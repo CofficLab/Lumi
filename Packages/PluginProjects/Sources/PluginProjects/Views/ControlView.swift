@@ -16,13 +16,18 @@ struct ControlView: View {
     }
 
     var body: some View {
-        Button {
+        // 显式读取存储状态修订号：缓存失效后需要重新探测存储类型，
+        // 依赖它才能让胶囊图标随之刷新。
+        let _ = viewModel.storageRevision
+
+        return Button {
             isPopoverPresented = true
             refreshStorageKinds()
         } label: {
             HStack(spacing: 6) {
                 // 外置设备（U 盘、移动硬盘）用硬盘图标，与本机磁盘区分。
                 ProjectStorageIcon(kind: storageKind)
+                    .help(storageHint)
 
                 Text(viewModel.currentProject?.name ?? pluginLocalization.string("Projects"))
                     .font(.system(size: 13, weight: .medium))
@@ -76,6 +81,11 @@ struct ControlView: View {
         return ProjectStorageDetector.kind(for: path)
     }
 
+    /// 当前项目的存储状态提示；无项目或状态正常时为空串。
+    private var storageHint: String {
+        ProjectStorageHint.text(for: storageKind)
+    }
+
     private func presentImporter() {
         isPopoverPresented = false
 
@@ -92,7 +102,7 @@ struct ControlView: View {
     /// 外置设备可能在应用运行期间被拔出或重新挂载，缓存的判定结果会过期；
     /// 用户打开弹层时重新探测一次即可，无需常驻轮询。
     private func refreshStorageKinds() {
-        ProjectStorageDetector.invalidateAll()
+        viewModel.refreshStorageState()
     }
 
     private func handleImport(_ result: Result<[URL], any Error>) {

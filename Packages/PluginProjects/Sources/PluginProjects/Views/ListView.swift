@@ -14,7 +14,11 @@ struct ListView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        // 显式读取存储状态修订号：缓存失效后需要重新探测存储类型，
+        // 依赖它才能让列表图标随之刷新。
+        let _ = viewModel.storageRevision
+
+        return VStack(spacing: 0) {
             header
             Divider()
             list

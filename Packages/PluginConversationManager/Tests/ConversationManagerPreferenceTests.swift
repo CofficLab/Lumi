@@ -190,6 +190,40 @@ struct ConversationManagerPreferenceTests {
         #expect(restarted.globalVerbosity == .brief)
     }
 
+    @Test func globalChatGPTVerbosityPersistsAcrossRestartWithoutSelectedConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationChatGPTVerbosityPersistenceTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalVerbosity(.chatGPT)
+
+        let stateURL = directory.appendingPathComponent("state.json")
+        var persisted: ResponseVerbosity?
+        for _ in 0..<100 {
+            if let data = try? Data(contentsOf: stateURL),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let raw = object["globalVerbosity"] as? String,
+               let verbosity = ResponseVerbosity(rawValue: raw) {
+                persisted = verbosity
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(persisted == .chatGPT)
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let restarted = ConversationManager(store: store, dataDirectory: directory)
+        restarted.loadConversations()
+        for _ in 0..<100 where restarted.isLoadingConversations {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(!restarted.isLoadingConversations)
+        #expect(restarted.selectedConversationID == nil)
+        #expect(restarted.globalVerbosity == .chatGPT)
+    }
+
     /// 回归 #987：后台会话被挤出缓存后，排队回合仍须使用会话绑定的模型。
     @Test func evictedConversationKeepsItsBoundModel() throws {
         let directory = FileManager.default.temporaryDirectory

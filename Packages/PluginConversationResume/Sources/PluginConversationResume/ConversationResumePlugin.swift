@@ -78,6 +78,8 @@ public final class ConversationResumePlugin: SuperPlugin, SuperLog {
         let store = ResumableTurnStore(fileURL: Self.storeFileURL())
 
         let viewModel = ResumeViewModel { [weak self] in
+            // 恢复当前选中的会话。协调器内部按会话去重，因此别的会话
+            // 正在恢复不会挡住本次操作（#888）。
             await self?.coordinator?.resume()
         }
         self.viewModel = viewModel

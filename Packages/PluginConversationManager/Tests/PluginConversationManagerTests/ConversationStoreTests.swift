@@ -70,6 +70,20 @@ struct ConversationStoreTests {
         #expect(await store.fetchConversation(id: id)?.verbosity == .brief)
     }
 
+    @Test("ChatGPT V5 详细程度可持久化")
+    func updateChatGPTVerbosity() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let id = UUID()
+        try await store.createConversation(id: id, title: "ChatGPT 详细程度测试", verbosity: .standard)
+
+        let updated = await store.updateConversationPreferences(id: id, verbosity: .chatGPT)
+        #expect(updated)
+        #expect(await store.fetchConversation(id: id)?.verbosity == .chatGPT)
+        #expect(await store.fetchConversation(id: id)?.verbosity?.rawValue == "v5")
+    }
+
     @Test("ConversationManager 等待详细程度写入完成")
     @MainActor
     func managerSetVerbosityAndWaitPersists() async throws {

@@ -23,6 +23,12 @@ final class ResumeCoordinator {
         var isResumable: Bool = false
         /// 提示文案（可继续时才有意义）。
         var reason: String = ""
+        /// 当前会话是否正在执行恢复流程。
+        ///
+        /// - Important: 按会话判定（#888）。它是**当前展示的这条横幅所属
+        ///   会话**的恢复状态，不是全局的 —— 会话 A 恢复期间不该禁用会话 B
+        ///   的「继续」按钮。
+        var isResuming: Bool = false
     }
 
     // MARK: - Dependencies
@@ -51,7 +57,19 @@ final class ResumeCoordinator {
     /// 当前状态。
     private(set) var state = State()
     /// 正在执行恢复流程的会话，避免重复点击。
-    private var resumingConversationID: UUID?
+    ///
+    /// - Important: 必须是**按会话隔离**的集合，而不是单个全局标志（#888）。
+    ///   旧实现用单个 `resumingConversationID`，于是会话 A 的恢复回合尚未
+    ///   返回时，会话 B 即使有自己独立的中断记录、消息历史和 AgentLoop
+    ///   运行时，也无法开始恢复 —— 一次慢速或长期未结束的恢复会无意义地
+    ///   串行化其它会话的故障恢复。
+    ///
+    ///   AgentLoop 侧的 `runtimes` 与 `completionWaiters` 本来就按
+    ///   conversationID 隔离，底层支持并行回合，只有这一层退化成了全局单值。
+    ///
+    ///   集合而非布尔：同一会话的重复恢复仍必须被抑制（否则会并发启动
+    ///   两个回合），但不同会话之间互不阻塞。
+    private var resumingConversationIDs: Set<UUID> = []
 
     init(
         loop: any ResumeAgentLoopCapability,
@@ -167,9 +185,9 @@ final class ResumeCoordinator {
 
         switch verdict {
         case let .resumable(reason):
-            apply(State(isResumable: true, reason: reason))
+            apply(State(isResumable: true, reason: reason, isResuming: isResuming(conversationID)))
         case .notResumable:
-            apply(State())
+            apply(State(isResuming: isResuming(conversationID)))
         }
     }
 
@@ -187,16 +205,29 @@ final class ResumeCoordinator {
     /// 1. 复查当前状态（点击可能发生在状态已变化之后）；
     /// 2. 修复孤儿 tool_call —— 否则这次 LLM 请求必然被 provider 拒绝；
     /// 3. 启动新回合。
-    func resume() async {
+    ///
+    /// - Parameter conversationID: 要恢复的会话。默认取当前选中的会话。
+    ///
+    /// - Important: 恢复的互斥必须**按会话**判定（#888）。旧实现在这里用
+    ///   全局 `resumingConversationID == nil` 做 guard，于是任何其它会话正在
+    ///   恢复时，本会话的恢复会被静默拒绝。改为集合后：同一会话的重复恢复
+    ///   仍被抑制，不同会话之间互不阻塞。
+    func resume(for requestedConversationID: UUID? = nil) async {
         guard isActive else { return }
-        guard let conversationID = conversations.selectedConversationID else { return }
-        guard resumingConversationID == nil else { return }
+        let conversationID = requestedConversationID ?? conversations.selectedConversationID
+        guard let conversationID else { return }
+        // 同一会话的重复恢复要挡住；别的会话正在恢复与此无关。
+        guard resumingConversationIDs.insert(conversationID).inserted else { return }
+        defer { resumingConversationIDs.remove(conversationID) }
+
+        // 恢复状态变化要立刻反映到「继续」按钮上（#888）。
+        publishResumeState(for: conversationID)
 
         await refreshState(for: conversationID)
-        guard state.isResumable else { return }
-
-        resumingConversationID = conversationID
-        defer { resumingConversationID = nil }
+        guard state.isResumable else {
+            publishResumeState(for: conversationID)
+            return
+        }
 
         await repairOrphanToolCalls(in: conversationID)
 
@@ -206,6 +237,26 @@ final class ResumeCoordinator {
 
         await loop.startTurn(for: conversationID)
         await refreshState(for: conversationID)
+        publishResumeState(for: conversationID)
+    }
+
+    /// 某会话当前是否正在执行恢复流程。
+    ///
+    /// 供 UI 判断「继续」按钮是否该禁用。必须按会话判定：一个会话的恢复
+    /// 不该禁用另一个会话的按钮（#888）。
+    func isResuming(_ conversationID: UUID) -> Bool {
+        resumingConversationIDs.contains(conversationID)
+    }
+
+    /// 把某个会话的恢复状态变化推给 UI。
+    ///
+    /// 只在会话当前被选中时才影响展示 —— `refreshState` 也遵守这条规则。
+    private func publishResumeState(for conversationID: UUID) {
+        guard isActive else { return }
+        guard conversations.selectedConversationID == conversationID else { return }
+        var newState = state
+        newState.isResuming = isResuming(conversationID)
+        apply(newState)
     }
 
     /// 为未配对的 tool_call 补写占位 tool result。

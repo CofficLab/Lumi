@@ -75,8 +75,13 @@ public struct CreateSkillTool: SuperAgentTool {
         conversationProjectPath: String?
     ) async throws -> String {
         // 优先使用显式参数，其次工具调用所属会话绑定的项目，最后回退到当前项目。
-        let explicitPath = (arguments["project_path"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        //
+        // - Important: 显式参数必须用 `SkillToolSupport.string` 读取，它会把
+        //   空白字符串归一为 nil。模型经常把可选参数显式写成空串
+        //   （`"project_path": "   "`），若原样保留，`??` 会短路掉后面两层回退，
+        //   最终抛「no current project selected」——而当前项目其实就在那儿。
+        //   空白必须与「省略该参数」等价（#890）。
+        let explicitPath = SkillToolSupport.string(arguments, "project_path")
         let currentPath: String? = await MainActor.run { SkillRuntime.currentProjectPath }
         let projectPath = explicitPath ?? conversationProjectPath ?? currentPath
 

@@ -39,6 +39,13 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 打开文件记录是否已完成首次加载。
     @Published public private(set) var isLoadingOpenedFiles = true
 
+    /// 存储状态修订号。
+    ///
+    /// 项目目录是否仍在磁盘上属于易变信息（目录可能被删除、外置硬盘可能被拔出）。
+    /// 探测结果按路径缓存在 `ProjectStorageDetector` 中，缓存失效时必须让视图
+    /// 重新读取，于是用这个修订号驱动重绘。
+    @Published public private(set) var storageRevision = 0
+
     // MARK: - Dependencies
 
     public let store: ProjectsStore
@@ -65,6 +72,16 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     }
 
     // MARK: - Intents
+
+    /// 刷新项目存储状态缓存，并递增修订号驱动视图重绘。
+    ///
+    /// 项目目录是否还在磁盘上会随外部操作变化（目录被删除、外置硬盘被拔出、
+    /// 网络卷重新挂载）。探测结果按路径缓存在 `ProjectStorageDetector` 中，
+    /// 因此每次刷新都要先清空缓存再让视图重新读取。
+    public func refreshStorageState() {
+        ProjectStorageDetector.invalidateAll()
+        storageRevision &+= 1
+    }
 
     /// 订阅 Store 的打开文件变更，并完成首次加载。
     ///

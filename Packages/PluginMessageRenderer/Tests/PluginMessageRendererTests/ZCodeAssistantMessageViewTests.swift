@@ -131,6 +131,99 @@ struct ZCodeAssistantMessageViewTests {
         #expect(ZCodeAssistantTextStyle.timeLabelFontSize == 12)
     }
 
+    // MARK: - 常驻占位（消除 hover 引起的行高跳动）
+
+    @Test("轮尾已完成且有内容时预留常驻占位")
+    func reservesSlotForCompletedTailWithContent() {
+        let context = MessageTurnPresentationContext(
+            turnKey: "turn:1",
+            agentTurnID: nil,
+            isTailAssistantText: true,
+            isRunning: false,
+            assistantCopyText: "内容",
+            completedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        #expect(ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+    }
+
+    @Test("占位与 hover 无关：未 hover 也占位")
+    func slotReservationIsIndependentOfHover() {
+        // - Important: 占位条件里**不能**有 hover。
+        //   否则 hover 就会改变行高 —— 那正是要消除的跳动。
+        //
+        //   `shouldReserveActionBarSlot` 的签名里根本没有 hover 参数，
+        //   这条断言把「不依赖 hover」钉死在 API 形状上。
+        let context = MessageTurnPresentationContext(
+            turnKey: "turn:1",
+            agentTurnID: nil,
+            isTailAssistantText: true,
+            isRunning: false,
+            assistantCopyText: "内容",
+            completedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        #expect(ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+        // 未 hover 时操作栏**不显示**，但占位仍在。
+        #expect(
+            !ZCodeAssistantTextStyle.shouldShowActionBar(context: context, isHovered: false)
+        )
+        #expect(ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+    }
+
+    @Test("非轮尾正文不预留操作栏占位")
+    func nonTailRowReservesNoSlot() {
+        let context = MessageTurnPresentationContext(
+            turnKey: "turn:1",
+            agentTurnID: nil,
+            isTailAssistantText: false,
+            isRunning: false,
+            assistantCopyText: "内容",
+            completedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        #expect(!ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+    }
+
+    @Test("运行中不预留操作栏占位")
+    func runningTurnReservesNoSlot() {
+        let context = MessageTurnPresentationContext(
+            turnKey: "turn:1",
+            agentTurnID: nil,
+            isTailAssistantText: true,
+            isRunning: true,
+            assistantCopyText: "内容",
+            completedAt: nil
+        )
+
+        #expect(!ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+    }
+
+    @Test("既无复制文本也无完成时间时不预留占位")
+    func emptyTailReservesNoSlot() {
+        let context = MessageTurnPresentationContext(
+            turnKey: "turn:1",
+            agentTurnID: nil,
+            isTailAssistantText: true,
+            isRunning: false,
+            assistantCopyText: "",
+            completedAt: nil
+        )
+
+        #expect(!ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: context))
+    }
+
+    @Test("context 为 nil 时不预留占位")
+    func nilContextReservesNoSlot() {
+        #expect(!ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: nil))
+    }
+
+    @Test("操作栏占位高度是 32，淡入淡出 150ms")
+    func actionBarSlotMetrics() {
+        #expect(ZCodeAssistantTextStyle.actionBarSlotHeight == 32)
+        #expect(ZCodeAssistantTextStyle.actionBarFadeDuration == 0.15)
+    }
+
     // MARK: - 上下文缺失时
 
     @Test("context 为 nil 时 V1–V3 保持旧行为")

@@ -491,6 +491,7 @@ public struct ConversationStoreSettingsView: View {
         case .detailed: L("Detailed")
         // V4 是 ZCode 风格消息列表的呈现变体。
         case .zcode: L("ZCode")
+        case .chatGPT: L("ChatGPT")
         case nil: L("Default")
         }
     }
