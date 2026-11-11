@@ -18,10 +18,10 @@ This is a design document only; it does not implement the changes.
 
 Relevant code:
 
-- [`ProjectRAGPlugin.swift`](../Plugins/ProjectRAGPlugin/Sources/ProjectRAGPlugin.swift)
-- [`OnReady.swift`](../Plugins/ProjectRAGPlugin/Sources/Hooks/OnReady.swift)
-- [`RAGService.swift`](../Plugins/ProjectRAGPlugin/Sources/Services/RAGService.swift)
-- [`RAGIndexer.swift`](../Plugins/ProjectRAGPlugin/Sources/Services/RAGIndexer.swift)
+- [`ProjectRAGPlugin.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/ProjectRAGPlugin.swift)
+- [`OnReady.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/Hooks/ProjectRAGProjectLifecycleHook.swift)
+- [`RAGService.swift`](../Packages/PluginProjectRAG/Sources/ProjectRAGEngine/Services/RAGService.swift)
+- [`RAGIndexer.swift`](../Packages/PluginProjectRAG/Sources/ProjectRAGEngine/Services/RAGIndexer.swift)
 
 ### 2.1 Concurrency model
 
@@ -39,7 +39,7 @@ This avoids stacking the full contents of multiple projects in memory, but a lar
 
 CPU is spent on recursive directory enumeration, file reads, hashing, chunking, NaturalLanguage embedding, and SQLite/vector writes. The first index is the most expensive case.
 
-Memory is bounded better than a whole-project load, but the current implementation still holds the project file-path list, indexed-file state map, one complete file, all chunks for that file, and all embeddings for that file. Files are limited to 1.5 MB and generated/build/dependency directories are excluded in [`RAGFileScanner.swift`](../Plugins/ProjectRAGPlugin/Sources/Utils/RAGFileScanner.swift).
+Memory is bounded better than a whole-project load, but the current implementation still holds the project file-path list, indexed-file state map, one complete file, all chunks for that file, and all embeddings for that file. Files are limited to 1.5 MB and generated/build/dependency directories are excluded in [`RAGFileScanner.swift`](../Packages/PluginProjectRAG/Sources/ProjectRAGEngine/Utils/RAGFileScanner.swift).
 
 The current design has six main weaknesses:
 
