@@ -25,10 +25,14 @@ struct TokenPlanToolbarView: View {
         let _ = viewModel.revision
 
         Group {
-            if let text = viewModel.statusBarText {
+            if viewModel.chipPresentation == .loading {
+                loadingChip
+            } else if let text = viewModel.statusBarText {
                 chip(text: text)
             } else {
-                loadingChip
+                // 成功但算不出摘要（例如配额列表里没有可展示的模型）：
+                // 仍给出可点击的占位，用户仍能打开详情面板查看原始数据。
+                chip(text: pluginLocalization.string("Loading..."))
             }
         }
         .task { handleAppear() }
@@ -82,18 +86,27 @@ extension TokenPlanToolbarView {
     }
 
     /// chip 颜色跟随最紧张的一项配额：充足为绿、偏低为橙、告急为红。
+    ///
+    /// 失败态用错误色，让用户在工具栏上一眼看出「配额没拿到」。
     private var chipTint: Color {
-        guard case let .success(plans) = viewModel.status else { return .primary }
+        switch viewModel.status {
+        case .success(let plans):
+            let ratios = plans.flatMap { plan in
+                TokenPlanModelDisplayConfig.from(plan.modelName).remainingRatios(for: plan)
+            }
+            guard let tightest = ratios.min() else { return .primary }
 
-        let ratios = plans.flatMap { plan in
-            TokenPlanModelDisplayConfig.from(plan.modelName).remainingRatios(for: plan)
-        }
-        guard let tightest = ratios.min() else { return .primary }
-
-        switch tightest {
-        case 0.5...: return theme.success
-        case 0.2..<0.5: return theme.warning
-        default: return theme.error
+            switch tightest {
+            case 0.5...: return theme.success
+            case 0.2..<0.5: return theme.warning
+            default: return theme.error
+            }
+        case .authError:
+            return theme.error
+        case .unavailable:
+            return theme.warning
+        case .loading:
+            return .primary
         }
     }
 }
