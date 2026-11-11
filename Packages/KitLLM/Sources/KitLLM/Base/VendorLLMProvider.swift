@@ -192,7 +192,11 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 响应 ID 与停止原因：与 SSE 路径同源，避免两条协议路径给出
+            // 不一样的响应元数据。
+            responseID: parsed.responseID,
+            stopReason: parsed.stopReason
         )
     }
 
