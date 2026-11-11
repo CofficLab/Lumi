@@ -203,10 +203,16 @@ enum ConversationHTMLExporter {
         return "data:\(mimeType);base64,\(data)"
     }
 
+    /// 判断一段文本是否只有空白。
+    ///
+    /// 只用裁剪后的结果判断「有没有内容」，**返回的却是原文**：导出的正文、
+    /// 推理、工具参数、工具结果与附件文件体都是预排版内容，首尾的缩进、空格
+    /// 与换行属于原文的一部分。返回裁剪后的字符串会把这些不可见字符抹掉，
+    /// 即使 CSS 已经用 `white-space: pre-wrap` 也无法恢复（#859）。
     private static func nonempty(_ value: String?) -> String? {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        return trimmed.isEmpty ? nil : value
     }
 
     private static func escape(_ value: String) -> String {
