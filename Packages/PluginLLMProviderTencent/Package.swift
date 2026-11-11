@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "PluginLLMProviderTencent",
     platforms: [
-        .macOS("13.1"),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
         .library(name: "PluginLLMProviderTencent", targets: ["PluginLLMProviderTencent"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
     ],

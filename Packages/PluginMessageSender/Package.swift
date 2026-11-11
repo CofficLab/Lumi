@@ -11,13 +11,13 @@ let package = Package(
         .library(name: "PluginMessageSender", targets: ["PluginMessageSender"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "PluginXcodeBuild",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginXcodeBuild", targets: ["PluginXcodeBuild"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

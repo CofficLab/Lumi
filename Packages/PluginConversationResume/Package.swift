@@ -9,15 +9,15 @@ let package = Package(
         .library(name: "PluginConversationResume", targets: ["PluginConversationResume"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         .target(

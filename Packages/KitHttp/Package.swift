@@ -5,7 +5,7 @@ let package = Package(
     name: "KitHttp",
     defaultLocalization: "en",
     platforms: [
-        .macOS("13.1"),
+        .macOS("14.0"),
         .iOS(.v17),
     ],
     products: [
@@ -15,8 +15,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
 
     targets: [

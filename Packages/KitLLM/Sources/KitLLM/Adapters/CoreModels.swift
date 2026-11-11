@@ -78,6 +78,40 @@ public struct StreamChunk: Sendable, Equatable {
     public let stopReason: String?
     /// `redacted_thinking` 块的不透明数据，原样收集后回传。
     public let redactedThinkingData: String?
+    /// 生成的图片（图像生成模型的产物）。
+    ///
+    /// OpenRouter 等图像模型在 `message.images` / `delta.images` 里返回
+    /// base64 图片。没有这个字段时，一次合法的「只生成图片」的响应会被
+    /// 当成空响应，图片直接丢失。
+    public let images: [MessageImage]?
+
+    /// 补上响应 ID（`chatcmpl-...`）。
+    ///
+    /// 流式解析的每个事件都带同一个顶层 `id`，但 chunk 构造点分散在各
+    /// 分支里；与其逐个加参数，不如在解析函数末尾统一补齐。
+    public func withResponseID(_ responseID: String?) -> StreamChunk {
+        guard let responseID, self.responseID == nil else { return self }
+        return StreamChunk(
+            content: content,
+            isDone: isDone,
+            toolCalls: toolCalls,
+            error: error,
+            partialJson: partialJson,
+            toolCallIndex: toolCallIndex,
+            eventType: eventType,
+            rawEvent: rawEvent,
+            rawStreamPayload: rawStreamPayload,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            cachedInputTokens: cachedInputTokens,
+            cacheWriteInputTokens: cacheWriteInputTokens,
+            cacheTotalInputTokens: cacheTotalInputTokens,
+            responseID: responseID,
+            stopReason: stopReason,
+            redactedThinkingData: redactedThinkingData,
+            images: images
+        )
+    }
 
     public init(
         content: String? = nil,
@@ -96,7 +130,8 @@ public struct StreamChunk: Sendable, Equatable {
         cacheTotalInputTokens: Int? = nil,
         responseID: String? = nil,
         stopReason: String? = nil,
-        redactedThinkingData: String? = nil
+        redactedThinkingData: String? = nil,
+        images: [MessageImage]? = nil
     ) {
         self.content = content
         self.isDone = isDone
@@ -115,6 +150,7 @@ public struct StreamChunk: Sendable, Equatable {
         self.responseID = responseID
         self.stopReason = stopReason
         self.redactedThinkingData = redactedThinkingData
+        self.images = images
     }
 
     public func withRawStreamPayload(_ raw: String?) -> StreamChunk {

@@ -311,6 +311,19 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     normalized.remove(at: resultIndex)
                 }
                 normalized.insert(contentsOf: results, at: index + 1)
+
+                // 移除**没有配对结果**的 tool_call 声明。
+                //
+                // 一次 assistant 回合可以请求多个工具，部分完成就中断时
+                // 会有调用没有结果（协议要求每个调用都有结果）。此前这里
+                // 看到「至少有一个结果」就保留全部声明，未配对的调用会让
+                // 上游直接拒绝请求。已完成的结果必须保留。
+                let answeredIDs = Set(results.compactMap(\.toolCallID))
+                let answered = toolCalls.filter { answeredIDs.contains($0.id) }
+                if answered.count != toolCalls.count {
+                    normalized[index].toolCalls = answered
+                }
+
                 index += results.count + 1
                 continue
             }
@@ -348,7 +361,17 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         ]
     }
 
-    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?) {
+    public func parseResponse(
+        data: Data,
+        reverseMap: [String: String]? = nil
+    ) throws -> (
+        content: String,
+        toolCalls: [ToolCall]?,
+        reasoningContent: String?,
+        images: [MessageImage]?,
+        responseID: String?,
+        stopReason: String?
+    ) {
         if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
             throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -371,7 +394,32 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             )
         }
 
-        return (choiceMessage.content ?? "", toolCalls, choiceMessage.reasoningContent)
+        // 正文优先；正文缺失时回退到拒答文本。
+        //
+        // OpenAI 在模型拒绝作答时返回 `content: null` + `message.refusal`。
+        // 只取 `content` 会把一次合法拒答变成空串，随后在 AgentLoop 层被
+        // 重新归类为「模型返回空响应」，用户看到的是通用失败提示而不是
+        // 模型给出的拒绝说明。
+        let content = choiceMessage.content ?? choiceMessage.refusal ?? ""
+
+        // 生成的图片（图像生成模型的产物）。
+        //
+        // 没有这个字段时，一次合法的「只生成图片」的响应会被当成空响应：
+        // 内容为空、没有工具调用、也没有思考——生成的图片直接丢失。
+        let images = choiceMessage.images?.compactMap { $0.decodedImage() }
+
+        // 响应元数据：顶层 `id` 与 `choices[].finish_reason`。
+        //
+        // 两者都是标准字段——关联 ID 让下游能把请求与供应商日志对上，
+        // finish_reason 让截断的回答（`length`）能说明「为什么没说完」。
+        return (
+            content,
+            toolCalls,
+            choiceMessage.reasoningContent,
+            images,
+            response.id,
+            response.choices.first?.finishReason
+        )
     }
 
     /// 解析单个 SSE 事件，返回该事件产出的**有序事件列表**。
@@ -424,6 +472,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
         var chunks: [StreamChunk] = []
 
+        // 顶层响应 ID（`chatcmpl-...`）：供应商的关联标识，下游要靠它把
+        // 一次请求与它的日志对上。
+        let responseID = json["id"] as? String
+
         // MARK: - Parse content/reasoning/toolCalls first
         if let choices = json["choices"] as? [[String: Any]],
            let firstChoice = choices.first,
@@ -440,7 +492,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 思考增量与正文增量各自独立产出：二者可以同时存在，
             // 都不因对方的存在而被丢弃。
-            if let reasoningContent = delta["reasoning_content"] as? String,
+            //
+            // `reasoning_content` 与 `reasoning` 是同一个语义的两个别名：
+            // OpenRouter 用 `reasoning`，其它供应商多用 `reasoning_content`。
+            if let reasoningContent = (delta["reasoning_content"] as? String ?? delta["reasoning"] as? String),
                !reasoningContent.isEmpty {
                 chunks.append(StreamChunk(
                     content: reasoningContent,
@@ -457,6 +512,46 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             if let content = delta["content"] as? String, !content.isEmpty {
                 chunks.append(StreamChunk(
                     content: content,
+                    eventType: .textDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason
+                ))
+            }
+
+            // 生成的图片增量（图像生成模型的 `delta.images`）。
+            //
+            // 与思考 / 正文增量一样独立产出：三者可以同时存在，互不覆盖。
+            // 没有这个分支时，一次合法的「只生成图片」的流式响应不会有任何
+            // 增量产出，流以空内容正常结束，随后被当成空响应。
+            if let images = Self.parseImageDelta(delta["images"]), !images.isEmpty {
+                chunks.append(StreamChunk(
+                    eventType: .textDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason,
+                    images: images
+                ))
+            }
+
+            // 拒答增量（OpenAI 的 `delta.refusal`）。
+            //
+            // 拒答时 `delta.content` 为空，拒答说明只出现在这个字段里。
+            // 不读它会让一次合法拒答在流式下累积为空内容，随后被
+            // AgentLoop 重新归类为「模型返回空响应」——模型明确拒绝了，
+            // 用户看到的却是通用失败提示。
+            //
+            // 与 `content` / `reasoning_content` 一样独立产出：三者可以
+            // 同时存在，互不覆盖。
+            if let refusal = delta["refusal"] as? String, !refusal.isEmpty {
+                chunks.append(StreamChunk(
+                    content: refusal,
                     eventType: .textDelta,
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
@@ -527,7 +622,31 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             }
         }
 
-        return chunks
+        // 统一补上响应 ID：chunk 构造点分散在各分支里，逐个加参数容易漏。
+        guard let responseID else { return chunks }
+        return chunks.map { $0.withResponseID(responseID) }
+    }
+
+    /// 解析流式事件里的图片增量。
+    ///
+    /// 与非流式的 `ImageData.decodedImage()` 用同一套解码规则：只接受
+    /// `data:` URL（base64 内联），外链 URL 无法在不额外下载的前提下变成
+    /// 图片数据。
+    static func parseImageDelta(_ value: Any?) -> [MessageImage]? {
+        guard let entries = value as? [[String: Any]], !entries.isEmpty else { return nil }
+        var images: [MessageImage] = []
+        for entry in entries {
+            guard let imageURL = entry["image_url"] as? [String: Any],
+                  let url = imageURL["url"] as? String,
+                  url.hasPrefix("data:") else { continue }
+            guard let commaIndex = url.firstIndex(of: ",") else { continue }
+            let metadata = String(url[url.startIndex..<commaIndex])
+            let payload = String(url[url.index(after: commaIndex)...])
+            guard metadata.contains("base64"), let data = Data(base64Encoded: payload) else { continue }
+            let mimeType = String(metadata.dropFirst("data:".count).prefix(while: { $0 != ";" }))
+            images.append(MessageImage(data: data, mimeType: mimeType.isEmpty ? "image/png" : mimeType))
+        }
+        return images.isEmpty ? nil : images
     }
 
     private func extractSSEData(from text: String) -> String? {
@@ -558,7 +677,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         return dataLines.joined(separator: "\n")
     }
 
-    static func cacheReadInputTokens(from usage: [String: Any]?) -> Int? {
+    /// 读取 usage 里的缓存命中 token 数。
+    ///
+    /// 公开给其它 provider 插件复用：不同网关的 usage 字段名各异，
+    /// 但「缓存命中」这一个语义必须有一致口径，否则缓存命中率统计会
+    /// 把部分协议（Responses / Anthropic 兼容等）的轮次悄悄排除在外。
+    public static func cacheReadInputTokens(from usage: [String: Any]?) -> Int? {
         usage?["cached_tokens"] as? Int
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
@@ -567,7 +691,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ?? usage?["prompt_cache_hit_tokens"] as? Int
     }
 
-    static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
+    /// 读取 usage 里的缓存写入 token 数。口径同 ``cacheReadInputTokens(from:)``。
+    public static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
         usage?["cache_write_tokens"] as? Int
             ?? usage?["cache_creation_input_tokens"] as? Int
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cache_write_tokens"] as? Int
@@ -618,12 +743,28 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let name = function["name"] as? String
             let arguments = function["arguments"] as? String
 
-            if let id, let name {
+            // 身份字段可能分散在不同 delta：
+            //
+            // ```
+            // delta 1: {"index":0,"id":"call_1","function":{}}
+            // delta 2: {"index":0,"function":{"name":"lookup","arguments":"{}"}}
+            // ```
+            //
+            // 此前只在 `id` 与 `name` **同时**到达时才产出 ToolCall，否则只
+            // 保留 arguments 作为 partialJson——已收到的 ID 与后到的 name
+            // 都被丢弃，累积器最终造出 `ToolCall(id: "", name: "")`，一次
+            // 合法的工具调用变成无名调用，无法分发。
+            //
+            // 因此只要有任何身份字段就产出调用，缺失的留空由累积器合并
+            // （`upsertToolCall` 逐字段取非空值）。
+            if id != nil || name != nil || arguments != nil {
                 parsedToolCalls.append(
                     ToolCall(
-                        id: id,
-                        name: name,
-                        arguments: arguments ?? "{}"
+                        id: id ?? "",
+                        name: name ?? "",
+                        // 占位参数用空串而不是 "{}"：累积器把 "{}" 当作
+                        // 「尚未收到真实参数」的标记，真实分片会被正确拼接。
+                        arguments: arguments ?? ""
                     )
                 )
             }

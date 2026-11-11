@@ -10,6 +10,13 @@ final class MLXRuntime {
     private var modelContainer: ModelContainer?
     private var currentModelID: String?
 
+    /// 引用 VLM factory，确保 `MLXVLM` 目标被链接进二进制。
+    ///
+    /// 链接器会裁掉没有任何符号引用的目标，而 mlx-swift-lm 靠
+    /// `NSClassFromString` 动态发现 factory——不显式引用的话 VLM factory
+    /// 不会进二进制，VL 模型加载时会抛 `unsupportedModelType`。
+    private static let vlmFactoryLinkage = MLXVLMFactoryLinkage.modelFactory
+
     func configure(rootDirectory: URL) {
         MLXModelPaths.configure(rootDirectory: rootDirectory)
         MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
@@ -65,9 +72,22 @@ final class MLXRuntime {
             }
         }
         guard !messages.isEmpty else { throw MLXProviderError.emptyPrompt }
-        let input = UserInput(chat: messages, tools: mlxTools(from: request.tools))
+        let tools = mlxTools(from: request.tools)
+        let input = UserInput(chat: messages, tools: tools)
         let prepared = try await container.prepare(input: input)
-        let stream = try await container.generate(input: prepared, parameters: GenerateParameters(temperature: 0.7))
+        // `generate(..., tools:)` 与 `UserInput.tools` 用途不同，**都要传**：
+        // - `UserInput.tools` 供 chat template 渲染提示词；
+        // - `generate(..., tools:)` 供响应解析层做参数类型解析与函数名授权。
+        //
+        // 省略后者时它的默认值是 `nil`，语义是「接受任意解析出的函数名，
+        // 且不做 Schema 类型转换」：声明为 `integer` 的参数保持字符串，
+        // 未声明的函数名也不会被拒绝——错误的参数类型会直接流进 Agent
+        // 工具链。
+        let stream = try await container.generate(
+            input: prepared,
+            parameters: GenerateParameters(temperature: 0.7),
+            tools: tools
+        )
 
         var content = ""
         var toolCalls: [LLMToolCall] = []
@@ -89,29 +109,19 @@ final class MLXRuntime {
         return LLMResponse(content: content, model: modelID, toolCalls: toolCalls.isEmpty ? nil : toolCalls)
     }
 
-    private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: Sendable]]? {
+    private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: any Sendable]]? {
         guard let tools, !tools.isEmpty else { return nil }
         return tools.map { tool in
-            [
-                "type": "function",
-                "function": [
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": sendableJSON(tool.parameters),
-                ],
+            let function: [String: any Sendable] = [
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": MLXSendableJSON.convertSendableDictionary(tool.parameters),
             ]
-        }
-    }
-
-    private func sendableJSON(_ value: Any) -> any Sendable {
-        switch value {
-        case let value as String: return value
-        case let value as Bool: return value
-        case let value as Int: return value
-        case let value as Double: return value
-        case let value as [Any]: return value.map(sendableJSON)
-        case let value as [String: Any]: return value.mapValues(sendableJSON)
-        default: return String(describing: value)
+            let entry: [String: any Sendable] = [
+                "type": "function",
+                "function": function,
+            ]
+            return entry
         }
     }
 

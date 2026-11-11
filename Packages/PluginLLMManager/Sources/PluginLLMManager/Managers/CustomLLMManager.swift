@@ -69,11 +69,16 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
     ///
     /// 与 `DefaultLLMManager` 保持一致：远程模型刷新成功后必须广播
     /// `.modelsRefreshed`，观察者（如模型选择器）才会重新读取动态模型池。
+    ///
+    /// 刷新也可能把当前选中的模型从动态池里移除，因此必须重校验选中态：
+    /// 失效的选中会被回退到该供应商的可用模型并广播 `.selectionChanged`，
+    /// 避免 UI 显示「未选择」而请求层静默使用默认模型。
     public func notifyModelsRefreshed(providerID: String) {
         if Self.verbose {
             Self.logger.info("\(Self.t)models refreshed: provider=\(providerID, privacy: .public)")
         }
         notify(.modelsRefreshed(providerID: providerID))
+        ensureValidSelection(reason: .remoteModelsRefreshed)
     }
 
     // MARK: - UserDefaults Keys
@@ -417,7 +422,13 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     /// 注册表变化后保证选中态一致：失效的持久化选中回退到第一个供应商；
     /// 模型回退到默认模型。仅在确实变化时写 UserDefaults 并广播。
-    private func ensureValidSelection(fallbackForMissingProvider: Bool = false) {
+    ///
+    /// - Parameter reason: 选中态发生变化时广播的原因；`nil` 表示按默认语义
+    ///   广播 `.providerChanged`（恢复场景另走 `.appRestore`）。
+    private func ensureValidSelection(
+        fallbackForMissingProvider: Bool = false,
+        reason: ModelSelectionReason? = nil
+    ) {
         let previous = selectedModelID
         var next: LLMModelID?
 
@@ -448,7 +459,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         // 一次性 `.appRestore`：选中值在 `init` 中即已恢复（无 `nil → 值` 跃迁），
         // 故在首次经校验解析出有效 `next` 后主动广播一次，让启动期已注册的观察者
         // 感知「恢复的选中已生效」。仅对首个解析出选中的注册流程生效。
-        if pendingRestoreBroadcast {
+        if pendingRestoreBroadcast, reason == nil {
             pendingRestoreBroadcast = false
             if let next {
                 notify(.selectionChanged(providerID: next.providerID, model: next.modelID, reason: .appRestore))
@@ -457,7 +468,11 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         }
 
         guard previous != next else { return }
-        notify(.selectionChanged(providerID: next?.providerID, model: next?.modelID, reason: .providerChanged))
+        notify(.selectionChanged(
+            providerID: next?.providerID,
+            model: next?.modelID,
+            reason: reason ?? .providerChanged
+        ))
         if next == nil, Self.verbose {
             Self.logger.warning("\(Self.t)no model routes available, cleared selection")
         }

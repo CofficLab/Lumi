@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginMessageManager", targets: ["PluginMessageManager"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

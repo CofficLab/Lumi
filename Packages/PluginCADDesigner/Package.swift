@@ -6,11 +6,11 @@ let package = Package(
     platforms: [.macOS("14.0")],
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(path: "../KitCADDesigner"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(

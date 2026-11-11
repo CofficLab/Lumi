@@ -4,20 +4,20 @@ import PackageDescription
 let package = Package(
     name: "PluginCodeEditor",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginCodeEditor", targets: ["PluginCodeEditor"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiLogging"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../ProviderEditor"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversationInputBlock"),
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiUI"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
     ],
     targets: [
         .target(

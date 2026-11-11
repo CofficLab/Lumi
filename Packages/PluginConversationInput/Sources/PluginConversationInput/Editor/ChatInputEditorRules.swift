@@ -81,6 +81,14 @@ public enum ChatInputEditorRules {
         return values.isDirectory == true
     }
 
+    /// 判断一个拖入的 URL 是否应当进入本地文件附件链。
+    ///
+    /// 只有 `isFileURL` 的 URL 才有可读取的本地路径；`https:`、`mailto:` 等
+    /// 非文件 URL 交给附件加载器只会得到一条读不出内容的附件错误（#882）。
+    public static func isFileAttachmentURL(_ url: URL) -> Bool {
+        url.isFileURL
+    }
+
     public static func fileURL(fromDroppedString string: String) -> URL? {
         fileURLs(fromDroppedString: string).first
     }

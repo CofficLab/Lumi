@@ -93,4 +93,24 @@ struct MarkdownChatListLayoutTests {
 
         #expect(scrollRowHeight >= standaloneHeight * 0.85)
     }
+
+    @Test
+    func legacyTableCellTextDoesNotWrapOneCharacterPerLine() async throws {
+        let markdown = """
+            | 步骤 | 动作 | 说明 |
+            | --- | --- | --- |
+            | 1 | 创建共享包 | 保持旧主题表格正常显示 |
+            """
+        MarkdownRenderCache.warm(markdown: markdown)
+
+        let height = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
+            markdown: markdown,
+            width: 360,
+            preferOuterScroll: true,
+            settleMilliseconds: 200
+        )
+
+        #expect(height > 0)
+        #expect(height < 120, "表头和一行数据不应逐字换行，实际高度为 \(height)")
+    }
 }

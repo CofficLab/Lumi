@@ -165,7 +165,24 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     // MARK: - 响应解析
 
     /// 解析非流式响应
-    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?) {
+    ///
+    /// - Returns: 正文、工具调用与响应元数据（token 用量、缓存用量、
+    ///   响应 ID、停止原因）。整段 JSON 的流式回退也要带上这些元数据，
+    ///   否则同一个网关从 SSE 换成整段 JSON 就会丢失它们。
+    public func parseResponse(
+        data: Data,
+        reverseMap: [String: String]? = nil
+    ) throws -> (
+        content: String,
+        toolCalls: [ToolCall]?,
+        inputTokens: Int?,
+        outputTokens: Int?,
+        cachedInputTokens: Int?,
+        cacheWriteInputTokens: Int?,
+        cacheTotalInputTokens: Int?,
+        responseID: String?,
+        stopReason: String?
+    ) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -191,7 +208,32 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             }
         }
 
-        return (textContent, toolCalls.isEmpty ? nil : toolCalls)
+        // 响应元数据。
+        //
+        // 整段 JSON 的流式回退依赖这些字段：只给正文与工具调用的话，
+        // 累积器拿到的 chunk 上没有任何元数据，最终响应的 token 用量、
+        // 缓存用量、响应 ID、停止原因全是 nil。
+        let usage = response.usage
+        let cacheWriteInputTokens = usage?.cacheCreationInputTokens
+        let cachedInputTokens = usage?.cacheReadInputTokens
+            ?? (cacheWriteInputTokens == nil ? nil : 0)
+        let inputTokens = usage?.inputTokens
+
+        return (
+            textContent,
+            toolCalls.isEmpty ? nil : toolCalls,
+            inputTokens,
+            usage?.outputTokens,
+            cachedInputTokens,
+            cacheWriteInputTokens,
+            Self.cacheTotalInputTokens(
+                inputTokens: inputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens
+            ),
+            response.id,
+            response.stopReason
+        )
     }
 
     // MARK: - 流式解析
@@ -215,12 +257,21 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
            !trimmed.contains("data:") {
             let parsed = try parseResponse(data: data)
             if !parsed.content.isEmpty || parsed.toolCalls != nil {
+                // 必须带上响应元数据：网关从 SSE 换成整段 JSON 时，最终
+                // 响应的 token 用量、缓存用量、响应 ID、停止原因不应改变。
                 return StreamChunk(
                     content: parsed.content.isEmpty ? nil : parsed.content,
                     isDone: true,
                     toolCalls: parsed.toolCalls,
                     eventType: .textDelta,
-                    rawEvent: text
+                    rawEvent: text,
+                    inputTokens: parsed.inputTokens,
+                    outputTokens: parsed.outputTokens,
+                    cachedInputTokens: parsed.cachedInputTokens,
+                    cacheWriteInputTokens: parsed.cacheWriteInputTokens,
+                    cacheTotalInputTokens: parsed.cacheTotalInputTokens,
+                    responseID: parsed.responseID,
+                    stopReason: parsed.stopReason
                 )
             }
         }
@@ -598,27 +649,45 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 continue
             }
 
-            // Recover from an interrupted tool turn. Sending a trailing
-            // assistant tool_use without a matching tool_result is rejected by
-            // MiniMax with error 2013. Add an explicit error result so the
-            // history remains structurally valid and the model can retry it.
-            if index == messages.count - 1,
-               message.role == .assistant,
+            // Recover from an interrupted tool turn. Sending an assistant
+            // tool_use without a matching tool_result is rejected by MiniMax
+            // with error 2013. Add an explicit error result so the history
+            // remains structurally valid and the model can retry it.
+            //
+            // 适用���**任何**位置，不只是最后一条：一次 assistant 回合请求
+            // 多个工具、部分完成就中断时，未配对的调用会让后续请求被拒。
+            if message.role == .assistant,
                let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
+                // 找出这次 assistant 之后已经落地的结果。
+                var answered = Set<String>()
+                var scan = index + 1
+                while scan < messages.count {
+                    let candidate = messages[scan]
+                    if candidate.role == .assistant { break }
+                    if candidate.role == .tool, let toolCallID = candidate.toolCallID {
+                        answered.insert(toolCallID)
+                    }
+                    scan += 1
+                }
+                let unanswered = toolCalls.filter { !answered.contains($0.id) }
+
                 output.append(transformMessage(message))
-                output.append([
-                    "role": "user",
-                    "content": toolCalls.map { toolCall in
-                        [
-                            "type": "tool_result",
-                            "tool_use_id": toolCall.id,
-                            "content": "Tool execution was interrupted before a result was recorded.",
-                            "is_error": true,
-                        ] as [String: Any]
-                    },
-                ])
-                break
+                if !unanswered.isEmpty {
+                    output.append([
+                        "role": "user",
+                        "content": unanswered.map { toolCall in
+                            [
+                                "type": "tool_result",
+                                "tool_use_id": toolCall.id,
+                                "content": "Tool execution was interrupted before a result was recorded.",
+                                "is_error": true,
+                            ] as [String: Any]
+                        },
+                    ])
+                }
+                index += 1
+                continue
             }
 
             output.append(transformMessage(message))

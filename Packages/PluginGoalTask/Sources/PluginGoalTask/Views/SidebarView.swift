@@ -27,18 +27,26 @@ public struct SidebarView: View {
     /// 直接贴住底边会显得拥挤,这里留一段固定底部内边距。
     private static let taskListBottomInset: CGFloat = 10
 
-    /// 顶部阴影的模糊半径(点):决定阴影顶端渐隐的柔和程度。
+    /// 面板与 chat section 底边之间的留白。
+    ///
+    /// Goal 面板挂在 chat section 的 stack 区底部,紧贴下方的输入区。面板本身
+    /// 已经画了底边描边,直接压上去显得拥挤,这里留出一段空白。
+    ///
+    /// 留白只在**面板可见时**存在:没有活跃 goal 时面板高度为 0,若仍留白,
+    /// chat section 底部就会凭空多出一段空白区域。
+    static let chatSectionBottomInset: CGFloat = 8
+
+    /// 顶部阴影的高斯标准差(点):决定阴影渐隐的柔和程度与视觉厚度。
     ///
     /// 面板下方任务列表容器(`taskListSurface`)用的是
     /// `DesignTokens.Shadow.innerFieldBlur`(2pt)配合上下各内缩 2pt,
     /// 得到一条很紧的内阴影带。顶部阴影是**投影**而非内阴影,
-    /// 扩散范围更大,半径取 4pt 才能与之读起来是同一套柔和质感。
-    private static let topShadowBlur: CGFloat = 4
-
-    /// 顶部阴影紧贴面板顶边的实心核心高度(点)。
+    /// 扩散范围更大,标准差取 2.2pt 才能与之读起来是同一套柔和质感。
     ///
-    /// 核心保持实色,让阴影在顶边处有明确的接触感;核心之外交给模糊衰减。
-    private static let topShadowCore: CGFloat = 4
+    /// 2.2pt 是实测选出来的:标准差偏小时高斯尾部会在带顶之前就归零,
+    /// 阴影带里会留下几行纯白(实测 σ=1.6 时 8pt 带宽只有 7 行有效),
+    /// 读起来像阴影被齐刷刷切断。2.2pt 让整条带都参与衰减。
+    private static let topShadowSigma: CGFloat = 2.2
 
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
@@ -101,6 +109,14 @@ public struct SidebarView: View {
         .overlay(alignment: .top) {
             topShadow
         }
+        // 面板底边与 chat section 底边之间留一段空白,避免面板直接压住输入区。
+        //
+        // 放在 `.frame(height:)` **之后**:面板自身高度仍由 `sidebarHeight` 决定,
+        // 留白在面板之外额外撑开一段,面板底部的橙色描边仍贴在内容边缘。
+        //
+        // 只在面板可见时留白:没有活跃 goal 时面板高度为 0,若仍留白,chat section
+        // 底部会凭空多出一段空白区域。
+        .padding(.bottom, hasVisibleGoal ? Self.chatSectionBottomInset : 0)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(pluginLocalization.string("Goal & Tasks"))
     }
@@ -116,22 +132,21 @@ public struct SidebarView: View {
     /// 阴影落在面板上方(消息列表一侧),把 Goal 面板与上方的对话内容分开,
     /// 面板因此读起来是「压在聊天区之上的一层」。
     ///
-    /// 具体写法见 `GoalTopShadowView`:与面板下方任务列表容器的内阴影同源,
-    /// 都是「模糊挖空」而非线性渐变,避免出现一条生硬的灰边。
+    /// 具体写法见 `GoalTopShadowView`:阴影形状由高斯函数直接决定,
+    /// 紧贴顶边处最浓、向上单调衰减,不会出现一条生硬的灰边。
     @ViewBuilder
     private var topShadow: some View {
         if hasVisibleGoal {
             GoalTopShadowView(
                 opacity: topShadowOpacity,
-                blurRadius: Self.topShadowBlur,
-                coreHeight: Self.topShadowCore
+                sigma: Self.topShadowSigma
             )
         }
     }
 
     /// 顶部阴影的不透明度:暗色主题下同样的黑色几乎看不出层次,故暗色更重。
     ///
-    /// 阴影带已从 20pt 收窄到 12pt,峰值浓度相应下调:早先 0.18 / 0.30 是配合
+    /// 阴影带已从 20pt 收窄到 8pt,峰值浓度相应下调:早先 0.18 / 0.30 是配合
     /// 20pt 宽的带调的,带窄后同样的浓度会读成一条压得很重的黑边。
     private var topShadowOpacity: Double {
         colorScheme == .dark ? 0.26 : 0.16

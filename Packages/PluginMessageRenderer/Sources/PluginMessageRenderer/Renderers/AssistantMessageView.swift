@@ -19,9 +19,18 @@ struct AssistantMessageView: View {
     }
 
     var body: some View {
-        // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
-        // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
-        if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+        // V5（ChatGPT）：独立呈现 —— 无气泡、无旧 chrome，
+        // 居中阅读列，轮尾操作按 turn 出现。
+        if ChatGPTAssistantTextStyle.usesChatGPTPresentation(verbosity: verbosity) {
+            ChatGPTAssistantMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+            // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
+            // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
             ZCodeAssistantMessageView(
                 capability: capability,
                 stateViewModel: stateViewModel,
@@ -83,6 +92,11 @@ private struct AssistantMessageBody: View {
         return reasoning
     }
 
+    /// 助手消息附带的生成图片（解码自 `imageAttachments`）。
+    private var generatedImageData: [Data] {
+        message.imageAttachments.compactMap { Data(base64Encoded: $0.data) }
+    }
+
     /// 内容是否含可见字符。
     ///
     /// 不用 `trimmingCharacters(in:).isEmpty` —— 那会为每次 body 求值
@@ -106,6 +120,13 @@ private struct AssistantMessageBody: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .font(.appBody)
+            }
+
+            // 图像生成模型产出的图片。
+            //
+            // 图片独立于正文渲染：这类响应的正文往往为空，只有图片。
+            if !generatedImageData.isEmpty {
+                AppImagePreviewGrid(imageDataList: generatedImageData)
             }
 
             if let toolCalls = message.toolCalls,

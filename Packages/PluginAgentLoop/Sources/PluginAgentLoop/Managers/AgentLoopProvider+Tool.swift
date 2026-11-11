@@ -653,22 +653,11 @@ extension AgentLoopManager {
         // 计算工具 schema
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
-        let tools = automationLevel.allowsTools ? rawTools : []
+        var tools = automationLevel.allowsTools ? rawTools : []
         // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
         // 与当前回合是否允许调用工具无关。
         let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
-        if Self.verbose {
-            let firstFive = tools.prefix(5).map(\.name)
-            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
-        }
         let language = languagePreference(for: conversationID)
-        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
-            LLMFunctionSchema(
-                name: tool.name,
-                description: tool.description(for: language),
-                parameters: tool.inputSchema(for: language)
-            )
-        }
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
         var runtime = runtimes[conversationID] ?? TurnRuntime()
@@ -680,6 +669,32 @@ extension AgentLoopManager {
         let routingProviderID = modelRoute?.providerID
         let modelName = modelRoute?.modelName
         let modelInfo = modelRoute?.modelInfo
+
+        // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+        //
+        // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+        // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+        // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+        // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+        // 上游还可能直接报协议错误。
+        if modelInfo?.supportsTools == false {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)模型不支持工具，省略工具 Schema model=\(modelName ?? "unknown")")
+            }
+            tools = []
+        }
+
+        if Self.verbose {
+            let firstFive = tools.prefix(5).map(\.name)
+            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
+        }
+        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
+            LLMFunctionSchema(
+                name: tool.name,
+                description: tool.description(for: language),
+                parameters: tool.inputSchema(for: language)
+            )
+        }
         let toolSchemaTokens = estimateToolSchemaTokens(schemas)
         let contextRequest = LLMContextPreparationRequest(
             conversationID: conversationID,
@@ -695,9 +710,36 @@ extension AgentLoopManager {
 
         // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
         // AgentLoop 不读取全量历史，也不感知具体压缩策略。
+        // 这里取一次当前生效的实现，保证同一次请求的上报与重试使用同一个 Provider。
+        let contextProvider = self.contextProvider
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        let llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
+        var llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
+
+        // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+        //
+        // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+        // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+        // 模型（如内置的 `gpt-4` / `gpt-3.5-turbo`）仍然收到 base64 图片
+        // 块——一个本地就能拦下的能力错误被推迟成供应商的协议失败。
+        if modelInfo?.supportsVision == false {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)模型不支持视觉，剥离图片 model=\(modelName ?? "unknown")")
+            }
+            llmHistory = llmHistory.map { message in
+                message.images.isEmpty
+                    ? message
+                    : LLMMessage(
+                        role: message.role,
+                        content: message.content,
+                        toolCalls: message.toolCalls,
+                        toolCallID: message.toolCallID,
+                        reasoningContent: message.reasoningContent,
+                        redactedThinking: message.redactedThinking,
+                        isError: message.isError
+                    )
+            }
+        }
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
@@ -794,7 +836,12 @@ extension AgentLoopManager {
             // assistant 消息，走失败链路交给自动重试插件接管时间线与重试，
             // 与网络错误的处理方式一致。思考内容可能已经流式输出过，随
             // 错误一起保留到错误消息，避免用户看到内容凭空消失。
+            //
+            // 例外：图像生成模型的「只生成图片」响应正文为空但带着图片，
+            // 那是一次**成功**的响应，不能当成空响应失败处理。
+            let hasGeneratedImages = !(response.images?.isEmpty ?? true)
             if response.toolCalls?.isEmpty ?? true,
+               !hasGeneratedImages,
                response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理 model=\(response.model ?? "unknown")")
                 streaming.end(conversationID: conversationID)
@@ -852,7 +899,17 @@ extension AgentLoopManager {
                 stopReason: response.stopReason,
                 latencyMs: timing.latencyMs,
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
-                streamingDurationMs: timing.streamingDurationMs
+                streamingDurationMs: timing.streamingDurationMs,
+                // 图像生成模型产出的图片。
+                //
+                // 不落库的话，一次合法的「只生成图片」的响应会变成一条
+                // 空文本消息：用户既看不到生成的图片，也无法回溯。
+                imageAttachments: (response.images ?? []).map {
+                    MessageImageAttachment(
+                        data: $0.data.base64EncodedString(),
+                        mimeType: $0.mimeType
+                    )
+                }
             )
             // 记录本次请求实际使用的供应商。未绑定对话会走全局供应商，
             // 因此这里不能只写 conversationProviderID（否则 UI 会丢失供应商）。

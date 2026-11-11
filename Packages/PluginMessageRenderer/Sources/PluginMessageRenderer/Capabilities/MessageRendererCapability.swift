@@ -36,6 +36,21 @@ protocol MessageRendererCapability: AnyObject {
     /// 重跑指定失败回合；回合已失效时 Provider 会抛出，调用方忽略。
     func retryTurn(turnID: UUID, conversationID: UUID) async
 
+    // MARK: 停止回合
+
+    /// 该会话当前是否有「没干完的活」——回合正在运行，或挂在等工具授权 / 等用户回答。
+    ///
+    /// - Important: 挂起（`.suspended`）同样算「没干完」。回合停在等授权的地方时，
+    ///   用户仍然需要能把它停掉，否则只能把整条对话晾在那里干等。
+    ///   判定口径与 `ConversationStateSnapshot.canStop` 保持一致。
+    func canStopTurn(conversationID: UUID) -> Bool
+
+    /// 停止该会话正在运行 / 挂起的回合。
+    ///
+    /// - Important: 取消权归 AgentLoop 回合状态机。`cancelTurn` 自身是幂等的，
+    ///   没有活回合时它就是 no-op，调用方无需先判断再决定要不要调。
+    func stopTurn(conversationID: UUID)
+
     // MARK: 自定义工具行渲染器
 
     /// 命中自定义工具调用行渲染器时返回，否则 `nil`。
@@ -101,6 +116,19 @@ final class MessageRendererCapabilityAdapter: MessageRendererCapability {
         guard let agentLoop else { return }
         // 回合可能已被新回合取代，此时 Provider 抛错；用户点击重试无需报错。
         _ = try? await agentLoop.retryTurn(in: conversationID, after: turnID)
+    }
+
+    func canStopTurn(conversationID: UUID) -> Bool {
+        guard let agentLoop else { return false }
+        let state = agentLoop.state(for: conversationID)
+        return state == .running || state == .suspended
+    }
+
+    func stopTurn(conversationID: UUID) {
+        guard let agentLoop else { return }
+        // 取消权归 AgentLoop 回合状态机：`cancelTurn` 幂等，
+        // 没有活回合时就是 no-op，调用方不必先判断。
+        agentLoop.cancelTurn(in: conversationID)
     }
 
     func toolCallRenderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)? {

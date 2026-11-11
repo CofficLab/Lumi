@@ -4,16 +4,16 @@ import PackageDescription
 let package = Package(
     name: "PluginSystemBenchmark",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1")],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "PluginSystemBenchmark", targets: ["PluginSystemBenchmark"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiSettings"),
-        .package(path: "../../Vendor/LumiProviders")
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(

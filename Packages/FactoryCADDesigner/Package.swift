@@ -7,10 +7,10 @@ let package = Package(
     products: [.library(name: "FactoryCADDesigner", targets: ["FactoryCADDesigner"])],
     dependencies: [
         .package(path: "../FactoryLumi"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../PluginCADDesigner"),
-        .package(path: "../ProviderToolManager"),
-        .package(path: "../../Vendor/LumiProviders")
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(

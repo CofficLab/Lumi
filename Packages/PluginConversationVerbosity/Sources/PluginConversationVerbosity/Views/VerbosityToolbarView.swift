@@ -81,7 +81,7 @@ private struct VerbosityRow: View {
                         .font(.system(size: 12, weight: .semibold))
                     Text(level.localizedDisplayName())
                         .font(.system(size: 11))
-                    if level == .brief {
+                    if level == .brief || level == .zcode || level == .chatGPT {
                         BetaBadgeView()
                     }
                 }

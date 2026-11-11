@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "KitOpenIn",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "KitOpenIn", targets: ["KitOpenIn"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../KitAgentTool"),
-        .package(path: "../../Vendor/LumiUI"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
     ],
     targets: [
         .target(

@@ -216,7 +216,16 @@ public struct DefaultPluginFactory: PluginFactory {
             // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),
             ToastSuperPlugin(),
-            CaffeinatePlugin(),
+            // 防休眠插件（共享远程包 lumi-softworks/LumiPluginCaffeinate）。
+            // 注入 Lumi 品牌配置：插件 id 与历史一致，用户已保存的启用状态
+            // 与插件数据目录因此继续有效。
+            PluginCaffeinate(
+                configuration: CaffeinateConfiguration(
+                    pluginID: "com.coffic.lumi.plugin.caffeinate",
+                    loggerSubsystem: "com.coffic.lumi.plugin.caffeinate",
+                    accessibilityIdentifierPrefix: "lumi.caffeinate"
+                )
+            ),
             SettingGeneralPlugin(),
             // 底部面板宿主（order 12）：在 EditorPreview / Terminal 之前注册
             // PanelBottomProviding，承载 content footer 的 tab 容器。

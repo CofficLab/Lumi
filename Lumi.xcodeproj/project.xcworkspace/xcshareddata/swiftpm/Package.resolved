@@ -1,5 +1,5 @@
 {
-  "originHash" : "f1f357683d9507bf371bb5e6d27622f748825f4083f47cc4f33e103b408c610d",
+  "originHash" : "6fbe7c64bb7376f8bd7136140101e208f2a1c53f96b503308692c1def391e621",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -47,12 +47,30 @@
       }
     },
     {
+      "identity" : "hummingbird",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/hummingbird-project/hummingbird.git",
+      "state" : {
+        "revision" : "341e11f65d8e24cf87e9aae427c040f0084ada4e",
+        "version" : "2.28.1"
+      }
+    },
+    {
       "identity" : "jsonrpc",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/JSONRPC",
       "state" : {
         "revision" : "29987f721374f30e686af40ccffd0b13b14dde1f",
         "version" : "0.9.2"
+      }
+    },
+    {
+      "identity" : "kitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
+      "state" : {
+        "revision" : "e07e1c1f1a5d89554152b0fd21a555e116d522bb",
+        "version" : "1.0.1"
       }
     },
     {
@@ -83,12 +101,237 @@
       }
     },
     {
+      "identity" : "lumikernel",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKernel.git",
+      "state" : {
+        "revision" : "c0aace6a4b0b428f3b059020327a558c470538ed",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "lumikitreminder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitReminder.git",
+      "state" : {
+        "revision" : "62c7e4a16c0261caf71a04343165662fbb230641",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumilocalization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiLocalization.git",
+      "state" : {
+        "revision" : "da8ca9d0cc77e9c1f979680f9cb79e87f79a3f87",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumilogging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiLogging.git",
+      "state" : {
+        "revision" : "ed01ea8d6e95c627be241a01924c75999b6d8256",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumipluginabout",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginAbout.git",
+      "state" : {
+        "revision" : "6b67ef27dcdbedab57a475aff2fe9c86fe26cc83",
+        "version" : "3.0.4"
+      }
+    },
+    {
+      "identity" : "lumipluginactivitybar",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginActivityBar.git",
+      "state" : {
+        "revision" : "ab7c6757b4cd6fdaf5261b399705aff5572d1408",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "lumipluginbookletmaker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginBookletMaker.git",
+      "state" : {
+        "revision" : "4bd43742ac15ff6860a183fa94878fc9dd9ea6c6",
+        "version" : "2.1.1"
+      }
+    },
+    {
+      "identity" : "lumiplugincaffeinate",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",
+      "state" : {
+        "revision" : "ce8102858d0bb2a6c88605719ddfb6017e125057",
+        "version" : "1.1.3"
+      }
+    },
+    {
+      "identity" : "lumiplugincommand",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginCommand.git",
+      "state" : {
+        "revision" : "cbf25032b899d23e3619bc2403543bdca9afda22",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumipluginhydrationreminder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginHydrationReminder.git",
+      "state" : {
+        "revision" : "f11ccf58342e3b01913673453e01ea7893a1d95f",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "lumipluginidletime",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginIdleTime.git",
+      "state" : {
+        "revision" : "d22499fadfcb21e4a7f768d371c316a5f579e614",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumipluginlogos",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginLogos.git",
+      "state" : {
+        "revision" : "7b8076f94140980faa690fe009a3090a79c6feaf",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lumipluginpluginmanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginPluginManager.git",
+      "state" : {
+        "revision" : "29f1ada0b17b99e960cf86da1d330e65e831963e",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "lumipluginsettingview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginSettingView.git",
+      "state" : {
+        "revision" : "32c903d27c7bb91622d229e331e77b950f234c53",
+        "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "lumipluginstorage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginStorage.git",
+      "state" : {
+        "revision" : "e52232ff8d6b95fa799a4ddffefb18c1df3e2d24",
+        "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "lumipluginthememanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginThemeManager.git",
+      "state" : {
+        "revision" : "10e0e84793a39438f171efd9c7cbefefd095b2a0",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumipluginthemepack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginThemePack.git",
+      "state" : {
+        "revision" : "f9b778eb97d863e98134b95f493055789a2a391e",
+        "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "lumiplugintoast",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginToast.git",
+      "state" : {
+        "revision" : "aa69f0a61ebc8ada94f13a06fe7452adf5af4f08",
+        "version" : "1.2.4"
+      }
+    },
+    {
+      "identity" : "lumiproviders",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiProviders.git",
+      "state" : {
+        "revision" : "3df57f9c165ae72221aafce0a231918c51b1dbdb",
+        "version" : "1.22.2"
+      }
+    },
+    {
+      "identity" : "lumisettings",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiSettings.git",
+      "state" : {
+        "revision" : "e66207de1d7664177a2914b2c982245aa0f01035",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "lumithemepack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiThemePack.git",
+      "state" : {
+        "revision" : "8830a960ea6ca0bbce59cd301c2c81bb269b1d10",
+        "version" : "1.0.13"
+      }
+    },
+    {
+      "identity" : "lumiui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiUI.git",
+      "state" : {
+        "revision" : "e04e122994c9d22e16c7fba2aa611e911612c1ab",
+        "version" : "1.13.2"
+      }
+    },
+    {
+      "identity" : "magicalert",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicAlert.git",
+      "state" : {
+        "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "magiclog",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicLog.git",
       "state" : {
         "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5",
         "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "mlx-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ml-explore/mlx-swift",
+      "state" : {
+        "revision" : "19601207e9a0de51e03ee6ec0c3c5f3784275075",
+        "version" : "0.32.3"
+      }
+    },
+    {
+      "identity" : "mlx-swift-lm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ml-explore/mlx-swift-lm.git",
+      "state" : {
+        "revision" : "3b339ad6e3b3f44c8121ecff5131c7fd55e075e6",
+        "version" : "3.32.3"
       }
     },
     {
@@ -116,6 +359,15 @@
       "state" : {
         "revision" : "552f611479a4f28243a1ef2a7376a216d6899f42",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "providertoolmanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/ProviderToolManager.git",
+      "state" : {
+        "revision" : "ae298d0f65fbcfaeab1ff966be254b9f4bc764ce",
+        "version" : "1.0.0"
       }
     },
     {
@@ -222,8 +474,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
-        "version" : "1.7.5"
+        "revision" : "88754449ab766a739610b660e117762115fabc9c",
+        "version" : "1.7.6"
       }
     },
     {
@@ -294,8 +546,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/huggingface/swift-jinja.git",
       "state" : {
-        "revision" : "a091d6ae559ee97e904a0f3c2890b21949d0306f",
-        "version" : "3.0.0"
+        "revision" : "66042420a9225c98ea9382d705e2285769dfdbe5",
+        "version" : "3.1.0"
       }
     },
     {

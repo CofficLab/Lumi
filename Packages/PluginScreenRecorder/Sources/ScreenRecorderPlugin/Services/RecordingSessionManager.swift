@@ -48,6 +48,11 @@ public final class RecordingSessionManager {
     ///
     /// `config.outputDirectory` 必须由调用方（工具）预先用 `kernel.isPathAllowed` 校验。
     public func start(config: RecordingConfig) async throws {
+        // 0) 参数校验：H.264 要求宽高为偶数，输出尺寸的对齐会把 1 变成 0。
+        //    必须在请求权限、解析目标、初始化采集之前拒绝，否则 ScreenCaptureKit
+        //    与 AVAssetWriter 会拿到 0 高度，报错也只会笼统地表现为编码失败。
+        try RecordingResolution.validate(height: config.resolutionHeight)
+
         // 1) 能力校验：macOS 14 的 SCStream 无法采集麦克风。必须在请求权限、
         //    创建临时文件之前拒绝，否则会返回「成功」但导出视频没有人声。
         try RecordingMicrophoneCapability.validate(

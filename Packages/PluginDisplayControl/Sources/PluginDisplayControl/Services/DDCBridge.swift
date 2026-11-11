@@ -188,13 +188,15 @@ private enum DDCTransport {
                     guard let baseAddress = buffer.baseAddress,
                           let writeI2C = PrivateDisplaySymbol.ioAVServiceWriteI2C
                     else { return false }
+                    // 返回的是 `IOReturn`，成功值是 `kIOReturnSuccess == 0`，
+                    // 不能直接当成 `Bool` 读（#864）。
                     return writeI2C(
                         service,
                         UInt32(Self.sevenBitAddress),
                         UInt32(Self.dataAddress),
                         baseAddress,
                         packetCount
-                    )
+                    ) == kIOReturnSuccess
                 }
             }
 
@@ -207,13 +209,15 @@ private enum DDCTransport {
                     guard let baseAddress = buffer.baseAddress,
                           let readI2C = PrivateDisplaySymbol.ioAVServiceReadI2C
                     else { return false }
+                    // 返回的是 `IOReturn`，成功值是 `kIOReturnSuccess == 0`，
+                    // 不能直接当成 `Bool` 读（#864）。
                     return readI2C(
                         service,
                         UInt32(Self.sevenBitAddress),
                         0,
                         baseAddress,
                         replyCount
-                    )
+                    ) == kIOReturnSuccess
                 }
                 if success, reply.count >= 2 {
                     success = checksum(seed: 0x50, data: reply, start: 0, end: reply.count - 2) == reply[reply.count - 1]
@@ -416,11 +420,13 @@ private final class Arm64DDCMatcher: SuperLog {
 
     private func matchScore(displayID: CGDirectDisplayID, registryService: RegistryService) -> Int {
         guard let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
-              let infoDict = createInfoDictionary(displayID)
+              let unmanagedInfo = createInfoDictionary(displayID)
         else {
             return 0
         }
-        let info = infoDict as NSDictionary
+        // Create 规则返回 +1 持有的字典，必须在这里取走所有权并释放，
+        // 否则每次匹配都会泄漏一个字典（#865）。
+        let info = unmanagedInfo.takeRetainedValue() as NSDictionary
         var score = 0
 
         if let location = info[kIODisplayLocationKey] as? String,

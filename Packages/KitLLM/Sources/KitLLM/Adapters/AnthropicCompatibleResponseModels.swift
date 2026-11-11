@@ -12,6 +12,33 @@ struct AnthropicCompatibleErrorResponse: Decodable {
 /// Anthropic 兼容 API 非流式响应
 struct AnthropicCompatibleResponse: Decodable {
     let content: [ContentBlock]
+    /// 响应 ID（`msg_...`）。
+    let id: String?
+    /// 停止原因（`end_turn` / `tool_use` / `max_tokens` 等）。
+    let stopReason: String?
+    /// token 用量。
+    let usage: Usage?
+
+    enum CodingKeys: String, CodingKey {
+        case content, id
+        case stopReason = "stop_reason"
+        case usage
+    }
+
+    /// Anthropic 的 usage 结构。
+    struct Usage: Decodable {
+        let inputTokens: Int?
+        let outputTokens: Int?
+        let cacheCreationInputTokens: Int?
+        let cacheReadInputTokens: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case inputTokens = "input_tokens"
+            case outputTokens = "output_tokens"
+            case cacheCreationInputTokens = "cache_creation_input_tokens"
+            case cacheReadInputTokens = "cache_read_input_tokens"
+        }
+    }
 
     struct ContentBlock: Decodable {
         let type: String
@@ -31,7 +58,15 @@ struct AnthropicCompatibleAnyValue: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
-        if let intValue = try? container.decode(Int.self) {
+        // 必须先判空：JSON `null` 会让后面所有具体解码都失败，最后落到
+        // 兜底的 `value = ""`——工具调用照常发出，但参数里已经没有模型
+        // 返回的值了（`{"value":null}` 变成 `{"value":""}`）。
+        //
+        // 用 `null` 表示「缺省 / 清空可选字段」的 Anthropic 工具会收到
+        // 字符串：严格校验失败，宽松校验则可能执行与模型意图不同的操作。
+        if container.decodeNil() {
+            value = NSNull()
+        } else if let intValue = try? container.decode(Int.self) {
             value = intValue
         } else if let doubleValue = try? container.decode(Double.self) {
             value = doubleValue

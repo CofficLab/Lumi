@@ -78,6 +78,19 @@ public enum MessageTimelineEvent {
     public static let contextCompactionOriginalEstimateKey = "contextCompactionOriginalEstimate"
     public static let contextCompactionCompactedEstimateKey = "contextCompactionCompactedEstimate"
     public static let contextCompactionSourceLastMessageIDKey = "contextCompactionSourceLastMessageID"
+    /// 产出本次摘要的供应商（轻量任务模型可能与对话主模型不同）。
+    public static let contextCompactionSummaryProviderIDKey = "contextCompactionSummaryProviderID"
+    /// 产出本次摘要的模型名。
+    public static let contextCompactionSummaryModelNameKey = "contextCompactionSummaryModelName"
+    /// 摘要调用消耗的 token（输入 + 输出）；缺失表示用量不可用。
+    public static let contextCompactionSpentTokensKey = "contextCompactionSpentTokens"
+    /// 摘要用量是否为估算口径（"true" / "false"）。
+    public static let contextCompactionSpentIsEstimatedKey = "contextCompactionSpentIsEstimated"
+    public static let contextCompactionInputTokensKey = "contextCompactionInputTokens"
+    public static let contextCompactionOutputTokensKey = "contextCompactionOutputTokens"
+    public static let contextCompactionCachedInputTokensKey = "contextCompactionCachedInputTokens"
+    public static let contextCompactionCacheWriteTokensKey = "contextCompactionCacheWriteTokens"
+    public static let contextCompactionCacheTotalTokensKey = "contextCompactionCacheTotalTokens"
 
     public enum ContextCompactionReason: String, Sendable, Equatable {
         case hardThreshold = "hard-threshold"
@@ -161,5 +174,33 @@ public enum MessageTimelineEvent {
     public static func integerMetadata(_ key: String, from message: Message) -> Int? {
         guard let value = message.metadata[key] else { return nil }
         return Int(value)
+    }
+
+    /// 压缩节省的估算 token（压缩前 − 压缩后）；任一端缺失时为 `nil`。
+    public static func compactionSavedTokens(for message: Message) -> Int? {
+        guard let original = integerMetadata(contextCompactionOriginalEstimateKey, from: message),
+              let compacted = integerMetadata(contextCompactionCompactedEstimateKey, from: message) else {
+            return nil
+        }
+        return original - compacted
+    }
+
+    /// 摘要调用消耗的 token；未记录时为 `nil`（不可用）。
+    public static func compactionSpentTokens(for message: Message) -> Int? {
+        integerMetadata(contextCompactionSpentTokensKey, from: message)
+    }
+
+    /// 摘要用量是否为估算口径。
+    public static func compactionSpentIsEstimated(for message: Message) -> Bool {
+        message.metadata[contextCompactionSpentIsEstimatedKey] == "true"
+    }
+
+    /// 压缩净收益 = 节省（估算）− 摘要消耗；任一端缺失时为 `nil`。
+    public static func compactionNetTokens(for message: Message) -> Int? {
+        guard let saved = compactionSavedTokens(for: message),
+              let spent = compactionSpentTokens(for: message) else {
+            return nil
+        }
+        return saved - spent
     }
 }

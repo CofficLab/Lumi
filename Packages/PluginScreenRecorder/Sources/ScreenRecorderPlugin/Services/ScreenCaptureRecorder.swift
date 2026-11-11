@@ -194,7 +194,7 @@ final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
 
     // MARK: - Output size
 
-    private static func computeOutputSize(contentSize: CGSize, resolutionHeight: Int?) -> (width: Int, height: Int) {
+    static func computeOutputSize(contentSize: CGSize, resolutionHeight: Int?) -> (width: Int, height: Int) {
         var height = max(1, Int(contentSize.height.rounded()))
         var width = max(1, Int(contentSize.width.rounded()))
         if let target = resolutionHeight, target > 0, height > 0 {
@@ -205,6 +205,9 @@ final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
         // H.264 要求偶数。
         width = width & ~1
         height = height & ~1
+        // 对齐之后不能为 0：0 尺寸既无法采集也无法建立编码器输入（#866）。
+        width = max(RecordingResolution.minimumDimension, width)
+        height = max(RecordingResolution.minimumDimension, height)
         return (width, height)
     }
 

@@ -18,6 +18,11 @@ public final class MLXDownloadManager: ObservableObject {
 
     private let downloadManager: KitDownload.DownloadManager
     private var stateSubject: CurrentValueSubject<LLMModelDownloadState, Never>?
+    /// 缓存目录的磁盘扫描结果缓存。
+    ///
+    /// 进度事件（底层每 64KB 一次）只读缓存，扫描本身只在结构性变化时
+    /// 重算，避免把进度回调放大成持续的全目录扫描。
+    private let cacheIndex = MLXDownloadCacheIndex()
     private var downloadTask: Task<Void, Never>?
     private var downloadKitCancellation: Task<Void, Never>?
     private var activeOperationID: UUID?
@@ -42,6 +47,19 @@ public final class MLXDownloadManager: ObservableObject {
         makeDownloadState()
     }
 
+    /// 已完成的磁盘扫描次数。
+    ///
+    /// 诊断与回归测试用：下载进度事件不应让它增长——进度只更新字节数与
+    /// 比例，不触发全目录扫描。
+    var cacheScanCount: Int {
+        cacheIndex.scanCount
+    }
+
+    /// 作废缓存扫描结果，下次读取时重新扫描磁盘。
+    func invalidateCacheSnapshot() {
+        cacheIndex.invalidate()
+    }
+
     public var downloadStatePublisher: AnyPublisher<LLMModelDownloadState, Never> {
         if stateSubject == nil {
             stateSubject = CurrentValueSubject(downloadState)
@@ -57,16 +75,21 @@ public final class MLXDownloadManager: ObservableObject {
         let directory = MLXModelPaths.modelDirectory(for: modelID)
         guard FileManager.default.fileExists(atPath: directory.path) else { return }
         try FileManager.default.removeItem(at: directory)
+        cacheIndex.invalidate()
         refreshDownloadState()
     }
 
+    /// 显式刷新下载状态：磁盘可能已被外部改动，重算缓存扫描结果。
     public func refreshDownloadState() {
+        cacheIndex.invalidate()
         stateSubject?.send(downloadState)
     }
 
     public func configure(rootDirectory: URL) {
         isShutdown = false
         MLXModelPaths.configure(rootDirectory: rootDirectory)
+        // 模型根目录变了：此前的扫描结果指向旧目录，必须作废。
+        cacheIndex.invalidate()
     }
 
     public func download(modelID: String) async {
@@ -247,6 +270,8 @@ public final class MLXDownloadManager: ObservableObject {
             }
 
             try MLXModelDownloader.markComplete(directory: modelDirectory)
+            // 模型已落盘：缓存内容变了，下一次状态求值必须重新扫描。
+            cacheIndex.invalidate()
             guard activeOperationID == operationID, !Task.isCancelled else { return }
             progress.fractionCompleted = 1
             progress.downloadedBytes = max(progress.downloadedBytes, totalBytes)
@@ -347,7 +372,10 @@ public final class MLXDownloadManager: ObservableObject {
     }
 
     private func makeDownloadState() -> LLMModelDownloadState {
-        LLMModelDownloadState(
+        // 磁盘扫描结果走缓存索引：进度事件（底层每 64KB 一次）只读缓存，
+        // 扫描本身只在结构性变化时重算。
+        let cache = cacheIndex.snapshot { scanDownloadCache() }
+        return LLMModelDownloadState(
             status: mapStatus(status),
             modelID: downloadingModelID,
             progress: LLMModelDownloadProgress(
@@ -359,9 +387,30 @@ public final class MLXDownloadManager: ObservableObject {
                 speedBytesPerSecond: progress.speed
             ),
             currentFileName: currentFileName,
-            downloadedModelIDs: downloadedModelIDs,
-            cacheSizeBytes: cacheSizeBytes,
+            downloadedModelIDs: cache.downloadedModelIDs,
+            cacheSizeBytes: cache.cacheSizeBytes,
             speedLimitBytesPerSecond: downloadSpeedLimit
+        )
+    }
+
+    /// 扫描下载缓存：逐模型检查完成标记 + 递归统计缓存目录大小。
+    ///
+    /// 这是全量磁盘操作，只在结构性变化后被调用一次。
+    private func scanDownloadCache() -> MLXDownloadCacheIndex.Snapshot {
+        cacheScanner()
+    }
+
+    /// 缓存扫描实现。
+    ///
+    /// 默认走真实的磁盘扫描；测试可替换为计数桩，断言进度事件不会触发扫描。
+    var cacheScanner: () -> MLXDownloadCacheIndex.Snapshot = {
+        MLXDownloadCacheIndex.Snapshot(
+            downloadedModelIDs: Set(MLXProviderCatalog.availableRegistrations.compactMap { model in
+                MLXModelDownloader.isComplete(directory: MLXModelPaths.modelDirectory(for: model.id))
+                    ? model.id
+                    : nil
+            }),
+            cacheSizeBytes: MLXDownloadManager.currentCacheSizeBytes(in: MLXModelPaths.modelsDirectory)
         )
     }
 
@@ -381,9 +430,12 @@ public final class MLXDownloadManager: ObservableObject {
         })
     }
 
-    private var cacheSizeBytes: Int64 {
+    /// 递归统计缓存目录的总字节数。
+    ///
+    /// 这是全量磁盘操作：只应在结构性变化后被调用一次（见 ``cacheIndex``）。
+    private static func currentCacheSizeBytes(in directory: URL) -> Int64 {
         guard let enumerator = FileManager.default.enumerator(
-            at: modelCacheDirectoryURL,
+            at: directory,
             includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
         ) else { return 0 }

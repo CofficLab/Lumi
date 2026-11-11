@@ -224,6 +224,46 @@ struct ConversationManagerPreferenceTests {
         #expect(restarted.globalVerbosity == .chatGPT)
     }
 
+    /// 回归 #1144：New Chat 的默认自动化级别没有会话承载，必须跨重启保留。
+    ///
+    /// 语言（#983）与详细度（#986）都已持久化，自动化级别却只改内存：
+    /// 重启后默认静默回到 Build，下一个新会话还会把这个被重置的值持久化
+    /// 下去——用户选的无工具默认因此丢失，首个请求会带上工具 Schema。
+    @Test func globalAutomationLevelPersistsAcrossRestartWithoutSelectedConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationAutomationPersistenceTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalAutomationLevel(.chat)
+
+        // 写盘在串行队列上异步完成，等 state.json 落盘后再模拟重启。
+        let stateURL = directory.appendingPathComponent("state.json")
+        var persisted: AutomationLevel?
+        for _ in 0..<100 {
+            if let data = try? Data(contentsOf: stateURL),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let raw = object["globalAutomationLevel"] as? String,
+               let level = AutomationLevel(rawValue: raw) {
+                persisted = level
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(persisted == .chat)
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let restarted = ConversationManager(store: store, dataDirectory: directory)
+        restarted.loadConversations()
+        for _ in 0..<100 where restarted.isLoadingConversations {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(!restarted.isLoadingConversations)
+        #expect(restarted.selectedConversationID == nil)
+        #expect(restarted.globalAutomationLevel == .chat)
+    }
+
     /// 回归 #987：后台会话被挤出缓存后，排队回合仍须使用会话绑定的模型。
     @Test func evictedConversationKeepsItsBoundModel() throws {
         let directory = FileManager.default.temporaryDirectory

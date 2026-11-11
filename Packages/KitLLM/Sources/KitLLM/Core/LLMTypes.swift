@@ -168,6 +168,11 @@ public struct LLMResponse: Sendable, Equatable {
     public let rawResponseJSON: String?
     public let rawStreamEventsJSON: String?
     public let stopReason: String?
+    /// 生成的图片（图像生成模型的产物）。
+    ///
+    /// 没有这个字段时，一次合法的「只生成图片」的响应会被当成空响应，
+    /// 生成的图片直接丢失。
+    public let images: [MessageImage]?
 
     public init(
         content: String,
@@ -183,7 +188,8 @@ public struct LLMResponse: Sendable, Equatable {
         responseID: String? = nil,
         rawResponseJSON: String? = nil,
         rawStreamEventsJSON: String? = nil,
-        stopReason: String? = nil
+        stopReason: String? = nil,
+        images: [MessageImage]? = nil
     ) {
         self.content = content
         self.model = model
@@ -199,6 +205,7 @@ public struct LLMResponse: Sendable, Equatable {
         self.rawResponseJSON = rawResponseJSON
         self.rawStreamEventsJSON = rawStreamEventsJSON
         self.stopReason = stopReason
+        self.images = images
     }
 
     /// 在 AgentLoop 落库或执行工具前校验模型返回的所有工具调用。
@@ -216,19 +223,23 @@ public struct LLMStreamChunk: Sendable {
     public let isDone: Bool
     public let eventTitle: String?
     public let toolCalls: [LLMToolCall]?
+    /// 流式过程中产出的图片（图像生成模型的产物）。
+    public let images: [MessageImage]?
 
     public init(
         content: String? = nil,
         reasoningContent: String? = nil,
         isDone: Bool = false,
         eventTitle: String? = nil,
-        toolCalls: [LLMToolCall]? = nil
+        toolCalls: [LLMToolCall]? = nil,
+        images: [MessageImage]? = nil
     ) {
         self.content = content
         self.reasoningContent = reasoningContent
         self.isDone = isDone
         self.eventTitle = eventTitle
         self.toolCalls = toolCalls
+        self.images = images
     }
 }
 

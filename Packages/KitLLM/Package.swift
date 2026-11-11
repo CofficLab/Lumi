@@ -3,13 +3,13 @@ import PackageDescription
 
 let package = Package(
     name: "KitLLM",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "KitLLM", targets: ["KitLLM"]),
     ],
     dependencies: [
         .package(path: "../KitKeychain"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
     ],
     targets: [
         .target(

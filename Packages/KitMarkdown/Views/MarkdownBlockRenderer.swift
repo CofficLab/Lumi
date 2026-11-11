@@ -233,7 +233,7 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func tableView(headers: [String], rows: [[String]]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let content = VStack(alignment: .leading, spacing: 0) {
             tableRowView(headers, isHeader: true)
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 Divider().opacity(0.4)
@@ -245,6 +245,16 @@ public struct MarkdownBlockRenderer: View {
             RoundedRectangle(cornerRadius: theme.tableCornerRadius)
                 .strokeBorder(Color.secondary.opacity(0.12), lineWidth: theme.tableBorderWidth)
         )
+
+        // Important: 只有主题显式声明 `tableScrollsHorizontally` 时才包横向滚动。
+        //   宽表格不能撑破阅读列（V5 的 768 列），但 V1–V3 的既有布局必须**逐值不变**。
+        if theme.tableScrollsHorizontally {
+            ScrollView(.horizontal, showsIndicators: true) {
+                content
+            }
+        } else {
+            content
+        }
     }
 
     @ViewBuilder
@@ -259,7 +269,7 @@ public struct MarkdownBlockRenderer: View {
                     .padding(.vertical, theme.tableCellVerticalPadding)
                     .frame(
                         minWidth: theme.tableCellMinWidth,
-                        maxWidth: theme.tableCellMaxWidth,
+                        maxWidth: theme.tableCellMaxWidth > 0 ? theme.tableCellMaxWidth : nil,
                         alignment: theme.tableHeaderAlignment
                     )
                     .frame(maxWidth: .infinity, alignment: theme.tableHeaderAlignment)

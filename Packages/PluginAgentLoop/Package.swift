@@ -8,19 +8,19 @@ let package = Package(
         .library(name: "PluginAgentLoop", targets: ["PluginAgentLoop"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
         .package(name: "ProviderAgentLoop", path: "../ProviderAgentLoop"),
         .package(name: "ProviderMessage", path: "../ProviderMessage"),
         .package(name: "ProviderMessageSender", path: "../ProviderMessageSender"),
         .package(name: "KitLLM", path: "../KitLLM"),
         .package(name: "ProviderLLMManager", path: "../ProviderLLMManager"),
-        .package(name: "ProviderToolManager", path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(name: "ProviderMessageStreaming", path: "../ProviderMessageStreaming"),
         .package(name: "ProviderConversation", path: "../ProviderConversation"),
         .package(name: "ProviderLifecycleHooks", path: "../ProviderLifecycleHooks"),
         .package(name: "ProviderLLMContext", path: "../ProviderLLMContext"),
-        .package(name: "KitAgentTool", path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
     ],
     targets: [
         .target(

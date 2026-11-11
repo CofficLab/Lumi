@@ -149,7 +149,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 响应元数据：供应商的关联 ID 与结束原因。截断的回答（`length`）
+            // 靠 `stopReason` 才能说明「为什么没说完」。
+            responseID: parsed.responseID,
+            stopReason: parsed.stopReason,
+            // 生成的图片（图像生成模型的产物）。没有它，一次合法的
+            // 「只生成图片」的响应会被当成空响应。
+            images: parsed.images
         )
     }
 
@@ -189,7 +196,11 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 响应 ID 与停止原因：与 SSE 路径同源，避免两条协议路径给出
+            // 不一样的响应元数据。
+            responseID: parsed.responseID,
+            stopReason: parsed.stopReason
         )
     }
 
@@ -213,6 +224,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
         let data = try await apiService.sendJSON(request: httpRequest, body: body)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+        // 终态失败必须被识别为供应商失败。
+        //
+        // Responses 协议用 `status: "failed"` + `error` 表达终态失败，且它
+        // 走 HTTP 200。解析器此前从不检查这两个字段，于是失败的响应被当成
+        // 「成功但内容为空」——没有 output 时 AgentLoop 报通用的、不可恢复
+        // 的 `emptyResponse`，供应商给的错误全部丢失；有部分文本时甚至会
+        // 被当成成功的助手消息落库。
+        try Self.throwIfResponsesFailed(object)
         let text = Self.responsesText(from: object)
         let tokenCounts = tokenCounts(from: data, anthropic: false)
         return LLMResponse(
@@ -222,7 +241,11 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 顶层响应 ID（`resp_...`）：供应商的关联标识，下游要靠它把一次
+            // 请求与它的日志对上。自定义 `.responses` 供应商走的就是这条
+            // 路径，丢掉它就无法在下游恢复（issue #1147）。
+            responseID: object["id"] as? String
         )
     }
 
@@ -362,13 +385,51 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         return url
     }
 
+    /// Responses 响应若是终态失败，抛出供应商给出的错误。
+    ///
+    /// 失败信息优先取 `error.message`，其次取 `error.code`；两者都没有时用
+    /// 状态值兜底，保证错误永远带得出一条可读的原因。
+    private static func throwIfResponsesFailed(_ object: [String: Any]) throws {
+        guard let status = object["status"] as? String, status == "failed" else { return }
+        let error = object["error"] as? [String: Any]
+        let message = error?["message"] as? String
+        let code = error?["code"] as? String
+        let detail: String
+        switch (message, code) {
+        case let (message?, code?):
+            detail = "\(message) (\(code))"
+        case let (message?, nil):
+            detail = message
+        case let (nil, code?):
+            detail = code
+        default:
+            detail = "Responses request failed (status: \(status))"
+        }
+        throw OpenAICompatibleProviderError.apiError(message: detail)
+    }
+
     private static func responsesText(from object: [String: Any]) -> String {
         if let text = object["output_text"] as? String { return text }
         guard let output = object["output"] as? [[String: Any]] else { return "" }
         return output
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
-            .compactMap { $0["text"] as? String }
+            .compactMap { responsesContentText(from: $0) }
             .joined()
+    }
+
+    /// 提取一个 Responses 内容块的文本。
+    ///
+    /// 两种块都可能出现：
+    /// - `output_text`：正文，读 `text`；
+    /// - `refusal`：拒答，读 `refusal`。
+    ///
+    /// 拒答块此前被忽略，于是一次**合法完成的拒答**变成空内容，AgentLoop
+    /// 把它归类成通用的、不可恢复的 `emptyResponse`——用户看不到模型给出
+    /// 的拒绝说明（与 Chat Completions 的 `message.refusal` 同类问题）。
+    private static func responsesContentText(from block: [String: Any]) -> String? {
+        if let text = block["text"] as? String { return text }
+        if let refusal = block["refusal"] as? String { return refusal }
+        return nil
     }
 
     /// Normalize the usage shapes used by OpenAI, Anthropic-compatible
@@ -452,6 +513,8 @@ final class StreamingAccumulator: @unchecked Sendable {
     private var responseID: String?
     private var rawStreamEvents: [String] = []
     private var stopReason: String?
+    /// 累积的生成图片（图像生成模型的产物）。
+    private var images: [MessageImage] = []
     private var finished = false
     private var failure: Error?
 
@@ -506,6 +569,12 @@ final class StreamingAccumulator: @unchecked Sendable {
             await onChunk(LLMStreamChunk(content: piece))
         }
 
+        // 图片增量（图像生成模型的产物）
+        if let chunkImages = chunk.images, !chunkImages.isEmpty {
+            images.append(contentsOf: chunkImages)
+            await onChunk(LLMStreamChunk(images: chunkImages))
+        }
+
         // 工具调用增量
         if let calls = chunk.toolCalls, !calls.isEmpty {
             for call in calls {
@@ -550,7 +619,8 @@ final class StreamingAccumulator: @unchecked Sendable {
             cacheTotalInputTokenCount: cacheTotalInputTokens,
             responseID: responseID,
             rawStreamEventsJSON: rawStreamEventsJSON,
-            stopReason: stopReason
+            stopReason: stopReason,
+            images: images.isEmpty ? nil : images
         )
     }
 

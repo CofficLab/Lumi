@@ -5,7 +5,7 @@
 PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** 处于 `V2 (标准)` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 120
+测试文件: 21 个，用例总数: 124
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,6 +38,7 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **ActivityStatusLocalization**（4 条）：由 `activityContentUsesInjectedLocalization`、`activityContentHasNoChineseLiteral`、`activityLabelsHaveTranslationsInCompiledBundle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **BottomDecision**（8 条）：由 `bottomDecisionTrueAtExactBottom`、`bottomDecisionFalseFarFromBottom`、`bottomDecisionUsesHysteresisBand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **InitialPositionGateBudget**（1 条）：由 `gateBudgetIsAbsoluteNotAdditiveUnderMainActorContention` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **InitialPositionGate**（10 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -183,16 +184,20 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 118 | MessageListSyntheticRowOrdering | 同一 turn 内被文本消息隔开的两组工具消息不得合并成一行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolGroupsSeparatedByTextMessageMustNotMerge` |
 | 119 | MessageListSyntheticRowOrdering | 合成行的位置不得早于它所承载的授权挂起点 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `syntheticRowMustNotPrecedeItsSuspensionPoint` |
 | 120 | MessageListSyntheticRowOrdering | 无 turnID 的工具消息仍按时间相邻合并 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolOnlyMessagesWithoutTurnIDStillMergeConsecutively` |
+| 121 | ActivityStatusLocalization | 活动状态文案全部经过注入的本地化解析（#886） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activityContentUsesInjectedLocalization` |
+| 122 | ActivityStatusLocalization | 活动状态文案不含中文字面量（#886） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activityContentHasNoChineseLiteral` |
+| 123 | ActivityStatusLocalization | 活动状态词条在所有规范语言下都有译文（#886） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activityLabelsHaveTranslationsInCompiledBundle` |
+| 124 | ActivityStatusLocalization | 旧的 status.* 词条已从 catalog 移除（#886） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacyStatusKeysAreRemoved` |
 
-> 说明：全部 **120 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 38 / 38
-- P1: 已覆盖 72 / 72
-- P2: 已覆盖 10 / 10
-- **合计: 120 / 120**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 73 / 73
+- P2: 已覆盖 13 / 13
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -203,7 +208,7 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 120 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

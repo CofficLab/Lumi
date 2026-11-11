@@ -19,7 +19,8 @@ public final class DeepSeekAnthropicProvider: VendorLLMProvider {
                 ],
                 websiteURL: URL(string: "https://www.deepseek.com/")!,
                 apiFormat: .anthropic,
-                apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek"
+                apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek",
+                recommendedUtilityModel: "deepseek-v4-flash"
             ),
             apiService: apiService
         )

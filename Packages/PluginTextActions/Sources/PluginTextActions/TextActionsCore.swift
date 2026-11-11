@@ -22,6 +22,43 @@ enum TextSelectionReadPolicy {
     }
 }
 
+// MARK: - 选择手势判定
+
+/// 「这次鼠标动作是否完成了一次选择」的纯逻辑，与全局事件监听解耦以便单测。
+///
+/// 菜单只应在用户**刚选中文字**时出现（拖拽划选、双击选词、三击选段、
+/// Shift+单击扩选），而不是「任何一次点击后恰好存在选区」——否则点击
+/// 网页上的「复制」按钮、右键菜单里的「复制」都会把菜单再弹出来：
+/// 这些操作不清空选区，但本身不是选择动作。
+enum TextSelectionGesturePolicy {
+    /// 判定为拖拽划选的最小位移（pt），过滤单击时的手部抖动。
+    static let dragThreshold: CGFloat = 4
+
+    /// 一次 leftMouseUp 是否完成了选择手势。
+    ///
+    /// - parameters:
+    ///   - pressLocation: leftMouseDown 时的位置；监听没捕获到按下
+    ///     （如刚启用监听）时为 nil，此时无法判定拖拽。
+    ///   - releaseLocation: leftMouseUp 时的位置。
+    ///   - clickCount: 连击数；≥2 为双击选词 / 三击选段。
+    ///   - modifiers: Shift+单击在文本视图中是扩选。
+    static func isSelectionGesture(
+        pressLocation: CGPoint?,
+        releaseLocation: CGPoint,
+        clickCount: Int,
+        modifiers: NSEvent.ModifierFlags
+    ) -> Bool {
+        if clickCount >= 2 { return true }
+        if modifiers.contains(.shift) { return true }
+        guard let pressLocation else { return false }
+        let distance = hypot(
+            releaseLocation.x - pressLocation.x,
+            releaseLocation.y - pressLocation.y
+        )
+        return distance > dragThreshold
+    }
+}
+
 // MARK: - 坐标换算
 
 /// Quartz 屏幕坐标（原点在主屏左上角、y 向下）与 Cocoa 屏幕坐标
@@ -136,14 +173,34 @@ enum TextActionDismissPolicy {
         modifiers.intersection([.shift, .command, .control, .option]) == [.shift] ? false : true
     }
 
+    /// 复制 / 剪切 / 全选的虚拟键码（Carbon HIToolbox/Events.h）。
+    private static let copyKeyCode: UInt16 = 8
+    private static let cutKeyCode: UInt16 = 7
+    private static let selectAllKeyCode: UInt16 = 0
+    /// 方向键与 Home/End/PageUp/PageDown：配合 Shift 可扩选。
+    private static let selectionKeyCodes: Set<UInt16> = [123, 124, 125, 126, 115, 119, 116, 121]
+
     /// keyUp 是否值得触发一次选区重读。
     ///
-    /// 普通打字的 keyUp 不读 AX——菜单已被 keyDown 收起，且每次击键都读
-    /// AX 是不必要的开销。只有可能改变选区的按键（带修饰键，如
-    /// Shift+方向键、Cmd+A）或菜单仍在显示时才重读。
-    static func shouldEvaluateOnKeyUp(modifiers: NSEvent.ModifierFlags, menuVisible: Bool) -> Bool {
+    /// 只有可能产生/调整选区的按键才读 AX：Shift+方向键/Home/End/
+    /// PageUp/PageDown（扩选）与 Cmd+A（全选）。普通打字与其他快捷键
+    /// （Cmd+S 等）不读——菜单已被 keyDown 收起，逐键读 AX 是无意义开销。
+    ///
+    /// 复制/剪切（Cmd+C / Cmd+X）**永不**触发重读：它们不产生选区，
+    /// 若放行，「菜单不在时按 Cmd+C」会把菜单弹出来（复制后弹菜单）。
+    /// 菜单仍可见时保留重读，以便 Shift 调整选区后更新位置。
+    static func shouldEvaluateOnKeyUp(
+        modifiers: NSEvent.ModifierFlags,
+        menuVisible: Bool,
+        keyCode: UInt16
+    ) -> Bool {
+        if modifiers.contains(.command),
+           keyCode == Self.copyKeyCode || keyCode == Self.cutKeyCode {
+            return false
+        }
         if menuVisible { return true }
-        return modifiers.intersection([.shift, .command, .control, .option]).isEmpty == false
+        if keyCode == Self.selectAllKeyCode, modifiers.contains(.command) { return true }
+        return Self.selectionKeyCodes.contains(keyCode) && modifiers.contains(.shift)
     }
 
     /// 事件是否落在浮层自身窗口内。

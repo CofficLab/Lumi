@@ -240,17 +240,21 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     /// | `ZCONTENT` | 121 MB | 需要 |
     /// | `ZREASONINGCONTENT` | 54 MB | 需要 |
     /// | `ZRAWSTREAMEVENTSJSON` | 47 MB | **不需要** |
-    /// | `ZMETADATAJSON` | 35 MB | **不需要** |
+    /// | `ZMETADATAJSON` | 35 MB | 只抽需要的键 |
     ///
-    /// 后两列合计 82MB，在每次 LLM 回合里被读取、拷贝、JSON 解码，
-    /// 然后永远不用。
+    /// `rawStreamEventsJSON` 在每次 LLM 回合里被读取、拷贝、JSON 解码，
+    /// 然后永远不用；`metadataJson` 只抽下面三个键，不整份解码。
     ///
-    /// ## 唯一必须保留的 metadata：时间线标记
+    /// ## 必须保留的 metadata：时间线标记与附件
     ///
     /// `llmHistory` 在读取之后才过滤 `MessageTimelineEvent.isTimelineEvent`，
     /// 该判断依赖 `renderKind` 或 `metadata["lumi.timelineEvent"]`。因此窄读取
-    /// 必须带上 `ZRENDERKIND`，并用 SQL 的 `json_extract` 只取出这一个键，
+    /// 必须带上 `ZRENDERKIND`，并用 SQL 的 `json_extract` 取出这个键，
     /// 否则 Finder 卡片等界面事件会被当成普通历史发送给模型。
+    ///
+    /// `imageAttachments` / `fileAttachments` 同样必须保留：`Message.llmMessage`
+    /// 从 metadata 解码它们，把图片挂上请求、把文件正文注入用户消息。
+    /// 窄读取若丢掉这两个键，用户发送的附件就到不了模型。
     ///
     /// ## 为什么用原生 SQL 而不是 SwiftData
     ///
@@ -276,7 +280,8 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
 
             // `ZRENDERKIND` 与 metadata 里的时间线标记必须保留：
             // `llmHistory` 依赖它们过滤 Finder 卡片等仅用于界面的消息。
-            // 只从 metadata JSON 中抽取这一个键，避免解码整份 35MB 数据。
+            // 附件两个键同样必须保留：`llmMessage` 靠它们把图片/文件注入请求。
+            // 只从 metadata JSON 中抽取这三个键，避免解码整份 35MB 数据。
             let sql = """
             SELECT ZID, ZCONVERSATIONID, ZTURNID, ZROLE, ZCONTENT, ZCREATEDAT, \
             ZISERROR, ZTOOLCALLID, ZREASONINGCONTENT, ZTOOLCALLSJSON, \
@@ -284,7 +289,11 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             ZCACHEWRITEINPUTTOKENCOUNT, ZCACHETOTALINPUTTOKENCOUNT, ZSTOPREASON, \
             ZRENDERKIND, \
             CASE WHEN json_valid(ZMETADATAJSON) \
-            THEN json_extract(ZMETADATAJSON, '$."lumi.timelineEvent"') END \
+            THEN json_extract(ZMETADATAJSON, '$."lumi.timelineEvent"') END, \
+            CASE WHEN json_valid(ZMETADATAJSON) \
+            THEN json_extract(ZMETADATAJSON, '$.imageAttachments') END, \
+            CASE WHEN json_valid(ZMETADATAJSON) \
+            THEN json_extract(ZMETADATAJSON, '$.fileAttachments') END \
             FROM ZMESSAGEMODEL WHERE ZCONVERSATIONID = ? ORDER BY ZCREATEDAT ASC
             """
             var statement: OpaquePointer?
@@ -333,10 +342,17 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             try? JSONDecoder().decode([MessageToolCall].self, from: Data($0.utf8))
         }
 
-        // 只还原时间线标记；LLM 上下文不需要其余 metadata。
+        // 只还原 LLM 上下文需要的键：时间线标记用于过滤界面事件，
+        // 附件由 `Message.llmMessage` 解码注入请求；其余 metadata 不物化。
         var metadata: [String: String] = [:]
         if let timelineEvent = text(at: 17) {
             metadata[MessageTimelineEvent.metadataKey] = timelineEvent
+        }
+        if let imageAttachments = text(at: 18) {
+            metadata[UserAttachmentMetadata.imageAttachmentsKey] = imageAttachments
+        }
+        if let fileAttachments = text(at: 19) {
+            metadata[UserAttachmentMetadata.fileAttachmentsKey] = fileAttachments
         }
 
         return Message(

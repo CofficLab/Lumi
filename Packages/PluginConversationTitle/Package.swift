@@ -9,15 +9,16 @@ let package = Package(
         .library(name: "PluginConversationTitle", targets: ["PluginConversationTitle"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderLLMContext"),
         .package(path: "../KitLLM"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderAgentLoop"),
     ],
     targets: [
@@ -31,6 +32,7 @@ let package = Package(
                 "ProviderConversation",
                 "ProviderMessage",
                 "ProviderLLMManager",
+                "ProviderLLMContext",
                 "KitLLM",
                 "ProviderToolManager",
                 "ProviderAgentLoop",
@@ -39,7 +41,15 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationTitleTests",
-            dependencies: ["PluginConversationTitle"],
+            dependencies: [
+                "PluginConversationTitle",
+                "KitLLM",
+                "ProviderConversation",
+                "ProviderLLMContext",
+                "ProviderLLMManager",
+                "ProviderMessage",
+                .product(name: "KernelCore", package: "LumiKernel"),
+            ],
             path: "Tests/PluginConversationTitleTests"
         ),
     ]

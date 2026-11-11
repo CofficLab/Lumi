@@ -407,16 +407,46 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             .filter { !MessageTimelineEvent.isTimelineEvent($0) }
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
-        let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
+        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+        // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+        //
+        // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+        // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+        // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+        // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+        // 上游还可能直接报协议错误。
+        let modelAllowsTools = route?.modelInfo.supportsTools != false
+        let tools = (level.allowsTools && modelAllowsTools) ? toolManager.allTools() : []
+        let schemas = tools.compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
-        let llmHistory = llmMessages(from: history)
+        var llmHistory = llmMessages(from: history)
+        // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+        //
+        // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+        // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+        // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
+        // 供应商的协议失败。
+        if route?.modelInfo.supportsVision == false {
+            llmHistory = llmHistory.map { message in
+                message.images.isEmpty
+                    ? message
+                    : LLMMessage(
+                        role: message.role,
+                        content: message.content,
+                        toolCalls: message.toolCalls,
+                        toolCallID: message.toolCallID,
+                        reasoningContent: message.reasoningContent,
+                        redactedThinking: message.redactedThinking,
+                        isError: message.isError
+                    )
+            }
+        }
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
             preparedMessages = result.messages
         }
-        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
         let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
@@ -596,7 +626,16 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
             let automationLevel = conversations.automationLevel(for: conversationID)
-            let tools = automationLevel.allowsTools ? toolManager.allTools() : []
+            // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+            //
+            // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+            // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+            // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+            // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+            // 上游还可能直接报协议错误。
+            let legacyRoute = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+            let modelAllowsTools = legacyRoute?.modelInfo.supportsTools != false
+            let tools = (automationLevel.allowsTools && modelAllowsTools) ? toolManager.allTools() : []
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)
                 return LLMFunctionSchema(
@@ -611,7 +650,28 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
-        let llmHistory = llmMessages(from: history)
+        var llmHistory = llmMessages(from: history)
+            // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+            //
+            // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+            // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+            // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
+            // 供应商的协议失败。
+            if legacyRoute?.modelInfo.supportsVision == false {
+                llmHistory = llmHistory.map { message in
+                    message.images.isEmpty
+                        ? message
+                        : LLMMessage(
+                            role: message.role,
+                            content: message.content,
+                            toolCalls: message.toolCalls,
+                            toolCallID: message.toolCallID,
+                            reasoningContent: message.reasoningContent,
+                            redactedThinking: message.redactedThinking,
+                            isError: message.isError
+                        )
+                }
+            }
             var preparedMessages = llmHistory
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {

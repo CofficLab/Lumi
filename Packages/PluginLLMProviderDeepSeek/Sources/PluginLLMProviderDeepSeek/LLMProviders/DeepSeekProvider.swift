@@ -20,7 +20,8 @@ public final class DeepSeekProvider: VendorLLMProvider {
                 ],
                 websiteURL: URL(string: "https://www.deepseek.com/")!,
                 apiFormat: .openAI,
-                apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek"
+                apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek",
+                recommendedUtilityModel: "deepseek-flash"
             ),
             apiService: apiService
         )

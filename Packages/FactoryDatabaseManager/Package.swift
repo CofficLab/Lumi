@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "FactoryDatabaseManager", targets: ["FactoryDatabaseManager"])],
     dependencies: [
         .package(path: "../FactoryLumi"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../PluginCodeEditorHost"),
         .package(name: "PluginDatabaseManager", path: "../PluginDatabaseManager"),
         .package(path: "../ProviderExternalFile"),

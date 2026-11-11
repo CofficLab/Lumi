@@ -21,7 +21,9 @@ enum RemoteModelMerger {
         // 远程优先覆盖同 id 元数据
         var byID: [String: LLMModelInfo] = [:]
         for model in base { byID[model.id] = model }
-        for model in remote { byID[model.id] = model }
+        for model in remote {
+            byID[model.id] = Self.merging(remote: model, onto: byID[model.id])
+        }
 
         // 按基线顺序输出，远程新增追加在后
         var seen = Set<String>()
@@ -35,5 +37,35 @@ enum RemoteModelMerger {
             seen.insert(model.id)
         }
         return merged
+    }
+
+    /// 把远程条目合并到同 id 的基线条目上。
+    ///
+    /// 远程条目的上下文窗口**缺失或非正**时保留基线的有效窗口：远程
+    /// 只带 displayName 的增量更新不应把已知的窗口降级成「未知」，否则
+    /// 预算层会退回保守兜底，输入上限被压到极小。
+    private static func merging(remote: LLMModelInfo, onto base: LLMModelInfo?) -> LLMModelInfo {
+        guard let base else { return remote }
+        guard let remoteWindow = remote.contextWindowSize, remoteWindow > 0 else {
+            guard let baseWindow = base.contextWindowSize, baseWindow > 0 else { return remote }
+            return LLMModelInfo(
+                id: remote.id,
+                displayName: remote.displayName,
+                contextWindowSize: baseWindow,
+                supportsStreaming: remote.supportsStreaming,
+                supportsVision: remote.supportsVision || base.supportsVision,
+                supportsTools: remote.supportsTools,
+                isRetired: remote.isRetired
+            )
+        }
+        return LLMModelInfo(
+            id: remote.id,
+            displayName: remote.displayName,
+            contextWindowSize: remoteWindow,
+            supportsStreaming: remote.supportsStreaming,
+            supportsVision: remote.supportsVision || base.supportsVision,
+            supportsTools: remote.supportsTools,
+            isRetired: remote.isRetired
+        )
     }
 }

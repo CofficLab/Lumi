@@ -4,17 +4,17 @@ import PackageDescription
 let package = Package(
     name: "PluginLLMProviderLPgpt",
     platforms: [
-        .macOS("13.1"),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
         .library(name: "PluginLLMProviderLPgpt", targets: ["PluginLLMProviderLPgpt"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

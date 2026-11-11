@@ -70,16 +70,20 @@ struct TextSelectionSuppression {
 
 /// 选区监听与读取的调度者。
 ///
-/// 三个依赖全部可注入（事件监听、选区读取、权限检查），默认值是生产实现；
-/// 单测注入替身即可覆盖启动/停止/权限/重试时序，而不必碰真实的
-/// `NSEvent` 全局监听与 Accessibility 授权弹窗。
+/// 四个依赖全部可注入（事件监听、选区读取、权限检查、鼠标位置），
+/// 默认值是生产实现；单测注入替身即可覆盖启动/停止/权限/触发时序，
+/// 而不必碰真实的 `NSEvent` 全局监听与 Accessibility 授权弹窗。
 ///
 /// 事件分流规则：
-/// - **mouseUp**（拖拽、双击、三击完成选择）：总是重新评估选区；
-/// - **keyUp**：仅在可能改变选区（带修饰键）或菜单仍可见时评估，
-///   普通打字的击键不读 AX，避免无意义开销；
+/// - **leftMouseDown**：记录按下位置，供 mouseUp 判定拖拽；
+/// - **leftMouseUp**：只有完成选择手势（拖拽 / 双击及以上 / Shift+单击）
+///   才重新评估选区；普通单击不触发——点「复制」按钮、点上下文菜单项
+///   都不是选择动作，即使选区仍在也不弹菜单；
+/// - **keyUp**：仅可能产生选区的按键（Shift+方向键、Cmd+A 等）或菜单
+///   仍可见时评估；复制/剪切快捷键永不触发；
+/// - 右键事件不参与触发——右键是上下文菜单手势，不是选择手势；
 /// - 菜单因键盘输入消失后，同一选区不会因随后的 keyUp 复活
-///   （`suppressedKeyboardText`，覆盖 Cmd+C 复制场景）。
+///   （`suppression`，覆盖调整选区后文本相同的场景）。
 @MainActor
 final class TextSelectionManager: TextSelectionMonitoring {
     static let shared = TextSelectionManager()
@@ -88,7 +92,12 @@ final class TextSelectionManager: TextSelectionMonitoring {
     private let eventMonitor: any TextEventMonitoring
     private let selectedTextProvider: any SelectedTextProviding
     private let permissionChecker: () -> Bool
+    private let mouseLocationProvider: () -> CGPoint
     private var monitor: Any?
+
+    /// 最近一次 leftMouseDown 的位置（Cocoa 坐标），mouseUp 时用于判定
+    /// 拖拽划选；每次 mouseUp 消费后置空，避免陈旧按下位置误配。
+    private var mousePressLocation: CGPoint?
 
     /// 监听是否已注册。
     ///
@@ -111,11 +120,13 @@ final class TextSelectionManager: TextSelectionMonitoring {
         permissionChecker: @escaping () -> Bool = {
             let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
             return AXIsProcessTrustedWithOptions(options)
-        }
+        },
+        mouseLocationProvider: @escaping () -> CGPoint = { NSEvent.mouseLocation }
     ) {
         self.eventMonitor = eventMonitor
         self.selectedTextProvider = selectedTextProvider
         self.permissionChecker = permissionChecker
+        self.mouseLocationProvider = mouseLocationProvider
         refreshPermission()
     }
 
@@ -156,20 +167,26 @@ final class TextSelectionManager: TextSelectionMonitoring {
 
         // 选区既可能由鼠标拖拽完成，也可能由 Shift/方向键完成；只监听
         // leftMouseUp 会漏掉后者。且部分应用在 mouseUp 后才更新 AXSelectedText。
+        // leftMouseDown 用于记录按下位置以判定拖拽；右键不参与触发。
         monitor = eventMonitor.addGlobalMonitor(
-            matching: [.leftMouseUp, .rightMouseUp, .keyUp]
-        ) { [weak self] event in
+            matching: [.leftMouseDown, .leftMouseUp, .keyUp]
+        ) { [weak self, mouseLocationProvider] event in
             // NSEvent 不可跨隔离域传递，先在回调线程提取值类型。
+            // keyCode 只对键盘事件有效，clickCount 只对鼠标事件有效，
+            // 跨类型访问会抛 NSInternalInconsistencyException。
             let type = event.type
             let modifiers = event.modifierFlags
-            let keyCode = event.keyCode
-            let anchor = NSEvent.mouseLocation
+            let isKeyEvent = type == .keyUp
+            let keyCode = isKeyEvent ? event.keyCode : 0
+            let clickCount = isKeyEvent ? 0 : event.clickCount
+            let anchor = mouseLocationProvider()
             Task { @MainActor [weak self] in
                 self?.handleSelectionTrigger(
                     type: type,
                     modifiers: modifiers,
                     keyCode: keyCode,
-                    anchor: anchor
+                    anchor: anchor,
+                    clickCount: clickCount
                 )
             }
         }
@@ -203,18 +220,31 @@ final class TextSelectionManager: TextSelectionMonitoring {
         type: NSEvent.EventType,
         modifiers: NSEvent.ModifierFlags,
         keyCode: UInt16,
-        anchor: CGPoint
+        anchor: CGPoint,
+        clickCount: Int
     ) {
         switch type {
-        case .leftMouseUp, .rightMouseUp:
+        case .leftMouseDown:
+            mousePressLocation = anchor
+        case .leftMouseUp:
+            let pressLocation = mousePressLocation
+            mousePressLocation = nil
             suppression.clear()
+            // 只有完成选择手势才读选区：普通单击（点「复制」按钮、
+            // 点上下文菜单项）即使选区仍在也不弹菜单。
+            guard TextSelectionGesturePolicy.isSelectionGesture(
+                pressLocation: pressLocation,
+                releaseLocation: anchor,
+                clickCount: clickCount,
+                modifiers: modifiers
+            ) else { return }
             beginEvaluation(anchor: anchor, keyCode: keyCode)
         case .keyUp:
             // 键码变化意味着用户开始了新的选择动作，旧的抑制不再适用。
             suppression.clearIfKeyChanged(keyCode)
             let menuVisible = TextActionMenuController.shared.isVisible
             guard TextActionDismissPolicy.shouldEvaluateOnKeyUp(
-                modifiers: modifiers, menuVisible: menuVisible
+                modifiers: modifiers, menuVisible: menuVisible, keyCode: keyCode
             ) else { return }
             beginEvaluation(anchor: anchor, keyCode: keyCode)
         default:

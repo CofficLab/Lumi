@@ -6,13 +6,13 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiLogging"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../KitDownload"),
-        .package(path: "../../Vendor/mlx-swift-lm"),
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm.git", from: "3.32.3"),
         .package(
             url: "https://github.com/huggingface/swift-transformers.git",
             exact: "1.4.0"
@@ -31,6 +31,11 @@ let package = Package(
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                // 必须链接 MLXVLM：mlx-swift-lm 运行时用
+                // `NSClassFromString("MLXVLM.TrampolineModelFactory")` 动态发现
+                // VLM factory。未链接时该类不在二进制里，`qwen2_vl` /
+                // `qwen3_vl` 这类只在 VLM 注册表提供的架构无法加载。
+                .product(name: "MLXVLM", package: "mlx-swift-lm"),
                 .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],

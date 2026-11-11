@@ -5,6 +5,7 @@ import LumiLoggingKit
 import os
 import ProviderAgentLoop
 import ProviderConversation
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 
@@ -261,17 +262,60 @@ final class TitleService: SuperLog {
     }
 
     private func generateTitle(for userMessage: String, conversationID: UUID) async throws -> String {
+        let conversationModelID = conversations.modelID(for: conversationID).flatMap(LLMModelID.init(rawValue:))
+        // 标题是幕后轻量任务：供应商声明了有效的轻量模型时优先用它，否则保持
+        // 原有行为（沿用对话主模型）。供应商解析顺序与摘要路由一致。
+        let providerID = conversationModelID.flatMap { llmProvider.modelRoute(for: $0)?.providerID }
+            ?? conversations.providerID(for: conversationID)
+            ?? llmProvider.selectedProviderID
+        let utility = providerID.flatMap { llmProvider.utilityModelRoute(for: $0) }
+        let messages = [
+            LLMMessage(role: .system, content: Self.titlePrompt),
+            LLMMessage(role: .user, content: Self.fencedUserMessage(userMessage)),
+        ]
         let request = LLMRequest(
             conversationID: conversationID,
-            modelID: conversations.modelID(for: conversationID).flatMap(LLMModelID.init(rawValue:)),
-            messages: [
-                LLMMessage(role: .system, content: Self.titlePrompt),
-                LLMMessage(role: .user, content: Self.fencedUserMessage(userMessage)),
-            ],
-            model: nil
+            providerID: utility?.providerID,
+            modelID: utility?.modelID ?? conversationModelID,
+            messages: messages,
+            model: utility?.modelName
         )
         let response = try await llmProvider.complete(request)
+        await recordTitleUsage(
+            response,
+            conversationID: conversationID,
+            providerID: utility?.providerID ?? providerID,
+            modelName: utility?.modelName ?? response.model ?? conversations.modelName(for: conversationID),
+            messages: messages
+        )
         return Self.normalizeTitle(response.content)
+    }
+
+    /// 把标题调用用量记入幕后账本（#1158）。
+    ///
+    /// 账本由上下文插件注册；缺失时（测试 / 插件未启动）静默跳过，不影响标题生成。
+    /// 供应商未上报用量时用估算值填充并标注估算口径，绝不记零。
+    private func recordTitleUsage(
+        _ response: LLMResponse,
+        conversationID: UUID,
+        providerID: String?,
+        modelName: String?,
+        messages: [LLMMessage]
+    ) async {
+        guard let ledger = kernel.resolveProvider((any LLMAuxiliaryUsageProviding).self) else { return }
+        let estimatedInput = messages.reduce(0) {
+            $0 + LLMContextTokenEstimator.estimate(text: $1.content) + 12
+        }
+        let entry = LLMAuxiliaryUsageEntry(
+            response: response,
+            purpose: .title,
+            conversationID: conversationID,
+            providerID: providerID,
+            modelName: modelName,
+            estimatedInputTokens: estimatedInput,
+            estimatedOutputTokens: LLMContextTokenEstimator.estimate(text: response.content)
+        )
+        await ledger.record(entry)
     }
 
     private static let titlePrompt = """

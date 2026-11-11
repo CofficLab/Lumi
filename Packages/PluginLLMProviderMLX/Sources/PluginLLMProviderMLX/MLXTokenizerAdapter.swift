@@ -51,9 +51,18 @@ struct MLXTokenizerAdapter: MLXLMCommon.Tokenizer {
 }
 
 /// 从本地模型目录加载 swift-transformers 的 `AutoTokenizer`。
+///
+/// 传入的是 Lumi 已下载完成的本地模型目录，必须走**本地目录入口**
+/// `from(modelFolder:)`。
+///
+/// 不能用 `from(pretrained:)`：在 swift-transformers 1.4.0 里 `pretrained`
+/// 是 **Hub repository 入口**，本地目录会被当成 repo id（形如
+/// `file:///...`）去解析——离线时抛 `Repository not available locally`，
+/// 在线时也会尝试 Hub 解析而不是读取传入的目录。模型「显示已下载」因此
+/// 不代表能离线使用。
 struct MLXTokenizerLoader: MLXLMCommon.TokenizerLoader {
     func load(from directory: URL) async throws -> any MLXLMCommon.Tokenizer {
-        let tokenizer = try await AutoTokenizer.from(pretrained: directory.absoluteString)
+        let tokenizer = try await AutoTokenizer.from(modelFolder: directory)
         return MLXTokenizerAdapter(inner: tokenizer)
     }
 }

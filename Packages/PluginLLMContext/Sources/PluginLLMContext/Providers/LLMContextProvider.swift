@@ -80,6 +80,25 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let sourceLastMessageID: UUID
         let providerID: String?
         let modelName: String?
+        /// 产出本摘要的幕后调用用量；磁盘恢复的旧摘要可能为 `nil`。
+        let usage: LLMAuxiliaryUsageEntry?
+    }
+
+    /// 摘要请求的路由解析结果。
+    ///
+    /// `main*` 是对话主模型（用于发送压缩上下文与若干守卫判断）；`author*` 是
+    /// 实际产出摘要的模型——供应商声明了有效的轻量任务模型时用它，否则回退主模型。
+    /// 摘要快照的兼容性按 `author*` 比较，因此切换对话主模型不会作废摘要。
+    private struct SummaryRouting {
+        let requestedModelID: LLMModelID?
+        let mainProviderID: String?
+        let mainModelName: String?
+        let mainModelID: LLMModelID?
+        let authorProviderID: String?
+        let authorModelName: String?
+        let authorModelID: LLMModelID?
+        let authorContextWindowSize: Int?
+        let isUtility: Bool
     }
 
     private struct SummarySource {
@@ -114,6 +133,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private let conversations: any ConversationManaging
     private let llmProvider: any LLMManaging
     private let summaryStore: ContextSummaryStore?
+    private let auxiliaryUsage: (any LLMAuxiliaryUsageProviding)?
     private var summaries: [UUID: SummarySnapshot] = [:]
     private var loadedSummaryIDs: Set<UUID> = []
     private var summaryTasks: [UUID: Task<SummaryRefreshOutcome, Never>] = [:]
@@ -126,12 +146,19 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         messages: any MessageManaging,
         conversations: any ConversationManaging,
         llmProvider: any LLMManaging,
-        summaryStore: ContextSummaryStore? = nil
+        summaryStore: ContextSummaryStore? = nil,
+        auxiliaryUsage: (any LLMAuxiliaryUsageProviding)? = nil
     ) {
         self.messages = messages
         self.conversations = conversations
         self.llmProvider = llmProvider
         self.summaryStore = summaryStore
+        self.auxiliaryUsage = auxiliaryUsage
+    }
+
+    /// 读取某会话的幕后调用用量（压缩 + 标题），供上下文弹窗聚合开销。
+    func auxiliaryUsageEntries(for conversationID: UUID) async -> [LLMAuxiliaryUsageEntry] {
+        await auxiliaryUsage?.entries(for: conversationID) ?? []
     }
 
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
@@ -436,12 +463,42 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] =
                 "\(contextWindowTokens)"
         }
+        // 摘要作者与用量：让「省了多少 / 花了多少 / 净收益」可核算，并把质量问题
+        // 归因到实际产出摘要的模型（可能与对话主模型不同）。
+        if let authorProviderID = snapshot.providerID {
+            metadata[MessageTimelineEvent.contextCompactionSummaryProviderIDKey] = authorProviderID
+        }
+        if let authorModelName = snapshot.modelName {
+            metadata[MessageTimelineEvent.contextCompactionSummaryModelNameKey] = authorModelName
+        }
+        if let usage = snapshot.usage {
+            if let spent = usage.spentTokens {
+                metadata[MessageTimelineEvent.contextCompactionSpentTokensKey] = "\(spent)"
+                metadata[MessageTimelineEvent.contextCompactionSpentIsEstimatedKey] =
+                    usage.isEstimated ? "true" : "false"
+            }
+            if let input = usage.inputTokenCount {
+                metadata[MessageTimelineEvent.contextCompactionInputTokensKey] = "\(input)"
+            }
+            if let output = usage.outputTokenCount {
+                metadata[MessageTimelineEvent.contextCompactionOutputTokensKey] = "\(output)"
+            }
+            if let cached = usage.cachedInputTokenCount {
+                metadata[MessageTimelineEvent.contextCompactionCachedInputTokensKey] = "\(cached)"
+            }
+            if let cacheWrite = usage.cacheWriteInputTokenCount {
+                metadata[MessageTimelineEvent.contextCompactionCacheWriteTokensKey] = "\(cacheWrite)"
+            }
+            if let cacheTotal = usage.cacheTotalInputTokenCount {
+                metadata[MessageTimelineEvent.contextCompactionCacheTotalTokensKey] = "\(cacheTotal)"
+            }
+        }
 
         messages.insertMessage(
             Message(
                 conversationID: request.conversationID,
                 role: .system,
-                content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
+                content: String(localized: "Conversation compacted", defaultValue: "对话已压缩", bundle: .module),
                 createdAt: Date(),
                 metadata: metadata,
                 providerID: request.providerID,
@@ -459,42 +516,35 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         guard isActive else { return .skipped }
 
         let history = await llmHistory(for: request.conversationID)
-        let conversationModelID = conversations.modelID(for: request.conversationID)
-            .flatMap(LLMModelID.init(rawValue:))
-        let requestedModelID = request.modelID
-            ?? conversationModelID
-            ?? request.providerID.flatMap { providerID in
-                request.model.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
-            }
         if let requestModelID = request.modelID,
            llmProvider.modelRoute(for: requestModelID) == nil {
             return .skipped
         }
-        let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
-        let providerID = route?.providerID ?? request.providerID ?? activeProviderID
-        let modelName = route?.modelName ?? request.model ?? conversations.modelName(for: request.conversationID)
-        let modelID = route?.modelID ?? requestedModelID ?? providerID.flatMap { providerID in
-            modelName.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
-        }
+        let routing = resolveSummaryRoute(for: request)
         let existingSnapshot = summaries[request.conversationID]
-        let compatibleSnapshot = existingSnapshot?.providerID == providerID
-            && existingSnapshot?.modelName == modelName
+        let compatibleSnapshot = isCompatibleSnapshot(existingSnapshot, routing: routing)
+
+        // 摘要输入预算按摘要作者模型的窗口收缩：轻量模型窗口往往更小，复用主模型
+        // 预算会让摘要请求超出轻量模型能力。压缩结果仍按主模型预算组装（见
+        // compactedHistory），两者互不影响。
+        let summaryBudget = routing.isUtility
+            ? LLMContextBudget.conservative(
+                contextWindowTokens: routing.authorContextWindowSize,
+                toolSchemaTokens: 0
+            )
+            : request.budget
         guard let source = summarySource(
             from: history,
             snapshot: compatibleSnapshot ? existingSnapshot : nil,
-            budget: request.budget
+            budget: summaryBudget
         ) else {
             return .skipped
         }
 
         // 已有摘要仍然覆盖得住最近区间时直接复用，不再调用摘要接口。
         //
-        // 旧的判据是"压缩结果是否低于软阈值"，但在压缩结果贴着预算上限的实现下
-        // 这个条件几乎永远不成立，导致每回合都重新生成一次摘要。真正的复用条件
-        // 是"覆盖水位是否仍然够用"，也就是尾部会不会被截断。
+        // 真正的复用条件是"覆盖水位是否仍然够用"，也就是尾部会不会被截断。
         if compatibleSnapshot, let snapshot = existingSnapshot,
-           snapshot.providerID == providerID,
-           snapshot.modelName == modelName,
            let compacted = compactedHistory(history, snapshot: snapshot, request: request),
            !compacted.tailTruncated {
             return .reused
@@ -502,19 +552,104 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         // 摘要请求必须使用与当前请求相同的路由上下文；如果路由已切换，
         // 放弃本次预热，下一次请求会用新的 provider/model 重新调度。
-        if requestedModelID == nil, let providerID, providerID != activeProviderID {
+        if routing.requestedModelID == nil,
+           let mainProviderID = routing.mainProviderID,
+           mainProviderID != activeProviderID {
             return .skipped
         }
 
+        let outcome = await generateSummary(source: source, request: request, routing: routing)
+        // 轻量模型摘要失败时回退主模型重试一次。标题已有占位兜底，无需此路径。
+        if outcome == .skipped, routing.isUtility {
+            let fallbackRouting = SummaryRouting(
+                requestedModelID: routing.requestedModelID,
+                mainProviderID: routing.mainProviderID,
+                mainModelName: routing.mainModelName,
+                mainModelID: routing.mainModelID,
+                authorProviderID: routing.mainProviderID,
+                authorModelName: routing.mainModelName,
+                authorModelID: routing.mainModelID,
+                authorContextWindowSize: request.budget.contextWindowTokens,
+                isUtility: false
+            )
+            return await generateSummary(source: source, request: request, routing: fallbackRouting)
+        }
+        return outcome
+    }
+
+    /// 解析摘要路由：先按对话主模型解析，再套用供应商声明的轻量任务模型。
+    ///
+    /// 主模型与摘要作者分离后，快照兼容性按作者比较，切换对话主模型不会作废摘要。
+    private func resolveSummaryRoute(for request: LLMContextPreparationRequest) -> SummaryRouting {
+        let conversationModelID = conversations.modelID(for: request.conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        let requestedModelID = request.modelID
+            ?? conversationModelID
+            ?? request.providerID.flatMap { providerID in
+                request.model.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+            }
+        let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
+        let providerID = route?.providerID ?? request.providerID ?? activeProviderID
+        let modelName = route?.modelName ?? request.model ?? conversations.modelName(for: request.conversationID)
+        let modelID = route?.modelID ?? requestedModelID ?? providerID.flatMap { providerID in
+            modelName.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+        }
+        if let providerID, let utility = llmProvider.utilityModelRoute(for: providerID) {
+            return SummaryRouting(
+                requestedModelID: requestedModelID,
+                mainProviderID: providerID,
+                mainModelName: modelName,
+                mainModelID: modelID,
+                authorProviderID: utility.providerID,
+                authorModelName: utility.modelName,
+                authorModelID: utility.modelID,
+                authorContextWindowSize: utility.modelInfo.contextWindowSize,
+                isUtility: true
+            )
+        }
+        return SummaryRouting(
+            requestedModelID: requestedModelID,
+            mainProviderID: providerID,
+            mainModelName: modelName,
+            mainModelID: modelID,
+            authorProviderID: providerID,
+            authorModelName: modelName,
+            authorModelID: modelID,
+            authorContextWindowSize: request.budget.contextWindowTokens,
+            isUtility: false
+        )
+    }
+
+    /// 摘要快照是否与当前路由兼容。
+    ///
+    /// 作者完全匹配自然兼容；轻量模型调用失败回退主模型产出的摘要（作者＝主模型）
+    /// 同样可用——不能因为首选路由仍是轻量模型就把这份兜底摘要作废，否则回退
+    /// 永远无法产出可发送的压缩上下文。
+    private func isCompatibleSnapshot(_ snapshot: SummarySnapshot?, routing: SummaryRouting) -> Bool {
+        guard let snapshot else { return false }
+        if snapshot.providerID == routing.authorProviderID,
+           snapshot.modelName == routing.authorModelName {
+            return true
+        }
+        return snapshot.providerID == routing.mainProviderID
+            && snapshot.modelName == routing.mainModelName
+    }
+
+    /// 执行一次摘要调用：请求 → 校验 → 记录用量 → 写入快照与磁盘。
+    private func generateSummary(
+        source: SummarySource,
+        request: LLMContextPreparationRequest,
+        routing: SummaryRouting
+    ) async -> SummaryRefreshOutcome {
         let summaryRequest = LLMRequest(
             conversationID: request.conversationID,
-            providerID: route?.providerID ?? providerID,
-            modelID: modelID,
+            providerID: routing.authorProviderID,
+            modelID: routing.authorModelID,
             messages: [
                 LLMMessage(role: .system, content: Self.summarySystemPrompt),
                 LLMMessage(role: .user, content: Self.renderSummaryInput(source.messages)),
             ],
-            model: modelName
+            model: routing.authorModelName
         )
 
         do {
@@ -528,12 +663,25 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 return .discardedForNewMessages
             }
 
+            let usage = LLMAuxiliaryUsageEntry(
+                response: response,
+                purpose: .compaction,
+                conversationID: request.conversationID,
+                providerID: routing.authorProviderID,
+                modelName: routing.authorModelName,
+                sourceLastMessageID: source.sourceLastMessageID,
+                estimatedInputTokens: Self.estimateSummaryInputTokens(summaryRequest.messages),
+                estimatedOutputTokens: LLMContextTokenEstimator.estimate(text: summary)
+            )
+            await auxiliaryUsage?.record(usage)
+
             let snapshot = SummarySnapshot(
                 text: summary,
                 coveredThroughMessageID: source.coveredThroughMessageID,
                 sourceLastMessageID: source.sourceLastMessageID,
-                providerID: providerID,
-                modelName: modelName
+                providerID: routing.authorProviderID,
+                modelName: routing.authorModelName,
+                usage: usage
             )
             summaries[request.conversationID] = snapshot
 
@@ -542,8 +690,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 text: summary,
                 coveredThroughMessageID: source.coveredThroughMessageID,
                 sourceLastMessageID: source.sourceLastMessageID,
-                providerID: providerID,
-                modelName: modelName,
+                providerID: routing.authorProviderID,
+                modelName: routing.authorModelName,
                 sourceMessageCount: latest.count,
                 updatedAt: Date()
             )
@@ -562,6 +710,11 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             }
             return .skipped
         }
+    }
+
+    /// 估算摘要请求输入 token（供应商未上报用量时的兜底口径）。
+    private static func estimateSummaryInputTokens(_ messages: [LLMMessage]) -> Int {
+        messages.reduce(0) { $0 + LLMContextTokenEstimator.estimate(text: $1.content) + messageOverheadTokens }
     }
 
     // MARK: - History selection
@@ -641,8 +794,10 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         snapshot: SummarySnapshot,
         request: LLMContextPreparationRequest
     ) -> CompactedHistory? {
-        guard snapshot.providerID == request.providerID,
-              snapshot.modelName == request.model,
+        // 兼容性按摘要作者路由比较，而非对话主模型：摘要由轻量模型产出时，
+        // 切换对话主模型不应作废摘要；只有摘要路由本身变化才需要重新生成。
+        let routing = resolveSummaryRoute(for: request)
+        guard isCompatibleSnapshot(snapshot, routing: routing),
               let coveredIndex = history.firstIndex(where: { $0.id == snapshot.coveredThroughMessageID }) else {
             return nil
         }
@@ -928,7 +1083,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 coveredThroughMessageID: record.coveredThroughMessageID,
                 sourceLastMessageID: record.sourceLastMessageID,
                 providerID: record.providerID,
-                modelName: record.modelName
+                modelName: record.modelName,
+                usage: nil
             )
         } catch {
             if Self.verbose {
