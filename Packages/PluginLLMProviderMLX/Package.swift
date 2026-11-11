@@ -31,6 +31,11 @@ let package = Package(
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                // 必须链接 MLXVLM：mlx-swift-lm 运行时用
+                // `NSClassFromString("MLXVLM.TrampolineModelFactory")` 动态发现
+                // VLM factory。未链接时该类不在二进制里，`qwen2_vl` /
+                // `qwen3_vl` 这类只在 VLM 注册表提供的架构无法加载。
+                .product(name: "MLXVLM", package: "mlx-swift-lm"),
                 .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],

@@ -10,6 +10,13 @@ final class MLXRuntime {
     private var modelContainer: ModelContainer?
     private var currentModelID: String?
 
+    /// 引用 VLM factory，确保 `MLXVLM` 目标被链接进二进制。
+    ///
+    /// 链接器会裁掉没有任何符号引用的目标，而 mlx-swift-lm 靠
+    /// `NSClassFromString` 动态发现 factory——不显式引用的话 VLM factory
+    /// 不会进二进制，VL 模型加载时会抛 `unsupportedModelType`。
+    private static let vlmFactoryLinkage = MLXVLMFactoryLinkage.modelFactory
+
     func configure(rootDirectory: URL) {
         MLXModelPaths.configure(rootDirectory: rootDirectory)
         MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
