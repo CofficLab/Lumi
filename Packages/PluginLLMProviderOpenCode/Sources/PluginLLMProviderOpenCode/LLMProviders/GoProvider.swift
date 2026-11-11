@@ -229,7 +229,14 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 model: model,
                 tools: tools,
                 systemPrompt: "",
-                config: LLMConfig(model: model, providerId: providerInfo.id)
+                // 必须带上 `request.reasoningEffort`：重建 LLMConfig 时漏掉它，
+                // 生成参数 applier 就不会下发 thinking 配置，用户选定的推理
+                // 档位被静默丢弃，实际拿到的是供应商的默认推理行为。
+                config: LLMConfig(
+                    model: model,
+                    providerId: providerInfo.id,
+                    reasoningEffort: request.reasoningEffort
+                )
             )
             let accumulator = GoStreamingAccumulator()
             try await apiService.sendStreamingChatRequest(
@@ -261,7 +268,14 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             model: model,
             tools: tools,
             systemPrompt: "",
-            config: LLMConfig(model: model, providerId: providerInfo.id)
+            // 必须带上 `request.reasoningEffort`：重建 LLMConfig 时漏掉它，
+            // 生成参数 applier 就不会下发 reasoning_effort，用户选定的推理
+            // 档位被静默丢弃，实际拿到的是供应商的默认推理行为。
+            config: LLMConfig(
+                model: model,
+                providerId: providerInfo.id,
+                reasoningEffort: request.reasoningEffort
+            )
         )
         let accumulator = GoStreamingAccumulator()
         try await apiService.sendStreamingChatRequest(
