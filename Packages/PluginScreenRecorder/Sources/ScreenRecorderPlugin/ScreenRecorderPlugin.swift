@@ -109,7 +109,7 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             "include_app_audio": ["type": "boolean", "default": false],
             "include_microphone": ["type": "boolean", "default": false],
             "frame_rate": ["type": "integer", "minimum": 1, "maximum": 60, "default": 30],
-            "resolution_height": ["type": "integer", "minimum": 1, "maximum": 4320],
+            "resolution_height": ["type": "integer", "minimum": 2, "maximum": 4320],
             "output_directory": ["type": "string"],
             "filename": ["type": "string"],
         ], "additionalProperties": false]
@@ -137,10 +137,21 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             target = .appWindow(application: application, windowTitle: ScreenRecorderV2Support.string(arguments, "window_title"))
         }
         let outputDirectory = ScreenRecorderV2Support.outputDirectory(arguments)
+        // 原始参数先校验：`RecordingConfig` 会把过小的值钳到 1，钳制之后就
+        // 看不出用户到底请求了多少，报错信息也会失真（#866）。
+        let resolutionHeight = ScreenRecorderV2Support.integer(arguments, "resolution_height")
+        do {
+            try RecordingResolution.validate(height: resolutionHeight)
+        } catch let error as RecordingError {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: error.errorDescription ?? "Invalid resolution height."
+            )
+        }
         let config = RecordingConfig(
             target: target,
             frameRate: ScreenRecorderV2Support.integer(arguments, "frame_rate") ?? 30,
-            resolutionHeight: ScreenRecorderV2Support.integer(arguments, "resolution_height"),
+            resolutionHeight: resolutionHeight,
             includeAppAudio: ScreenRecorderV2Support.boolean(arguments, "include_app_audio"),
             includeMicrophone: ScreenRecorderV2Support.boolean(arguments, "include_microphone"),
             maxDurationSeconds: ScreenRecorderV2Support.integer(arguments, "duration_seconds"),
