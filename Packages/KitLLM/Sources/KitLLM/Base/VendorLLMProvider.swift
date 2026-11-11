@@ -149,7 +149,10 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 生成的图片（图像生成模型的产物）。没有它，一次合法的
+            // 「只生成图片」的响应会被当成空响应。
+            images: parsed.images
         )
     }
 
@@ -452,6 +455,8 @@ final class StreamingAccumulator: @unchecked Sendable {
     private var responseID: String?
     private var rawStreamEvents: [String] = []
     private var stopReason: String?
+    /// 累积的生成图片（图像生成模型的产物）。
+    private var images: [MessageImage] = []
     private var finished = false
     private var failure: Error?
 
@@ -506,6 +511,12 @@ final class StreamingAccumulator: @unchecked Sendable {
             await onChunk(LLMStreamChunk(content: piece))
         }
 
+        // 图片增量（图像生成模型的产物）
+        if let chunkImages = chunk.images, !chunkImages.isEmpty {
+            images.append(contentsOf: chunkImages)
+            await onChunk(LLMStreamChunk(images: chunkImages))
+        }
+
         // 工具调用增量
         if let calls = chunk.toolCalls, !calls.isEmpty {
             for call in calls {
@@ -550,7 +561,8 @@ final class StreamingAccumulator: @unchecked Sendable {
             cacheTotalInputTokenCount: cacheTotalInputTokens,
             responseID: responseID,
             rawStreamEventsJSON: rawStreamEventsJSON,
-            stopReason: stopReason
+            stopReason: stopReason,
+            images: images.isEmpty ? nil : images
         )
     }
 

@@ -61,6 +61,11 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var timeToFirstTokenMs: Double?
     /// 流式总时长（毫秒）。
     public var streamingDurationMs: Double?
+    /// 助手消息附带的生成图片（图像生成模型的产物）。
+    ///
+    /// 与用户消息的 `metadata["imageAttachments"]` 不同：这里是**模型
+    /// 生成**的产物，直接挂在消息上，渲染层无需再解 metadata。
+    public var imageAttachments: [MessageImageAttachment]
 
     public init(
         id: UUID = UUID(),
@@ -94,7 +99,8 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         stopReason: String? = nil,
         latencyMs: Double? = nil,
         timeToFirstTokenMs: Double? = nil,
-        streamingDurationMs: Double? = nil
+        streamingDurationMs: Double? = nil,
+        imageAttachments: [MessageImageAttachment] = []
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -128,6 +134,58 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         self.latencyMs = latencyMs
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.streamingDurationMs = streamingDurationMs
+        self.imageAttachments = imageAttachments
+    }
+
+    // MARK: Codable（兼容旧数据：imageAttachments 缺失视为空）
+
+    private enum CodingKeys: String, CodingKey {
+        case id, conversationID, role, content, createdAt, turnID, metadata, isError
+        case providerID, modelName, rawErrorDetail, httpStatusCode, httpBody
+        case renderKind, preferredRendererID, toolCallID, reasoningContent
+        case redactedThinkingData, toolCalls
+        case inputTokenCount, outputTokenCount, cachedInputTokenCount
+        case cacheWriteInputTokenCount, cacheTotalInputTokenCount
+        case responseID, requestID, rawResponseJSON, rawStreamEventsJSON, stopReason
+        case latencyMs, timeToFirstTokenMs, streamingDurationMs
+        case imageAttachments
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        conversationID = try c.decode(UUID.self, forKey: .conversationID)
+        role = try c.decode(MessageRole.self, forKey: .role)
+        content = try c.decode(String.self, forKey: .content)
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        turnID = try c.decodeIfPresent(UUID.self, forKey: .turnID)
+        metadata = try c.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
+        isError = try c.decodeIfPresent(Bool.self, forKey: .isError) ?? false
+        providerID = try c.decodeIfPresent(String.self, forKey: .providerID)
+        modelName = try c.decodeIfPresent(String.self, forKey: .modelName)
+        rawErrorDetail = try c.decodeIfPresent(String.self, forKey: .rawErrorDetail)
+        httpStatusCode = try c.decodeIfPresent(Int.self, forKey: .httpStatusCode)
+        httpBody = try c.decodeIfPresent(String.self, forKey: .httpBody)
+        renderKind = try c.decodeIfPresent(String.self, forKey: .renderKind)
+        preferredRendererID = try c.decodeIfPresent(String.self, forKey: .preferredRendererID)
+        toolCallID = try c.decodeIfPresent(String.self, forKey: .toolCallID)
+        reasoningContent = try c.decodeIfPresent(String.self, forKey: .reasoningContent)
+        redactedThinkingData = try c.decodeIfPresent([String].self, forKey: .redactedThinkingData)
+        toolCalls = try c.decodeIfPresent([MessageToolCall].self, forKey: .toolCalls)
+        inputTokenCount = try c.decodeIfPresent(Int.self, forKey: .inputTokenCount)
+        outputTokenCount = try c.decodeIfPresent(Int.self, forKey: .outputTokenCount)
+        cachedInputTokenCount = try c.decodeIfPresent(Int.self, forKey: .cachedInputTokenCount)
+        cacheWriteInputTokenCount = try c.decodeIfPresent(Int.self, forKey: .cacheWriteInputTokenCount)
+        cacheTotalInputTokenCount = try c.decodeIfPresent(Int.self, forKey: .cacheTotalInputTokenCount)
+        responseID = try c.decodeIfPresent(String.self, forKey: .responseID)
+        requestID = try c.decodeIfPresent(String.self, forKey: .requestID)
+        rawResponseJSON = try c.decodeIfPresent(String.self, forKey: .rawResponseJSON)
+        rawStreamEventsJSON = try c.decodeIfPresent(String.self, forKey: .rawStreamEventsJSON)
+        stopReason = try c.decodeIfPresent(String.self, forKey: .stopReason)
+        latencyMs = try c.decodeIfPresent(Double.self, forKey: .latencyMs)
+        timeToFirstTokenMs = try c.decodeIfPresent(Double.self, forKey: .timeToFirstTokenMs)
+        streamingDurationMs = try c.decodeIfPresent(Double.self, forKey: .streamingDurationMs)
+        imageAttachments = try c.decodeIfPresent([MessageImageAttachment].self, forKey: .imageAttachments) ?? []
     }
 }
 

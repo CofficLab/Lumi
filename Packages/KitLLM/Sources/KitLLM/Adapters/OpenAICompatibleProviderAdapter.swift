@@ -348,7 +348,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         ]
     }
 
-    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?) {
+    public func parseResponse(
+        data: Data,
+        reverseMap: [String: String]? = nil
+    ) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?, images: [MessageImage]?) {
         if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
             throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -379,7 +382,13 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         // 模型给出的拒绝说明。
         let content = choiceMessage.content ?? choiceMessage.refusal ?? ""
 
-        return (content, toolCalls, choiceMessage.reasoningContent)
+        // 生成的图片（图像生成模型的产物）。
+        //
+        // 没有这个字段时，一次合法的「只生成图片」的响应会被当成空响应：
+        // 内容为空、没有工具调用、也没有思考——生成的图片直接丢失。
+        let images = choiceMessage.images?.compactMap { $0.decodedImage() }
+
+        return (content, toolCalls, choiceMessage.reasoningContent, images)
     }
 
     /// 解析单个 SSE 事件，返回该事件产出的**有序事件列表**。
@@ -478,6 +487,24 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 ))
             }
 
+            // 生成的图片增量（图像生成模型的 `delta.images`）。
+            //
+            // 与思考 / 正文增量一样独立产出：三者可以同时存在，互不覆盖。
+            // 没有这个分支时，一次合法的「只生成图片」的流式响应不会有任何
+            // 增量产出，流以空内容正常结束，随后被当成空响应。
+            if let images = Self.parseImageDelta(delta["images"]), !images.isEmpty {
+                chunks.append(StreamChunk(
+                    eventType: .textDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason,
+                    images: images
+                ))
+            }
+
             // 拒答增量（OpenAI 的 `delta.refusal`）。
             //
             // 拒答时 `delta.content` 为空，拒答说明只出现在这个字段里。
@@ -561,6 +588,28 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return chunks
+    }
+
+    /// 解析流式事件里的图片增量。
+    ///
+    /// 与非流式的 `ImageData.decodedImage()` 用同一套解码规则：只接受
+    /// `data:` URL（base64 内联），外链 URL 无法在不额外下载的前提下变成
+    /// 图片数据。
+    static func parseImageDelta(_ value: Any?) -> [MessageImage]? {
+        guard let entries = value as? [[String: Any]], !entries.isEmpty else { return nil }
+        var images: [MessageImage] = []
+        for entry in entries {
+            guard let imageURL = entry["image_url"] as? [String: Any],
+                  let url = imageURL["url"] as? String,
+                  url.hasPrefix("data:") else { continue }
+            guard let commaIndex = url.firstIndex(of: ",") else { continue }
+            let metadata = String(url[url.startIndex..<commaIndex])
+            let payload = String(url[url.index(after: commaIndex)...])
+            guard metadata.contains("base64"), let data = Data(base64Encoded: payload) else { continue }
+            let mimeType = String(metadata.dropFirst("data:".count).prefix(while: { $0 != ";" }))
+            images.append(MessageImage(data: data, mimeType: mimeType.isEmpty ? "image/png" : mimeType))
+        }
+        return images.isEmpty ? nil : images
     }
 
     private func extractSSEData(from text: String) -> String? {

@@ -78,6 +78,12 @@ public struct StreamChunk: Sendable, Equatable {
     public let stopReason: String?
     /// `redacted_thinking` 块的不透明数据，原样收集后回传。
     public let redactedThinkingData: String?
+    /// 生成的图片（图像生成模型的产物）。
+    ///
+    /// OpenRouter 等图像模型在 `message.images` / `delta.images` 里返回
+    /// base64 图片。没有这个字段时，一次合法的「只生成图片」的响应会被
+    /// 当成空响应，图片直接丢失。
+    public let images: [MessageImage]?
 
     public init(
         content: String? = nil,
@@ -96,7 +102,8 @@ public struct StreamChunk: Sendable, Equatable {
         cacheTotalInputTokens: Int? = nil,
         responseID: String? = nil,
         stopReason: String? = nil,
-        redactedThinkingData: String? = nil
+        redactedThinkingData: String? = nil,
+        images: [MessageImage]? = nil
     ) {
         self.content = content
         self.isDone = isDone
@@ -115,6 +122,7 @@ public struct StreamChunk: Sendable, Equatable {
         self.responseID = responseID
         self.stopReason = stopReason
         self.redactedThinkingData = redactedThinkingData
+        self.images = images
     }
 
     public func withRawStreamPayload(_ raw: String?) -> StreamChunk {
