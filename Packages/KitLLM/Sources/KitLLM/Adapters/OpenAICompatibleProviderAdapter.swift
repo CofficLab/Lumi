@@ -371,7 +371,15 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             )
         }
 
-        return (choiceMessage.content ?? "", toolCalls, choiceMessage.reasoningContent)
+        // 正文优先；正文缺失时回退到拒答文本。
+        //
+        // OpenAI 在模型拒绝作答时返回 `content: null` + `message.refusal`。
+        // 只取 `content` 会把一次合法拒答变成空串，随后在 AgentLoop 层被
+        // 重新归类为「模型返回空响应」，用户看到的是通用失败提示而不是
+        // 模型给出的拒绝说明。
+        let content = choiceMessage.content ?? choiceMessage.refusal ?? ""
+
+        return (content, toolCalls, choiceMessage.reasoningContent)
     }
 
     /// 解析单个 SSE 事件，返回该事件产出的**有序事件列表**。
@@ -457,6 +465,28 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             if let content = delta["content"] as? String, !content.isEmpty {
                 chunks.append(StreamChunk(
                     content: content,
+                    eventType: .textDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason
+                ))
+            }
+
+            // 拒答增量（OpenAI 的 `delta.refusal`）。
+            //
+            // 拒答时 `delta.content` 为空，拒答说明只出现在这个字段里。
+            // 不读它会让一次合法拒答在流式下累积为空内容，随后被
+            // AgentLoop 重新归类为「模型返回空响应」——模型明确拒绝了，
+            // 用户看到的却是通用失败提示。
+            //
+            // 与 `content` / `reasoning_content` 一样独立产出：三者可以
+            // 同时存在，互不覆盖。
+            if let refusal = delta["refusal"] as? String, !refusal.isEmpty {
+                chunks.append(StreamChunk(
+                    content: refusal,
                     eventType: .textDelta,
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
