@@ -60,10 +60,10 @@ struct ContextPopover: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(theme.warning)
-                Text(String(localized: "Context compaction", defaultValue: "上下文压缩"))
+                Text(String(localized: "Context compaction", defaultValue: "上下文压缩", bundle: .module))
                     .font(.headline)
                 Spacer(minLength: 0)
-                Text(String(format: String(localized: "%lld compactions", defaultValue: "%lld 次压缩"), events.count))
+                Text(String(format: String(localized: "%lld compactions", defaultValue: "%lld 次压缩", bundle: .module), events.count))
                     .font(.appCaption)
                     .foregroundStyle(theme.warning)
             }
@@ -221,7 +221,7 @@ private struct CompactionTimelineRow: View {
 
     private var modelText: String {
         let provider = message.providerID
-        let model = message.modelName ?? String(localized: "Unknown model", defaultValue: "未知模型")
+        let model = message.modelName ?? String(localized: "Unknown model", defaultValue: "未知模型", bundle: .module)
         if let provider, !provider.isEmpty {
             return "\(provider) · \(model)"
         }
@@ -237,16 +237,16 @@ private struct CompactionTimelineRow: View {
             MessageTimelineEvent.contextCompactionContextWindowTokensKey,
             from: message
         ) {
-            return "\(String(localized: "Context window", defaultValue: "上下文窗口")) \(formatTokens(contextWindow)) · \(String(localized: "input budget", defaultValue: "输入预算")) \(formatTokens(inputLimit))"
+            return "\(String(localized: "Context window", defaultValue: "上下文窗口", bundle: .module)) \(formatTokens(contextWindow)) · \(String(localized: "input budget", defaultValue: "输入预算", bundle: .module)) \(formatTokens(inputLimit))"
         }
         let effective = MessageTimelineEvent.integerMetadata(
             MessageTimelineEvent.contextCompactionEffectiveWindowTokensKey,
             from: message
         )
         let fallback = effective.map { "\(formatTokens($0)) fallback" }
-            ?? String(localized: "Unknown context window", defaultValue: "上下文窗口未知")
+            ?? String(localized: "Unknown context window", defaultValue: "上下文窗口未知", bundle: .module)
         if let inputLimit {
-            return "\(fallback) · \(String(localized: "input budget", defaultValue: "输入预算")) \(formatTokens(inputLimit))"
+            return "\(fallback) · \(String(localized: "input budget", defaultValue: "输入预算", bundle: .module)) \(formatTokens(inputLimit))"
         }
         return fallback
     }
@@ -270,26 +270,26 @@ private struct CompactionTimelineRow: View {
     private var reasonText: String {
         switch reason {
         case .hardThreshold:
-            return String(localized: "Threshold", defaultValue: "达到阈值")
+            return String(localized: "Threshold", defaultValue: "达到阈值", bundle: .module)
         case .contextLimitRetry:
-            return String(localized: "Retry", defaultValue: "超限重试")
+            return String(localized: "Retry", defaultValue: "超限重试", bundle: .module)
         case .emergency:
-            return String(localized: "Emergency", defaultValue: "紧急")
+            return String(localized: "Emergency", defaultValue: "紧急", bundle: .module)
         case .legacy:
-            return String(localized: "Legacy", defaultValue: "历史记录")
+            return String(localized: "Legacy", defaultValue: "历史记录", bundle: .module)
         }
     }
 
     private var reasonExplanation: String {
         switch reason {
         case .hardThreshold:
-            return String(localized: "The input budget reached the hard threshold.", defaultValue: "输入预算达到硬阈值后进行了压缩。")
+            return String(localized: "The input budget reached the hard threshold.", defaultValue: "输入预算达到硬阈值后进行了压缩。", bundle: .module)
         case .contextLimitRetry:
-            return String(localized: "The provider rejected the context size, so Lumi compacted and retried.", defaultValue: "供应商返回上下文长度超限，Lumi 压缩后重新尝试。")
+            return String(localized: "The provider rejected the context size, so Lumi compacted and retried.", defaultValue: "供应商返回上下文长度超限，Lumi 压缩后重新尝试。", bundle: .module)
         case .emergency:
-            return String(localized: "An emergency compaction was requested to keep the next request safe.", defaultValue: "为保证下一次请求安全，执行了紧急压缩。")
+            return String(localized: "An emergency compaction was requested to keep the next request safe.", defaultValue: "为保证下一次请求安全，执行了紧急压缩。", bundle: .module)
         case .legacy:
-            return String(localized: "This record was created before detailed compaction information was saved.", defaultValue: "这条记录创建于详细压缩信息保存之前。")
+            return String(localized: "This record was created before detailed compaction information was saved.", defaultValue: "这条记录创建于详细压缩信息保存之前。", bundle: .module)
         }
     }
 
@@ -299,7 +299,7 @@ private struct CompactionTimelineRow: View {
 
     private func formatTokens(_ tokens: Int?) -> String {
         guard let tokens else {
-            return String(localized: "Unknown", defaultValue: "未知")
+            return String(localized: "Unknown", defaultValue: "未知", bundle: .module)
         }
         if tokens >= 1_000_000 {
             return String(format: "%.1fM", Double(tokens) / 1_000_000)
