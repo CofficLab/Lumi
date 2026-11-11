@@ -35,7 +35,12 @@ enum PrivateDisplaySymbol {
 
     typealias DisplayServicesGetBrightness = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
     typealias DisplayServicesSetBrightness = @convention(c) (CGDirectDisplayID, Float) -> Int32
-    typealias CoreDisplayCreateInfoDictionary = @convention(c) (CGDirectDisplayID) -> CFDictionary?
+    /// 返回 `Unmanaged<CFDictionary>` 而不是裸的 `CFDictionary?`。
+    ///
+    /// 裸指针无法表达「+1 持有」的所有权语义，调用点很容易直接桥接成 Swift
+    /// 字典而忘记释放，于是每次刷新都泄漏一个字典（#865）。用 `Unmanaged`
+    /// 把所有权显式带出来，调用点必须写 `takeRetainedValue()`。
+    typealias CoreDisplayCreateInfoDictionary = @convention(c) (CGDirectDisplayID) -> Unmanaged<CFDictionary>?
     typealias IOAVServiceCreateWithService = @convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?
     typealias IOAVServiceReadI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafeMutablePointer<UInt8>, UInt32) -> Bool
     typealias IOAVServiceWriteI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafePointer<UInt8>, UInt32) -> Bool
@@ -65,6 +70,7 @@ enum PrivateDisplaySymbol {
     /// `CoreDisplay_DisplayCreateInfoDictionary` — 读取显示器信息字典（含产品名）。
     ///
     /// 遵循 Core Foundation 的 "Create" 规则：返回 +1 持有的 `CFDictionary` 或 NULL。
+    /// 调用点必须用 `takeRetainedValue()` 取走这份所有权，否则字典不会被释放。
     static let coreDisplayCreateInfoDictionary: CoreDisplayCreateInfoDictionary? = {
         guard let symbol = lookup(Framework.coreDisplay, "CoreDisplay_DisplayCreateInfoDictionary") else { return nil }
         return unsafeBitCast(symbol, to: CoreDisplayCreateInfoDictionary.self)
