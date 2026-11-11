@@ -15,7 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
     ],
 
     targets: [

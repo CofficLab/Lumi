@@ -6,8 +6,8 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginConversationNew", targets: ["PluginConversationNew"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../KitAgentTool"),
@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
     ],
     targets: [

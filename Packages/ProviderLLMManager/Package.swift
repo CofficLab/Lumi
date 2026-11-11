@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitLLM"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
