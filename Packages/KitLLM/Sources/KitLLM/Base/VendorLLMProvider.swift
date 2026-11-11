@@ -224,6 +224,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
         let data = try await apiService.sendJSON(request: httpRequest, body: body)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+        // 终态失败必须被识别为供应商失败。
+        //
+        // Responses 协议用 `status: "failed"` + `error` 表达终态失败，且它
+        // 走 HTTP 200。解析器此前从不检查这两个字段，于是失败的响应被当成
+        // 「成功但内容为空」——没有 output 时 AgentLoop 报通用的、不可恢复
+        // 的 `emptyResponse`，供应商给的错误全部丢失；有部分文本时甚至会
+        // 被当成成功的助手消息落库。
+        try Self.throwIfResponsesFailed(object)
         let text = Self.responsesText(from: object)
         let tokenCounts = tokenCounts(from: data, anthropic: false)
         return LLMResponse(
@@ -375,6 +383,29 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             throw VendorAPIError.invalidBaseURL(string)
         }
         return url
+    }
+
+    /// Responses 响应若是终态失败，抛出供应商给出的错误。
+    ///
+    /// 失败信息优先取 `error.message`，其次取 `error.code`；两者都没有时用
+    /// 状态值兜底，保证错误永远带得出一条可读的原因。
+    private static func throwIfResponsesFailed(_ object: [String: Any]) throws {
+        guard let status = object["status"] as? String, status == "failed" else { return }
+        let error = object["error"] as? [String: Any]
+        let message = error?["message"] as? String
+        let code = error?["code"] as? String
+        let detail: String
+        switch (message, code) {
+        case let (message?, code?):
+            detail = "\(message) (\(code))"
+        case let (message?, nil):
+            detail = message
+        case let (nil, code?):
+            detail = code
+        default:
+            detail = "Responses request failed (status: \(status))"
+        }
+        throw OpenAICompatibleProviderError.apiError(message: detail)
     }
 
     private static func responsesText(from object: [String: Any]) -> String {
