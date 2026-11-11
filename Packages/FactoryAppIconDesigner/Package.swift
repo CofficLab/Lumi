@@ -27,7 +27,7 @@ let package = Package(
         .package(path: "../PluginToolManager"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),

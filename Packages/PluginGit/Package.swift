@@ -15,7 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
         .package(url: "https://github.com/nookery/LibGit2Swift.git", exact: "1.0.7"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderEditor"),

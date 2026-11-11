@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginConversationManager", targets: ["PluginConversationManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.18.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderConversation"),

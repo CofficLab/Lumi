@@ -189,7 +189,7 @@ let package = Package(
         .package(path: "../ProviderProjectRAG"),
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderLegacyData"),
         .package(path: "../ProviderMessageRendering"),
