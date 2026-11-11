@@ -14,7 +14,7 @@
 
 本计划承接而不是重复：
 
-- `docs/plans/2026-09-01-agent-loop-tool-call-recovery.md`：负责 malformed/truncated tool call 的协议校验与有界 correction retry。
+- `docs/plans/2026-09-01-agent-loop-tool-call-recovery.md`（已完成归档）：负责 malformed/truncated tool call 的协议校验与有界 correction retry。
 - 现有 `VendorAPIService` 请求重试：只覆盖收到首个 SSE 前的安全重试，避免重复 token。
 - 现有 ToolJob：负责授权、执行、取消与 Job 持久化，不自动重跑启动时发现的未知 Job。
 - 现有 Resume：负责回合崩溃记录与孤儿 tool call 修复。

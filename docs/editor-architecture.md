@@ -1,6 +1,6 @@
 # Lumi 代码编辑器技术架构
 
-> 本文描述当前实现。所有编辑器 package 都必须归入 `Kit*`、`Provider*` 或 `Plugin*`；不设独立 `Editor*` package。面向完整重构的历史蓝图见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)，包归类规则以本文及 [`editor-package-taxonomy-plan`](./plans/2026-09-20-editor-package-taxonomy.md) 为准。
+> 本文描述当前实现。所有编辑器 package 都必须归入 `Kit*`、`Provider*` 或 `Plugin*`；不设独立 `Editor*` package。面向完整重构的历史蓝图见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)，包归类规则以本文及包归类规范（`docs/plans/2026-09-20-editor-package-taxonomy.md`，已完成归档）为准。
 
 ## 概述
 

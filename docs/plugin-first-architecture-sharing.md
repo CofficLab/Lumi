@@ -1425,9 +1425,9 @@ Phase 1 必须在 Phase 3 之前完成，原因写得很直白：
 - [`docs/editor-architecture.md`](./editor-architecture.md) — 编辑器子系统的分层与扩展点（本文第 3 节 `Editor*` 分层的展开）
 - 零差异迁移总计划（本文第 9 节的依据；`docs/lumi-v2-zero-difference-migration-plan.md`，已完成归档并移除）
 - [`docs/agent-tool-job-operations.md`](./agent-tool-job-operations.md) — Tool Job 运行模型、取消/超时语义、重启恢复
-- [`docs/plans/2026-09-03-plugin-observer-only.md`](./plans/2026-09-03-plugin-observer-only.md) — Observer 所有权迁移
+- Observer 所有权迁移（`docs/plans/2026-09-03-plugin-observer-only.md`，已完成归档）
 - [`docs/plans/2026-09-06-plugin-capabilities-directory.md`](./plans/2026-09-06-plugin-capabilities-directory.md) — Capabilities 收窄设计与迁移
-- [`docs/plans/2026-09-02-robust-context-compaction-design.md`](./plans/2026-09-02-robust-context-compaction-design.md) — 上下文压缩的预算 / 阈值 / 降级设计
+- 上下文压缩的预算 / 阈值 / 降级设计（`docs/plans/2026-09-02-robust-context-compaction-design.md`，已完成归档）
 - [`.lumi/rules/core-plugin-boundary-rules.md`](../.lumi/rules/core-plugin-boundary-rules.md) — 内核与插件边界规范
 
 ---

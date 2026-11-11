@@ -200,7 +200,7 @@ V2/V3 同时监听消息管理器和发送器的状态变化。消息插入、�
 
 V1 已改为维护有限的消息窗口：首次激活、尾部兜底刷新和加载更早内容均使用异步分页；turn 记录和展示项只从当前窗口重建。新消息通过带 payload 的插入事件直接合并到窗口，编辑/删除继续使用 `objectWillChange` 兜底刷新，因此 brief 模式不再因一次刷新扫描整段历史。
 
-实现记录见 [`docs/plans/2026-09-02-v1-window-pagination.md`](plans/2026-09-02-v1-window-pagination.md)。
+实现记录原见 `docs/plans/2026-09-02-v1-window-pagination.md`（已完成归档）。
 
 ### P2：完成主路径后处理
 
@@ -222,7 +222,7 @@ send() 同步捕获并提交用户消息
 
 如果保留 async API，则 UI 层不应等待完整 AgentLoop 回合；发送 API 的完成点应定义为“用户消息已提交”，而不是“LLM 回答完成”。
 
-实现记录见 [`docs/plans/2026-09-02-fast-message-commit.md`](plans/2026-09-02-fast-message-commit.md)。
+实现记录原见 `docs/plans/2026-09-02-fast-message-commit.md`（已完成归档）。
 
 #### P2-2：附件编码在 MainActor（已完成）
 
@@ -230,13 +230,13 @@ send() 同步捕获并提交用户消息
 
 已完成：图片文件读取和 base64 编码均在附件准备任务中执行；带附件发送时，附件 JSON metadata 通过 `.utility` 任务编码，编码完成后才回主线程提交消息。纯文本发送不创建编码任务，继续走同步提交路径。
 
-实现记录见 [`docs/plans/2026-09-02-attachment-encoding.md`](plans/2026-09-02-attachment-encoding.md)。
+实现记录原见 `docs/plans/2026-09-02-attachment-encoding.md`（已完成归档）。
 
 #### P2-3：持久化队列应明确设置 QoS（已完成）
 
 消息持久化属于 eventual consistency，已使用 `.utility` 串行队列，避免与用户交互争抢调度资源，同时保留顺序保证和失败补偿机制。error、user、assistant、tool 等非瞬时消息统一先进入 pending，再排队落盘；删除和清空操作继续同步排空该队列，避免旧写入复活已删除消息。
 
-实现记录见 [`docs/plans/2026-09-02-persistence-queue-qos.md`](plans/2026-09-02-persistence-queue-qos.md)。
+实现记录原见 `docs/plans/2026-09-02-persistence-queue-qos.md`（已完成归档）。
 
 #### P2-4：统一性能指标 Providing（已移除）
 
