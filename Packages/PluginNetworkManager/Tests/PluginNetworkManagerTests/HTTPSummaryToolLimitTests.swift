@@ -5,7 +5,7 @@ import Testing
 
 /// 汇总类 HTTP 工具：`limit` 只能裁剪明细，不能改变匹配总数。
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, HTTPExchangeStoreGateTrait())
 struct HTTPSummaryToolLimitTests {
     @Test func summariesCountAllMatchesWhileLimitOnlyCapsDetails() async throws {
         let directory = FileManager.default.temporaryDirectory
