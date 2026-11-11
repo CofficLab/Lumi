@@ -12,11 +12,20 @@
 
 ## 1. 当前事实
 
-- `Scripts/run-all-package-tests.sh` 已是全包测试入口，但当前末尾只 `cat` summary：即使 `FAILED.txt` 非空也会退出 0。把它作为门禁前必须先修复并测试退出码，否则会产生假绿。
-- `.github/workflows/release-build-validation.yml` 负责锁定依赖、双架构 archive、签名和产物验证，不是常规 `swift test` 门禁。
+- `Scripts/run-all-package-tests.sh` 已是全包测试入口。**已在 `2cbba85` 修复退出码**：任一包失败即非零退出，`rc` 文件缺失计为失败（按 99）；回归测试见 `Scripts/tests/test-run-all-package-tests.py`（临时假仓库 + PATH 中的 `swift` 桩程序，不跑真实 Swift 包、不依赖网络）。
+- `.github/workflows/release-build-validation.yml` 负责锁定依赖、双架构 archive、签名和产物验证，不是常规 `swift test` 门禁。**已在 `2cbba85` 新增独立的 `.github/workflows/agent-reliability-tests.yml`**：PR 到 `dev`/`main` 触发，按 contracts/runtime/integration 三组 matrix 并行，`fail-fast: false`；release workflow 未改。
 - `Packages/FactoryLumi/Tests/FactoryLumiTests` 已有首次消息与多种真实装配测试，可扩展而不是新建 Factory。
 - AgentTurnFSM、ToolJob、MessageStore 已有各自测试，但跨层 save/notify/dispatch 顺序、进程崩溃和第二实现容易漏测。
 - Lumi 包多，不能一次性给全仓写严格架构规则；应学习 ZCode managed modules，从本次 Agent 核心开始。
+
+### 已知的既存失败（非门禁引入，已在 clean HEAD 复现）
+
+| 包 | 失败 | 性质 |
+|---|---|---|
+| `PluginConversationInput` | `CollapsedContentChip` 系列 6 项像素级字体测量断言 | 对宿主系统字体渲染敏感，本机不稳定 |
+| `FactoryLumi` | "停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启"；`MailPluginRuntime.fallbackDataDirectory()` 未注入触发 `IsolatedDirectoryGuard` fatal error | 测试隔离缺口，需补目录注入 |
+
+> 门禁若要以这两项为绿，需先修它们；当前 CI 会如实报红，不会掩盖。
 
 ### 非目标
 
