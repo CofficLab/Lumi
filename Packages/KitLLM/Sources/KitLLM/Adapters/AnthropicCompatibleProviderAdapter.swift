@@ -649,27 +649,45 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 continue
             }
 
-            // Recover from an interrupted tool turn. Sending a trailing
-            // assistant tool_use without a matching tool_result is rejected by
-            // MiniMax with error 2013. Add an explicit error result so the
-            // history remains structurally valid and the model can retry it.
-            if index == messages.count - 1,
-               message.role == .assistant,
+            // Recover from an interrupted tool turn. Sending an assistant
+            // tool_use without a matching tool_result is rejected by MiniMax
+            // with error 2013. Add an explicit error result so the history
+            // remains structurally valid and the model can retry it.
+            //
+            // 适用���**任何**位置，不只是最后一条：一次 assistant 回合请求
+            // 多个工具、部分完成就中断时，未配对的调用会让后续请求被拒。
+            if message.role == .assistant,
                let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
+                // 找出这次 assistant 之后已经落地的结果。
+                var answered = Set<String>()
+                var scan = index + 1
+                while scan < messages.count {
+                    let candidate = messages[scan]
+                    if candidate.role == .assistant { break }
+                    if candidate.role == .tool, let toolCallID = candidate.toolCallID {
+                        answered.insert(toolCallID)
+                    }
+                    scan += 1
+                }
+                let unanswered = toolCalls.filter { !answered.contains($0.id) }
+
                 output.append(transformMessage(message))
-                output.append([
-                    "role": "user",
-                    "content": toolCalls.map { toolCall in
-                        [
-                            "type": "tool_result",
-                            "tool_use_id": toolCall.id,
-                            "content": "Tool execution was interrupted before a result was recorded.",
-                            "is_error": true,
-                        ] as [String: Any]
-                    },
-                ])
-                break
+                if !unanswered.isEmpty {
+                    output.append([
+                        "role": "user",
+                        "content": unanswered.map { toolCall in
+                            [
+                                "type": "tool_result",
+                                "tool_use_id": toolCall.id,
+                                "content": "Tool execution was interrupted before a result was recorded.",
+                                "is_error": true,
+                            ] as [String: Any]
+                        },
+                    ])
+                }
+                index += 1
+                continue
             }
 
             output.append(transformMessage(message))

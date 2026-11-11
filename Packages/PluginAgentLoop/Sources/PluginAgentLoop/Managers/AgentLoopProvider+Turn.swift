@@ -141,6 +141,9 @@ extension AgentLoopManager {
         // 但授权卡片是渲染自已落库消息的，回合取消不会自动改写消息——先把
         // 占位写成终态，否则卡片会留在界面上等一个已经不存在的回合作答。
         settlePendingAuthorization(in: conversationID, runtime: runtime)
+        // 取消后必须留下**协议完整**的历史：为没有结果的 tool_call 补一条
+        // 独立的 tool 消息。
+        settleUnansweredToolCalls(in: conversationID, turnID: turnID)
         let (updated, _) = TurnReducer.reduce(runtime, event: .cancel)
         runtime = updated
         // 挂起时 finishTurn(.suspended) 已经投递过一次「完成」，
@@ -158,6 +161,40 @@ extension AgentLoopManager {
         runtimes[conversationID] = runtime
         toolManager.cancelJobs(forTurnID: turnID)
         finishTurn(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
+    }
+
+    /// 为没有结果的工具调用补一条终态 tool 消息。
+    ///
+    /// 一次 assistant 响应可以请求多个工具：自动执行的 A 先完成，审批中的
+    /// B 一直挂着。按下停止时，B 的结果只写进了 assistant 消息的**嵌套**
+    /// 结果，没有独立的 `role == .tool` 消息。
+    ///
+    /// OpenAI / Anthropic 协议都要求同一次 assistant 回合里的每个
+    /// tool_call 都有结果，于是下一轮请求会在模型看到新消息之前就被上游
+    /// 拒绝——用户无法继续对话。
+    private func settleUnansweredToolCalls(in conversationID: UUID, turnID: UUID) {
+        let history = messages.messages(for: conversationID)
+        // 已经落过结果的 tool_call。
+        var answered = Set(history.compactMap { message -> String? in
+            message.role == .tool ? message.toolCallID : nil
+        })
+
+        for assistant in history where assistant.role == .assistant {
+            guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else { continue }
+            for toolCall in toolCalls where !answered.contains(toolCall.id) {
+                answered.insert(toolCall.id)
+                messages.insertMessage(
+                    Message(
+                        conversationID: conversationID,
+                        role: .tool,
+                        content: "Tool execution was cancelled because the turn was stopped.",
+                        turnID: turnID,
+                        toolCallID: toolCall.id
+                    ),
+                    to: conversationID
+                )
+            }
+        }
     }
 
     /// 把「等待授权」的工具调用写成终态。
