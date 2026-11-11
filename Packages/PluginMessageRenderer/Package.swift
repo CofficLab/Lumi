@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageSender"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../KitMarkdown"),

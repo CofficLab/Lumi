@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageSender"),
     ],
     targets: [

@@ -35,7 +35,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.0"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(

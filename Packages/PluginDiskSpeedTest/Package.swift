@@ -17,10 +17,10 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.18.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.11.1"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(

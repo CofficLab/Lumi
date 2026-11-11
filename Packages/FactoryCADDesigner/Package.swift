@@ -9,7 +9,7 @@ let package = Package(
         .package(path: "../FactoryLumi"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../PluginCADDesigner"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
     ],
     targets: [

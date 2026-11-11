@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
     ],
     targets: [

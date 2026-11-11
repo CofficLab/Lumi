@@ -8,11 +8,11 @@ let package = Package(
         .library(name: "ProviderAgentLoop", targets: ["ProviderAgentLoop"]),
     ],
     dependencies: [
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),

@@ -18,8 +18,8 @@ let package = Package(
         .package(path: "../KitWebAPI"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderToolManager"),
-        .package(path: "../KitAgentTool"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [

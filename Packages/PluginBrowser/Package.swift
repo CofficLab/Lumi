@@ -16,8 +16,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
-        .package(path: "../KitAgentTool"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
