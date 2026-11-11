@@ -121,20 +121,25 @@ struct LLMTurnMaterializationScopeTests {
             """
         )
 
-        // ── 不变式 2：不得物化 metadata JSON ──
+        // ── 不变式 2：不得整份物化 metadata JSON ──
         //
         // `metadataJson` 在生产库合计 35MB，逐条 JSON 解码成字典。
-        // 唯一例外是 `lumi.timelineEvent`：`llmHistory` 靠它过滤界面事件，
-        // 必须保留；其余键一个都不该出现。
-        let timelineKey = MessageTimelineEvent.metadataKey
+        // 例外只有 LLM 真正需要的三个键：`lumi.timelineEvent`（过滤界面事件）、
+        // `imageAttachments` / `fileAttachments`（llmMessage 注入请求）；
+        // 其余键一个都不该出现。
+        let allowedKeys: Set<String> = [
+            MessageTimelineEvent.metadataKey,
+            UserAttachmentMetadata.imageAttachmentsKey,
+            UserAttachmentMetadata.fileAttachmentsKey,
+        ]
         let withMetadata = messages.filter {
-            $0.metadata.keys.contains { $0 != timelineKey }
+            $0.metadata.keys.contains { !allowedKeys.contains($0) }
         }
         #expect(
             withMetadata.isEmpty,
             """
             LLM 回合物化了 \(withMetadata.count)/\(messages.count) 条消息的 \
-            metadata（生产库合计 35MB）。除时间线标记外，LLM 上下文不需要它。
+            无关 metadata（生产库合计 35MB）。除时间线标记与附件外，LLM 上下文不需要它。
             """
         )
     }
