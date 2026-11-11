@@ -161,7 +161,8 @@ func selectionManagerStartsOnlyOnceAndStopsMonitoring() {
     manager.startMonitoring()
     manager.startMonitoring()
     #expect(monitor.addCount == 1)
-    #expect(monitor.lastMask == [.leftMouseUp, .rightMouseUp, .keyUp])
+    // leftMouseDown 用于判定拖拽划选；右键是上下文菜单手势，不参与触发。
+    #expect(monitor.lastMask == [.leftMouseDown, .leftMouseUp, .keyUp])
 
     manager.stopMonitoring()
     #expect(monitor.removeCount == 1)

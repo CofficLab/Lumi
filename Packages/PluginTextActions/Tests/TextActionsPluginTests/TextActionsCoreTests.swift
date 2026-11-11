@@ -30,6 +30,85 @@ struct TextSelectionReadPolicyTests {
     }
 }
 
+// MARK: - 选择手势判定
+
+@Suite("Text Actions 选择手势判定")
+struct TextSelectionGesturePolicyTests {
+
+    @Test("拖拽超过阈值算选择")
+    func dragBeyondThresholdIsSelection() {
+        #expect(TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: CGPoint(x: 100, y: 100),
+            releaseLocation: CGPoint(x: 240, y: 112),
+            clickCount: 1,
+            modifiers: []
+        ))
+    }
+
+    @Test("阈值内的抖动单击不算选择")
+    func clickWithJitterIsNotSelection() {
+        // 回归「点复制按钮也弹菜单」：单击（含手部抖动）不是选择手势，
+        // 即使应用里仍有选区也不得触发读取。
+        #expect(!TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: CGPoint(x: 100, y: 100),
+            releaseLocation: CGPoint(x: 100, y: 100),
+            clickCount: 1,
+            modifiers: []
+        ))
+        #expect(!TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: CGPoint(x: 100, y: 100),
+            releaseLocation: CGPoint(x: 102, y: 101),
+            clickCount: 1,
+            modifiers: []
+        ))
+    }
+
+    @Test("双击/三击无位移也算选择")
+    func multiClickIsSelection() {
+        for clickCount in [2, 3] {
+            #expect(TextSelectionGesturePolicy.isSelectionGesture(
+                pressLocation: CGPoint(x: 50, y: 50),
+                releaseLocation: CGPoint(x: 50, y: 50),
+                clickCount: clickCount,
+                modifiers: []
+            ))
+        }
+    }
+
+    @Test("Shift+单击扩选算选择")
+    func shiftClickIsSelection() {
+        #expect(TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: CGPoint(x: 50, y: 50),
+            releaseLocation: CGPoint(x: 50, y: 50),
+            clickCount: 1,
+            modifiers: [.shift]
+        ))
+    }
+
+    @Test("没有按下位置时单击不算选择")
+    func missingPressLocationIsNotSelection() {
+        // 监听刚启用、没捕获到 mouseDown：无法判定拖拽，保守不触发。
+        #expect(!TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: nil,
+            releaseLocation: CGPoint(x: 200, y: 200),
+            clickCount: 1,
+            modifiers: []
+        ))
+        // 但双击与 Shift+单击不依赖按下位置。
+        #expect(TextSelectionGesturePolicy.isSelectionGesture(
+            pressLocation: nil,
+            releaseLocation: CGPoint(x: 200, y: 200),
+            clickCount: 2,
+            modifiers: []
+        ))
+    }
+
+    @Test("拖拽阈值常量固定")
+    func dragThresholdIsStable() {
+        #expect(TextSelectionGesturePolicy.dragThreshold == 4)
+    }
+}
+
 // MARK: - 坐标换算
 
 @Suite("Text Actions 坐标换算")
@@ -253,12 +332,32 @@ struct TextActionDismissPolicyTests {
         #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: [.shift]) == false)
     }
 
-    @Test("菜单不可见时只有带修饰键的 keyUp 触发重读")
+    @Test("菜单不可见时只有选择键的 keyUp 触发重读")
     func keyUpEvaluationGating() {
-        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: false) == false)
-        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.shift], menuVisible: false) == true)
-        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false) == true)
-        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: true) == true)
+        // 普通打字与非选择快捷键不读 AX。
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: false, keyCode: 0) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false, keyCode: 1) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.shift], menuVisible: false, keyCode: 13) == false)
+        // Shift+方向键 / Home / End 扩选、Cmd+A 全选是选择动作。
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.shift], menuVisible: false, keyCode: 123) == true)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command, .shift], menuVisible: false, keyCode: 124) == true)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.shift], menuVisible: false, keyCode: 115) == true)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false, keyCode: 0) == true)
+        // 菜单可见时保留重读，Shift 调整选区后更新位置。
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: true, keyCode: 0) == true)
+    }
+
+    @Test("复制/剪切快捷键的 keyUp 永不触发重读")
+    func copyAndCutShortcutsNeverEvaluate() {
+        // 回归「复制后弹菜单」：菜单不在时按 Cmd+C，keyUp 不得重读选区，
+        // 否则读到的旧选区会把菜单弹出来。菜单可见时同样排除，
+        // 不依赖「keyDown 先收起菜单」的时序。
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false, keyCode: 8) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: true, keyCode: 8) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false, keyCode: 7) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: true, keyCode: 7) == false)
+        // 不带 Command 的 C/X 是普通打字，同样不读。
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: false, keyCode: 8) == false)
     }
 
     @Test("滚动阈值固定")
