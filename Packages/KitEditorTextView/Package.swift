@@ -26,9 +26,9 @@ let package = Package(
             .upToNextMajor(from: "1.7.5")
         ),
         // Logging protocol
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
         // Runtime localization
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         // The main text view target.

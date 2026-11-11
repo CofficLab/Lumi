@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "PluginLLMProviderTencent", targets: ["PluginLLMProviderTencent"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
     ],

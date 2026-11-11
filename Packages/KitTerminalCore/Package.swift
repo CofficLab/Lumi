@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "KitTerminalCore", targets: ["KitTerminalCore"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
         // 上限锁定在 1.99.0 之前：SwiftTerm 的 v1.99.0 实际是 2.0 预发布，
         // 移除了本包依赖的 getTerminal()，放开上限会解析到不兼容版本。
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", "1.20.0" ..< "1.99.0")

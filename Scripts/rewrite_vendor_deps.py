@@ -22,13 +22,13 @@ ROOT = Path(__file__).resolve().parent.parent
 # Vendor 目录名 -> (远程 URL, 版本)
 # 版本默认取 .upstream-version；OVERRIDES 用于本仓库已回流上游的更新版本。
 URLS = {
-    "LumiKernel": "https://github.com/CofficLab/LumiKernel.git",
-    "LumiKitReminder": "https://github.com/CofficLab/LumiKitReminder.git",
-    "LumiLocalization": "https://github.com/CofficLab/LumiLocalization.git",
-    "LumiLogging": "https://github.com/CofficLab/LumiLogging.git",
+    "LumiKernel": "https://github.com/lumi-softworks/LumiKernel.git",
+    "LumiKitReminder": "https://github.com/lumi-softworks/LumiKitReminder.git",
+    "LumiLocalization": "https://github.com/lumi-softworks/LumiLocalization.git",
+    "LumiLogging": "https://github.com/lumi-softworks/LumiLogging.git",
     "LumiProviders": "https://github.com/lumi-softworks/LumiProviders.git",
-    "LumiSettings": "https://github.com/CofficLab/LumiSettings.git",
-    "LumiThemePack": "https://github.com/CofficLab/LumiThemePack.git",
+    "LumiSettings": "https://github.com/lumi-softworks/LumiSettings.git",
+    "LumiThemePack": "https://github.com/lumi-softworks/LumiThemePack.git",
     "LumiUI": "https://github.com/lumi-softworks/LumiUI.git",
     "MagicAlert": "https://github.com/nookery/MagicAlert.git",
     "hummingbird": "https://github.com/hummingbird-project/hummingbird.git",
@@ -51,7 +51,7 @@ for _name in [
     "LumiPluginThemePack",
     "LumiPluginToast",
 ]:
-    URLS[_name] = f"https://github.com/CofficLab/{_name}.git"
+    URLS[_name] = f"https://github.com/lumi-softworks/{_name}.git"
 
 # 覆盖版本：本仓库已把改动回流上游并打了新 tag
 OVERRIDES = {
