@@ -1,5 +1,5 @@
 {
-  "originHash" : "aa166c422cd05521536415f59f4e044777ed6858e29363b3b9f22d78bfe8847b",
+  "originHash" : "629add70a37e493ceb35f38257f84478f7a4dc05cd630b6369d69a448fc8293d",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "32f8042e3509a4819f00ff9cd46e829ec2b26da0",
         "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "kitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
+      "state" : {
+        "revision" : "e07e1c1f1a5d89554152b0fd21a555e116d522bb",
+        "version" : "1.0.1"
       }
     },
     {
@@ -62,6 +71,15 @@
       "state" : {
         "revision" : "82f3fa6fd362107ae2201d240d5f0ebf1117fd95",
         "version" : "1.13.1"
+      }
+    },
+    {
+      "identity" : "providertoolmanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/ProviderToolManager.git",
+      "state" : {
+        "revision" : "ae298d0f65fbcfaeab1ff966be254b9f4bc764ce",
+        "version" : "1.0.0"
       }
     },
     {
