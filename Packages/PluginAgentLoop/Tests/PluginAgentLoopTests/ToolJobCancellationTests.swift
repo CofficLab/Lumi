@@ -270,7 +270,12 @@ func lateToolJobCompletionAfterCancellationIsIgnored() {
     )
 
     #expect(loop.state(for: conversationID) == .cancelled)
-    #expect(messages.messages(for: conversationID).filter { $0.role == .tool }.isEmpty)
+    // 取消时会给未完成的 tool_call 补一条终态 tool 消息（协议要求每个
+    // tool_call 都有结果），但**迟到的 Job 终态事件不得再写回结果**——
+    // 消息数量不应因此增加。
+    let toolMessages = messages.messages(for: conversationID).filter { $0.role == .tool }
+    #expect(toolMessages.count == 1)
+    #expect(toolMessages.first?.content != "late result")
 }
 
 @MainActor

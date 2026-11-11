@@ -311,6 +311,19 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     normalized.remove(at: resultIndex)
                 }
                 normalized.insert(contentsOf: results, at: index + 1)
+
+                // 移除**没有配对结果**的 tool_call 声明。
+                //
+                // 一次 assistant 回合可以请求多个工具，部分完成就中断时
+                // 会有调用没有结果（协议要求每个调用都有结果）。此前这里
+                // 看到「至少有一个结果」就保留全部声明，未配对的调用会让
+                // 上游直接拒绝请求。已完成的结果必须保留。
+                let answeredIDs = Set(results.compactMap(\.toolCallID))
+                let answered = toolCalls.filter { answeredIDs.contains($0.id) }
+                if answered.count != toolCalls.count {
+                    normalized[index].toolCalls = answered
+                }
+
                 index += results.count + 1
                 continue
             }
