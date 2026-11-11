@@ -1097,10 +1097,16 @@ final class EditorTextView: NSTextView {
 
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
            !urls.isEmpty {
-            for url in urls {
-                fileDropHandler?(url)
+            // 只有**本地文件**才走附件链。`https:`、`mailto:` 等非文件 URL
+            // 没有可读取的本地路径，交给附件加载器只会得到一条读不出内容的
+            // 附件错误；它们应当落到下面的字符串分支或默认拖放处理（#882）。
+            let fileURLs = urls.filter { ChatInputEditorRules.isFileAttachmentURL($0) }
+            if !fileURLs.isEmpty {
+                for url in fileURLs {
+                    fileDropHandler?(url)
+                }
+                return true
             }
-            return true
         }
 
         if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String] {
