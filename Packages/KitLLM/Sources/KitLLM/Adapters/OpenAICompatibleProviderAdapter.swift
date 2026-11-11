@@ -719,12 +719,28 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let name = function["name"] as? String
             let arguments = function["arguments"] as? String
 
-            if let id, let name {
+            // 身份字段可能分散在不同 delta：
+            //
+            // ```
+            // delta 1: {"index":0,"id":"call_1","function":{}}
+            // delta 2: {"index":0,"function":{"name":"lookup","arguments":"{}"}}
+            // ```
+            //
+            // 此前只在 `id` 与 `name` **同时**到达时才产出 ToolCall，否则只
+            // 保留 arguments 作为 partialJson——已收到的 ID 与后到的 name
+            // 都被丢弃，累积器最终造出 `ToolCall(id: "", name: "")`，一次
+            // 合法的工具调用变成无名调用，无法分发。
+            //
+            // 因此只要有任何身份字段就产出调用，缺失的留空由累积器合并
+            // （`upsertToolCall` 逐字段取非空值）。
+            if id != nil || name != nil || arguments != nil {
                 parsedToolCalls.append(
                     ToolCall(
-                        id: id,
-                        name: name,
-                        arguments: arguments ?? "{}"
+                        id: id ?? "",
+                        name: name ?? "",
+                        // 占位参数用空串而不是 "{}"：累积器把 "{}" 当作
+                        // 「尚未收到真实参数」的标记，真实分片会被正确拼接。
+                        arguments: arguments ?? ""
                     )
                 )
             }
