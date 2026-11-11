@@ -200,6 +200,15 @@
       }
     },
     {
+      "identity" : "lumipluginlogos",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginLogos.git",
+      "state" : {
+        "revision" : "7b8076f94140980faa690fe009a3090a79c6feaf",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "lumipluginpluginmanager",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginPluginManager.git",
