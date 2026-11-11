@@ -42,8 +42,12 @@ enum PrivateDisplaySymbol {
     /// 把所有权显式带出来，调用点必须写 `takeRetainedValue()`。
     typealias CoreDisplayCreateInfoDictionary = @convention(c) (CGDirectDisplayID) -> Unmanaged<CFDictionary>?
     typealias IOAVServiceCreateWithService = @convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?
-    typealias IOAVServiceReadI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafeMutablePointer<UInt8>, UInt32) -> Bool
-    typealias IOAVServiceWriteI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafePointer<UInt8>, UInt32) -> Bool
+    /// `IOAVServiceReadI2C` / `IOAVServiceWriteI2C` 返回的是 `IOReturn`。
+    ///
+    /// 成功值是 `kIOReturnSuccess == 0`。若把返回值声明成 `Bool`，成功的 0 会被
+    /// 读成 `false`，于是每一次成功的传输都被判成失败并进入重试分支（#864）。
+    typealias IOAVServiceReadI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafeMutablePointer<UInt8>, UInt32) -> IOReturn
+    typealias IOAVServiceWriteI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafePointer<UInt8>, UInt32) -> IOReturn
 
     // MARK: Framework Locations
 
@@ -86,12 +90,16 @@ enum PrivateDisplaySymbol {
     }()
 
     /// `IOAVServiceReadI2C` — 读取 AV service 的 I2C 数据。
+    ///
+    /// 返回 `IOReturn`：`kIOReturnSuccess` 表示成功。
     static let ioAVServiceReadI2C: IOAVServiceReadI2C? = {
         guard let symbol = lookup(Framework.ioKit, "IOAVServiceReadI2C") else { return nil }
         return unsafeBitCast(symbol, to: IOAVServiceReadI2C.self)
     }()
 
     /// `IOAVServiceWriteI2C` — 向 AV service 写入 I2C 数据。
+    ///
+    /// 返回 `IOReturn`：`kIOReturnSuccess` 表示成功。
     static let ioAVServiceWriteI2C: IOAVServiceWriteI2C? = {
         guard let symbol = lookup(Framework.ioKit, "IOAVServiceWriteI2C") else { return nil }
         return unsafeBitCast(symbol, to: IOAVServiceWriteI2C.self)
