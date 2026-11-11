@@ -86,6 +86,15 @@ struct GoalTopShadowTests {
 
     // MARK: - Tests
 
+    /// 面板渲染总高:标题栏 + 底部留白。
+    ///
+    /// 面板底部与 chat section 底边之间留了一段空白(见
+    /// `SidebarView.chatSectionBottomInset`),渲染尺寸必须把它算进去,
+    /// 否则 `ImageRenderer` 产出的位图与断言的尺寸对不上。
+    private var panelHeight: Int {
+        44 + Int(SidebarView.chatSectionBottomInset)
+    }
+
     /// 阴影确实画在面板顶边**之上**,并且越靠近顶边越重。
     ///
     /// 合成画面:白色留白 24pt + Goal 面板。面板顶边落在 y=24,
@@ -99,7 +108,7 @@ struct GoalTopShadowTests {
         }
         .frame(width: 300)
 
-        let rep = try render(composite, width: 300, height: header + 44)
+        let rep = try render(composite, width: 300, height: header + panelHeight)
 
         // 阴影带最上沿:高斯衰减后已很淡,但不能是纯白——那说明阴影根本没铺到这。
         let shadowTop = rowBrightness(rep, y: header - Int(GoalTopShadowView.bandHeight))
@@ -132,7 +141,7 @@ struct GoalTopShadowTests {
         }
         .frame(width: 300)
 
-        let rep = try render(composite, width: 300, height: header + 44)
+        let rep = try render(composite, width: 300, height: header + panelHeight)
 
         let bandHeight = Int(GoalTopShadowView.bandHeight)
         var profile: [Double] = []
