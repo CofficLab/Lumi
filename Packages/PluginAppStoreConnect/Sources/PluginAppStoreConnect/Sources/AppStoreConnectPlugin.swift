@@ -62,6 +62,12 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     private var chatToolbarViewModel: ASCChatToolbarViewModel?
     private var chatToolbarObserver: ASCChatToolbarObserver?
 
+    /// 当前是否已登记 Agent 工具。
+    ///
+    /// 用于让 `onEnable` 幂等：内核在「曾经 Boot 过再启用」时只调 `onEnable`，
+    /// 而「启动时被跳过、首次启用」时会走完整的 `onBoot`。
+    private var areAgentToolsRegistered = false
+
     public init() {}
 
     public func migrateData(context: PluginDataMigrationContext) throws {
@@ -104,13 +110,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             Task { await ScreenshotImageCache.shared.configure(network: network) }
         }
 
-        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
-                toolManager.add(tool, pluginID: id)
-            }
-        } else {
-            Self.logger.error("\(Self.t) ToolManagerProviding not found")
-        }
+        registerAgentTools(kernel: kernel)
 
         // 注册提交审核时间线消息渲染器，并把消息管理器交给时间线桥，
         // 让提交工具可以在会话里插入结构化的「即将提交什么」卡片。
@@ -300,11 +300,26 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         }
     }
 
+    /// 运行时重新启用：恢复 Agent 工具。
+    ///
+    /// 走这条路径说明插件曾经 Boot 过、工具已被撤回，这里重新登记一次即可。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        registerAgentTools(kernel: kernel)
+    }
+
+    /// 运行时禁用：立即撤回 Agent 工具。
+    ///
+    /// 内核在运行时禁用插件时只撤回它**显式登记**的贡献，不会替插件清理
+    /// Provider 侧的写入。若不在这里撤回工具，插件在设置里显示「已禁用」后，
+    /// 这 27 个工具仍能被 LLM 调用——包括删除版本、提交审核、上传截图与
+    /// Xcode Cloud 变更这类有副作用的操作（#860）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        unregisterAgentTools(kernel: kernel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         unregisterChatToolbarItem(kernel: kernel)
-        kernel.resolveProvider((any ToolManagerProviding).self).map { manager in
-            Self.agentTools.forEach { manager.remove(id: $0.name) }
-        }
+        unregisterAgentTools(kernel: kernel)
         kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any MessageRenderingProviding).self)?
@@ -339,6 +354,37 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    // MARK: - Agent Tools
+
+    /// 登记本插件的 Agent 工具。
+    ///
+    /// 幂等：重复调用不会重复注册。
+    private func registerAgentTools(kernel: KernelCoreContainer) {
+        guard !areAgentToolsRegistered else { return }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t) ToolManagerProviding not found")
+            return
+        }
+
+        areAgentToolsRegistered = true
+        for tool in Self.agentTools {
+            toolManager.add(tool, pluginID: id)
+        }
+    }
+
+    /// 撤回本插件的 Agent 工具。
+    ///
+    /// 幂等：重复调用不会重复撤回。
+    private func unregisterAgentTools(kernel: KernelCoreContainer) {
+        guard areAgentToolsRegistered else { return }
+        areAgentToolsRegistered = false
+
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        for tool in Self.agentTools {
+            toolManager.remove(id: tool.name)
+        }
     }
 
     // MARK: - Chat Toolbar
