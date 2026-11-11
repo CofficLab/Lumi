@@ -364,7 +364,14 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     public func parseResponse(
         data: Data,
         reverseMap: [String: String]? = nil
-    ) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?, images: [MessageImage]?) {
+    ) throws -> (
+        content: String,
+        toolCalls: [ToolCall]?,
+        reasoningContent: String?,
+        images: [MessageImage]?,
+        responseID: String?,
+        stopReason: String?
+    ) {
         if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
             throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -401,7 +408,18 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         // 内容为空、没有工具调用、也没有思考——生成的图片直接丢失。
         let images = choiceMessage.images?.compactMap { $0.decodedImage() }
 
-        return (content, toolCalls, choiceMessage.reasoningContent, images)
+        // 响应元数据：顶层 `id` 与 `choices[].finish_reason`。
+        //
+        // 两者都是标准字段——关联 ID 让下游能把请求与供应商日志对上，
+        // finish_reason 让截断的回答（`length`）能说明「为什么没说完」。
+        return (
+            content,
+            toolCalls,
+            choiceMessage.reasoningContent,
+            images,
+            response.id,
+            response.choices.first?.finishReason
+        )
     }
 
     /// 解析单个 SSE 事件，返回该事件产出的**有序事件列表**。
@@ -453,6 +471,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         var chunks: [StreamChunk] = []
+
+        // 顶层响应 ID（`chatcmpl-...`）：供应商的关联标识，下游要靠它把
+        // 一次请求与它的日志对上。
+        let responseID = json["id"] as? String
 
         // MARK: - Parse content/reasoning/toolCalls first
         if let choices = json["choices"] as? [[String: Any]],
@@ -600,7 +622,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             }
         }
 
-        return chunks
+        // 统一补上响应 ID：chunk 构造点分散在各分支里，逐个加参数容易漏。
+        guard let responseID else { return chunks }
+        return chunks.map { $0.withResponseID(responseID) }
     }
 
     /// 解析流式事件里的图片增量。
