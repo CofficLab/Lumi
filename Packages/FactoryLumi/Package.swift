@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../PluginDevice"),
         .package(path: "../PluginDiskManager"),
         .package(path: "../PluginNetworkManager"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginCaffeinate.git", from: "1.1.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginCaffeinate.git", from: "1.1.3"),
         .package(path: "../PluginHostsManager"),
         .package(path: "../PluginDocxRead"),
         .package(path: "../PluginWebFetch"),

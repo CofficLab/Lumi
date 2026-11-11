@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",
       "state" : {
-        "revision" : "1ad4f3a19d624ba21f59a5e3055ba3419fb6cceb",
-        "version" : "1.1.2"
+        "revision" : "ce8102858d0bb2a6c88605719ddfb6017e125057",
+        "version" : "1.1.3"
       }
     },
     {
