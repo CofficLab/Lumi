@@ -25,7 +25,7 @@
       "path": "Packages/KitBootstrapEnvironment",
     }, {
       "kind": "remote",
-      "repository": "https://github.com/CofficLab/LumiProviders.git",
+      "repository": "https://github.com/lumi-softworks/LumiProviders.git",
       "version": {
         "up-to-next-major-version": "1.22.0",
       },

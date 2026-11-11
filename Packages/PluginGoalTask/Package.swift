@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "PluginGoalTask", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),

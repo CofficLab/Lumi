@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProjectRAG"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(

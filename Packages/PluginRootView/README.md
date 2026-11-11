@@ -32,7 +32,7 @@ targets: [
 公共 Provider 直接来自远程包：
 
 ```swift
-.package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
+.package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.2.7")
 ```
 
 ## Testing

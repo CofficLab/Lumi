@@ -26,7 +26,7 @@ URLS = {
     "LumiKitReminder": "https://github.com/CofficLab/LumiKitReminder.git",
     "LumiLocalization": "https://github.com/CofficLab/LumiLocalization.git",
     "LumiLogging": "https://github.com/CofficLab/LumiLogging.git",
-    "LumiProviders": "https://github.com/CofficLab/LumiProviders.git",
+    "LumiProviders": "https://github.com/lumi-softworks/LumiProviders.git",
     "LumiSettings": "https://github.com/CofficLab/LumiSettings.git",
     "LumiThemePack": "https://github.com/CofficLab/LumiThemePack.git",
     "LumiUI": "https://github.com/lumi-softworks/LumiUI.git",
