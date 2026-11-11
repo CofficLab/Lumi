@@ -136,6 +136,7 @@ public enum RecordingError: LocalizedError, Sendable {
     case alreadyRecording(String)
     case notRecording
     case encodingFailed(String)
+    case invalidResolutionHeight(Int)
     case diskFull
     case pathDenied(String)
     case cancelled
@@ -158,6 +159,8 @@ public enum RecordingError: LocalizedError, Sendable {
             "There is no recording in progress."
         case .encodingFailed(let detail):
             "Failed to encode the recording: \(detail)"
+        case .invalidResolutionHeight(let height):
+            "The resolution height must be at least 2 pixels (H.264 needs even dimensions), but \(height) was requested."
         case .diskFull:
             "Not enough disk space to save the recording."
         case .pathDenied(let path):
@@ -165,6 +168,26 @@ public enum RecordingError: LocalizedError, Sendable {
         case .cancelled:
             "The recording was cancelled."
         }
+    }
+}
+
+// MARK: - Resolution
+
+/// 输出分辨率的合法性判定。
+///
+/// H.264 要求宽高都是偶数，采集侧的对齐会把奇数高度向下取整成偶数。高度 1
+/// 因此会变成 0，而 0 高度既无法被 ScreenCaptureKit 接受，也无法建立
+/// AVAssetWriter 输入——错误只会笼统地表现为编码失败，问题很难定位。
+enum RecordingResolution {
+    /// 宽高对齐后允许的最小尺寸。
+    static let minimumDimension = 2
+
+    /// 校验请求的分辨率高度。
+    ///
+    /// `nil` 表示「跟随源尺寸」，无需校验。
+    static func validate(height: Int?) throws {
+        guard let height, height < minimumDimension else { return }
+        throw RecordingError.invalidResolutionHeight(height)
     }
 }
 
