@@ -47,22 +47,30 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         }
 
         let summaryStore: ContextSummaryStore?
+        let auxiliaryStore: AuxiliaryUsageStore?
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let directory = storage.pluginDataDirectory(for: id)
             summaryStore = try? ContextSummaryStore(directory: directory)
             if summaryStore == nil {
                 Self.logger.error("\(Self.t)上下文摘要数据库初始化失败，改用内存摘要")
             }
+            auxiliaryStore = try? AuxiliaryUsageStore(directory: directory)
+            if auxiliaryStore == nil {
+                Self.logger.error("\(Self.t)幕后用量数据库初始化失败，改用内存账本")
+            }
         } else {
             summaryStore = nil
-            Self.logger.error("\(Self.t)缺少 StorageProviding，摘要不会持久化")
+            auxiliaryStore = nil
+            Self.logger.error("\(Self.t)缺少 StorageProviding，摘要与幕后用量不会持久化")
         }
 
+        let auxiliaryLedger = AuxiliaryUsageLedger(store: auxiliaryStore)
         let provider = LLMContextProvider(
             messages: messages,
             conversations: conversations,
             llmProvider: llmProvider,
-            summaryStore: summaryStore
+            summaryStore: summaryStore,
+            auxiliaryUsage: auxiliaryLedger
         )
         self.provider = provider
 
@@ -100,6 +108,9 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any LLMContextProviding).self)
         try kernel.registerProvider((any LLMContextProviding).self, provider)
 
+        kernel.unregisterProvider((any LLMAuxiliaryUsageProviding).self)
+        try kernel.registerProvider((any LLMAuxiliaryUsageProviding).self, auxiliaryLedger)
+
         let hook = LLMContextTurnFinishedHook(provider: provider)
         turnFinishedHook = hook
         kernel.resolveProvider((any LifecycleHooksProviding).self)?
@@ -117,5 +128,6 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         provider?.shutdown()
         provider = nil
         kernel.unregisterProvider((any LLMContextProviding).self)
+        kernel.unregisterProvider((any LLMAuxiliaryUsageProviding).self)
     }
 }

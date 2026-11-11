@@ -24,7 +24,8 @@ public final class OpenAIProvider: VendorLLMProvider {
                 ],
                 websiteURL: URL(string: "https://openai.com/")!,
                 apiFormat: .openAI,
-                apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
+                apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI",
+                recommendedUtilityModel: "gpt-4o-mini"
             ),
             apiService: apiService
         )

@@ -169,6 +169,22 @@ public extension LLMManaging {
     func modelInfo(for id: String, in provider: any SuperLLMProvider) -> LLMModelInfo? {
         dynamicModels(of: provider).first { $0.id == id }
     }
+
+    /// 解析供应商声明的轻量任务模型路由（摘要、标题等幕后调用）。
+    ///
+    /// 声明缺失、为空，或声明的模型不在该供应商当前模型池中时返回 `nil`，
+    /// 调用方据此回退到对话主模型。校验针对动态模型池（`availableModels`），
+    /// 因此远程供应商刷新后下线了的推荐模型也会正确回退。
+    func utilityModelRoute(for providerID: String) -> LLMModelRoute? {
+        guard let provider = provider(id: providerID),
+              let declared = provider.providerInfo.recommendedUtilityModel,
+              !declared.isEmpty,
+              contains(model: declared, in: provider),
+              let modelID = LLMModelID(providerID: providerID, modelID: declared) else {
+            return nil
+        }
+        return modelRoute(for: modelID)
+    }
 }
 
 // MARK: - Default registration
