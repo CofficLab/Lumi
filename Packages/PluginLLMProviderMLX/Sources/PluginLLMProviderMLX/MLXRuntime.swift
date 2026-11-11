@@ -89,29 +89,19 @@ final class MLXRuntime {
         return LLMResponse(content: content, model: modelID, toolCalls: toolCalls.isEmpty ? nil : toolCalls)
     }
 
-    private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: Sendable]]? {
+    private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: any Sendable]]? {
         guard let tools, !tools.isEmpty else { return nil }
         return tools.map { tool in
-            [
-                "type": "function",
-                "function": [
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": sendableJSON(tool.parameters),
-                ],
+            let function: [String: any Sendable] = [
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": MLXSendableJSON.convertSendableDictionary(tool.parameters),
             ]
-        }
-    }
-
-    private func sendableJSON(_ value: Any) -> any Sendable {
-        switch value {
-        case let value as String: return value
-        case let value as Bool: return value
-        case let value as Int: return value
-        case let value as Double: return value
-        case let value as [Any]: return value.map(sendableJSON)
-        case let value as [String: Any]: return value.mapValues(sendableJSON)
-        default: return String(describing: value)
+            let entry: [String: any Sendable] = [
+                "type": "function",
+                "function": function,
+            ]
+            return entry
         }
     }
 
