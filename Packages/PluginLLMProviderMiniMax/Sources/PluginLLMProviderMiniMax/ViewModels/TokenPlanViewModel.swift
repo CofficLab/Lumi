@@ -47,10 +47,46 @@ final class TokenPlanViewModel: ObservableObject {
 
     // MARK: - Public
 
-    /// 当前 chip 文本；`nil` 表示无可展示数据（此时应显示加载态或隐藏 chip）。
+    /// 工具栏 chip 的呈现方式。
+    ///
+    /// 失败态必须走 `.interactive`：chip 上挂了 Button + popover，
+    /// 详情面板里已有失败文案与手动刷新按钮。失败若退化成 `.loading`，
+    /// 用户既看不到原因也点不开详情，只能干等。
+    enum ChipPresentation: Equatable {
+        /// 加载中：不可点击的占位 chip。
+        case loading
+        /// 有文案且可点击（成功配额或失败提示）。
+        case interactive
+    }
+
+    /// 当前 chip 文本。
+    ///
+    /// 成功时是配额摘要；失败时是失败原因；加载中时是加载文案。
+    /// 三种状态都有文案，避免「没有文案」被渲染成无法区分的加载态。
     var statusBarText: String? {
-        guard case let .success(plans) = status else { return nil }
-        return TokenPlanData.statusBarText(from: plans)
+        switch status {
+        case .success(let plans):
+            return TokenPlanData.statusBarText(from: plans)
+        case .authError:
+            return pluginLocalization.string("Authentication failed")
+        case .unavailable:
+            return pluginLocalization.string("Unable to fetch quota info")
+        case .loading:
+            return pluginLocalization.string("Loading...")
+        }
+    }
+
+    /// chip 的呈现方式。
+    ///
+    /// 只有真正还在加载时才不可点击；失败态也必须可点开详情，
+    /// 否则用户无法看到失败原因与手动刷新入口。
+    var chipPresentation: ChipPresentation {
+        switch status {
+        case .loading:
+            return .loading
+        case .success, .authError, .unavailable:
+            return .interactive
+        }
     }
 
     /// 定时器 tick：仅在缓存过期时才真正发请求。
@@ -88,10 +124,20 @@ final class TokenPlanViewModel: ObservableObject {
 
     // MARK: - Setter
 
+    /// 应用一次拉取结果。
+    ///
+    /// 只有**成功**才推进 TTL 时间戳：失败时保留旧时间戳，让下一次定时 tick
+    /// 或重新出现 chip 时能立即重试。否则一次失败会把后续 5 分钟的刷新
+    /// 全部抑制掉，用户既看不到原因也没法主动重试。
     private func apply(_ newStatus: TokenPlanStatus) {
         status = newStatus
-        lastUpdateTime = Date()
-        lastUpdatedAt = lastUpdateTime
+        if case .success = newStatus {
+            lastUpdateTime = Date()
+            lastUpdatedAt = lastUpdateTime
+        } else if lastUpdatedAt == nil {
+            // 失败时也记录一次时间点：详情面板用它标注「最近一次尝试」。
+            lastUpdatedAt = Date()
+        }
         revision &+= 1
     }
 
@@ -101,8 +147,13 @@ final class TokenPlanViewModel: ObservableObject {
         get { status }
         set {
             status = newValue
-            lastUpdateTime = Date()
-            lastUpdatedAt = lastUpdateTime
+            // 与 `apply` 保持同一套 TTL 语义：失败不推进 TTL。
+            if case .success = newValue {
+                lastUpdateTime = Date()
+                lastUpdatedAt = lastUpdateTime
+            } else if lastUpdatedAt == nil {
+                lastUpdatedAt = Date()
+            }
             revision &+= 1
         }
     }

@@ -25,23 +25,28 @@ struct TokenPlanViewModelTests {
 
     // MARK: - 初始状态
 
-    @Test("初始为加载中且没有 chip 文案")
+    @Test("初始为加载中且显示加载文案")
     func startsLoadingWithoutChipText() {
         let viewModel = makeViewModel(network: StubLLMNetwork(json: StubPayload.tokenPlanSuccess))
 
         #expect(viewModel.status == .loading)
-        #expect(viewModel.statusBarText == nil)
+        #expect(viewModel.statusBarText == pluginLocalization.string("Loading..."))
+        #expect(viewModel.chipPresentation == .loading)
         #expect(viewModel.revision == 0)
     }
 
-    @Test("非成功状态都不产生 chip 文案", arguments: [
-        TokenPlanStatus.loading, .authError, .unavailable
+    /// 非成功状态**不再**没有 chip 文案：失败态必须明确呈现失败，
+    /// 否则工具栏只能渲染成无法区分的加载态，用户看不到原因也点不开详情。
+    @Test("失败状态有明确的失败文案", arguments: [
+        TokenPlanStatus.authError, .unavailable
     ])
-    func nonSuccessStatesHaveNoChipText(status: TokenPlanStatus) {
+    func failureStatesHaveFailureText(status: TokenPlanStatus) {
         let viewModel = makeViewModel(network: StubLLMNetwork(json: StubPayload.tokenPlanSuccess))
         viewModel.previewStatus = status
 
-        #expect(viewModel.statusBarText == nil)
+        let text = viewModel.statusBarText
+        #expect(text != nil, "\(status) 状态不应没有 chip 文案")
+        #expect(text != pluginLocalization.string("Loading..."), "\(status) 状态不应显示加载文案")
     }
 
     // MARK: - 刷新
@@ -74,7 +79,7 @@ struct TokenPlanViewModelTests {
         try await Self.waitUntilRevision(viewModel, equals: 1, timeout: Self.fastFlushTimeout)
 
         #expect(viewModel.status == .unavailable)
-        #expect(viewModel.statusBarText == nil)
+        #expect(viewModel.statusBarText == pluginLocalization.string("Unable to fetch quota info"))
         #expect(viewModel.revision == 1)
     }
 
