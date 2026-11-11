@@ -180,6 +180,12 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             return LLMResponse(
                 content: parsed.content,
                 model: model,
+                // 必须带上解析出的工具调用：`LLMResponse.toolCalls` 默认是
+                // `nil`，漏掉它会把一次合法的「只调用工具」的响应变成空文本
+                // 响应，调用方无法执行被请求的工具。
+                toolCalls: parsed.toolCalls?.map {
+                    LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+                },
                 inputTokenCount: tokenCounts.input,
                 outputTokenCount: tokenCounts.output
             )
@@ -204,6 +210,12 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         return LLMResponse(
             content: parsed.content,
             model: model,
+            // 必须带上解析出的工具调用：`LLMResponse.toolCalls` 默认是
+            // `nil`，漏掉它会把一次合法的「只调用工具」的响应变成空文本
+            // 响应，调用方无法执行被请求的工具。
+            toolCalls: parsed.toolCalls?.map {
+                LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            },
             inputTokenCount: tokenCounts.input,
             outputTokenCount: tokenCounts.output
         )
