@@ -653,22 +653,11 @@ extension AgentLoopManager {
         // 计算工具 schema
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
-        let tools = automationLevel.allowsTools ? rawTools : []
+        var tools = automationLevel.allowsTools ? rawTools : []
         // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
         // 与当前回合是否允许调用工具无关。
         let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
-        if Self.verbose {
-            let firstFive = tools.prefix(5).map(\.name)
-            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
-        }
         let language = languagePreference(for: conversationID)
-        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
-            LLMFunctionSchema(
-                name: tool.name,
-                description: tool.description(for: language),
-                parameters: tool.inputSchema(for: language)
-            )
-        }
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
         var runtime = runtimes[conversationID] ?? TurnRuntime()
@@ -680,6 +669,32 @@ extension AgentLoopManager {
         let routingProviderID = modelRoute?.providerID
         let modelName = modelRoute?.modelName
         let modelInfo = modelRoute?.modelInfo
+
+        // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+        //
+        // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+        // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+        // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+        // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+        // 上游还可能直接报协议错误。
+        if modelInfo?.supportsTools == false {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)模型不支持工具，省略工具 Schema model=\(modelName ?? "unknown")")
+            }
+            tools = []
+        }
+
+        if Self.verbose {
+            let firstFive = tools.prefix(5).map(\.name)
+            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
+        }
+        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
+            LLMFunctionSchema(
+                name: tool.name,
+                description: tool.description(for: language),
+                parameters: tool.inputSchema(for: language)
+            )
+        }
         let toolSchemaTokens = estimateToolSchemaTokens(schemas)
         let contextRequest = LLMContextPreparationRequest(
             conversationID: conversationID,
