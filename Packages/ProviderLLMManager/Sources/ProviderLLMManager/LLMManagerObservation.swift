@@ -36,6 +36,8 @@ public enum ModelSelectionReason: Sendable, Equatable {
     case providerChanged
     /// 应用启动时从持久化存储恢复上一次选中。
     case appRestore
+    /// 远程模型列表刷新后，原选中模型已不在动态池，选中态被重校验回退。
+    case remoteModelsRefreshed
 }
 
 /// LLM 供应商管理器观察句柄。
