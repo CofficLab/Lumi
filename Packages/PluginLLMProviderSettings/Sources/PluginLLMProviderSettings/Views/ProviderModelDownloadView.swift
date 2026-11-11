@@ -206,7 +206,7 @@ struct ProviderModelDownloadView: View {
             .help(pluginLocalization.string("暂停下载"))
         } else if isPaused {
             AppButton(systemImage: "play.fill", style: .tonal, size: .small) {
-                Task { await capability.resumeDownload() }
+                resumeDownload(modelID)
             }
             .help(pluginLocalization.string("继续下载"))
             AppButton(systemImage: "xmark", style: .ghost, size: .small) {
@@ -221,13 +221,15 @@ struct ProviderModelDownloadView: View {
     }
 
     private func startDownload(_ modelID: String) {
-        viewModel.clearError()
         Task {
-            await capability.download(modelID: modelID)
-            capability.refreshDownloadState()
-            if case .failed(let message) = viewModel.downloadState.status {
-                viewModel.reportError(modelID: modelID, message: message)
-            }
+            await viewModel.startDownload(modelID: modelID, capability: capability)
+        }
+    }
+
+    /// 继续下载；结束后与初次下载一样把失败原因显示在对应模型下。
+    private func resumeDownload(_ modelID: String) {
+        Task {
+            await viewModel.resumeDownload(modelID: modelID, capability: capability)
         }
     }
 
