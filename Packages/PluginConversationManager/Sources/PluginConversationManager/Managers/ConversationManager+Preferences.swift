@@ -178,6 +178,10 @@ extension ConversationManager {
         guard globalAutomationLevel != automationLevel else { return }
         globalAutomationLevel = automationLevel
         notifyConversationObservers(.automationChanged(nil))
+        // New Chat 的默认自动化级别没有会话承载，必须单独落盘才能跨重启保留。
+        // 否则重启后默认静默回到 Build，下一个新会话还会把这个被重置的值
+        // 持久化下去——用户选的无工具默认因此丢失（issue #1144）。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalAutomationLevel: level=\(automationLevel.rawValue)")

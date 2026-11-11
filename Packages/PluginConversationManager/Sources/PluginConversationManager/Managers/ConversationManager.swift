@@ -158,6 +158,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                 if let persistedVerbosity = persistedState?.globalVerbosity {
                     self.globalVerbosity = persistedVerbosity
                 }
+                // New Chat 的默认自动化级别同样独立于选中会话，必须先恢复；
+                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                if let persistedAutomation = persistedState?.globalAutomationLevel {
+                    self.globalAutomationLevel = persistedAutomation
+                }
                 if self.selectedConversationID != nil {
                     // 初始化全局详细程度为当前选中对话的详细程度
                     self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
@@ -341,13 +346,15 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         let selectedID = selectedConversationID
         let verbosity = globalVerbosity
         let language = globalLanguage
+        let automationLevel = globalAutomationLevel
         let fileURL = stateFileURL
         let directory = fileURL.deletingLastPathComponent()
         Self.stateWriteQueue.async {
             let state = ConversationState(
                 selectedConversationID: selectedID,
                 globalVerbosity: verbosity,
-                globalLanguage: language
+                globalLanguage: language,
+                globalAutomationLevel: automationLevel
             )
             guard let data = try? JSONEncoder().encode(state) else { return }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -368,6 +375,8 @@ private struct ConversationState: Codable {
     /// 旧版本 `state.json` 不含这些全局字段，用可选值兼容解码。
     let globalVerbosity: ResponseVerbosity?
     let globalLanguage: ConversationLanguage?
+    /// New Chat 的默认自动化级别（没有会话承载，需单独落盘）。
+    let globalAutomationLevel: AutomationLevel?
 }
 
 // MARK: - Selected Conversation Observer
