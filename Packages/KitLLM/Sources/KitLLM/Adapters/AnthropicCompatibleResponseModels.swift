@@ -31,7 +31,15 @@ struct AnthropicCompatibleAnyValue: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
-        if let intValue = try? container.decode(Int.self) {
+        // 必须先判空：JSON `null` 会让后面所有具体解码都失败，最后落到
+        // 兜底的 `value = ""`——工具调用照常发出，但参数里已经没有模型
+        // 返回的值了（`{"value":null}` 变成 `{"value":""}`）。
+        //
+        // 用 `null` 表示「缺省 / 清空可选字段」的 Anthropic 工具会收到
+        // 字符串：严格校验失败，宽松校验则可能执行与模型意图不同的操作。
+        if container.decodeNil() {
+            value = NSNull()
+        } else if let intValue = try? container.decode(Int.self) {
             value = intValue
         } else if let doubleValue = try? container.decode(Double.self) {
             value = doubleValue
