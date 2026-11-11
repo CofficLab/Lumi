@@ -27,6 +27,15 @@ public struct SidebarView: View {
     /// 直接贴住底边会显得拥挤,这里留一段固定底部内边距。
     private static let taskListBottomInset: CGFloat = 10
 
+    /// 面板与 chat section 底边之间的留白。
+    ///
+    /// Goal 面板挂在 chat section 的 stack 区底部,紧贴下方的输入区。面板本身
+    /// 已经画了底边描边,直接压上去显得拥挤,这里留出一段空白。
+    ///
+    /// 留白只在**面板可见时**存在:没有活跃 goal 时面板高度为 0,若仍留白,
+    /// chat section 底部就会凭空多出一段空白区域。
+    static let chatSectionBottomInset: CGFloat = 8
+
     /// 顶部阴影的模糊半径(点):决定阴影顶端渐隐的柔和程度。
     ///
     /// 面板下方任务列表容器(`taskListSurface`)用的是
@@ -101,6 +110,14 @@ public struct SidebarView: View {
         .overlay(alignment: .top) {
             topShadow
         }
+        // 面板底边与 chat section 底边之间留一段空白,避免面板直接压住输入区。
+        //
+        // 放在 `.frame(height:)` **之后**:面板自身高度仍由 `sidebarHeight` 决定,
+        // 留白在面板之外额外撑开一段,面板底部的橙色描边仍贴在内容边缘。
+        //
+        // 只在面板可见时留白:没有活跃 goal 时面板高度为 0,若仍留白,chat section
+        // 底部会凭空多出一段空白区域。
+        .padding(.bottom, hasVisibleGoal ? Self.chatSectionBottomInset : 0)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(pluginLocalization.string("Goal & Tasks"))
     }
