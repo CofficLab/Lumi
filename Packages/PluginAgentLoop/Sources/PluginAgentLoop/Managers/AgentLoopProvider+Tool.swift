@@ -811,7 +811,12 @@ extension AgentLoopManager {
             // assistant 消息，走失败链路交给自动重试插件接管时间线与重试，
             // 与网络错误的处理方式一致。思考内容可能已经流式输出过，随
             // 错误一起保留到错误消息，避免用户看到内容凭空消失。
+            //
+            // 例外：图像生成模型的「只生成图片」响应正文为空但带着图片，
+            // 那是一次**成功**的响应，不能当成空响应失败处理。
+            let hasGeneratedImages = !(response.images?.isEmpty ?? true)
             if response.toolCalls?.isEmpty ?? true,
+               !hasGeneratedImages,
                response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理 model=\(response.model ?? "unknown")")
                 streaming.end(conversationID: conversationID)
@@ -869,7 +874,17 @@ extension AgentLoopManager {
                 stopReason: response.stopReason,
                 latencyMs: timing.latencyMs,
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
-                streamingDurationMs: timing.streamingDurationMs
+                streamingDurationMs: timing.streamingDurationMs,
+                // 图像生成模型产出的图片。
+                //
+                // 不落库的话，一次合法的「只生成图片」的响应会变成一条
+                // 空文本消息：用户既看不到生成的图片，也无法回溯。
+                imageAttachments: (response.images ?? []).map {
+                    MessageImageAttachment(
+                        data: $0.data.base64EncodedString(),
+                        mimeType: $0.mimeType
+                    )
+                }
             )
             // 记录本次请求实际使用的供应商。未绑定对话会走全局供应商，
             // 因此这里不能只写 conversationProviderID（否则 UI 会丢失供应商）。

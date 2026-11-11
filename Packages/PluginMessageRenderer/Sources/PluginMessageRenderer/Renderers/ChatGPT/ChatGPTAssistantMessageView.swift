@@ -37,6 +37,11 @@ struct ChatGPTAssistantMessageView: View {
     /// 动效偏好：Reduced Motion 或全局禁用动画时关闭操作栏淡入淡出。
     @LumiMotionPreferenceReader private var motionPreference
 
+    /// 助手消息附带的生成图片（解码自 `imageAttachments`）。
+    private var generatedImageData: [Data] {
+        message.imageAttachments.compactMap { Data(base64Encoded: $0.data) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let reasoning, ChatGPTReasoningStyle.shouldRender(text: reasoning, isStreaming: isRunning) {
@@ -64,6 +69,11 @@ struct ChatGPTAssistantMessageView: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(ChatGPTRendererAccessibilityIdentifiers.assistantBody)
+            }
+
+            // 图像生成模型产出的图片（这类响应的正文往往为空）。
+            if !generatedImageData.isEmpty {
+                AppImagePreviewGrid(imageDataList: generatedImageData)
             }
 
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
