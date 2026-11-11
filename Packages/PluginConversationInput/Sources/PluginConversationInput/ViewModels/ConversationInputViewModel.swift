@@ -379,6 +379,11 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 同一个文件拖到输入框里是图片附件，拖到预览区里也得是图片附件。
     /// 规则因此收敛在 ViewModel 一处，两条路径共用，避免两套规则悄悄漂移。
     func attach(droppedURL url: URL) {
+        // 只有本地文件才进入附件链。`https:`、`mailto:` 等非文件 URL 没有可读取
+        // 的本地路径，交给附件加载器只会得到一条读不出内容的附件错误（#882）。
+        guard ChatInputEditorRules.isFileAttachmentURL(url) else {
+            return
+        }
         if ChatInputEditorRules.isDirectoryURL(url) {
             insertDirectoryPath(url)
         } else if ChatInputEditorRules.isChatImageFileURL(url) {
