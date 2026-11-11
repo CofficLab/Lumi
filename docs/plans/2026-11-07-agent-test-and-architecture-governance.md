@@ -18,14 +18,17 @@
 - AgentTurnFSM、ToolJob、MessageStore 已有各自测试，但跨层 save/notify/dispatch 顺序、进程崩溃和第二实现容易漏测。
 - Lumi 包多，不能一次性给全仓写严格架构规则；应学习 ZCode managed modules，从本次 Agent 核心开始。
 
-### 已知的既存失败（非门禁引入，已在 clean HEAD 复现）
+### 门禁的既存失败已全部修复
 
-| 包 | 失败 | 性质 |
-|---|---|---|
-| `PluginConversationInput` | `CollapsedContentChip` 系列 6 项像素级字体测量断言 | 对宿主系统字体渲染敏感，本机不稳定 |
-| `FactoryLumi` | "停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启"；`MailPluginRuntime.fallbackDataDirectory()` 未注入触发 `IsolatedDirectoryGuard` fatal error | 测试隔离缺口，需补目录注入 |
+| 包 | 原失败 | 根因 | 修复 |
+|---|---|---|---|
+| `PluginConversationInput` | `CollapsedContentChip` 6 项像素级字体测量断言 | 量测方法硬编码「白底 + 深色字」阈值，而文本视图背景跟随系统外观：深色外观下整个画布都被当成墨迹 | 新增 `ChipPixelProbe` 固定浅色外观并共享阈值；浅色/深色外观下各跑一遍均 188/188 通过 |
+| `FactoryLumi` | `MailPluginRuntime.fallbackDataDirectory()` fatal error | KernelCore 回滚时会对从未 boot 的插件调 `onShutdown`，而 `onShutdown` 触碰 lazy 属性连带解析目录 | `MailPlugin` 用 `didBoot` 区分，没 boot 过的直接返回 |
+| `FactoryLumi` | "停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启" | 设置视图管理器用 `registerProvider` 替换默认实现，Provider 归插件所有因而随 `stop()` 被撤回 | 新增 `SettingViewHostPlugin` 用 `registerHostProvider` 重新登记同一实例；重启改用与首次启动同一份插件目录 |
+| `ProviderLLMManager` | "首次注册自动选中第一个供应商并落到默认模型" 随机失败 | `SuiteTrait` 没有 `setUp` 钩子导致隔离从未生效；兄弟 suite 并发时互抢全局偏好域指针 | 共享隔离域 + 跨 suite 异步互斥门，连续 15 次零失败 |
+| `PluginNetworkManager` | 查询工具随机报 "HTTP exchange store not available" | `NetworkService.shared` 上的进程级单例被兄弟 suite 的 shutdown 清空 | 跨 suite 异步互斥门，连续 12 次零失败 |
 
-> 门禁若要以这两项为绿，需先修它们；当前 CI 会如实报红，不会掩盖。
+> 三组门禁（contracts / runtime / integration）现已连续三轮全绿。
 
 ### 非目标
 
