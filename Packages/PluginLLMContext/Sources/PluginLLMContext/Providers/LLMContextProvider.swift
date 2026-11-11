@@ -441,7 +441,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             Message(
                 conversationID: request.conversationID,
                 role: .system,
-                content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
+                content: String(localized: "Conversation compacted", defaultValue: "对话已压缩", bundle: .module),
                 createdAt: Date(),
                 metadata: metadata,
                 providerID: request.providerID,
