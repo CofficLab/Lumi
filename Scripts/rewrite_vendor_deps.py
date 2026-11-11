@@ -29,7 +29,7 @@ URLS = {
     "LumiProviders": "https://github.com/CofficLab/LumiProviders.git",
     "LumiSettings": "https://github.com/CofficLab/LumiSettings.git",
     "LumiThemePack": "https://github.com/CofficLab/LumiThemePack.git",
-    "LumiUI": "https://github.com/CofficLab/LumiUI.git",
+    "LumiUI": "https://github.com/lumi-softworks/LumiUI.git",
     "MagicAlert": "https://github.com/nookery/MagicAlert.git",
     "hummingbird": "https://github.com/hummingbird-project/hummingbird.git",
     "mlx-swift": "https://github.com/ml-explore/mlx-swift.git",
