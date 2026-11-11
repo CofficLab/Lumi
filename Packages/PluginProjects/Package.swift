@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
         .package(path: "../ProviderProjectRAG"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(path: "../ProviderToolManager"),

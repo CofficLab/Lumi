@@ -24,7 +24,7 @@ let package = Package(
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitKeychain"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.2"),
