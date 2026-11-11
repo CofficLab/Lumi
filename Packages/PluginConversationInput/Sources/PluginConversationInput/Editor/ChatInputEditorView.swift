@@ -980,6 +980,26 @@ final class EditorTextView: NSTextView {
 
     /// 命中测试：返回命中点所在的粘贴折叠按钮，没有则返回 nil。
     private func pastePreviewCell(at point: NSPoint) -> PasteButtonAttachmentCell? {
+        guard let hit = pastePreviewHit(at: point) else {
+            return nil
+        }
+
+        return hit.attachment.attachmentCell as? PasteButtonAttachmentCell
+    }
+
+    /// 命中测试的结果：命中的粘贴附件及其在视图坐标系里的矩形。
+    struct PastePreviewHit {
+        let attachment: PastePreviewAttachment
+        let rect: NSRect
+    }
+
+    /// 判断命中点是否落在粘贴折叠按钮上。
+    ///
+    /// AppKit 的 `characterIndex(for:in:fractionOfDistanceBetweenInsertionPoints:)`
+    /// 在没有字符覆盖该点时返回**最近**的字符，而不是「没有命中」。只靠它做
+    /// 命中判断，点击 chip 之外的空白区域也会被算作命中，从而误开预览并吞掉
+    /// 这次点击（#881）。因此必须再用附件的实际矩形做一次包含判断。
+    func pastePreviewHit(at point: NSPoint) -> PastePreviewHit? {
         guard let textStorage, let layoutManager, let textContainer else {
             return nil
         }
@@ -999,7 +1019,19 @@ final class EditorTextView: NSTextView {
             return nil
         }
 
-        return attachment.attachmentCell as? PasteButtonAttachmentCell
+        let glyphRange = layoutManager.glyphRange(
+            forCharacterRange: NSRange(location: charIndex, length: 1),
+            actualCharacterRange: nil
+        )
+        let attachmentRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+            .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+
+        // 最近字符不等于命中：必须落在附件的实际矩形里。
+        guard attachmentRect.contains(point) else {
+            return nil
+        }
+
+        return PastePreviewHit(attachment: attachment, rect: attachmentRect)
     }
 
     override func setMarkedText(
@@ -1137,33 +1169,11 @@ final class EditorTextView: NSTextView {
     }
 
     private func showPastePreviewIfNeeded(at point: NSPoint) -> Bool {
-        guard let textStorage, let layoutManager, let textContainer else {
+        guard let hit = pastePreviewHit(at: point) else {
             return false
         }
 
-        let containerPoint = NSPoint(
-            x: point.x - textContainerOrigin.x,
-            y: point.y - textContainerOrigin.y
-        )
-        let charIndex = layoutManager.characterIndex(
-            for: containerPoint,
-            in: textContainer,
-            fractionOfDistanceBetweenInsertionPoints: nil
-        )
-        guard charIndex < textStorage.length,
-              let attachment = textStorage.attribute(.attachment, at: charIndex, effectiveRange: nil) as? PastePreviewAttachment
-        else {
-            return false
-        }
-
-        let glyphRange = layoutManager.glyphRange(
-            forCharacterRange: NSRange(location: charIndex, length: 1),
-            actualCharacterRange: nil
-        )
-        let attachmentRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
-            .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
-
-        showPastePreviewPopover(attachment: attachment, from: attachmentRect)
+        showPastePreviewPopover(attachment: hit.attachment, from: hit.rect)
         return true
     }
 
