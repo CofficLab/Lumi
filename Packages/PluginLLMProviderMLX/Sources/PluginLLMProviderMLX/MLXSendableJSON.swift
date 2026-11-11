@@ -61,14 +61,19 @@ enum MLXSendableJSON {
             return nullValue
         case let value as String:
             return value
-        case let value as Bool:
-            return value
-        case let value as Int:
-            return value
-        case let value as Double:
-            return value
         case let value as NSNumber:
-            // 布尔值已经被上面的 `Bool` 分支捕获；其余按数值处理。
+            // 必须先判别「真正的 JSON boolean」，再处理数值。
+            //
+            // Foundation 的桥接有个坑：`NSNumber(0)` 与 `NSNumber(1)` 都能
+            // 先成功转换为 `Bool`，而真正的 JSON boolean 是 `__NSCFBoolean`
+            // （CFBoolean）。若先匹配 `Bool`，合法的数值 0/1 会被改写成
+            // `false` / `true`，`minimum` / `maximum` / `default` /
+            // `const` / `examples` 里的数值全部失真。
+            //
+            // 用 CoreFoundation 的类型标识区分二者，不依赖 Swift 的桥接顺序。
+            if CFGetTypeID(value) == CFBooleanGetTypeID() {
+                return value.boolValue
+            }
             // 整数值保持 Int，避免 3 变成 3.0 影响 Schema 的 `type` 语义。
             if CFNumberIsFloatType(value) {
                 return value.doubleValue
