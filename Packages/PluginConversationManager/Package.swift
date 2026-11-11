@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLLMManager"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.0"),

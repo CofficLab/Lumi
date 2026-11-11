@@ -190,7 +190,7 @@ let package = Package(
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
-        .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderLegacyData"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
