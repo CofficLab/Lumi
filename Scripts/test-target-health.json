@@ -642,21 +642,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginLogoCoffic": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginLogoManager": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginLogoSmartLight": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginMCP": {
     "status": "ok",
     "errors": [],
