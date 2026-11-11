@@ -413,8 +413,23 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         guard let output = object["output"] as? [[String: Any]] else { return "" }
         return output
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
-            .compactMap { $0["text"] as? String }
+            .compactMap { responsesContentText(from: $0) }
             .joined()
+    }
+
+    /// 提取一个 Responses 内容块的文本。
+    ///
+    /// 两种块都可能出现：
+    /// - `output_text`：正文，读 `text`；
+    /// - `refusal`：拒答，读 `refusal`。
+    ///
+    /// 拒答块此前被忽略，于是一次**合法完成的拒答**变成空内容，AgentLoop
+    /// 把它归类成通用的、不可恢复的 `emptyResponse`——用户看不到模型给出
+    /// 的拒绝说明（与 Chat Completions 的 `message.refusal` 同类问题）。
+    private static func responsesContentText(from block: [String: Any]) -> String? {
+        if let text = block["text"] as? String { return text }
+        if let refusal = block["refusal"] as? String { return refusal }
+        return nil
     }
 
     /// Normalize the usage shapes used by OpenAI, Anthropic-compatible
