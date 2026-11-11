@@ -448,7 +448,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 思考增量与正文增量各自独立产出：二者可以同时存在，
             // 都不因对方的存在而被丢弃。
-            if let reasoningContent = delta["reasoning_content"] as? String,
+            //
+            // `reasoning_content` 与 `reasoning` 是同一个语义的两个别名：
+            // OpenRouter 用 `reasoning`，其它供应商多用 `reasoning_content`。
+            if let reasoningContent = (delta["reasoning_content"] as? String ?? delta["reasoning"] as? String),
                !reasoningContent.isEmpty {
                 chunks.append(StreamChunk(
                     content: reasoningContent,
