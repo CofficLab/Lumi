@@ -202,10 +202,16 @@ public enum KernelFactory {
         return kernel
     }
 
-    private static func makePlugins(
+    /// 组装完整的插件目录：`RootViewPlugin` + 工厂目录 + 宿主附加插件。
+    ///
+    /// - Important: `RootViewPlugin` 必须在目录里——它在 `onBoot` 时注册
+    ///   `RootViewProviding`，没有它，后续插件（如 ProjectFiles）解析不到
+    ///   该 Provider 会在 `onBoot` 抛错。重启内核时必须用**同一份目录**，
+    ///   否则重启后插件目录与首次启动不一致。
+    public static func makePlugins(
         providerFactory: any ProviderFactory,
         pluginFactory: any PluginFactory,
-        additionalPlugins: [any SuperPlugin]
+        additionalPlugins: [any SuperPlugin] = []
     ) -> [any SuperPlugin] {
         [RootViewPlugin(provider: providerFactory.makeRootViewProvider())]
             + pluginFactory.makePlugins()
