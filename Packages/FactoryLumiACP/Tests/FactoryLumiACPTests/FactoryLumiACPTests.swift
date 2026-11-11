@@ -76,6 +76,21 @@ struct ACPPluginFactoryTests {
         #expect(ids.contains("com.coffic.lumi.plugin.llm-provider.zhipu"))
     }
 
+    @Test("上下文压缩插件排在 AgentLoop 之前")
+    func llmContextPluginPrecedesAgentLoop() {
+        let factory = ACPPluginFactory()
+        let plugins = factory.makePlugins()
+
+        let ids = plugins.map { $0.id }
+        let contextIndex = ids.firstIndex(of: "com.coffic.lumi.plugin.llm-context")
+        let agentLoopIndex = ids.firstIndex(of: "com.coffic.lumi.plugin.agent-loop")
+
+        #expect(contextIndex != nil)
+        #expect(agentLoopIndex != nil)
+        // 两个插件 order 相同，Kernel 以数组顺序决定启动先后。
+        #expect(contextIndex! < agentLoopIndex!)
+    }
+
     @Test("插件 ID 唯一无重复")
     func pluginIDsAreUnique() {
         let factory = ACPPluginFactory()

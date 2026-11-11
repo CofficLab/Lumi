@@ -117,7 +117,6 @@ public struct ACPPluginFactory: PluginFactory {
             ToastSuperPlugin(),
             PluginLLMManager(),
             PluginToolManager(),
-            PluginAgentLoop(),
             AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             AgentRulesPlugin(),
@@ -125,7 +124,11 @@ public struct ACPPluginFactory: PluginFactory {
             AgentPlanStoragePlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            // 上下文压缩插件必须早于 AgentLoop 启动：两者 order 相同，Kernel 以
+            // 数组顺序决定先后，若 AgentLoop 先启动就会捕获启动阶段的降级
+            // 上下文 Provider，导致每一轮都绕过压缩（#883）。
             LLMContextPlugin(),
+            PluginAgentLoop(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationTitlePlugin(),

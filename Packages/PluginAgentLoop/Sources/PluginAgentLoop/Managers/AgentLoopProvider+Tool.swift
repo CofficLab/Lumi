@@ -695,6 +695,8 @@ extension AgentLoopManager {
 
         // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
         // AgentLoop 不读取全量历史，也不感知具体压缩策略。
+        // 这里取一次当前生效的实现，保证同一次请求的上报与重试使用同一个 Provider。
+        let contextProvider = self.contextProvider
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
         let llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
