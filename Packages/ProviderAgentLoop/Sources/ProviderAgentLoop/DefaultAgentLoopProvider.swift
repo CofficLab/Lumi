@@ -407,7 +407,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             .filter { !MessageTimelineEvent.isTimelineEvent($0) }
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
-        let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
+        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+        // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+        //
+        // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+        // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+        // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+        // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+        // 上游还可能直接报协议错误。
+        let modelAllowsTools = route?.modelInfo.supportsTools != false
+        let tools = (level.allowsTools && modelAllowsTools) ? toolManager.allTools() : []
+        let schemas = tools.compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
         let llmHistory = llmMessages(from: history)
@@ -416,7 +426,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
             preparedMessages = result.messages
         }
-        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
         let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
@@ -596,7 +605,16 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
             let automationLevel = conversations.automationLevel(for: conversationID)
-            let tools = automationLevel.allowsTools ? toolManager.allTools() : []
+            // 模型能力过滤：明确声明「不支持工具」的模型不得收到工具 Schema。
+            //
+            // `LLMModelInfo.supportsTools` 是模型的能力契约，不只是列表展示用的
+            // 标签。只按 `automationLevel` 过滤会让 MLX 的视觉模型、阿里云的图像
+            // 模型这类 `supportsTools: false` 的模型收到全部工具定义：既让模型
+            // 生成它声明不支持的工具调用，又白白消耗工具 Schema 的上下文预算，
+            // 上游还可能直接报协议错误。
+            let legacyRoute = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+            let modelAllowsTools = legacyRoute?.modelInfo.supportsTools != false
+            let tools = (automationLevel.allowsTools && modelAllowsTools) ? toolManager.allTools() : []
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)
                 return LLMFunctionSchema(
