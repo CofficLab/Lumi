@@ -30,6 +30,19 @@ struct OpenAICompatibleResponse: Decodable {
             case toolCalls = "tool_calls"
             case reasoningContent = "reasoning_content"
             case refusal
+            /// OpenRouter 把助手的思考放在 `reasoning` 字段上，
+            /// 与其它供应商的 `reasoning_content` 是同一个语义。
+            case reasoning
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            content = try container.decodeIfPresent(String.self, forKey: .content)
+            toolCalls = try container.decodeIfPresent([ToolCallData].self, forKey: .toolCalls)
+            refusal = try container.decodeIfPresent(String.self, forKey: .refusal)
+            // 两个别名都支持：优先 `reasoning_content`，其次 `reasoning`。
+            reasoningContent = try container.decodeIfPresent(String.self, forKey: .reasoningContent)
+                ?? container.decodeIfPresent(String.self, forKey: .reasoning)
         }
     }
 
