@@ -3,16 +3,16 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>6.3.1</title>
-            <pubDate>Wed, 11 Nov 2026 00:40:57 +0000</pubDate>
-            <sparkle:version>20261110233312</sparkle:version>
-            <sparkle:shortVersionString>6.3.1</sparkle:shortVersionString>
+            <title>6.5.0</title>
+            <pubDate>Wed, 11 Nov 2026 14:45:40 +0000</pubDate>
+            <sparkle:version>20261111134221</sparkle:version>
+            <sparkle:shortVersionString>6.5.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-<description><![CDATA[<h2>Preview p6.3.1(20261110233312)</h2>
+<description><![CDATA[<h2>Preview p6.5.0(20261111134221)</h2>
 <p>This preview build may contain unfinished changes.</p>]]></description>
-<sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p6.3.1(20261110233312)</sparkle:fullReleaseNotesLink>
+<sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p6.5.0(20261111134221)</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_6.3.1_20261110233312_arm64.dmg" length="56169573" type="application/octet-stream" sparkle:edSignature="ZpDcaQzo3mqyVoYh8eYdU11HMcHvBcatuLvyMPF/bOrrpm1dMR55gyvWCcY8nPHAiFOv+vlklS8Vc2qu1UunDg=="/>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_6.5.0_20261111134221_arm64.dmg" length="56170254" type="application/octet-stream" sparkle:edSignature="1JlP8OW+BZ6jWzZrotvUNnfMHfkn4eF0wLn/2NwqiBGHckKWTrzB35+B+Mma07b79uvnJjmZrgo2FUsKheKPBw=="/>
         </item>
     </channel>
 </rss>
