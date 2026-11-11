@@ -11,6 +11,14 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import LumiLoggingKit
+
+/// 惰性解析当前生效的上下文 Provider。
+///
+/// 真实实现（带压缩的 `LLMContextProvider`）可能在 AgentLoop 之后才替换内核
+/// 注册表里的降级实现；若在启动时快照 Provider，AgentLoop 会永久持有降级实现，
+/// 让每一轮都绕过上下文压缩（#883）。
+public typealias LLMContextProviderResolver = @MainActor () -> (any LLMContextProviding)?
+
 /// Agent 回合执行器门面。
 ///
 /// 内部使用有限状态机（`TurnRuntime` + `TurnReducer`）管理回合生命周期，
@@ -29,8 +37,19 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
-    let contextProvider: any LLMContextProviding
+    /// 启动阶段解析到的上下文 Provider（降级兜底）。
+    let fallbackContextProvider: any LLMContextProviding
+    /// 惰性解析器：每次请求时返回内核当前注册的上下文 Provider。
+    private let contextProviderResolver: LLMContextProviderResolver?
     var lifecycleHooks: (any LifecycleHooksProviding)?
+
+    /// 当前生效的上下文 Provider。
+    ///
+    /// 优先使用惰性解析结果，这样即使真实实现晚于 AgentLoop 启动才注册，
+    /// 请求也会走到带压缩的实现上；解析失败时才回退到启动阶段的快照。
+    var contextProvider: any LLMContextProviding {
+        contextProviderResolver?() ?? fallbackContextProvider
+    }
 
     // MARK: - FSM State (single source of truth)
 
@@ -56,14 +75,16 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         toolManager: any ToolManagerProviding,
         streaming: any MessageStreamingProviding,
         conversations: any ConversationManaging,
-        contextProvider: any LLMContextProviding
+        contextProvider: any LLMContextProviding,
+        contextProviderResolver: LLMContextProviderResolver? = nil
     ) {
         self.messages = messages
         self.llmManager = llmManager
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
-        self.contextProvider = contextProvider
+        self.fallbackContextProvider = contextProvider
+        self.contextProviderResolver = contextProviderResolver
     }
 
     public func addAgentLoopObserver(

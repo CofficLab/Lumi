@@ -78,13 +78,18 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         }
 
         // 2. 创建自定义实现
+        // 上下文 Provider 采用惰性解析：带压缩的真实实现可能晚于本插件启动
+        // 才替换内核注册表里的降级实现，快照式持有会让每轮都绕过压缩（#883）。
         let agentLoop = AgentLoopManager(
             messages: messages,
             llmManager: llmManager,
             toolManager: toolManager,
             streaming: streaming,
             conversations: conversations,
-            contextProvider: contextProvider
+            contextProvider: contextProvider,
+            contextProviderResolver: { [weak kernel] in
+                kernel?.resolveProvider((any LLMContextProviding).self)
+            }
         )
         self.manager = agentLoop
         toolJobObserver = ToolJobObserver(toolManager: toolManager) { [weak agentLoop] event in
