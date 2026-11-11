@@ -39,9 +39,6 @@ public struct UpdateAppStoreConnectLocalizationTool: SuperAgentTool {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty localizationID.")
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
-
         // Only the fields explicitly provided by the caller are sent in the PATCH body;
         // unset fields keep their current values on App Store Connect.
         let promotionalText = arguments["promotionalText"]?.stringValue
@@ -51,10 +48,19 @@ public struct UpdateAppStoreConnectLocalizationTool: SuperAgentTool {
         let supportURL = arguments["supportURL"]?.stringValue
         let marketingURL = arguments["marketingURL"]?.stringValue
 
+        // 参数校验必须在客户端初始化之前：参数不合法是调用方的问题，
+        // 不该被「凭据缺失」掩盖（#861）。
         guard promotionalText != nil || description != nil || keywords != nil
                 || whatsNew != nil || supportURL != nil || marketingURL != nil else {
-            return "Nothing to update. Provide at least one of: promotionalText, description, keywords, whatsNew, supportURL, marketingURL."
+            // 更新没有发生：必须以失败表达，否则调用方会把这次调用记成成功。
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Nothing to update. Provide at least one of: promotionalText, description, keywords, whatsNew, supportURL, marketingURL."
+            )
         }
+
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let updated = try await client.updateLocalization(
