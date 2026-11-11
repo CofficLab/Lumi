@@ -424,6 +424,33 @@ struct VendorProviderStreamingTests {
         #expect(network.lastBodyJSON["stream_options"] as? [String: Any] != nil)
     }
 
+    /// OpenAI 的拒答帧（`delta.refusal`）必须被累积成正文。
+    ///
+    /// 回归：不读 `delta.refusal` 时，拒答帧不产出任何增量，流以空内容
+    /// 正常结束，随后在 AgentLoop 层被重新归类为「模型返回空响应」——
+    /// 模型明确拒绝了，用户看到的却是通用失败提示。
+    @Test("OpenAI 兼容流式拒答累积为正文而非空响应")
+    func openAIStreamAccumulatesRefusal() async throws {
+        let network = FakeNetworkProvider()
+        network.setStreamEvents([
+            Fixture.sse(["choices": [["delta": ["role": "assistant", "refusal": "I'm sorry, but I can't help with that."]]]]),
+            Fixture.sse(["choices": [["delta": [:], "finish_reason": "stop"]]]),
+        ])
+        let provider = makeProvider(network: network, format: .openAI)
+        let collector = ChunkCollector()
+        let request = LLMRequest(
+            messages: [LLMMessage(role: .user, content: "hi")],
+            model: "gpt-4o"
+        )
+
+        let response = try await provider.streamComplete(request) { chunk in
+            collector.append(chunk)
+        }
+
+        #expect(collector.text == "I'm sorry, but I can't help with that.")
+        #expect(response.content == "I'm sorry, but I can't help with that.")
+    }
+
     @Test("Anthropic 兼容流式响应累积正文")
     func anthropicStreamAccumulatesContent() async throws {
         let network = FakeNetworkProvider()
