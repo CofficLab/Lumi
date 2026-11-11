@@ -714,7 +714,32 @@ extension AgentLoopManager {
         let contextProvider = self.contextProvider
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        let llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
+        var llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
+
+        // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+        //
+        // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+        // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+        // 模型（如内置的 `gpt-4` / `gpt-3.5-turbo`）仍然收到 base64 图片
+        // 块——一个本地就能拦下的能力错误被推迟成供应商的协议失败。
+        if modelInfo?.supportsVision == false {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)模型不支持视觉，剥离图片 model=\(modelName ?? "unknown")")
+            }
+            llmHistory = llmHistory.map { message in
+                message.images.isEmpty
+                    ? message
+                    : LLMMessage(
+                        role: message.role,
+                        content: message.content,
+                        toolCalls: message.toolCalls,
+                        toolCallID: message.toolCallID,
+                        reasoningContent: message.reasoningContent,
+                        redactedThinking: message.redactedThinking,
+                        isError: message.isError
+                    )
+            }
+        }
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(

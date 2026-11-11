@@ -420,7 +420,28 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let schemas = tools.compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
-        let llmHistory = llmMessages(from: history)
+        var llmHistory = llmMessages(from: history)
+        // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+        //
+        // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+        // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+        // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
+        // 供应商的协议失败。
+        if route?.modelInfo.supportsVision == false {
+            llmHistory = llmHistory.map { message in
+                message.images.isEmpty
+                    ? message
+                    : LLMMessage(
+                        role: message.role,
+                        content: message.content,
+                        toolCalls: message.toolCalls,
+                        toolCallID: message.toolCallID,
+                        reasoningContent: message.reasoningContent,
+                        redactedThinking: message.redactedThinking,
+                        isError: message.isError
+                    )
+            }
+        }
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
@@ -629,7 +650,28 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
-        let llmHistory = llmMessages(from: history)
+        var llmHistory = llmMessages(from: history)
+            // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
+            //
+            // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
+            // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
+            // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
+            // 供应商的协议失败。
+            if legacyRoute?.modelInfo.supportsVision == false {
+                llmHistory = llmHistory.map { message in
+                    message.images.isEmpty
+                        ? message
+                        : LLMMessage(
+                            role: message.role,
+                            content: message.content,
+                            toolCalls: message.toolCalls,
+                            toolCallID: message.toolCallID,
+                            reasoningContent: message.reasoningContent,
+                            redactedThinking: message.redactedThinking,
+                            isError: message.isError
+                        )
+                }
+            }
             var preparedMessages = llmHistory
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {
