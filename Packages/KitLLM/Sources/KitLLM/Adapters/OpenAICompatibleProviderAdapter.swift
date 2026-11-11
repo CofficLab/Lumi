@@ -588,7 +588,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         return dataLines.joined(separator: "\n")
     }
 
-    static func cacheReadInputTokens(from usage: [String: Any]?) -> Int? {
+    /// 读取 usage 里的缓存命中 token 数。
+    ///
+    /// 公开给其它 provider 插件复用：不同网关的 usage 字段名各异，
+    /// 但「缓存命中」这一个语义必须有一致口径，否则缓存命中率统计会
+    /// 把部分协议（Responses / Anthropic 兼容等）的轮次悄悄排除在外。
+    public static func cacheReadInputTokens(from usage: [String: Any]?) -> Int? {
         usage?["cached_tokens"] as? Int
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
@@ -597,7 +602,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ?? usage?["prompt_cache_hit_tokens"] as? Int
     }
 
-    static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
+    /// 读取 usage 里的缓存写入 token 数。口径同 ``cacheReadInputTokens(from:)``。
+    public static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
         usage?["cache_write_tokens"] as? Int
             ?? usage?["cache_creation_input_tokens"] as? Int
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cache_write_tokens"] as? Int
