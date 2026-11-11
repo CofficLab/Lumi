@@ -63,7 +63,7 @@ public struct AddRuleFormView: View {
                 .frame(width: 200)
 
                 // 添加按钮
-                AppButton("添加", style: .secondary, action: onAddRule)
+                AppButton(pluginLocalization.string("Add"), style: .secondary, action: onAddRule)
                     .disabled(!canAddRule)
                     .frame(width: 80)
             }
