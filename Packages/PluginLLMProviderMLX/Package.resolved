@@ -1,5 +1,5 @@
 {
-  "originHash" : "483b419eb896cf920fdff6f730fc8a6feaa65483ec0711fd5dab5c1db48c8e93",
+  "originHash" : "e121e4b1e8342ce23423b22ffb117cce4d871e5dd8c828fa9264970b7da05a34",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "bb4b61273b5a976bb571859c17f903ebc3439df1",
         "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "kitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
+      "state" : {
+        "revision" : "e07e1c1f1a5d89554152b0fd21a555e116d522bb",
+        "version" : "1.0.1"
       }
     },
     {
@@ -49,7 +58,7 @@
     {
       "identity" : "lumiui",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiUI.git",
+      "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
         "revision" : "82f3fa6fd362107ae2201d240d5f0ebf1117fd95",
         "version" : "1.13.1"
