@@ -12,11 +12,17 @@ final class ProviderSettingsPageViewModel: ObservableObject {
     @Published var selectedProviderID: String?
     @Published var searchText = ""
     @Published private(set) var customProviderRevision = 0
+    /// 远程模型刷新计数：自增以驱动头部模型数重算。
+    ///
+    /// 头部的模型总数取自动态模型池，远程刷新后必须重算，
+    /// 否则会停在刷新前的旧值。
+    @Published private(set) var modelsRevision = 0
 
     private let capability: any ProviderSettingsCapability
     private let isLocalFlag: Bool
     private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
     private var customCancellable: AnyCancellable?
+    private var modelsCancellable: AnyCancellable?
 
     init(
         capability: any ProviderSettingsCapability,
@@ -30,12 +36,18 @@ final class ProviderSettingsPageViewModel: ObservableObject {
             self?.customProviderRevision &+= 1
             self?.synchronizeSelection()
         }
+        // 远程模型刷新后重算头部的模型总数：动态池可能新增或移除模型。
+        modelsCancellable = capability.modelsUpdatedPublisher.sink { [weak self] _ in
+            self?.modelsRevision &+= 1
+        }
     }
 
     /// 插件卸载时调用，释放外部订阅。
     func cancel() {
         customCancellable?.cancel()
         customCancellable = nil
+        modelsCancellable?.cancel()
+        modelsCancellable = nil
     }
 
     // MARK: - Derived
@@ -73,8 +85,15 @@ final class ProviderSettingsPageViewModel: ObservableObject {
         return scopedProviders.first { $0.providerInfo.id == selectedProviderID }
     }
 
+    /// 当前选中供应商的模型总数。
+    ///
+    /// 必须与右侧详情使用**同一个动态模型池**（`capability.availableModels`）：
+    /// 远程型供应商的模型列表来自「远程快照 / 缓存 / 基线」的合并池，
+    /// 刷新后可能多于静态基线。只读 `providerInfo.models` 会让同一页面
+    /// 对同一供应商给出两个不同的总数。
     var selectedModelCount: Int {
-        selectedProvider?.providerInfo.models.count ?? 0
+        guard let providerID = selectedProvider?.providerInfo.id else { return 0 }
+        return capability.availableModels(for: providerID).count
     }
 
     var providerCountLabel: String {
