@@ -165,7 +165,24 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     // MARK: - 响应解析
 
     /// 解析非流式响应
-    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?) {
+    ///
+    /// - Returns: 正文、工具调用与响应元数据（token 用量、缓存用量、
+    ///   响应 ID、停止原因）。整段 JSON 的流式回退也要带上这些元数据，
+    ///   否则同一个网关从 SSE 换成整段 JSON 就会丢失它们。
+    public func parseResponse(
+        data: Data,
+        reverseMap: [String: String]? = nil
+    ) throws -> (
+        content: String,
+        toolCalls: [ToolCall]?,
+        inputTokens: Int?,
+        outputTokens: Int?,
+        cachedInputTokens: Int?,
+        cacheWriteInputTokens: Int?,
+        cacheTotalInputTokens: Int?,
+        responseID: String?,
+        stopReason: String?
+    ) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -191,7 +208,32 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             }
         }
 
-        return (textContent, toolCalls.isEmpty ? nil : toolCalls)
+        // 响应元数据。
+        //
+        // 整段 JSON 的流式回退依赖这些字段：只给正文与工具调用的话，
+        // 累积器拿到的 chunk 上没有任何元数据，最终响应的 token 用量、
+        // 缓存用量、响应 ID、停止原因全是 nil。
+        let usage = response.usage
+        let cacheWriteInputTokens = usage?.cacheCreationInputTokens
+        let cachedInputTokens = usage?.cacheReadInputTokens
+            ?? (cacheWriteInputTokens == nil ? nil : 0)
+        let inputTokens = usage?.inputTokens
+
+        return (
+            textContent,
+            toolCalls.isEmpty ? nil : toolCalls,
+            inputTokens,
+            usage?.outputTokens,
+            cachedInputTokens,
+            cacheWriteInputTokens,
+            Self.cacheTotalInputTokens(
+                inputTokens: inputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens
+            ),
+            response.id,
+            response.stopReason
+        )
     }
 
     // MARK: - 流式解析
@@ -215,12 +257,21 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
            !trimmed.contains("data:") {
             let parsed = try parseResponse(data: data)
             if !parsed.content.isEmpty || parsed.toolCalls != nil {
+                // 必须带上响应元数据：网关从 SSE 换成整段 JSON 时，最终
+                // 响应的 token 用量、缓存用量、响应 ID、停止原因不应改变。
                 return StreamChunk(
                     content: parsed.content.isEmpty ? nil : parsed.content,
                     isDone: true,
                     toolCalls: parsed.toolCalls,
                     eventType: .textDelta,
-                    rawEvent: text
+                    rawEvent: text,
+                    inputTokens: parsed.inputTokens,
+                    outputTokens: parsed.outputTokens,
+                    cachedInputTokens: parsed.cachedInputTokens,
+                    cacheWriteInputTokens: parsed.cacheWriteInputTokens,
+                    cacheTotalInputTokens: parsed.cacheTotalInputTokens,
+                    responseID: parsed.responseID,
+                    stopReason: parsed.stopReason
                 )
             }
         }

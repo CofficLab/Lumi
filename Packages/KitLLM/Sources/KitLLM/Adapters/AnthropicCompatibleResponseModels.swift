@@ -12,6 +12,33 @@ struct AnthropicCompatibleErrorResponse: Decodable {
 /// Anthropic 兼容 API 非流式响应
 struct AnthropicCompatibleResponse: Decodable {
     let content: [ContentBlock]
+    /// 响应 ID（`msg_...`）。
+    let id: String?
+    /// 停止原因（`end_turn` / `tool_use` / `max_tokens` 等）。
+    let stopReason: String?
+    /// token 用量。
+    let usage: Usage?
+
+    enum CodingKeys: String, CodingKey {
+        case content, id
+        case stopReason = "stop_reason"
+        case usage
+    }
+
+    /// Anthropic 的 usage 结构。
+    struct Usage: Decodable {
+        let inputTokens: Int?
+        let outputTokens: Int?
+        let cacheCreationInputTokens: Int?
+        let cacheReadInputTokens: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case inputTokens = "input_tokens"
+            case outputTokens = "output_tokens"
+            case cacheCreationInputTokens = "cache_creation_input_tokens"
+            case cacheReadInputTokens = "cache_read_input_tokens"
+        }
+    }
 
     struct ContentBlock: Decodable {
         let type: String
