@@ -416,11 +416,13 @@ private final class Arm64DDCMatcher: SuperLog {
 
     private func matchScore(displayID: CGDirectDisplayID, registryService: RegistryService) -> Int {
         guard let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
-              let infoDict = createInfoDictionary(displayID)
+              let unmanagedInfo = createInfoDictionary(displayID)
         else {
             return 0
         }
-        let info = infoDict as NSDictionary
+        // Create 规则返回 +1 持有的字典，必须在这里取走所有权并释放，
+        // 否则每次匹配都会泄漏一个字典（#865）。
+        let info = unmanagedInfo.takeRetainedValue() as NSDictionary
         var score = 0
 
         if let location = info[kIODisplayLocationKey] as? String,

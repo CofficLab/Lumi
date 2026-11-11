@@ -241,16 +241,24 @@ final class DisplayService: ObservableObject, SuperLog {
         return Array(ids.prefix(Int(count)))
     }
 
-    private nonisolated static func displayName(for id: CGDirectDisplayID, isBuiltIn: Bool) -> String {
+    /// 读取显示器名称。
+    ///
+    /// 该函数每 5 秒被刷新流程调用一次，因此 CoreDisplay 的 Create 规则字典
+    /// 必须在这里被取走所有权并释放，否则每次刷新都会泄漏一个字典（#865）。
+    /// 可见性为 internal，便于测试直接覆盖这条路径。
+    nonisolated static func displayName(for id: CGDirectDisplayID, isBuiltIn: Bool) -> String {
         if let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
-           let rawInfo = createInfoDictionary(id),
-           let info = rawInfo as? [String: Any],
-           let localizedNames = info["DisplayProductName"] as? [String: String]
+           let unmanagedInfo = createInfoDictionary(id)
         {
-            let name = localizedNames[Locale.current.identifier]
-                ?? localizedNames["en_US"]
-                ?? localizedNames.first?.value
-            if let name { return name }
+            // Create 规则返回 +1 持有的字典，必须在这里取走所有权并释放，
+            // 否则每次刷新都会泄漏一个字典（#865）。
+            let info = unmanagedInfo.takeRetainedValue() as? [String: Any]
+            if let localizedNames = info?["DisplayProductName"] as? [String: String] {
+                let name = localizedNames[Locale.current.identifier]
+                    ?? localizedNames["en_US"]
+                    ?? localizedNames.first?.value
+                if let name { return name }
+            }
         }
 
         if isBuiltIn { return "Built-in Display" }

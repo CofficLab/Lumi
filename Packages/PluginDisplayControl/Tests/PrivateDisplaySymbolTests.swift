@@ -32,7 +32,10 @@ func privateSymbolsDegradeGracefully() {
         _ = setBrightness(999_999, 0.5)
     }
     if let createInfoDictionary {
-        _ = createInfoDictionary(999_999)
+        // Create 规则返回 +1 持有的字典：必须取走所有权，否则这里本身也在泄漏。
+        if let unmanaged = createInfoDictionary(999_999) {
+            _ = unmanaged.takeRetainedValue()
+        }
     }
 
     // 断言的是"调用没崩"，而不是符号是否存在 —— 两者都是合法状态。
