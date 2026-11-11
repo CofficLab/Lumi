@@ -62,8 +62,50 @@ enum ASCBundleIDDetector {
         }
 
         // 优先取看起来像真实 bundle ID 的值（含点号，且不是测试 target）。
-        let preferred = candidates.first { $0.contains(".") && !$0.hasSuffix(".tests") }
+        let preferred = candidates.first { $0.contains(".") && !isTestBundleIdentifier($0) }
         return preferred ?? candidates.first
+    }
+
+    /// Xcode 为测试 Target 生成的标准 Bundle ID 后缀（不区分大小写）。
+    ///
+    /// `uitests` 也以 `tests` 结尾，因此只需匹配 `tests`。
+    private static let testTargetSuffix = "tests"
+
+    /// Xcode 追加在 Bundle ID 末尾的构建配置后缀。
+    private static let buildConfigurationSuffixes: Set<String> = ["debug", "release"]
+
+    /// 判断一个 Bundle ID 是否属于测试 Target。
+    ///
+    /// 多 Target 工程里测试 Target 的 Bundle ID 常见形式有 `DemoTests`、
+    /// `com.example.DemoTests`、`.Tests` 与 `.UITests`。此前只排除小写的
+    /// `.tests` 后缀，于是 `DemoTests` 会被当成主 App，自动绑定拿到的就是
+    /// 测试 Target 的 ID（#862）。
+    ///
+    /// 判定不区分大小写：只看 Bundle ID 的**最后一段**（反向 DNS 的 App 名
+    /// 部分），这样 `com.example.DemoTests` 能被识别，而 `com.example.Latest`
+    /// 不会因为以 `test` 结尾而被误判。
+    static func isTestBundleIdentifier(_ bundleID: String) -> Bool {
+        let normalized = bundleID
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard !normalized.isEmpty else { return false }
+
+        let segments = normalized.split(separator: ".").map(String.init)
+        guard let last = segments.last else { return false }
+
+        if last.hasSuffix(testTargetSuffix) {
+            return true
+        }
+
+        // `com.example.DemoTests.debug`：构建配置后缀之后才是真正的末段。
+        if buildConfigurationSuffixes.contains(last), segments.count >= 2 {
+            let previous = segments[segments.count - 2]
+            if previous.hasSuffix(testTargetSuffix) {
+                return true
+            }
+        }
+
+        return false
     }
 
     private static func unquote(_ value: String) -> String {
