@@ -17,6 +17,17 @@ public struct LauncherAppItem: Identifiable, Hashable, Sendable {
     }
 }
 
+/// 应用检索条目：缓存归一化名称，避免每次按键重复 lowercased
+public struct AppSearchEntry: Sendable {
+    public let item: LauncherAppItem
+    public let normalizedName: String
+
+    public init(item: LauncherAppItem, normalizedName: String) {
+        self.item = item
+        self.normalizedName = normalizedName
+    }
+}
+
 /// 应用扫描服务：扫描标准应用目录并缓存
 @MainActor
 public final class AppSearchService: ObservableObject, SuperLog {
@@ -28,7 +39,9 @@ public final class AppSearchService: ObservableObject, SuperLog {
     // MARK: - State
 
     /// 已扫描的应用（按名称排序）
-    @Published public private(set) var apps: [LauncherAppItem] = []
+    @Published public private(set) var apps: [LauncherAppItem] = [] {
+        didSet { rebuildSearchIndex() }
+    }
 
     /// 是否正在扫描
     @Published public private(set) var isScanning = false
@@ -46,6 +59,8 @@ public final class AppSearchService: ObservableObject, SuperLog {
     private var iconCache: [String: NSImage] = [:]
     /// 目录修改时间戳，用于增量刷新判断
     private var lastScanStamps: [String: Date] = [:]
+    /// 检索索引：应用条目 + 归一化名称，随应用列表变化重建
+    private var searchIndex: [AppSearchEntry] = []
 
     /// 标准应用目录
     static let searchDirectories: [String] = [
@@ -145,11 +160,49 @@ public final class AppSearchService: ObservableObject, SuperLog {
 
     /// 按查询词过滤应用（前缀 > 包含 > 模糊，同 QuickFileSearch 打分思路）
     public func search(matching query: String) -> [LauncherAppItem] {
-        guard !query.isEmpty else { return [] }
+        searchItems(matching: query, limit: Int.max).map(\.item)
+    }
+
+    /// 按查询词检索应用，最多返回 limit 条。
+    ///
+    /// 归一化键预先算好并缓存，匹配时拿到足够结果即停止，
+    /// 避免每次按键都对全部应用做字符串分配与模糊扫描。
+    func searchItems(matching query: String, limit: Int) -> [AppSearchEntry] {
+        guard !query.isEmpty, limit > 0 else { return [] }
         let lowered = query.lowercased()
-        return apps.filter { item in
-            let name = item.name.lowercased()
-            return name.hasPrefix(lowered) || name.contains(lowered) || Self.fuzzyMatch(lowered, in: name)
+
+        var prefixHits: [AppSearchEntry] = []
+        var containsHits: [AppSearchEntry] = []
+        var fuzzyHits: [AppSearchEntry] = []
+        var found = 0
+
+        for entry in searchIndex {
+            let normalized = entry.normalizedName
+            if normalized.hasPrefix(lowered) {
+                prefixHits.append(entry)
+                found += 1
+            } else if normalized.contains(lowered) {
+                containsHits.append(entry)
+                found += 1
+            } else if Self.fuzzyMatch(lowered, in: normalized) {
+                fuzzyHits.append(entry)
+                found += 1
+            }
+            // 结果条数已够，不再继续扫描剩余应用。
+            if found >= limit { break }
+        }
+
+        // 前缀命中排前；同类按名称长度排，短名优先。
+        let ordered = (prefixHits + containsHits + fuzzyHits).sorted {
+            $0.item.name.count < $1.item.name.count
+        }
+        return Array(ordered.prefix(limit))
+    }
+
+    /// 重建应用检索索引（应用列表变化时调用）。
+    private func rebuildSearchIndex() {
+        searchIndex = apps.map { item in
+            AppSearchEntry(item: item, normalizedName: item.name.lowercased())
         }
     }
 
