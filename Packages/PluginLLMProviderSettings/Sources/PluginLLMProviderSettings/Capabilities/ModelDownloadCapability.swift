@@ -8,6 +8,11 @@ import KitLLM
 @MainActor
 protocol ModelDownloadCapability: AnyObject {
     var modelCacheDirectoryURL: URL { get }
+    /// 当前下载状态快照。
+    ///
+    /// 下载操作结束后据此判断是否失败：失败必须落到对应模型上，不能
+    /// 静默恢复成「可重新下载」的普通状态。
+    var downloadState: LLMModelDownloadState { get }
 
     func refreshDownloadState()
     func setDownloadSpeedLimit(bytesPerSecond: Int?)
@@ -29,6 +34,10 @@ final class ModelDownloadCapabilityAdapter: ModelDownloadCapability {
 
     var modelCacheDirectoryURL: URL {
         downloader.modelCacheDirectoryURL
+    }
+
+    var downloadState: LLMModelDownloadState {
+        downloader.downloadState
     }
 
     func refreshDownloadState() {
