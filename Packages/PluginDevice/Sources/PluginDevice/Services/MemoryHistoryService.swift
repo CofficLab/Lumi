@@ -57,6 +57,9 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     }
 
     public func stopRecording() {
+        // 先把当前这一分钟的聚合点结算进长期历史，再保存。
+        // 否则会话末尾不足一分钟的采样在重启后永久丢失（#863）。
+        settlePendingMinute()
         saveHistory()
     }
 
@@ -116,6 +119,31 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     }
 
     // MARK: - Persistence
+
+    /// 把当前未完成分钟的聚合点结算进长期历史。
+    ///
+    /// 正常情况下这个点要等到下一分钟的采样到来才写入长期历史。若采样在此时
+    /// 停止，图表上看得到的那个聚合点就不会落盘，重启后永久丢失（#863）。
+    /// 停止时先结算一次，保证「已经显示出来的数据」不会因为没有跨分钟而消失。
+    private func settlePendingMinute() {
+        guard minuteAccumulator.count > 0 else { return }
+
+        let avgPct = minuteAccumulator.sumPct / Double(minuteAccumulator.count)
+        let avgBytes = minuteAccumulator.sumBytes / UInt64(minuteAccumulator.count)
+        longTermHistory.append(
+            MemoryDataPoint(
+                timestamp: lastMinuteTimestamp,
+                usagePercentage: avgPct,
+                usedBytes: avgBytes
+            )
+        )
+
+        if longTermHistory.count > maxLongTermPoints {
+            longTermHistory.removeFirst(longTermHistory.count - maxLongTermPoints)
+        }
+
+        minuteAccumulator = (0, 0, 0)
+    }
 
     @discardableResult
     func saveHistory() -> Task<Bool, Never>? {
