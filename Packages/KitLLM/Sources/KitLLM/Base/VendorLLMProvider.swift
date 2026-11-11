@@ -233,7 +233,11 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 顶层响应 ID（`resp_...`）：供应商的关联标识，下游要靠它把一次
+            // 请求与它的日志对上。自定义 `.responses` 供应商走的就是这条
+            // 路径，丢掉它就无法在下游恢复（issue #1147）。
+            responseID: object["id"] as? String
         )
     }
 
