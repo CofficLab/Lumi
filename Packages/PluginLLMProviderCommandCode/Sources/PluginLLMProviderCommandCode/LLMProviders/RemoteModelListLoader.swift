@@ -60,8 +60,16 @@ struct RemoteModelListLoader: Sendable {
         for entry in entries {
             guard let id = entry["id"] as? String, !id.isEmpty else { continue }
             let displayName = entry["name"] as? String
-            let contextLength = (entry["context_length"] as? NSNumber)?.intValue
+            let rawContextLength = (entry["context_length"] as? NSNumber)?.intValue
                 ?? (entry["contextLength"] as? NSNumber)?.intValue
+            // 非正的上下文窗口视为「未知」，不发布给上层。
+            //
+            // 合并时远程条目会整体替换同 id 的静态条目，畸形的远程 `0`
+            // 会顶掉有效的静态窗口（如 1,000,000）；而且该值非 `nil`，
+            // 「窗口未知」的兜底分支不会生效——预算层只把有效窗口钳到
+            // 4096，输入上限随之塌到 1024 token，普通历史就被压缩或
+            // 确定性截断。畸形远程值绝不能压垮生产输入预算。
+            let contextLength = (rawContextLength ?? 0) > 0 ? rawContextLength : nil
             result.append(
                 LLMModelInfo(
                     id: id,
