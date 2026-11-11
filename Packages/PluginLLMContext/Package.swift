@@ -46,6 +46,7 @@ let package = Package(
                 "PluginLLMContext",
                 "KitLLM",
                 "ProviderConversation",
+                "ProviderLLMContext",
                 "ProviderLLMManager",
                 "ProviderMessage",
             ],

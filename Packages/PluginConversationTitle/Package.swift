@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderLLMContext"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderAgentLoop"),
@@ -31,6 +32,7 @@ let package = Package(
                 "ProviderConversation",
                 "ProviderMessage",
                 "ProviderLLMManager",
+                "ProviderLLMContext",
                 "KitLLM",
                 "ProviderToolManager",
                 "ProviderAgentLoop",
@@ -39,7 +41,15 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationTitleTests",
-            dependencies: ["PluginConversationTitle"],
+            dependencies: [
+                "PluginConversationTitle",
+                "KitLLM",
+                "ProviderConversation",
+                "ProviderLLMContext",
+                "ProviderLLMManager",
+                "ProviderMessage",
+                .product(name: "KernelCore", package: "LumiKernel"),
+            ],
             path: "Tests/PluginConversationTitleTests"
         ),
     ]

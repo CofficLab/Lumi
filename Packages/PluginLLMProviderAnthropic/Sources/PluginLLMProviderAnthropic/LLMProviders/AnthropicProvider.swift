@@ -24,7 +24,8 @@ public final class AnthropicProvider: VendorLLMProvider {
                 ],
                 websiteURL: URL(string: "https://www.anthropic.com/")!,
                 apiFormat: .anthropic,
-                apiKeyStorageKey: "DevAssistant_ApiKey_Anthropic"
+                apiKeyStorageKey: "DevAssistant_ApiKey_Anthropic",
+                recommendedUtilityModel: "claude-3-haiku-20240307"
             ),
             apiService: apiService
         )

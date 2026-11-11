@@ -1,4 +1,5 @@
 import LumiUI
+import ProviderLLMContext
 import ProviderMessage
 import SwiftUI
 
@@ -9,11 +10,21 @@ struct ContextPopover: View {
     let usage: ContextWindowUsageSnapshot?
     let history: ContextUsageHistory
     let events: [Message]
+    /// 幕后调用（压缩摘要 / 标题）用量；独立于上下文曲线展示开销。
+    var auxiliaryEntries: [LLMAuxiliaryUsageEntry] = []
+
+    private var auxiliaryOverheads: [LLMAuxiliaryOverhead] {
+        LLMAuxiliaryOverhead.summarize(auxiliaryEntries)
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 windowSection
+                if !auxiliaryOverheads.isEmpty {
+                    Divider()
+                    auxiliarySection
+                }
                 if !events.isEmpty {
                     Divider()
                     compactionSection
@@ -50,6 +61,81 @@ struct ContextPopover: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    // MARK: - Auxiliary Overhead Section
+
+    /// 幕后调用开销：压缩摘要与标题各自消耗了多少额度。
+    ///
+    /// 这些调用不属于对话回合，因此不进入上方的上下文曲线；这里单独列出，
+    /// 让「省了多少 / 花了多少」可被核算。供应商未上报用量时标注估算或不可用，
+    /// 绝不显示零。
+    private var auxiliarySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "gauge.with.dots.needle.67percent")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                Text(String(localized: "Background usage", defaultValue: "幕后调用开销", bundle: .module))
+                    .font(.headline)
+            }
+
+            ForEach(auxiliaryOverheads, id: \.purpose) { overhead in
+                auxiliaryRow(overhead)
+            }
+
+            Text(String(
+                localized: "Summaries and titles run outside the conversation turn, so they are not part of the context curve above.",
+                defaultValue: "摘要与标题在对话回合之外运行，不计入上方的上下文曲线。",
+                bundle: .module
+            ))
+            .font(.appCaption)
+            .foregroundStyle(theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private func auxiliaryRow(_ overhead: LLMAuxiliaryOverhead) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(auxiliaryPurposeLabel(overhead.purpose))
+                .font(.appCaption)
+                .foregroundStyle(theme.textPrimary)
+            Text(String(
+                format: String(localized: "%lld calls", defaultValue: "%lld 次", bundle: .module),
+                overhead.callCount
+            ))
+            .font(.appMicro)
+            .foregroundStyle(theme.textSecondary)
+            Spacer(minLength: 0)
+            Text(auxiliarySpentText(overhead))
+                .font(.appMonoCaption)
+                .foregroundStyle(theme.textSecondary)
+        }
+    }
+
+    private func auxiliaryPurposeLabel(_ purpose: LLMAuxiliaryPurpose) -> String {
+        switch purpose {
+        case .compaction:
+            return String(localized: "Compaction summaries", defaultValue: "压缩摘要", bundle: .module)
+        case .title:
+            return String(localized: "Conversation titles", defaultValue: "对话标题", bundle: .module)
+        }
+    }
+
+    private func auxiliarySpentText(_ overhead: LLMAuxiliaryOverhead) -> String {
+        guard let spent = overhead.spentTokens else {
+            return String(localized: "Usage unavailable", defaultValue: "用量不可用", bundle: .module)
+        }
+        let value = spent.formattedTokensShort
+        if overhead.hasEstimatedUsage {
+            return String(
+                format: String(localized: "~%@ (estimated)", defaultValue: "~%@（估算）", bundle: .module),
+                value
+            )
+        }
+        return value
     }
 
     // MARK: - Compaction Section
@@ -189,6 +275,19 @@ private struct CompactionTimelineRow: View {
                     Text(estimateText)
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
+                    if let summaryAuthorText {
+                        Text(summaryAuthorText)
+                            .font(.appCaption)
+                            .foregroundStyle(theme.textSecondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let savingsText {
+                        Text(savingsText)
+                            .font(.appCaption)
+                            .foregroundStyle(theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
 
                 Text(reasonExplanation)
@@ -263,6 +362,43 @@ private struct CompactionTimelineRow: View {
         return "\(formatTokens(original)) → \(formatTokens(compacted)) tokens"
     }
 
+    /// 实际产出摘要的模型（可能与对话主模型不同）；未记录时不显示。
+    private var summaryAuthorText: String? {
+        let provider = message.metadata[MessageTimelineEvent.contextCompactionSummaryProviderIDKey]
+        let model = message.metadata[MessageTimelineEvent.contextCompactionSummaryModelNameKey]
+        guard provider != nil || model != nil else { return nil }
+        let label = String(localized: "Summary model", defaultValue: "摘要模型", bundle: .module)
+        let unknown = String(localized: "Unknown model", defaultValue: "未知模型", bundle: .module)
+        if let provider, !provider.isEmpty {
+            return "\(label): \(provider) · \(model ?? unknown)"
+        }
+        return "\(label): \(model ?? unknown)"
+    }
+
+    /// 节省（估算）/ 摘要消耗（真实或标注估算）/ 净收益；缺失端标注不可用，不显示零。
+    private var savingsText: String? {
+        let saved = MessageTimelineEvent.compactionSavedTokens(for: message)
+        let spent = MessageTimelineEvent.compactionSpentTokens(for: message)
+        guard saved != nil || spent != nil else { return nil }
+
+        let savedLabel = String(localized: "Saved", defaultValue: "节省", bundle: .module)
+        let spentLabel = String(localized: "summary cost", defaultValue: "摘要消耗", bundle: .module)
+        let netLabel = String(localized: "net", defaultValue: "净收益", bundle: .module)
+        let unavailable = String(localized: "unavailable", defaultValue: "不可用", bundle: .module)
+
+        let savedText = saved.map { "~\(formatTokens($0))" } ?? unavailable
+        let spentText: String
+        if let spent {
+            spentText = MessageTimelineEvent.compactionSpentIsEstimated(for: message)
+                ? "~\(formatTokens(spent)) (\(String(localized: "estimated", defaultValue: "估算", bundle: .module)))"
+                : formatTokens(spent)
+        } else {
+            spentText = unavailable
+        }
+        let netText = MessageTimelineEvent.compactionNetTokens(for: message).map(formatTokens) ?? unavailable
+        return "\(savedLabel) \(savedText) · \(spentLabel) \(spentText) · \(netLabel) \(netText)"
+    }
+
     private var reason: MessageTimelineEvent.ContextCompactionReason {
         MessageTimelineEvent.compactionReason(for: message)
     }
@@ -294,7 +430,16 @@ private struct CompactionTimelineRow: View {
     }
 
     private var accessibilityText: String {
-        "\(message.createdAt.formatted(date: .abbreviated, time: .shortened)), \(modelText), \(windowText), \(estimateText), \(reasonExplanation)"
+        var parts = [
+            message.createdAt.formatted(date: .abbreviated, time: .shortened),
+            modelText,
+            windowText,
+            estimateText,
+        ]
+        if let summaryAuthorText { parts.append(summaryAuthorText) }
+        if let savingsText { parts.append(savingsText) }
+        parts.append(reasonExplanation)
+        return parts.joined(separator: ", ")
     }
 
     private func formatTokens(_ tokens: Int?) -> String {

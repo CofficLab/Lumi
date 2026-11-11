@@ -185,6 +185,16 @@ public struct LLMProviderInfo: Sendable, Equatable {
     /// API Key 在 Keychain 中的存储 key（与旧版 Keychain 兼容）。
     public let apiKeyStorageKey: String
 
+    /// 供应商推荐的轻量任务模型（上下文摘要、对话标题等幕后调用）。
+    ///
+    /// 这类任务输入小、输出短、能力要求低，用便宜模型即可胜任，避免在每次
+    /// 长对话压缩和每条新对话标题上消耗主模型额度。声明即唯一事实来源，无用户
+    /// 设置项。
+    ///
+    /// - Important: 必须是该供应商**自己模型列表**中的模型 id。缺失、为空或不在
+    ///   模型池中时，调用方回退到对话主模型（见 `LLMManaging.utilityModelRoute(for:)`）。
+    public let recommendedUtilityModel: String?
+
     public init(
         id: String,
         displayName: String,
@@ -195,7 +205,8 @@ public struct LLMProviderInfo: Sendable, Equatable {
         websiteURL: URL? = nil,
         providerType: LLMProviderType? = nil,
         apiFormat: LLMProviderAPIFormat = .openAI,
-        apiKeyStorageKey: String = ""
+        apiKeyStorageKey: String = "",
+        recommendedUtilityModel: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -207,6 +218,7 @@ public struct LLMProviderInfo: Sendable, Equatable {
         self.websiteURL = websiteURL
         self.apiFormat = apiFormat
         self.apiKeyStorageKey = apiKeyStorageKey
+        self.recommendedUtilityModel = recommendedUtilityModel
     }
 
     /// 全部模型 id，按声明顺序。

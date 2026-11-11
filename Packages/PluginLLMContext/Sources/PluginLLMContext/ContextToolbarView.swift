@@ -1,5 +1,6 @@
 import LumiUI
 import ProviderConversation
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import SwiftUI
@@ -16,6 +17,7 @@ struct ContextToolbarView: View {
     @State private var usage: ContextWindowUsageSnapshot?
     @State private var history: ContextUsageHistory = .empty
     @State private var events: [Message] = []
+    @State private var auxiliaryEntries: [LLMAuxiliaryUsageEntry] = []
     @State private var isPopoverPresented = false
     @State private var selectedConversationID: UUID?
     @State private var refreshRevision = 0
@@ -36,7 +38,7 @@ struct ContextToolbarView: View {
         .buttonStyle(.plain)
         .help(contextTooltip)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ContextPopover(usage: usage, history: history, events: events)
+            ContextPopover(usage: usage, history: history, events: events, auxiliaryEntries: auxiliaryEntries)
         }
         .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(refreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
@@ -44,6 +46,7 @@ struct ContextToolbarView: View {
             await refreshUsage(for: selectedConversationID)
             await refreshHistory(for: selectedConversationID)
             await refreshEvents(for: selectedConversationID)
+            await refreshAuxiliaryUsage(for: selectedConversationID)
         }
         .onAppear {
             guard observerHandle == nil else { return }
@@ -188,5 +191,15 @@ struct ContextToolbarView: View {
                 if lhs.createdAt == rhs.createdAt { return lhs.id > rhs.id }
                 return lhs.createdAt > rhs.createdAt
             }
+    }
+
+    private func refreshAuxiliaryUsage(for conversationID: UUID?) async {
+        guard let conversationID else {
+            auxiliaryEntries = []
+            return
+        }
+        let entries = await provider.auxiliaryUsageEntries(for: conversationID)
+        guard !Task.isCancelled, selectedConversationID == conversationID else { return }
+        auxiliaryEntries = entries
     }
 }
