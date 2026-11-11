@@ -72,9 +72,22 @@ final class MLXRuntime {
             }
         }
         guard !messages.isEmpty else { throw MLXProviderError.emptyPrompt }
-        let input = UserInput(chat: messages, tools: mlxTools(from: request.tools))
+        let tools = mlxTools(from: request.tools)
+        let input = UserInput(chat: messages, tools: tools)
         let prepared = try await container.prepare(input: input)
-        let stream = try await container.generate(input: prepared, parameters: GenerateParameters(temperature: 0.7))
+        // `generate(..., tools:)` 与 `UserInput.tools` 用途不同，**都要传**：
+        // - `UserInput.tools` 供 chat template 渲染提示词；
+        // - `generate(..., tools:)` 供响应解析层做参数类型解析与函数名授权。
+        //
+        // 省略后者时它的默认值是 `nil`，语义是「接受任意解析出的函数名，
+        // 且不做 Schema 类型转换」：声明为 `integer` 的参数保持字符串，
+        // 未声明的函数名也不会被拒绝——错误的参数类型会直接流进 Agent
+        // 工具链。
+        let stream = try await container.generate(
+            input: prepared,
+            parameters: GenerateParameters(temperature: 0.7),
+            tools: tools
+        )
 
         var content = ""
         var toolCalls: [LLMToolCall] = []
