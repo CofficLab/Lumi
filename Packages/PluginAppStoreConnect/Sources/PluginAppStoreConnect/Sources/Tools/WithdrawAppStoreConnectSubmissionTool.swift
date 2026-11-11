@@ -43,7 +43,11 @@ public struct WithdrawAppStoreConnectSubmissionTool: SuperAgentTool {
 
         do {
             guard let submissionID = try await client.readSubmissionID(versionID: versionID) else {
-                return "No pending submission found for version id=\(versionID)."
+                // 撤回没有发生：必须以失败表达，否则调用方会把这次调用记成成功。
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "No pending submission found for version id=\(versionID)."
+                )
             }
             try await client.withdrawSubmission(submissionID: submissionID)
             return "Submission id=\(submissionID) for version id=\(versionID) withdrawn."

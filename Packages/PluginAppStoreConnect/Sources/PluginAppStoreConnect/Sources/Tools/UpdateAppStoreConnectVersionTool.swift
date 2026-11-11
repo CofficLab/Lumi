@@ -60,7 +60,11 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
         let earliestReleaseDate = arguments["earliestReleaseDate"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if copyright == nil, releaseType == nil, downloadable == nil, earliestReleaseDate == nil {
-            return "No update fields provided. Pass copyright, releaseType, downloadable, or earliestReleaseDate."
+            // 更新没有发生：必须以失败表达，否则调用方会把这次调用记成成功。
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No update fields provided. Pass copyright, releaseType, downloadable, or earliestReleaseDate."
+            )
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()

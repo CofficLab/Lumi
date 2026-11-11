@@ -48,7 +48,11 @@ public struct UploadAppStoreConnectScreenshotTool: SuperAgentTool {
 
         let fileURL = URL(fileURLWithPath: filePath)
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            return "File not found: \(filePath)"
+            // 上传没有发生：必须以失败表达，否则调用方会把这次调用记成成功。
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "File not found: \(filePath)"
+            )
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
