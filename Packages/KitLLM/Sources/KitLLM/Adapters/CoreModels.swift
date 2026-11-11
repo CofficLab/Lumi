@@ -85,6 +85,34 @@ public struct StreamChunk: Sendable, Equatable {
     /// 当成空响应，图片直接丢失。
     public let images: [MessageImage]?
 
+    /// 补上响应 ID（`chatcmpl-...`）。
+    ///
+    /// 流式解析的每个事件都带同一个顶层 `id`，但 chunk 构造点分散在各
+    /// 分支里；与其逐个加参数，不如在解析函数末尾统一补齐。
+    public func withResponseID(_ responseID: String?) -> StreamChunk {
+        guard let responseID, self.responseID == nil else { return self }
+        return StreamChunk(
+            content: content,
+            isDone: isDone,
+            toolCalls: toolCalls,
+            error: error,
+            partialJson: partialJson,
+            toolCallIndex: toolCallIndex,
+            eventType: eventType,
+            rawEvent: rawEvent,
+            rawStreamPayload: rawStreamPayload,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            cachedInputTokens: cachedInputTokens,
+            cacheWriteInputTokens: cacheWriteInputTokens,
+            cacheTotalInputTokens: cacheTotalInputTokens,
+            responseID: responseID,
+            stopReason: stopReason,
+            redactedThinkingData: redactedThinkingData,
+            images: images
+        )
+    }
+
     public init(
         content: String? = nil,
         isDone: Bool = false,

@@ -10,9 +10,22 @@ struct OpenAICompatibleErrorResponse: Decodable {
 
 struct OpenAICompatibleResponse: Decodable {
     let choices: [Choice]
+    /// 顶层响应 ID（`chatcmpl-...`）。
+    ///
+    /// 这是供应商的关联标识，下游要靠它把一次请求与它的日志对上。
+    let id: String?
 
     struct Choice: Decodable {
         let message: Message
+        /// 结束原因（`stop` / `length` / `tool_calls` 等）。
+        ///
+        /// 截断的回答（`length`）靠它才能说明「为什么没说完」。
+        let finishReason: String?
+
+        enum CodingKeys: String, CodingKey {
+            case message
+            case finishReason = "finish_reason"
+        }
     }
 
     struct Message: Decodable {

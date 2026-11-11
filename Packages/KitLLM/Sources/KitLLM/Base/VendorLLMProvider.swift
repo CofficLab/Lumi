@@ -150,6 +150,10 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             cachedInputTokenCount: tokenCounts.cachedInput,
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
             cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            // 响应元数据：供应商的关联 ID 与结束原因。截断的回答（`length`）
+            // 靠 `stopReason` 才能说明「为什么没说完」。
+            responseID: parsed.responseID,
+            stopReason: parsed.stopReason,
             // 生成的图片（图像生成模型的产物）。没有它，一次合法的
             // 「只生成图片」的响应会被当成空响应。
             images: parsed.images
