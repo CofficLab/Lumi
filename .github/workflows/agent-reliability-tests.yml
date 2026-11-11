@@ -1,0 +1,69 @@
+name: Agent Reliability Tests
+
+# Swift 测试门禁：让 `swift test` 真正成为 PR 的红线。
+#
+# 与 release-build-validation.yml 的分工：
+#   - 本 workflow 只跑单元测试，不构建、不签名、不出包
+#   - release validation 保持独立，仍负责双架构 archive 与产物验证
+#
+# 触发范围刻意收窄在 Agent 核心链路，避免每个 PR 都跑全仓 200+ 个包。
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "Packages/**"
+      - "Scripts/**"
+      - ".github/workflows/agent-reliability-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-reliability-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 门禁脚本自身的回归测试：确认 run-all-package-tests.sh 在有包失败时
+  # 真的非零退出，而不是把失败读成绿灯。
+  script-self-test:
+    name: Test script exit codes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Verify the all-package test script propagates failures
+        run: python3 Scripts/tests/test-run-all-package-tests.py
+
+  tests:
+    name: ${{ matrix.group }}
+    needs: script-self-test
+    runs-on: xcode-27
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - contracts
+          - runtime
+          - integration
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        with:
+          xcode-version: "27.0"
+      - name: Run ${{ matrix.group }} package tests
+        run: Scripts/run-agent-reliability-tests.sh ${{ matrix.group }}
+      - name: Preserve test logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-reliability-logs-${{ matrix.group }}-${{ github.run_id }}
+          path: .test-logs/agent-reliability/${{ matrix.group }}
+          retention-days: 7
+          if-no-files-found: warn
