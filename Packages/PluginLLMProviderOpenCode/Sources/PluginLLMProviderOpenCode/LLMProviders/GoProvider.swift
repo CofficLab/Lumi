@@ -334,27 +334,43 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             inputTokenCount: tokenCounts.input,
-            outputTokenCount: tokenCounts.output
+            outputTokenCount: tokenCounts.output,
+            cachedInputTokenCount: tokenCounts.cachedInput,
+            cacheWriteInputTokenCount: tokenCounts.cacheWrite,
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal
         )
     }
 
     /// OpenCode 网关的不同协议使用不同的 usage 字段名，统一转换到 Lumi 的
     /// token 统计字段。
-    private static func tokenCounts(from data: Data, anthropic: Bool) -> (input: Int?, output: Int?) {
+    ///
+    /// 缓存字段复用共享的 OpenAI 适配器解析：Responses 的标准 usage 把
+    /// 缓存命中写在 `input_tokens_details.cached_tokens`，该形态在仓库
+    /// 其它路径已被支持，这里必须保持同一口径，否则缓存命中率统计会
+    /// 把每一轮 Responses 请求都排除在外。
+    private static func tokenCounts(
+        from data: Data,
+        anthropic: Bool
+    ) -> (input: Int?, output: Int?, cachedInput: Int?, cacheWrite: Int?, cacheTotal: Int?) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let usage = object["usage"] as? [String: Any] else {
-            return (nil, nil)
+            return (nil, nil, nil, nil, nil)
         }
+        let input: Int?
+        let output: Int?
         if anthropic {
-            return (
-                usage["input_tokens"] as? Int,
-                usage["output_tokens"] as? Int
-            )
+            input = usage["input_tokens"] as? Int
+            output = usage["output_tokens"] as? Int
+        } else {
+            input = usage["input_tokens"] as? Int ?? usage["prompt_tokens"] as? Int
+            output = usage["output_tokens"] as? Int ?? usage["completion_tokens"] as? Int
         }
-        return (
-            usage["input_tokens"] as? Int ?? usage["prompt_tokens"] as? Int,
-            usage["output_tokens"] as? Int ?? usage["completion_tokens"] as? Int
-        )
+        let cachedInput = OpenAICompatibleProviderAdapter.cacheReadInputTokens(from: usage)
+        let cacheWrite = OpenAICompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
+        // OpenAI 形态的 `input_tokens` 已经是总输入（含缓存命中部分），
+        // 不能与缓存字段相加。
+        let cacheTotal = input
+        return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
 
     private func endpointURL(_ string: String) throws -> URL {
