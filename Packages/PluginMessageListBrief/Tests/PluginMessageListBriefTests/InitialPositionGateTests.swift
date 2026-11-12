@@ -195,10 +195,15 @@ func gateResetMustNotCancelConvergenceAlreadyStarted() async {
 @Test("首屏遮罩：复位不得让已失效的旧一轮放行遮罩")
 func gateResetMustNotReleaseMaskFromStaleRound() async {
     let staleConversationID = UUID()
-    // Important: 预算给足（30s）。本用例要验的是「**失效的一轮**不得放行遮罩」，
+    // Important: 预算给足（10 分钟）。本用例要验的是「**失效的一轮**不得放行遮罩」，
     //   而 gate 还有一条独立的兜底计时器（遮罩寿命上界）。预算太短时兜底会
     //   在断言前开火，失败原因就不再是被测机制本身（机器繁忙时 sleep 也会超时）。
-    let gate = InitialPositionGate(budgetNanoseconds: 30_000_000_000)
+    //
+    //   原先用 30s，但高负载下（CI 上多个包同时跑）主 actor 被占用会让
+    //   300ms 的 sleep 实际拖过 30s → 兜底开火 → `isReady` 变 true →
+    //   **偶发**失败，且失败原因与被测机制无关。10 分钟让兜底在本用例期间
+    //   不可能开火。
+    let gate = InitialPositionGate(budgetNanoseconds: 600_000_000_000)
 
     // 旧会话的一轮仍在飞行，但已经失效（会话已被换掉）。
     gate.request(
@@ -212,6 +217,11 @@ func gateResetMustNotReleaseMaskFromStaleRound() async {
 
     gate.resetForConversationSwitch()
 
-    try? await Task.sleep(nanoseconds: 300_000_000)
+    // 判据：失效的一轮**已经回来并释放了准备状态**（`isPreparing == false`
+    // 且不再等待旧会话）。这是被测机制本身的完成信号 —— 固定 sleep 既慢
+    // 又不可靠（高负载下 sleep 的实际时长会漂移）。
+    let settled = await waitUntil({ !gate.isPreparing }, timeoutMs: 10_000)
+    #expect(settled, "失效的一轮未释放准备状态")
+    #expect(gate.awaitingConversationID == nil, "失效的一轮不应继续占用等待位")
     #expect(!gate.isReady, "已失效的一轮不得放行遮罩")
 }
