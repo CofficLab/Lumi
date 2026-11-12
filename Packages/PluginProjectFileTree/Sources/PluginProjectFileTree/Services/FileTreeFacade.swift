@@ -115,7 +115,7 @@ public enum FileTreeFacade {
     ///
     /// 多选删除必须处理 `actionTargets(for:)` 的全部目标，并保留失败项供
     /// 调用方汇报部分失败（回归 #1109）。
-    struct TrashBatchResult: Equatable {
+    struct TrashBatchResult: Equatable, Sendable {
         let trashedURLs: [URL]
         let failedURLs: [URL]
 

@@ -5,6 +5,10 @@ import Testing
 
 @testable import PluginProjectFileTree
 
+private final class URLRecorder: @unchecked Sendable {
+    var urls: [URL] = []
+}
+
 /// 回归 #1109：多选右键 Move to Trash 必须处理 `actionTargets(for:)` 的全部目标，
 /// 而不是只删除右键项。
 @MainActor
@@ -109,15 +113,15 @@ struct FileTreeBatchDeleteTests {
             url: secondURL, isDirectory: false, modifiers: .command, onToggleExpand: {}
         )
 
-        var received: [URL] = []
+        let urlRecorder = URLRecorder()
         controller.trashHandler = { urls in
-            received = urls
+            urlRecorder.urls = urls
             return FileTreeFacade.TrashBatchResult(trashedURLs: urls, failedURLs: [])
         }
 
-        controller.performDelete(targets: controller.selectionState.actionTargets(for: firstURL))
+        await controller.performDelete(targets: controller.selectionState.actionTargets(for: firstURL))
 
-        #expect(received.map(\.lastPathComponent) == ["a.txt", "b.txt"])
+        #expect(urlRecorder.urls.map(\.lastPathComponent) == ["a.txt", "b.txt"])
         #expect(controller.selectionState.selectedPaths.isEmpty)
         #expect(recorder.toasts.last?.style == .success)
     }
@@ -152,7 +156,7 @@ struct FileTreeBatchDeleteTests {
             )
         }
 
-        controller.performDelete(targets: controller.selectionState.actionTargets(for: firstURL))
+        await controller.performDelete(targets: controller.selectionState.actionTargets(for: firstURL))
 
         #expect(
             controller.selectionState.selectedPaths
