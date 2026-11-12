@@ -66,7 +66,13 @@ struct EditorPreviewTests {
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         project.updateCurrentFile(fileURL)
-        try await Task.sleep(for: .milliseconds(20))
+        // 等待异步加载完成。
+        //
+        // - Important: `updateCurrentFile` 只把状态同步置为 `.loading`，
+        //   内容由随后的异步 Task 读入。原先固定睡 20ms —— 在并发负载下
+        //   （CI 上多个包同时跑）调度延迟会让文件读取来不及，于是**偶发**失败。
+        //   这里复用本文件已有的轮询式等待。
+        try await waitForMarkdown(viewModel, "# Preview\n", fileURL: fileURL)
 
         #expect(viewModel.state == .markdown(fileURL.standardizedFileURL, "# Preview\n"))
 

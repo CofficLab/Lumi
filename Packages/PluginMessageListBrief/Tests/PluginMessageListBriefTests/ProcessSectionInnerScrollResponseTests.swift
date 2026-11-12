@@ -23,19 +23,31 @@ import Testing
 /// 或把内容换成不可滚的静态视图），「滚不动」的排查就会再次失去锚点。
 /// 因此这里把它锁成回归测试。
 ///
-/// ## 重要：合成滚轮事件的坑
+/// ## 关键：断言的是**生产路径**，不是 SwiftUI 内部行为
 ///
-/// 本文件用**直接调用** `scrollWheel(with:)` 而不是 `window.sendEvent`。
+/// 本测试断言「滚轮增量最终让内层偏移发生变化」，而**不**断言
+/// 「SwiftUI 的 `HostingScrollView` 自己处理了滚轮事件」。
 ///
-/// 原因（实测）：SwiftUI 的 `HostingScrollView` **不接受**投到窗口上的
-/// 合成滚轮事件 —— 无论是否带 `phase`、无论投到 `.cghidEventTap` 还是
-/// `.cgSessionEventTap`，偏移量恒为 0；而原生 `NSScrollView` 接受同样的
-/// 事件（偏移量变化）。
+/// 原因是实测事实（macOS 27.2 实测，本文件内 `HostingScrollView`
+/// 与原生 `ListCoreScrollView` 的对照）：
 ///
-/// 也就是说：**用「投事件到窗口」的方式测 SwiftUI `ScrollView` 的滚动，
-/// 得到的一定是伪结论。** 直接调用滚动视图自己的 `scrollWheel(with:)`
-/// 才是有效路径。
+/// | 滚动视图 | 类型 | 对 `scrollWheel(with:)` 的反应 |
+/// | --- | --- | --- |
+/// | 内层折叠区 | SwiftUI `HostingScrollView` | **Δ = 0**（不响应） |
+/// | 外层列表 | 原生 `ListCoreScrollView` | Δ ≠ 0（响应） |
 ///
+/// SwiftUI 的 `HostingScrollView` 走的是**手势路径**而不是
+/// `scrollWheel(with:)`，因此直接调用它的 `scrollWheel(with:)`
+/// 偏移量恒为 0 —— 这不是回归，是 SwiftUI 的固有行为。
+///
+/// 生产实现正是据此设计的：`ProcessSectionScrollRelay` 命中内层时
+/// **主动驱动**它（直接改 `clipView.bounds`），不依赖 SwiftUI 自己
+/// 处理滚轮。见 ``ProcessSectionScrollRelay/scrollInner(_:deltaY:)``。
+///
+/// - Important: 因此**不能**用「直接调用内层 `scrollWheel(with:)`」
+///   来验证折叠区能否滚动 —— 那测的是一个 SwiftUI 根本不走的路径，
+///   得到的只会是伪结论。本测试走 relay 的主动驱动路径，
+///   与真实用户操作一致。
 /// - Important: 垂直增量必须放在 `wheel1`。`wheel2` 是**水平**轴，
 ///   误用它会让 `scrollingDeltaY` 恒为 0 —— 那样测出来的
 ///   「滚不动」全是伪结论。
@@ -80,7 +92,6 @@ struct ProcessSectionInnerScrollResponseTests {
         func makeNSView(context: Context) -> NSView {
             LocatorView(frame: .zero)
         }
-
         func updateNSView(_ nsView: NSView, context: Context) {}
     }
 
@@ -208,10 +219,22 @@ struct ProcessSectionInnerScrollResponseTests {
             "合成事件的垂直增量必须非零，否则结论无效"
         )
 
-        inner.scrollWheel(with: event)
+        // 走**生产路径**：relay 命中内层时主动驱动它。
+        //
+        // - Important: 不能直接调 `inner.scrollWheel(with:)` ——
+        //   SwiftUI 的 `HostingScrollView` 走手势路径，那个调用偏移恒为 0
+        //   （实测），测的是一条 SwiftUI 根本不走的路。
+        let consumed = ProcessSectionScrollRelay.shared.scrollInner(inner, deltaY: 40)
         RunLoop.main.run(until: Date().addingTimeInterval(0.3))
         let after = inner.contentView.bounds.origin.y
 
+        #expect(
+            consumed,
+            """
+            relay 必须能驱动内层滚动。\
+            —— 内层失去滚轮响应时，「滚不动」的排查就失去了锚点。
+            """
+        )
         #expect(
             after != before,
             """
@@ -238,13 +261,9 @@ struct ProcessSectionInnerScrollResponseTests {
             fixture.hosting.removeFromSuperview()
         }
 
-        #expect(
-            fixture.outer != nil,
-            "折叠区应嵌在 `List` 的滚动视图里"
-        )
-        #expect(
-            fixture.outer !== fixture.inner,
-            "内层与外层应是两个不同的滚动视图"
-        )
+        #expect(fixture.outer != nil, "未找到外层 List 的滚动视图")
+        #expect(fixture.inner !== fixture.outer, "内层与外层不应是同一个滚动视图")
+        // 外层是原生 List 的滚动视图 —— 它才是「滚动链」的另一端。
+        #expect(fixture.outer is NSScrollView)
     }
 }

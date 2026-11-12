@@ -235,6 +235,11 @@ class LumiUITestCase: XCTestCase {
     ///   否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
     ///   这种失败点随机漂移，极难归因。
     func terminateAppAndWait(timeout: TimeInterval = 30) {
+        // - Important: `app` 可能还是 nil —— `launchLumi` 尚未跑到赋值那一步，
+        //   或 `setUpWithError` 提前失败。tearDown 仍然会跑，若这里直接
+        //   `app.state` 就会「隐式解包 nil」崩溃，把**真正的**失败原因
+        //   （setup 失败）盖成一行无关的 fatal error。
+        guard let app else { return }
         guard app.state != .notRunning else { return }
         app.terminate()
         let stopped = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)

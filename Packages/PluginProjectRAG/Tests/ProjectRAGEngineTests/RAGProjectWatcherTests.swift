@@ -47,8 +47,22 @@ import Testing
             trigger: { recorder.record($0) }
         )
         defer { watcher.stop() }
-        watcher.start(projectPath: dir.path)
-
+        // - Important: **不**启动真实 FSEvents 流。
+        //
+        //   `watcher.start(projectPath:)` 会同时开一个真实的 FSEvents 监听，
+        //   它的 `streamLatency` 是 1 秒 —— 测试目录里的任何文件变化
+        //   （包括测试自己创建/删除临时目录）都会在**约 1 秒后**送达，
+        //   触发第二次增量索引。
+        //
+        //   于是这条断言（连续事件只触发一次）就掺进了一条**与被测行为无关**
+        //   的路径：在低负载下 FSEvents 事件来得晚、断言已过；高负载下
+        //   主流程被拖慢，FSEvents 事件在断言前到达 → 快照变成 2 条 →
+        //   断言失败。**偶发，且与 debounce 语义无关。**
+        //
+        //   debounce 语义本身只依赖 `handleEvent` 注入路径，
+        //   真实 FSEvents 流由另一条用例（「真实 FSEvents 流：写入文件后
+        //   触发增量索引」）覆盖。
+        watcher.prepareForInjectedEvents(projectPath: dir.path)
         watcher.handleEvent(paths: ["a.swift"])
         watcher.handleEvent(paths: ["b.swift"])
         watcher.handleEvent(paths: ["c.swift"])

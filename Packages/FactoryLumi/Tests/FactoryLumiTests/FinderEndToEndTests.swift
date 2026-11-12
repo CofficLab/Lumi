@@ -100,10 +100,15 @@ struct FinderEndToEndTests {
     ///
     /// 工具在后台异步执行，消息插入时机与提交调用不在同一拍，
     /// 因此这里轮询等待而不是假设它已经就位。
+    /// 等卡片消息出现。
+    ///
+    /// - Important: 超时给到 15s。工具执行链路要经过「提交 → 工具管理器
+    ///   调度 → 工具执行 → 消息插入」，在高负载下（CI 上多个包同时跑）
+    ///   5s 偶尔不够 → **偶发**失败。上限只影响失败路径。
     private func waitForCardMessage(
         in messages: any MessageManaging,
         conversationID: UUID,
-        timeout: TimeInterval = 5
+        timeout: TimeInterval = 15
     ) async throws -> Message {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {

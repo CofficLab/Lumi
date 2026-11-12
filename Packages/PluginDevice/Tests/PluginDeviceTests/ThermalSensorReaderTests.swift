@@ -42,18 +42,21 @@ struct ThermalSensorReaderTests {
     func peakIsMaximum() {
         // 注意:peak() 内部会重新采样,因此必须与同一次 read() 的结果比较,
         // 否则两次采样之间的温度波动会造成假失败。
+        //
+        // - Important: 原实现虽然注释写对了,代码却仍去比 `peakCelsius()`
+        //   （它会**重新采样**）—— 于是断言测到的是两次采样间的温度波动。
+        //   本机负载高时波动可超过 1℃ 容差 → 稳定失败。
+        //
+        //   现在改为：用**同一次采样**同时算出样本与 peak，比较二者。
         let readings = ThermalSensorReader.read()
-        guard let expected = readings.map(\.celsius).max() else {
+        guard let expected = ThermalSensorReader.peakCelsius(from: readings) else {
             #expect(readings.isEmpty)
             return
         }
-        let peak = ThermalSensorReader.peakCelsius()
-        #expect(peak != nil)
-        // 允许 1℃ 采样抖动。
-        if let peak {
-            #expect(abs(peak - expected) <= 1.0)
-            #expect(peak >= expected - 1.0)
-        }
+        // 同一次采样,peak 必须严格等于样本最大值。
+        #expect(expected == readings.map(\.celsius).max())
+        // 独立采样路径仍必须给出可用的温度(存在性保证)。
+        #expect(ThermalSensorReader.peakCelsius() != nil)
     }
 
     @Test("isAvailable agrees with non-empty read")

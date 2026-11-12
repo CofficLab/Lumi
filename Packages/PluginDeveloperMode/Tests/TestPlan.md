@@ -22,7 +22,6 @@ PluginDeveloperMode 的实现包，包含 6 个主要类型；当前测试覆盖
 - `DeveloperModeCapability`
 - `DeveloperModeObserver`
 - `DeveloperModeViewModel`
-- `DebugBadgeView`
 - `DeveloperModeToggleView`
 
 ## 关键行为契约（实现约定，非协议要求）

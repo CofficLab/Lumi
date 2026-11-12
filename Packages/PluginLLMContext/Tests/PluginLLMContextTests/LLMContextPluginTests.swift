@@ -1083,3 +1083,183 @@ private final class SummaryLLMProvider: SuperLLMProvider {
         return LLMResponse(content: "摘要结果", model: request.model)
     }
 }
+
+
+/// 压缩块的**并发加载**。
+///
+/// ## 回归背景
+///
+/// `LLMContextProvider.loadBlocksIfNeeded` 曾在**任何 await 之前**同步置位
+/// 「已加载」标记。主流程（`prepareContext`）与后台压缩任务
+/// （`scheduleBackgroundCompaction`）会并发调用它，于是：
+///
+/// - 先到者置位标记后进入 await（让出主 actor）；
+/// - 后到者看到「已加载」标记，**直接返回**，读到**空块**。
+///
+/// 症状：迁移后的块偶发丢失、`persisted.count` 断言偶发为 0，
+/// 且**只在并发时出现**，单跑必过 —— 极难归因。
+///
+/// 现在改成三态（未加载 / 加载中 / 已加载）：重复调用者会 await
+/// 同一个加载任务，拿到一致结果。
+@MainActor
+@Suite("压缩块的并发加载")
+struct ConcurrentBlockLoadTests {
+
+    @Test("并发调用时两个调用者都读到迁移后的块")
+    func concurrentLoadersSeeTheSameMigratedBlock() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LLMContextConcurrentLoad-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let legacyStore = try ContextSummaryStore(directory: directory)
+        let blockStore = try CompressionBlockStore(directory: directory)
+        let conversationID = UUID()
+
+        var history: [Message] = []
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            let message = Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "并发加载内容 ", count: 100) + "\(index)"
+            )
+            history.append(message)
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        // 预置一条旧格式摘要，迁移路径才会被走到。
+        let coveredThrough = history[history.count - 17].id
+        try await legacyStore.save(ContextSummaryRecord(
+            conversationID: conversationID,
+            text: "旧版滚动摘要",
+            coveredThroughMessageID: coveredThrough,
+            sourceLastMessageID: history[history.count - 1].id,
+            providerID: summaryProvider.providerID,
+            modelName: "summary-model",
+            sourceMessageCount: history.count,
+            updatedAt: Date()
+        ))
+
+        let budget = LLMContextBudget(
+            contextWindowTokens: 5_000,
+            reservedOutputTokens: 500,
+            safetyMarginTokens: 500
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm,
+            summaryStore: legacyStore,
+            blockStore: blockStore
+        )
+
+        // 两个**非结构化** Task 并发进入 `loadBlocksIfNeeded`。
+        //
+        // - Important: 必须用 `Task { }` 而不是 `async let` —— 后者是
+        //   结构化并发，在 MainActor 上两个子任务仍然**串行**执行，
+        //   根本构造不出竞争（实测：换 `async let` 后本用例无法复现缺陷）。
+        //   `Task { }` 才是真正并发的两个 Task。
+        //
+        //   修复前：先到者置位「已加载」后 await 存储加载，后到者看到
+        //   标记直接返回 → 读到**空块**。修复后：后到者等待同一个
+        //   加载任务 → 两个调用者都拿到迁移后的块。
+        let first = Task { @MainActor in
+            await provider.compressionBlocks(for: conversationID)
+        }
+        let second = Task { @MainActor in
+            await provider.compressionBlocks(for: conversationID)
+        }
+        let results = [await first.value, await second.value]
+
+        // 两个调用者都必须看到迁移后的块。
+        for (index, blocks) in results.enumerated() {
+            #expect(
+                blocks.count == 1,
+                "并发调用者必须都读到迁移后的块（调用者 \(index) 实得 \(blocks.count) 个）"
+            )
+            #expect(blocks.first?.summary == "旧版滚动摘要")
+        }
+
+        // 迁移**只发生一次**（修复前会各写一个块）。
+        let persisted = try await blockStore.load(conversationID: conversationID)
+        #expect(
+            persisted.count == 1,
+            """
+            迁移只应发生一次，实际写入 \(persisted.count) 个块 —— \
+            并发调用者重复迁移了。
+            """
+        )
+        #expect(persisted.first?.tier == 1)
+        #expect(persisted.first?.summary == "旧版滚动摘要")
+        #expect(try await legacyStore.load(conversationID: conversationID) == nil)
+    }
+
+    @Test("并发调用不因重复加载而产生重复的迁移块")
+    func concurrentLoadersDoNotProduceDuplicateMigratedBlocks() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LLMContextConcurrentSummary-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let legacyStore = try ContextSummaryStore(directory: directory)
+        let blockStore = try CompressionBlockStore(directory: directory)
+        let conversationID = UUID()
+
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            let message = Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "并发摘要内容 ", count: 100) + "\(index)"
+            )
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm,
+            summaryStore: legacyStore,
+            blockStore: blockStore
+        )
+        let budget = LLMContextBudget(
+            contextWindowTokens: 5_000,
+            reservedOutputTokens: 500,
+            safetyMarginTokens: 500
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+
+        async let first = provider.prepareContext(for: request)
+        async let second = provider.prepareContext(for: request)
+        _ = await [first, second]
+
+        // 没有旧摘要可迁移时走正常的压缩流程，摘要调用次数由引擎决定，
+        // 这里只断言**块存储里没有重复块** —— 并发加载不应各写一份。
+        let persisted = try await blockStore.load(conversationID: conversationID)
+        let tier1 = persisted.filter { $0.tier == 1 }
+        #expect(tier1.count <= 1, "并发加载不应写出重复的块")
+    }
+}

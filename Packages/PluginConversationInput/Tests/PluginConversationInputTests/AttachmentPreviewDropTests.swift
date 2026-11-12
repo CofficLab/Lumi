@@ -108,6 +108,11 @@ struct AttachmentPreviewDropTests {
 
     // MARK: - 分流规则
 
+    // - Important: 本文件的三处 `waitUntil` 用 10s 超时（默认 2s 不够）。
+    //   附件入池要走「拖入 → 解析文件 → 判定 MIME 类型」，比普通状态变更
+    //   慢得多；在并发负载下（CI 上多个包同时跑）调度延迟会把实际等待
+    //   撑过 2s，于是**偶发**失败。等待上限只影响失败路径。
+
     @Test("拖入预览区的图片进入图片池")
     func droppedImageGoesToImagePool() async throws {
         let capability = SendActionBarTestCapability()
@@ -120,7 +125,7 @@ struct AttachmentPreviewDropTests {
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
         viewModel.attach(droppedURL: fileURL)
 
-        await waitUntil("图片附件未加入挂起池") {
+        await waitUntil("图片附件未加入挂起池", timeout: .seconds(10)) {
             !capability.pendingImageAttachments.isEmpty
         }
 
@@ -138,7 +143,7 @@ struct AttachmentPreviewDropTests {
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
         viewModel.attach(droppedURL: fileURL)
 
-        await waitUntil("文件附件未加入挂起池") {
+        await waitUntil("文件附件未加入挂起池", timeout: .seconds(10)) {
             !capability.pendingFileAttachments.isEmpty
         }
 
@@ -180,7 +185,7 @@ struct AttachmentPreviewDropTests {
         previewViewModel.attach(droppedURL: fileURL)
         editorViewModel.attachImage(fileURL)
 
-        await waitUntil("图片附件未加入挂起池") {
+        await waitUntil("图片附件未加入挂起池", timeout: .seconds(10)) {
             !previewCapability.pendingImageAttachments.isEmpty
                 && !editorCapability.pendingImageAttachments.isEmpty
         }

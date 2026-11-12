@@ -157,7 +157,21 @@ import Testing
     rootView.setRailViewVisible(true)
 
     controller.start(rail: rail, rootView: rootView)
-    try await Task.sleep(for: .milliseconds(120))
+    // 等首次 reconcile 收敛，而不是固定睡 120ms。
+    //
+    // - Important: 固定 sleep 在高负载下（CI 上多个包同时跑）不够 ——
+    //   reconcile 还没跑完就断言，读到的是「尚未写回」的中间状态 →
+    //   **偶发**失败。改成条件等待：条件成立即返回。
+    // 等首次 reconcile 把宿主可见性写回 false，而不是固定睡 120ms。
+    //
+    // - Important: `scheduleRefresh` 自带 80ms 去抖延迟，加上实际的
+    //   对话计数查询，高负载下（CI 上多个包同时跑）固定 120ms 不足以
+    //   等到 reconcile 完成 → 读到「尚未写回」的中间状态 → **偶发**失败。
+    //
+    //   判据是**写回结果本身**（宿主可见性变为 false），而不是
+    //   `rail.hasVisibleTabs`（它一开始就是 false，立即满足，等不到任何东西）。
+    let reconciled = await waitUntil(timeout: .seconds(10)) { !rootView.isRailViewVisible }
+    #expect(reconciled, "首次 reconcile 未把宿主 Rail 可见性写回 false")
 
     // 无对话 → 无可见 tab → 宿主可见性必须被拉下来。
     // 这一步是本测试的核心：若 `reconcile` 忘记写回，`rootView` 会停在 true，
