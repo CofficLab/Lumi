@@ -13,27 +13,113 @@ struct ContextPopover: View {
     /// 幕后调用（压缩摘要 / 标题）用量；独立于上下文曲线展示开销。
     var auxiliaryEntries: [LLMAuxiliaryUsageEntry] = []
 
+    @State private var isExporting = false
+
     private var auxiliaryOverheads: [LLMAuxiliaryOverhead] {
         LLMAuxiliaryOverhead.summarize(auxiliaryEntries)
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                windowSection
-                if !auxiliaryOverheads.isEmpty {
-                    Divider()
-                    auxiliarySection
-                }
-                if !events.isEmpty {
-                    Divider()
-                    compactionSection
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            headerView(showsExportButton: true)
+
+            ScrollView {
+                sectionsContent
             }
         }
         .background(theme.background)
         .frame(width: 360)
         .frame(maxHeight: 520)
+    }
+
+    // MARK: - Header
+
+    /// 标题行：图标 + 标题（+ 导出按钮）。
+    ///
+    /// 导出图片复用同一份标题，但不带按钮——导出的图里不该再有一个「下载」入口。
+    private func headerView(showsExportButton: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "text.viewfinder")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(theme.primary)
+            Text(String(localized: "Context", defaultValue: "上下文", bundle: .module))
+                .font(.headline)
+                .fixedSize()
+            Spacer(minLength: 8)
+            #if os(macOS)
+            if showsExportButton {
+                exportButton
+            }
+            #endif
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+    }
+
+    #if os(macOS)
+    /// 导出当前弹窗内容为 PNG。
+    @ViewBuilder
+    private var exportButton: some View {
+        Button(action: exportAsImage) {
+            Image(systemName: "arrow.down.circle")
+                .font(.system(size: 16))
+                .foregroundStyle(.secondary)
+                .opacity(isExporting ? 0.5 : 1.0)
+        }
+        .buttonStyle(.plain)
+        .disabled(isExporting)
+        .help(String(localized: "Save as image", defaultValue: "保存为图片", bundle: .module))
+    }
+
+    /// 把弹窗内容导出为 PNG 文件。
+    ///
+    /// 导出的内容与弹窗一致，但不受弹窗最大高度约束，
+    /// 保证压缩历史被完整渲染，而不是只截到可视区域。
+    @MainActor
+    private func exportAsImage() {
+        isExporting = true
+        defer { isExporting = false }
+        ContextPopoverImageExporter.export(
+            content: exportContent,
+            suggestedFileName: "llm-context.png"
+        )
+    }
+    #endif
+
+    // MARK: - Export Content
+
+    #if os(macOS)
+    /// 导出用的完整内容：宽度与弹窗一致，高度由内容撑开。
+    ///
+    /// 刻意不套最大高度约束——弹窗的 `maxHeight: 520` 会把超出的内容裁掉，
+    /// 导出的图就会丢掉视口外的压缩时间线。
+    var exportContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerView(showsExportButton: false)
+            sectionsContent
+        }
+        .frame(width: 360, alignment: .leading)
+        .background(theme.background)
+        .background(Color(.windowBackgroundColor))
+    }
+    #endif
+
+    // MARK: - Sections
+
+    /// 弹窗正文：窗口信息 + 幕后开销 + 压缩历史。
+    private var sectionsContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            windowSection
+            if !auxiliaryOverheads.isEmpty {
+                Divider()
+                auxiliarySection
+            }
+            if !events.isEmpty {
+                Divider()
+                compactionSection
+            }
+        }
     }
 
     // MARK: - Window Section
@@ -140,6 +226,7 @@ struct ContextPopover: View {
 
     // MARK: - Compaction Section
 
+    /// 压缩历史时间线。
     private var compactionSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
@@ -156,18 +243,16 @@ struct ContextPopover: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 4)
 
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
-                        CompactionTimelineRow(
-                            message: event,
-                            isLast: index == events.count - 1
-                        )
-                    }
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                    CompactionTimelineRow(
+                        message: event,
+                        isLast: index == events.count - 1
+                    )
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
         .padding(.top, 12)
     }
