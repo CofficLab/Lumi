@@ -141,6 +141,7 @@ final class FileTreeDataSource: SuperLog {
 
     /// 设置软件包依赖列表，追加到文件树末尾
     func setPackageDependencies(_ dependencies: [PackageDependency]) {
+        guard dependencies != cachedDependencies else { return }
         cachedDependencies = dependencies
         appendPackageItems()
     }
@@ -257,6 +258,7 @@ final class FileTreeDataSource: SuperLog {
             isPackageExpanded: isPackageExpanded,
             projectRootPath: projectRootPath
         ))
+        guard newItems != items else { return }
         items = newItems
         onItemsChanged?(items)
     }
