@@ -29,35 +29,35 @@ struct ProjectStorageDetectorTests {
     @Test("内置磁盘判定为 internalDisk")
     func internalDiskKind() {
         withProbe({ _ in .traits(VolumeTraits(isLocal: true, isInternal: true)) }) {
-            #expect(ProjectStorageDetector.kind(for: "/tmp/project") == .internalDisk)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/tmp/project") == .internalDisk)
         }
     }
 
     @Test("外置设备判定为 externalDisk")
     func externalDiskKind() {
         withProbe({ _ in .traits(VolumeTraits(isLocal: true, isInternal: false)) }) {
-            #expect(ProjectStorageDetector.kind(for: "/Volumes/USB/project") == .externalDisk)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/project") == .externalDisk)
         }
     }
 
     @Test("网络卷判定为 networkVolume")
     func networkVolumeKind() {
         withProbe({ _ in .traits(VolumeTraits(isLocal: false, isInternal: false)) }) {
-            #expect(ProjectStorageDetector.kind(for: "/Volumes/NAS/project") == .networkVolume)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/Volumes/NAS/project") == .networkVolume)
         }
     }
 
     @Test("目录不存在判定为 missingDirectory")
     func missingDirectoryKind() {
         withProbe({ _ in .missingDirectory }) {
-            #expect(ProjectStorageDetector.kind(for: "/Volumes/USB/gone") == .missingDirectory)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/gone") == .missingDirectory)
         }
     }
 
     @Test("卷属性读不到判定为 unreachableVolume")
     func unreachableVolumeKind() {
         withProbe({ _ in .unreachableVolume }) {
-            #expect(ProjectStorageDetector.kind(for: "/Volumes/USB/unmounted") == .unreachableVolume)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/unmounted") == .unreachableVolume)
         }
     }
 
@@ -65,12 +65,12 @@ struct ProjectStorageDetectorTests {
     @Test("目录缺失与卷不可达互不混淆")
     func missingDirectoryDiffersFromUnreachableVolume() {
         withProbe({ _ in .missingDirectory }) {
-            #expect(ProjectStorageDetector.kind(for: "/tmp/gone") == .missingDirectory)
-            #expect(ProjectStorageDetector.kind(for: "/tmp/gone") != .unreachableVolume)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/tmp/gone") == .missingDirectory)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/tmp/gone") != .unreachableVolume)
         }
         withProbe({ _ in .unreachableVolume }) {
-            #expect(ProjectStorageDetector.kind(for: "/tmp/unmounted") == .unreachableVolume)
-            #expect(ProjectStorageDetector.kind(for: "/tmp/unmounted") != .missingDirectory)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/tmp/unmounted") == .unreachableVolume)
+            #expect(ProjectStorageDetector.probeAndCache(for: "/tmp/unmounted") != .missingDirectory)
         }
     }
 
@@ -93,7 +93,7 @@ struct ProjectStorageDetectorTests {
             callCount += 1
             return .traits(VolumeTraits(isLocal: true, isInternal: false))
         }) {
-            _ = ProjectStorageDetector.kind(for: "/Volumes/USB/project")
+            _ = ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/project")
             _ = ProjectStorageDetector.kind(for: "/Volumes/USB/project")
             #expect(callCount == 1)
         }
@@ -106,9 +106,9 @@ struct ProjectStorageDetectorTests {
             callCount += 1
             return .traits(VolumeTraits(isLocal: true, isInternal: false))
         }) {
-            _ = ProjectStorageDetector.kind(for: "/Volumes/USB/project")
+            _ = ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/project")
             ProjectStorageDetector.invalidate(path: "/Volumes/USB/project")
-            _ = ProjectStorageDetector.kind(for: "/Volumes/USB/project")
+            _ = ProjectStorageDetector.probeAndCache(for: "/Volumes/USB/project")
             #expect(callCount == 2)
         }
     }
@@ -122,7 +122,7 @@ struct ProjectStorageDetectorTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         ProjectStorageDetector.invalidateAll()
-        #expect(ProjectStorageDetector.kind(for: directory.path) == .internalDisk)
+        #expect(ProjectStorageDetector.probeAndCache(for: directory.path) == .internalDisk)
     }
 
     /// 真实文件系统：不存在的路径应判定为 missingDirectory（目录已被删除）。
@@ -130,7 +130,7 @@ struct ProjectStorageDetectorTests {
     func realMissingPathIsMissingDirectory() {
         let missing = "/Volumes/LumiDoesNotExist-\(UUID().uuidString)/project"
         ProjectStorageDetector.invalidateAll()
-        #expect(ProjectStorageDetector.kind(for: missing) == .missingDirectory)
+        #expect(ProjectStorageDetector.probeAndCache(for: missing) == .missingDirectory)
     }
 
     /// 真实文件系统：目录被删除后，缓存失效能重新探测到「已缺失」。
@@ -142,13 +142,13 @@ struct ProjectStorageDetectorTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         ProjectStorageDetector.invalidateAll()
-        #expect(ProjectStorageDetector.kind(for: directory.path) == .internalDisk)
+        #expect(ProjectStorageDetector.probeAndCache(for: directory.path) == .internalDisk)
 
         try FileManager.default.removeItem(at: directory)
 
         // 缓存未失效时仍返回旧结果；失效后重新探测才能看到目录已消失。
         #expect(ProjectStorageDetector.kind(for: directory.path) == .internalDisk)
         ProjectStorageDetector.invalidateAll()
-        #expect(ProjectStorageDetector.kind(for: directory.path) == .missingDirectory)
+        #expect(ProjectStorageDetector.probeAndCache(for: directory.path) == .missingDirectory)
     }
 }

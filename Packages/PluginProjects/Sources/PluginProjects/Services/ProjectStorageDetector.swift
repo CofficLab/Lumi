@@ -66,14 +66,34 @@ enum ProjectStorageDetector {
         )
     }
 
-    /// 探测指定路径的存储类型。
+    /// 探测指定路径的存储类型（仅读缓存，不做同步 I/O）。
+    ///
+    /// 视图 body 中调用此方法不会阻塞主线程；缓存未命中时返回 `.internalDisk`
+    /// 作为占位值，后台探测完成后通过 `storageRevision` 驱动重绘。
     static func kind(for path: String) -> ProjectStorageKind {
-        if let cached = cache[path] {
-            return cached
-        }
-        let result = detect(path: path)
+        cache[path] ?? .internalDisk
+    }
+
+    /// 同步探测并写入缓存。供测试与一次性探测使用，不要在视图 body 中调用。
+    static func probeAndCache(for path: String) -> ProjectStorageKind {
+        let result = detect(path: path, probe: probe)
         cache[path] = result
         return result
+    }
+
+    /// 在后台线程批量探测路径并更新缓存。
+    static func refresh(paths: [String]) async {
+        nonisolated(unsafe) let probe = Self.probe
+        let results = await Task.detached(priority: .utility) {
+            var dict: [String: ProjectStorageKind] = [:]
+            for path in paths {
+                dict[path] = detect(path: path, probe: probe)
+            }
+            return dict
+        }.value
+        for (path, kind) in results {
+            cache[path] = kind
+        }
     }
 
     /// 清除指定路径的缓存。路径失效或设备挂载状态变化时调用。
@@ -87,7 +107,7 @@ enum ProjectStorageDetector {
     }
 
     /// 实际执行探测。
-    private static func detect(path: String) -> ProjectStorageKind {
+    nonisolated private static func detect(path: String, probe: (String) -> StorageProbeResult) -> ProjectStorageKind {
         switch probe(path) {
         case .missingDirectory:
             return .missingDirectory
