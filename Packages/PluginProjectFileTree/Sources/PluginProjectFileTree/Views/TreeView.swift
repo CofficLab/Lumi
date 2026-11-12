@@ -82,14 +82,18 @@ public struct TreeView: View, SuperLog {
 
     private func refreshTreeAfterMutation() {
         coordinator.refresh()
-        packageStore.refresh()
+        if showPackageDependencies {
+            packageStore.refresh()
+        }
     }
 
     private func projectPathDidChange(to newProjectPath: String) {
         recomputeShowPackageDependencies()
         coordinator.stop()
         coordinator.setProjectRootPath(newProjectPath)
-        packageStore.setProjectRootPath(newProjectPath)
+        if showPackageDependencies {
+            packageStore.setProjectRootPath(newProjectPath)
+        }
     }
 
     private func onAppear() {
