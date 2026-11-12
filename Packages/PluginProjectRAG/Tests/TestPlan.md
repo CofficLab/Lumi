@@ -243,16 +243,24 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 177 | CodeNavigationCoordinatorIndexing | 索引进行中实时搜索必须仍返回结果 | isIndexing true、项目内有匹配文件 | 调用 `coordinator.search` | 非空且全部为实时 matchKind | P0 | ✅ 已覆盖 | `liveSearchWorksWhileIndexing` |
 | 178 | CodeNavigationCoordinatorIndexing | 索引进行中语义检索不得排队 | isIndexing true | 调用 search 并统计 provider 调用 | search 与 ensureIndexed 均 0 次 | P0 | ✅ 已覆盖 | `semanticSkippedWhileIndexing` |
 | 179 | CodeNavigationCoordinatorIndexing | 索引就绪时语义与实时结果合并 | isIndexing false、索引存在 | 调用 search | semantic 与 filesystemLexical 都在 | P1 | ✅ 已覆盖 | `semanticMergedWhenIdle` |
+| 180 | RAGQueryAnalyzer | 中文设计问句提取领域词 | 「登录功能是怎么设计的」 | 调用 `extractTerms` | 含登录，不含怎么/功能/设计 | P1 | ✅ 已覆盖 | `chineseDesignQuestionExtractsDomainTerm` |
+| 181 | RAGQueryAnalyzer | 标识符保留原大小写且普通英文词不算 | 「Where is LoginViewController defined」 | 调用 `extractTerms` | 含 LoginViewController，不含 where/defined | P1 | ✅ 已覆盖 | `identifierPreserved` |
+| 182 | RAGQueryAnalyzer | 文件名片段保留 | 「打开 Package.swift 看看」 | 调用 `extractTerms` | 含 Package.swift | P1 | ✅ 已覆盖 | `fileNamePreserved` |
+| 183 | RAGQueryAnalyzer | 空提取回退旧分词 | 「hello world」 | 调用 `extractTerms` | 与 `RAGTextUtils.tokenize` 一致 | P1 | ✅ 已覆盖 | `emptyExtractionFallsBackToTokenize` |
+| 184 | RAGQueryAnalyzer | 搜索词上限 8 个 | 10 个标识符 | 调用 `extractTerms` | 取前 8 个 | P1 | ✅ 已覆盖 | `termCapAtEight` |
+| 185 | RAGQueryAnalyzer | 优先级标识符 > 文件名 > CJK | 混合查询 | 调用 `extractTerms` | 按优先级顺序输出 | P1 | ✅ 已覆盖 | `priorityOrderIdentifierThenFileNameThenCJK` |
+| 186 | RAGQueryAnalyzer | 下划线/数字算标识符 | 「user_id 和 abc123 在哪」 | 调用 `extractTerms` | 含 user_id 与 abc123 | P1 | ✅ 已覆盖 | `snakeCaseAndDigitsQualifyAsIdentifiers` |
+| 187 | CodeNavigationCoordinatorQuery | 词法搜索必须使用提取后的搜索词 | A 仅含疑问词、B 含领域词 | search topK 1 | 命中 B.swift 而非 A.swift | P0 | ✅ 已覆盖 | `lexicalSearchUsesExtractedTerms` |
 
-> 说明：全部 **179 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **187 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
-- P1: 已覆盖 129 / 129
+- P0: 已覆盖 38 / 38
+- P1: 已覆盖 136 / 136
 - P2: 已覆盖 13 / 13
-- **合计: 179 / 179**（仅表示清单场景，非源码覆盖率）
+- **合计: 187 / 187**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

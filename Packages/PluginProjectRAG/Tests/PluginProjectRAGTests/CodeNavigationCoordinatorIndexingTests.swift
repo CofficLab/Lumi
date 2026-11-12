@@ -115,3 +115,33 @@ struct CodeNavigationCoordinatorIndexingTests {
         #expect(response.results.contains { $0.matchKind == .filesystemLexical })
     }
 }
+
+/// 词法/路径搜索必须使用提取后的搜索词，疑问词不得进入 rg 模式。
+@Suite("CodeNavigationCoordinatorQuery", .serialized)
+@MainActor
+struct CodeNavigationCoordinatorQueryTests {
+
+    @Test("lexical search uses extracted terms")
+    func lexicalSearchUsesExtractedTerms() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-query-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        // A.swift 只含疑问词字符，B.swift 含领域词。旧实现按单字 OR 匹配会
+        // 让两者同分、按文件名取 A；提取后只有 B 命中。
+        try "怎么么么怎\n".write(
+            to: root.appendingPathComponent("A.swift"), atomically: true, encoding: .utf8
+        )
+        try "登录登录\n".write(
+            to: root.appendingPathComponent("B.swift"), atomically: true, encoding: .utf8
+        )
+        let provider = IndexingStubProvider(indexing: true, hasIndex: false)
+
+        let response = try await CodeNavigationCoordinator(provider: provider).search(
+            query: "登录功能是怎么设计的", projectPath: root.path, topK: 1
+        )
+
+        let first = try #require(response.results.first)
+        #expect(first.source == "B.swift")
+    }
+}

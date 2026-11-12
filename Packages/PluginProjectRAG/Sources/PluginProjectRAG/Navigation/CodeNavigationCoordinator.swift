@@ -23,13 +23,16 @@ struct CodeNavigationCoordinator: Sendable {
             projectPath: projectPath,
             topK: topK
         )
+        // 语义 embed 用原始 query；词法/路径用提取后的搜索词，
+        // 避免疑问词进入 rg 模式稀释命中。
+        let liveQuery = RAGQueryAnalyzer.extractTerms(query: query).joined(separator: " ")
         async let lexicalResults = (try? RAGLexicalFileSearcher.search(
-            query: query,
+            query: liveQuery,
             projectPath: projectPath,
             topK: topK
         )) ?? []
         async let pathResults = (try? RAGFilePathSearcher.search(
-            query: query,
+            query: liveQuery,
             projectPath: projectPath,
             topK: topK
         )) ?? []
