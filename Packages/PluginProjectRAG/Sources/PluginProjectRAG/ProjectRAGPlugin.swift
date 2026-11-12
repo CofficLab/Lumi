@@ -40,6 +40,7 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
     private var searchMemory: ProjectRAGSearchMemory?
     private var projectObserver: ProjectRAGProjectObserver?
+    private var projectWatcher: RAGProjectWatcher?
 
     public init() {}
 
@@ -53,9 +54,20 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
         let provider = ProjectRAGProvider(service: service, project: project)
+        // Task 3.2：监听当前项目文件变更，debounce 后触发增量索引。
+        let watcher = RAGProjectWatcher(
+            isPaused: { await service.isIndexingPaused() },
+            currentProjectPath: { await MainActor.run { provider.currentProjectPath } },
+            trigger: { path in await service.ensureIndexedBackground(projectPath: path) }
+        )
+        self.projectWatcher = watcher
+        if let path = provider.currentProjectPath {
+            watcher.start(projectPath: path)
+        }
         if let project {
-            projectObserver = ProjectRAGProjectObserver(project: project) { [weak provider] in
+            projectObserver = ProjectRAGProjectObserver(project: project) { [weak provider, weak self] in
                 provider?.handleProjectChange()
+                self?.restartProjectWatcher()
             }
         }
         ProjectRAGRuntime.configure(provider: provider)
@@ -114,6 +126,8 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         schedulerTask?.cancel()
         schedulerTask = nil
         scheduler = nil
+        projectWatcher?.stop()
+        projectWatcher = nil
         llmContextHookHandle?.cancel()
         llmContextHookHandle = nil
         llmContextHook = nil
@@ -125,5 +139,15 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()
+    }
+
+    /// 项目切换时停旧流起新流；没有当前项目时停流，等下次切换再启动。
+    private func restartProjectWatcher() {
+        guard let watcher = projectWatcher else { return }
+        if let path = ProjectRAGRuntime.provider?.currentProjectPath {
+            watcher.start(projectPath: path)
+        } else {
+            watcher.stop()
+        }
     }
 }

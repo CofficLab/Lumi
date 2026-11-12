@@ -273,19 +273,24 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 207 | RAGVectorPersistence | 二次初始化不得 DROP 或回灌 vec 行 | chunks embedding 漂移为 32 维 | 两次 `configureVectorBackend` | 二次成功且 ANN 仍命中 | P0 | ✅ 已覆盖 | `secondInitializeKeepsVectorRows` |
 | 208 | RAGVectorPersistence | 维度变化强制重建 vec 表 | 64→32 维且 chunks 已重嵌 | 调用 `configureVectorBackend` | ANN 命中且 rag_meta 记录 32 | P1 | ✅ 已覆盖 | `dimensionChangeForcesRebuild` |
 | 209 | RAGVectorPersistence | vec 行数不一致必须触发回灌 | 模拟崩溃丢失 vec 行 | 调用 `configureVectorBackend` | ANN 重新命中 | P0 | ✅ 已覆盖 | `rowCountMismatchTriggersRebuild` |
+| 210 | RAGProjectWatcher | debounce 合并连续事件为一次触发 | debounce 0.1s，连发 3 个事件 | 调用 `handleEvent` 三次 | 仅触发 1 次增量索引 | P1 | ✅ 已覆盖 | `debounceCoalescesEvents` |
+| 211 | RAGProjectWatcher | 旧项目晚到事件不得触发索引 | 当前项目已切换为其它路径 | 旧路径事件过 debounce | 身份校验丢弃，0 次触发 | P0 | ✅ 已覆盖 | `staleProjectEventDropped` |
+| 212 | RAGProjectWatcher | 索引暂停时不得触发 | `isPaused` 返回 true | 事件过 debounce | 0 次触发 | P0 | ✅ 已覆盖 | `pausedWatcherDoesNotTrigger` |
+| 213 | RAGProjectWatcher | 真实 FSEvents 流写入后触发 | 临时目录真实流，latency 0.1s | 写入一个 Swift 文件 | debounce 后触发该项目索引 | P1 | ✅ 已覆盖 | `fileEventsStreamTriggersOnWrite` |
 
-> 说明：全部 **209 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **213 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
 > Task 3.1 启动成本实测（2026-11-12）：500 chunks×384 维，全量回灌 370.2ms → 保留路径 0.8ms（约 460 倍）。
+> Task 3.2 新鲜度链路（2026-11-12）：真实 FSEvents 流测试证明「保存文件 → debounce → 触发增量索引」；macOS 27 实测 dispatch queue 回调的 eventPaths 为 C 字符串数组（按 CFArray 解引用会段错误），已按此 ABI 读取。索引完成后 search_code 即可命中新内容。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 45 / 45
-- P1: 已覆盖 150 / 150
+- P0: 已覆盖 47 / 47
+- P1: 已覆盖 152 / 152
 - P2: 已覆盖 14 / 14
-- **合计: 209 / 209**（仅表示清单场景，非源码覆盖率）
+- **合计: 213 / 213**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
