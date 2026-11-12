@@ -259,16 +259,18 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 193 | RAGCodeSearchToolOutput | 超预算输出必须截断附标记 | 20 个大片段 | 调用 `execute` | utf8 ≤ 20000 且含 truncated 与 grep 建议 | P0 | ✅ 已覆盖 | `searchCodeOutputBudgetTruncates` |
 | 194 | RAGCodeSearchToolOutput | 单片段 3000 字符截断 | 5000 字符片段 | 调用 `execute` | 不含 3001 连续字符且含 snippet clipped | P0 | ✅ 已覆盖 | `searchCodeSnippetClippedAt3000` |
 | 195 | RAGCodeSearchToolOutput | 头部展示证据构成 | semantic/lexical/path 各 1 | 调用 `execute` | 含 semantic: 1, live-lexical: 1, path: 1 | P1 | ✅ 已覆盖 | `searchCodeHeaderShowsEvidenceMix` |
+| 196 | RAGFTS5AvailabilityProbe | 探测内置 SQLite 的 FTS5 可用性 | 内存数据库 | CREATE VIRTUAL TABLE fts5 + PRAGMA compile_options | 建表结果与 ENABLE_FTS5 编译项一致 | P2 | ✅ 已覆盖 | `probeFTS5Availability` |
 
-> 说明：全部 **195 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **196 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 42 / 42
 - P1: 已覆盖 140 / 140
-- P2: 已覆盖 13 / 13
-- **合计: 195 / 195**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 14 / 14
+- **合计: 196 / 196**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
