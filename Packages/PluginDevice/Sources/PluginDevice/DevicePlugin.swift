@@ -6,10 +6,13 @@ import ProviderToolbar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
+import ProviderMessage
+import ProviderMessageRendering
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
+import ProviderToolManager
 import SwiftUI
 
 /// 设备信息插件。
@@ -29,6 +32,21 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
 
     private var viewModels: DevicePluginViewModels?
     private var metricsObserver: DeviceMetricsObserver?
+
+    /// 插入设备状态卡片消息的桥。
+    ///
+    /// 做成插件的实例状态而非全局单例：多个内核并存时（测试进程里并排跑几个
+    /// 内核就是这种情况）不会互相抢走消息管理器。
+    private let messageBridge = DeviceStatusMessageBridge()
+
+    /// 设备状态采集器。
+    private let collector = DeviceStatusCollector()
+
+    /// 当前是否已注册工具与渲染器。
+    ///
+    /// 用于让 `onEnable` 幂等：内核在「曾经 Boot 过再启用」时只调 `onEnable`，
+    /// 而「启动时被跳过、首次启用」时会走完整的 `onBoot`。
+    private var isChatRegistered = false
 
     /// 入口标题的本地化解析；测试可注入替身断言注册链不再写死字面量。
     private let localize: (String) -> String
@@ -98,14 +116,27 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         }
 
         try contributeMenuBar(to: kernel, viewModels: viewModels)
+        registerChatContributions(kernel: kernel)
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
         guard let viewModels else { return }
         try contributeMenuBar(to: kernel, viewModels: viewModels)
+        registerChatContributions(kernel: kernel)
+    }
+
+    /// 运行时禁用：撤回工具与渲染器。
+    ///
+    /// - Important: 内核在运行时禁用插件时只撤回它**显式登记**的贡献
+    ///   （`trackContribution`），不会替插件清理 Provider 侧的写入。
+    ///   因此工具与渲染器必须由本插件自己在 `onDisable` 里撤回，
+    ///   否则插件在设置里显示「已禁用」后，LLM 仍能调用该工具、卡片也仍会渲染。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        unregisterChatContributions(kernel: kernel)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        unregisterChatContributions(kernel: kernel)
         metricsObserver?.cancel()
         metricsObserver = nil
         viewModels = nil
@@ -164,5 +195,59 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         ) {
             MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)
         })
+    }
+
+    // MARK: - Chat Contributions
+
+    /// 设备状态卡片渲染器的优先级。
+    ///
+    /// 必须高于核心渲染器的 `core-system-message`（base + 150 = 160）：
+    /// 卡片消息是 `role = .system`，若优先级低于它就会被通用系统消息渲染器接管，
+    /// 用户看到的是一行纯文本而不是卡片。
+    ///
+    /// 取 190 而非 200，是为了与同样用 200 的 Finder / HTMLCanvas / DiskSpeed
+    /// 卡片渲染器错开，避免顺序相同的渲染器之间出现不确定的命中顺序。
+    static let cardRendererOrder = 190
+
+    /// 登记工具、渲染器与消息桥。
+    ///
+    /// 幂等：重复调用不会重复注册。
+    private func registerChatContributions(kernel: KernelCoreContainer) {
+        guard !isChatRegistered else { return }
+        isChatRegistered = true
+
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            toolManager.add(
+                DeviceStatusTool(bridge: messageBridge, collector: collector),
+                pluginID: id
+            )
+        } else {
+            Self.logger.error("\(Self.t)ToolManagerProviding not found; device status tool skipped")
+        }
+
+        // 注册卡片渲染器。order 由插件 order 派生，确保卡片消息不被通用渲染器接管。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(DeviceStatusCardRenderer.item(order: Self.cardRendererOrder))
+            Self.logger.info("\(Self.t)Registered device status card renderer")
+        } else {
+            Self.logger.warning("\(Self.t)MessageRenderingProviding not found; card renderer skipped")
+        }
+
+        messageBridge.configure(
+            messages: kernel.resolveProvider((any MessageManaging).self)
+        )
+    }
+
+    /// 撤回工具、渲染器与消息桥。
+    private func unregisterChatContributions(kernel: KernelCoreContainer) {
+        guard isChatRegistered else { return }
+        isChatRegistered = false
+
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: DeviceStatusTimeline.rendererID)
+        messageBridge.reset()
+
+        kernel.resolveProvider((any ToolManagerProviding).self)?
+            .remove(id: DeviceStatusTool.toolName)
     }
 }
