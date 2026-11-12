@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 117 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 126 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 117
+测试文件: 11 个，用例总数: 126
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -53,6 +53,11 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **以 sleep 开头的命令豁免自动后台**：`sleep 5` 的语义就是「等一会儿」，转后台会让模型拿到的不是结果而是一个迟到的通知。显式 `run_in_background=true` 仍然尊重。
   - **后台结果文本必须含三要素**：后台 ID、输出路径、`read_file` 提示。缺一模型就无法继续跟进这个后台任务。
   - **失败必须抛出**：没有登记表时后台化抛 `ToolExecutionError`，不能返回一句「已在后台运行」——那会让模型以为进程还活着。
+- **完成通知**（9 条）：由 `idleConversationGetsUserMessage`、`turnFinishedDrainsQueuedNotification`、`duplicateCompletionEventsDeliverOnlyOnce` 等用例锁定；改动 `BackgroundTaskNotificationCoordinator` 时优先跑 `BackgroundTaskNotificationTests`。四条易错约定：
+  - **通知写成 `role == .user` 的消息**：Lumi 没有「只给模型看」的标志位，只有反向的 timeline-event 机制。user 消息会触发 `MessageObserver` 起回合，从而唤醒模型。
+  - **忙时必须入队而不是直接插入**：回合正在跑时插入消息不会起新回合（`MessageObserver` 因 `isRunning` 直接返回），通知就丢了。忙时入队，由 `turnFinished` 钩子排空。
+  - **排空必须延后到回合真正空闲**：`turnFinished` 触发时上一个 `runTurn` 还在退栈，直接起会被判定为并发回合而失败。
+  - **抑制期间暂存而非丢弃**：`isAutoReplySuppressed`（ACP 托管回合）时插入的消息会被 `MessageObserver` 丢弃，因此改为暂存，抑制解除后再投递。
 
 ## 测试用例清单
 
@@ -176,27 +181,36 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 115 | 非阻塞命令 | 没有登记表时后台化显式失败而不是谎称成功 | 未注入登记表 | 执行 `run_in_background=true` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `backgroundWithoutRegistryThrows` |
 | 116 | 非阻塞命令 | 超时上限被钳制到 600 秒 | — | 读取常量 | 上限为 600 秒 | P1 | ✅ 已覆盖 | `timeoutIsClampedToCeiling` |
 | 117 | 非阻塞命令 | 短命令行为不变：返回执行结果而不是后台提示 | — | 执行 `echo hello` | 返回输出，不含后台提示 | P0 | ✅ 已覆盖 | `shortCommandStillReturnsResult` |
+| 118 | 完成通知 | 空闲时插入 user 消息唤醒模型 | 会话空闲 | 投递完成事件 | 插入一条 `role == .user` 消息，含任务 ID 与输出路径 | P0 | ✅ 已覆盖 | `idleConversationGetsUserMessage` |
+| 119 | 完成通知 | 通知消息带 metadata 供渲染器识别 | 会话空闲 | 投递完成事件 | metadata 含任务 ID、状态、退出码、输出路径 | P1 | ✅ 已覆盖 | `notificationCarriesRendererMetadata` |
+| 120 | 完成通知 | 同一任务的完成事件只投递一次 | 会话空闲 | 重复投递同一任务三次 | 只插入一条消息 | P0 | ✅ 已覆盖 | `duplicateCompletionEventsDeliverOnlyOnce` |
+| 121 | 完成通知 | 会话正忙时通知入队而不是直接插入 | 会话运行中 | 投递完成事件 | 不插入消息，队列长度为 1 | P0 | ✅ 已覆盖 | `busyConversationQueuesNotification` |
+| 122 | 完成通知 | 回合结束后排队的通知被排空 | 会话运行中后转空闲 | 触发 turnFinished | 排空后插入一条消息，队列归零 | P0 | ✅ 已覆盖 | `turnFinishedDrainsQueuedNotification` |
+| 123 | 完成通知 | 忙时两个任务完成都会被送达 | 会话运行中 | 投递两个完成事件后转空闲 | 两条消息都被送达 | P1 | ✅ 已覆盖 | `twoCompletionsWhileBusyBothDelivered` |
+| 124 | 完成通知 | 自动回复被抑制时通知被暂存而不是丢弃 | 抑制开启 | 投递完成事件 | 不插入消息，暂存长度为 1 | P0 | ✅ 已覆盖 | `suppressedConversationHoldsNotification` |
+| 125 | 完成通知 | 抑制解除后暂存的通知被投递 | 抑制开启后关闭 | 触发 turnFinished | 插入一条消息 | P0 | ✅ 已覆盖 | `suppressedNotificationDeliveredAfterSuppressionEnds` |
+| 126 | 完成通知 | 失败任务的通知写明退出码 | — | 构造通知消息 | 含任务 ID、failed、退出码与摘录 | P1 | ✅ 已覆盖 | `failedNotificationIncludesExitCode` |
 
-> 说明：全部 **117 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **126 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 92 / 92
+- P0: 已覆盖 25 / 25
+- P1: 已覆盖 95 / 95
 - P2: 已覆盖 6 / 6
-- **合计: 117 / 117**（仅表示清单场景，非源码覆盖率）
+- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（92 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（25 条）
+- **P1**: 其余功能性用例（95 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 117 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 126 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
