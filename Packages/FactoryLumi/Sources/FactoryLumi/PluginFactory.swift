@@ -273,7 +273,10 @@ public struct DefaultPluginFactory: PluginFactory {
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
             IdleTimePlugin(),
-            PluginHydrationReminder(),
+            // 喝水提醒：默认不启用，用户需在「插件管理」中显式开启，
+            // 避免新用户被动接受定时提醒。策略在宿主装配层指定，
+            // 不改动外部插件包（LumiPluginHydrationReminder）的默认值。
+            PluginHydrationReminder(policy: .disabledByDefault),
             ActivityHeatmapPlugin(),
             RailTokenTrendPlugin(),
             ChatPanelPlugin(),
