@@ -136,8 +136,9 @@ guard !Task.isCancelled else { return }             // 丢弃过期结果
   `MarkdownRenderCache.warm(markdown:)`(线程安全,后台线程批量调用,
   已缓存时近免费)。`ListV2ViewModel` 已内置此逻辑(utility 优先级)。
 - `MarkdownBlockCache.warm(markdown:)` 与 `blocks(for:)` 的差异:
-  不推进 `streamingSlot`(预热针对稳定历史内容,不干扰流式增量解析状态),
-  解析在锁外执行,不阻塞滚动/流式路径上的缓存查询。
+  warm 不推进 `streamingSlot`(预热针对稳定历史内容,不干扰流式增量解析状态)。
+  两者**都在锁外解析**——锁只保护字典/槽位读写,后台解析不得阻塞主线程
+  每帧的缓存查询(见陷阱清单与回归测试 ID 128)。
 
 ### 3A.3 测试注意事项
 
@@ -232,3 +233,7 @@ List 惰性重物化(AG 视图图重建 + 文本排版)是纯 SwiftUI 路径的�
   ——接入方应保证高频路径命中 `MarkdownBlockCache`;
 - 进程级缓存(`MarkdownBlockCache` 等)的键含全文,
   流式场景键随内容增长而变化属预期行为,不要试图"稳定"它们。
+- **不要**在 `MarkdownBlockCache.blocks(for:)` 的锁内解析:流式期间主线程
+  每帧查询缓存,持锁解析会把查询阻塞整段解析时长(回归测试 ID 128);
+- **不要**在推进流式稳定边界时重解析整个前缀:只解析新稳定区段
+  (决策单元 `appendSpans`),否则长回复的累计成本是平方级(回归测试 ID 129)。
