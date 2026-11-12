@@ -14,7 +14,7 @@ final class ToolManagerEventManager: SuperLog {
         category: "ToolManagerEventManager"
     )
     public nonisolated static let emoji = "📣"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
 

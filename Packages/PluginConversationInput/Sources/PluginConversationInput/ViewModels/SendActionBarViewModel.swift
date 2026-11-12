@@ -12,7 +12,7 @@ import ProviderMessageSender
 final class SendActionBarViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin-conversation-input", category: "SendActionBarButton")
     nonisolated public static let emoji = "🔘"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复点击排起多条发送链。

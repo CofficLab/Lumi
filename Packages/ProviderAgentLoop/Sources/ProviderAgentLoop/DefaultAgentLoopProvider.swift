@@ -97,7 +97,7 @@ private typealias ToolCall = KitAgentTool.ToolCall
 public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-agent-loop", category: "AgentLoop")
     public nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private let messages: any MessageManaging
     private let llmManager: any LLMManaging
     private let toolManager: any ToolManagerProviding
