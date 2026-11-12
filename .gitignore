@@ -97,7 +97,4 @@ buildServer.json
 __pycache__/
 *.pyc
 
-# Workbuddy
-.workbuddy/
-
 .zcode/

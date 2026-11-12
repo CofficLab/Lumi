@@ -117,7 +117,7 @@ extension MyView {
 
 ### 3. 日志记录规范
 
-**使用 `os.Logger` 进行日志记录，禁止使用 `os_log`。** 详见 `.cursor/rules/swift-log.mdc`。
+**使用 `os.Logger` 进行日志记录，禁止使用 `os_log`。** 详见 `.lumi/rules/swift-log.md`。
 
 **Core 模块使用 AppLogger.core：**
 ```swift
