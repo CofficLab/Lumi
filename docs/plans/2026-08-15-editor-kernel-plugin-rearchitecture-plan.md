@@ -2,7 +2,7 @@
 
 > 状态：目标架构与实施蓝图  
 > 适用范围：`KernelLumi`、`EditorKernel`、`EditorService`、`EditorSource`、`EditorTextView`、`EditorLanguageRuntime`、所有编辑器及开发工具插件  
-> 当前架构说明：[`editor-architecture.md`](./editor-architecture.md)  
+> 当前架构说明：[`2026-06-13-editor-architecture.md`](./2026-06-13-editor-architecture.md)  
 > 包结构更新：编辑器 packages 统一归入 `ProviderEditor`、`KitEditor*`、`Plugin*`；`EditorService` 是 `PluginCodeEditorHost` 内部 target。本文中旧 package 路径仅作迁移蓝图，执行与验证以当前架构说明为准。
 > 原则：本文描述最终目标和迁移方法；迁移期间不得以破坏当前可用编辑体验为代价一次性重写。
 

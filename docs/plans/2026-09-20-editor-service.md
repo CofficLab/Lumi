@@ -10,4 +10,4 @@ Run its tests from the Host package:
 swift test --package-path Packages/PluginCodeEditorHost --filter EditorServiceTests
 ```
 
-The package-level dependency map and extension lifecycle are documented in [the editor architecture guide](editor-architecture.md).
+The package-level dependency map and extension lifecycle are documented in [the editor architecture guide](2026-06-13-editor-architecture.md).

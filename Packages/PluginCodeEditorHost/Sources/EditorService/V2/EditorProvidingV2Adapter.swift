@@ -17,7 +17,7 @@ import SwiftUI
 // MARK: - V2 契约适配器
 //
 // `EditorProvidingV2Adapter` 把现有 `EditorService` 适配到 KernelLumi 编辑器契约 V2
-// （`docs/editor-kernel-plugin-rearchitecture-plan.md` §30 任务 3）。
+// （`docs/plans/2026-08-15-editor-kernel-plugin-rearchitecture-plan.md` §30 任务 3）。
 //
 // 设计约束：
 // - **不重写 EditorService 内部实现**，只做边界适配（§20 Phase 1）。

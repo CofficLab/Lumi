@@ -5,7 +5,7 @@ import Testing
 /// #927 回归测试：OSLogStore 的读取是累计的，去重集合淘汰旧 key 后不能把旧日志再写一次。
 ///
 /// `position(date:)` 实测不限制读取范围（见
-/// `docs/project-filelog-first-principles.md`：10→20→30→40 条累计返回），
+/// `docs/plans/2026-10-29-project-filelog-first-principles.md`：10→20→30→40 条累计返回），
 /// 因此仅靠最多 20,000 个 key 的集合去重，一旦淘汰就会在下一轮把同一条
 /// 历史日志当成新记录追加，形成每轮重复写一条旧日志的级联。
 @Suite(.serialized)

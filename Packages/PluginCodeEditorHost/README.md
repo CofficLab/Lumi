@@ -23,7 +23,7 @@ Lumi 编辑器插件。
 
 `EditorService` 是本包内的内部 SwiftPM target，不是独立 package/product。它负责编辑器服务门面、工作台状态、LSP 协作与扩展注册；其他插件只能面向 `ProviderEditor` 协议扩展，不应依赖或导入此 target。
 
-可复用的编辑器层分别归入 `KitEditorKernel`、`KitEditorSource`、`KitEditorTextView` 和 `KitEditorLanguageRuntime`。整体依赖与扩展边界见 [编辑器架构说明](../../docs/editor-architecture.md)。
+可复用的编辑器层分别归入 `KitEditorKernel`、`KitEditorSource`、`KitEditorTextView` 和 `KitEditorLanguageRuntime`。整体依赖与扩展边界见 [编辑器架构说明](../../docs/plans/2026-06-13-editor-architecture.md)。
 
 ## 依赖与集成
 

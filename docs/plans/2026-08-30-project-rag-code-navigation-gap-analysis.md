@@ -227,7 +227,7 @@ AgentLoop 推理、修改和验证
 5. 首次查询时，如果已有旧索引，立即返回旧索引结果，同时后台更新；不要等待新索引，也不要把“更新中”误报成“没有结果”。
 6. 如果完全没有索引，优先启动轻量词法搜索，语义索引完成后再补充结果。
 
-这部分应与现有的 [`project-rag-resource-optimization-plan.md`](./project-rag-resource-optimization-plan.md) 保持一致，复用其后台调度、增量索引、取消和资源预算设计。
+这部分应与现有的 [`2026-07-30-project-rag-resource-optimization-plan.md`](./2026-07-30-project-rag-resource-optimization-plan.md) 保持一致，复用其后台调度、增量索引、取消和资源预算设计。
 
 ### Phase 2：实现分层检索
 

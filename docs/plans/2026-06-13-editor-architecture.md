@@ -1,6 +1,6 @@
 # Lumi 代码编辑器技术架构
 
-> 本文描述当前实现。所有编辑器 package 都必须归入 `Kit*`、`Provider*` 或 `Plugin*`；不设独立 `Editor*` package。面向完整重构的历史蓝图见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)，包归类规则以本文及包归类规范（`docs/plans/2026-09-20-editor-package-taxonomy.md`，已完成归档）为准。
+> 本文描述当前实现。所有编辑器 package 都必须归入 `Kit*`、`Provider*` 或 `Plugin*`；不设独立 `Editor*` package。面向完整重构的历史蓝图见 [`2026-08-15-editor-kernel-plugin-rearchitecture-plan.md`](./2026-08-15-editor-kernel-plugin-rearchitecture-plan.md)，包归类规则以本文及包归类规范（`docs/plans/2026-09-20-editor-package-taxonomy.md`，已完成归档）为准。
 
 ## 概述
 
@@ -217,6 +217,6 @@ public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
 
 ## 相关文档
 
-- [插件 Package 化架构](./plugin-first-architecture-sharing.md)
-- [内核与插件边界规范](../.lumi/rules/core-plugin-boundary-rules.md)
-- [编辑器性能分析](./editor-performance-analysis.md)
+- [插件 Package 化架构](./2026-09-17-plugin-first-architecture-sharing.md)
+- [内核与插件边界规范](../../.lumi/rules/core-plugin-boundary-rules.md)
+- [编辑器性能分析](./2026-05-23-editor-performance-analysis.md)
