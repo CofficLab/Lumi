@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 135 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 140 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 135
+测试文件: 17 个，用例总数: 140
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -199,16 +199,21 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 133 | RAGRipgrepLocator | 内置 ripgrep 优先解析且可执行 | 包资源内置 rg | 调用 `RAGRipgrepLocator.executable()` 并运行 `--version` | 返回 bundle 内 rg 而非系统 PATH 副本，退出码 0 且输出含 ripgrep | P0 | ✅ 已覆盖 | `bundledRipgrepResolvesAndRuns` |
 | 134 | RAGRipgrepLocator | bundle 候选排在系统 PATH 之前 | 包资源内置 rg，PATH 中可能存在 rg | 比较 `candidates()` 中 bundle 路径与各 PATH 候选的顺序 | bundle 候选先于所有系统 PATH 候选 | P0 | ✅ 已覆盖 | `bundledCandidatePrecedesSystemPaths` |
 | 135 | RAGRipgrepLocator | 内置 rg 为双架构 universal 二进制 | 包资源内置 rg | 对 bundle rg 运行 `lipo -archs` | 同时包含 arm64 与 x86_64 | P1 | ✅ 已覆盖 | `bundledRipgrepIsUniversal` |
+| 136 | RAGContextBuilderBudget | prompt 落在 token 预算内且片段完整 | 10 个片段、maxTokens 600、utf8/3 估算器 | 调用 `buildPrompt` 并估算结果 | 估算 ≤ 600，保留片段内容完整无半截，且少于 10 个 | P1 | ✅ 已覆盖 | `promptFitsTokenBudget` |
+| 137 | RAGContextBuilderBudget | nil 预算保留 9000 字符旧上限 | 6 个 4000 字符片段、maxTokens nil | 调用 `buildPrompt` | 总字符 < 11000 且含截断标记 | P1 | ✅ 已覆盖 | `nilBudgetKeepsLegacyCharLimit` |
+| 138 | RAGContextBuilderBudget | 极小预算丢弃全部片段并跳过注入 | maxTokens 10 | 调用 `buildPrompt` | 返回 nil（连 disclaimer 都放不下） | P1 | ✅ 已覆盖 | `tinyBudgetDropsAllSnippets` |
+| 139 | ProjectRAGLLMContextHookBudget | 预算为 0 时不注入 | injectedContentTokenBudget 0 | 调用 `hook.apply` | messages 不变 | P0 | ✅ 已覆盖 | `hookSkipsInjectionWhenBudgetZero` |
+| 140 | ProjectRAGLLMContextHookBudget | 注入消息整体遵守预算 | injectedContentTokenBudget 600、10 个片段 | 调用 `hook.apply` 并估算注入消息 | 注入消息估算 ≤ 600 | P0 | ✅ 已覆盖 | `hookHonorsInjectedContentBudget` |
 
-> 说明：全部 **135 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **140 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
-- P1: 已覆盖 102 / 102
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 105 / 105
 - P2: 已覆盖 13 / 13
-- **合计: 135 / 135**（仅表示清单场景，非源码覆盖率）
+- **合计: 140 / 140**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

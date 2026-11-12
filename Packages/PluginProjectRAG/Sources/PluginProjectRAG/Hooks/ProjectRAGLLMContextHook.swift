@@ -2,6 +2,7 @@ import Foundation
 import KitLLM
 import ProjectRAGEngine
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import ProviderProjectRAG
 
 /// 在 LLM 请求前为代码问题注入一次项目检索上下文。
@@ -27,6 +28,11 @@ final class ProjectRAGLLMContextHook {
               RAGIntentAnalyzer.shouldUseRAG(for: latestUserMessage.content),
               let projectPath = provider.currentProjectPath,
               !projectPath.isEmpty else {
+            return context
+        }
+
+        // 历史已占满窗口时不再注入，避免请求超限后紧急重试带着同样超限内容再失败。
+        if let budget = context.injectedContentTokenBudget, budget <= 0 {
             return context
         }
 
@@ -63,18 +69,25 @@ final class ProjectRAGLLMContextHook {
                 )
             }
             let language: RAGLanguagePreference = containsCJK(latestUserMessage.content) ? .chinese : .english
-            let prompt = RAGContextBuilder.buildPrompt(
+            let wrapper = "Project code navigation context:\n"
+            // 预留 wrapper 的 token，保证整条注入消息（而非仅 prompt）落在预算内。
+            let promptBudget = context.injectedContentTokenBudget.map {
+                $0 - LLMContextTokenEstimator.estimate(text: wrapper)
+            }
+            guard let prompt = RAGContextBuilder.buildPrompt(
                 query: latestUserMessage.content,
                 results: results,
                 projectPath: projectPath,
-                languagePreference: language
-            )
+                languagePreference: language,
+                maxTokens: promptBudget,
+                tokenEstimator: LLMContextTokenEstimator.estimate(text:)
+            ) else { return context }
 
             var updated = context
             updated.messages.insert(
                 LLMMessage(
                     role: .system,
-                    content: "Project code navigation context:\n\(prompt)"
+                    content: wrapper + prompt
                 ),
                 at: 0
             )
