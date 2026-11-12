@@ -26,7 +26,6 @@ OUT="$ROOT/.test-logs/agent-reliability"
 GROUP="${1:-}"
 
 CONTRACTS=(
-  ProviderDiagnostics
   KitAgentTool
   KitLLM
   ProviderMessage

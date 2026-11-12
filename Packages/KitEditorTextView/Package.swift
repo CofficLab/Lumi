@@ -23,12 +23,12 @@ let package = Package(
         // Useful data structures
         .package(
             url: "https://github.com/apple/swift-collections.git",
-            .upToNextMajor(from: "1.7.5")
+            .upToNextMajor(from: "1.7.6")
         ),
         // Logging protocol
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         // Runtime localization
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
     ],
     targets: [
         // The main text view target.

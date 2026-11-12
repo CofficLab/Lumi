@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginXcodeBuild", targets: ["PluginXcodeBuild"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
         .target(

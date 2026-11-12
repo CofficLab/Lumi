@@ -1,5 +1,5 @@
 {
-  "originHash" : "182d6eea4880fb8b2f6017749543bde1107324435dea7221eea996c1a6966675",
+  "originHash" : "967783c209f11fbebdfa1860cb3345a8a6cd5ed277ecc0e13abb7d71f4251071",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "80d2bd096a1ce7cfe27b19ddd417ac3322277f62",
-        "version" : "1.13.3"
+        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
+        "version" : "1.17.1"
       }
     },
     {
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
-        "version" : "1.7.5"
+        "revision" : "88754449ab766a739610b660e117762115fabc9c",
+        "version" : "1.7.6"
       }
     },
     {
