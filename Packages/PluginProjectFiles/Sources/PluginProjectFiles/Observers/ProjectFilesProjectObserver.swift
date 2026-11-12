@@ -7,8 +7,13 @@ final class ProjectFilesProjectObserver {
     private var handle: (any ProjectProvidingObserverHandle)?
 
     init(project: any ProjectProviding, onChange: @escaping () -> Void) {
-        handle = project.addObserver { _ in
-            onChange()
+        handle = project.addObserver { event in
+            switch event {
+            case .projectsChanged:
+                break
+            case .currentProjectChanged, .openFilesChanged, .currentFileChanged:
+                onChange()
+            }
         }
     }
 
