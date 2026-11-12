@@ -73,7 +73,6 @@ struct ListV1View: View {
             if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.surface.opacity(0.6))
             }
         }
         .task {

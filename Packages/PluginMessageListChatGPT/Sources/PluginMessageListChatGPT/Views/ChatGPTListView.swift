@@ -86,7 +86,6 @@ struct ChatGPTListView: View {
             if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.surface.opacity(0.6))
             }
             // 「回到底部」按钮：只在脱离跟随且有内容时出现。
             if scrollAnchor.shouldShowBackToBottom(rowCount: projection.turns.count) {
