@@ -2,23 +2,14 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 140 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 218 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 140
+测试文件: 34 个，用例总数: 218
 
 核心组件（源码目录）:
-- `Hooks/`
-- `Navigation/`
-- `Observers/`
-- `Providers/`
-- `Support/`
-- `Tools/`
-- `Core/`
-- `Models/`
-- `Observers/`
-- `Services/`
-- `Utils/`
+- PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
+- ProjectRAGEngine: `Core/` `Models/` `Observers/` `Services/` `Utils/`
 
 ## 公开 API
 
@@ -277,31 +268,37 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 211 | RAGProjectWatcher | 旧项目晚到事件不得触发索引 | 当前项目已切换为其它路径 | 旧路径事件过 debounce | 身份校验丢弃，0 次触发 | P0 | ✅ 已覆盖 | `staleProjectEventDropped` |
 | 212 | RAGProjectWatcher | 索引暂停时不得触发 | `isPaused` 返回 true | 事件过 debounce | 0 次触发 | P0 | ✅ 已覆盖 | `pausedWatcherDoesNotTrigger` |
 | 213 | RAGProjectWatcher | 真实 FSEvents 流写入后触发 | 临时目录真实流，latency 0.1s | 写入一个 Swift 文件 | debounce 后触发该项目索引 | P1 | ✅ 已覆盖 | `fileEventsStreamTriggersOnWrite` |
+| 214 | ProjectRAGSettings | 自动注入默认开启 | 全新 UserDefaults suite | 初始化设置 ViewModel | autoInjectEnabled == true | P1 | ✅ 已覆盖 | `autoInjectDefaultsToEnabled` |
+| 215 | ProjectRAGSettings | 注入开关必须写入 Hook 读取的同一 key | 设置 ViewModel 绑定独立 suite | 关闭开关后重建 ViewModel | policy key 为 false 且重读一致 | P0 | ✅ 已覆盖 | `autoInjectTogglePersistsToPolicyKey` |
+| 216 | ProjectRAGSettings | 暂停开关驱动服务并回读真实状态 | 未暂停的 RAGService | 切换暂停开/关 | service 与 ViewModel 状态一致 | P1 | ✅ 已覆盖 | `pauseToggleDrivesService` |
+| 217 | ProjectRAGSettings | load 反映外部设置的暂停状态 | 外部先暂停 service | 调用 `load` | ViewModel 显示已暂停 | P1 | ✅ 已覆盖 | `loadReflectsServiceState` |
+| 218 | ProjectRAGSettings | shutdown 必须撤回设置入口 | 内核注册 DefaultSettingViewProviding | onBoot 后 onShutdown | 入口先注册后移除 | P0 | ✅ 已覆盖 | `settingsEntryLifecycle` |
 
-> 说明：全部 **213 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **218 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
 > Task 3.1 启动成本实测（2026-11-12）：500 chunks×384 维，全量回灌 370.2ms → 保留路径 0.8ms（约 460 倍）。
 > Task 3.2 新鲜度链路（2026-11-12）：真实 FSEvents 流测试证明「保存文件 → debounce → 触发增量索引」；macOS 27 实测 dispatch queue 回调的 eventPaths 为 C 字符串数组（按 CFArray 解引用会段错误），已按此 ABI 读取。索引完成后 search_code 即可命中新内容。
+> Task 4.1 设置开关（2026-11-12）：独立设置入口「Project RAG」暴露自动注入与索引暂停两个进程级开关；ViewModel 测试覆盖开关键一致性与暂停回读，布局登记进 FactoryLumi SettingsLayoutConformance 审计表。真实 App 内手工拨动开关未验证（环境无法启动整 App），行为等价性由 215/216 用例保证。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 47 / 47
-- P1: 已覆盖 152 / 152
+- P0: 已覆盖 49 / 49
+- P1: 已覆盖 155 / 155
 - P2: 已覆盖 14 / 14
-- **合计: 213 / 213**（仅表示清单场景，非源码覆盖率）
+- **合计: 218 / 218**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（101 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（49 条）
+- **P1**: 其余功能性用例（155 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 132 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 218 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -202,6 +202,13 @@ struct SettingsLayoutConformanceTests {
             detailPadding: nil
         ),
         AuditedPage(
+            viewTypeNames: ["ProjectRAGSettingsView"],
+            path: "Packages/PluginProjectRAG/Sources/PluginProjectRAG/Views/ProjectRAGSettingsView.swift",
+            relatedPaths: [],
+            kind: .singleColumn,
+            detailPadding: nil
+        ),
+        AuditedPage(
             viewTypeNames: ["LauncherSettingsView"],
             path: "Packages/PluginQuickLauncher/Sources/PluginQuickLauncher/Views/LauncherSettingsView.swift",
             relatedPaths: [],

@@ -7,6 +7,7 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderProjectRAG
 import ProviderLifecycleHooks
+import ProviderSettingView
 import LumiLoggingKit
 import os
 
@@ -78,6 +79,19 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         toolManager?.add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
         toolManager?.add(RAGGrepTool(), pluginID: id)
 
+        if let settingView = kernel.resolveProvider((any SettingViewProviding).self) {
+            settingView.addEntries([
+                SettingEntryItem(
+                    id: "\(id).settings",
+                    title: "Project RAG",
+                    systemImage: "text.magnifyingglass",
+                    order: 155
+                ) {
+                    ProjectRAGSettingsView(service: service)
+                },
+            ])
+        }
+
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let contextHook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
             self.llmContextHook = contextHook
@@ -122,6 +136,8 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         toolManager?.remove(id: RAGCodeSearchTool.toolName)
         toolManager?.remove(id: RAGGrepTool.toolName)
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
