@@ -37,7 +37,9 @@ let package = Package(
             ],
             path: "Sources/ProjectRAGEngine",
             resources: [
-                .copy("../../Resources/vec0.dylib")
+                .copy("../../Resources/vec0.dylib"),
+                .copy("../../Resources/rg"),
+                .copy("../../Resources/ripgrep-licenses")
             ]
         ),
         .target(

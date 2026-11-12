@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 132 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 135 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 132
+测试文件: 14 个，用例总数: 135
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -56,6 +56,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 - **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
 - **RAGLexicalIgnore**（2 条）：由 `ripgrepArgumentsDisableIgnoreRules`、`lexicalSearchFindsSourceInGitignoredDirectory` 锁定。索引扫描和路径搜索都不读取 `.gitignore`，词法搜索的 ripgrep 参数必须带 `--no-ignore`，否则被忽略目录中的源码在有其他匹配时会被静默漏掉（**回归 #1113**）。
+- **RAGRipgrepLocator**（3 条）：由 `bundledRipgrepResolvesAndRuns`、`bundledCandidatePrecedesSystemPaths`、`bundledRipgrepIsUniversal` 锁定。ripgrep 随包内置（`Resources/rg`，universal），解析优先于系统 PATH，不依赖用户机器安装 rg；应用内签名副本由构建脚本放入 `Contents/MacOS`，资源 bundle 内未签名副本不得优先。
 - **RAGSQLiteCandidateDedup**（3 条）：由 `mergeKeepsChunksThatShareContentPrefix`、`partialMatchDoesNotEvictFullMatch`、`fallbackOverlapIsDeduplicated` 锁定。词法与回退候选合并必须按数据库 chunk id 去重；不能用「路径 + 内容前 80 字符」，否则同前缀的不同 chunk 会互相覆盖，完整命中的旧 chunk 会在评分前被较新的部分匹配挤掉（**回归 #1115**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
 
@@ -195,16 +196,19 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 130 | RAGServiceEnsureOutcome | 只有完成索引或索引新鲜算作进展（**回归 #1116**） | 四种结果值 | 检查 `confirmsProgress` | `indexed`/`fresh` 为 true，`throttled`/`paused` 为 false | P1 | ✅ 已覆盖 | `onlyIndexedAndFreshConfirmProgress` |
 | 131 | RAGServiceCancellation | 中断前捕获的令牌无法重新打开后台索引（**回归 #1117**） | 服务已初始化，先捕获令牌再调用 `cancelBackgroundIndexing` | 用旧令牌以 `background: true` 调用 `ensureIndexed`（连续两次），再用新令牌索引 | 旧令牌抛 `CancellationError` 且没有写入索引状态；新令牌返回 `.indexed` 且 chunk 数大于 0 | P0 | ✅ 已覆盖 | `staleTokenCannotRestartBackgroundIndexing` |
 | 132 | RAGServiceCancellation | 前台索引不受后台取消令牌影响 | 服务已初始化并调用过 `cancelBackgroundIndexing` | 以 `background: false` 调用 `ensureIndexed` | 返回 `.indexed`，索引状态有 chunk，前台工作不被后台令牌阻断 | P1 | ✅ 已覆盖 | `foregroundIndexingIgnoresBackgroundCancellation` |
+| 133 | RAGRipgrepLocator | 内置 ripgrep 优先解析且可执行 | 包资源内置 rg | 调用 `RAGRipgrepLocator.executable()` 并运行 `--version` | 返回 bundle 内 rg 而非系统 PATH 副本，退出码 0 且输出含 ripgrep | P0 | ✅ 已覆盖 | `bundledRipgrepResolvesAndRuns` |
+| 134 | RAGRipgrepLocator | bundle 候选排在系统 PATH 之前 | 包资源内置 rg，PATH 中可能存在 rg | 比较 `candidates()` 中 bundle 路径与各 PATH 候选的顺序 | bundle 候选先于所有系统 PATH 候选 | P0 | ✅ 已覆盖 | `bundledCandidatePrecedesSystemPaths` |
+| 135 | RAGRipgrepLocator | 内置 rg 为双架构 universal 二进制 | 包资源内置 rg | 对 bundle rg 运行 `lipo -archs` | 同时包含 arm64 与 x86_64 | P1 | ✅ 已覆盖 | `bundledRipgrepIsUniversal` |
 
-> 说明：全部 **132 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **135 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 101 / 101
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 102 / 102
 - P2: 已覆盖 13 / 13
-- **合计: 132 / 132**（仅表示清单场景，非源码覆盖率）
+- **合计: 135 / 135**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

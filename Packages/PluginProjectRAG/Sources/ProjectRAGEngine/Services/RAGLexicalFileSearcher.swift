@@ -66,7 +66,7 @@ public enum RAGLexicalFileSearcher {
         projectPath: String,
         topK: Int
     ) throws -> [RAGSearchResult]? {
-        guard let executable = ripgrepExecutable() else { return nil }
+        guard let executable = RAGRipgrepLocator.executable() else { return nil }
 
         let arguments = ripgrepArguments(terms: terms, projectPath: projectPath)
 
@@ -183,20 +183,6 @@ public enum RAGLexicalFileSearcher {
         }
         arguments.append(contentsOf: ["--regexp", pattern, projectPath])
         return arguments
-    }
-
-    private static func ripgrepExecutable() -> URL? {
-        let pathEntries = ProcessInfo.processInfo.environment["PATH"]?
-            .split(separator: ":")
-            .map(String.init) ?? []
-        let candidates = pathEntries.map { "\($0)/rg" } + [
-            "/opt/homebrew/bin/rg",
-            "/usr/local/bin/rg",
-            "/usr/bin/rg",
-        ]
-        return candidates.lazy
-            .map { URL(fileURLWithPath: $0) }
-            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
 
     private static func makeSnippet(content: String, terms: [String]) -> Snippet {
