@@ -294,8 +294,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "a1d7d67a32fe10de37e7473a3e6452f0f2102ba2",
-        "version" : "1.15.0"
+        "revision" : "55a5f5b4dcf4c5ed6a6c6abb00a1cf14cd47a589",
+        "version" : "1.16.0"
       }
     },
     {

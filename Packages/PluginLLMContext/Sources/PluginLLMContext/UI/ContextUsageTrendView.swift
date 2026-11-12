@@ -51,7 +51,11 @@ struct ContextUsageTrendView: View {
                         Int(value).formattedContextSize
                     },
                     fixedPointSpacing: Self.pointSpacing,
-                    guides: guides
+                    guides: guides,
+                    // 横轴是请求序号而不是时间：同一天里的多次请求在日期标签下
+                    // 完全无法区分，标成序号才与横轴的真实含义一致。
+                    axisStyle: .index,
+                    showsAxisTicks: true
                 )
                 .frame(height: 118)
 
