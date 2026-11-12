@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 126 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 137 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 126
+测试文件: 12 个，用例总数: 137
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -58,6 +58,10 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **忙时必须入队而不是直接插入**：回合正在跑时插入消息不会起新回合（`MessageObserver` 因 `isRunning` 直接返回），通知就丢了。忙时入队，由 `turnFinished` 钩子排空。
   - **排空必须延后到回合真正空闲**：`turnFinished` 触发时上一个 `runTurn` 还在退栈，直接起会被判定为并发回合而失败。
   - **抑制期间暂存而非丢弃**：`isAutoReplySuppressed`（ACP 托管回合）时插入的消息会被 `MessageObserver` 丢弃，因此改为暂存，抑制解除后再投递。
+- **卡片与停止**（11 条）：由 `stopsRunningTask`、`missingPayloadDecodesToNil`、`unknownStatusDecodesToNil` 等用例锁定；改动 `StopBackgroundTaskTool` / `BackgroundTaskCardRenderer` 时优先跑 `BackgroundTaskCardAndStopToolTests`。三条易错约定：
+  - **停止语义复用进程树终止**：后台命令常带子进程（编译器、测试 runner），只杀直接子进程会留下孤儿。因此 `stop` 走 KitShell 的 SIGTERM → 宽限 → SIGKILL。
+  - **停止已结束的任务不算失败**：任务已经自然结束时再调 stop 会返回真实状态（「already completed」），而不是抛一个误导性的错误。
+  - **载荷缺失必须回退而不是崩溃**：通知消息是持久化的，metadata 可能因旧版本数据而缺失，因此解析失败时返回 nil，渲染器回退到纯文本。
 
 ## 测试用例清单
 
@@ -190,27 +194,38 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 124 | 完成通知 | 自动回复被抑制时通知被暂存而不是丢弃 | 抑制开启 | 投递完成事件 | 不插入消息，暂存长度为 1 | P0 | ✅ 已覆盖 | `suppressedConversationHoldsNotification` |
 | 125 | 完成通知 | 抑制解除后暂存的通知被投递 | 抑制开启后关闭 | 触发 turnFinished | 插入一条消息 | P0 | ✅ 已覆盖 | `suppressedNotificationDeliveredAfterSuppressionEnds` |
 | 126 | 完成通知 | 失败任务的通知写明退出码 | — | 构造通知消息 | 含任务 ID、failed、退出码与摘录 | P1 | ✅ 已覆盖 | `failedNotificationIncludesExitCode` |
+| 127 | 卡片与停止 | 工具名与 schema 声明 task_id | — | 读取工具定义 | 名称为 `stop_background_task`，必填 `task_id` | P1 | ✅ 已覆盖 | `toolDeclaresTaskIDArgument` |
+| 128 | 卡片与停止 | 缺少 task_id 时抛错而不是返回字符串 | — | 不带参数执行 | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingTaskIDThrows` |
+| 129 | 卡片与停止 | 没有登记表时抛错 | 未注入登记表 | 执行停止 | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingRegistryThrows` |
+| 130 | 卡片与停止 | 未知任务 ID 时抛错 | 已注入登记表 | 停止不存在的任务 | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `unknownTaskIDThrows` |
+| 131 | 卡片与停止 | 停止运行中的任务会终止进程 | 已交接长命令 | 调用停止工具 | 进程被杀，任务状态为 stopped | P0 | ✅ 已覆盖 | `stopsRunningTask` |
+| 132 | 卡片与停止 | 停止已结束的任务返回真实状态而不是报错 | 任务已自然结束 | 调用停止工具 | 返回「already」而非抛错 | P1 | ✅ 已覆盖 | `stoppingFinishedTaskReportsStatus` |
+| 133 | 卡片与停止 | 通知消息被卡片渲染器接管 | — | 判定消息 | 通知消息被接管 | P0 | ✅ 已覆盖 | `notificationMessageIsRenderedByCard` |
+| 134 | 卡片与停止 | 普通消息不被卡片渲染器接管 | — | 判定消息 | 普通 user 消息不被接管 | P1 | ✅ 已覆盖 | `ordinaryMessageIsNotRenderedByCard` |
+| 135 | 卡片与停止 | 载荷解析出任务 ID、状态、退出码与输出路径 | — | 解析 metadata | 四项载荷均正确 | P1 | ✅ 已覆盖 | `payloadDecodesFromMetadata` |
+| 136 | 卡片与停止 | 载荷缺失时返回 nil 以便回退到纯文本 | — | 解析空 metadata | 返回 nil | P0 | ✅ 已覆盖 | `missingPayloadDecodesToNil` |
+| 137 | 卡片与停止 | 未知状态值不会导致崩溃 | — | 解析非法状态 | 返回 nil | P0 | ✅ 已覆盖 | `unknownStatusDecodesToNil` |
 
-> 说明：全部 **126 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **137 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 25 / 25
-- P1: 已覆盖 95 / 95
+- P0: 已覆盖 32 / 32
+- P1: 已覆盖 99 / 99
 - P2: 已覆盖 6 / 6
-- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
+- **合计: 137 / 137**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（25 条）
-- **P1**: 其余功能性用例（95 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
+- **P1**: 其余功能性用例（99 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 126 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 137 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

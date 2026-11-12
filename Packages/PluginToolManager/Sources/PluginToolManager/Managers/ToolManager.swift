@@ -159,6 +159,14 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
             ),
             pluginID: Self.toolManagerPluginID
         )
+        add(
+            StopBackgroundTaskTool(
+                registryProvider: { [weak self] in
+                    self?.backgroundTaskRegistry
+                }
+            ),
+            pluginID: Self.toolManagerPluginID
+        )
     }
 
     public static let toolManagerPluginID = "com.coffic.lumi.plugin.tool-manager"

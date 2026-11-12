@@ -10,6 +10,7 @@ import ProviderToolManager
 import ProviderAgentLoop
 import ProviderLifecycleHooks
 import ProviderMessage
+import ProviderMessageRendering
 import LumiLoggingKit
 import SwiftUI
 
@@ -89,6 +90,23 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         kernel.unregisterProvider((any ToolManagerProviding).self)
         try kernel.registerProvider((any ToolManagerProviding).self, service)
 
+        // 3.5 注册后台任务卡片渲染器。order 由插件 order 派生，确保通知消息
+        // 不被通用渲染器接管。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(
+                BackgroundTaskCardRenderer.item(
+                    order: order + 300,
+                    registryProvider: { [weak self] in
+                        self?.backgroundTaskRegistry
+                    }
+                )
+            )
+        } else {
+            Self.logger.warning(
+                "\(Self.t)MessageRenderingProviding not resolved, background task card renderer skipped"
+            )
+        }
+
         // 4. 设置界面注入「Tools」入口。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.addEntries([
@@ -125,6 +143,8 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.removeEntries(ids: [settingsEntryID])
         }
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: BackgroundTaskNotification.rendererID)
         // 应用退出时终止仍在运行的后台任务，避免留下孤儿进程。
         if let registry = backgroundTaskRegistry {
             Task { [weak self] in
