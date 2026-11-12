@@ -20,7 +20,12 @@ public struct RAGCodeSearchTool: SuperAgentTool {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        "Search semantic code snippets in the current project or an explicitly supplied project path."
+        switch language {
+        case .chinese:
+            return "混合代码检索：精确文本/符号优先用 grep；本工具用于自然语言语义问题与跨文件定位。索引未就绪时仍返回实时搜索结果。"
+        case .english:
+            return "Hybrid code retrieval: prefer grep for exact text/symbols; use this tool for natural-language semantic questions and cross-file location. Returns live search results even when the index is not ready."
+        }
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -100,10 +105,50 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         guard !response.results.isEmpty else {
             return "## Code Search\n\nNo code matched `\(query)`. If the project was just opened, indexing may still be in progress; try grep for exact text."
         }
-        return response.results.enumerated().map { index, result in
+        return formatResults(response.results)
+    }
+
+    private static let maxOutputBytes = 20_000
+    private static let maxSnippetCharacters = 3_000
+
+    private func formatResults(_ results: [ProjectRAGSearchResult]) -> String {
+        let semanticCount = results.filter { $0.matchKind == .semantic }.count
+        let lexicalCount = results.filter {
+            $0.matchKind == .filesystemLexical || $0.matchKind == .indexedLexical
+        }.count
+        let pathCount = results.filter { $0.matchKind == .filesystemPath }.count
+        let header = "## Code Search\n\nsemantic: \(semanticCount), live-lexical: \(lexicalCount), path: \(pathCount)"
+
+        let blocks = results.enumerated().map { index, result -> String in
             let score = String(format: "%.2f", result.score)
             let lineLabel = result.lineRange.map { ":\($0.startLine)-\($0.endLine)" } ?? ""
-            return "### \(index + 1). `\(result.source)\(lineLabel)` (score: \(score), evidence: \(result.matchKind.rawValue))\n\n```\n\(result.content)\n```"
-        }.joined(separator: "\n\n")
+            var content = result.content
+            if content.count > Self.maxSnippetCharacters {
+                content = String(content.prefix(Self.maxSnippetCharacters)) + "\n…[snippet clipped]"
+            }
+            return "### \(index + 1). `\(result.source)\(lineLabel)` (score: \(score), evidence: \(result.matchKind.rawValue))\n\n```\n\(content)\n```"
+        }
+
+        // 预留最坏情况截断标记，保证 header + 片段 + 标记整体不超预算。
+        let worstMarker = truncationMarker(remaining: results.count)
+        var used = header.utf8.count
+        var shown: [String] = []
+        for block in blocks {
+            let cost = block.utf8.count + 2
+            if used + cost + worstMarker.utf8.count + 2 > Self.maxOutputBytes { break }
+            shown.append(block)
+            used += cost
+        }
+
+        var output = header + "\n\n" + shown.joined(separator: "\n\n")
+        let remaining = results.count - shown.count
+        if remaining > 0 {
+            output += "\n\n" + truncationMarker(remaining: remaining)
+        }
+        return output
+    }
+
+    private func truncationMarker(remaining: Int) -> String {
+        "[truncated: \(remaining) more results; refine the query or use grep + read_file]"
     }
 }

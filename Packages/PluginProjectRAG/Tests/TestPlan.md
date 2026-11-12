@@ -256,16 +256,19 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 190 | CodeNavigationFusion | 展示分保留簇内最佳原始分 | 同一证据两路 0.4 / 0.7 | 调用 `fuse` | bestOriginalScore 0.7 | P1 | ✅ 已覆盖 | `displayScoreKeepsBestOriginal` |
 | 191 | CodeNavigationFusion | 相同内容跨文件去重 | A/B 不同文件同内容 | 调用 `fuse` | 仅 1 条 | P1 | ✅ 已覆盖 | `identicalContentDeduplicatedAcrossSources` |
 | 192 | CodeNavigationFusion | 协调器排序走 RRF 且保留最佳展示分 | 语义 Y 0.99 + X、词法 X | 调用 `coordinator.search` | X 第一且 score ≈ 0.85 | P0 | ✅ 已覆盖 | `coordinatorOrdersCrossSourceConsensusFirst` |
+| 193 | RAGCodeSearchToolOutput | 超预算输出必须截断附标记 | 20 个大片段 | 调用 `execute` | utf8 ≤ 20000 且含 truncated 与 grep 建议 | P0 | ✅ 已覆盖 | `searchCodeOutputBudgetTruncates` |
+| 194 | RAGCodeSearchToolOutput | 单片段 3000 字符截断 | 5000 字符片段 | 调用 `execute` | 不含 3001 连续字符且含 snippet clipped | P0 | ✅ 已覆盖 | `searchCodeSnippetClippedAt3000` |
+| 195 | RAGCodeSearchToolOutput | 头部展示证据构成 | semantic/lexical/path 各 1 | 调用 `execute` | 含 semantic: 1, live-lexical: 1, path: 1 | P1 | ✅ 已覆盖 | `searchCodeHeaderShowsEvidenceMix` |
 
-> 说明：全部 **192 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **195 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 40 / 40
-- P1: 已覆盖 139 / 139
+- P0: 已覆盖 42 / 42
+- P1: 已覆盖 140 / 140
 - P2: 已覆盖 13 / 13
-- **合计: 192 / 192**（仅表示清单场景，非源码覆盖率）
+- **合计: 195 / 195**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
