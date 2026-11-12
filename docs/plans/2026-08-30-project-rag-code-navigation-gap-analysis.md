@@ -2,6 +2,8 @@
 
 日期：2026-08-29
 
+> **状态更新（2026-11-12）**：本文「RAG 尚未接入生产请求链路」的结论已过时。后续方案 [2026-11-12-project-rag-agentic-search-improvement-plan.md](2026-11-12-project-rag-agentic-search-improvement-plan.md) 已落地：实时 grep/search_code 成为主路径、自动注入受置信度门槛与用户开关约束、BM25 词法融合与文件监听增量索引均已实现。本文保留作历史背景。
+
 ## 1. 结论
 
 Lumi 已经具备完整的 Project RAG 基础设施：项目索引、SQLite 存储、sqlite-vec 向量检索、Apple NaturalLanguage embedding、后台索引调度，以及 `search_code` Agent 工具。
