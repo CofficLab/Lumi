@@ -147,6 +147,7 @@ struct ModelListView: View {
                                 model: model,
                                 isSelected: isSelected,
                                 modelInfo: modelInfo,
+                                isUtilityModel: viewModel.isUtilityModel(providerID: providerID, model: model),
                                 onSelect: {
                                     viewModel.select(providerID: providerID, model: model)
                                     onSelect?(providerID, model)
