@@ -8,7 +8,9 @@ import Testing
 /// 不变式：
 /// 1. 受支持的语言必须被着色（多种颜色），而不是整块纯文本；
 /// 2. 不支持/缺失的语言必须降级为 nil（调用方按纯文本渲染），不得抛错；
-/// 3. 着色不得改动代码文本本身。
+/// 3. 着色不得改动代码文本本身；
+/// 4. **每个着色片段必须完整落在单个语法单元上**——不得出现
+///    「注释被切成碎片」「类型名被截断」这类错位。
 @MainActor
 struct TreeSitterCodeHighlightProviderTests {
 
@@ -90,6 +92,68 @@ struct TreeSitterCodeHighlightProviderTests {
         )
     }
 
+    // MARK: - 非 ASCII 偏移（回归）
+
+    @Test("含中文注释时着色范围不偏移")
+    func keepsHighlightAlignedWithNonASCIICode() throws {
+        // 回归：tree-sitter 以 UTF-16LE 解析，捕获偏移是 UTF-16 code unit。
+        // 若按 UTF-8 字节偏移换算，含中文的代码块会出现着色错位
+        // （注释被切成碎片、类型名被截断）。
+        let code = """
+        public struct ConversationStateSnapshot {
+            let agentLoopState: AgentLoopState        // 回合主状态
+            let toolState: ConversationToolState      // idle/executing/suspended/completed
+        }
+        """
+        let attributed = try #require(
+            provider().highlight(code: code, language: "swift"),
+            "含中文的 swift 代码块应当被高亮"
+        )
+
+        let colored = coloredTexts(in: attributed)
+
+        // 注释必须完整着色，不能被切成 "…回" / "合主" / "状" / "态" 这样的碎片。
+        #expect(colored.contains("// 回合主状态"), "中文注释应当完整着色，实际: \(colored)")
+        #expect(
+            colored.contains("// idle/executing/suspended/completed"),
+            "英文注释应当完整着色，实际: \(colored)"
+        )
+
+        // 类型名必须完整着色，不能被截断成 "oolState: Conversatio"。
+        #expect(colored.contains("ConversationStateSnapshot"), "类型名应当完整着色，实际: \(colored)")
+        #expect(colored.contains("ConversationToolState"), "类型名应当完整着色，实际: \(colored)")
+        #expect(colored.contains("AgentLoopState"), "类型名应当完整着色，实际: \(colored)")
+    }
+
+    @Test("含中文的字符串字面量被完整着色")
+    func highlightsStringLiteralWithChinese() throws {
+        let code = #"let message = "这是一条中文消息""#
+        let attributed = try #require(provider().highlight(code: code, language: "swift"))
+
+        let colored = coloredTexts(in: attributed)
+        #expect(colored.contains("这是一条中文消息"), "字符串字面量应当完整着色，实际: \(colored)")
+    }
+
+    @Test("含中文注释的其它语言同样不错位")
+    func keepsHighlightAlignedForOtherLanguages() throws {
+        let samples: [String: String] = [
+            "python": "# 这是中文注释\nvalue = 1\n",
+            "javascript": "// 这是中文注释\nconst value = 1;\n",
+            "bash": "# 这是中文注释\necho hello\n",
+        ]
+        for (language, code) in samples {
+            let attributed = try #require(
+                provider().highlight(code: code, language: language),
+                "\(language) 代码块应当被高亮"
+            )
+            let colored = coloredTexts(in: attributed)
+            #expect(
+                colored.contains("# 这是中文注释") || colored.contains("// 这是中文注释"),
+                "\(language) 的中文注释应当完整着色，实际: \(colored)"
+            )
+        }
+    }
+
     // MARK: - 辅助
 
     private func colors(in attributed: AttributedString) -> Set<Color> {
@@ -100,5 +164,12 @@ struct TreeSitterCodeHighlightProviderTests {
             }
         }
         return result
+    }
+
+    /// 所有带前景色的片段文本。
+    private func coloredTexts(in attributed: AttributedString) -> [String] {
+        attributed.runs.compactMap { run in
+            run.foregroundColor == nil ? nil : String(attributed[run.range].characters)
+        }
     }
 }
