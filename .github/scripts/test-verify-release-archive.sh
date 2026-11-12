@@ -125,6 +125,11 @@ create_fake_archive() {
   chmod +x "${archive}/Products/Applications/Lumi.app/Contents/MacOS/lumi-acp"
   echo "${arch}" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/lumi-acp.actual_arch"
 
+  # Bundled ripgrep
+  echo "fake" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/rg"
+  chmod +x "${archive}/Products/Applications/Lumi.app/Contents/MacOS/rg"
+  echo "${arch}" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/rg.actual_arch"
+
   echo "fake" > "${archive}/Products/Applications/Lumi.app/Contents/Frameworks/vec0.dylib"
   echo "${arch}" > "${archive}/Products/Applications/Lumi.app/Contents/Frameworks/vec0.dylib.actual_arch"
 
@@ -193,7 +198,7 @@ bash "${SCRIPT}" "${archive}" "arm64" \
   --expected-version "6.0.0" \
   --expected-build "20260920120000" > "${WORK}/out-ok.txt" 2>&1
 expect_eq "0" "$?" "valid archive exits 0"
-expect_contains "$(cat "${WORK}/out-ok.txt")" "12 checks passed" "reports all release checks passed"
+expect_contains "$(cat "${WORK}/out-ok.txt")" "14 checks passed" "reports all release checks passed"
 
 # ---------------------------------------------------------------------------
 # 3. Architecture mismatch on main binary

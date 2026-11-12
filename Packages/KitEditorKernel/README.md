@@ -4,7 +4,7 @@
 
 ## 全局技术架构
 
-Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。
+Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../docs/plans/2026-06-13-editor-architecture.md)。
 
 ```text
 应用装配层 (LumiApp)

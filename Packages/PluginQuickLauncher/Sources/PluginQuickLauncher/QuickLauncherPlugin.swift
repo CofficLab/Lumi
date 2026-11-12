@@ -29,6 +29,8 @@ public final class QuickLauncherPlugin: SuperPlugin, SuperLog {
     )
 
     private let hotkeyManager = GlobalHotkeyManager.shared
+    /// 命令注册表观察句柄：注册表变化时让启动器命令搜索索引失效。
+    private var commandObserver: (any CommandProvidingObserverHandle)?
 
     public init() {}
 
@@ -76,6 +78,10 @@ public final class QuickLauncherPlugin: SuperPlugin, SuperLog {
                 )
             }
         }
+        // 命令注册表变化时让启动器的命令搜索索引失效，避免命中过期缓存。
+        commandObserver = commands?.addObserver { _ in
+            LauncherBridge.invalidateCommandGroups()
+        }
         LauncherBridge.activateMainWindowHandler = {
             NSApp.activate(ignoringOtherApps: true)
             if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { !$0.isKind(of: NSPanel.self) }) {
@@ -99,6 +105,8 @@ public final class QuickLauncherPlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         FileSearchService.shared.cancelSearch()
+        commandObserver?.cancel()
+        commandObserver = nil
         hotkeyManager.stop()
         LauncherWindowController.shared.hide()
         LauncherBridge.askAIHandler = nil

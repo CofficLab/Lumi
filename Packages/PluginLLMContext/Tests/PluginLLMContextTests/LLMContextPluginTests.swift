@@ -519,7 +519,7 @@ struct LLMContextPluginTests {
         #expect(Bool(false), "滚动摘要未继续推进")
     }
 
-    @Test("重新创建 Provider 后复用磁盘摘要")
+    @Test("重新创建 Provider 后复用磁盘压缩块")
     func persistedSummarySurvivesProviderRecreation() async throws {
         let messages = DefaultMessageManager()
         let conversations = DefaultConversationManager()
@@ -530,7 +530,7 @@ struct LLMContextPluginTests {
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LLMContextStoreTests-\(UUID().uuidString)", isDirectory: true)
-        let store = try ContextSummaryStore(directory: directory)
+        let store = try CompressionBlockStore(directory: directory)
         let conversationID = UUID()
         for index in 0...LLMContextProvider.compactionMessageThreshold {
             messages.insertMessage(
@@ -547,7 +547,7 @@ struct LLMContextPluginTests {
             messages: messages,
             conversations: conversations,
             llmProvider: llm,
-            summaryStore: store
+            blockStore: store
         )
         _ = await firstProvider.messagesForLLM(in: conversationID)
 
@@ -560,7 +560,7 @@ struct LLMContextPluginTests {
         }
 
         #expect(FileManager.default.fileExists(
-            atPath: directory.appendingPathComponent(ContextSummaryStore.databaseFileName).path
+            atPath: directory.appendingPathComponent(CompressionBlockStore.databaseFileName).path
         ))
         #expect(summaryProvider.completeCalls == 1)
 
@@ -568,13 +568,84 @@ struct LLMContextPluginTests {
             messages: messages,
             conversations: conversations,
             llmProvider: llm,
-            summaryStore: store
+            blockStore: store
         )
         let restored = await secondProvider.messagesForLLM(in: conversationID)
 
         #expect(restored.contains { $0.metadata["llmContext"] == "summary" })
         #expect(restored.contains { $0.content.contains("摘要结果") })
         #expect(summaryProvider.completeCalls == 1)
+    }
+
+    @Test("旧单摘要记录迁移为 tier-1 压缩块后复用")
+    func legacySummaryMigratesToCompressionBlock() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LLMContextMigrationTests-\(UUID().uuidString)", isDirectory: true)
+        let legacyStore = try ContextSummaryStore(directory: directory)
+        let blockStore = try CompressionBlockStore(directory: directory)
+        let conversationID = UUID()
+        var history: [Message] = []
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            let message = Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "迁移摘要内容 ", count: 100) + "\(index)"
+            )
+            history.append(message)
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        // 预置一条旧格式摘要：覆盖到倒数第 17 条（保留最近 16 条逐字区间）。
+        let coveredThrough = history[history.count - 17].id
+        try await legacyStore.save(ContextSummaryRecord(
+            conversationID: conversationID,
+            text: "旧版滚动摘要",
+            coveredThroughMessageID: coveredThrough,
+            sourceLastMessageID: history[history.count - 1].id,
+            providerID: summaryProvider.providerID,
+            modelName: "summary-model",
+            sourceMessageCount: history.count,
+            updatedAt: Date()
+        ))
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm,
+            summaryStore: legacyStore,
+            blockStore: blockStore
+        )
+        let budget = LLMContextBudget(
+            contextWindowTokens: 5_000,
+            reservedOutputTokens: 500,
+            safetyMarginTokens: 500
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: request)
+
+        // 迁移块直接复用：渲染旧摘要正文，不触发新的摘要调用。
+        #expect(result.didCompact)
+        #expect(result.messages.contains { $0.content.contains("旧版滚动摘要") })
+        #expect(summaryProvider.completeCalls == 0)
+        // 旧记录已升级并删除，块存储里能读到迁移块。
+        let persisted = try await blockStore.load(conversationID: conversationID)
+        #expect(persisted.count == 1)
+        #expect(persisted.first?.tier == 1)
+        #expect(persisted.first?.summary == "旧版滚动摘要")
+        #expect(try await legacyStore.load(conversationID: conversationID) == nil)
     }
 
     @Test("压缩结果落在目标水位内，不会把预算填满")

@@ -14,7 +14,7 @@ is reported by a single status card pinned to the bottom of the list, not inside
 
 ## Before you start
 
-Set the toolbar **Response Detail** chip to **L (Brief)**. That is the only setting V1 reacts to;
+Set the toolbar **Message List Style** chip to **Brief**. That is the only setting V1 reacts to;
 at any other level a different message list is shown instead.
 
 > This package must not depend on other plugin packages, and other plugin packages must not depend on

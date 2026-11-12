@@ -32,7 +32,7 @@ struct AgentRuleInjectionBudgetTests {
     func hookHonorsInjectedContentBudget() async throws {
         let provider = DefaultAgentRuleProvider()
         provider.addProvider(HugeRuleContributor())
-        let hook = AgentRuleInjectionHook(project: nil, ruleProvider: provider)
+        let hook = AgentRuleInjectionHook(conversations: nil, ruleProvider: provider)
 
         let budget = 600
         let context = WillSendToLLMContext(

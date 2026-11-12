@@ -36,7 +36,7 @@ import Foundation
 public enum FileTreeDropProcessor {
 
     /// 处理结果。
-    public enum Result {
+    public enum Result: Sendable {
         /// 被拒绝：开关关闭 / target 非目录 / sources 为空 / 全部 move 失败。
         case rejected
         /// 至少一个 source 移动成功；返回成功 pairs、失败源与受影响的父目录集合。

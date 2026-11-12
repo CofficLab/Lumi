@@ -45,6 +45,20 @@ public final class MailPlugin: SuperPlugin, SuperLog {
     /// 装配时解析到的存储 Provider；`onShutdown` 置空以打破引用环。
     private var storageProvider: (any StorageProviding)?
 
+    /// `onBoot` 是否已经走过。
+    ///
+    /// - Important: 内核启动失败回滚时，会对**已注册但未启用**的插件调用
+    ///   `onShutdown`（KernelCore 的 `rollbackStartup` 把所有注册过的插件
+    ///   都记进了 `bootedIDs`）。那些插件的 `onBoot` 从未执行，lazy 属性
+    ///   也从未初始化——此时触碰 `sessionManager` 会连带初始化
+    ///   `accountStore`、`cacheService`（建 SwiftData 库）并解析
+    ///   `dataDirectory`。
+    ///
+    ///   后果有两个方向：生产上会把数据写到版本化根目录之外，测试进程里
+    ///   则直接触发目录守卫崩溃。因此 `onShutdown` 必须先确认自己真的
+    ///   boot 过。
+    private var didBoot = false
+
     /// 插件数据目录。优先用 Provider 解析出的版本化目录。
     ///
     /// - Important: 所有 lazy 属性都读它，所以 `onBoot` 必须**先**给
@@ -98,6 +112,9 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                 "\(self.t)StorageProviding 未注册，邮件数据将写入兜底目录 \(MailPluginRuntime.fallbackDataDirectory().path, privacy: .public)"
             )
         }
+
+        // 标记已 boot：此后 `onShutdown` 才会触碰 lazy 属性做清理。
+        didBoot = true
 
         let sessionManager = self.sessionManager
         let accountStore = self.accountStore
@@ -178,6 +195,10 @@ public final class MailPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        // 从未 boot 过的插件没有装配任何东西，无需清理；更重要的是不能触碰
+        // lazy 属性——那会连带创建 accountStore / cacheService 并解析目录。
+        guard didBoot else { return }
+
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
 
@@ -202,6 +223,7 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         tools?.remove(id: MailSearchMessagesTool.toolName)
         tools?.remove(id: MailSendMessageTool.toolName)
 
+        didBoot = false
         storageProvider = nil
         Task {
             await sessionManager.disconnectAll()

@@ -5,13 +5,14 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 45
+测试文件: 16 个，用例总数: 66
 
 核心组件（源码目录）:
 - `Models/`
 - `Observers/`
 - `Services/`
 - `Support/`
+- `Tools/`
 - `ViewModels/`
 - `Views/`
 
@@ -25,6 +26,8 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - `DeviceData`
 - `DeviceHistoryRange`
 - `DeviceHistorySample`
+- `DeviceStatusScope`
+- `DeviceStatusTimeline`
 - `GPUTimeRange`
 - `MemoryTimeRange`
 - `SystemMetrics`
@@ -48,6 +51,7 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - **历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **历史图表几何**（4 条）：由 `xMapsTimestampsProportionally`、`longGapKeepsProportionalWidth`、`xClampsOutOfRangeTimestamps`、`hoverSelectsNearestTimestamp` 锁定，防止绘线或悬浮选点退回数组等距映射。
 - **CPU 采样**（4 条）：由 `averageUsageAcrossCPUs`、`usageIsDeltaBased`、`shortBuffersReturnZero`、`zeroCPUCountReturnsZero` 锁定，防止 `host_processor_info` 返回的 CPU 数量/buffer 长度与循环不一致时越界。
+- **设备状态卡片**（27 条）：由 `payloadRoundTripsThroughContent`、`cardIsExcludedFromLLMContext`、`invalidScopeThrows`、`rendererOutranksCoreSystemMessage`、`onDisableUnregistersToolAndRenderer` 等用例锁定；改动设备状态载荷、工具参数解析、卡片渲染器或插件的对话贡献点时优先跑对应测试文件。
 - **本地化**（5 条）：由 `memoryMonitorHasTranslationsInCompiledBundle`、`sensorLabelUsesInjectedLocalization`、`sensorLabelHasTranslationsInCompiledBundle`、`registrationTitlesUseInjectedLocalization`、`entryLabelsHaveTranslationsInCompiledBundle` 锁定，防止视图词条与注册入口标题绕过 `pluginLocalization`，或在某个规范语言下缺失而回退成英文 key。
 
 ## 测试用例清单
@@ -100,26 +104,54 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 44 | 本地化 | 文档、活动栏与菜单标题经过本地化解析 | 注入 marker 解析器，真实 kernel 启动并启用插件 | 读取文档入口、ActivityBar 入口与菜单栏贡献标题 | 全部为 `localized:Device Info` / `localized:Memory`，证明注册链不再写死中文字面量（**回归** #900） | P1 | ✅ 已覆盖 | `registrationTitlesUseInjectedLocalization` |
 | 45 | 本地化 | Device Info 与 Memory 词条在所有规范语言下都有译文 | 编译后的资源包 | 读取 en / zh-Hans / zh-Hant / zh-HK / zh-TW 的 `Localizable.strings` | 五种语言都有对应译文，不回退成英文 key（**回归** #900） | P1 | ✅ 已覆盖 | `entryLabelsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
+| 46 | 设备状态卡片 | 载荷能通过 content 往返 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `payloadRoundTripsThroughContent` |
+| 47 | 设备状态卡片 | 消息被标记为设备状态时间线事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageIsMarkedAsTimelineEvent` |
+| 48 | 设备状态卡片 | 卡片被排除在 LLM 上下文之外 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cardIsExcludedFromLLMContext` |
+| 49 | 设备状态卡片 | 损坏的 content 降级为 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `corruptedContentDegradesToNil` |
+| 50 | 设备状态卡片 | 摘要文本对每个范围都可读 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `summaryTextStaysReadable` |
+| 51 | 设备状态卡片 | 会话与回合 ID 被写进消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageCarriesConversationAndTurn` |
+| 52 | 设备状态卡片 | scope 缺失时回退到总览 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingScopeFallsBackToOverview` |
+| 53 | 设备状态卡片 | scope 为空串时回退到总览 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `blankScopeFallsBackToOverview` |
+| 54 | 设备状态卡片 | 合法 scope 被正确解析，且忽略大小写 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validScopeIsParsed` |
+| 55 | 设备状态卡片 | 非法 scope 抛出工具执行错误 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidScopeThrows` |
+| 56 | 设备状态卡片 | 宽松解析在非法值时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `lenientScopeReturnsNilForInvalidValue` |
+| 57 | 设备状态卡片 | 工具名固定为 device_status | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolNameIsStable` |
+| 58 | 设备状态卡片 | input schema 声明了全部合法 scope | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inputSchemaDeclaresAllScopes` |
+| 59 | 设备状态卡片 | 工具是低风险只读操作 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolIsLowRisk` |
+| 60 | 设备状态卡片 | 渲染器优先级高于核心系统消息渲染器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rendererOutranksCoreSystemMessage` |
+| 61 | 设备状态卡片 | 渲染器只认设备状态卡片消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererOnlyHandlesDeviceStatusMessages` |
+| 62 | 设备状态卡片 | 渲染器 ID 与时间线消息一致 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `rendererIDMatchesTimeline` |
+| 63 | 设备状态卡片 | 摘要文本包含各指标的关键数值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryIncludesKeyMetrics` |
+| 64 | 设备状态卡片 | 摘要在无数据时不编造指标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryOmitsAbsentMetrics` |
+| 65 | 设备状态卡片 | 温度无读数时摘要如实说明 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `summaryReportsMissingThermalReadings` |
+| 66 | 设备状态卡片 | 字节格式化不会溢出 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `byteFormattingHandlesExtremeValues` |
+| 67 | 设备状态卡片 | onBoot 注册 device_status 工具与卡片渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootRegistersToolAndRenderer` |
+| 68 | 设备状态卡片 | 重复 onBoot 不会重复注册 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedBootDoesNotDuplicateRegistrations` |
+| 69 | 设备状态卡片 | onDisable 撤回工具与渲染器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `onDisableUnregistersToolAndRenderer` |
+| 70 | 设备状态卡片 | onShutdown 撤回工具与渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onShutdownUnregistersToolAndRenderer` |
+| 71 | 设备状态卡片 | 禁用后重新启用会恢复工具与渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onEnableRestoresToolAndRenderer` |
+| 72 | 设备状态卡片 | 缺少工具与渲染器 Provider 时优雅降级 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `onBootDegradesWithoutProviders` |
+
+> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 31 / 31
-- P2: 已覆盖 9 / 9
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 45 / 45
+- P2: 已覆盖 18 / 18
+- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（31 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（45 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（18 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 72 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

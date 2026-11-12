@@ -93,7 +93,10 @@ public struct ChatSectionItem: Identifiable, Sendable {
 }
 
 public enum ChatSectionBarPlacement: Sendable {
+    /// header 栏左侧：会话标题等主标识。
     case header
+    /// header 栏右侧：统计指标、状态徽标等次要信息。
+    case headerTrailing
     case toolbarLeading
     case toolbarTrailing
     case actionLeading

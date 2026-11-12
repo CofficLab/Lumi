@@ -1,0 +1,659 @@
+import AppKit
+import SwiftUI
+
+/// 通过观察底层 `NSScrollView` 的滚动位置来判断「用户是否停在列表底部」，
+/// **完全替代** SwiftUI 的 `GeometryReader` + `PreferenceKey` 方案。
+///
+/// ## 为什么需要它
+///
+/// 旧方案在 `LazyVStack` 末尾挂一个 `GeometryReader { Color.clear.preference(...) }`，
+/// 报告锚点的全局 maxY。在流式场景下（助手回复行高随 token 连续增长），这个锚点的
+/// 全局坐标**每帧都在变**，导致 LazyStack 永不收敛 → 主线程 100% CPU 活锁。
+///
+/// 本类型把「是否在底部」的判定从 SwiftUI 布局/偏好系统里**完全剥离**，改为由
+/// AppKit 的 `NSClipView.boundsDidChangeNotification` 驱动（仅在滚动时触发，
+/// 流式行高度变化不会触发），彻底切断反馈环。
+///
+/// ## 线程与 invalidation
+///
+/// 观察者在主队列回调；闭包写入的内容（`AtBottomBox`）刻意不实现 `ObservableObject`，
+/// 因此**不会**触发 SwiftUI invalidation —— 这是切断反馈环的关键之一。
+///
+/// ## 布局影响
+///
+/// `makeNSView` 返回一个零尺寸、不参与布局的 NSView，仅用于拿到 window 后向上
+/// 查找 `enclosingScrollView`。它不会贡献任何尺寸或参与 SwiftUI 的尺寸协商。
+@MainActor
+final class ScrollViewBottomController {
+    struct Snapshot: Equatable {
+        let documentHeight: CGFloat
+        let visibleHeight: CGFloat
+        let offsetY: CGFloat
+    }
+
+    private weak var scrollView: NSScrollView?
+
+    var isAttached: Bool { scrollView != nil }
+
+    fileprivate func attach(to scrollView: NSScrollView) {
+        self.scrollView = scrollView
+    }
+
+    fileprivate func detach(from scrollView: NSScrollView) {
+        guard self.scrollView === scrollView else { return }
+        self.scrollView = nil
+    }
+
+    // MARK: - 测试缝
+
+    /// 仅供测试装配真实滚动视图。生产路径经 `ScrollViewBottomTracker`
+    /// 的 `attachIfNeeded()` 调用 `attach(to:)`。
+    func attachForTesting(to scrollView: NSScrollView) { attach(to: scrollView) }
+
+    /// 仅供测试验证解绑后的行为。
+    func detachForTesting(from scrollView: NSScrollView) { detach(from: scrollView) }
+
+    /// 钉住底层滚动视图的真实 document 底边，并返回当前几何快照。
+    /// SwiftUI proxy 可能使用尚未完成的 List 行布局；直接调整 clip view
+    /// 可以让调用方在 document 高度继续增长时重复收敛到真正的底部。
+    func pinToBottom() -> Snapshot? {
+        guard let scrollView,
+              let documentView = scrollView.documentView else { return nil }
+
+        let clipView = scrollView.contentView
+        let documentHeight = documentView.bounds.height
+        let visibleHeight = clipView.bounds.height
+        guard documentHeight.isFinite,
+              visibleHeight.isFinite,
+              visibleHeight > 0,
+              documentHeight < 10_000_000 else { return nil }
+
+        let maxOffsetY = max(0, documentHeight - visibleHeight)
+        var bounds = clipView.bounds
+        bounds.origin.y = maxOffsetY
+        clipView.bounds = bounds
+        scrollView.reflectScrolledClipView(clipView)
+
+        return Snapshot(
+            documentHeight: documentHeight,
+            visibleHeight: visibleHeight,
+            offsetY: clipView.bounds.origin.y
+        )
+    }
+}
+
+struct ScrollViewBottomTracker: NSViewRepresentable {
+    /// 「是否在底部」布尔值翻转时回调。仅在真正翻转时调用，避免高频无意义触发。
+    let onChange: (Bool) -> Void
+    /// 提供给滚动协调器的底层滚动控制器，不参与 SwiftUI 布局。
+    let controller: ScrollViewBottomController?
+    /// Live-resize 结束时回调，参数为 resize **开始时**是否在底部。
+    /// 宿主据此决定底部场景滚到底部（scrollTick）、非底部场景由 tracker 内部恢复 offset。
+    var onLiveResizeEnd: ((Bool) -> Void)?
+
+    init(
+        onChange: @escaping (Bool) -> Void,
+        controller: ScrollViewBottomController? = nil,
+        onLiveResizeEnd: ((Bool) -> Void)? = nil
+    ) {
+        self.onChange = onChange
+        self.controller = controller
+        self.onLiveResizeEnd = onLiveResizeEnd
+    }
+
+    func makeNSView(context: Context) -> TrackerView {
+        let view = TrackerView()
+        view.setBottomController(controller)
+        view.onChange = { [weak coordinator = context.coordinator] atBottom in
+            coordinator?.onChange(atBottom)
+        }
+        view.onLiveResizeEnd = { [weak coordinator = context.coordinator] wasAtBottom in
+            coordinator?.onLiveResizeEnd?(wasAtBottom)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: TrackerView, context: Context) {
+        // 故意不做任何尺寸/几何相关工作 —— 这里一旦触碰布局就会重新进入
+        // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
+        context.coordinator.onChange = onChange
+        context.coordinator.onLiveResizeEnd = onLiveResizeEnd
+        nsView.setBottomController(controller)
+    }
+
+    static func dismantleNSView(_ nsView: TrackerView, coordinator: Coordinator) {
+        nsView.stopObserving()
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onChange: onChange, onLiveResizeEnd: onLiveResizeEnd)
+    }
+
+    final class Coordinator {
+        var onChange: (Bool) -> Void
+        var onLiveResizeEnd: ((Bool) -> Void)?
+        init(onChange: @escaping (Bool) -> Void, onLiveResizeEnd: ((Bool) -> Void)?) {
+            self.onChange = onChange
+            self.onLiveResizeEnd = onLiveResizeEnd
+        }
+    }
+}
+
+/// 承载观察逻辑的 NSView。零尺寸、不绘制、不参与布局尺寸协商。
+@MainActor
+final class TrackerView: NSView {
+    fileprivate var onChange: ((Bool) -> Void)?
+    fileprivate var onLiveResizeEnd: ((Bool) -> Void)?
+    fileprivate var bottomController: ScrollViewBottomController?
+    private var observation: NSObjectProtocol?
+    /// 文档视图尺寸变化的观察者。
+    ///
+    /// - Important: 这一路观察是「自动滚动没彻底到底」的根因所在。
+    ///   `List` 的行高是**事后修正**的：懒加载行陆续物化、Markdown 异步
+    ///   解析后回填正文，都会让 `documentView` 在**滚到底的收敛循环已经
+    ///   退出之后**继续变高。而这类增长**不会**触发 clip view 的
+    ///   `boundsDidChangeNotification`（实测：只有 `documentView` 的
+    ///   `frameDidChangeNotification`）—— 只观察偏移量的 tracker 因此
+    ///   永远发现不了它，内容底沿落到视口底之下，底部被输入框遮住。
+    private var documentObservation: NSObjectProtocol?
+    private weak var observedScrollView: NSScrollView?
+    /// 文档视图尺寸变化的通知对象。SwiftUI `List` 复用同一个 document
+    /// view，但换会话重建 `List` 时可能换新，需要重新挂观察者。
+    private weak var observedDocumentView: NSView?
+    /// 上一次已知的文档高度。
+    private var lastObservedDocumentHeight: CGFloat = -1
+    /// 上一次已知的「文档最大滚动偏移」（= documentHeight - visibleHeight）。
+    ///
+    /// 用来回答「文档变高**之前**我们是否停在底部」。必须用增长**前**的
+    /// 值比较：用户可能在上一次同步之后就已经上滚了。
+    private var lastKnownMaxOffsetY: CGFloat = 0
+    /// 钉底过程中置位，防止「写 clip bounds → 触发观察 → 再钉」的回环。
+    private var isPinningToBottom = false
+    /// 上一次报告的「是否在底部」，用于迟滞判定、避免无谓回调。
+    private var lastAtBottom: Bool = true
+
+    // MARK: - Live-resize 恢复
+
+    /// resize 开始时记录的 contentOffset（仅非底部场景用于松手后恢复阅读位置）。
+    private var savedOriginY: CGFloat?
+    /// resize 开始时是否在底部。
+    private var resizeStartedAtBottom: Bool = false
+    /// 底部场景：resize 结束后是否正在执行「持续钉底」恢复。
+    ///
+    /// 为 true 时，`reevaluate()` 被抑制 —— 防止 lazy materialize 导致的
+    /// documentView 高度增长被误判为「离开底部」，也防止恢复过程中
+    /// `onChange(false)` 把 `atBottomBox` 置为 false 后，恢复结束无人
+    /// 再把它翻回 true，导致后续流式跟随滚动被永久关闭。
+    private var isRestoringAfterResize = false
+    /// 非底部场景：松手后多帧恢复计数。
+    private var restoreAttempts = 0
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: .zero)
+        // 不绘制、不参与命中测试，纯粹作为「挂在视图树里用来找 scrollView」的锚点。
+        wantsLayer = false
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil {
+            attachIfNeeded()
+        } else {
+            stopObserving()
+        }
+    }
+
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        attachIfNeeded()
+    }
+
+    override func layout() {
+        super.layout()
+        // The tracker is installed as a SwiftUI background and may be laid out
+        // after it first enters the view hierarchy. Retry here until its own
+        // ancestor scroll view is available.
+        attachIfNeeded()
+    }
+
+    // MARK: - Live-resize 检测（NSResponder 方法，不依赖通知）
+
+    override func viewWillStartLiveResize() {
+        super.viewWillStartLiveResize()
+        saveOffsetBeforeResize()
+    }
+
+    override func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        beginRestoreAfterResize()
+    }
+
+    private func attachIfNeeded() {
+        // Tracker 必须绑定到自己的消息 List。禁止从 window.contentView
+        // 全局扫描，否则同一个窗口里的 Rail NSScrollView 可能被误选中。
+        guard let scrollView = enclosingScrollView else {
+            stopObserving()
+            return
+        }
+        guard scrollView !== observedScrollView else { return }
+
+        attach(to: scrollView)
+    }
+
+    /// 绑定滚动视图并挂上观察者。
+    ///
+    /// 生产路径由 `attachIfNeeded()` 调用；单测经 `attachForTesting(to:)` 调用。
+    private func attach(to scrollView: NSScrollView) {
+        stopObserving()
+        observedScrollView = scrollView
+        bottomController?.attach(to: scrollView)
+        let clipView = scrollView.contentView
+        // postsBoundsChangedNotifications 默认对 NSClipView 为 true，显式确保。
+        clipView.postsBoundsChangedNotifications = true
+        observation = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification,
+            object: clipView,
+            queue: .main
+        ) { [weak self] _ in
+            // NotificationCenter 回调不在 MainActor 上下文里，dispatch 回主线程。
+            Task { @MainActor [weak self] in
+                self?.reevaluate()
+            }
+        }
+        // 观察文档视图的尺寸变化 —— 这是「自动滚动没彻底到底」的关键。
+        // 只观察 clip view 的偏移量是**不够**的：List 行高的事后修正
+        // （懒加载行物化 / Markdown 异步解析回填）只会改变文档高度，
+        // 不会触发 clip view 的 bounds 变化通知。
+        startObservingDocumentView(of: scrollView)
+        // 附着后立刻评估一次，把初始状态同步给回调。
+        reevaluate()
+    }
+
+    /// 挂上文档视图的尺寸观察者。
+    ///
+    /// - Important: `frameDidChangeNotification` 在 AppKit 的布局过程中发出，
+    ///   此时**不能**同步写 `clipView.bounds`（会与 AppKit 正在进行的布局
+    ///   打架）。因此只在这里记录「文档变高了」，把真正的钉底动作推迟到
+    ///   下一个主线程回合。
+    private func startObservingDocumentView(of scrollView: NSScrollView) {
+        guard let documentView = scrollView.documentView else { return }
+        stopObservingDocumentView()
+        observedDocumentView = documentView
+        lastObservedDocumentHeight = documentView.bounds.height
+        lastKnownMaxOffsetY = currentMaxOffsetY()
+        documentObservation = NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: documentView,
+            queue: .main
+        ) { [weak self] _ in
+            // - Important: 回调用 `queue: .main` 投递，**已经**在布局
+            //   之后的下一个主线程回合执行，因此这里可以直接钉底。
+            //   不要再套一层 `Task { @MainActor }` / `DispatchQueue.main.async`：
+            //   主 actor 被占满时（长会话连续翻页等场景）那类推迟会被
+            //   无限期延后，钉底迟迟不发生 —— 症状正是「列表没滚到底」。
+            MainActor.assumeIsolated {
+                self?.handleDocumentFrameChange()
+            }
+        }
+    }
+
+    private func stopObservingDocumentView() {
+        if let documentObservation {
+            NotificationCenter.default.removeObserver(documentObservation)
+            self.documentObservation = nil
+        }
+        observedDocumentView = nil
+        lastObservedDocumentHeight = -1
+    }
+
+    /// 文档高度变化时的处理：**在用户仍处于底部的前提下**重新钉住底沿。
+    ///
+    /// ## 为什么需要这一步
+    ///
+    /// `MessageListScrollCoordinator.settleBottom` 的收敛判据是「文档高度 /
+    /// 可见高度 / 偏移量连续 3 帧不再变化」，判为稳定就**退出循环**。而
+    /// `List` 的行高是事后修正的 —— 懒加载行陆续物化、Markdown 正文异步
+    /// 解析后回填 —— 这些都发生在收敛循环退出**之后**。
+    ///
+    /// 结果：文档继续变高 → 内容底沿落到视口底**之下** → 底部被输入框
+    /// 遮住一小截；同时 `distance` 超过 `bottomLeaveTolerance`，`atBottomBox`
+    /// 被翻成 false，**后续**新消息彻底不再跟随滚到底。
+    ///
+    /// ## 为什么要用「增长前」的最大偏移量
+    ///
+    /// 判断「用户是否在底部」必须用文档变高**之前**的 `maxOffsetY`：用户
+    /// 可能在上一次同步之后就已经上滚了。用增长后的值比较会把这部分用户
+    /// 也拽回底部。
+    private func handleDocumentFrameChange() {
+        guard !isPinningToBottom else { return }
+        guard !isRestoringAfterResize else { return }
+        guard let scrollView = observedScrollView,
+              let documentView = scrollView.documentView else { return }
+
+        let newHeight = documentView.bounds.height
+        let previousHeight = lastObservedDocumentHeight
+        guard previousHeight >= 0 else {
+            lastObservedDocumentHeight = newHeight
+            lastKnownMaxOffsetY = currentMaxOffsetY()
+            return
+        }
+        guard abs(newHeight - previousHeight) > 0.5 else { return }
+
+        // 文档变矮（行被回收 / 内容替换）不做处理：向下钉底没有意义，
+        // 而且会把用户正在读的位置弄丢。
+        guard newHeight > previousHeight else {
+            lastObservedDocumentHeight = newHeight
+            lastKnownMaxOffsetY = currentMaxOffsetY()
+            return
+        }
+
+        // 文档变高**之前**我们是否停在底部？用增长前的 maxOffset 比较。
+        let wasAtBottomBeforeGrowth = lastKnownMaxOffsetY - currentOffsetY()
+            <= MessageListScrollCoordinator.bottomLeaveTolerance
+
+        lastObservedDocumentHeight = newHeight
+        lastKnownMaxOffsetY = currentMaxOffsetY()
+
+        guard wasAtBottomBeforeGrowth else { return }
+
+        // 推迟到下一个主线程回合：此刻正处于 AppKit 布局过程中，
+        // 同步写 clipView.bounds 会与布局打架。
+        //
+        // - Important: 必须用 `Task { @MainActor }` 而**不是**
+        //   `DispatchQueue.main.async`。后者要等主线程的 run loop 取到
+        //   main queue 才会执行；在没有 run loop 的上下文里（例如
+        //   Swift Testing 的 async 用例 —— 主线程跑的是 Swift 并发
+        //   executor，不是 run loop）它可能被无限期推迟，钉底动作
+        //   于是迟迟不发生，表现为「列表没滚到底」。
+        //   `Task { @MainActor }` 走主 actor 的 executor，保证被调度。
+        Task { @MainActor [weak self] in
+            self?.pinBottomAfterDocumentGrowth()
+        }
+    }
+
+    /// 文档变高后重新钉底。
+    ///
+    /// 钉底之后**必须**再做一次底部判定：此时 `distance` 归零，
+    /// `atBottomBox` 保持 true —— 否则 `lastAtBottom` 停留在 false，
+    /// 后续新消息不再跟随滚动。
+    private func pinBottomAfterDocumentGrowth() {
+        guard !isPinningToBottom else { return }
+        guard let scrollView = observedScrollView,
+              let documentView = scrollView.documentView else { return }
+
+        isPinningToBottom = true
+        defer { isPinningToBottom = false }
+
+        let clipView = scrollView.contentView
+        let documentHeight = documentView.bounds.height
+        let visibleHeight = clipView.bounds.height
+        let maxOffsetY = max(0, documentHeight - visibleHeight)
+        let currentY = clipView.bounds.origin.y
+
+        // 已经在新的底沿上，无需再动。
+        guard abs(maxOffsetY - currentY) > 0.5 else {
+            lastKnownMaxOffsetY = maxOffsetY
+            reevaluate()
+            return
+        }
+
+        var bounds = clipView.bounds
+        bounds.origin.y = maxOffsetY
+        clipView.bounds = bounds
+        scrollView.reflectScrolledClipView(clipView)
+
+        lastKnownMaxOffsetY = maxOffsetY
+        // 钉底之后重新判定：distance 现在是 0，`lastAtBottom` 应为 true。
+        reevaluate()
+    }
+
+    private func currentOffsetY() -> CGFloat {
+        observedScrollView?.contentView.bounds.origin.y ?? 0
+    }
+
+    private func currentMaxOffsetY() -> CGFloat {
+        guard let scrollView = observedScrollView,
+              let documentView = scrollView.documentView else { return 0 }
+        return max(0, documentView.bounds.height - scrollView.contentView.bounds.height)
+    }
+
+    /// 更换底部几何控制器。
+    ///
+    /// - Important: 控制器换了实例时**必须**把它重新绑定到当前观察的滚动视图。
+    ///   旧实现只做 `bottomController = controller`，而 `attachIfNeeded()` 因
+    ///   `scrollView === observedScrollView` 提前返回 —— 于是新控制器永远拿不到
+    ///   `NSScrollView`，`isAttached` 恒为 false，
+    ///   `MessageListScrollCoordinator.prepareInitialBottom` 因此退化为
+    ///   「只 `scrollTo` 一次」，不再等待 `List` 懒加载行物化完成。
+    internal func setBottomController(_ controller: ScrollViewBottomController?) {
+        guard bottomController !== controller else { return }
+        if let observedScrollView {
+            bottomController?.detach(from: observedScrollView)
+            controller?.attach(to: observedScrollView)
+        }
+        bottomController = controller
+    }
+
+    /// 供单测模拟「tracker 已观察到某个滚动视图」的状态。
+    ///
+    /// 生产路径由 `attachIfNeeded()` 依据视图层级自行发现滚动视图；
+    /// 单测无法构造真实层级，故提供此缝直接注入。
+    internal func setObservedScrollViewForTesting(_ scrollView: NSScrollView?) {
+        observedScrollView = scrollView
+    }
+
+    /// 供单测把 tracker 绑定到真实滚动视图。
+    ///
+    /// 与生产路径 `attachIfNeeded()` 走同一条 `attach(to:)` 逻辑：
+    /// 挂上 clip view 的偏移观察**和** document view 的尺寸观察。
+    /// 单测无法构造 SwiftUI 视图层级，故提供此缝直接注入。
+    internal func attachForTesting(to scrollView: NSScrollView) {
+        attach(to: scrollView)
+    }
+
+    /// 供单测解绑，用于验证解绑后不再重新钉底。
+    internal func detachForTesting() {
+        stopObserving()
+    }
+
+    /// 供单测读取「上一次报告的底部状态」。
+    internal var lastReportedAtBottomForTesting: Bool { lastAtBottom }
+
+    /// 供单测捕获底部状态回调序列。
+    internal var onChangeForTesting: ((Bool) -> Void)? {
+        get { onChange }
+        set { onChange = newValue }
+    }
+
+    fileprivate func stopObserving() {
+        if let observation {
+            NotificationCenter.default.removeObserver(observation)
+            self.observation = nil
+        }
+        stopObservingDocumentView()
+        if let observedScrollView {
+            bottomController?.detach(from: observedScrollView)
+        }
+        observedScrollView = nil
+    }
+
+    // MARK: - 底部判定（迟滞带）
+
+    // MARK: - Live-resize 恢复实现
+
+    private func saveOffsetBeforeResize() {
+        let sv = observedScrollView ?? enclosingScrollView
+        guard let scrollView = sv else { return }
+        resizeStartedAtBottom = lastAtBottom
+        savedOriginY = scrollView.contentView.bounds.origin.y
+    }
+
+    private func beginRestoreAfterResize() {
+        guard savedOriginY != nil else { return }
+        if resizeStartedAtBottom {
+            // 底部场景：由本类型直接在 AppKit 层持续钉底，直到几何稳定。
+            //
+            // 为什么不交给宿主的 proxy.scrollTo(bottomAnchor) 重试循环：
+            // proxy.scrollTo 对 List 末尾的 Color.clear 锚点是「按需
+            // materialize + 滚动到当前坐标」，但富文本行是逐帧/按需 materialize
+            // 的，documentView 高度在 resize 结束后的几百毫秒内持续增长。
+            // 固定次数的 scrollTo 重试只能追到「当时」的底部。改为：
+            // suppress onChange，逐帧把 contentOffset 钉到当前 documentView
+            // 底部，直到几何连续多帧稳定，才真正落地。
+            isRestoringAfterResize = true
+            suppressReevaluateDuringRestore()
+            onLiveResizeEnd?(true)
+            pinToBottomUntilStable()
+        } else {
+            // 非底部场景：tracker 在 AppKit 层恢复 contentOffset。
+            onLiveResizeEnd?(false)
+            restoreAttempts = 0
+            scheduleRestore()
+        }
+    }
+
+    /// 底部场景：逐帧把 contentOffset 钉到 documentView 底部，
+    /// 直到几何（高度 + 钉底后的 offset）连续多帧不再变化。
+    private func pinToBottomUntilStable() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // 等 LiveResizeFrozenView 恢复真实宿主并应用最终宽度。
+            // 80ms 足够覆盖这一帧 + 后续几帧的 initial layout。
+            try? await Task.sleep(nanoseconds: 80_000_000)
+
+            var lastHeight: CGFloat = -1
+            var lastOffset: CGFloat = -1
+            var stableCount = 0
+            // 最多尝试 40 帧 × 80ms = 3.2s，覆盖超长对话的 lazy materialize。
+            for _ in 0..<40 {
+                guard self.isRestoringAfterResize else { return }
+                guard let scrollView = self.observedScrollView ?? self.enclosingScrollView,
+                      let documentView = scrollView.documentView else { break }
+
+                let clipView = scrollView.contentView
+                let documentHeight = documentView.bounds.height
+                let visibleHeight = clipView.bounds.height
+                let maxOffset = max(0, documentHeight - visibleHeight)
+
+                guard documentHeight.isFinite, visibleHeight.isFinite,
+                      visibleHeight > 0 else { break }
+
+                // 直接写 clipView.bounds 后，必须调 reflectScrolledClipView 让
+                // NSScrollView 同步内部状态（滚动条/缓存），否则写入可能被下一次
+                // layout 覆盖回去。
+                var newBounds = clipView.bounds
+                newBounds.origin.y = maxOffset
+                clipView.bounds = newBounds
+                scrollView.reflectScrolledClipView(clipView)
+
+                // 几何稳定 = documentView 高度不再变 且 钉底后的 offset 也不再变。
+                // 任一还在变，说明 lazy materialize 尚未完成，继续钉。
+                if abs(documentHeight - lastHeight) < 1.0,
+                   abs(maxOffset - lastOffset) < 1.0 {
+                    stableCount += 1
+                    // 连续 4 帧稳定才认为真正落地，避免偶发一帧的「假稳定」。
+                    if stableCount >= 4 { break }
+                } else {
+                    stableCount = 0
+                }
+                lastHeight = documentHeight
+                lastOffset = maxOffset
+
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+
+            self.finishBottomRestore()
+        }
+    }
+
+    /// 底部恢复落地：解除 suppress，把判定重置回「在底部」并通知宿主，
+    /// 确保后续流式跟随滚动（atBottomBox == true）正常工作。
+    private func finishBottomRestore() {
+        isRestoringAfterResize = false
+        savedOriginY = nil
+        // 主动把状态翻回 true 并通知宿主 —— 即使恢复过程中曾（被 suppress）
+        // 偏离过底部，落地后语义上用户仍应被视为「在底部」。
+        if !lastAtBottom {
+            lastAtBottom = true
+            onChange?(true)
+        }
+        // 再强制评估一次当前真实几何，确保 lastAtBottom 与实际一致。
+        reevaluate()
+    }
+
+    /// 恢复期间抑制 reevaluate，防止 lazy materialize 的高度增长被误判
+    /// 为「离开底部」而翻转 onChange / 污染 atBottomBox。
+    private func suppressReevaluateDuringRestore() {
+        // 占位：实际的 suppress 通过在 reevaluate 开头检查 isRestoringAfterResize 实现。
+    }
+
+    // MARK: - 非底部场景：contentOffset 恢复
+
+    private func scheduleRestore() {
+        guard restoreAttempts < 10 else {
+            savedOriginY = nil
+            return
+        }
+        restoreAttempts += 1
+        DispatchQueue.main.async { [weak self] in
+            self?.restoreOnce()
+        }
+    }
+
+    private func restoreOnce() {
+        // 仅用于非底部场景（resizeStartedAtBottom == false）。
+        guard let scrollView = observedScrollView ?? enclosingScrollView,
+              let targetY = savedOriginY else { return }
+        let clipView = scrollView.contentView
+        var bounds = clipView.bounds
+        let documentHeight = scrollView.documentView?.bounds.height ?? bounds.height
+        let maxOriginY = max(0, documentHeight - bounds.height)
+        // 恢复到记录的 offset，夹紧到合法范围。
+        bounds.origin.y = min(max(targetY, 0), maxOriginY)
+
+        let currentY = clipView.bounds.origin.y
+        if abs(currentY - bounds.origin.y) < 0.5 {
+            clipView.bounds = bounds
+            savedOriginY = nil
+            return
+        }
+        clipView.bounds = bounds
+        scheduleRestore()
+    }
+
+    private func reevaluate() {
+        // 底部恢复期间完全抑制判定：lazy materialize 导致的高度增长会
+        // 让 distance 暂时 > tolerance，若此时翻转 onChange(false)，会
+        // 污染 atBottomBox，且恢复结束后无人把它翻回 true。
+        guard !isRestoringAfterResize else { return }
+        guard let scrollView = observedScrollView,
+              let documentView = scrollView.documentView else { return }
+        let documentHeight = documentView.bounds.height
+        let visibleHeight = scrollView.contentView.bounds.height
+        let offsetY = scrollView.contentView.bounds.origin.y
+        // 判定规则集中在 BottomDecision，便于精确测试迟滞带。
+        guard let atBottom = BottomDecision.evaluate(
+            documentHeight: documentHeight,
+            visibleHeight: visibleHeight,
+            offsetY: offsetY,
+            lastAtBottom: lastAtBottom,
+            enterTolerance: MessageListScrollCoordinator.bottomEnterTolerance,
+            leaveTolerance: MessageListScrollCoordinator.bottomLeaveTolerance
+        ) else { return }
+
+        guard atBottom != lastAtBottom else { return }
+        lastAtBottom = atBottom
+        onChange?(atBottom)
+    }
+
+    /// 切换会话/重置滚动位置时由外部调用，把判定重置回「在底部」。
+    /// （当前由 `atBottomBox.value = true` 直接重置，此处保留以备需要。）
+    fileprivate func resetToBottom() {
+        lastAtBottom = true
+    }
+}

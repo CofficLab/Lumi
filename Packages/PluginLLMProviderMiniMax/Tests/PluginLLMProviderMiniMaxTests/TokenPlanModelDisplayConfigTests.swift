@@ -101,13 +101,25 @@ struct TokenPlanModelDisplayConfigTests {
         for locale in ["zh-Hans", "zh-Hant", "zh-HK", "zh-TW"] {
             let loc = Locale(identifier: locale)
             for key in keys {
+                // 判定「该语言有译文」而不是「译文 ≠ key」。
+                //
+                // `MiniMax Token Plan` 是官方套餐名，中文**有意**保留英文原样
+                // （译作「套餐名」反而对不上官方文档）。用「译文 ≠ key」当
+                // 存在性判据，会把这种合法保留误判成「资源缺失」。
                 #expect(
-                    pluginLocalization.string(key, locale: loc) != key,
+                    pluginLocalization.string(key, locale: loc) != key
+                        || Self.chineseLocalesKeepingEnglishNames.contains(key),
                     "\(locale) 资源缺少 key：\(key)"
                 )
             }
         }
     }
+
+    /// 中文里有意保留英文原文的 key（官方产品名 / 专有名词）。
+    private static let chineseLocalesKeepingEnglishNames: Set<String> = [
+        "MiniMax Token Plan",
+        "MiniMax Token Plan Quota",
+    ]
 
     // MARK: - 展示口径
 

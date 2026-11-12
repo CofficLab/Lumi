@@ -15,3 +15,5 @@
 | `ThermalHistoryGraphView.swift` | CPU / die 温度历史图表（摄氏度 Y 轴，量程自适应） |
 | `GPUHistoryGraphView.swift` / `GPUHistoryDetailView.swift` | GPU 历史图表与详情 |
 | `WaveformView.swift` | 波形辅助视图 |
+| `DeviceStatusCardRenderer.swift` | 设备状态卡片消息渲染器（`renderKind = device-status`） |
+| `DeviceStatusCard/` | 设备状态卡片视图与各范围区块（总览 / CPU / 内存 / 存储 / 温度 / 进程） |

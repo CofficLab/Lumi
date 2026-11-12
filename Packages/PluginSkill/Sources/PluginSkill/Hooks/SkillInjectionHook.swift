@@ -1,30 +1,33 @@
 import Foundation
 import KitLLM
+import ProviderConversation
 import ProviderLifecycleHooks
-import ProviderProject
 import ProviderSkill
 
 /// `willSendToLLM` 钩子：注入可用技能列表（插件贡献 + 内置 + 项目）。
 ///
-/// 无当前项目时也注入，保证通用技能始终可用。
+/// 项目技能按「请求所属会话」绑定的项目解析，而不是 UI 全局当前项目：
+/// 并发切换会话时全局 `currentProject` 会被改写，读它会把别的项目的技能
+/// 注入本会话提示词。无绑定项目时仍注入通用底座技能。
 @MainActor
 final class SkillInjectionHook {
-    private weak var project: (any ProjectProviding)?
+    private let conversations: (any ConversationManaging)?
     private weak var skillProvider: (any SkillProviding)?
     private let skillService: SkillService
 
     init(
-        project: (any ProjectProviding)?,
+        conversations: (any ConversationManaging)?,
         skillProvider: (any SkillProviding)?,
         skillService: SkillService = .shared
     ) {
-        self.project = project
+        self.conversations = conversations
         self.skillProvider = skillProvider
         self.skillService = skillService
     }
 
     func apply(to context: WillSendToLLMContext) async -> WillSendToLLMContext {
-        let projectPath = project?.currentProject?.path ?? ""
+        let projectPath = await conversations?.fetchConversation(id: context.conversationID)?.projectPath?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         // 底座 = 插件贡献 + 内置（由 SkillProviding 聚合）。
         let baseSkills = skillProvider?.allSkills() ?? []
         let skills = await skillService.listSkills(projectPath: projectPath, baseSkills: baseSkills)

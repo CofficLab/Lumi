@@ -12,11 +12,23 @@
 
 ## 1. 当前事实
 
-- `Scripts/run-all-package-tests.sh` 已是全包测试入口，但当前末尾只 `cat` summary：即使 `FAILED.txt` 非空也会退出 0。把它作为门禁前必须先修复并测试退出码，否则会产生假绿。
-- `.github/workflows/release-build-validation.yml` 负责锁定依赖、双架构 archive、签名和产物验证，不是常规 `swift test` 门禁。
+- `Scripts/run-all-package-tests.sh` 已是全包测试入口。**已在 `2cbba85` 修复退出码**：任一包失败即非零退出，`rc` 文件缺失计为失败（按 99）；回归测试见 `Scripts/tests/test-run-all-package-tests.py`（临时假仓库 + PATH 中的 `swift` 桩程序，不跑真实 Swift 包、不依赖网络）。
+- `.github/workflows/release-build-validation.yml` 负责锁定依赖、双架构 archive、签名和产物验证，不是常规 `swift test` 门禁。**已在 `2cbba85` 新增独立的 `.github/workflows/agent-reliability-tests.yml`**：PR 到 `dev`/`main` 触发，按 contracts/runtime/integration 三组 matrix 并行，`fail-fast: false`；release workflow 未改。
 - `Packages/FactoryLumi/Tests/FactoryLumiTests` 已有首次消息与多种真实装配测试，可扩展而不是新建 Factory。
 - AgentTurnFSM、ToolJob、MessageStore 已有各自测试，但跨层 save/notify/dispatch 顺序、进程崩溃和第二实现容易漏测。
 - Lumi 包多，不能一次性给全仓写严格架构规则；应学习 ZCode managed modules，从本次 Agent 核心开始。
+
+### 门禁的既存失败已全部修复
+
+| 包 | 原失败 | 根因 | 修复 |
+|---|---|---|---|
+| `PluginConversationInput` | `CollapsedContentChip` 6 项像素级字体测量断言 | 量测方法硬编码「白底 + 深色字」阈值，而文本视图背景跟随系统外观：深色外观下整个画布都被当成墨迹 | 新增 `ChipPixelProbe` 固定浅色外观并共享阈值；浅色/深色外观下各跑一遍均 188/188 通过 |
+| `FactoryLumi` | `MailPluginRuntime.fallbackDataDirectory()` fatal error | KernelCore 回滚时会对从未 boot 的插件调 `onShutdown`，而 `onShutdown` 触碰 lazy 属性连带解析目录 | `MailPlugin` 用 `didBoot` 区分，没 boot 过的直接返回 |
+| `FactoryLumi` | "停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启" | 设置视图管理器用 `registerProvider` 替换默认实现，Provider 归插件所有因而随 `stop()` 被撤回 | 新增 `SettingViewHostPlugin` 用 `registerHostProvider` 重新登记同一实例；重启改用与首次启动同一份插件目录 |
+| `ProviderLLMManager` | "首次注册自动选中第一个供应商并落到默认模型" 随机失败 | `SuiteTrait` 没有 `setUp` 钩子导致隔离从未生效；兄弟 suite 并发时互抢全局偏好域指针 | 共享隔离域 + 跨 suite 异步互斥门，连续 15 次零失败 |
+| `PluginNetworkManager` | 查询工具随机报 "HTTP exchange store not available" | `NetworkService.shared` 上的进程级单例被兄弟 suite 的 shutdown 清空 | 跨 suite 异步互斥门，连续 12 次零失败 |
+
+> 三组门禁（contracts / runtime / integration）现已连续三轮全绿。
 
 ### 非目标
 

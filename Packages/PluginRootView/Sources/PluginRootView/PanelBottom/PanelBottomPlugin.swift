@@ -27,7 +27,7 @@ public final class PanelBottomPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi.plugin.panel-bottom",
         category: "PanelBottom"
     )
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public static let pluginID = "com.coffic.lumi.plugin.panel-bottom"
 

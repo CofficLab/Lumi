@@ -157,6 +157,19 @@ final class ConversationListViewModel: ObservableObject {
         context.conversations.deleteConversation(id: id)
     }
 
+    /// 停止指定会话正在运行 / 挂起的回合。
+    ///
+    /// - Important: 停的是**被右键的那一条**对话，不是当前选中对话。
+    ///   用户浏览历史会话时右键历史行，停的必须是那个历史会话。
+    func stopConversation(id: UUID) {
+        context.stopCapability.stop(conversationID: id)
+    }
+
+    /// 指定会话当前是否可以被停止（回合 running / suspended）。
+    func canStopConversation(id: UUID) -> Bool {
+        context.stopCapability.canStop(conversationID: id)
+    }
+
     // MARK: - 数据加载
 
     func loadInitialIfNeeded() async {

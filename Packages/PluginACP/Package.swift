@@ -9,17 +9,17 @@ let package = Package(
         .library(name: "PluginACP", targets: ["PluginACP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
     ],
     targets: [
         .target(

@@ -4,7 +4,7 @@ import Testing
 
 /// `HorizontalScrollView` 高度测量缓存（P1 修复）的契约测试。
 ///
-/// 背景（docs/ui-performance-audit-2026-08.md P1）：流式输出期间
+/// 背景（UI 性能审计 P1，2026-08）：流式输出期间
 /// `updateNSView` 每帧被调用，旧实现无条件清空 fittingSize 缓存，
 /// 导致每 16ms 对整段代码块重跑 `NSHostingView.fittingSize`。
 /// 修复后的契约：仅当内容指纹或宽度分桶变化时才允许重新测量。

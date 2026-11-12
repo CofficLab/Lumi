@@ -31,6 +31,9 @@ final class TextActionMenuModel: ObservableObject {
     /// 由 `TextActionMenuController` 注入的动作处理器。
     var onPerform: @MainActor (TextAction) -> Void = { _ in }
 
+    /// 由 `TextActionMenuController` 注入的关闭处理器。
+    var onClose: @MainActor () -> Void = { }
+
     /// 状态切换通知（观察用）。
     ///
     /// 浮层尺寸**不由它驱动**：`didSet` 早于 SwiftUI 刷新，此时量尺寸拿到
@@ -39,6 +42,8 @@ final class TextActionMenuModel: ObservableObject {
     var onStateChange: (@MainActor (State) -> Void)?
 
     func perform(_ action: TextAction) { onPerform(action) }
+
+    func close() { onClose() }
 }
 
 // MARK: - 浮层窗口
@@ -140,6 +145,7 @@ enum LumiBrandMark {
 
 struct TextActionMenuView: View {
     @ObservedObject var model: TextActionMenuModel
+    @State private var isCloseHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -160,22 +166,48 @@ struct TextActionMenuView: View {
     /// 放在所有状态共用的容器里（动作条、复制反馈、翻译中/结果/失败都会出现），
     /// 而不是只加在翻译分支，避免有的入口有标识、有的没有。
     /// 视觉权重刻意压低：9pt 次要色文字 + 13pt App 图标，内容仍是主视觉。
+    /// 关闭按钮与标识同条，所有状态都能一键收起浮层。
     private var brandStrip: some View {
         HStack(spacing: 4) {
-            Image(nsImage: LumiBrandMark.image)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: 13, height: 13)
-                .accessibilityHidden(true)
-            Text("Lumi")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.secondary)
+            // 无障碍合并只包住标识本身；若连同关闭按钮一起 combine，
+            // 按钮会被吞进静态标签，VoiceOver 无法触达。
+            HStack(spacing: 4) {
+                Image(nsImage: LumiBrandMark.image)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 13, height: 13)
+                    .accessibilityHidden(true)
+                Text("Lumi")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Lumi")
             Spacer(minLength: 0)
+            closeButton
         }
         .padding(.horizontal, 3)
         .padding(.top, 1)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Lumi")
+    }
+
+    /// 关闭按钮：hover 提亮，与动作按钮同一套自绘高亮。
+    private var closeButton: some View {
+        Button {
+            model.close()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(isCloseHovered ? .primary : .secondary)
+                .frame(width: 16, height: 16)
+                .background(
+                    Circle().fill(Color.primary.opacity(isCloseHovered ? 0.12 : 0))
+                )
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isCloseHovered = $0 }
+        .help(pluginLocalization.string("Close"))
+        .accessibilityLabel(pluginLocalization.string("Close"))
     }
 
     @ViewBuilder

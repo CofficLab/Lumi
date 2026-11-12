@@ -24,4 +24,14 @@ struct ProcessMetricDisplayTests {
         #expect(metric(cpuUsage: 120).cpuBarFraction == 1)
         #expect(metric(cpuUsage: -5).cpuBarFraction == 0)
     }
+
+    @Test("内存进度条以榜首进程为满格，无进程时为 0")
+    func memoryBarFractionIsRelativeToTopProcess() {
+        let top = ProcessMetric(id: 1, name: "Xcode", icon: nil, cpuUsage: 0, memoryUsage: 2_000_000_000)
+        let half = ProcessMetric(id: 2, name: "Chrome", icon: nil, cpuUsage: 0, memoryUsage: 1_000_000_000)
+
+        #expect(top.memoryBarFraction(relativeTo: 2_000_000_000) == 1)
+        #expect(half.memoryBarFraction(relativeTo: 2_000_000_000) == 0.5)
+        #expect(half.memoryBarFraction(relativeTo: 0) == 0)
+    }
 }

@@ -63,37 +63,55 @@ struct ContextPopoverLayoutTests {
         }
     }
 
-    // MARK: - ContextUsageTrendMarkers 高度约束
+    // MARK: - 趋势图高度约束
 
-    @Test("ContextUsageTrendMarkers 在宽松空间下不应超过图表高度",
+    @Test("趋势图在宽松空间下不应超过图表高度",
           .timeLimit(.minutes(1)))
-    func trendMarkersHeightIsConstrained() {
+    func trendViewHeightIsConstrained() {
         let history = historyWithManyCompactions()
-        let markers = ContextUsageTrendMarkers(
-            markers: history.compactionMarkers,
-            sampleCount: history.samples.count
-        )
+        let view = ContextUsageTrendView(history: history)
 
-        // 模拟弹出层给标记层一个很大的可用空间。
-        let size = renderedSize(markers, proposedSize: CGSize(width: 340, height: 600))
+        // 模拟弹出层给趋势图一个很大的可用空间。
+        let size = renderedSize(view, proposedSize: CGSize(width: 340, height: 600))
 
-        // 约束正确时高度 ≈ 118；如果 GeometryReader 未约束，会膨胀到接近 600。
-        // 留一些像素余量容纳渲染取整。
-        #expect(size.height <= 130, "标记层高度 \(size.height) 超出预期上限 130，GeometryReader 可能缺少高度约束")
+        // 图表本身固定 118，加上标题与统计行仍应远小于 600。
+        #expect(size.height <= 260, "趋势图高度 \(size.height) 超出预期上限 260")
     }
 
-    @Test("ContextUsageTrendMarkers 在极小空间下仍能渲染",
+    @Test("趋势图在极小空间下仍能渲染",
           .timeLimit(.minutes(1)))
-    func trendMarkersRendersInTightSpace() {
+    func trendViewRendersInTightSpace() {
         let history = historyWithManyCompactions()
-        let markers = ContextUsageTrendMarkers(
-            markers: history.compactionMarkers,
-            sampleCount: history.samples.count
-        )
+        let view = ContextUsageTrendView(history: history)
 
-        let size = renderedSize(markers, proposedSize: CGSize(width: 200, height: 118))
+        let size = renderedSize(view, proposedSize: CGSize(width: 200, height: 118))
         #expect(size.height > 0)
         #expect(size.width > 0)
+    }
+
+    /// 请求数极多时趋势图不应膨胀：数据超出视口后改为横向滚动，
+    /// 高度始终由图表固定。
+    @Test("请求数极多时趋势图高度不变",
+          .timeLimit(.minutes(1)))
+    func trendViewHeightStaysStableWithManySamples() {
+        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        let samples = (0..<500).map { i in
+            ContextUsageSample(
+                id: UUID(),
+                index: i,
+                date: base.addingTimeInterval(Double(i) * 60),
+                tokens: 20_000 + i * 1_000,
+                isEstimated: false
+            )
+        }
+        let history = ContextUsageHistory(samples: samples, compactionMarkers: [])
+
+        let size = renderedSize(
+            ContextUsageTrendView(history: history),
+            proposedSize: CGSize(width: 340, height: 600)
+        )
+
+        #expect(size.height <= 260, "500 个采样点时趋势图高度 \(size.height) 异常增大")
     }
 
     // MARK: - ContextPopover 最大高度约束

@@ -24,6 +24,12 @@ import KitLLM
 ///
 /// - Note: 官方文档同时明确「M2.7、M2.5、M2.1 和 M2 系列仅支持文本与工具
 ///   调用相关内容块，不支持图片和视频输入」，故 M2.x 一律 `supportsVision = false`。
+///
+/// - Important: M2 系列已在上游下线（官方《模型列表》标为「历史模型」），
+///   但本枚举**仍保留 m2 分支**：远程 `/v1/models` 可能短暂返回退役前的
+///   缓存条目，且其它供应商（阿里云百炼、腾讯 TokenHub）仍在托管
+///   MiniMax-M2.x 模型。家族规则描述的是「这个 id 是什么规格的模型」，
+///   与「上游是否还在提供」是两个正交的事实——后者由 `isRetired` 表达。
 enum MiniMaxModelFamily: Sendable, Equatable {
 
     /// M3 系列：1M 上下文，原生多模态。

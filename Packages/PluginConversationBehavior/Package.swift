@@ -9,17 +9,17 @@ let package = Package(
         .library(name: "PluginConversationBehavior", targets: ["PluginConversationBehavior"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../KitLLM"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
     ],
     targets: [
         .target(

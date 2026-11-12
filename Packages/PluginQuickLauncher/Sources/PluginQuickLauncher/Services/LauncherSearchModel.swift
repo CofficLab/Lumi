@@ -39,7 +39,15 @@ public enum LauncherBridge {
     /// 询问 AI：参数为问题文本，实现需激活主窗口并发送到会话
     public static var askAIHandler: (@MainActor (String) -> Void)?
     /// 提供当前所有命令组（来自内核 CommandProviding）
-    public static var commandGroupsProvider: (@MainActor () -> [LauncherCommandGroup])?
+    public static var commandGroupsProvider: (@MainActor () -> [LauncherCommandGroup])? {
+        didSet { invalidateCommandGroups() }
+    }
+    /// 命令来源版本号：命令组注册表变化时自增，供搜索索引判断缓存是否过期。
+    public private(set) static var commandGroupsVersion: UInt64 = 0
+    /// 标记命令来源已变化，使命令搜索索引缓存失效。
+    public static func invalidateCommandGroups() {
+        commandGroupsVersion &+= 1
+    }
     /// 激活 Lumi 主窗口
     public static var activateMainWindowHandler: (@MainActor () -> Void)?
 }
@@ -157,6 +165,8 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
 
     private let appSearch = AppSearchService.shared
     private let fileSearch = FileSearchService.shared
+    /// 命令搜索索引：缓存命令 DTO 与归一化键，避免每次按键重建全量 DTO。
+    private let commandIndex = LauncherCommandIndex()
     private var cancellables: Set<AnyCancellable> = []
     private var queryDebounceTask: Task<Void, Never>?
 
@@ -223,19 +233,11 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
 
         var merged: [LauncherResult] = []
 
-        // 应用
+        // 应用：检索时即截断到上限，不对全量应用做匹配。
         if Self.isSourceEnabled(.app) {
-            let lowered = trimmed.lowercased()
-            let apps = appSearch.search(matching: trimmed).prefix(Self.appLimit)
-            // 前缀命中排前
-            merged += apps
-                .sorted { a, b in
-                    let aPrefix = a.name.lowercased().hasPrefix(lowered)
-                    let bPrefix = b.name.lowercased().hasPrefix(lowered)
-                    if aPrefix != bPrefix { return aPrefix }
-                    return a.name.count < b.name.count
-                }
-                .map(LauncherResult.init(app:))
+            merged += appSearch
+                .searchItems(matching: trimmed, limit: Self.appLimit)
+                .map { LauncherResult(app: $0.item) }
         }
 
         // 文件（Spotlight 异步，结果到达后经 $results 再触发 rebuild）
@@ -243,9 +245,9 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
             merged += fileSearch.results.map(LauncherResult.init(file:))
         }
 
-        // 命令
+        // 命令：命令索引缓存了 DTO 与归一化键，检索时即截断到上限。
         if Self.isSourceEnabled(.command) {
-            merged += searchCommands(matching: trimmed).prefix(Self.commandLimit)
+            merged += commandIndex.search(matching: trimmed, limit: Self.commandLimit)
         }
 
         results = merged
@@ -253,17 +255,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
 
     /// 展平并过滤内核命令组
     func searchCommands(matching query: String) -> [LauncherResult] {
-        guard let groups = LauncherBridge.commandGroupsProvider?() else { return [] }
-        let lowered = query.lowercased()
-        var found: [LauncherResult] = []
-        for group in groups {
-            for item in group.items where
-                item.title.lowercased().contains(lowered) || group.name.lowercased().contains(lowered)
-            {
-                found.append(LauncherResult(command: item, groupName: group.name))
-            }
-        }
-        return found
+        commandIndex.search(matching: query, limit: Int.max)
     }
 
     /// 重建后按结果 ID 恢复选中项。
@@ -321,13 +313,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
     /// 按结果 id 找到原始命令并执行（避免闭包非 Sendable 存进结果）。
     /// 返回是否找到并执行了对应命令。
     private func executeCommand(matching result: LauncherResult) -> Bool {
-        guard let groups = LauncherBridge.commandGroupsProvider?() else { return false }
-        for group in groups {
-            for item in group.items where result.id == "command:\(group.name)/\(item.id)" {
-                item.action()
-                return true
-            }
-        }
+        if commandIndex.execute(resultID: result.id) { return true }
         if Self.verbose {
             QuickLauncherPluginSupport.logger.info("\(self.t)未找到命令结果对应的原始项: \(result.title)")
         }

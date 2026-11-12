@@ -3,36 +3,6 @@ import KitLLM
 import Testing
 @testable import ProviderLLMManager
 
-/// 把选中态持久化重定向到**隔离的偏好域**，并在测试结束后还原。
-///
-/// - Important: `LLMManagerUserDefaults.current` 是进程级静态状态，
-///   测试必须在自己的用例内接管并还原，避免污染开发者本机偏好。
-private final class RemoteRefreshDefaultsSnapshot: SuiteTrait, @unchecked Sendable {
-    private let lock = NSLock()
-    private let suiteName: String
-    private let isolated: UserDefaults
-
-    init() {
-        self.suiteName = "com.coffic.lumi.test.llm-manager.refresh.\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(suiteName)）")
-        }
-        self.isolated = defaults
-    }
-
-    func setUp() async throws {
-        let defaults = isolated
-        defaults.removePersistentDomain(forName: suiteName)
-        LLMManagerUserDefaults.current = defaults
-    }
-
-    deinit {
-        let defaults = isolated
-        defaults.removePersistentDomain(forName: suiteName)
-        LLMManagerUserDefaults.current = .standard
-    }
-}
-
 /// 可远程增删模型的供应商替身：模拟远程快照刷新后模型池变化。
 @MainActor
 private final class MutableRemoteProvider: ManagedLLMProvider {
@@ -84,7 +54,7 @@ private final class MutableRemoteProvider: ManagedLLMProvider {
 /// 结果是 UI、持久化选择与真实请求三者不一致，用户既没看到也没确认过这次
 /// 切换。正确行为是：刷新后同步重校验选择并广播新的有效选择。
 @MainActor
-@Suite("远程刷新后的选中态重校验", .serialized, RemoteRefreshDefaultsSnapshot())
+@Suite("远程刷新后的选中态重校验", .serialized, LLMManagerDefaultsTrait())
 struct RemoteModelRefreshSelectionTests {
 
     @Test("刷新移除当前选中的远程模型后重校验为默认模型并广播选择变化")

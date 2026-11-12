@@ -2,7 +2,7 @@
 
 ## 包概述
 
-PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** 处于 `V2 (标准)` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
+PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **消息列表风格** 处于 `标准` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
 测试文件: 21 个，用例总数: 124

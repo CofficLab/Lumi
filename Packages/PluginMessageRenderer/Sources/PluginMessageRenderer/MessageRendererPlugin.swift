@@ -35,22 +35,6 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
     /// 渲染器优先级基数（与旧版一致）。
     public nonisolated static let baseOrder: Int = 10
 
-    private let rendererIDs: [String] = [
-        "core-turn-completed",
-        "core-context-compaction",
-        "core-agent-loop-retry",
-        "core-goal-task-continuation",
-        "core-model-switched",
-        "core-status-message",
-        "core-error-message",
-        "core-tool-message",
-        "core-user-message",
-        "core-tool-step-group",
-        "core-assistant-message",
-        "core-system-message",
-        "core-default-markdown",
-    ]
-
     private var riskApprovalChatViewModel: RiskApprovalChatViewModel?
     private var capability: MessageRendererCapabilityAdapter?
     private var stateViewModel: MessageRendererStateViewModel?
@@ -100,325 +84,62 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         }
         let base = Self.baseOrder
 
-        // Important: 所有核心 renderer 的产出都经 `renderWithMenu` 包一层，
-        //   统一挂上消息行右键菜单。
-        //   菜单挂在**注册层**而不是各个具体视图里，是因为 V4/V5
-        //   （ZCode / ChatGPT）用的是独立渲染器，**不走** `MessageViewChrome`；
-        //   挂视图内部会漏掉这批行。挂在注册层则 V1–V5 行为完全一致。
-        func renderWithMenu(
-            _ view: AnyView,
-            capability: (any MessageRendererCapability)?,
-            message: Message
-        ) -> AnyView {
-            MessageContextMenu.attach(
-                to: view,
+        // 渲染器实现一律在 `Renderers/Core/` 下，入口只负责注册。
+        // 菜单挂在**注册层**而不是各个具体视图里，是因为 V4/V5
+        // （ZCode / ChatGPT）用的是独立渲染器，**不走** `MessageViewChrome`；
+        // 挂视图内部会漏掉这批行。挂在注册层则 V1–V5 行为完全一致。
+        manager.register(
+            CoreTurnCompletedRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreContextCompactionRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreAgentLoopRetryRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreGoalTaskContinuationRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreModelSwitchedRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreStatusMessageRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreErrorMessageRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreToolMessageRenderer.item(capability: capability, baseOrder: base)
+        )
+        manager.register(
+            CoreUserMessageRenderer.item(
                 capability: capability,
-                message: message
+                stateViewModel: stateViewModel,
+                baseOrder: base
             )
-        }
-
-        // 优先级最高：turn-completed / status 特殊渲染
-        manager.register(MessageRendererItem(
-            id: "core-turn-completed",
-            order: base + 320,
-            canRender: { message in
-                message.renderKind == "turn-completed" || message.content == LumiChatMarkers.turnCompleted
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(TurnCompletedMessageView(message: message))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        manager.register(MessageRendererItem(
-            id: "core-context-compaction",
-            order: base + 315,
-            canRender: { message in
-                MessageTimelineEvent.isContextCompaction(message)
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(ContextCompactionMessageView(message: message))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        manager.register(MessageRendererItem(
-            id: "core-agent-loop-retry",
-            order: base + 314,
-            canRender: { message in
-                MessageTimelineEvent.isAgentLoopRetry(message)
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(AgentLoopRetryMessageView(message: message))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        manager.register(MessageRendererItem(
-            id: "core-goal-task-continuation",
-            order: base + 313,
-            canRender: { message in
-                MessageTimelineEvent.isGoalTaskContinuation(message)
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(GoalTaskContinuationMessageView(message: message))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        manager.register(MessageRendererItem(
-            id: "core-model-switched",
-            order: base + 316,
-            canRender: { message in
-                MessageTimelineEvent.isModelSwitched(message)
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(ModelSwitchMessageView(message: message))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        manager.register(MessageRendererItem(
-            id: "core-status-message",
-            order: base + 310,
-            canRender: { message in
-                message.role == .status
-                    && message.renderKind != "turn-completed"
-                    && message.content != LumiChatMarkers.turnCompleted
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(StatusMessageView(message: message, verbosity: verbosity))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 错误消息：让 Provider 特定渲染器优先
-        manager.register(MessageRendererItem(
-            id: "core-error-message",
-            order: base + 290,
-            canRender: { message in
-                message.role == .error || message.isError
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTErrorMessageView(
-                            capability: capability,
-                            message: message,
-                            verbosity: verbosity
-                        ))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(ErrorMessageView(
-                                capability: capability,
-                                message: message,
-                                verbosity: verbosity
-                            ))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 工具结果
-        manager.register(MessageRendererItem(
-            id: "core-tool-message",
-            order: base + 240,
-            canRender: { message in
-                message.role == .tool
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(ToolMessageView(
-                    message: message,
-                    verbosity: verbosity
-                ))
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 用户消息
-        manager.register(MessageRendererItem(
-            id: "core-user-message",
-            order: base + 190,
-            canRender: { message in
-                message.role == .user
-            },
-            render: { [capability, stateViewModel] message, verbosity in
-                let view = AnyView(UserMessageView(
-                    capability: capability,
-                    stateViewModel: stateViewModel,
-                    message: message,
-                    verbosity: verbosity
-                ))
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 工具步骤组合成消息（数据层把连续多条「只含工具调用的助手消息」合并成一条）。
-        // 优先级高于普通助手消息：V1 走可折叠步骤组，V2/V3 复用助手气泡。
-        manager.register(MessageRendererItem(
-            id: "core-tool-step-group",
-            order: base + 185,
-            canRender: { message in
-                message.renderKind == "tool-step-group" || message.renderKind == "turn-activity"
-            },
-            render: { [capability, stateViewModel] message, verbosity in
-                let view = AnyView(ToolStepGroupMessageView(
-                    capability: capability,
-                    stateViewModel: stateViewModel,
-                    message: message,
-                    verbosity: verbosity
-                ))
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 助手消息
-        manager.register(MessageRendererItem(
-            id: "core-assistant-message",
-            order: base + 180,
-            canRender: { message in
-                message.role == .assistant
-            },
-            render: { [capability, stateViewModel] message, verbosity in
-                let view = AnyView(AssistantMessageView(
-                    capability: capability,
-                    stateViewModel: stateViewModel,
-                    message: message,
-                    verbosity: verbosity
-                ))
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 系统消息
-        manager.register(MessageRendererItem(
-            id: "core-system-message",
-            order: base + 150,
-            canRender: { message in
-                message.role == .system
-            },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(SystemMessageView(
-                                message: message,
-                                verbosity: verbosity
-                            ))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
-
-        // 兜底渲染器：order 最低，只要没有任何更高优先级的 renderer 能处理，就由它接管。
-        manager.register(MessageRendererItem(
-            id: "core-default-markdown",
-            order: base - 10,
-            canRender: { _ in true },
-            render: { [capability] message, verbosity in
-                let view = AnyView(
-                    verbosity == .chatGPT
-                        ? AnyView(ChatGPTDefaultMessageView(message: message, verbosity: verbosity))
-                        : verbosity == .zcode
-                            ? AnyView(ZCodeTimelineMarkerView(message: message))
-                            : AnyView(DefaultMessageView(
-                                message: message,
-                                verbosity: verbosity
-                            ))
-                )
-                return renderWithMenu(
-                    view,
-                    capability: capability,
-                    message: message
-                )
-            }
-        ))
+        )
+        manager.register(
+            CoreToolStepGroupRenderer.item(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                baseOrder: base
+            )
+        )
+        manager.register(
+            CoreAssistantMessageRenderer.item(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                baseOrder: base
+            )
+        )
+        manager.register(
+            CoreSystemMessageRenderer.item(capability: capability, baseOrder: base)
+        )
+        // 兜底渲染器：order 最低，只要没有更高优先级的 renderer 能处理，就由它接管。
+        manager.register(
+            CoreDefaultMarkdownRenderer.item(capability: capability, baseOrder: base)
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -434,7 +155,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             .unregister(id: ToolApprovalRowRenderer.id)
         ToolApprovalBridge.shared.stop()
         let manager = kernel.resolveProvider((any MessageRenderingProviding).self)
-        for id in rendererIDs {
+        for id in CoreMessageRenderer.rendererIDs {
             manager?.unregister(id: id)
         }
     }

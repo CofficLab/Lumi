@@ -76,6 +76,39 @@ struct ProcessAggregationTests {
         #expect(viewModel.topProcessesPreview.first?.name == "Process 1")
     }
 
+    @Test("内存榜按常驻内存降序，且保留零 CPU 的大内存常驻进程")
+    func memoryRankingKeepsIdleHighMemoryProcesses() {
+        let metrics = ProcessService.aggregate([
+            sample(pid: 1, name: "Xcode", cpu: 0, memory: 1_500_000_000),
+            sample(pid: 2, name: "Google Chrome", cpu: 12, memory: 800_000_000),
+            sample(pid: 3, name: "Lumi", cpu: 0.05, memory: 200_000_000),
+        ], selfPID: 3)
+
+        let ranked = ProcessService.memoryRanking(metrics)
+
+        #expect(ranked.map(\.name) == ["Xcode", "Google Chrome", "Lumi"])
+        // 内存榜不能沿用 CPU 活动过滤，否则 Xcode / Lumi 会被丢掉。
+        #expect(ProcessService.cpuRanking(metrics).map(\.name) == ["Google Chrome"])
+    }
+
+    @Test("内存弹窗只展示前 5 条")
+    func memoryPreviewLimitsToFive() {
+        let viewModel = MemoryManagerViewModel()
+        viewModel.apply(topProcesses: (1 ... 7).map { index in
+            ProcessMetric(
+                id: Int32(index),
+                name: "Process \(index)",
+                icon: nil,
+                cpuUsage: 0,
+                memoryUsage: Int64(8 - index) * 100_000_000
+            )
+        })
+
+        #expect(viewModel.topProcesses.count == 7)
+        #expect(viewModel.topProcessesPreview.count == 5)
+        #expect(viewModel.topProcessesPreview.first?.name == "Process 1")
+    }
+
     @Test("CPU 采样间隔与网络区块统一为 1 秒")
     func samplingIntervalMatchesNetworkBlock() {
         #expect(ProcessService.samplingInterval == 1.0)

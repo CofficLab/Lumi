@@ -49,7 +49,7 @@ public enum RAGFilePathSearcher {
 
     /// 优先让 ripgrep 枚举路径；返回 nil 表示工具不可用或执行失败，调用方再回退到文件扫描。
     private static func searchWithRipgrep(projectPath: String) throws -> [String]? {
-        guard let executable = ripgrepExecutable() else { return nil }
+        guard let executable = RAGRipgrepLocator.executable() else { return nil }
 
         var arguments = [
             "--files",
@@ -108,20 +108,6 @@ public enum RAGFilePathSearcher {
                 }
                 return values.fileSize.map { $0 <= RAGFileScanner.defaultMaxFileSizeBytes } ?? true
             }
-    }
-
-    private static func ripgrepExecutable() -> URL? {
-        let pathEntries = ProcessInfo.processInfo.environment["PATH"]?
-            .split(separator: ":")
-            .map(String.init) ?? []
-        let candidates = pathEntries.map { "\($0)/rg" } + [
-            "/opt/homebrew/bin/rg",
-            "/usr/local/bin/rg",
-            "/usr/bin/rg",
-        ]
-        return candidates.lazy
-            .map { URL(fileURLWithPath: $0) }
-            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
 
     private static func directPathMatches(query: String, projectPath: String) -> [RAGSearchResult] {

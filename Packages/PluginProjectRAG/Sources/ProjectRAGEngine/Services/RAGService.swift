@@ -99,7 +99,10 @@ public actor RAGService: SuperLog {
         let store = try RAGSQLiteStore(dbURL: dbURL)
         try store.migrate()
         let embeddingProvider = RAGEmbeddingFactory.makeProvider()
-        try store.configureVectorBackend(embeddingDimension: embeddingProvider.dimension)
+        try store.configureVectorBackend(
+            embeddingDimension: embeddingProvider.dimension,
+            embeddingModel: embeddingProvider.modelIdentifierWithVersion
+        )
 
         self.store = store
         self.indexer = RAGIndexer(

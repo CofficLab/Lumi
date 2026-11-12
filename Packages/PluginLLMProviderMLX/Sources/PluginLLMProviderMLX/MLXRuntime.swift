@@ -89,24 +89,13 @@ final class MLXRuntime {
             tools: tools
         )
 
-        var content = ""
-        var toolCalls: [LLMToolCall] = []
+        var consumer = MLXGenerationConsumer()
         for await result in stream {
             try Task.checkCancellation()
-            if let text = result.chunk {
-                content += text
-                await onChunk(LLMStreamChunk(content: text, eventTitle: "生成中"))
-            }
-            if let toolCall = result.toolCall {
-                let arguments = (try? JSONSerialization.data(withJSONObject: toolCall.function.arguments.mapValues { $0.anyValue }))
-                    .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-                let call = LLMToolCall(id: UUID().uuidString, name: toolCall.function.name, arguments: arguments)
-                toolCalls.append(call)
-                await onChunk(LLMStreamChunk(eventTitle: "工具调用", toolCalls: [call]))
-            }
+            await consumer.consume(result, onChunk: onChunk)
         }
         await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
-        return LLMResponse(content: content, model: modelID, toolCalls: toolCalls.isEmpty ? nil : toolCalls)
+        return consumer.response(model: modelID)
     }
 
     private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: any Sendable]]? {

@@ -4,6 +4,7 @@ import PluginMessageListChatGPT
 import PluginMessageListDetailed
 import PluginMessageListEmpty
 import PluginMessageListStandard
+import PluginMessageListStandardNoHeader
 import PluginMessageListZCode
 import PluginMessageManager
 import ProviderChatSection
@@ -98,8 +99,8 @@ struct MessageListSlotArbitrationTests {
     /// 核心不变式：**任一时刻 active 的 message-list item 至多一个**。
     /// 只断言「排序后的 winner」是不够的 —— 两个插件同时 active 时，
     /// winner 仍可能恰好正确，但用户会看到两个列表叠加。
-    @Test("V1–V5 往返时 active 的 message-list item 至多一个")
-    func onlyOneMessageListItemIsActiveAcrossV1ToV5() async throws {
+    @Test("V1–V6 往返时 active 的 message-list item 至多一个")
+    func onlyOneMessageListItemIsActiveAcrossV1ToV6() async throws {
         let context = try await MessageListFixtureHarness.make()
 
         for verbosity in [
@@ -108,6 +109,7 @@ struct MessageListSlotArbitrationTests {
             .detailed,
             .zcode,
             .chatGPT,
+            .standardNoHeader,
             .brief,
         ] {
             context.conversations.setVerbosity(verbosity, for: context.conversationID)
@@ -180,6 +182,36 @@ struct MessageListSlotArbitrationTests {
         )
         #expect(context.activeMessageListItemIDs.isEmpty)
     }
+
+    /// V6（standardNoHeader）选中时，槽位必须属于 V6 插件而不是 V2 插件。
+    @Test("选择无消息头 V6 时槽位属于 V6 插件")
+    func standardNoHeaderVerbosityActivatesV6Plugin() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.standardNoHeader, for: context.conversationID)
+        try await context.settle()
+
+        #expect(context.renderedMessageListItemID == context.standardNoHeaderPluginID)
+        #expect(context.activeMessageListItemIDs == [context.standardNoHeaderPluginID])
+    }
+
+    /// shutdown 后 V6 的 ChatSection item 必须被移除，且 observer 全部取消。
+    @Test("V6 shutdown 后移除 ChatSection item")
+    func standardNoHeaderShutdownRemovesChatSectionItem() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.standardNoHeader, for: context.conversationID)
+        try await context.settle()
+        #expect(context.renderedMessageListItemID == context.standardNoHeaderPluginID)
+
+        context.shutdownStandardNoHeader()
+
+        #expect(
+            !context.chat.items.contains { $0.id == context.standardNoHeaderPluginID },
+            "V6 shutdown 后 ChatSection item 仍然存在"
+        )
+        #expect(context.activeMessageListItemIDs.isEmpty)
+    }
 }
 
 // MARK: - Harness
@@ -196,6 +228,7 @@ private final class MessageListFixtureHarness {
     let emptyPluginID: String
     let zcodePluginID: String
     let chatGPTPluginID: String
+    let standardNoHeaderPluginID: String
 
     /// 必须持有插件实例：空态 item 的 `isActive` 闭包以 `[weak self]` 捕获插件，
     /// 插件被释放后闭包恒返回 `false`，会让「空态从不渲染」假象通过断言。
@@ -206,6 +239,8 @@ private final class MessageListFixtureHarness {
     private let zcodePlugin: PluginMessageListZCodePlugin
     /// V5（ChatGPT）插件同样必须被强持有。
     private let chatGPTPlugin: PluginMessageListChatGPTPlugin
+    /// V6（standardNoHeader）插件同样必须被强持有。
+    private let standardNoHeaderPlugin: PluginMessageListStandardNoHeaderPlugin
     /// 插件 shutdown 时需要的 kernel。
     private let kernel: KernelCoreContainer
 
@@ -238,6 +273,11 @@ private final class MessageListFixtureHarness {
         try? chatGPTPlugin.onShutdown(kernel: kernel)
     }
 
+    /// 关闭 V6 插件，验证 shutdown 完整清理。
+    func shutdownStandardNoHeader() {
+        try? standardNoHeaderPlugin.onShutdown(kernel: kernel)
+    }
+
     private init(
         chat: DefaultChatSectionProviding,
         messages: MessageManager,
@@ -247,10 +287,12 @@ private final class MessageListFixtureHarness {
         emptyPluginID: String,
         zcodePluginID: String,
         chatGPTPluginID: String,
+        standardNoHeaderPluginID: String,
         emptyPlugin: PluginMessageListEmptyPlugin,
         standardPlugin: PluginMessageListStandardPlugin,
         zcodePlugin: PluginMessageListZCodePlugin,
         chatGPTPlugin: PluginMessageListChatGPTPlugin,
+        standardNoHeaderPlugin: PluginMessageListStandardNoHeaderPlugin,
         kernel: KernelCoreContainer
     ) {
         self.chat = chat
@@ -261,10 +303,12 @@ private final class MessageListFixtureHarness {
         self.emptyPluginID = emptyPluginID
         self.zcodePluginID = zcodePluginID
         self.chatGPTPluginID = chatGPTPluginID
+        self.standardNoHeaderPluginID = standardNoHeaderPluginID
         self.emptyPlugin = emptyPlugin
         self.standardPlugin = standardPlugin
         self.zcodePlugin = zcodePlugin
         self.chatGPTPlugin = chatGPTPlugin
+        self.standardNoHeaderPlugin = standardNoHeaderPlugin
         self.kernel = kernel
     }
 
@@ -304,6 +348,10 @@ private final class MessageListFixtureHarness {
         // V5（ChatGPT）：独立插件，共享同一个 message-list 槽位。
         let chatGPT = PluginMessageListChatGPTPlugin()
         try chatGPT.onBoot(kernel: kernel)
+
+        // V6（standardNoHeader）：与 V2 同一布局、不渲染消息头。
+        let standardNoHeader = PluginMessageListStandardNoHeaderPlugin()
+        try standardNoHeader.onBoot(kernel: kernel)
 
         let conversationID = try conversations.createConversation(
             title: "Fixture",
@@ -347,10 +395,12 @@ private final class MessageListFixtureHarness {
             emptyPluginID: empty.id,
             zcodePluginID: zcode.id,
             chatGPTPluginID: chatGPT.id,
+            standardNoHeaderPluginID: standardNoHeader.id,
             emptyPlugin: empty,
             standardPlugin: standard,
             zcodePlugin: zcode,
             chatGPTPlugin: chatGPT,
+            standardNoHeaderPlugin: standardNoHeader,
             kernel: kernel
         )
     }

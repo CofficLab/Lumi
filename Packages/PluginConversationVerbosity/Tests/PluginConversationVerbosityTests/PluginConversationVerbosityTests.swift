@@ -151,6 +151,7 @@ struct PluginConversationVerbosityTests {
             (.detailed, "Detailed", "Detailed Description"),
             (.zcode, "ZCode", "ZCode Description"),
             (.chatGPT, "ChatGPT", "ChatGPT Description"),
+            (.standardNoHeader, "No Header", "No Header Description"),
         ]
         let resolve: (String) -> String = { "localized:\($0)" }
 
@@ -171,6 +172,11 @@ struct PluginConversationVerbosityTests {
     @Test("详细度词条在所有规范语言下都有译文（回归 #920）")
     func verbosityStringsHaveTranslationsInCompiledBundle() throws {
         let expected: [String: [String: String]] = [
+            "Message List Style": [
+                "en": "Message List Style", "zh-Hans": "消息列表风格",
+                "zh-Hant": "訊息列表風格", "zh-HK": "訊息列表風格",
+                "zh-TW": "訊息列表風格",
+            ],
             "Brief": [
                 "en": "Brief", "zh-Hans": "简洁", "zh-Hant": "簡潔",
                 "zh-HK": "簡潔", "zh-TW": "簡潔",
@@ -184,25 +190,25 @@ struct PluginConversationVerbosityTests {
                 "zh-HK": "詳細", "zh-TW": "詳細",
             ],
             "Brief Description": [
-                "en": "Returns only the core conclusion",
-                "zh-Hans": "只返回核心结论",
-                "zh-Hant": "只回傳核心結論",
-                "zh-HK": "只回傳核心結論",
-                "zh-TW": "只回傳核心結論",
+                "en": "Groups messages by turn, with a collapsed process section",
+                "zh-Hans": "按回合分组消息，过程区段折叠",
+                "zh-Hant": "按回合分組訊息，過程區段折疊",
+                "zh-HK": "按回合分組訊息，過程區段折疊",
+                "zh-TW": "按回合分組訊息，過程區段折疊",
             ],
             "Standard Description": [
-                "en": "Includes essential explanations and steps",
-                "zh-Hans": "包含必要说明和步骤",
-                "zh-Hant": "包含必要說明和步驟",
-                "zh-HK": "包含必要說明和步驟",
-                "zh-TW": "包含必要說明和步驟",
+                "en": "Lists every message row in a plain layout",
+                "zh-Hans": "以朴素布局逐条列出消息",
+                "zh-Hant": "以樸素佈局逐條列出訊息",
+                "zh-HK": "以樸素佈局逐條列出訊息",
+                "zh-TW": "以樸素佈局逐條列出訊息",
             ],
             "Detailed Description": [
-                "en": "Includes full reasoning and context",
-                "zh-Hans": "包含完整推理和上下文",
-                "zh-Hant": "包含完整推理與上下文",
-                "zh-HK": "包含完整推理與上下文",
-                "zh-TW": "包含完整推理與上下文",
+                "en": "Lists every message row and shows the reasoning content",
+                "zh-Hans": "逐条列出消息，并显示思考内容",
+                "zh-Hant": "逐條列出訊息，並顯示思考內容",
+                "zh-HK": "逐條列出訊息，並顯示思考內容",
+                "zh-TW": "逐條列出訊息，並顯示思考內容",
             ],
             "ZCode": [
                 "en": "ZCode", "zh-Hans": "ZCode", "zh-Hant": "ZCode",
@@ -225,6 +231,17 @@ struct PluginConversationVerbosityTests {
                 "zh-Hant": "ChatGPT 風格訊息列表",
                 "zh-HK": "ChatGPT 風格訊息列表",
                 "zh-TW": "ChatGPT 風格訊息列表",
+            ],
+            "No Header": [
+                "en": "No Header", "zh-Hans": "无消息头", "zh-Hant": "無訊息頭",
+                "zh-HK": "無訊息頭", "zh-TW": "無訊息頭",
+            ],
+            "No Header Description": [
+                "en": "Standard layout without message headers",
+                "zh-Hans": "标准布局，不显示消息头",
+                "zh-Hant": "標準佈局，不顯示訊息頭",
+                "zh-HK": "標準佈局，不顯示訊息頭",
+                "zh-TW": "標準佈局，不顯示訊息頭",
             ],
         ]
 

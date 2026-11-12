@@ -45,6 +45,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 探测结果按路径缓存在 `ProjectStorageDetector` 中，缓存失效时必须让视图
     /// 重新读取，于是用这个修订号驱动重绘。
     @Published public private(set) var storageRevision = 0
+    private var storageRefreshGeneration = 0
 
     // MARK: - Dependencies
 
@@ -76,11 +77,20 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 刷新项目存储状态缓存，并递增修订号驱动视图重绘。
     ///
     /// 项目目录是否还在磁盘上会随外部操作变化（目录被删除、外置硬盘被拔出、
-    /// 网络卷重新挂载）。探测结果按路径缓存在 `ProjectStorageDetector` 中，
-    /// 因此每次刷新都要先清空缓存再让视图重新读取。
+    /// 网络卷重新挂载）。探测在后台线程执行，完成后再次递增修订号驱动重绘；
+    /// 视图 body 中的 `kind(for:)` 仅读缓存，不做同步 I/O。
     public func refreshStorageState() {
         ProjectStorageDetector.invalidateAll()
         storageRevision &+= 1
+        storageRefreshGeneration &+= 1
+        let generation = storageRefreshGeneration
+        let paths = projects.map(\.path)
+        guard !paths.isEmpty else { return }
+        Task { @MainActor [weak self] in
+            await ProjectStorageDetector.refresh(paths: paths)
+            guard let self, self.storageRefreshGeneration == generation else { return }
+            self.storageRevision &+= 1
+        }
     }
 
     /// 订阅 Store 的打开文件变更，并完成首次加载。

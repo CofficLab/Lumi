@@ -65,6 +65,29 @@ PluginDevice/
 | 关于 / 说明书 | — | `DeviceInfoAboutView` / `DeviceInfoManualView` |
 | 菜单栏内容 | `*.metrics` | CPU 每核柱状图 + 内存单柱 |
 | 菜单栏弹窗 | `*.cpu` / `*.memory` | CPU、内存弹窗 |
+| Agent 工具 | `device_status` | 在对话中查询设备状态，并插入一张状态卡片 |
+| 消息渲染器 | `com.coffic.lumi.plugin.device-info.card` | 把 `renderKind = device-status` 的消息画成设备状态卡片 |
+
+## 对话中的设备状态卡片
+
+用户可以直接在对话里问「我这机器现在内存还剩多少」，LLM 会调用 `device_status`
+工具。工具采集一份快照，按 `scope` 裁剪，插入一条带
+`renderKind = "device-status"` 的时间线消息，由本插件注册的渲染器画成卡片。
+
+`scope` 取值：
+
+| scope | 卡片内容 |
+|-------|---------|
+| `overview`（默认） | CPU / 内存 / GPU / 电池 / 磁盘 一屏总览 |
+| `cpu` | 总占用 + 每核分布 + 负载均值 + user/system/idle 拆分 |
+| `memory` | 已用 / 总量 / 内存压力等级 |
+| `storage` | 系统盘与外接卷容量 |
+| `thermal` | 各传感器读数与峰值 |
+| `processes` | 进程排行（CPU 与内存榜合并去重） |
+
+卡片消息是**纯界面产物**，不会回流到 LLM 上下文——`MessageTimelineEvent`
+把它识别为时间线事件并从历史中过滤掉。工具同时把关键数值以文本形式返回给
+模型，供模型在回复里引用。
 
 ## 构建与测试
 

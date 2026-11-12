@@ -100,7 +100,12 @@ buildServer.json
 __pycache__/
 *.pyc
 
-# Workbuddy
+# Machine-local AI assistant state.
+# The shared rules and commands live under .lumi/; these three directories only
+# ever held per-workstation configuration (local MCP tool allowlists, personal
+# hook scripts, session notes) and must never be committed.
+.claude/
+.cursor/
 .workbuddy/
 
 .zcode/

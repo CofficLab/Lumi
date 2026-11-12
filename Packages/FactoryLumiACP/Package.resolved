@@ -1,5 +1,5 @@
 {
-  "originHash" : "1715829e55d5e820764b0be6d5b19d835a40dcbb77b5811948e30d153cfbb0e2",
+  "originHash" : "adcad8e97bc469043c990b58772c4574ddcb070ee78ee684eab0dabb8214081e",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "3df57f9c165ae72221aafce0a231918c51b1dbdb",
-        "version" : "1.22.2"
+        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
+        "version" : "1.23.0"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "e04e122994c9d22e16c7fba2aa611e911612c1ab",
-        "version" : "1.13.2"
+        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
+        "version" : "1.17.1"
       }
     },
     {

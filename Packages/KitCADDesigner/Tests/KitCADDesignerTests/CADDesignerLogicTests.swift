@@ -322,7 +322,7 @@ final class CADDesignerLogicTests: XCTestCase {
 
     // MARK: - Project Save/Load
 
-    func testProjectSaveLoadRoundTrip() throws {
+    func testProjectSaveLoadRoundTrip() async throws {
         let service = ProjectSaveLoadService()
         let document = CADDocument(
             name: "SaveLoad Test",
@@ -331,8 +331,8 @@ final class CADDesignerLogicTests: XCTestCase {
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("CADDesignerTest-\(UUID().uuidString).cadproj")
-        try service.save(document: document, to: url)
-        let loaded = try service.load(from: url)
+        try await service.save(document: document, to: url)
+        let loaded = try await service.load(from: url)
         try? FileManager.default.removeItem(at: url)
 
         XCTAssertEqual(document.id, loaded.id)
@@ -353,7 +353,7 @@ final class CADDesignerLogicTests: XCTestCase {
     // MARK: - File Association Open
 
     @MainActor
-    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() throws {
+    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         let document = CADDocument(
@@ -362,14 +362,14 @@ final class CADDesignerLogicTests: XCTestCase {
         )
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("CADFinderOpen-\(UUID().uuidString).cadproj")
-        try ProjectSaveLoadService().save(document: document, to: url)
+        try await ProjectSaveLoadService().save(document: document, to: url)
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
         // 工作区启动时会自动创建空项目；系统打开的文件必须替换为选中的项目。
         XCTAssertEqual(store.selectedDocument?.name, "Untitled Project")
 
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Finder Open")
         XCTAssertEqual(store.selectedDocument?.components.count, 1)
@@ -378,7 +378,7 @@ final class CADDesignerLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() throws {
+    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         _ = store.createDocument(name: "Keep Me")
@@ -388,7 +388,7 @@ final class CADDesignerLogicTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
         XCTAssertEqual(store.documents.count, 1)
@@ -396,7 +396,7 @@ final class CADDesignerLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() throws {
+    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         _ = store.createDocument(name: "Keep Me")
@@ -406,7 +406,7 @@ final class CADDesignerLogicTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
         XCTAssertEqual(store.documents.count, 1)

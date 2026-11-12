@@ -70,6 +70,7 @@ import PluginConversationManager
 import PluginConversationMode
 import PluginConversationStats
 import PluginConversationSpeed
+import PluginConversationTokenUsage
 import PluginConversationNew
 import PluginConversationPendingMessage
 import PluginConversationResume
@@ -83,6 +84,7 @@ import PluginHostsManager
 import PluginIdleTime
 import PluginHydrationReminder
 import PluginActivityHeatmap
+import PluginRailTokenTrend
 import PluginLLMProviderAiRouter
 import PluginLLMManager
 import PluginLLMProviderAliyun
@@ -120,6 +122,7 @@ import PluginMessageListStandard
 import PluginMessageListDetailed
 import PluginMessageListZCode
 import PluginMessageListChatGPT
+import PluginMessageListStandardNoHeader
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
@@ -270,8 +273,12 @@ public struct DefaultPluginFactory: PluginFactory {
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
             IdleTimePlugin(),
-            PluginHydrationReminder(),
+            // 喝水提醒：默认不启用，用户需在「插件管理」中显式开启，
+            // 避免新用户被动接受定时提醒。策略在宿主装配层指定，
+            // 不改动外部插件包（LumiPluginHydrationReminder）的默认值。
+            PluginHydrationReminder(policy: .disabledByDefault),
             ActivityHeatmapPlugin(),
+            RailTokenTrendPlugin(),
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
             ChatScreenshotPlugin(),
@@ -283,6 +290,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
+            ConversationTokenUsagePlugin(),
             ConversationTitlePlugin(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
@@ -355,6 +363,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginMessageListDetailedPlugin(),
             PluginMessageListZCodePlugin(),
             PluginMessageListChatGPTPlugin(),
+            PluginMessageListStandardNoHeaderPlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
@@ -380,6 +389,8 @@ public struct DefaultPluginFactory: PluginFactory {
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
             PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
+            // 设置视图实现改为宿主级注册：停止内核时不被撤回，同一个内核才能重启。
+            SettingViewHostPlugin(),
             // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
             // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
             PluginLogoManager(),

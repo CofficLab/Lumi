@@ -49,14 +49,21 @@ public enum PathFormatter {
     }
 
     /// 批量操作时去掉被其它选中目录包含的子路径。
+    ///
+    /// 排序后线性扫描：字典序保证子路径紧跟父路径，只需与上一个顶层路径比较。
     static func topLevelURLs(from urls: [URL]) -> [URL] {
-        let paths = Set(urls.map { normalizedFilePath($0) })
-        return urls.filter { url in
-            let path = normalizedFilePath(url)
-            return !paths.contains { ancestor in
-                ancestor != path && path.hasPrefix(ancestor + "/")
+        let pairs = urls.map { (url: $0, path: normalizedFilePath($0)) }
+        let sortedPaths = pairs.map(\.path).sorted()
+        var topPaths = Set<String>()
+        var lastTopLevel: String?
+        for path in sortedPaths {
+            if let last = lastTopLevel, path.hasPrefix(last + "/") {
+                continue
             }
+            topPaths.insert(path)
+            lastTopLevel = path
         }
+        return pairs.filter { topPaths.contains($0.path) }.map(\.url)
     }
 
     private static func normalizedPath(_ path: String) -> String {

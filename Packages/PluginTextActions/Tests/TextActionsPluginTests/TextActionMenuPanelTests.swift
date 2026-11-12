@@ -29,6 +29,17 @@ struct TextActionMenuModelTests {
         #expect(received == [.copy, .search, .translate])
     }
 
+    @Test("close 转发给注入的处理器")
+    func closeForwardsToHandler() {
+        let model = TextActionMenuModel()
+        var closeCount = 0
+        model.onClose = { closeCount += 1 }
+
+        model.close()
+
+        #expect(closeCount == 1)
+    }
+
     @Test("状态切换触发 onStateChange")
     func stateChangeNotifies() {
         let model = TextActionMenuModel()

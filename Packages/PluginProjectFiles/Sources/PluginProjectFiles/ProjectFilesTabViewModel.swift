@@ -13,7 +13,9 @@ public final class ProjectFilesTabViewModel: ObservableObject {
     }
 
     public func reload() {
-        tabState = ProjectFilesTabState(projectCapability: projectCapability)
+        let newState = ProjectFilesTabState(projectCapability: projectCapability)
+        guard newState != tabState else { return }
+        tabState = newState
     }
 
     public func activate(_ fileURL: URL) {

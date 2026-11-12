@@ -74,31 +74,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Returns only the core conclusion"
+            "value": "Groups messages by turn, with a collapsed process section"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只返回核心结论"
+            "value": "按回合分组消息，过程区段折叠"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "只回傳核心結論"
+            "value": "按回合分組訊息，過程區段折疊"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "只回傳核心結論"
+            "value": "按回合分組訊息，過程區段折疊"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "只回傳核心結論"
+            "value": "按回合分組訊息，過程區段折疊"
           }
         }
       }
@@ -142,65 +142,65 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Includes full reasoning and context"
+            "value": "Lists every message row and shows the reasoning content"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含完整推理和上下文"
+            "value": "逐条列出消息，并显示思考内容"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含完整推理與上下文"
+            "value": "逐條列出訊息，並顯示思考內容"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含完整推理與上下文"
+            "value": "逐條列出訊息，並顯示思考內容"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含完整推理與上下文"
+            "value": "逐條列出訊息，並顯示思考內容"
           }
         }
       }
     },
-    "Response Detail": {
+    "Message List Style": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Response Detail"
+            "value": "Message List Style"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "回复详细程度"
+            "value": "消息列表风格"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "回复详细程度"
+            "value": "訊息列表風格"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "回复详细程度"
+            "value": "訊息列表風格"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "回复详细程度"
+            "value": "訊息列表風格"
           }
         }
       }
@@ -244,31 +244,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Includes essential explanations and steps"
+            "value": "Lists every message row in a plain layout"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含必要说明和步骤"
+            "value": "以朴素布局逐条列出消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含必要說明和步驟"
+            "value": "以樸素佈局逐條列出訊息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含必要說明和步驟"
+            "value": "以樸素佈局逐條列出訊息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含必要說明和步驟"
+            "value": "以樸素佈局逐條列出訊息"
           }
         }
       }
@@ -405,6 +405,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "ZCode 風格訊息呈現"
+          }
+        }
+      }
+    },
+    "No Header": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Header"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无消息头"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無訊息頭"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無訊息頭"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無訊息頭"
+          }
+        }
+      }
+    },
+    "No Header Description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard layout without message headers"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标准布局，不显示消息头"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準佈局，不顯示訊息頭"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準佈局，不顯示訊息頭"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準佈局，不顯示訊息頭"
           }
         }
       }

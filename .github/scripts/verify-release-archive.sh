@@ -191,6 +191,7 @@ echo "▶ Checking required release resources"
 required_paths=(
   "${app_path}/Contents/Frameworks/Sparkle.framework"
   "${app_path}/Contents/Frameworks/vec0.dylib"
+  "${app_path}/Contents/MacOS/rg"
   "${app_path}/Contents/Resources/PluginProjectRAG_ProjectRAGEngine.bundle"
   "${app_path}/Contents/Resources/PluginACP_PluginACP.bundle"
 )
@@ -202,6 +203,7 @@ for required_path in "${required_paths[@]}"; do
   fi
 done
 check_contains_arch "vec0 runtime" "${app_path}/Contents/Frameworks/vec0.dylib"
+check_contains_arch "ripgrep runtime" "${app_path}/Contents/MacOS/rg"
 
 # ---------------------------------------------------------------------------
 # 7. Bundle symlink integrity

@@ -2,28 +2,22 @@ import AppKit
 import LumiUI
 import SwiftUI
 
+/// 进程榜单的指标口径。
+enum ProcessMetricKind {
+    case cpu
+    case memory
+}
+
 struct TopProcessesView: View {
     // MARK: - Properties
 
     let processes: [ProcessMetric]
+    var metric: ProcessMetricKind = .cpu
 
     // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 标题
-            HStack(spacing: 4) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-
-                Text(pluginLocalization.string("Top Processes"))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 6)
-
             if processes.isEmpty {
                 Text(pluginLocalization.string("Collecting..."))
                     .font(.system(size: 10))
@@ -44,16 +38,27 @@ struct TopProcessesView: View {
 
     // MARK: - 私有方法
 
+    /// 内存进度条以榜首进程为满格，方便比较相对占用。
+    private var maxMemoryUsage: Int64 {
+        processes.map(\.memoryUsage).max() ?? 0
+    }
+
     private func processRow(_ process: ProcessMetric) -> some View {
-        ProcessMetricRow(process: process)
+        ProcessMetricRow(
+            process: process,
+            metric: metric,
+            maxMemoryUsage: maxMemoryUsage
+        )
     }
 }
 
-/// 单条进程记录：图标 / 名称（含份数与本应用标注）/ CPU% / 迷你进度条。
+/// 单条进程记录：图标 / 名称（含份数与本应用标注）/ 指标值 / 迷你进度条。
 ///
 /// 主弹窗只展示前 5 条，详情页复用同一行视图展示完整列表。
 struct ProcessMetricRow: View {
     let process: ProcessMetric
+    var metric: ProcessMetricKind = .cpu
+    var maxMemoryUsage: Int64 = 0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -91,21 +96,21 @@ struct ProcessMetricRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // CPU%：直接展示服务端算出的真实占用，不做前 N 名归一化。
-            Text(process.formattedCPUUsage)
+            // 指标值：CPU% 展示真实占用，不做前 N 名归一化；内存展示常驻大小。
+            Text(valueText)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.blue)
-                .frame(width: 40, alignment: .trailing)
+                .foregroundColor(valueColor)
+                .frame(width: valueWidth, alignment: .trailing)
 
-            // 进度条：以单核 100% 为满格。
+            // 进度条：CPU 以单核 100% 为满格；内存以榜首进程为满格。
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Color.secondary.opacity(0.2))
 
                     Capsule()
-                        .fill(Color.blue.opacity(0.7))
-                        .frame(width: geometry.size.width * CGFloat(process.cpuBarFraction))
+                        .fill(valueColor.opacity(0.7))
+                        .frame(width: geometry.size.width * CGFloat(barFraction))
                 }
             }
             .frame(width: 40, height: 4)
@@ -119,6 +124,36 @@ struct ProcessMetricRow: View {
             return Image(nsImage: NSWorkspace.shared.icon(forFile: path))
         }
         return Image(systemName: "terminal")
+    }
+
+    // MARK: - 展示口径
+
+    private var valueText: String {
+        switch metric {
+        case .cpu: process.formattedCPUUsage
+        case .memory: process.memoryString
+        }
+    }
+
+    private var valueColor: Color {
+        switch metric {
+        case .cpu: .blue
+        case .memory: .purple
+        }
+    }
+
+    private var valueWidth: CGFloat {
+        switch metric {
+        case .cpu: 40
+        case .memory: 56
+        }
+    }
+
+    private var barFraction: Double {
+        switch metric {
+        case .cpu: process.cpuBarFraction
+        case .memory: process.memoryBarFraction(relativeTo: maxMemoryUsage)
+        }
     }
 }
 
@@ -138,6 +173,12 @@ extension ProcessMetric {
     var cpuBarFraction: Double {
         min(max(cpuUsage / 100.0, 0), 1)
     }
+
+    /// 内存进度条比例：以榜单最大内存为满格。
+    func memoryBarFraction(relativeTo maxMemoryUsage: Int64) -> Double {
+        guard maxMemoryUsage > 0 else { return 0 }
+        return min(max(Double(memoryUsage) / Double(maxMemoryUsage), 0), 1)
+    }
 }
 
 // MARK: - 预览
@@ -150,6 +191,21 @@ extension ProcessMetric {
         ProcessMetric(id: 103, name: "mds_stores", icon: nil, cpuUsage: 5, memoryUsage: 200_000_000),
         ProcessMetric(id: 104, name: "Safari", icon: nil, cpuUsage: 3, memoryUsage: 450_000_000),
     ])
+    .frame(width: 280)
+    .padding()
+}
+
+#Preview("Top Memory Processes") {
+    TopProcessesView(
+        processes: [
+            ProcessMetric(id: 101, name: "Xcode", icon: nil, cpuUsage: 0, memoryUsage: 1_200_000_000),
+            ProcessMetric(id: 100, name: "Google Chrome", icon: nil, cpuUsage: 0, memoryUsage: 512_000_000),
+            ProcessMetric(id: 104, name: "Safari", icon: nil, cpuUsage: 0, memoryUsage: 450_000_000),
+            ProcessMetric(id: 102, name: "WindowServer", icon: nil, cpuUsage: 0, memoryUsage: 300_000_000),
+            ProcessMetric(id: 103, name: "mds_stores", icon: nil, cpuUsage: 0, memoryUsage: 200_000_000),
+        ],
+        metric: .memory
+    )
     .frame(width: 280)
     .padding()
 }

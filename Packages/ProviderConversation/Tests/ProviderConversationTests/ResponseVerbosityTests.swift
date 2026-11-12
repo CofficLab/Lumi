@@ -30,14 +30,23 @@ struct ResponseVerbosityTests {
         #expect(ResponseVerbosity(rawValue: "CHATGPT") == .chatGPT)
     }
 
+    @Test("V6 的 rawValue 是 v6，并接受 noheader 别名")
+    func standardNoHeaderRawValueAndAliases() {
+        #expect(ResponseVerbosity.standardNoHeader.rawValue == "v6")
+        #expect(ResponseVerbosity(rawValue: "v6") == .standardNoHeader)
+        #expect(ResponseVerbosity(rawValue: "noheader") == .standardNoHeader)
+        #expect(ResponseVerbosity(rawValue: "standard-no-header") == .standardNoHeader)
+        #expect(ResponseVerbosity(rawValue: "NOHEADER") == .standardNoHeader)
+    }
+
     @Test("默认级别仍是 V2 标准")
     func defaultVerbosityRemainsStandard() {
         #expect(ResponseVerbosity.defaultVerbosity == .standard)
     }
 
-    @Test("allCases 按 v1 v2 v3 v4 v5 顺序包含五种级别")
-    func allCasesContainFiveLevelsInOrder() {
-        #expect(ResponseVerbosity.allCases.map(\.rawValue) == ["v1", "v2", "v3", "v4", "v5"])
+    @Test("allCases 按 v1 v2 v3 v4 v5 v6 顺序包含六种级别")
+    func allCasesContainSixLevelsInOrder() {
+        #expect(ResponseVerbosity.allCases.map(\.rawValue) == ["v1", "v2", "v3", "v4", "v5", "v6"])
     }
 
     @Test("V1–V3 的 rawValue 保持不变")
@@ -79,9 +88,16 @@ struct ResponseVerbosityTests {
         #expect(ResponseVerbosity(rawValue: persisted) == .chatGPT)
     }
 
+    @Test("以字符串形式持久化 v6 后能解回无消息头标准列表")
+    func stringPersistedV6DecodesBackToStandardNoHeader() throws {
+        let persisted = ResponseVerbosity.standardNoHeader.rawValue
+        #expect(persisted == "v6")
+        #expect(ResponseVerbosity(rawValue: persisted) == .standardNoHeader)
+    }
+
     @Test("未知 rawValue 被拒绝")
     func unknownRawValueIsRejected() {
-        #expect(ResponseVerbosity(rawValue: "v6") == nil)
+        #expect(ResponseVerbosity(rawValue: "v7") == nil)
         #expect(ResponseVerbosity(rawValue: "") == nil)
     }
 }

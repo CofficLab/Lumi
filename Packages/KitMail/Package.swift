@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         // MailCore2 以 vendored xcframework 引入（本地 binary target），
-        // 见 docs/plans/2026-10-01-mail-client-plugin.md 第 4 节 Spike 结论。
+        // 见 Mail 客户端方案的 Spike 结论（docs/plans/2026-10-01-mail-client-plugin.md，已完成归档）。
         // 官方 SPM binary 仅含 macos-x86_64，不适用于 Apple Silicon，
         // 因此由本地构建产物提供 macos-arm64 slice。
     ],

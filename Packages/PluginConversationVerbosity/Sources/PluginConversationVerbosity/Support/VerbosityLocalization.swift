@@ -2,7 +2,7 @@ import Foundation
 import LumiLocalizationKit
 import ProviderConversation
 
-/// 详细度控件的用户可见文案。
+/// 消息列表风格控件的用户可见文案。
 ///
 /// 文案属于界面层，由插件本地化目录维护；`ProviderConversation` 只负责行为，
 /// 不再产出任何语言的显示名（#920）。
@@ -15,6 +15,8 @@ extension ResponseVerbosity {
         // V4 是 ZCode 风格消息列表的呈现变体。
         case .zcode: "ZCode"
         case .chatGPT: "ChatGPT"
+        // V6 是 V2 布局去掉消息头的呈现变体。
+        case .standardNoHeader: "No Header"
         }
     }
 
@@ -26,6 +28,7 @@ extension ResponseVerbosity {
         // V4 是呈现变体而非回复长度策略，因此描述只讲风格，不讲长短。
         case .zcode: "ZCode Description"
         case .chatGPT: "ChatGPT Description"
+        case .standardNoHeader: "No Header Description"
         }
     }
 

@@ -4,7 +4,7 @@ import Foundation
 
 /// 编辑器契约 V2 强类型标识。
 ///
-/// 见 `docs/editor-kernel-plugin-rearchitecture-plan.md` §7.1：
+/// 见 `docs/plans/2026-08-15-editor-kernel-plugin-rearchitecture-plan.md` §7.1：
 /// 禁止继续用裸 `UUID` 同时表示窗口、Session 和文档。
 /// 所有标识为 `RawRepresentable` + `Hashable` + `Sendable` 值类型，
 /// 不携带任何实现信息（视图、存储或插件对象）。

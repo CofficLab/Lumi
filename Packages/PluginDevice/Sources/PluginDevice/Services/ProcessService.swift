@@ -4,10 +4,12 @@ import Darwin
 import Foundation
 import os
 import LumiLoggingKit
-/// Process monitoring service that reports CPU usage per process via libproc.
+/// Process monitoring service that reports CPU/memory usage per process via libproc.
 ///
 /// 同名多进程（如浏览器/IDE 的多个 Helper）会合并为一条记录并标注份数，
-/// 与网络区块的展示口径保持一致。发布的是全部活跃进程，由调用方决定截取前几条。
+/// 与网络区块的展示口径保持一致。同一次采样分别产出 CPU 榜与内存榜：
+/// CPU 榜过滤掉本轮零活动的进程，内存榜保留零 CPU 的大内存常驻进程。
+/// 两个榜单都发布完整列表，由调用方决定截取前几条。
 @MainActor
 public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
@@ -34,7 +36,11 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     // MARK: - Published Properties
 
+    /// CPU 榜：只保留本轮有明显 CPU 活动的进程。
     @Published public var topProcesses: [ProcessMetric] = []
+
+    /// 内存榜：按常驻内存降序，包含本轮零 CPU 的常驻进程。
+    @Published public var topMemoryProcesses: [ProcessMetric] = []
 
     // MARK: - Private Properties
 
@@ -79,6 +85,7 @@ public final class ProcessService: ObservableObject, SuperLog {
             samplingTask = nil
             previousSnapshot.removeAll()
             topProcesses = []
+            topMemoryProcesses = []
         }
     }
 
@@ -118,7 +125,8 @@ public final class ProcessService: ObservableObject, SuperLog {
                 guard self.subscribersCount > 0 else { return }
                 self.previousSnapshot = result.snapshot
                 self.previousTimestamp = result.timestamp
-                self.topProcesses = result.metrics
+                self.topProcesses = Self.cpuRanking(result.metrics)
+                self.topMemoryProcesses = Self.memoryRanking(result.metrics)
             }
         }
     }
@@ -181,19 +189,32 @@ public final class ProcessService: ObservableObject, SuperLog {
 
                 let cpuPercent = cpuPercent(forProcessTimeDelta: totalDelta, elapsedSeconds: deltaTime)
 
-                if cpuPercent > 0.1 {
-                    samples.append(CPUSample(
-                        pid: pid,
-                        name: getProcessName(pid: pid),
-                        icon: appBundlePaths[pid],
-                        cpuUsage: cpuPercent,
-                        memoryUsage: Int64(taskInfo.pti_resident_size)
-                    ))
-                }
+                // 零 CPU 的常驻进程同样要进内存榜，因此这里不做 CPU 过滤。
+                samples.append(CPUSample(
+                    pid: pid,
+                    name: getProcessName(pid: pid),
+                    icon: appBundlePaths[pid],
+                    cpuUsage: cpuPercent,
+                    memoryUsage: Int64(taskInfo.pti_resident_size)
+                ))
             }
         }
 
         return (aggregate(samples), currentSnapshot, now)
+    }
+
+    /// CPU 榜过滤：去掉本轮几乎没有 CPU 活动的进程，避免详情页被 0% 项淹没。
+    nonisolated static func cpuRanking(_ metrics: [ProcessMetric]) -> [ProcessMetric] {
+        metrics.filter { $0.cpuUsage > 0.1 }
+    }
+
+    /// 内存榜：按聚合后的常驻内存降序。
+    ///
+    /// 不能沿用 CPU 活动过滤——大内存应用往往整轮采样都是 0% CPU。
+    nonisolated static func memoryRanking(_ metrics: [ProcessMetric]) -> [ProcessMetric] {
+        metrics
+            .filter { $0.memoryUsage > 0 }
+            .sorted { $0.memoryUsage > $1.memoryUsage }
     }
 
     /// 单个进程的原始采样值，供聚合与测试使用。

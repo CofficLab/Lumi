@@ -34,13 +34,15 @@ public struct SaveCADProjectV2Tool: SuperAgentTool {
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         do {
-            try await MainActor.run {
+            // 文档快照在主线程读取，JSON 编码与磁盘写入在后台完成（见 issue #1176）。
+            let document = try await MainActor.run {
                 guard let document = CADDocumentStore.shared.selectedDocument else {
                     throw CADDocumentStoreError.noSelectedDocument
                 }
-                try ProjectSaveLoadService().save(document: document, to: url)
-                CADDocumentStore.shared.setExportURL(url)
+                return document
             }
+            try await ProjectSaveLoadService().save(document: document, to: url)
+            await MainActor.run { CADDocumentStore.shared.setExportURL(url) }
             return CADDesignerV2ToolSupport.localized(
                 en: "Project saved to: \(url.path)",
                 zh: "项目已保存到：\(url.path)"

@@ -6,12 +6,16 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 提供 async/await API、流式输出回调、超时与取消、进程树终止与结构化结果。
 
 核心组件:
-- `ShellExecutor` - 执行入口（`execute` / `executeStreaming` / `findCommand` / `findCommandSync`）
+- `ShellExecutor` - 执行入口（`execute` / `executeStreaming` /
+  `executeStreamingWithBackgroundHandoff` / `findCommand` / `findCommandSync`）
 - `ShellResult` - 结构化结果（`exitCode` / `stdout` / `stderr` / 截断标记 / `duration`）
 - `ShellOptions` - 执行选项（shell 可执行文件、工作目录、环境变量、超时、QoS、
   `throwsOnError`、进程树终止、宽限期、输出上限、排空超时）
 - `ShellError` - 错误类型（`commandFailed` / `timeout` / `launchFailed` / `cancelled` /
   `decodingError`，均实现 `LocalizedError`）
+- `ShellExecutionOutcome` - 前台预算执行的结局（`completed` / `backgrounded`）
+- `BackgroundShellHandle` - 交接给后台的存活进程句柄（pid / 进程组 / `terminate()` /
+  `waitForExit()`）
 - `ProcessPipeCleanup` - 管道 fd 显式回收
 - `KitShellLocalization` - 本地化字符串
 
@@ -21,7 +25,18 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 - `execute(_ command: String, options:) async throws -> ShellResult` - 命令串执行（走 shell）
 - `execute(executable:arguments:options:) async throws -> ShellResult` - 显式可执行文件执行
 - `executeStreaming(...)` - 两个重载，流式回调
+- `executeStreamingWithBackgroundHandoff(...)` - 两个重载，前台预算耗尽时**不杀进程**，
+  返回 `.completed(ShellResult)` 或 `.backgrounded(BackgroundShellHandle)`
 - `findCommand(_:) async -> String?` / `findCommandSync(_:) -> String?` - 在 PATH 中查找命令
+
+### ShellExecutionOutcome
+- `completed(ShellResult)` - 进程在预算内退出
+- `backgrounded(BackgroundShellHandle)` - 预算耗尽，进程已交接给后台
+
+### BackgroundShellHandle
+- `processIdentifier: Int32` / `processGroupIdentifier: Int32?` / `startedAt: Date`
+- `terminate()` - SIGTERM → 宽限 → SIGKILL，终止整个进程树
+- `waitForExit() async -> Int32` - 挂起直到进程退出并返回退出码
 
 ### ShellResult
 - `exitCode: Int32` / `stdout: String` / `stderr: String`
@@ -33,6 +48,7 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 - `shellExecutable` / `workingDirectory` / `environment` / `timeout` / `qos`
 - `throwsOnError` / `terminatesProcessTree` / `terminationGracePeriod`
 - `maxOutputBytes` / `outputDrainTimeout`
+- `handsOffImmediately` - 进程一起来就交接给后台，不设前台预算
 - `static let defaultOptions`
 
 ### ShellError
@@ -65,6 +81,15 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
   父进程退出后管道仍不 EOF，`readDataToEndOfFile` 会永久阻塞。
 - **findCommand 不得创建 shell**：`findCommandSync` 直接扫 PATH，
   避免为一次存在性判断付出进程创建代价。
+- **预算耗尽≠杀进程**（ID 51）：`executeStreamingWithBackgroundHandoff` 的前台预算
+  到期时**不终止进程**，而是把它交接给后台（`.backgrounded`）。这与
+  `executeStreaming` 的 kill-on-timeout 语义**并存且互不影响**——后者是既有契约，
+  其它调用方依赖超时真的能杀掉进程树。
+- **交接是原子的**（ID 51/57）：交接在一次加锁内完成——清 deadline、置
+  `backgrounded` 标记、脱离前台取消、转移管道所有权。交接之后取消前台任务
+  **不得**终止进程（ID 57），因为进程已归后台所有。
+- **交接后输出继续流**（ID 53）：交接不关闭管道读端，进程后续输出仍送达
+  流式回调；`BackgroundShellHandle.waitForExit()` 能读到真实退出码（ID 52）。
 
 ## 测试用例清单
 
@@ -120,8 +145,17 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 | 48 | FD 影响 | fd 耗尽时工具调用以 EMFILE 失败 | 预先占满 fd | 发起子进程调用 | 报 `Too many open files` | P0 | ✅ 已覆盖 | `subprocessExhaustionBreaksToolCalls` |
 | 49 | FD 影响 | fd 充足时同一调用正常（对照组） | 不占满 | 同上 | 正常返回 | P0 | ✅ 已覆盖 | `normalConditionsWork` |
 | 50 | FD 影响 | 当前进程 fd 水位可观测 | — | 读 `openCount()` | 返回 ≥ 0 的整数 | P1 | ✅ 已覆盖 | `fileDescriptorWatermarkIsObservable` |
+| 51 | 后台交接 | 前台预算耗尽时进程被交接给后台且仍在运行 | `timeout` 极短 | 执行长命令 | 返回 `.backgrounded`，句柄 pid 仍存活 | P0 | ✅ 已覆盖 | `testBudgetExpiryHandsOffWithoutKillingProcess` |
+| 52 | 后台交接 | 交接后进程退出码可被后台所有者读到 | 交接后进程自然退出 | `waitForExit()` | 返回真实退出码 | P0 | ✅ 已覆盖 | `testBackgroundHandleReportsExitCode` |
+| 53 | 后台交接 | 交接后输出继续流入回调 | 交接后仍有输出 | 收集流式回调 | 交接前后的输出都能收到 | P0 | ✅ 已覆盖 | `testOutputKeepsFlowingAfterHandoff` |
+| 54 | 后台交接 | 预算内完成的命令仍然返回 `.completed` | `timeout` 宽松 | 执行短命令 | 返回 `.completed` 且结果正确 | P0 | ✅ 已覆盖 | `testFastCommandStillCompletes` |
+| 55 | 后台交接 | 显式停止会杀掉整个进程树 | 命令派生子进程 | `handle.terminate()` | 子进程与父进程一并终止 | P0 | ✅ 已覆盖 | `testExplicitStopTerminatesProcessTree` |
+| 56 | 后台交接 | 前台任务在启动前被取消时不会启动进程 | 取消先于 `Process.run()` | 取消后等待 | 抛 `.cancelled`，进程未启动 | P1 | ✅ 已覆盖 | `testCancellationBeforeStartNeverLaunchesProcess` |
+| 57 | 后台交接 | 交接之后取消前台任务不会终止后台进程 | 已完成交接 | 取消前台任务 | 后台进程仍在运行 | P0 | ✅ 已覆盖 | `testCancellationAfterHandoffKeepsProcessAlive` |
+| 58 | 后台交接 | 显式后台模式在进程启动后立即交接 | `handsOffImmediately = true` | 执行长命令 | 返回 `.backgrounded`，句柄 pid 仍存活 | P0 | ✅ 已覆盖 | `testImmediateHandoffReturnsHandleRightAway` |
+| 59 | 后台交接 | 显式后台模式不设前台预算：命令再久也立刻返回 | `handsOffImmediately = true` | 执行 `sleep 30` | 远早于命令结束就返回 | P0 | ✅ 已覆盖 | `testImmediateHandoffDoesNotWaitForBudget` |
 
-> 说明：全部 **50 条场景**（1 个 suite + 49 个自由函数用例）已在 macOS 上实跑通过。
+> 说明：全部 **59 条场景**（6 个 suite + 53 个自由函数用例）已在 macOS 上实跑通过。
 >
 > 本套件的价值集中在**故障复现而非功能断言**，三条易错约定已在用例里显式锁定：
 > - **管道 fd 泄漏的真实形态是「同 pool 内同步反复创建」**（ID 46）：不显式关闭时，
@@ -141,10 +175,10 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 18 / 18
+- P0: 已覆盖 31 / 31
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 9 / 9
-- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

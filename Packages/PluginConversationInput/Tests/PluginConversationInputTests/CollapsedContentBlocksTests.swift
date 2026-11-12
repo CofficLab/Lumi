@@ -282,9 +282,13 @@ struct CollapsedContentChipLayoutTests {
         NSGraphicsContext.current = context
         context.cgContext.setFillColor(NSColor.white.cgColor)
         context.cgContext.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        layoutManager.drawBackground(forGlyphRange: glyphRange, at: .zero)
-        layoutManager.drawGlyphs(forGlyphRange: glyphRange, at: .zero)
+        // 固定浅色外观：否则 `labelColor` 在深色外观下是白色，
+        // 白底白字 → 墨迹检测失效（见 ChipPixelProbe.withLightAppearance）。
+        ChipPixelProbe.withLightAppearance {
+            let glyphRange = layoutManager.glyphRange(for: textContainer)
+            layoutManager.drawBackground(forGlyphRange: glyphRange, at: .zero)
+            layoutManager.drawGlyphs(forGlyphRange: glyphRange, at: .zero)
+        }
         NSGraphicsContext.restoreGraphicsState()
         return (image, body.size().width)
     }
@@ -295,9 +299,9 @@ struct CollapsedContentChipLayoutTests {
         for row in 0..<image.pixelsHigh {
             for x in xRange {
                 guard let color = image.colorAt(x: x, y: row)?.usingColorSpace(.deviceRGB) else { continue }
-                if color.redComponent < 0.62,
-                   color.greenComponent < 0.62,
-                   color.blueComponent < 0.62 {
+                if color.redComponent < ChipPixelProbe.inkThreshold,
+                   color.greenComponent < ChipPixelProbe.inkThreshold,
+                   color.blueComponent < ChipPixelProbe.inkThreshold {
                     bottom = max(bottom ?? row, row)
                     break
                 }

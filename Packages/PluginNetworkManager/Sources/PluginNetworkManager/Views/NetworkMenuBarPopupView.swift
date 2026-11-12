@@ -24,9 +24,6 @@ public struct NetworkMenuBarPopupView: View {
                 // Real-time speed display
                 liveSpeedView
 
-                // History trend chart (last 60 seconds)
-                miniTrendView
-
                 Divider()
 
                 // Top network processes (inline, same presentation as the CPU block)
@@ -73,125 +70,6 @@ public struct NetworkMenuBarPopupView: View {
             .frame(alignment: .leading)
         }
         .padding(10)
-    }
-
-    // MARK: - Mini Trend View
-
-    private var miniTrendView: some View {
-        let recentData = historyViewModel.points(inLastSeconds: 60)
-        let maxSpeed = max(
-            recentData.map(\.downloadSpeed).max() ?? 0,
-            recentData.map(\.uploadSpeed).max() ?? 0,
-            1024 // Minimum scale
-        )
-
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.appMicro)
-                    .foregroundColor(.secondary)
-
-                Text(pluginLocalization.string("Last 60 seconds"))
-                    .font(.appMicro)
-                    .foregroundColor(.secondary)
-
-                Spacer()
-
-                // Legend
-                HStack(spacing: 6) {
-                    HStack(spacing: 3) {
-                        Circle()
-                            .fill(Color.green.opacity(0.8))
-                            .frame(width: 5, height: 5)
-                        Text(pluginLocalization.string("Down"))
-                            .font(.appMicro)
-                            .foregroundColor(.secondary)
-                    }
-
-                    HStack(spacing: 3) {
-                        Circle()
-                            .fill(Color.red.opacity(0.8))
-                            .frame(width: 5, height: 5)
-                        Text(pluginLocalization.string("Up"))
-                            .font(.appMicro)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-
-            // Mini chart
-            GeometryReader { geometry in
-                ZStack {
-                    // Background grid lines
-                    ForEach(0 ..< 3) { i in
-                        let y = CGFloat(i) * geometry.size.height / 2
-                        Path { path in
-                            path.move(to: CGPoint(x: 0, y: y))
-                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
-                        }
-                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
-                    }
-
-                    // Download area
-                    if !recentData.isEmpty {
-                        MiniGraphArea(
-                            data: recentData.map(\.downloadSpeed),
-                            maxValue: maxSpeed
-                        )
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.green.opacity(0.4),
-                                    Color.green.opacity(0.05),
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-
-                        // Download line
-                        MiniGraphLine(
-                            data: recentData.map(\.downloadSpeed),
-                            maxValue: maxSpeed
-                        )
-                        .stroke(Color.green.opacity(0.8), lineWidth: 1.2)
-
-                        // Upload area
-                        MiniGraphArea(
-                            data: recentData.map(\.uploadSpeed),
-                            maxValue: maxSpeed
-                        )
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.red.opacity(0.4),
-                                    Color.red.opacity(0.05),
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-
-                        // Upload line
-                        MiniGraphLine(
-                            data: recentData.map(\.uploadSpeed),
-                            maxValue: maxSpeed
-                        )
-                        .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
-                    } else {
-                        Text(pluginLocalization.string("Collecting..."))
-                            .font(.appMicro)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-            }
-            .frame(height: 40)
-            .padding(.horizontal, 12)
-        }
-        .padding(.vertical, 8)
-        .background(Color.secondary.opacity(0.06))
     }
 }
 

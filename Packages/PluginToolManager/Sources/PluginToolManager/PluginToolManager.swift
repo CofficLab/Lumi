@@ -8,6 +8,9 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
 import ProviderAgentLoop
+import ProviderLifecycleHooks
+import ProviderMessage
+import ProviderMessageRendering
 import LumiLoggingKit
 import SwiftUI
 
@@ -34,6 +37,15 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
     private var service: ToolManager?
     private var agentLoopToolCallsObserver: ToolCallsObserver?
 
+    /// 后台任务登记表：跨回合存活的进程由它管理，不走 ToolJob 事件通道。
+    private var backgroundTaskRegistry: BackgroundTaskRegistry?
+
+    /// 后台任务完成通知的投递协调器。
+    private var backgroundTaskNotificationCoordinator: BackgroundTaskNotificationCoordinator?
+
+    /// 登记表完成事件的观察者 ID（注销用）。
+    private var backgroundTaskObserverID: UUID?
+
     /// 设置页入口 id（onShutdown 时撤回）。
     private let settingsEntryID = "com.coffic.lumi.plugin.tool-manager.tools"
 
@@ -58,6 +70,14 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
                 let jobStoreURL = jobStore.directory.appendingPathComponent("tool_jobs.sqlite")
                 Self.logger.info("\(Self.t)created job store at \(jobStoreURL.path)")
             }
+
+            // 后台任务的输出文件与状态都落在插件自己的数据目录里。
+            let registry = BackgroundTaskRegistry(rootDirectory: databaseRootURL)
+            service.backgroundTaskRegistry = registry
+            self.backgroundTaskRegistry = registry
+            if Self.verbose {
+                Self.logger.info("\(Self.t)created background task registry at \(databaseRootURL.path)")
+            }
         }
 
         // 2. 注册内置工具。
@@ -69,6 +89,23 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         // 3. 替换默认 ToolManagerProviding 实现。
         kernel.unregisterProvider((any ToolManagerProviding).self)
         try kernel.registerProvider((any ToolManagerProviding).self, service)
+
+        // 3.5 注册后台任务卡片渲染器。order 由插件 order 派生，确保通知消息
+        // 不被通用渲染器接管。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(
+                BackgroundTaskCardRenderer.item(
+                    order: order + 300,
+                    registryProvider: { [weak self] in
+                        self?.backgroundTaskRegistry
+                    }
+                )
+            )
+        } else {
+            Self.logger.warning(
+                "\(Self.t)MessageRenderingProviding not resolved, background task card renderer skipped"
+            )
+        }
 
         // 4. 设置界面注入「Tools」入口。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
@@ -106,6 +143,23 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.removeEntries(ids: [settingsEntryID])
         }
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: BackgroundTaskNotification.rendererID)
+        // 应用退出时终止仍在运行的后台任务，避免留下孤儿进程。
+        if let registry = backgroundTaskRegistry {
+            Task { [weak self] in
+                if let observerID = await self?.backgroundTaskObserverID {
+                    await registry.removeObserver(observerID)
+                }
+                let stopped = await registry.stopAll()
+                if stopped > 0 {
+                    Self.logger.info("\(Self.t)stopped \(stopped) background task(s) on shutdown")
+                }
+                self?.backgroundTaskRegistry = nil
+                self?.backgroundTaskNotificationCoordinator = nil
+            }
+        }
+        backgroundTaskNotificationCoordinator = nil
         service = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider。
     }
@@ -114,6 +168,7 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
               let conversationManager = kernel.resolveProvider((any ConversationManaging).self),
+              let messages = kernel.resolveProvider((any MessageManaging).self),
               let service else {
             Self.logger.error("\(Self.emoji)无法建立 AgentLoop → ToolManager 事件订阅")
             return
@@ -125,5 +180,39 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
             conversations: conversationManager,
             service: service
         )
+
+        // 后台任务完成通知：登记表产生完成事件 → 协调器投递通知 → 模型被唤醒。
+        if let registry = backgroundTaskRegistry {
+            let coordinator = BackgroundTaskNotificationCoordinator(
+                agentLoop: agentLoop,
+                messages: messages,
+                registry: registry
+            )
+            backgroundTaskNotificationCoordinator = coordinator
+
+            // 登记表的完成事件 → 协调器。观察者注册是 actor 隔离的，
+            // 因此放到 Task 里完成；协调器是强引用，不会随 Task 结束丢失。
+            Task { @MainActor [weak self] in
+                let observerID = await registry.addObserver { event in
+                    guard case .finished(let record) = event else { return }
+                    Task { @MainActor in
+                        coordinator.handle(record)
+                    }
+                }
+                self?.backgroundTaskObserverID = observerID
+            }
+
+            // 回合结束 → 排空排队中的通知（忙路径）。
+            if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+                hooks.addTurnFinishedHook { context in
+                    guard context.endReason == .completed else { return }
+                    coordinator.handleTurnFinished(conversationID: context.conversationID)
+                }
+            } else {
+                Self.logger.warning(
+                    "\(Self.t)LifecycleHooksProviding not resolved, busy-path background notifications will not drain"
+                )
+            }
+        }
     }
 }

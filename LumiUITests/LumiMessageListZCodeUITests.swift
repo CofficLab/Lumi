@@ -21,7 +21,6 @@ import AppKit
 /// ## 截图
 ///
 /// 截图只做**人工对照**，不做字节相等断言。
-/// 评审产物落在 `docs/plans/artifacts/zcode-message-list-v4/`。
 final class LumiMessageListZCodeUITests: LumiUITestCase {
     /// 遮罩的稳定标识符，与 `MessageLoadingView.identifier` 一致。
     private let maskIdentifier = "lumi.message-list.loading-mask"

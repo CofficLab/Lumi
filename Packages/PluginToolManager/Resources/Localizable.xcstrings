@@ -1,6 +1,105 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Background Task": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Background Task" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "后台任务" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "背景任務" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "背景任務" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "背景任務" } }
+      }
+    },
+    "Task ID": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Task ID" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "任务 ID" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "任務 ID" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "任務 ID" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "任務 ID" } }
+      }
+    },
+    "Output File": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Output File" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "输出文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "輸出檔案" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "輸出檔案" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "輸出檔案" } }
+      }
+    },
+    "Exit Code": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Exit Code" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "退出码" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "結束碼" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "結束碼" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "結束碼" } }
+      }
+    },
+    "Command": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Command" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "命令" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "命令" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "命令" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "命令" } }
+      }
+    },
+    "Last Output": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Last Output" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "末尾输出" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "末尾輸出" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "末尾輸出" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "末尾輸出" } }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stop" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "停止" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "停止" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "停止" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "停止" } }
+      }
+    },
+    "Running in background": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Running in background" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在后台运行" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在背景執行" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "正在背景執行" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "正在背景執行" } }
+      }
+    },
+    "Completed successfully": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Completed successfully" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已成功完成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已成功完成" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "已成功完成" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "已成功完成" } }
+      }
+    },
+    "Stopped": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stopped" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已停止" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已停止" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "已停止" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "已停止" } }
+      }
+    },
+    "Interrupted": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Interrupted" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已中断" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已中斷" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "已中斷" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "已中斷" } }
+      }
+    },
     "Arguments": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Arguments" } },

@@ -49,6 +49,11 @@ final class DeviceMetricsObserver {
                 self?.viewModels.cpu.apply(topProcesses: processes)
             }
             .store(in: &cancellables)
+        ProcessService.shared.$topMemoryProcesses
+            .sink { [weak self] processes in
+                self?.viewModels.memory.apply(topProcesses: processes)
+            }
+            .store(in: &cancellables)
 
         MemoryService.shared.$memoryUsagePercentage
             .combineLatest(MemoryService.shared.$usedMemory, MemoryService.shared.$totalMemory)
