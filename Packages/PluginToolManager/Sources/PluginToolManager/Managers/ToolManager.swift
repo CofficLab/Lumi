@@ -155,6 +155,9 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
                 workspaceRootProvider: workspaceRootProvider,
                 backgroundTaskRegistryProvider: { [weak self] in
                     self?.backgroundTaskRegistry
+                },
+                currentConversationIDProvider: { [weak self] in
+                    self?.conversationManager?.selectedConversationID
                 }
             ),
             pluginID: Self.toolManagerPluginID

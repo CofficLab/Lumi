@@ -51,15 +51,23 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     private let commandTimeout: TimeInterval
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
     private let backgroundTaskRegistryProvider: @MainActor @Sendable () -> BackgroundTaskRegistry?
+    /// 当前选中的会话 ID。
+    ///
+    /// 无上下文的 `execute(arguments:)` 路径没有会话信息，但后台任务的完成
+    /// 通知必须送回**发起它的会话**。这里退回到当前选中的会话：猜错的后果是
+    /// 通知投递到一个用户正在看的会话，而不是通知消失。
+    private let currentConversationIDProvider: @MainActor @Sendable () -> UUID?
 
     public init(
         commandTimeout: TimeInterval = 120,
         workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil },
-        backgroundTaskRegistryProvider: @escaping @MainActor @Sendable () -> BackgroundTaskRegistry? = { nil }
+        backgroundTaskRegistryProvider: @escaping @MainActor @Sendable () -> BackgroundTaskRegistry? = { nil },
+        currentConversationIDProvider: @escaping @MainActor @Sendable () -> UUID? = { nil }
     ) {
         self.commandTimeout = commandTimeout
         self.workspaceRootProvider = workspaceRootProvider
         self.backgroundTaskRegistryProvider = backgroundTaskRegistryProvider
+        self.currentConversationIDProvider = currentConversationIDProvider
     }
 
     public func description(for language: LanguagePreference) -> String {
@@ -317,6 +325,9 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
 
         let registry = await backgroundTaskRegistryProvider()
         let taskID = await registry?.allocateTaskID() ?? UUID().uuidString
+        // 上下文里的会话 ID 才是权威来源；无上下文时退回当前选中的会话。
+        let fallbackConversationID = await currentConversationIDProvider()
+        let conversationID = context?.conversationID ?? fallbackConversationID ?? UUID()
 
         let options = ShellOptions(
             workingDirectory: workspaceRoot?.isEmpty == false
@@ -334,7 +345,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
             launch: launch,
             allowsBackgroundHandoff: allowsBackgroundHandoff,
             taskID: taskID,
-            conversationID: context?.conversationID ?? UUID(),
+            conversationID: conversationID,
             command: command,
             sink: BackgroundTaskOutputSink(),
             registry: registry
