@@ -1139,7 +1139,7 @@ unit-test-rules.md / automation-system-rules.md
 
 ### 8.2 让 AI 读规则，而不是读提示词
 
-`.lumi/rules/` 里的每一份文档都被 AI 编程助手（Claude Code / Cursor / 其他）自动加载。`.cursor/rules/*.mdc` 是同一批规则的另一份投影，`.lumi/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
+`.lumi/rules/` 里的每一份文档都被 AI 编程助手自动加载，`.lumi/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
 
 这套机制解决了一个具体问题：**在 146 个插件里，人无法同时记住所有边界规则。**
 
@@ -1215,7 +1215,7 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
 
 前面讲的都是目标状态。真实的挑战是：**应用在跑，用户在用，怎么换。**
 
-仓库里有一份 `lumi-v2-zero-difference-migration-plan.md`，把验收标准写到了近乎苛刻的程度：
+仓库里曾有一份 `lumi-v2-zero-difference-migration-plan.md`，把验收标准写到了近乎苛刻的程度（该计划已完成归档，文档已随迁移结束移除）：
 
 ### 9.1 「零差异」不等于「功能大致相同」
 
@@ -1423,11 +1423,11 @@ Phase 1 必须在 Phase 3 之前完成，原因写得很直白：
 ## 相关文档
 
 - [`docs/editor-architecture.md`](./editor-architecture.md) — 编辑器子系统的分层与扩展点（本文第 3 节 `Editor*` 分层的展开）
-- [`docs/lumi-v2-zero-difference-migration-plan.md`](./lumi-v2-zero-difference-migration-plan.md) — 零差异迁移总计划（本文第 9 节的依据）
+- 零差异迁移总计划（本文第 9 节的依据；`docs/lumi-v2-zero-difference-migration-plan.md`，已完成归档并移除）
 - [`docs/agent-tool-job-operations.md`](./agent-tool-job-operations.md) — Tool Job 运行模型、取消/超时语义、重启恢复
-- [`docs/plans/2026-09-03-plugin-observer-only.md`](./plans/2026-09-03-plugin-observer-only.md) — Observer 所有权迁移
+- Observer 所有权迁移（`docs/plans/2026-09-03-plugin-observer-only.md`，已完成归档）
 - [`docs/plans/2026-09-06-plugin-capabilities-directory.md`](./plans/2026-09-06-plugin-capabilities-directory.md) — Capabilities 收窄设计与迁移
-- [`docs/plans/2026-09-02-robust-context-compaction-design.md`](./plans/2026-09-02-robust-context-compaction-design.md) — 上下文压缩的预算 / 阈值 / 降级设计
+- 上下文压缩的预算 / 阈值 / 降级设计（`docs/plans/2026-09-02-robust-context-compaction-design.md`，已完成归档）
 - [`.lumi/rules/core-plugin-boundary-rules.md`](../.lumi/rules/core-plugin-boundary-rules.md) — 内核与插件边界规范
 
 ---

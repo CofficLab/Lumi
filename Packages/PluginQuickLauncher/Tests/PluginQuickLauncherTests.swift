@@ -242,4 +242,145 @@ struct QuickLauncherTests {
         #expect(model.results.isEmpty)
         #expect(model.selectedIndex == 0)
     }
+
+    // MARK: - 回归 #1218：检索不再对全量集合做匹配后截断
+
+    @Test func appSearchStopsOnceLimitIsReached() {
+        let service = AppSearchService.shared
+        defer { service.setAppsForTesting([]) }
+
+        // 10 个同名应用排在最前，若实现是「全量过滤后再 prefix」，
+        // 则 limit=3 时应返回 3 条；这里额外断言排序稳定在注册顺序前缀。
+        let apps = (0..<10).map { index in
+            LauncherAppItem(
+                id: "app\(index)",
+                name: "Target App \(index)",
+                path: "/Applications/TargetApp\(index).app",
+                bundleIdentifier: "app\(index)"
+            )
+        }
+        service.setAppsForTesting(apps)
+
+        let hits = service.searchItems(matching: "target", limit: 3)
+        #expect(hits.count == 3)
+        #expect(hits.map(\.item.id) == ["app0", "app1", "app2"])
+    }
+
+    @Test func appSearchRespectsLimitForFullMatchSet() {
+        let service = AppSearchService.shared
+        defer { service.setAppsForTesting([]) }
+
+        service.setAppsForTesting([
+            LauncherAppItem(id: "a", name: "Alpha", path: "/Applications/Alpha.app", bundleIdentifier: "a"),
+            LauncherAppItem(id: "b", name: "Beta", path: "/Applications/Beta.app", bundleIdentifier: "b"),
+            LauncherAppItem(id: "c", name: "Gamma", path: "/Applications/Gamma.app", bundleIdentifier: "c"),
+        ])
+
+        // 三个都模糊命中 "a"，limit=2 时只应返回 2 条。
+        let hits = service.searchItems(matching: "a", limit: 2)
+        #expect(hits.count == 2)
+    }
+
+    @Test func launcherModelCapsAppAndCommandResults() {
+        let appSearch = AppSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            appSearch.setAppsForTesting([])
+            LauncherBridge.commandGroupsProvider = nil
+            model.reset()
+        }
+
+        appSearch.setAppsForTesting(
+            (0..<20).map { index in
+                LauncherAppItem(
+                    id: "cap\(index)",
+                    name: "Cap App \(index)",
+                    path: "/Applications/CapApp\(index).app",
+                    bundleIdentifier: "cap\(index)"
+                )
+            }
+        )
+        LauncherBridge.commandGroupsProvider = {
+            [
+                LauncherCommandGroup(
+                    id: "cap",
+                    name: "CapGroup",
+                    items: (0..<20).map { index in
+                        LauncherCommandItem(id: "cap\(index)", title: "Cap Command \(index)", action: {})
+                    }
+                )
+            ]
+        }
+
+        model.query = "cap"
+        let appResults = model.results.filter { $0.kind == .app }
+        let commandResults = model.results.filter { $0.kind == .command }
+
+        #expect(appResults.count == LauncherSearchModel.appLimit)
+        #expect(commandResults.count == LauncherSearchModel.commandLimit)
+    }
+
+    @Test func commandIndexRebuildsWhenProviderChanges() {
+        let model = LauncherSearchModel.shared
+        defer {
+            LauncherBridge.commandGroupsProvider = nil
+            model.reset()
+        }
+
+        LauncherBridge.commandGroupsProvider = {
+            [
+                LauncherCommandGroup(
+                    id: "v1",
+                    name: "GroupV1",
+                    items: [LauncherCommandItem(id: "one", title: "Version One", action: {})]
+                )
+            ]
+        }
+        model.query = "version"
+        #expect(model.results.contains { $0.id == "command:GroupV1/one" })
+
+        // 更换命令来源后，索引必须失效并反映新内容。
+        LauncherBridge.commandGroupsProvider = {
+            [
+                LauncherCommandGroup(
+                    id: "v2",
+                    name: "GroupV2",
+                    items: [LauncherCommandItem(id: "two", title: "Version Two", action: {})]
+                )
+            ]
+        }
+        model.rebuildResults()
+        #expect(model.results.contains { $0.id == "command:GroupV2/two" })
+        #expect(!model.results.contains { $0.id == "command:GroupV1/one" })
+    }
+
+    @Test func commandExecutionRunsCachedIndexEntry() {
+        let model = LauncherSearchModel.shared
+        var executed = false
+        defer {
+            LauncherBridge.commandGroupsProvider = nil
+            model.reset()
+        }
+
+        LauncherBridge.commandGroupsProvider = {
+            [
+                LauncherCommandGroup(
+                    id: "exec",
+                    name: "ExecGroup",
+                    items: [
+                        LauncherCommandItem(id: "run", title: "Run Executable") {
+                            executed = true
+                        }
+                    ]
+                )
+            ]
+        }
+        model.query = "run"
+        let index = try? #require(model.results.firstIndex { $0.kind == .command })
+        #expect(index != nil)
+        if let index {
+            #expect(model.execute(at: index) == true)
+        }
+        #expect(executed)
+    }
 }

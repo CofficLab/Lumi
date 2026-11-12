@@ -542,7 +542,12 @@ struct FactoryLumiTests {
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.isEmpty == true)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 3)
 
-        try kernel.start(plugins: DefaultPluginFactory().makePlugins())
+        // 重启必须用与首次启动**同一份**插件目录：RootViewPlugin 在其中注册
+        // RootViewProviding，缺了它 ProjectFilesPlugin 的 onBoot 会抛错。
+        try kernel.start(plugins: KernelFactory.makePlugins(
+            providerFactory: DefaultProviderFactory(),
+            pluginFactory: DefaultPluginFactory()
+        ))
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
         // 设计类插件（图标/促销图/思维导图/简历/原型）均为 disabledByDefault，

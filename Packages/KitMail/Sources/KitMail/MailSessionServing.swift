@@ -2,7 +2,7 @@ import Foundation
 
 /// 邮件会话薄抽象：KitMail 对协议栈的唯一依赖面。
 ///
-/// 设计约束（见 docs/plans/2026-10-01-mail-client-plugin.md 第 5 节）：
+/// 设计约束（见 Mail 客户端方案第 5 节，docs/plans/2026-10-01-mail-client-plugin.md，已完成归档）：
 /// - 上层（PluginMail）只依赖本协议，不触碰任何第三方类型；
 /// - 实现可替换：`MailCoreAdapter`（A）／ swift-nio-imap + 自建 SMTP（B）／
 ///   自实现最小协议子集（C），切换不影响上层；

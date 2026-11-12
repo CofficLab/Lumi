@@ -25,7 +25,7 @@ Lumi 已经具备完整的 Project RAG 基础设施：项目索引、SQLite 存�
 
 - [`PluginFactory.swift`](../Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift)
 - [`ProjectRAGPlugin.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/ProjectRAGPlugin.swift)
-- [`ProjectRAGProvider.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/ProjectRAGProvider.swift)
+- [`ProjectRAGProvider.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/Providers/ProjectRAGProvider.swift)
 - [`RAGCodeSearchTool.swift`](../Packages/PluginProjectRAG/Sources/PluginProjectRAG/Tools/RAGCodeSearchTool.swift)
 
 ### 2.2 RAG 的检索能力

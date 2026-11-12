@@ -62,6 +62,12 @@ struct ListView: View {
                             },
                             onDelete: {
                                 viewModel.deleteConversation(id: conversation.id)
+                            },
+                            canStop: {
+                                viewModel.canStopConversation(id: conversation.id)
+                            },
+                            onStop: {
+                                viewModel.stopConversation(id: conversation.id)
                             }
                         )
                     }

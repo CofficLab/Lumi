@@ -68,7 +68,7 @@ Provider 的语义重新设计，只收窄插件实际使用的成员。
 Lumi 已完成 / 正在进行两项相关基建：
 
 - **Observer 化**（`docs/plans/2026-09-03-plugin-observer-only.md`、
-  `docs/plans/2026-09-03-provider-observer-only-migration.md`）：
+  `docs/plans/2026-09-03-provider-observer-only-migration.md`，均已完成归档）：
   Provider 状态变化通过类型化 `addObserver` + `ObserverHandle` 发布，
   插件入口持有 Observer，Observer 更新插件 ViewModel。
 - **Provider 协议边界**：Lumi 插件通过 `kernel.resolveProvider((any XProviding).self)`
