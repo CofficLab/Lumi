@@ -50,13 +50,19 @@ struct ProjectRAGSuperPluginTests {
     func usesConversationProject() async throws {
         let conversationPath = missingPath("conversation")
 
-        let result = try await RAGCodeSearchTool().executeResult(
-            context: makeContext(projectPath: conversationPath),
-            arguments: ["query": ToolArgument("handleRequest")]
-        )
-
-        #expect(result.content.contains("Project path does not exist"))
-        #expect(result.content.contains(conversationPath))
+        do {
+            _ = try await RAGCodeSearchTool().executeResult(
+                context: makeContext(projectPath: conversationPath),
+                arguments: ["query": ToolArgument("handleRequest")]
+            )
+            Issue.record("expected ToolExecutionError for nonexistent project path")
+        } catch let error as ToolExecutionError {
+            guard case let .executionFailed(_, reason) = error else {
+                Issue.record("unexpected ToolExecutionError case: \(error)")
+                return
+            }
+            #expect(reason.contains(conversationPath))
+        }
     }
 
     @Test("search_code 显式 project_path 优先于会话绑定项目")
@@ -64,16 +70,23 @@ struct ProjectRAGSuperPluginTests {
         let conversationPath = missingPath("conversation")
         let explicitPath = missingPath("explicit")
 
-        let result = try await RAGCodeSearchTool().executeResult(
-            context: makeContext(projectPath: conversationPath),
-            arguments: [
-                "query": ToolArgument("handleRequest"),
-                "project_path": ToolArgument(explicitPath),
-            ]
-        )
-
-        #expect(result.content.contains(explicitPath))
-        #expect(!result.content.contains(conversationPath))
+        do {
+            _ = try await RAGCodeSearchTool().executeResult(
+                context: makeContext(projectPath: conversationPath),
+                arguments: [
+                    "query": ToolArgument("handleRequest"),
+                    "project_path": ToolArgument(explicitPath),
+                ]
+            )
+            Issue.record("expected ToolExecutionError for nonexistent project path")
+        } catch let error as ToolExecutionError {
+            guard case let .executionFailed(_, reason) = error else {
+                Issue.record("unexpected ToolExecutionError case: \(error)")
+                return
+            }
+            #expect(reason.contains(explicitPath))
+            #expect(!reason.contains(conversationPath))
+        }
     }
 }
 

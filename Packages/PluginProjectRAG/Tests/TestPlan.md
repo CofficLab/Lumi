@@ -216,16 +216,22 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 150 | RAGInjectionPolicy | 单条词法命中不注入 | 单条 filesystemLexical | 调用 `shouldInject` | false | P1 | ✅ 已覆盖 | `singleLexicalHitDoesNotInject` |
 | 151 | ProjectRAGLLMContextHookGate | 开关关闭时不注入 | UserDefaults autoInjectEnabled=false | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `hookToggleDisabledSkipsInjection` |
 | 152 | ProjectRAGLLMContextHookGate | 低置信结果不注入 | 单条 semantic 0.40 | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `lowConfidenceResultsSkipInjection` |
+| 153 | RAGCodeSearchToolContract | 缺少 query 必须抛工具错误 | arguments 为空 | 调用 `execute` | 抛 `ToolExecutionError`，不返回错误字符串 | P0 | ✅ 已覆盖 | `missingQueryThrows` |
+| 154 | RAGCodeSearchToolContract | 无项目上下文必须抛工具错误 | Runtime 未配置且无 project_path | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingProjectThrows` |
+| 155 | RAGCodeSearchToolContract | 不存在的路径必须抛工具错误 | project_path 指向不存在目录 | 调用 `execute` | 抛 `ToolExecutionError` 且 reason 含该路径 | P0 | ✅ 已覆盖 | `nonexistentPathThrows` |
+| 156 | RAGCodeSearchToolContract | provider 不可用必须抛工具错误 | Runtime 已 reset、路径存在 | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `unavailableProviderThrows` |
+| 157 | RAGCodeSearchToolContract | 越界 top_k 安全钳制不得崩溃 | top_k = -5 / 999 / "abc" | 调用 `execute` 并记录 provider 收到的 topK | 依次钳制为 1 / 20 / 默认 8，无 trap | P0 | ✅ 已覆盖 | `topKClampedToSchemaRange` |
+| 158 | RAGCodeSearchToolContract | 空结果返回引导文案而非错误 | provider 返回空结果 | 调用 `execute` | 含 No code matched 与 grep 建议，不含 Error | P1 | ✅ 已覆盖 | `emptyResultReturnsInformationalString` |
 
-> 说明：全部 **152 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **158 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 117 / 117
+- P0: 已覆盖 27 / 27
+- P1: 已覆盖 118 / 118
 - P2: 已覆盖 13 / 13
-- **合计: 152 / 152**（仅表示清单场景，非源码覆盖率）
+- **合计: 158 / 158**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
