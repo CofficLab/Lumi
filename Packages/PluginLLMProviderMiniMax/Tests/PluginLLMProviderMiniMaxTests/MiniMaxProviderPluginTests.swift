@@ -49,18 +49,18 @@ struct MiniMaxProviderPluginTests {
         let provider = MiniMaxOpenAIProvider()
         let info = provider.providerInfo
 
-        // id 与上游 `GET /v1/models` 逐字一致（2026-10 实测）
+        // id 与上游 `GET /v1/models` 逐字一致（2026-11 实测）。
+        // 官方《模型列表》把 M2 / M2.1 / M2.5 / M2.7 全系列标为「已下线」，
+        // 上游在售的语言模型只剩这两个。
         #expect(info.modelIDs == [
             "MiniMax-M3.1-Flash",
-            "MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
-            "MiniMax-M2.5", "MiniMax-M2.5-highspeed",
-            "MiniMax-M2.1", "MiniMax-M2.1-highspeed", "MiniMax-M2",
+            "MiniMax-M3",
         ])
-        #expect(info.models.count == 9)
+        #expect(info.models.count == 2)
         #expect(info.contains(model: info.defaultModel))
 
         // 三个协议变体共享同一批模型
-        #expect(MiniMaxVendorModels.all.count == 9)
+        #expect(MiniMaxVendorModels.all.count == 2)
         #expect(MiniMaxVendorModels.all.map(\.id) == info.modelIDs)
 
         // 清单里不得残留上游不存在的 id
@@ -73,17 +73,10 @@ struct MiniMaxProviderPluginTests {
         #expect(m3.contextWindowSize == 1_000_000)
         #expect(m3.supportsVision == true)
 
-        // M2 系列 204,800 且不支持图片输入
-        // （官方文档：M2.7 / M2.5 / M2.1 / M2 仅支持文本与工具调用）
-        let m27 = try #require(info.models.first(where: { $0.id == "MiniMax-M2.7" }))
-        #expect(m27.contextWindowSize == 204_800)
-        #expect(m27.supportsVision == false)
-        let m25 = try #require(info.models.first(where: { $0.id == "MiniMax-M2.5" }))
-        #expect(m25.contextWindowSize == 204_800)
-        #expect(m25.supportsVision == false)
-        let m2 = try #require(info.models.first(where: { $0.id == "MiniMax-M2" }))
-        #expect(m2.contextWindowSize == 204_800)
-        #expect(m2.supportsVision == false)
+        // 清单不得残留已下线的 M2 系列
+        for retired in ["MiniMax-M2", "MiniMax-M2.1", "MiniMax-M2.5", "MiniMax-M2.7"] {
+            #expect(!info.modelIDs.contains(retired), "已下线的 \(retired) 不应留在静态清单")
+        }
 
         // 清单元数据必须与家族推断规则一致，避免两处各自漂移
         for model in info.models {
@@ -93,6 +86,18 @@ struct MiniMaxProviderPluginTests {
             #expect(model.supportsVision == family.supportsVision,
                     "\(model.id) 视觉能力与家族规则不一致")
         }
+    }
+
+    @Test("声明的轻量任务模型在售且在模型池中")
+    func utilityModelIsListedAndAvailable() throws {
+        let provider = MiniMaxOpenAIProvider()
+        let info = provider.providerInfo
+
+        // 轻量任务模型必须是自己模型列表里的 id——否则 `utilityModelRoute`
+        // 会因「不在动态模型池中」而静默回退到对话主模型，声明形同虚设。
+        let utility = try #require(info.recommendedUtilityModel)
+        #expect(utility == "MiniMax-M3.1-Flash")
+        #expect(info.contains(model: utility), "轻量任务模型必须在模型列表中")
     }
 
     @Test("MiniMax 指向 minimaxi.com 端点")

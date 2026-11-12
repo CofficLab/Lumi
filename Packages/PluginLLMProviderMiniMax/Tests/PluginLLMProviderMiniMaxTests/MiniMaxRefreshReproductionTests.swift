@@ -10,7 +10,7 @@ import Testing
 /// 刷新链路：refreshModels → 磁盘落盘 → notifyModelsRefreshed → manager 模型池。
 /// UI（box/viewModel）读取的正是 manager 模型池。
 ///
-/// - Note: 桩响应对齐 2026-10 实测的真实 `/v1/models` 返回（9 个模型），
+/// - Note: 桩响应对齐 2026-11 实测的真实 `/v1/models` 返回（2 个模型），
 ///   与静态清单 id 完全重合。历史上两者是错开的（清单 6 个 vs 上游 9 个），
 ///   因为清单里存在一个上游没有的 `MiniMax-M3.1-Flash-Preview`。
 @MainActor
@@ -34,18 +34,11 @@ struct MiniMaxRefreshReproductionTests {
         VendorAPIKeyTools.set("test-key", storageKey: provider.providerInfo.apiKeyStorageKey)
     }
 
-    /// 模拟国内站 `/v1/models` 返回，逐字对齐 2026-10 实测结果。
+    /// 模拟国内站 `/v1/models` 返回，逐字对齐 2026-11 实测结果。
     private static let remotePayload = """
     {"object":"list","data":[
       {"id":"MiniMax-M3.1-Flash","object":"model","created":1789556118,"owned_by":"minimax"},
-      {"id":"MiniMax-M3","object":"model","created":1780272000,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.7","object":"model","created":1773799200,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.7-highspeed","object":"model","created":1773799200,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.5","object":"model","created":1770948000,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.5-highspeed","object":"model","created":1770948000,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.1","object":"model","created":1766455200,"owned_by":"minimax"},
-      {"id":"MiniMax-M2.1-highspeed","object":"model","created":1766455200,"owned_by":"minimax"},
-      {"id":"MiniMax-M2","object":"model","created":1761530400,"owned_by":"minimax"}
+      {"id":"MiniMax-M3","object":"model","created":1780272000,"owned_by":"minimax"}
     ]}
     """
 
@@ -74,12 +67,12 @@ struct MiniMaxRefreshReproductionTests {
         ) async throws {}
     }
 
-    /// 上游返回的 9 个模型与静态清单完全重合，刷新前后模型池都应为 9 个。
+    /// 上游返回的 2 个模型与静态清单完全重合，刷新前后模型池都应为 2 个。
     ///
     /// 回归：历史清单里有一个上游不存在的 `MiniMax-M3.1-Flash-Preview`，
     /// 刷新后会同时出现 `-Preview`（调不通）与 `MiniMax-M3.1-Flash`（可用）
-    /// 两个条目。修正 id 后两者合一，池大小稳定为 9。
-    @Test("刷新后模型池保持 9 个，不因 id 错位产生重复条目（manager 即 UI 读取路径）")
+    /// 两个条目。修正 id 后两者合一，池大小稳定。
+    @Test("刷新后模型池保持 2 个，不因 id 错位产生重复条目（manager 即 UI 读取路径）")
     func refreshKeepsModelPoolAlignedWithRemote() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("minimax-repro-\(UUID().uuidString)", isDirectory: true)
@@ -96,24 +89,24 @@ struct MiniMaxRefreshReproductionTests {
         try manager.register(provider)
 
         // ── 刷新前：UI 显示静态清单 ──
-        #expect(MiniMaxVendorModels.all.count == 9)
-        #expect(provider.availableModels.count == 9, "刷新前应显示静态清单 9 个")
-        #expect(manager.models(for: provider.providerID).count == 9, "刷新前 manager 模型池应为 9 个")
+        #expect(MiniMaxVendorModels.all.count == 2)
+        #expect(provider.availableModels.count == 2, "刷新前应显示静态清单 2 个")
+        #expect(manager.models(for: provider.providerID).count == 2, "刷新前 manager 模型池应为 2 个")
 
         // ── 点击刷新（等价 ModelSelectorViewModel.refreshModels 的调用序列）──
         try await provider.refreshModels()
         manager.notifyModelsRefreshed(providerID: provider.providerID)
 
-        // 磁盘 models.json 已写入 9 个
+        // 磁盘 models.json 已写入 2 个
         let fileURL = directory.appendingPathComponent("models.json")
         #expect(FileManager.default.fileExists(atPath: fileURL.path), "刷新后磁盘应出现 models.json")
         let diskObject = try JSONSerialization.jsonObject(with: Data(contentsOf: fileURL)) as? [String: Any]
         let diskModels = (diskObject?["models"] as? [[String: Any]]) ?? []
-        #expect(diskModels.count == 9, "磁盘 models.json 应包含 9 个模型")
+        #expect(diskModels.count == 2, "磁盘 models.json 应包含 2 个模型")
 
         // ── 刷新后：上游 id 与清单一一对应，不新增也不重复 ──
-        #expect(provider.availableModels.count == 9, "刷新后模型池应仍为 9 个")
-        #expect(manager.models(for: provider.providerID).count == 9, "刷新后 manager 模型池应仍为 9 个")
+        #expect(provider.availableModels.count == 2, "刷新后模型池应仍为 2 个")
+        #expect(manager.models(for: provider.providerID).count == 2, "刷新后 manager 模型池应仍为 2 个")
 
         let ids = provider.availableModels.map(\.id)
         #expect(Set(ids).count == ids.count, "模型池不应出现重复 id")
