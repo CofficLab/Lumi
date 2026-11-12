@@ -260,17 +260,21 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 194 | RAGCodeSearchToolOutput | 单片段 3000 字符截断 | 5000 字符片段 | 调用 `execute` | 不含 3001 连续字符且含 snippet clipped | P0 | ✅ 已覆盖 | `searchCodeSnippetClippedAt3000` |
 | 195 | RAGCodeSearchToolOutput | 头部展示证据构成 | semantic/lexical/path 各 1 | 调用 `execute` | 含 semantic: 1, live-lexical: 1, path: 1 | P1 | ✅ 已覆盖 | `searchCodeHeaderShowsEvidenceMix` |
 | 196 | RAGFTS5AvailabilityProbe | 探测内置 SQLite 的 FTS5 可用性 | 内存数据库 | CREATE VIRTUAL TABLE fts5 + PRAGMA compile_options | 建表结果与 ENABLE_FTS5 编译项一致 | P2 | ✅ 已覆盖 | `probeFTS5Availability` |
+| 197 | RAGBM25 | 稀有词命中排在高频词之上 | 3 候选文档 cache 高频 quokka 稀有 | 调用 `RAGBM25.scores` | 含稀有词文档得分最高 | P1 | ✅ 已覆盖 | `bm25RanksRareTermHigher` |
+| 198 | RAGBM25 | 同词频下短文档得分更高 | needle 各出现一次的长短文档 | 调用 `RAGBM25.scores` | 短文档得分高于长文档 | P1 | ✅ 已覆盖 | `bm25PrefersShorterDocumentAtEqualFrequency` |
+| 199 | RAGBM25 | 中文查询逐字分词后仍有得分 | 查询「登录」中英候选各一 | 调用 `RAGBM25.scores` | 中文文档 > 0 无关文档 = 0 | P1 | ✅ 已覆盖 | `cjkQueryReturnsResults` |
+| 200 | RAGRetrieverBM25Fusion | ANN 与 BM25 候选必须经 RRF 融合排序 | ANN X/Y + 词法 Z/X | 调用 `retrieve` | 共识 X 第一且 Z 为 indexedLexical | P0 | ✅ 已覆盖 | `rrfFusesAnnAndLexical` |
 
-> 说明：全部 **196 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **200 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 42 / 42
-- P1: 已覆盖 140 / 140
+- P0: 已覆盖 43 / 43
+- P1: 已覆盖 143 / 143
 - P2: 已覆盖 14 / 14
-- **合计: 196 / 196**（仅表示清单场景，非源码覆盖率）
+- **合计: 200 / 200**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
