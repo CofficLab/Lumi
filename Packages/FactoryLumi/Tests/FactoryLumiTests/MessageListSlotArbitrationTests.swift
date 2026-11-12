@@ -371,7 +371,7 @@ private final class MessageListFixtureHarness {
                 to: conversationID
             )
         }
-        try await Self.settle()
+        try await Self.settle(chat: chat)
         // 再等一次落盘队列排空。
         for _ in 0..<200 {
             let count = await messages.messagePageAsync(
@@ -384,7 +384,7 @@ private final class MessageListFixtureHarness {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         // 空态插件的撤销注册是异步评估的，给它跑完的时间。
-        try await Self.settle()
+        try await Self.settle(chat: chat)
 
         return MessageListFixtureHarness(
             chat: chat,
@@ -405,17 +405,47 @@ private final class MessageListFixtureHarness {
         )
     }
 
+    /// 等待槽位判定收敛。
+    ///
+    /// - Important: 这里**必须**用条件等待，不能用固定 sleep。
+    ///
+    ///   固定 sleep（100 × 5ms = 500ms）有两个问题：
+    ///   1. **慢**：本文件有 8 处 `settle()`，每处 500ms 累加起来就是
+    ///      数秒的纯等待；
+    ///   2. **仍不可靠**：判定何时跑完取决于 SwiftData 查询与
+    ///      `Task.detached` 的调度，固定 500ms 只是「大概够了」——
+    ///      高负载下不够就会让断言落在「还没收敛」的状态上。
+    ///
+    ///   条件等待同时解决两者：条件成立就立刻返回，判定慢也不会误判。
     func settle() async throws {
-        for _ in 0..<100 {
-            try await Task.sleep(nanoseconds: 5_000_000)
+        try await Self.settle(chat: chat)
+    }
+
+    /// 等待槽位判定收敛（条件式）。
+    ///
+    /// 判据：连续两轮读到的 active item id 集合相同 —— 判定收敛后
+    /// 集合不再变化。空态插件的评估走 `Task.detached` + SwiftData 查询，
+    /// `Task.yield()` 不会推进真实时间，因此轮询间隔用挂钟时间。
+    private static func settle(chat: DefaultChatSectionProviding) async throws {
+        var previous: Set<String>?
+        for _ in 0..<400 {
+            let current = activeItemIDs(chat: chat)
+            if let previous, current == previous {
+                return
+            }
+            previous = current
+            try await Task.sleep(nanoseconds: 10_000_000)
         }
     }
 
-    private static func settle() async throws {
-        // 空态插件的评估走 Task.detached + SwiftData 查询，`Task.yield()`
-        // 不会推进真实时间，必须给实际挂钟时间让它跑完。
-        for _ in 0..<100 {
-            try await Task.sleep(nanoseconds: 5_000_000)
-        }
+    /// 读取当前 active 的 message-list item id 集合。
+    private static func activeItemIDs(chat: DefaultChatSectionProviding) -> Set<String> {
+        Set(
+            chat.items.compactMap { item in
+                item.exclusiveGroup == "message-list" && item.placement == .stack && item.isActive()
+                    ? item.id
+                    : nil
+            }
+        )
     }
 }
