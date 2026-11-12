@@ -157,7 +157,22 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     /// 每会话的全部块（含停用块，供血缘回溯）；渲染时由引擎筛 active 并排序。
     private var blocks: [UUID: [CompressionBlock]] = [:]
     private var compactionMeta: [UUID: CompactionMeta] = [:]
-    private var loadedBlockIDs: Set<UUID> = []
+    /// 每会话的块加载状态。
+    ///
+    /// - Important: 不能只用「已加载」布尔标记 —— `loadBlocksIfNeeded`
+    ///   在 await 之前同步置位，而 await 处会让出主 actor，于是**并发**
+    ///   调用者会拿到「已加载」标记却读到**空块**（主流程与后台压缩任务
+    ///   正好构成这样的竞争）。改为三态后，并发调用者会等待同一个
+    ///   加载任务完成，读到一致的结果。
+    private enum BlockLoadState {
+        /// 尚未开始加载。
+        case notLoaded
+        /// 正在加载：持有任务，重复调用者 await 它。
+        case loading(Task<Void, Never>)
+        /// 已加载完毕。
+        case loaded
+    }
+    private var blockLoadStates: [UUID: BlockLoadState] = [:]
     private var summaryTasks: [UUID: Task<SummaryRefreshOutcome, Never>] = [:]
     private var lastPreparationRequests: [UUID: LLMContextPreparationRequest] = [:]
     private var calibrationFactors: [String: Double] = [:]
@@ -213,7 +228,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeValue(forKey: conversationID)
         blocks.removeValue(forKey: conversationID)
         compactionMeta.removeValue(forKey: conversationID)
-        loadedBlockIDs.remove(conversationID)
+        blockLoadStates.removeValue(forKey: conversationID)
         lastPreparationRequests.removeValue(forKey: conversationID)
         forcedCompactionIDs.remove(conversationID)
         try? await blockStore?.remove(conversationID: conversationID)
@@ -437,7 +452,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeAll()
         blocks.removeAll()
         compactionMeta.removeAll()
-        loadedBlockIDs.removeAll()
+        blockLoadStates.removeAll()
         lastPreparationRequests.removeAll()
         forcedCompactionIDs.removeAll()
     }
@@ -1167,13 +1182,36 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     /// 首次访问某会话时加载磁盘块；块存储为空时把旧单摘要迁移成 tier-1 块。
     ///
-    /// `loadedBlockIDs` 在 await 之前同步置位，避免并发重复加载。迁移是 best-effort：
+    /// 加载状态为「加载中」时，重复调用者等待同一个任务完成（而不是并发
+    /// 重复加载）。迁移是 best-effort：
     /// 旧记录没有逐条血缘，`sourceMessageIDs` 留空（decompress 无法还原原始消息），
     /// 但覆盖水位已知，渲染与增量折叠不受影响。迁移后删除旧记录，避免重复升级。
     private func loadBlocksIfNeeded(for conversationID: UUID) async {
-        guard !loadedBlockIDs.contains(conversationID) else { return }
-        loadedBlockIDs.insert(conversationID)
+        // 已在加载：等待同一个任务完成，避免并发调用者读到半成品。
+        if case .loading(let task) = blockLoadStates[conversationID] {
+            await task.value
+            return
+        }
+        if case .loaded = blockLoadStates[conversationID] {
+            return
+        }
 
+        // 把加载工作交给一个 Task 并立刻登记：这样在 Task 真正开始执行前，
+        // 后续调用者看到的是「加载中」并等待它，而不是各自发起一次加载。
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performBlockLoad(for: conversationID)
+        }
+        blockLoadStates[conversationID] = .loading(task)
+        await task.value
+        blockLoadStates[conversationID] = .loaded
+    }
+
+    /// 实际执行块加载与旧摘要迁移。
+    ///
+    /// - Note: 与 `loadBlocksIfNeeded` 分开是为了让「登记加载中」这一步
+    ///   在任何 await 之前完成 —— 否则并发调用者会读到空块。
+    private func performBlockLoad(for conversationID: UUID) async {
         if let blockStore {
             do {
                 let persisted = try await blockStore.load(conversationID: conversationID)
