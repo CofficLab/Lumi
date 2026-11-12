@@ -210,7 +210,7 @@ final class TextSelectionManager: TextSelectionMonitoring {
             // 同一按键序列的 keyUp 不复活菜单；其它按键不受影响。
             suppression.suppress(text: lastPresentedText, keyCode: keyCode)
             lastPresentedText = nil
-        case .mouseDownOutside, .scroll, .actionPerformed, .programmatic:
+        case .mouseDownOutside, .scroll, .actionPerformed, .closeButton, .programmatic:
             suppression.clear()
             lastPresentedText = nil
         }
@@ -298,6 +298,8 @@ enum TextActionMenuDismissReason {
     case scroll
     /// 菜单动作执行完毕（复制 / 搜索）。
     case actionPerformed
+    /// 点击了浮层上的关闭按钮。
+    case closeButton
     /// 代码主动收起（插件停用、选区清空等）。
     case programmatic
 }
@@ -332,6 +334,9 @@ final class TextActionMenuController {
     init() {
         model.onPerform = { [weak self] action in
             self?.perform(action)
+        }
+        model.onClose = { [weak self] in
+            self?.hide(reason: .closeButton)
         }
     }
 
