@@ -23,7 +23,10 @@ public struct RAGChunker: Sendable {
         var chunkIndex = 0
 
         while start < lines.count {
-            let end = min(start + maxLines, lines.count)
+            var end = min(start + maxLines, lines.count)
+            if end < lines.count {
+                end = preferredCut(start: start, end: end, lines: lines)
+            }
             let block = lines[start..<end].joined(separator: "\n")
 
             if block.count <= maxCharsPerChunk {
@@ -69,5 +72,42 @@ public struct RAGChunker: Sendable {
         }
 
         return chunks
+    }
+
+    /// 窗口内选切点：空行 > 顶层声明起始行 > 窗口末端（保持旧行为）。
+    /// 从窗口末端向前找，取最靠后的边界，让当前块尽量装满。
+    private func preferredCut(start: Int, end: Int, lines: [Substring]) -> Int {
+        var declarationCut: Int?
+        var index = end - 1
+        while index > start {
+            let line = lines[index]
+            if line.allSatisfy(\.isWhitespace) {
+                return index
+            }
+            if declarationCut == nil, Self.isDeclarationStart(line) {
+                declarationCut = index
+            }
+            index -= 1
+        }
+        return declarationCut ?? end
+    }
+
+    /// 行首无缩进的声明起始（Swift/JS/TS/Python 启发式，不引入 tree-sitter）。
+    private static func isDeclarationStart(_ line: Substring) -> Bool {
+        guard let first = line.first, !first.isWhitespace else { return false }
+        let keywords: Set<String> = [
+            "func", "function", "class", "struct", "enum", "protocol",
+            "extension", "import", "def", "const", "let", "var",
+        ]
+        let modifiers: Set<String> = [
+            "public", "private", "internal", "fileprivate", "open", "final",
+            "static", "override", "export", "default", "abstract", "async",
+        ]
+        for word in line.split(whereSeparator: \.isWhitespace) {
+            let token = String(word)
+            if keywords.contains(token) { return true }
+            if !modifiers.contains(token) { return false }
+        }
+        return false
     }
 }
