@@ -152,6 +152,35 @@ struct BackgroundTaskEndToEndTests {
 
         _ = await registry.stop(taskID: taskID)
     }
+
+    @Test("输出文件能被 read_file 用绝对路径读到")
+    func outputFileIsReadableByReadFileWithAbsolutePath() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let registry = BackgroundTaskRegistry(rootDirectory: directory)
+        let tool = ShellTool(
+            commandTimeout: 1,
+            workspaceRootProvider: { "/tmp" },
+            backgroundTaskRegistryProvider: { registry }
+        )
+
+        let result = try await tool.execute(arguments: [
+            "command": ToolArgument("while true; do echo marker-line; sleep 0.2; done"),
+            "timeout": ToolArgument(1),
+        ])
+        let outputPath = try #require(parseField(result, prefix: "Output file:"))
+        let taskID = try #require(parseField(result, prefix: "Background task ID:"))
+
+        try await Task.sleep(nanoseconds: 800_000_000)
+
+        // 模型用 read_file 读输出文件：路径是绝对的，必须能直接读到。
+        let readTool = ReadFileTool()
+        let content = try await readTool.execute(arguments: ["path": ToolArgument(outputPath)])
+        #expect(content.contains("marker-line"))
+
+        _ = await registry.stop(taskID: taskID)
+    }
 }
 
 // MARK: - Helpers

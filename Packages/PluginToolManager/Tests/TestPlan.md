@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 141 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 142 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 141
+测试文件: 13 个，用例总数: 142
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -62,8 +62,9 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **停止语义复用进程树终止**：后台命令常带子进程（编译器、测试 runner），只杀直接子进程会留下孤儿。因此 `stop` 走 KitShell 的 SIGTERM → 宽限 → SIGKILL。
   - **停止已结束的任务不算失败**：任务已经自然结束时再调 stop 会返回真实状态（「already completed」），而不是抛一个误导性的错误。
   - **载荷缺失必须回退而不是崩溃**：通知消息是持久化的，metadata 可能因旧版本数据而缺失，因此解析失败时返回 nil，渲染器回退到纯文本。
-- **端到端**（4 条）：由 `longCommandHandsOffThenNotifies`、`backgroundTaskUsesSelectedConversationWhenContextIsAbsent` 等用例锁定；改动整条链路时优先跑 `BackgroundTaskEndToEndTests`。两条易错约定：
+- **端到端**（5 条）：由 `longCommandHandsOffThenNotifies`、`backgroundTaskUsesSelectedConversationWhenContextIsAbsent`、`outputFileIsReadableByReadFileWithAbsolutePath` 等用例锁定；改动整条链路时优先跑 `BackgroundTaskEndToEndTests`。三条易错约定：
   - **后台任务必须挂在发起它的会话上**：生产路径从 `ToolExecutionContext.conversationID` 取会话；无上下文的 `execute(arguments:)` 路径退回**当前选中的会话**。用随机 UUID 会让完成通知投递到一个不存在的会话——通知不丢，但模型永远收不到。
+  - **输出路径必须是 read_file 能直接解析的绝对路径**：`WorkspacePathResolver` 对绝对路径直接返回，因此模型只需把通知里的路径原样传给 `read_file`。
   - **取消回合不杀后台任务，删除会话才杀**：前者是后台化的意义所在；后者见「后台任务」小节。
 
 ## 测试用例清单
@@ -212,27 +213,28 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 139 | 端到端 | 取消回合不会杀掉后台任务 | 已交接长命令 | 取消回合 | 任务状态仍是 running | P0 | ✅ 已覆盖 | `cancellingTurnKeepsBackgroundTaskAlive` |
 | 140 | 端到端 | 短命令不进入后台，行为与之前一致 | 已注入登记表 | 执行 `echo quick` | 返回输出，不进后台，登记表为空 | P0 | ✅ 已覆盖 | `shortCommandNeverEntersBackground` |
 | 141 | 端到端 | 无上下文时后台任务归属当前选中的会话 | 已注入登记表与当前会话 | 执行长命令 | 任务挂在当前选中的会话上 | P0 | ✅ 已覆盖 | `backgroundTaskUsesSelectedConversationWhenContextIsAbsent` |
+| 142 | 端到端 | 输出文件能被 read_file 用绝对路径读到 | 已注入登记表 | 执行长命令后用 read_file 读输出 | 读到命令的输出内容 | P0 | ✅ 已覆盖 | `outputFileIsReadableByReadFileWithAbsolutePath` |
 
-> 说明：全部 **141 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **142 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 36 / 36
+- P0: 已覆盖 37 / 37
 - P1: 已覆盖 99 / 99
 - P2: 已覆盖 6 / 6
-- **合计: 141 / 141**（仅表示清单场景，非源码覆盖率）
+- **合计: 142 / 142**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（36 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
 - **P1**: 其余功能性用例（99 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 141 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 142 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
