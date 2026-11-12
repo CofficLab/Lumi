@@ -30,11 +30,24 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
     }
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
-        let accumulator = MLXTextAccumulator()
-        let response = try await streamComplete(request) { chunk in
-            accumulator.append(chunk.content ?? "")
-        }
-        return LLMResponse(content: accumulator.value, model: response.model, toolCalls: response.toolCalls)
+        let response = try await streamComplete(request) { _ in }
+        return Self.nonStreamingResponse(from: response)
+    }
+
+    /// 把流式响应收敛为非流式响应。
+    ///
+    /// 非流式调用（如上下文摘要）同样需要 token 用量与停止原因，
+    /// 因此这里保留流式响应里的全部用量字段，而不是只取正文与工具调用。
+    static func nonStreamingResponse(from response: LLMResponse) -> LLMResponse {
+        LLMResponse(
+            content: response.content,
+            model: response.model,
+            toolCalls: response.toolCalls,
+            reasoningContent: response.reasoningContent,
+            inputTokenCount: response.inputTokenCount,
+            outputTokenCount: response.outputTokenCount,
+            stopReason: response.stopReason
+        )
     }
 
     func streamComplete(
