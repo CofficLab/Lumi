@@ -17,8 +17,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.2"),
         .package(path: "../KitEditorLanguageRuntime"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
     ],
     targets: [
         .target(

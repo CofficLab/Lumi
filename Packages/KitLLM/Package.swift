@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitKeychain"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
     ],
     targets: [
         .target(

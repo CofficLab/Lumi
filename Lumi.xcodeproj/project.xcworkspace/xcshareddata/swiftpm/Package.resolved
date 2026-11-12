@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fbe7c64bb7376f8bd7136140101e208f2a1c53f96b503308692c1def391e621",
+  "originHash" : "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/LibGit2Swift.git",
       "state" : {
-        "revision" : "547bbc76a08f24018560fea13543500713d157b6",
-        "version" : "1.0.7"
+        "revision" : "5cc1b96e18c39ad1bd0e81c9b5d80865dd8038f7",
+        "version" : "1.1.1"
       }
     },
     {
@@ -150,8 +150,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginActivityBar.git",
       "state" : {
-        "revision" : "ab7c6757b4cd6fdaf5261b399705aff5572d1408",
-        "version" : "1.0.3"
+        "revision" : "070b7ca5d1cf5f8956c732051b074d34dbd2fd73",
+        "version" : "1.0.5"
       }
     },
     {
@@ -267,8 +267,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "3df57f9c165ae72221aafce0a231918c51b1dbdb",
-        "version" : "1.22.2"
+        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
+        "version" : "1.23.0"
       }
     },
     {
@@ -294,8 +294,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "55a5f5b4dcf4c5ed6a6c6abb00a1cf14cd47a589",
-        "version" : "1.16.0"
+        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
+        "version" : "1.17.1"
       }
     },
     {
@@ -348,8 +348,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/postgres-nio",
       "state" : {
-        "revision" : "649adba966158859f4fb1767e4d11802966d3fb4",
-        "version" : "1.33.2"
+        "revision" : "c7320acff7ba4034d8eb7acac2daf200855996d3",
+        "version" : "1.33.3"
       }
     },
     {

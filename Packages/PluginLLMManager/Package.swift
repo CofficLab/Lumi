@@ -12,15 +12,15 @@ let package = Package(
         .library(name: "PluginLLMManager", targets: ["PluginLLMManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
     ],
     targets: [
         .target(

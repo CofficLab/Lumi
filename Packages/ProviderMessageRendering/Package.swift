@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ProviderMessageRendering", targets: ["ProviderMessageRendering"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
     ],
