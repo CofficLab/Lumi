@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fbe7c64bb7376f8bd7136140101e208f2a1c53f96b503308692c1def391e621",
+  "originHash" : "0258684112d9ce2e83cf7ca0f4273a3a3da0ea5bf4939d8f26ae46ac88275fec",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -197,6 +197,15 @@
       "state" : {
         "revision" : "d22499fadfcb21e4a7f768d371c316a5f579e614",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumipluginlogos",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginLogos.git",
+      "state" : {
+        "revision" : "7b8076f94140980faa690fe009a3090a79c6feaf",
+        "version" : "1.0.0"
       }
     },
     {
