@@ -259,6 +259,122 @@ public enum ShellExecutor {
         return shellResult
     }
 
+    // MARK: - Background Handoff Execution
+
+    /// Execute a command with a **foreground budget** that hands the process
+    /// off to the background instead of killing it.
+    ///
+    /// This is the non-blocking counterpart of `executeStreaming`:
+    ///
+    /// - The command finishes inside `options.timeout` → `.completed(result)`.
+    /// - The budget expires → the process is **not** terminated; it is handed
+    ///   off as `.backgrounded(handle)` and keeps running.
+    ///
+    /// The handoff is atomic: the deadline is cleared, the process is detached
+    /// from the calling task's cancellation, and the caller becomes the owner of
+    /// the live process through the returned handle.
+    ///
+    /// `executeStreaming` keeps its kill-on-timeout semantics — other callers
+    /// depend on a timeout actually killing the process tree.
+    ///
+    /// - Parameters:
+    ///   - command: The command to execute (supports shell syntax like pipes)
+    ///   - options: Execution options; `timeout` is the foreground budget
+    ///   - onOutput: Callback for stdout chunks (called on background thread)
+    ///   - onError: Callback for stderr chunks (called on background thread)
+    /// - Returns: `.completed` when the process exited, `.backgrounded` otherwise
+    public static func executeStreamingWithBackgroundHandoff(
+        _ command: String,
+        options: ShellOptions = .defaultOptions,
+        onOutput: @escaping @Sendable (String) -> Void = { _ in },
+        onError: @escaping @Sendable (String) -> Void = { _ in },
+        onOutputData: @escaping @Sendable (Data) -> Void = { _ in },
+        onErrorData: @escaping @Sendable (Data) -> Void = { _ in }
+    ) async throws -> ShellExecutionOutcome {
+        try await executeStreamingWithBackgroundHandoff(
+            executable: options.shellExecutable,
+            arguments: ["-c", command],
+            options: options,
+            onOutput: onOutput,
+            onError: onError,
+            onOutputData: onOutputData,
+            onErrorData: onErrorData
+        )
+    }
+
+    /// Execute an executable with a foreground budget that hands the process
+    /// off to the background instead of killing it.
+    ///
+    /// See `executeStreamingWithBackgroundHandoff(_:options:onOutput:onError:onOutputData:onErrorData:)`.
+    public static func executeStreamingWithBackgroundHandoff(
+        executable: String,
+        arguments: [String] = [],
+        options: ShellOptions = .defaultOptions,
+        onOutput: @escaping @Sendable (String) -> Void = { _ in },
+        onError: @escaping @Sendable (String) -> Void = { _ in },
+        onOutputData: @escaping @Sendable (Data) -> Void = { _ in },
+        onErrorData: @escaping @Sendable (Data) -> Void = { _ in }
+    ) async throws -> ShellExecutionOutcome {
+        let startedAt = Date()
+        let stdoutBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+        let stderrBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+
+        let result = try await runProcess(
+            executable: executable,
+            arguments: arguments,
+            options: options,
+            stdoutHandler: { data in
+                onOutputData(data)
+                stdoutBuffer.append(data)
+                if let text = String(data: data, encoding: .utf8) {
+                    onOutput(text)
+                }
+            },
+            stderrHandler: { data in
+                onErrorData(data)
+                stderrBuffer.append(data)
+                if let text = String(data: data, encoding: .utf8) {
+                    onError(text)
+                }
+            },
+            allowBackgroundHandoff: true
+        )
+
+        // The budget expired and the process was handed off: it is still alive
+        // and now belongs to the caller.
+        if let handle = result.backgroundHandle {
+            return .backgrounded(handle)
+        }
+
+        let command = commandDescription(executable: executable, arguments: arguments)
+        if result.timedOut {
+            throw ShellError.timeout(command: command, seconds: options.timeout ?? 0)
+        }
+        if result.wasCancelled {
+            throw ShellError.cancelled(command: command)
+        }
+
+        let duration = Date().timeIntervalSince(startedAt)
+        let shellResult = ShellResult(
+            exitCode: result.exitCode,
+            stdout: stdoutBuffer.getString().trimmingCharacters(in: .whitespacesAndNewlines),
+            stderr: stderrBuffer.getString().trimmingCharacters(in: .whitespacesAndNewlines),
+            duration: duration,
+            stdoutTruncated: stdoutBuffer.isTruncated,
+            stderrTruncated: stderrBuffer.isTruncated
+        )
+
+        if options.throwsOnError && result.exitCode != 0 {
+            throw ShellError.commandFailed(
+                exitCode: result.exitCode,
+                stdout: shellResult.stdout,
+                stderr: shellResult.stderr
+            )
+        }
+
+        return .completed(shellResult)
+    }
+
     // MARK: - Check Command
 
     /// Check if a command is available in the system
@@ -298,6 +414,22 @@ public enum ShellExecutor {
         let exitCode: Int32
         let wasCancelled: Bool
         let timedOut: Bool
+
+        /// Non-nil when the foreground budget expired and the process was
+        /// handed off to the background instead of being killed.
+        let backgroundHandle: BackgroundShellHandle?
+
+        init(
+            exitCode: Int32,
+            wasCancelled: Bool,
+            timedOut: Bool,
+            backgroundHandle: BackgroundShellHandle? = nil
+        ) {
+            self.exitCode = exitCode
+            self.wasCancelled = wasCancelled
+            self.timedOut = timedOut
+            self.backgroundHandle = backgroundHandle
+        }
     }
 
     private final class SyncResultBox: @unchecked Sendable {
@@ -318,6 +450,44 @@ public enum ShellExecutor {
         }
     }
 
+    /// A one-shot signal used by a handed-off process to report its exit code.
+    ///
+    /// The background owner may attach a waiter at any time — including after
+    /// the process already exited — so the exit code is latched.
+    private final class BackgroundExitSignal: @unchecked Sendable {
+        private let lock = NSLock()
+        private var exitCode: Int32?
+        private var waiters: [CheckedContinuation<Int32, Never>] = []
+
+        func complete(exitCode: Int32) {
+            lock.lock()
+            if self.exitCode == nil {
+                self.exitCode = exitCode
+            }
+            let code = self.exitCode ?? exitCode
+            let pending = waiters
+            waiters.removeAll()
+            lock.unlock()
+
+            for waiter in pending {
+                waiter.resume(returning: code)
+            }
+        }
+
+        func wait() async -> Int32 {
+            await withCheckedContinuation { continuation in
+                lock.lock()
+                if let code = exitCode {
+                    lock.unlock()
+                    continuation.resume(returning: code)
+                    return
+                }
+                waiters.append(continuation)
+                lock.unlock()
+            }
+        }
+    }
+
     private final class ProcessExecutionState: @unchecked Sendable {
         private let lock = NSLock()
         private var continuation: CheckedContinuation<ProcessResult, Error>?
@@ -328,8 +498,20 @@ public enum ShellExecutor {
         private var timedOut = false
         private var finished = false
 
-        init(continuation: CheckedContinuation<ProcessResult, Error>) {
+        /// True once the process was handed off to the background.
+        ///
+        /// After the handoff the foreground task no longer owns the process:
+        /// cancelling the turn must **not** kill it.
+        private var backgrounded = false
+        private var exitSignal: BackgroundExitSignal?
+        private let allowsBackgroundHandoff: Bool
+
+        init(
+            continuation: CheckedContinuation<ProcessResult, Error>,
+            allowsBackgroundHandoff: Bool = false
+        ) {
             self.continuation = continuation
+            self.allowsBackgroundHandoff = allowsBackgroundHandoff
         }
 
         func prepareToStart(_ process: Process) -> Bool {
@@ -360,6 +542,13 @@ public enum ShellExecutor {
         }
 
         func timeout(options: ShellOptions) {
+            if allowsBackgroundHandoff {
+                // The foreground budget expired: hand the process off instead
+                // of killing it. The process keeps running under the new owner.
+                _ = handoffToBackground(options: options)
+                return
+            }
+
             let process: Process?
             let processGroupID: Int32?
             lock.lock()
@@ -382,7 +571,9 @@ public enum ShellExecutor {
             let process: Process?
             let processGroupID: Int32?
             lock.lock()
-            guard !finished else {
+            guard !finished, !backgrounded else {
+                // A handed-off process belongs to the background owner; a
+                // cancelled turn must leave it running.
                 lock.unlock()
                 return
             }
@@ -396,11 +587,69 @@ public enum ShellExecutor {
             }
         }
 
+        /// Hands the running process off to the background.
+        ///
+        /// The handoff is atomic: the deadline is cleared, the process is
+        /// detached from the calling task's cancellation, and the caller
+        /// receives ownership through a `BackgroundShellHandle`. The process
+        /// itself is **not** terminated.
+        ///
+        /// - Returns: the handle, or `nil` when the process already exited and
+        ///   the foreground result was delivered instead.
+        func handoffToBackground(options: ShellOptions) -> BackgroundShellHandle? {
+            lock.lock()
+            guard !finished, !backgrounded, let process = self.process else {
+                lock.unlock()
+                return nil
+            }
+            backgrounded = true
+            timedOut = true
+            wasCancelled = false
+            timeoutItem?.cancel()
+            timeoutItem = nil
+            let continuation = self.continuation
+            self.continuation = nil
+            finished = true
+            let processGroupID = self.processGroupID
+            let signal = BackgroundExitSignal()
+            exitSignal = signal
+            lock.unlock()
+
+            let handle = BackgroundShellHandle(
+                processIdentifier: process.processIdentifier,
+                processGroupIdentifier: processGroupID,
+                startedAt: Date(),
+                terminate: {
+                    terminate(process: process, processGroupID: processGroupID, options: options)
+                },
+                waitForExit: {
+                    await signal.wait()
+                }
+            )
+
+            continuation?.resume(returning: ProcessResult(
+                exitCode: -1,
+                wasCancelled: false,
+                timedOut: true,
+                backgroundHandle: handle
+            ))
+            return handle
+        }
+
         func complete(exitCode: Int32) {
             let continuation: CheckedContinuation<ProcessResult, Error>?
             let result: ProcessResult
+            let signal: BackgroundExitSignal?
             lock.lock()
             timeoutItem?.cancel()
+            if backgrounded {
+                // The foreground already returned; only the background owner
+                // needs the exit status now.
+                signal = exitSignal
+                lock.unlock()
+                signal?.complete(exitCode: exitCode)
+                return
+            }
             continuation = self.continuation
             self.continuation = nil
             finished = true
@@ -446,12 +695,16 @@ public enum ShellExecutor {
         arguments: [String],
         options: ShellOptions,
         stdoutHandler: @escaping @Sendable (Data) -> Void,
-        stderrHandler: @escaping @Sendable (Data) -> Void
+        stderrHandler: @escaping @Sendable (Data) -> Void,
+        allowBackgroundHandoff: Bool = false
     ) async throws -> ProcessResult {
         let stateStore = ProcessExecutionStateStore()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                let state = ProcessExecutionState(continuation: continuation)
+                let state = ProcessExecutionState(
+                    continuation: continuation,
+                    allowsBackgroundHandoff: allowBackgroundHandoff
+                )
                 stateStore.set(state)
                 // The cancellation handler may run before the continuation
                 // installs its state in the store. Check again after
