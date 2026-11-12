@@ -2331,6 +2331,7 @@
       }
     },
     "Top Processes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
