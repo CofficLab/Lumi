@@ -296,7 +296,10 @@ public struct ChatSectionHostView: View {
             if provider.isVisible {
                 VStack(spacing: 0) {
                     if provider.isContextActive, provider.isHeaderVisible {
-                        ChatHeaderRow(items: bars(.header))
+                        ChatHeaderRow(
+                            leading: bars(.header),
+                            trailing: bars(.headerTrailing)
+                        )
                         ChatToolbarRow(items: toolbarItems)
                     }
 
@@ -368,9 +371,12 @@ private struct ChatBottomFixedView: View {
 
 /// header 栏：对应旧版 `ChatHeaderView`（`AppToolbarContainer` height 40、
 /// `.panel` 背景、上下 8 / 左右 10 内边距、底部边框）。
+///
+/// 左侧放主标识（会话标题），右侧放次要信息（token 统计等指标）。
 @MainActor
 private struct ChatHeaderRow: View {
-    let items: [ChatSectionBarItem]
+    let leading: [ChatSectionBarItem]
+    let trailing: [ChatSectionBarItem]
 
     var body: some View {
         AppToolbarContainer(
@@ -379,8 +385,9 @@ private struct ChatHeaderRow: View {
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
             HStack(spacing: 8) {
-                ForEach(items) { $0.makeView() }
+                ForEach(leading) { $0.makeView() }
                 Spacer(minLength: 0)
+                ForEach(trailing) { $0.makeView() }
             }
         }
         .borderBottom()

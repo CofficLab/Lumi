@@ -70,6 +70,7 @@ import PluginConversationManager
 import PluginConversationMode
 import PluginConversationStats
 import PluginConversationSpeed
+import PluginConversationTokenUsage
 import PluginConversationNew
 import PluginConversationPendingMessage
 import PluginConversationResume
@@ -286,6 +287,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
+            ConversationTokenUsagePlugin(),
             ConversationTitlePlugin(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
