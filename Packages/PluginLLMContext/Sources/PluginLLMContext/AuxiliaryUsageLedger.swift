@@ -30,6 +30,13 @@ final class AuxiliaryUsageLedger: LLMAuxiliaryUsageProviding {
         }
     }
 
+    /// 会话删除时清空内存缓存与磁盘记录（#350）。
+    func remove(conversationID: UUID) async {
+        cache.removeValue(forKey: conversationID)
+        loadedConversationIDs.remove(conversationID)
+        try? await store?.remove(conversationID: conversationID)
+    }
+
     /// 首次访问某会话时把磁盘记录并入内存缓存。
     ///
     /// `loadedConversationIDs` 在 await 之前同步置位，避免并发加载；磁盘记录按

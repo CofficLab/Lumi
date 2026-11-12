@@ -73,7 +73,11 @@ enum CompressionEngine {
         let middle = history[startIndex ..< zoneStart].filter {
             !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
-        guard middle.count >= max(minimumFoldMessages, 1) else { return nil }
+        // 增长门控只约束「已有块之后的增量」：首次折叠（无块）只要中间段非空
+        // 就执行，否则短会话永远产不出第一份摘要；已有块时不足阈值则不重压，
+        // 避免每回合为几条新消息重新折叠（#1160 增长门控、增量触发）。
+        let threshold = orderedBlocks.isEmpty ? 1 : max(minimumFoldMessages, 1)
+        guard middle.count >= threshold else { return nil }
         return middle
     }
 
