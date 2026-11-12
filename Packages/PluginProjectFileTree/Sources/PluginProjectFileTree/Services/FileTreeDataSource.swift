@@ -105,6 +105,7 @@ final class FileTreeDataSource: SuperLog {
 
     /// 正在进行中的后台重建任务。
     private var rebuildTask: Task<Void, Never>?
+    private var rebuildWorkerTask: Task<[FileTreeNodeItem], Never>?
 
     /// 是否有后台重建正在进行。重建提交的是开始时的磁盘快照，
     /// 期间的精准刷新必须在提交后重放（回归 #1103）。
@@ -172,6 +173,7 @@ final class FileTreeDataSource: SuperLog {
     private func rebuildItems(clearImmediately: Bool = false) {
         guard !projectRootPath.isEmpty else {
             rebuildTask?.cancel()
+            rebuildWorkerTask?.cancel()
             isRebuilding = false
             pendingReloadsDuringRebuild.removeAll()
             items = []
@@ -198,16 +200,19 @@ final class FileTreeDataSource: SuperLog {
         let reader = fileSystemReader
 
         rebuildTask?.cancel()
+        rebuildWorkerTask?.cancel()
         rebuildTask = Task { @MainActor [weak self] in
-            // 磁盘遍历在后台线程执行。
-            let fileItems = await Task.detached(priority: .userInitiated) {
+            guard !Task.isCancelled else { return }
+            let worker = Task.detached(priority: .userInitiated) {
                 Self.expandDirectory(
                     rootURL, depth: 0,
                     projectRootPath: snapshotProjectRootPath,
                     expandedPaths: snapshotExpandedPaths,
                     fileSystemReader: reader
                 )
-            }.value
+            }
+            self?.rebuildWorkerTask = worker
+            let fileItems = await worker.value
 
             guard let self, !Task.isCancelled, self.rebuildGeneration == generation else { return }
 
@@ -292,6 +297,7 @@ final class FileTreeDataSource: SuperLog {
         expandedPaths: Set<String>,
         fileSystemReader: FileSystemReading
     ) -> [FileTreeNodeItem] {
+        guard !Task.isCancelled else { return [] }
         var result: [FileTreeNodeItem] = []
         let relativePath = PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
         // 根节点始终展开，避免文件树为空
@@ -313,6 +319,7 @@ final class FileTreeDataSource: SuperLog {
                 )
                 let sorted = fileSystemReader.sortAndFilter(children)
                 for childURL in sorted {
+                    guard !Task.isCancelled else { break }
                     result.append(contentsOf: expandDirectory(
                         childURL, depth: depth + 1,
                         projectRootPath: projectRootPath,
