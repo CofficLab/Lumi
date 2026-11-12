@@ -27,7 +27,7 @@ public struct CADDesignerView: View {
         .onOpenURL { url in
             // Finder “打开方式”或系统文件关联直接打开 `.cadproj` 时，
             // 把 URL 交给当前工作区，而不是丢弃后显示自动创建的空项目。
-            viewModel.openProjectURL(url)
+            Task { await viewModel.openProjectURL(url) }
         }
     }
 
@@ -96,7 +96,7 @@ public struct CADDesignerView: View {
             .help(L.string("Redo"))
 
             Button {
-                saveDocument()
+                Task { await saveDocument() }
             } label: {
                 Label(L.string("Save"), systemImage: "doc.badge.arrow.up")
             }
@@ -104,7 +104,7 @@ public struct CADDesignerView: View {
             .disabled(store.selectedDocument == nil)
 
             Button {
-                loadDocument()
+                Task { await loadDocument() }
             } label: {
                 Label(L.string("Load"), systemImage: "arrow.down.doc")
             }
@@ -184,7 +184,7 @@ public struct CADDesignerView: View {
         viewModel.redo()
     }
 
-    private func saveDocument() {
+    private func saveDocument() async {
         guard let document = store.selectedDocument else { return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.cadDesignerProject]
@@ -192,10 +192,10 @@ public struct CADDesignerView: View {
         panel.canCreateDirectories = true
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        viewModel.saveProject(to: url)
+        await viewModel.saveProject(to: url)
     }
 
-    private func loadDocument() {
+    private func loadDocument() async {
         let panel = NSOpenPanel()
         // Native `.cadproj` files must be selectable, while older `.json`
         // exports remain openable.
@@ -205,7 +205,7 @@ public struct CADDesignerView: View {
         panel.canChooseFiles = true
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        viewModel.loadProject(from: url)
+        await viewModel.loadProject(from: url)
     }
 
     @MainActor

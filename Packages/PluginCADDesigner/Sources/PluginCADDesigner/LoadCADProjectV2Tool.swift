@@ -34,7 +34,7 @@ public struct LoadCADProjectV2Tool: SuperAgentTool {
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         do {
-            let document = try ProjectSaveLoadService().load(from: url)
+            let document = try await ProjectSaveLoadService().load(from: url)
             // importDocument 会生成新的项目 ID 并选中它；返回值必须报告这个副本，
             // 否则调用方拿到的是文件里未被选中的旧 ID。
             let imported = await MainActor.run {
