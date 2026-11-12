@@ -1,6 +1,6 @@
 # PluginMessageListDetailed
 
-Lumi 消息列表 **V3（详细）** 实现包。工具栏 **Response Detail** 处于 `V3 (详细)` 时，
+Lumi 消息列表 **V3（详细）** 实现包。工具栏 **消息列表风格** 处于 `详细` 时，
 聊天区由本包接管；`V1` / `V2` 分别由 `PluginMessageListBrief` / `PluginMessageListStandard` 接管。
 
 > **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**

@@ -1259,36 +1259,36 @@
         }
       }
     },
-    "Verbosity": {
+    "Message List Style": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verbosity"
+            "value": "Message List Style"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "详细程度"
+            "value": "消息列表风格"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "詳細程度"
+            "value": "訊息列表風格"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "詳細程度"
+            "value": "訊息列表風格"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "詳細程度"
+            "value": "訊息列表風格"
           }
         }
       }

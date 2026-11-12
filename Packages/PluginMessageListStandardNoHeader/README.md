@@ -1,7 +1,7 @@
 # PluginMessageListStandardNoHeader
 
-Lumi 消息列表 **V6（standardNoHeader / 标准·无消息头）** 实现包。工具栏 **Response Detail**
-处于 `V6 (无消息头)` 时，聊天区由本包接管。
+Lumi 消息列表 **V6（standardNoHeader / 标准·无消息头）** 实现包。工具栏 **消息列表风格**
+处于 `无消息头` 时，聊天区由本包接管。
 
 布局、分页、滚动、折叠行为与 **V2（标准）完全一致**，唯一差异是**每条消息不再渲染消息头**
 （头像 / 标题 / 时间那一行）。消息头的隐藏由渲染层统一判定

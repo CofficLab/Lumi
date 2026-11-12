@@ -1,6 +1,9 @@
 import Foundation
 
-/// 回复详细程度。
+/// 消息列表风格（用户可见名称为「消息列表风格」）。
+///
+/// 该值同时被历史实现称作「回复详细程度」，但它**只决定消息列表的呈现形态**，
+/// 不影响提示词、回复长度或 Agent 执行。
 public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
     case brief
     case standard

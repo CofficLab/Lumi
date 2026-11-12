@@ -2,7 +2,7 @@ import Foundation
 import LumiLocalizationKit
 import ProviderConversation
 
-/// 详细度控件的用户可见文案。
+/// 消息列表风格控件的用户可见文案。
 ///
 /// 文案属于界面层，由插件本地化目录维护；`ProviderConversation` 只负责行为，
 /// 不再产出任何语言的显示名（#920）。

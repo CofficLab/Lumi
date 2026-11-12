@@ -323,7 +323,7 @@ public struct ConversationStoreSettingsView: View {
         AppSettingSection(title: L("Routing"), titleAlignment: .leading) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: L("Verbosity"),
+                    title: L("Message List Style"),
                     description: verbosityLabel(conversation.verbosity),
                     icon: "text.quote"
                 ) {

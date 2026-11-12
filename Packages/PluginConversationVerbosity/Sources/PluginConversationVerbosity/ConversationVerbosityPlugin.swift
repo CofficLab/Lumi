@@ -6,11 +6,11 @@ import ProviderConversation
 import LumiLoggingKit
 import SwiftUI
 
-/// 会话详细程度控制插件（V1 简洁 / V2 标准 / V3 详细）。
+/// 消息列表风格控制插件（V1 简洁 / V2 标准 / V3 详细 / V4 ZCode / V5 ChatGPT / V6 无消息头）。
 ///
-/// 复刻自旧版 `Plugins/ConversationVerbosityPlugin`：
-/// - 在 Chat 分区工具栏注册详细度 chip（`ChatSectionBarPlacement.toolbarTrailing`）；
-/// - 仅把详细度交给消息列表和消息渲染器，V1/V2/V3 不修改发送给 LLM 的提示词。
+/// 该开关只切换**消息列表的呈现形态**：
+/// - 在 Chat 分区工具栏注册风格 chip（`ChatSectionBarPlacement.toolbarTrailing`）；
+/// - 仅把风格交给消息列表和消息渲染器，不修改发送给 LLM 的提示词。
 @MainActor
 public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.verbosity", category: "ConversationVerbosity")
@@ -20,7 +20,7 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     public let order = 85
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.verbosity",
-        name: "Conversation Verbosity",
+        name: "Message List Style",
         description: "",
         category: .chat,
         stage: .stable,
