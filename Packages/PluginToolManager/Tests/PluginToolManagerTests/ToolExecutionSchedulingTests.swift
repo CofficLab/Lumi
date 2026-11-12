@@ -145,7 +145,16 @@ func readOnlyJobsRunInParallelWithPerTurnLimit() async {
     }
 
     let duration = Date().timeIntervalSince(startedAt)
-    #expect(duration < 0.65)
+    // 上限给到 1.0s。
+    //
+    // - Important: 这条断言要区分的是「**并行**」与「**串行**」：
+    //   5 个工具各延迟 250ms，串行需 1.25s，并行（上限 4）需 0.5s。
+    //   原先的 0.65s 只比并行下界多 150ms 余量，高负载下（CI 上多个包
+    //   同时跑）调度延迟就能吃掉它 → **偶发**失败。
+    //
+    //   1.0s 仍远小于串行的 1.25s，并行/串行的区分度保持不变。
+    //   真正的「并发上限是 4」由下一条断言（maximumActiveCount）负责。
+    #expect(duration < 1.0)
     #expect(await probe.maximumActiveCount == 4)
 }
 
