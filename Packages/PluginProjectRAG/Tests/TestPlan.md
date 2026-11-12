@@ -222,16 +222,34 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 156 | RAGCodeSearchToolContract | provider 不可用必须抛工具错误 | Runtime 已 reset、路径存在 | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `unavailableProviderThrows` |
 | 157 | RAGCodeSearchToolContract | 越界 top_k 安全钳制不得崩溃 | top_k = -5 / 999 / "abc" | 调用 `execute` 并记录 provider 收到的 topK | 依次钳制为 1 / 20 / 默认 8，无 trap | P0 | ✅ 已覆盖 | `topKClampedToSchemaRange` |
 | 158 | RAGCodeSearchToolContract | 空结果返回引导文案而非错误 | provider 返回空结果 | 调用 `execute` | 含 No code matched 与 grep 建议，不含 Error | P1 | ✅ 已覆盖 | `emptyResultReturnsInformationalString` |
+| 159 | RAGGrepSearcher | 字面量与正则命中 | fixture 含 handleRequest/HandleRequest | 分别用字面量与 `[Hh]andleRequest` 搜索 | 命中 1 与 2 条，行号正确 | P1 | ✅ 已覆盖 | `findsLiteralAndRegexMatches` |
+| 160 | RAGGrepSearcher | gitignore 目录内文件不得漏掉（**回归 #1113 同构**） | git 仓库且 generated/ 被忽略 | 搜索 needle | 跟踪与被忽略文件都命中 | P0 | ✅ 已覆盖 | `respectsNoIgnore` |
+| 161 | RAGGrepSearcher | glob 过滤生效 | a.swift 与 notes.md 均含 needle | glob `*.swift` | 仅 a.swift 命中 | P1 | ✅ 已覆盖 | `globFilterWorks` |
+| 162 | RAGGrepSearcher | case_insensitive 开关生效 | 文件内容为 Needle | 默认与 caseInsensitive 搜索 needle | 分别命中 0 与 1 条 | P1 | ✅ 已覆盖 | `caseInsensitiveFlagWorks` |
+| 163 | RAGGrepSearcher | 非法正则必须抛错 | pattern 为 `[` | 调用 `search` | 抛 `RAGGrepError` | P0 | ✅ 已覆盖 | `invalidRegexThrows` |
+| 164 | RAGGrepSearcher | rg 缺失必须显式报错不得静默回退 | 注入不存在的可执行路径 | 调用 `search` | 抛 `RAGGrepError.ripgrepUnavailable` | P0 | ✅ 已覆盖 | `missingRipgrepThrows` |
+| 165 | RAGGrepSearcher | maxResults 截断命中但总数完整 | 10 行命中、maxResults 3 | 调用 `search` | 3 条命中、totalMatchCount 10 | P1 | ✅ 已覆盖 | `maxResultsCapsMatchesButCountsAll` |
+| 166 | RAGGrepSearcher | context_lines 携带上下文行 | 3 行文件、contextLines 1 | 调用 `search` | 共 3 行其中 2 行 isContext | P1 | ✅ 已覆盖 | `contextLinesIncluded` |
+| 167 | RAGGrepSearcher | 超预算输出截断附标记且字节封顶 | 400 条 120 字符命中 | 调用 `formatOutput` | utf8 ≤ 20000 且 truncated 计数正确 | P0 | ✅ 已覆盖 | `outputBudgetTruncatesWithMarker` |
+| 168 | RAGGrepSearcher | 输出用相对路径且上下文行用 - 分隔 | 合成 2 行 outcome | 调用 `formatOutput` | `src/A.swift-1-` 与 `src/A.swift:2:` | P1 | ✅ 已覆盖 | `formatOutputUsesRelativePathsAndContextSeparator` |
+| 169 | RAGGrepTool | 缺少 pattern 必须抛工具错误 | arguments 为空 | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingPatternThrows` |
+| 170 | RAGGrepTool | 不存在的路径必须抛工具错误 | path 指向不存在目录 | 调用 `execute` | 抛错且 reason 含该路径 | P0 | ✅ 已覆盖 | `nonexistentPathThrows` |
+| 171 | RAGGrepTool | 无项目上下文必须抛工具错误 | Runtime 已 reset 且无 path | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingProjectThrows` |
+| 172 | RAGGrepTool | 无命中返回引导文案 | fixture 无匹配 pattern | 调用 `execute` | 含 No matches，不含 Error | P1 | ✅ 已覆盖 | `noMatchReturnsInformationalString` |
+| 173 | RAGGrepTool | 越界 max_results 安全钳制不得崩溃 | -5 / 9999 / "abc" | 调用 `execute` 并统计命中行 | 依次 1 / 10 / 10 行，无 trap | P0 | ✅ 已覆盖 | `maxResultsClampedToSchemaRange` |
+| 174 | RAGGrepTool | 显式 path 优先于会话项目 | 会话指向不存在目录 | 带 path 调用 `executeResult` | 命中显式目录内文件 | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
+| 175 | RAGGrepTool | 无显式 path 时使用会话项目 | 会话绑定真实目录 | 不带 path 调用 `executeResult` | 命中该目录文件 | P1 | ✅ 已覆盖 | `conversationProjectUsedWhenNoExplicitPath` |
+| 176 | RAGGrepTool | context_lines 输出上下文 | 3 行 fixture、context_lines 1 | 调用 `execute` | 含 -1- / :2: / -3- 三种行 | P1 | ✅ 已覆盖 | `contextLinesAddsSurroundingLines` |
 
-> 说明：全部 **158 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **176 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
-- P1: 已覆盖 118 / 118
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 128 / 128
 - P2: 已覆盖 13 / 13
-- **合计: 158 / 158**（仅表示清单场景，非源码覆盖率）
+- **合计: 176 / 176**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

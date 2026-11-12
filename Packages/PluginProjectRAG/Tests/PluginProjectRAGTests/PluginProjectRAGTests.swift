@@ -18,6 +18,7 @@ struct ProjectRAGSuperPluginTests {
     func retainsStableIdentifiers() {
         #expect(ProjectRAGPlugin().id == "com.coffic.lumi.plugin.project.rag")
         #expect(RAGCodeSearchTool.toolName == "search_code")
+        #expect(RAGGrepTool.toolName == "grep")
     }
 
     @Test("registers the RAG capability in KernelCore")

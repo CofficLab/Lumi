@@ -62,8 +62,9 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         try kernel.registerProvider((any ProjectRAGProviding).self, provider)
         let searchMemory = ProjectRAGSearchMemory()
         self.searchMemory = searchMemory
-        kernel.resolveProvider((any ToolManagerProviding).self)?
-            .add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
+        toolManager?.add(RAGGrepTool(), pluginID: id)
 
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let contextHook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
@@ -106,7 +107,9 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.remove(id: RAGCodeSearchTool.toolName)
+        toolManager?.remove(id: RAGGrepTool.toolName)
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
