@@ -9,6 +9,12 @@ struct ContextUsageTrendView: View {
 
     let history: ContextUsageHistory
 
+    /// 曲线上最多可见的采样点数。
+    ///
+    /// 请求次数多时，逐点绘制会让圆点挤成一条锯齿带；限制可见点数后，
+    /// 曲线按需降采样，尖峰与压缩后的回落依然可见。
+    private static let maximumVisiblePoints = 60
+
     private var chartPoints: [AppLineChartPoint] {
         history.samples.map { AppLineChartPoint(date: $0.date, value: Double($0.tokens)) }
     }
@@ -30,7 +36,9 @@ struct ContextUsageTrendView: View {
                         ),
                         valueLabel: { value in
                             Int(value).formattedContextSize
-                        }
+                        },
+                        maximumVisiblePoints: Self.maximumVisiblePoints,
+                        pointStyle: .automatic
                     )
                     .frame(height: 118)
 
