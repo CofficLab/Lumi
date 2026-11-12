@@ -151,6 +151,7 @@ struct PluginConversationVerbosityTests {
             (.detailed, "Detailed", "Detailed Description"),
             (.zcode, "ZCode", "ZCode Description"),
             (.chatGPT, "ChatGPT", "ChatGPT Description"),
+            (.standardNoHeader, "No Header", "No Header Description"),
         ]
         let resolve: (String) -> String = { "localized:\($0)" }
 
@@ -225,6 +226,17 @@ struct PluginConversationVerbosityTests {
                 "zh-Hant": "ChatGPT 風格訊息列表",
                 "zh-HK": "ChatGPT 風格訊息列表",
                 "zh-TW": "ChatGPT 風格訊息列表",
+            ],
+            "No Header": [
+                "en": "No Header", "zh-Hans": "无消息头", "zh-Hant": "無訊息頭",
+                "zh-HK": "無訊息頭", "zh-TW": "無訊息頭",
+            ],
+            "No Header Description": [
+                "en": "Standard layout without message headers",
+                "zh-Hans": "标准布局，不显示消息头",
+                "zh-Hant": "標準佈局，不顯示訊息頭",
+                "zh-HK": "標準佈局，不顯示訊息頭",
+                "zh-TW": "標準佈局，不顯示訊息頭",
             ],
         ]
 

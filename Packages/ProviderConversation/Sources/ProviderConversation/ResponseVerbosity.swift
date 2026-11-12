@@ -12,6 +12,10 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
     case zcode
     /// ChatGPT 风格消息列表（V5），仅影响呈现。
     case chatGPT
+    /// 标准列表的无消息头变体（V6）：布局与 V2 一致，但不渲染消息头。
+    ///
+    /// 与 V4 / V5 一样是**呈现变体**，不影响提示词、回复长度或 Agent 执行。
+    case standardNoHeader
 
     /// 未显式指定时使用的默认级别（单一事实来源）。
     /// 所有回退到默认值的位置都应引用此处，避免各处不一致。
@@ -26,6 +30,7 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case .detailed: "v3"
         case .zcode: "v4"
         case .chatGPT: "v5"
+        case .standardNoHeader: "v6"
         }
     }
 
@@ -36,6 +41,7 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case "v3", "detailed": self = .detailed
         case "v4", "zcode": self = .zcode
         case "v5", "chatgpt": self = .chatGPT
+        case "v6", "noheader", "standard-no-header": self = .standardNoHeader
         default: return nil
         }
     }
@@ -55,6 +61,7 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case .detailed: "doc.richtext"
         case .zcode: "bubble.left.and.bubble.right"
         case .chatGPT: "message"
+        case .standardNoHeader: "doc.plaintext"
         }
     }
 }

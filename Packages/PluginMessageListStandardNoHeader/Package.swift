@@ -1,0 +1,60 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginMessageListStandardNoHeader",
+    defaultLocalization: "en",
+    platforms: [.macOS("14.0"), .iOS(.v17)],
+    products: [.library(name: "PluginMessageListStandardNoHeader", targets: ["PluginMessageListStandardNoHeader"])],
+    dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
+        .package(path: "../KitMarkdown"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderChatSection"),
+        .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderConversationState"),
+        .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderMessageStreaming"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
+    ],
+    targets: [
+        .target(name: "PluginMessageListStandardNoHeader", dependencies: [
+            .product(name: "KernelCore", package: "LumiKernel"),
+            .product(name: "LumiUI", package: "LumiUI"),
+            .product(name: "KitMarkdown", package: "KitMarkdown"),
+            .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+            .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderConversationState", package: "ProviderConversationState"),
+            .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
+            .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+            .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
+            .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
+            .product(name: "ProviderProject", package: "LumiProviders"),
+            .product(name: "ProviderToolbar", package: "LumiProviders"),
+            .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            .product(name: "LumiLoggingKit", package: "LumiLogging"),
+        ], resources: [.process("../../Resources/Localizable.xcstrings")]),
+        .testTarget(name: "PluginMessageListStandardNoHeaderTests", dependencies: [
+            "PluginMessageListStandardNoHeader",
+            .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
+            .product(name: "ProviderProject", package: "LumiProviders"),
+            .product(name: "ProviderToolbar", package: "LumiProviders"),
+            .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
+        ]),
+    ]
+)

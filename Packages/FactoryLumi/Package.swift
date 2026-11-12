@@ -95,6 +95,7 @@ let package = Package(
         .package(path: "../PluginMessageListDetailed"),
         .package(path: "../PluginMessageListZCode"),
         .package(path: "../PluginMessageListChatGPT"),
+        .package(path: "../PluginMessageListStandardNoHeader"),
         .package(path: "../PluginMessageRenderer"),
         .package(path: "../PluginConversationList"),
         .package(path: "../PluginConversationNew"),
@@ -291,6 +292,7 @@ let package = Package(
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
                 .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
                 .product(name: "PluginMessageListChatGPT", package: "PluginMessageListChatGPT"),
+                .product(name: "PluginMessageListStandardNoHeader", package: "PluginMessageListStandardNoHeader"),
                 .product(name: "PluginMessageRenderer", package: "PluginMessageRenderer"),
                 .product(name: "PluginConversationList", package: "PluginConversationList"),
                 .product(name: "PluginConversationNew", package: "PluginConversationNew"),
@@ -460,6 +462,7 @@ let package = Package(
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
                 .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
                 .product(name: "PluginMessageListChatGPT", package: "PluginMessageListChatGPT"),
+                .product(name: "PluginMessageListStandardNoHeader", package: "PluginMessageListStandardNoHeader"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
                 // 全新安装首屏装配（空态 → 首条消息 → 对话列表 tab）需要真实

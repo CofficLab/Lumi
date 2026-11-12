@@ -37,7 +37,17 @@ struct ToolCallGroupCollapsePolicyTests {
         #expect(ToolCallGroupCollapsePolicy.shouldCollapse(calls, verbosity: .standard))
     }
 
-    // MARK: - 只有 V2 折叠
+    // MARK: - 只有 V2 / V6 折叠
+
+    @Test("V6（standardNoHeader）与 V2 一样折叠")
+    func standardNoHeaderCollapsesLikeStandard() {
+        let calls = [
+            makeCall(id: "a", result: makeResult()),
+            makeCall(id: "b", result: makeResult()),
+        ]
+        #expect(ToolCallGroupCollapsePolicy.shouldCollapse(calls, verbosity: .standardNoHeader))
+        #expect(AssistantMessageView.contentVerbosity(for: .standardNoHeader) == .standardNoHeader)
+    }
 
     @Test("V3（detailed）保持逐条铺开，不折叠")
     func detailedIsNotCollapsed() {

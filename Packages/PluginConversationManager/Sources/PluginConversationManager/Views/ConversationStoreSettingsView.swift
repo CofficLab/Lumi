@@ -492,6 +492,8 @@ public struct ConversationStoreSettingsView: View {
         // V4 是 ZCode 风格消息列表的呈现变体。
         case .zcode: L("ZCode")
         case .chatGPT: L("ChatGPT")
+        // V6 与 V2 布局相同，仅不渲染消息头。
+        case .standardNoHeader: L("No Header")
         case nil: L("Default")
         }
     }
