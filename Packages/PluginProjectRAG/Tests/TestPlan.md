@@ -251,16 +251,21 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 185 | RAGQueryAnalyzer | 优先级标识符 > 文件名 > CJK | 混合查询 | 调用 `extractTerms` | 按优先级顺序输出 | P1 | ✅ 已覆盖 | `priorityOrderIdentifierThenFileNameThenCJK` |
 | 186 | RAGQueryAnalyzer | 下划线/数字算标识符 | 「user_id 和 abc123 在哪」 | 调用 `extractTerms` | 含 user_id 与 abc123 | P1 | ✅ 已覆盖 | `snakeCaseAndDigitsQualifyAsIdentifiers` |
 | 187 | CodeNavigationCoordinatorQuery | 词法搜索必须使用提取后的搜索词 | A 仅含疑问词、B 含领域词 | search topK 1 | 命中 B.swift 而非 A.swift | P0 | ✅ 已覆盖 | `lexicalSearchUsesExtractedTerms` |
+| 188 | CodeNavigationFusion | 跨源共识必须优先于单路高分 | X 词法/路径第 1、语义第 5；Y 仅语义第 1 原始分 0.99 | 调用 `fuse` | X 排第一，展示分 0.3 | P0 | ✅ 已覆盖 | `rrfPrefersCrossSourceConsensus` |
+| 189 | CodeNavigationFusion | 同文件重叠区间去重 | A.swift 15-25 与 10-20 | 调用 `fuse` | 仅 1 条且 fusedScore > 1/61 | P1 | ✅ 已覆盖 | `overlappingLineRangesDeduplicated` |
+| 190 | CodeNavigationFusion | 展示分保留簇内最佳原始分 | 同一证据两路 0.4 / 0.7 | 调用 `fuse` | bestOriginalScore 0.7 | P1 | ✅ 已覆盖 | `displayScoreKeepsBestOriginal` |
+| 191 | CodeNavigationFusion | 相同内容跨文件去重 | A/B 不同文件同内容 | 调用 `fuse` | 仅 1 条 | P1 | ✅ 已覆盖 | `identicalContentDeduplicatedAcrossSources` |
+| 192 | CodeNavigationFusion | 协调器排序走 RRF 且保留最佳展示分 | 语义 Y 0.99 + X、词法 X | 调用 `coordinator.search` | X 第一且 score ≈ 0.85 | P0 | ✅ 已覆盖 | `coordinatorOrdersCrossSourceConsensusFirst` |
 
-> 说明：全部 **187 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **192 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 38 / 38
-- P1: 已覆盖 136 / 136
+- P0: 已覆盖 40 / 40
+- P1: 已覆盖 139 / 139
 - P2: 已覆盖 13 / 13
-- **合计: 187 / 187**（仅表示清单场景，非源码覆盖率）
+- **合计: 192 / 192**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

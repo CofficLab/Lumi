@@ -38,14 +38,32 @@ struct CodeNavigationCoordinator: Sendable {
         )) ?? []
 
         let response = try await semanticResponse
-        var merged = response.results
-        merged.append(contentsOf: await lexicalResults.map { makeProviderResult($0) })
-        merged.append(contentsOf: await pathResults.map { makeProviderResult($0) })
+        let lexical = await lexicalResults.map { makeProviderResult($0) }
+        let path = await pathResults.map { makeProviderResult($0) }
+        let lists = [response.results, lexical, path]
+        let inputs = lists.map { list in
+            list.map {
+                RAGFusionInput(
+                    source: $0.source,
+                    startLine: $0.lineRange?.startLine,
+                    endLine: $0.lineRange?.endLine,
+                    content: $0.content,
+                    score: $0.score
+                )
+            }
+        }
+        let results = RAGRankFusion.fuse(inputs, limit: topK).map { output -> ProjectRAGSearchResult in
+            let original = lists[output.listIndex][output.itemIndex]
+            return ProjectRAGSearchResult(
+                content: original.content,
+                source: original.source,
+                score: output.bestOriginalScore,
+                matchKind: original.matchKind,
+                lineRange: original.lineRange
+            )
+        }
 
-        return ProjectRAGResponse(
-            query: response.query,
-            results: deduplicateAndSort(merged, limit: topK)
-        )
+        return ProjectRAGResponse(query: response.query, results: results)
     }
 
     private func searchProjectRAG(
@@ -73,24 +91,6 @@ struct CodeNavigationCoordinator: Sendable {
             return ProjectRAGResponse(query: query, results: [])
         }
         return try await provider.search(query: query, projectPath: projectPath, topK: topK)
-    }
-
-    private func deduplicateAndSort(
-        _ results: [ProjectRAGSearchResult],
-        limit: Int
-    ) -> [ProjectRAGSearchResult] {
-        var seen = Set<String>()
-        return results
-            .filter { result in
-                let lineKey = result.lineRange.map { "\($0.startLine)-\($0.endLine)" } ?? "-"
-                return seen.insert("\(result.source)|\(lineKey)|\(result.content)").inserted
-            }
-            .sorted {
-                if $0.score != $1.score { return $0.score > $1.score }
-                return $0.source < $1.source
-            }
-            .prefix(max(limit, 1))
-            .map { $0 }
     }
 
     private func makeProviderResult(_ result: RAGSearchResult) -> ProjectRAGSearchResult {

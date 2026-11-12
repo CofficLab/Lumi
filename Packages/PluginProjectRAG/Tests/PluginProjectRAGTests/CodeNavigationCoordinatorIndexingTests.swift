@@ -5,7 +5,7 @@ import ProviderProjectRAG
 import Testing
 
 @MainActor
-private final class IndexingStubProvider: ProjectRAGProviding {
+final class IndexingStubProvider: ProjectRAGProviding {
     var currentProjectPath: String?
     let isInitialized = true
     var indexing: Bool
