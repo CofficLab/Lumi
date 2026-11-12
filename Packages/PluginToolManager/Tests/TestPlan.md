@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 97 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 106 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 97
+测试文件: 9 个，用例总数: 106
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,6 +44,10 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **ToolExecutionScheduling**（7 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **后台任务**（9 条）：由 `taskFinishesExactlyOnceOnProcessExit`、`explicitStopTerminatesProcessAndEmitsOnce`、`deletingConversationStopsItsBackgroundTasks` 等用例锁定；改动 `BackgroundTaskRegistry` 时优先跑 `BackgroundTaskRegistryTests`。三条易错约定：
+  - **后台任务不走 ToolJob 事件通道**：ToolJob 是回合作用域的，回合取消后迟到事件必须丢弃（见 #536）。后台任务的生命周期**跨越回合**——取消当前回合时后台进程必须继续跑，因此它由独立的 actor 管理，绝不能回流到 ToolJob 事件路径。
+  - **完成事件恰好一次**：状态迁移都在 actor 内完成，`finished` 只在状态首次从 `.running` 变为终态时发出。进程退出与用户显式停止并发时也只发一次。
+  - **取消回合不杀、删除会话要杀**：前者是后台化的意义所在；后者是因为后台进程会继续写文件、占用 CPU，且它的完成通知已经没有收件人。
 
 ## 测试用例清单
 
@@ -147,27 +151,36 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 95 | 工具恢复 | resolveUserResponseReexecutesAfterAuthorization | 低风险工具首次执行返回 awaitingUserResponse | 用户回答 computer_use.allow_for_task | 必须重新执行工具拿到真实结果，不得复用挂起的授权回执，执行计数为 2 | P0 | ✅ 已覆盖 | `resolveUserResponseReexecutesAfterAuthorization` |
 | 96 | 工具恢复 | resolveUserResponseRejectionDoesNotReexecute | 低风险工具首次执行返回 awaitingUserResponse | 用户回答 computer_use.deny | 返回失败结果并带上拒绝说明，执行计数保持 1 | P1 | ✅ 已覆盖 | `resolveUserResponseRejectionDoesNotReexecute` |
 | 97 | 工具恢复 | resolveUserResponseKeepsAnswerOnlyBehaviourByDefault | 未声明恢复动作的挂起工具 | 用户给出普通回答 | 回答文本直接作为工具结果，不重新执行 | P1 | ✅ 已覆盖 | `resolveUserResponseKeepsAnswerOnlyBehaviourByDefault` |
+| 98 | 后台任务 | 进程退出后任务被标记为完成并发出恰好一次完成事件 | 交接一个短生命周期进程 | 等待进程退出 | 状态为 completed、退出码 0，完成事件恰好一次 | P0 | ✅ 已覆盖 | `taskFinishesExactlyOnceOnProcessExit` |
+| 99 | 后台任务 | 非零退出码被记录为失败 | 交接一个非零退出的进程 | 等待进程退出 | 状态为 failed 且记录退出码 | P1 | ✅ 已覆盖 | `nonZeroExitCodeMarksTaskFailed` |
+| 100 | 后台任务 | 输出被写入任务文件并可读取尾部 | 交接前先产生输出 | 交接后读输出文件 | 文件存在且包含交接前的输出 | P0 | ✅ 已覆盖 | `outputIsWrittenToTaskFile` |
+| 101 | 后台任务 | 输出超过磁盘上限时保留尾部并标记截断 | 写入量超过上限 | 追加超出上限的内容 | 保留尾部、写入截断提示、文件大小受控 | P1 | ✅ 已覆盖 | `oversizedOutputKeepsTailAndMarksTruncation` |
+| 102 | 后台任务 | 显式停止会终止进程并只发出一次完成事件 | 交接一个长命令 | 调用 stop | 进程被杀，状态 stopped，完成事件恰好一次 | P0 | ✅ 已覆盖 | `explicitStopTerminatesProcessAndEmitsOnce` |
+| 103 | 后台任务 | 重复停止同一个任务不会重复发出完成事件 | 已停止的任务 | 再次调用 stop | 第二次返回 false，完成事件仍只有一次 | P1 | ✅ 已覆盖 | `repeatedStopIsIdempotent` |
+| 104 | 后台任务 | 删除会话会停止该会话的全部后台任务 | 两个会话各有一个任务 | 停止某会话的任务 | 该会话进程被杀，另一会话不受影响 | P0 | ✅ 已覆盖 | `deletingConversationStopsItsBackgroundTasks` |
+| 105 | 后台任务 | 重启后运行中的记录被标记为已中断 | 重新打开同一数据目录 | 读取任务记录 | 状态为 interrupted，不重挂孤儿进程 | P0 | ✅ 已覆盖 | `runningRecordsBecomeInterruptedAfterRestart` |
+| 106 | 后台任务 | 输出路径位于 background-tasks 目录且以任务 ID 命名 | — | 读取输出路径 | 路径为 `<root>/background-tasks/<taskID>.log` | P1 | ✅ 已覆盖 | `outputPathLivesInCanonicalDirectory` |
 
-> 说明：全部 **97 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **106 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 85 / 85
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 89 / 89
 - P2: 已覆盖 6 / 6
-- **合计: 97 / 97**（仅表示清单场景，非源码覆盖率）
+- **合计: 106 / 106**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（85 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（89 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 97 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 106 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

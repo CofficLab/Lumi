@@ -31,6 +31,9 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
     let toolExecutionManager = ToolExecutionManager()
     weak var conversationManager: (any ConversationManaging)?
 
+    /// 后台任务登记表。跨回合存活的进程由它管理，不走 ToolJob 事件通道。
+    var backgroundTaskRegistry: BackgroundTaskRegistry?
+
     public var recordStore: ProviderToolManager.ToolCallRecordStore? {
         get { recordStoreValue }
         set { recordStoreValue = newValue }

@@ -261,6 +261,14 @@ extension ToolManager {
         // 删除会话必须先停止仍在运行的 Job，避免后台工具继续修改文件、
         // 写入输出，或在删除完成后通过迟到事件唤醒 AgentLoop。
         cancelJobs(forConversationID: conversationID)
+        // 后台任务同样要停：它们会继续写文件、占用 CPU，而完成通知已经
+        // 没有收件人了。取消**回合**不杀后台任务，删除**会话**才杀。
+        if let registry = backgroundTaskRegistry {
+            let stopped = await registry.stopAll(forConversationID: conversationID)
+            if stopped > 0 {
+                Self.logger.info("\(Self.t)stopped \(stopped) background task(s) for deleted conversation")
+            }
+        }
         await jobRecordStore?.deleteAll(for: conversationID)
         resultCacheConversationIDs = resultCacheConversationIDs.filter { $0.value != conversationID }
         resultCache = resultCache.filter { resultCacheConversationIDs[$0.key] != nil }

@@ -34,6 +34,9 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
     private var service: ToolManager?
     private var agentLoopToolCallsObserver: ToolCallsObserver?
 
+    /// 后台任务登记表：跨回合存活的进程由它管理，不走 ToolJob 事件通道。
+    private var backgroundTaskRegistry: BackgroundTaskRegistry?
+
     /// 设置页入口 id（onShutdown 时撤回）。
     private let settingsEntryID = "com.coffic.lumi.plugin.tool-manager.tools"
 
@@ -57,6 +60,14 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
             if Self.verbose {
                 let jobStoreURL = jobStore.directory.appendingPathComponent("tool_jobs.sqlite")
                 Self.logger.info("\(Self.t)created job store at \(jobStoreURL.path)")
+            }
+
+            // 后台任务的输出文件与状态都落在插件自己的数据目录里。
+            let registry = BackgroundTaskRegistry(rootDirectory: databaseRootURL)
+            service.backgroundTaskRegistry = registry
+            self.backgroundTaskRegistry = registry
+            if Self.verbose {
+                Self.logger.info("\(Self.t)created background task registry at \(databaseRootURL.path)")
             }
         }
 
@@ -105,6 +116,16 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         agentLoopToolCallsObserver = nil
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.removeEntries(ids: [settingsEntryID])
+        }
+        // 应用退出时终止仍在运行的后台任务，避免留下孤儿进程。
+        if let registry = backgroundTaskRegistry {
+            Task { [weak self] in
+                let stopped = await registry.stopAll()
+                if stopped > 0 {
+                    Self.logger.info("\(Self.t)stopped \(stopped) background task(s) on shutdown")
+                }
+                self?.backgroundTaskRegistry = nil
+            }
         }
         service = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider。
