@@ -24,13 +24,13 @@ struct ProjectsStoreTests {
         #expect(reloaded.loadCurrentProjectPath() == "/tmp/demo")
     }
 
-    @Test func openedFilesPersistenceRoundTrip() {
+    @Test func openedFilesPersistenceRoundTrip() async {
         let directory = temporaryDirectory()
         let store = ProjectsStore(pluginDirectory: directory)
         let file = URL(fileURLWithPath: "/tmp/demo/Sources/Main.swift")
         let opened = ProjectOpenedFiles(openFileURLs: [file], currentFileURL: file)
 
-        store.saveOpenedFiles([ProjectsStore.normalizedPath("/tmp/demo"): opened])
+        await store.saveOpenedFiles([ProjectsStore.normalizedPath("/tmp/demo"): opened]).value
 
         let reloaded = ProjectsStore(pluginDirectory: directory)
         #expect(reloaded.loadOpenedFiles()[ProjectsStore.normalizedPath("/tmp/demo")] == opened)
