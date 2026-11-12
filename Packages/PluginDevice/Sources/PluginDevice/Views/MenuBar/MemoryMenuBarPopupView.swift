@@ -12,7 +12,12 @@ public struct MemoryMenuBarPopupView: View {
 
     public var body: some View {
         HoverableContainerView(detailView: MemoryHistoryDetailView(viewModel: historyViewModel)) {
-            liveStatsView
+            VStack(spacing: 0) {
+                liveStatsView
+
+                // Top 5 内存占用进程
+                TopProcessesView(processes: viewModel.topProcessesPreview, metric: .memory)
+            }
         }
     }
 
