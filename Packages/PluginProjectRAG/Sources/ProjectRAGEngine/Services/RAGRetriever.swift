@@ -98,21 +98,38 @@ public struct RAGRetriever: SuperLog {
         }
         let fused = RAGRankFusion.fuse(inputs, limit: topK)
 
-        let results: [RAGSearchResult] = fused.map { output in
+        var results: [RAGSearchResult] = fused.map { output in
             let chunk = lists[output.listIndex][output.itemIndex].0
-            let semantic = chunk.embedding.count == queryEmbedding.count
-                ? RAGMathUtils.cosineSimilarity(queryEmbedding, chunk.embedding)
-                : 0
-            let lexical = RAGTextUtils.lexicalBoost(query: query, content: chunk.content)
-            let pathBoost = RAGTextUtils.sourcePathBoost(queryTerms: queryTerms, filePath: chunk.filePath)
-            let displayScore = semantic * 0.75 + lexical * 0.20 + pathBoost * 0.05
-            return RAGSearchResult(
-                content: chunk.content,
-                source: RAGPathUtils.displayPath(filePath: chunk.filePath, projectPath: projectPath),
-                score: displayScore,
-                matchKind: output.listIndex == 0 ? .semantic : .indexedLexical,
-                lineRange: chunk.lineRange
+            return Self.makeResult(
+                chunk: chunk,
+                queryEmbedding: queryEmbedding,
+                query: query,
+                queryTerms: queryTerms,
+                projectPath: projectPath,
+                matchKind: output.listIndex == 0 ? .semantic : .indexedLexical
             )
+        }
+
+        // Task 2.3：低于工具侧阈值的语义候选直接丢弃；全部被丢弃时走词法兜底。
+        let beforeDrop = results.count
+        results.removeAll {
+            $0.matchKind == .semantic && $0.score < RAGInjectionPolicy.semanticResultThreshold
+        }
+        let dropped = beforeDrop - results.count
+        if dropped > 0 {
+            Self.logger.info("\(Self.t)丢弃低分语义候选 \(dropped) 条（阈值 \(RAGInjectionPolicy.semanticResultThreshold)）")
+        }
+        if results.isEmpty && !lexicalScored.isEmpty {
+            results = lexicalScored.prefix(topK).map { chunk, _ in
+                Self.makeResult(
+                    chunk: chunk,
+                    queryEmbedding: queryEmbedding,
+                    query: query,
+                    queryTerms: queryTerms,
+                    projectPath: projectPath,
+                    matchKind: .indexedLexical
+                )
+            }
         }
         let scoringDuration = (CFAbsoluteTimeGetCurrent() - scoringStart) * 1000
 
@@ -142,6 +159,29 @@ public struct RAGRetriever: SuperLog {
     }
 
     // MARK: - Private
+
+    private static func makeResult(
+        chunk: RAGStoredChunk,
+        queryEmbedding: [Float],
+        query: String,
+        queryTerms: [String],
+        projectPath: String?,
+        matchKind: RAGMatchKind
+    ) -> RAGSearchResult {
+        let semantic = chunk.embedding.count == queryEmbedding.count
+            ? RAGMathUtils.cosineSimilarity(queryEmbedding, chunk.embedding)
+            : 0
+        let lexical = RAGTextUtils.lexicalBoost(query: query, content: chunk.content)
+        let pathBoost = RAGTextUtils.sourcePathBoost(queryTerms: queryTerms, filePath: chunk.filePath)
+        let displayScore = semantic * 0.75 + lexical * 0.20 + pathBoost * 0.05
+        return RAGSearchResult(
+            content: chunk.content,
+            source: RAGPathUtils.displayPath(filePath: chunk.filePath, projectPath: projectPath),
+            score: displayScore,
+            matchKind: matchKind,
+            lineRange: chunk.lineRange
+        )
+    }
 
     private func loadANNCandidates(
         queryEmbedding: [Float],

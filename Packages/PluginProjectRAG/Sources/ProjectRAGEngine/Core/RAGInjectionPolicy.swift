@@ -7,8 +7,12 @@ import Foundation
 /// 跨路排序由 RRF 负责（见 CodeNavigationCoordinator）。
 public enum RAGInjectionPolicy {
     /// 语义注入阈值（决策 D4 初值）。低于此分的语义片段视为噪声，不自动注入。
-    /// 工具侧阈值更宽松（见 RAGRetriever 的 semanticResultThreshold）。
+    /// 工具侧阈值更宽松（见 semanticResultThreshold）。
     public static let semanticScoreThreshold: Float = 0.50
+
+    /// 工具侧语义结果阈值（Task 2.3 初值）：检索返回时丢弃低于此分的语义候选，
+    /// 比注入门槛宽松——工具可见更多证据，注入只挑高置信。
+    public static let semanticResultThreshold: Float = 0.30
 
     /// 没有达标语义结果时，至少需要这么多条词法命中才注入。
     public static let minLexicalHits = 2

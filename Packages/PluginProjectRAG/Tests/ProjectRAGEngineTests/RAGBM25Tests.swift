@@ -40,7 +40,7 @@ import Testing
     }
 }
 
-private final class BM25StubStore: RAGStore, @unchecked Sendable {
+final class BM25StubStore: RAGStore, @unchecked Sendable {
     var annChunks: [RAGStoredChunk] = []
     var lexicalChunks: [RAGStoredChunk] = []
 
@@ -106,5 +106,63 @@ private final class BM25StubStore: RAGStore, @unchecked Sendable {
         #expect(results[0].matchKind == .semantic)
         let zResult = try #require(results.first { $0.source == "Z.swift" })
         #expect(zResult.matchKind == .indexedLexical)
+    }
+}
+
+/// Task 2.3：语义候选最终分低于 semanticResultThreshold（0.30）直接丢弃；
+/// 全部被丢弃时走词法兜底。工具侧宽松、注入侧严格（0.50）。
+@Suite struct RAGRetrieverThresholdTests {
+    private func chunk(_ id: Int64, file: String, content: String, embedding: [Float]) -> RAGStoredChunk {
+        RAGStoredChunk(
+            id: id,
+            content: content,
+            filePath: "/tmp/project/\(file)",
+            embedding: embedding,
+            lineRange: RAGLineRange(startLine: 1, endLine: 5)
+        )
+    }
+
+    @Test("低分语义候选被丢弃，词法命中保留")
+    func lowScoreSemanticCandidatesDropped() throws {
+        let store = BM25StubStore()
+        // cosine ≈ 0.1 → 展示分 ≈ 0.075，低于 0.30。
+        let low = chunk(1, file: "L.swift", content: "unrelated body", embedding: [0.1, 0.995])
+        let hit = chunk(2, file: "M.swift", content: "quokka handler", embedding: [0, 1])
+        store.annChunks = [low]
+        store.lexicalChunks = [hit]
+
+        let retriever = RAGRetriever(store: store)
+        let results = try retriever.retrieve(
+            queryEmbedding: [1, 0],
+            query: "quokka",
+            projectPath: "/tmp/project",
+            topK: 5
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].source == "M.swift")
+        #expect(results[0].matchKind == .indexedLexical)
+    }
+
+    @Test("语义全部被丢弃时走词法兜底")
+    func allDroppedFallsBackToLexical() throws {
+        let store = BM25StubStore()
+        let low = chunk(1, file: "L.swift", content: "unrelated body", embedding: [0.1, 0.995])
+        let hit = chunk(2, file: "M.swift", content: "quokka handler", embedding: [0, 1])
+        store.annChunks = [low]
+        store.lexicalChunks = [hit]
+
+        let retriever = RAGRetriever(store: store)
+        // topK=1 时融合只输出低分语义；全部丢弃后必须回退词法。
+        let results = try retriever.retrieve(
+            queryEmbedding: [1, 0],
+            query: "quokka",
+            projectPath: "/tmp/project",
+            topK: 1
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].source == "M.swift")
+        #expect(results[0].matchKind == .indexedLexical)
     }
 }

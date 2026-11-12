@@ -268,8 +268,10 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 202 | RAGChunkerBoundary | 小函数整体保留在同一块 | 13 行文件函数跨窗口末端 | 调用 `chunk` | 函数首尾同块且首块不含函数 | P1 | ✅ 已覆盖 | `smallFunctionKeptWhole` |
 | 203 | RAGChunkerBoundary | 无空行时切在顶层声明之前 | public struct 起始行在窗口内 | 调用 `chunk` | 首块止于声明前一行 | P1 | ✅ 已覆盖 | `declarationStartPreferredOverMidBody` |
 | 204 | RAGChunkerBoundary | 超长声明退回字符窗口 | 单行 500+ 字符声明 | 调用 `chunk` | 多块且每块 ≤ maxChars | P1 | ✅ 已覆盖 | `oversizedDeclarationFallsBackToCharWindow` |
+| 205 | RAGRetrieverThreshold | 低分语义候选必须丢弃 | cosine≈0.1 语义 + 词法命中 | 调用 `retrieve` | 仅剩词法结果 | P1 | ✅ 已覆盖 | `lowScoreSemanticCandidatesDropped` |
+| 206 | RAGRetrieverThreshold | 语义全丢时走词法兜底 | topK=1 融合仅低分语义 | 调用 `retrieve` | 返回词法命中 indexedLexical | P1 | ✅ 已覆盖 | `allDroppedFallsBackToLexical` |
 
-> 说明：全部 **204 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **206 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
@@ -277,9 +279,9 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 ## 覆盖率统计
 
 - P0: 已覆盖 43 / 43
-- P1: 已覆盖 147 / 147
+- P1: 已覆盖 149 / 149
 - P2: 已覆盖 14 / 14
-- **合计: 204 / 204**（仅表示清单场景，非源码覆盖率）
+- **合计: 206 / 206**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
