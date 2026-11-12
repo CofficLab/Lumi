@@ -4,19 +4,33 @@ import SwiftUI
 /// 上下文使用趋势：历史曲线 + 压缩标记 + 统计。
 ///
 /// 作为 `ContextPopover` 的一段，展示当前会话每次请求的输入规模变化。
+///
+/// 曲线按**固定间距**排布：请求次数少时铺满图表，请求次数多时保持间距并
+/// 支持横向滚动，屏幕上的点密度不会随对话变长而变密。数据一个不丢，
+/// 因此每一次压缩回落都仍然可见。
 struct ContextUsageTrendView: View {
     @LumiTheme private var theme
 
     let history: ContextUsageHistory
 
-    /// 曲线上最多可见的采样点数。
+    /// 曲线上相邻数据点的固定间距（点）。
     ///
-    /// 请求次数多时，逐点绘制会让圆点挤成一条锯齿带；限制可见点数后，
-    /// 曲线按需降采样，尖峰与压缩后的回落依然可见。
-    private static let maximumVisiblePoints = 60
+    /// 8 点是「圆点不重叠」与「一屏能看足够多点」之间的平衡点。
+    private static let pointSpacing: CGFloat = 8
 
     private var chartPoints: [AppLineChartPoint] {
         history.samples.map { AppLineChartPoint(date: $0.date, value: Double($0.tokens)) }
+    }
+
+    /// 压缩标记：锚定在「压缩发生的那次请求」之后。
+    private var guides: [AppLineChartGuide] {
+        history.compactionMarkers.map { marker in
+            AppLineChartGuide(
+                id: marker.id.uuidString,
+                afterPointIndex: marker.afterSampleIndex,
+                style: .warning
+            )
+        }
     }
 
     var body: some View {
@@ -26,27 +40,20 @@ struct ContextUsageTrendView: View {
             if history.samples.isEmpty {
                 emptyState
             } else {
-                ZStack(alignment: .topLeading) {
-                    AppLineChart(
-                        points: chartPoints,
-                        accessibilityLabel: String(
-                            localized: "Context usage trend",
-                            defaultValue: "上下文使用趋势",
-                            bundle: .module
-                        ),
-                        valueLabel: { value in
-                            Int(value).formattedContextSize
-                        },
-                        maximumVisiblePoints: Self.maximumVisiblePoints,
-                        pointStyle: .automatic
-                    )
-                    .frame(height: 118)
-
-                    ContextUsageTrendMarkers(
-                        markers: history.compactionMarkers,
-                        sampleCount: history.samples.count
-                    )
-                }
+                AppLineChart(
+                    points: chartPoints,
+                    accessibilityLabel: String(
+                        localized: "Context usage trend",
+                        defaultValue: "上下文使用趋势",
+                        bundle: .module
+                    ),
+                    valueLabel: { value in
+                        Int(value).formattedContextSize
+                    },
+                    fixedPointSpacing: Self.pointSpacing,
+                    guides: guides
+                )
+                .frame(height: 118)
 
                 statsRow
             }
