@@ -19,18 +19,90 @@ import Testing
 struct ComputerUseTargetOverlayTests {
     // MARK: - 坐标转换
 
+    /// 独立于生产实现地，从 `NSScreen` 重新推导一个 Quartz 矩形对应的 AppKit 矩形。
+    ///
+    /// ## 为什么必须重新推导
+    ///
+    /// 屏幕尺寸**随机器而变**：Retina 缩放、分辨率差异、多屏布局都会改变
+    /// 主屏的点数尺寸。把「主屏是 1920x1080」写进断言，等于假设测试只在
+    /// 某一种显示器上成立 —— 在 1710x1112 的机器上必然失败，而失败信息
+    /// （`expected?.minY == 300` 却得到 332）完全看不出是**环境差异**，
+    /// 很容易被误判成生产代码的换算缺陷。
+    ///
+    /// 这里用「窗口所在屏幕的实际几何」重算一遍期望值：断言的仍然是
+    /// 同一条语义 —— **翻转必须锚定在窗口所在的那块屏幕上** ——
+    /// 而不是某个具体分辨率下的具体数值。
+    private func expectedAppKitRect(forQuartz quartz: CGRect) -> CGRect? {
+        for screen in NSScreen.screens {
+            let frame = screen.frame
+            // 屏幕在 Quartz 坐标里的顶边（AppKit 原点在左下，故翻转）。
+            let screenQuartzTop = frame.maxY - frame.height
+            let screenQuartz = CGRect(
+                x: frame.minX,
+                y: screenQuartzTop,
+                width: frame.width,
+                height: frame.height
+            )
+            guard quartz.intersects(screenQuartz) else { continue }
+            // 窗口顶边相对该屏幕顶部的偏移，换算回 AppKit 的 y。
+            let topOffsetInQuartz = quartz.minY - screenQuartzTop
+            return CGRect(
+                x: quartz.minX,
+                y: frame.maxY - topOffsetInQuartz - quartz.height,
+                width: quartz.width,
+                height: quartz.height
+            )
+        }
+        return nil
+    }
+
+    /// 取一个落在主屏内、且尺寸稳定的窗口矩形。
+    ///
+    /// - Important: 位置按**实际屏幕尺寸**推算，不写死像素坐标 ——
+    ///   否则小屏机器上矩形会落到屏幕外，`intersects` 判定会失真。
+    private func sampleRectInMainScreen() throws -> CGRect {
+        let screen = try #require(NSScreen.main, "当前环境没有主屏")
+        let frame = screen.frame
+        let width = min(500, frame.width - 100)
+        let height = min(392, frame.height - 200)
+        return CGRect(
+            x: frame.minX + 300,
+            y: frame.minY + 388,
+            width: width,
+            height: height
+        )
+    }
+
     @Test("Quartz 矩形按所在屏幕翻转为 AppKit 矩形")
-    func quartzRectConvertsToAppKitUsingHostingScreen() {
-        // 主屏在 Quartz 中是 (0,0,1920,1080)；AppKit 中 y 向上。
-        // 位于 (300,388) 尺寸 500x392 的窗口，AppKit 的 y 应为
-        // 1080 - 388 - 392 = 300。
-        let quartz = CGRect(x: 300, y: 388, width: 500, height: 392)
+    func quartzRectConvertsToAppKitUsingHostingScreen() throws {
+        let quartz = try sampleRectInMainScreen()
         let converted = ScreenCoordinateConverter.appKitRect(fromQuartz: quartz)
-        let expected = try? #require(converted)
-        #expect(expected?.minX == 300)
-        #expect(expected?.minY == 300)
-        #expect(expected?.width == 500)
-        #expect(expected?.height == 392)
+        let expected = try #require(converted)
+        let reference = try #require(expectedAppKitRect(forQuartz: quartz))
+
+        #expect(expected.minX == reference.minX)
+        #expect(expected.minY == reference.minY)
+        #expect(expected.width == quartz.width)
+        #expect(expected.height == quartz.height)
+
+        // 翻转语义的核心不变量：窗口顶边在 AppKit 坐标里，
+        // 等于「所在屏幕顶边」减去「窗口顶边到屏幕顶边的距离」。
+        //
+        // - Note: 这条不变量是「按所在屏幕翻转」与「按主屏高度翻转」
+        //   的分界 —— 多屏且副屏在主屏上方时，两者结果不同。
+        let screen = try #require(NSScreen.screens.first { screen in
+            let frame = screen.frame
+            let screenQuartz = CGRect(
+                x: frame.minX,
+                y: frame.maxY - frame.height,
+                width: frame.width,
+                height: frame.height
+            )
+            return quartz.intersects(screenQuartz)
+        })
+        let screenQuartzTop = screen.frame.maxY - screen.frame.height
+        let expectedTop = screen.frame.maxY - (quartz.minY - screenQuartzTop)
+        #expect(expected.maxY == expectedTop)
     }
 
     @Test("空矩形与退化尺寸不产生遮罩矩形")
@@ -49,11 +121,19 @@ struct ComputerUseTargetOverlayTests {
     }
 
     @Test("换算后矩形的宽高与原 Quartz 矩形一致")
-    func convertedRectPreservesSize() {
-        let quartz = CGRect(x: 120, y: 200, width: 640, height: 480)
-        let converted = try? #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
-        #expect(converted?.width == quartz.width)
-        #expect(converted?.height == quartz.height)
+    func convertedRectPreservesSize() throws {
+        let screen = try #require(NSScreen.main, "当前环境没有主屏")
+        let frame = screen.frame
+        // 尺寸按实际屏幕裁剪，保证矩形仍落在屏内（否则换算会返回 nil）。
+        let quartz = CGRect(
+            x: frame.minX + 120,
+            y: frame.minY + 200,
+            width: min(640, frame.width - 200),
+            height: min(480, frame.height - 300)
+        )
+        let converted = try #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
+        #expect(converted.width == quartz.width)
+        #expect(converted.height == quartz.height)
     }
 
     // MARK: - 强度策略
@@ -106,7 +186,7 @@ struct ComputerUseTargetOverlayTests {
     @Test("目标矩形不变时仍重算可见区域")
     func unchangedTargetStillRefreshesVisibleRegions() throws {
         let controller = ComputerUseTargetOverlayController.shared
-        let quartz = CGRect(x: 300, y: 388, width: 500, height: 392)
+        let quartz = try sampleRectInMainScreen()
         let frame = try #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
 
         var movedTo: [CGRect] = []
@@ -128,7 +208,7 @@ struct ComputerUseTargetOverlayTests {
     @Test("目标矩形变化时移动面板并重算可见区域")
     func changedTargetMovesPanelAndRefreshes() throws {
         let controller = ComputerUseTargetOverlayController.shared
-        let quartz = CGRect(x: 300, y: 388, width: 500, height: 392)
+        let quartz = try sampleRectInMainScreen()
         let frame = try #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
         let slightlyDifferentFrame = frame.offsetBy(dx: 10, dy: 10)
 
