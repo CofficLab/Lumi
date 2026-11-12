@@ -1139,7 +1139,7 @@ unit-test-rules.md / automation-system-rules.md
 
 ### 8.2 让 AI 读规则，而不是读提示词
 
-`.lumi/rules/` 里的每一份文档都被 AI 编程助手（Claude Code / Cursor / 其他）自动加载。`.cursor/rules/*.mdc` 是同一批规则的另一份投影，`.lumi/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
+`.lumi/rules/` 里的每一份文档都被 AI 编程助手自动加载，`.lumi/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
 
 这套机制解决了一个具体问题：**在 146 个插件里，人无法同时记住所有边界规则。**
 
