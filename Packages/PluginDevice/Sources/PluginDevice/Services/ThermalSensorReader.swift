@@ -96,6 +96,19 @@ public enum ThermalSensorReader {
         peak()?.celsius
     }
 
+    /// 由**同一次采样**得出的最高温度(℃)。
+    ///
+    /// - Important: `peakCelsius()` 内部会**重新采样**（`peak()` 调 `read()`），
+    ///   因此拿它与另一次 `read()` 的结果比较，测到的是**两次采样之间的温度
+    ///   波动**，不是「peak 是否等于样本最大值」这条契约本身 —— 高负载下
+    ///   波动会超过 1℃ 容差，让断言变成假失败。
+    ///
+    ///   本方法只采样一次并从中取最大值，与 `read()` 的口径完全一致，
+    ///   可与 `read()` 的结果直接比较。
+    public static func peakCelsius(from readings: [ThermalSensorReading]) -> Double? {
+        readings.map(\.celsius).max()
+    }
+
     // MARK: - Classification
 
     /// 由传感器下标推断类别。
