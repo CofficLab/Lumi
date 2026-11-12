@@ -1,5 +1,6 @@
 import Foundation
 import KitLLM
+import LumiLoggingKit
 import ProjectRAGEngine
 import ProviderLifecycleHooks
 import ProviderLLMContext
@@ -13,19 +14,30 @@ final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
     private let coordinator: CodeNavigationCoordinator
     private let searchMemory: ProjectRAGSearchMemory?
+    private let defaults: UserDefaults
     private var injectedTurns = RAGInjectionDeduplication()
 
-    init(provider: any ProjectRAGProviding, searchMemory: ProjectRAGSearchMemory? = nil) {
+    init(
+        provider: any ProjectRAGProviding,
+        searchMemory: ProjectRAGSearchMemory? = nil,
+        defaults: UserDefaults = .standard
+    ) {
         self.provider = provider
         self.coordinator = CodeNavigationCoordinator(provider: provider)
         self.searchMemory = searchMemory
+        self.defaults = defaults
     }
 
     func apply(to context: WillSendToLLMContext) async -> WillSendToLLMContext {
+        // 用户开关：关闭后不再自动注入，grep/search_code 工具仍可用。
+        guard defaults.object(forKey: RAGInjectionPolicy.autoInjectEnabledKey) as? Bool ?? true else {
+            return context
+        }
+
         let userMessages = context.messages.filter { $0.role == .user }
         guard let latestUserMessage = userMessages.last,
               !latestUserMessage.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              RAGIntentAnalyzer.shouldUseRAG(for: latestUserMessage.content),
+              RAGIntentAnalyzer.shouldAutoInject(for: latestUserMessage.content),
               let projectPath = provider.currentProjectPath,
               !projectPath.isEmpty else {
             return context
@@ -55,7 +67,6 @@ final class ProjectRAGLLMContextHook {
                 topK: 8
             )
             guard !response.results.isEmpty else { return context }
-            searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
 
             let results = response.results.map {
                 RAGSearchResult(
@@ -68,6 +79,16 @@ final class ProjectRAGLLMContextHook {
                     }
                 )
             }
+
+            // 置信度门槛：低相关片段不注入。埋点只记长度与判定结果，不记用户消息全文。
+            let topScore = results.map(\.score).max() ?? 0
+            let topKind = results.first?.matchKind.rawValue ?? "none"
+            let messageLength = latestUserMessage.content.count
+            guard RAGInjectionPolicy.shouldInject(results: results) else {
+                MagicLogger.debug("[ProjectRAG] autoInject injected=false reason=confidence topScore=\(topScore) kind=\(topKind) msgLen=\(messageLength)")
+                return context
+            }
+
             let language: RAGLanguagePreference = containsCJK(latestUserMessage.content) ? .chinese : .english
             let wrapper = "Project code navigation context:\n"
             // 预留 wrapper 的 token，保证整条注入消息（而非仅 prompt）落在预算内。
@@ -81,17 +102,27 @@ final class ProjectRAGLLMContextHook {
                 languagePreference: language,
                 maxTokens: promptBudget,
                 tokenEstimator: LLMContextTokenEstimator.estimate(text:)
-            ) else { return context }
+            ) else {
+                MagicLogger.debug("[ProjectRAG] autoInject injected=false reason=budget topScore=\(topScore) kind=\(topKind) msgLen=\(messageLength)")
+                return context
+            }
 
             var updated = context
+            // 插在最后一条 user 消息之前：历史前缀 [0..<anchor] 逐字节不变，
+            // 供应商前缀缓存可命中到注入点之前；不得插 0，也不得 append 到 user 之后。
+            guard let anchor = updated.messages.lastIndex(where: { $0.role == .user }) else {
+                return context
+            }
             updated.messages.insert(
                 LLMMessage(
                     role: .system,
                     content: wrapper + prompt
                 ),
-                at: 0
+                at: anchor
             )
+            searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
             injectedTurns.record(turnKey)
+            MagicLogger.debug("[ProjectRAG] autoInject injected=true topScore=\(topScore) kind=\(topKind) budget=\(context.injectedContentTokenBudget.map(String.init) ?? "nil") msgLen=\(messageLength)")
             return updated
         } catch {
             // RAG 不可用时不改变原始请求，避免检索故障阻塞正常对话。

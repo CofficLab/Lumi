@@ -204,16 +204,28 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 138 | RAGContextBuilderBudget | 极小预算丢弃全部片段并跳过注入 | maxTokens 10 | 调用 `buildPrompt` | 返回 nil（连 disclaimer 都放不下） | P1 | ✅ 已覆盖 | `tinyBudgetDropsAllSnippets` |
 | 139 | ProjectRAGLLMContextHookBudget | 预算为 0 时不注入 | injectedContentTokenBudget 0 | 调用 `hook.apply` | messages 不变 | P0 | ✅ 已覆盖 | `hookSkipsInjectionWhenBudgetZero` |
 | 140 | ProjectRAGLLMContextHookBudget | 注入消息整体遵守预算 | injectedContentTokenBudget 600、10 个片段 | 调用 `hook.apply` 并估算注入消息 | 注入消息估算 ≤ 600 | P0 | ✅ 已覆盖 | `hookHonorsInjectedContentBudget` |
+| 141 | ProjectRAGLLMContextHookPosition | 注入保留历史前缀 | [system, user1, assistant1, user2] | 调用 `hook.apply` | 前 3 条逐元素不变，新 system 位于下标 3，user2 顺延 | P1 | ✅ 已覆盖 | `injectionPreservesHistoryPrefix` |
+| 142 | ProjectRAGLLMContextHookPosition | 末尾有 system 时仍以最后一条 user 为锚 | [user1, assistant1, user2, system] | 调用 `hook.apply` | 新 system 位于下标 2，user2 与末尾 system 顺延 | P1 | ✅ 已覆盖 | `injectionBeforeLatestUserWhenTrailingSystemExists` |
+| 143 | RAGIntentAnalyzerAutoInject | 闲聊问句不自动注入 | 「今天天气怎么样」 | 调用 `shouldAutoInject` | false | P1 | ✅ 已覆盖 | `casualQuestionDoesNotAutoInject` |
+| 144 | RAGIntentAnalyzerAutoInject | 设计类问句自动注入 | 「登录功能是怎么设计的」 | 调用 `shouldAutoInject` | true（含「设计」） | P1 | ✅ 已覆盖 | `designQuestionAutoInjects` |
+| 145 | RAGIntentAnalyzerAutoInject | 标识符问句自动注入 | 「LoginViewController 在哪初始化」 | 调用 `shouldAutoInject` | true（含标识符样词） | P1 | ✅ 已覆盖 | `identifierQuestionAutoInjects` |
+| 146 | RAGIntentAnalyzerAutoInject | 宽触发词仍允许工具侧检索但不自动注入 | 「这个项目怎么样」 | 比较 `shouldUseRAG` 与 `shouldAutoInject` | 前者 true，后者 false | P1 | ✅ 已覆盖 | `broadTriggerStillAllowsToolUse` |
+| 147 | RAGInjectionPolicy | 语义分低于阈值不注入 | 单条 semantic 0.49 | 调用 `shouldInject` | false | P1 | ✅ 已覆盖 | `semanticBelowThresholdDoesNotInject` |
+| 148 | RAGInjectionPolicy | 语义分达到阈值注入 | 单条 semantic 0.50 | 调用 `shouldInject` | true | P1 | ✅ 已覆盖 | `semanticAtThresholdInjects` |
+| 149 | RAGInjectionPolicy | 两条词法命中注入 | filesystemLexical + indexedLexical | 调用 `shouldInject` | true | P1 | ✅ 已覆盖 | `twoLexicalHitsInject` |
+| 150 | RAGInjectionPolicy | 单条词法命中不注入 | 单条 filesystemLexical | 调用 `shouldInject` | false | P1 | ✅ 已覆盖 | `singleLexicalHitDoesNotInject` |
+| 151 | ProjectRAGLLMContextHookGate | 开关关闭时不注入 | UserDefaults autoInjectEnabled=false | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `hookToggleDisabledSkipsInjection` |
+| 152 | ProjectRAGLLMContextHookGate | 低置信结果不注入 | 单条 semantic 0.40 | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `lowConfidenceResultsSkipInjection` |
 
-> 说明：全部 **140 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **152 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 22 / 22
-- P1: 已覆盖 105 / 105
+- P1: 已覆盖 117 / 117
 - P2: 已覆盖 13 / 13
-- **合计: 140 / 140**（仅表示清单场景，非源码覆盖率）
+- **合计: 152 / 152**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
