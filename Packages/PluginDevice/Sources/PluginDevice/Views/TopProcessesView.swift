@@ -18,19 +18,6 @@ struct TopProcessesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 标题
-            HStack(spacing: 4) {
-                Image(systemName: iconName)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-
-                Text(pluginLocalization.string(titleKey))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 6)
-
             if processes.isEmpty {
                 Text(pluginLocalization.string("Collecting..."))
                     .font(.system(size: 10))
@@ -50,20 +37,6 @@ struct TopProcessesView: View {
     }
 
     // MARK: - 私有方法
-
-    private var titleKey: String {
-        switch metric {
-        case .cpu: "Top Processes"
-        case .memory: "Top Memory Processes"
-        }
-    }
-
-    private var iconName: String {
-        switch metric {
-        case .cpu: "chart.bar.fill"
-        case .memory: "memorychip.fill"
-        }
-    }
 
     /// 内存进度条以榜首进程为满格，方便比较相对占用。
     private var maxMemoryUsage: Int64 {
