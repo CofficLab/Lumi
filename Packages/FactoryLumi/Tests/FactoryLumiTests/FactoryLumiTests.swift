@@ -129,7 +129,9 @@ struct FactoryLumiTests {
         let plugins = DefaultPluginFactory().makePlugins()
         let hydration = try #require(plugins.first { $0.id == "com.coffic.lumi.plugin.hydration" })
 
-        #expect(hydration.metadata.policy == .enabledByDefault)
+        // 喝水提醒默认不启用，用户需在「插件管理」中显式开启，
+        // 避免新用户被动接受定时提醒。
+        #expect(hydration.metadata.policy == .disabledByDefault)
     }
 
     private final class AdditionalPlugin: SuperPlugin {
