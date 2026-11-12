@@ -14,42 +14,30 @@ struct CodeNavigationCoordinator: Sendable {
     }
 
     func search(query: String, projectPath: String, topK: Int) async throws -> ProjectRAGResponse {
-        // RAGService performs indexing synchronously inside its actor. Starting a
-        // semantic search while that work is active would enqueue the search
-        // behind the entire index and block the caller (including the main LLM
-        // request's lifecycle hook) until indexing completes.
-        //
-        // Return immediately instead. Callers can still explain that indexing
-        // is in progress, and the next request will use semantic results once
-        // the background index has finished.
-        guard !(await provider.isIndexing(projectPath: projectPath)) else {
-            return ProjectRAGResponse(query: query, results: [])
-        }
-
+        // Live lexical/path search never depends on index state: while background
+        // indexing runs they are the only evidence returned, so callers always get
+        // real results. Semantic search stays gated inside searchProjectRAG, which
+        // returns empty while indexing instead of queueing behind the index actor.
         async let semanticResponse = searchProjectRAG(
             query: query,
             projectPath: projectPath,
             topK: topK
         )
-        let lexicalResults = (try? RAGLexicalFileSearcher.search(
+        async let lexicalResults = (try? RAGLexicalFileSearcher.search(
             query: query,
             projectPath: projectPath,
             topK: topK
         )) ?? []
-        let pathResults = (try? RAGFilePathSearcher.search(
+        async let pathResults = (try? RAGFilePathSearcher.search(
             query: query,
             projectPath: projectPath,
             topK: topK
         )) ?? []
-        let response = try await semanticResponse
 
+        let response = try await semanticResponse
         var merged = response.results
-        merged.append(contentsOf: lexicalResults.map {
-            makeProviderResult($0)
-        })
-        merged.append(contentsOf: pathResults.map {
-            makeProviderResult($0)
-        })
+        merged.append(contentsOf: await lexicalResults.map { makeProviderResult($0) })
+        merged.append(contentsOf: await pathResults.map { makeProviderResult($0) })
 
         return ProjectRAGResponse(
             query: response.query,
@@ -62,8 +50,8 @@ struct CodeNavigationCoordinator: Sendable {
         projectPath: String,
         topK: Int
     ) async throws -> ProjectRAGResponse {
-        // Re-check after the caller's initial guard to cover the small window in
-        // which background indexing starts while the request is being prepared.
+        // Semantic search must never queue behind the indexing actor: while
+        // indexing is active, return empty and let live search carry the turn.
         guard !(await provider.isIndexing(projectPath: projectPath)) else {
             return ProjectRAGResponse(query: query, results: [])
         }

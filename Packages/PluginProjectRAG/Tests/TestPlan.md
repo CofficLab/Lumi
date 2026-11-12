@@ -240,16 +240,19 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 174 | RAGGrepTool | 显式 path 优先于会话项目 | 会话指向不存在目录 | 带 path 调用 `executeResult` | 命中显式目录内文件 | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
 | 175 | RAGGrepTool | 无显式 path 时使用会话项目 | 会话绑定真实目录 | 不带 path 调用 `executeResult` | 命中该目录文件 | P1 | ✅ 已覆盖 | `conversationProjectUsedWhenNoExplicitPath` |
 | 176 | RAGGrepTool | context_lines 输出上下文 | 3 行 fixture、context_lines 1 | 调用 `execute` | 含 -1- / :2: / -3- 三种行 | P1 | ✅ 已覆盖 | `contextLinesAddsSurroundingLines` |
+| 177 | CodeNavigationCoordinatorIndexing | 索引进行中实时搜索必须仍返回结果 | isIndexing true、项目内有匹配文件 | 调用 `coordinator.search` | 非空且全部为实时 matchKind | P0 | ✅ 已覆盖 | `liveSearchWorksWhileIndexing` |
+| 178 | CodeNavigationCoordinatorIndexing | 索引进行中语义检索不得排队 | isIndexing true | 调用 search 并统计 provider 调用 | search 与 ensureIndexed 均 0 次 | P0 | ✅ 已覆盖 | `semanticSkippedWhileIndexing` |
+| 179 | CodeNavigationCoordinatorIndexing | 索引就绪时语义与实时结果合并 | isIndexing false、索引存在 | 调用 search | semantic 与 filesystemLexical 都在 | P1 | ✅ 已覆盖 | `semanticMergedWhenIdle` |
 
-> 说明：全部 **176 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **179 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 35 / 35
-- P1: 已覆盖 128 / 128
+- P0: 已覆盖 37 / 37
+- P1: 已覆盖 129 / 129
 - P2: 已覆盖 13 / 13
-- **合计: 176 / 176**（仅表示清单场景，非源码覆盖率）
+- **合计: 179 / 179**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
