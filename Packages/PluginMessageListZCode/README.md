@@ -51,7 +51,3 @@ Sources/PluginMessageListZCode/
 └── Views/                               ListV4View、ZCodeTurnView 等
 ```
 
-## 相关文档
-
-- 评审与审计：`docs/plans/artifacts/zcode-message-list-v4/AUDIT.md`
-- 截图矩阵清单：`docs/plans/artifacts/zcode-message-list-v4/README.md`
