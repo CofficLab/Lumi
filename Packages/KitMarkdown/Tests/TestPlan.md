@@ -197,8 +197,10 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 | 123 | 复制按钮 | 复制时传递代码原文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiesRawCode` |
 | 124 | 复制按钮 | 复制内容不含 Markdown 围栏与语言标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiesWithoutFence` |
 | 125 | 复制按钮 | 多行代码的换行被完整保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `preservesNewlines` |
+| 126 | 流式 | 流式追加后段落必须跟随新内容渲染 | 链接首段 + 入窗宿主 | 同一段落尾部追加长文本 | 高度跟随增长，不停在旧快照 | P0 | ✅ 已覆盖 | `inlineTextFollowsStreamingAppend` |
+| 127 | 流式 | 原位替换段落后必须渲染新内容 | 链接首段 + 入窗宿主 | 整段替换为更长新内容 | 高度跟随增长，不停在旧快照 | P0 | ✅ 已覆盖 | `inlineTextFollowsInPlaceReplacement` |
 
-> 说明：全部 **125 条场景**已在 macOS 上实跑通过。
+> 说明：全部 **127 条场景**已在 macOS 上实跑通过。
 >
 > 本包的价值集中在**回归锁定**，几条易错约定已在用例里显式锁定：
 > - **表格规整的误判面比正确面更危险**（ID 39/41/42/46/53/54）：shell 管道
@@ -221,16 +223,19 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 >   `preferOuterScroll` + `List` 组合下才会出现，因此专门有 `MarkdownChatListLayoutTests`。
 > - **流式解析必须与全量解析逐步等价**（ID 109/110）：分段解析与一次性解析走
 >   不同代码路径，若不等价，用户会在流式过程中看到段落错位或代码块闪烁。
+> - **行内文本必须跟随内容变化**（ID 126/127）：视图 identity 在流式期间稳定，
+>   视图内缓存的解析结果若不带来源校验，段落会冻结在首次快照上不再增长——
+>   与代码高亮的跟随契约（ID 114）同源，两条渲染路径都必须锁定。
 > - **引用块的 12 条空白断言**（ID 97–108）横跨 bubble / list / listRow /
 >   full-message 四种容器：同一份引用内容在不同容器里的 padding 与 spacing 叠加
 >   方式不同，只测一种容器会漏掉其余三种的空白问题。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 44 / 44
+- P0: 已覆盖 46 / 46
 - P1: 已覆盖 79 / 79
 - P2: 已覆盖 2 / 2
-- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
+- **合计: 127 / 127**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -248,7 +253,7 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 
 - Package 声明 macOS 14+ / iOS 17+
 - `KitMarkdownCoreTests`（ID 1–56）为**跨平台**：纯 Foundation 解析逻辑
-- `KitMarkdownTests`（ID 57–125）依赖 SwiftUI/AppKit 布局度量
+- `KitMarkdownTests`（ID 57–127）依赖 SwiftUI/AppKit 布局度量
   （`NSHostingView` / `HorizontalScrollView` / `NSScrollView`），
   涉及真实测量高度的断言（ID 59–66、77–83、97–108）为 **macOS 专属**
 - 所有布局度量类用例依赖宿主窗口环境，`KitMarkdownTesting` 提供统一支撑；

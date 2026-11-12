@@ -515,14 +515,22 @@ private final class MarkdownInlineParseCache: @unchecked Sendable {
 private struct CachedMarkdownInlineText: View {
     let text: String
 
-    @State private var attributedText: AttributedString?
+    /// 解析结果连同生成时的源文本一起保存：文本变化（流式追加、原位重写）后
+    /// 旧结果必须立即失效，否则视图会停在旧快照上不再跟随新内容
+    /// （与 `HighlightedCodeView` 的 `highlighted.source == code` 同契约）。
+    @State private var parsed: ParsedInlineText?
+
+    private struct ParsedInlineText {
+        let source: String
+        let attributed: AttributedString
+    }
 
     var body: some View {
         Group {
             // 同步命中(历史行滚回视口的常见情况):首帧即富文本,
             // 无"纯文本 → 富文本"的高度跳变,也不占异步任务。
-            if let attributedText {
-                Text(attributedText)
+            if let parsed, parsed.source == text {
+                Text(parsed.attributed)
             } else if let cached = MarkdownInlineParseCache.shared.cachedAttributedString(for: text) {
                 Text(cached)
             } else {
@@ -530,17 +538,16 @@ private struct CachedMarkdownInlineText: View {
             }
         }
         .task(id: text) {
-            guard attributedText == nil else { return }
+            guard parsed?.source != text else { return }
             // 与块级解析同理(P8):miss 时的解析下放后台线程,
             // 主线程只接收结果;text 变化时丢弃过期结果。
             let source = text
-            let parsed = await Task.detached(priority: .userInitiated) {
+            let result = await Task.detached(priority: .userInitiated) {
                 MarkdownInlineParseCache.shared.attributedString(for: source)
             }.value
             guard !Task.isCancelled else { return }
-            if attributedText != parsed {
-                attributedText = parsed
-            }
+            guard parsed?.source != source else { return }
+            parsed = ParsedInlineText(source: source, attributed: result)
         }
     }
 }
