@@ -83,6 +83,7 @@ import PluginHostsManager
 import PluginIdleTime
 import PluginHydrationReminder
 import PluginActivityHeatmap
+import PluginRailTokenTrend
 import PluginLLMProviderAiRouter
 import PluginLLMManager
 import PluginLLMProviderAliyun
@@ -272,6 +273,7 @@ public struct DefaultPluginFactory: PluginFactory {
             IdleTimePlugin(),
             PluginHydrationReminder(),
             ActivityHeatmapPlugin(),
+            RailTokenTrendPlugin(),
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
             ChatScreenshotPlugin(),
