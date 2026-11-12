@@ -49,7 +49,28 @@ public final class RAGProjectWatcher: SuperLog, @unchecked Sendable {
         defer { lock.unlock() }
         stopLocked()
         watchedPath = projectPath
+        openEventStreamLocked(projectPath: projectPath)
+    }
 
+    /// 只设置监听目标，**不**打开真实 FSEvents 流。
+    ///
+    /// 供「注入路径」的单元测试使用：它们验证的是 `handleEvent` 的 debounce
+    /// 语义，与真实文件系统事件无关。真实流由 ``start(projectPath:)`` 打开，
+    /// 并由集成测试覆盖。
+    ///
+    /// - Note: 真实流的 `streamLatency` 是 1 秒 —— 测试目录里的文件变化会在
+    ///   约 1 秒后送达并触发一次额外索引。若注入路径的断言同时开着真实流，
+    ///   那条与 debounce 无关的额外触发会把断言掺成**偶发**失败
+    ///   （低负载下躲得过、高负载下躲不掉）。
+    internal func prepareForInjectedEvents(projectPath: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        stopLocked()
+        watchedPath = projectPath
+    }
+
+    /// 打开 FSEvents 流（`start` 的内部步骤）。
+    private func openEventStreamLocked(projectPath: String) {
         var context = FSEventStreamContext(
             version: 0,
             info: Unmanaged.passUnretained(self).toOpaque(),

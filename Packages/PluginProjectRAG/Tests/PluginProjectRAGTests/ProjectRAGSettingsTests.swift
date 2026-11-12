@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import ProjectRAGEngine
 import ProviderSettingView
+import ProviderStorage
 import Testing
 
 @Suite("ProjectRAGSettings")
@@ -63,6 +64,15 @@ struct ProjectRAGSettingsTests {
         let kernel = KernelCoreContainer()
         let settings = DefaultSettingViewProviding()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
+        // 注入**独立**的存储目录：否则回退到共享的临时目录 → 共用同一个
+        // `rag.sqlite` → 多个用例的 initialize 互相等待 → 高负载下偶发超时。
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-settings-\(UUID().uuidString)", isDirectory: true)
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            StubStorageProvider(root: storageRoot)
+        )
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
         let plugin = ProjectRAGPlugin()
 
         try plugin.onBoot(kernel: kernel)

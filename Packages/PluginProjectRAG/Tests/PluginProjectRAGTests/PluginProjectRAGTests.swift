@@ -24,6 +24,22 @@ struct ProjectRAGSuperPluginTests {
     @Test("registers the RAG capability in KernelCore")
     func registersProvider() throws {
         let kernel = KernelCoreContainer()
+        // 注入**独立**的存储目录。
+        //
+        // - Important: 不注入时 `onBoot` 会回退到
+        //   `FileManager.default.temporaryDirectory/<pluginID>` ——
+        //   **所有插件用例共用同一个目录**，于是共用同一个 `rag.sqlite`。
+        //   SwiftData/SQLite 的 initialize 会互相等待：高负载下（CI 上
+        //   多个包同时跑）本用例的 `initialize` 超时 → `scheduler` 为 nil
+        //   → 断言失败。**偶发，且与被测行为无关。**
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-plugin-\(UUID().uuidString)", isDirectory: true)
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            StubStorageProvider(root: storageRoot)
+        )
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
+
         let plugin = ProjectRAGPlugin()
 
         try plugin.onBoot(kernel: kernel)
@@ -473,7 +489,13 @@ struct ProjectRAGProviderObserverLifetimeTests {
 
 private final class CallbackCapture {}
 
-private final class StubStorageProvider: StorageProviding {
+/// 包内共享的存储替身：把插件数据目录指向**调用方提供的独立根目录**。
+///
+/// - Important: 插件在拿不到 `StorageProviding` 时会回退到
+///   `FileManager.default.temporaryDirectory/<pluginID>` —— 那是**所有用例
+///   共用**的目录，于是共用同一个 `rag.sqlite`，多个用例的 initialize
+///   互相等待，高负载下会偶发超时。注入独立根目录可彻底隔离。
+final class StubStorageProvider: StorageProviding {
     let dataRootDirectory: URL
 
     init(root: URL) {
