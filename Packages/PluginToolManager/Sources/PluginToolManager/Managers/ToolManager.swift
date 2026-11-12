@@ -151,7 +151,12 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         )
         add(ReadImageTool(), pluginID: Self.toolManagerPluginID)
         add(
-            ShellTool(workspaceRootProvider: workspaceRootProvider),
+            ShellTool(
+                workspaceRootProvider: workspaceRootProvider,
+                backgroundTaskRegistryProvider: { [weak self] in
+                    self?.backgroundTaskRegistry
+                }
+            ),
             pluginID: Self.toolManagerPluginID
         )
     }

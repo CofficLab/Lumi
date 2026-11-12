@@ -810,6 +810,12 @@ public enum ShellExecutor {
                     state.markProcessStarted(processGroupID: processGroupID)
                     if state.isCancellationRequested() {
                         state.cancel(options: options)
+                    } else if options.handsOffImmediately {
+                        // 显式后台模式：进程刚起来就交给调用方，不设前台预算。
+                        // 交接失败时不能静默——调用方会一直等一个不存在的句柄。
+                        if state.handoffToBackground(options: options) == nil {
+                            state.complete(exitCode: -SIGTERM)
+                        }
                     }
                 } catch {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil

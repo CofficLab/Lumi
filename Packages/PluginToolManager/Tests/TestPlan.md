@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 106 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 117 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 106
+测试文件: 10 个，用例总数: 117
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,6 +48,11 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **后台任务不走 ToolJob 事件通道**：ToolJob 是回合作用域的，回合取消后迟到事件必须丢弃（见 #536）。后台任务的生命周期**跨越回合**——取消当前回合时后台进程必须继续跑，因此它由独立的 actor 管理，绝不能回流到 ToolJob 事件路径。
   - **完成事件恰好一次**：状态迁移都在 actor 内完成，`finished` 只在状态首次从 `.running` 变为终态时发出。进程退出与用户显式停止并发时也只发一次。
   - **取消回合不杀、删除会话要杀**：前者是后台化的意义所在；后者是因为后台进程会继续写文件、占用 CPU，且它的完成通知已经没有收件人。
+- **非阻塞命令**（11 条）：由 `schemaAdvertisesBackgroundArguments`、`budgetExpiryHandsOffToBackground`、`sleepCommandWaitsInForeground` 等用例锁定；改动 `ShellTool` 时优先跑 `ShellToolBackgroundTests`。四条易错约定：
+  - **`timeout` 是前台预算而不是死线**：预算耗尽时命令**继续在后台跑**，不会被杀掉。这与 KitShell 里 `executeStreaming` 的 kill-on-timeout 语义并存且互不影响。
+  - **以 sleep 开头的命令豁免自动后台**：`sleep 5` 的语义就是「等一会儿」，转后台会让模型拿到的不是结果而是一个迟到的通知。显式 `run_in_background=true` 仍然尊重。
+  - **后台结果文本必须含三要素**：后台 ID、输出路径、`read_file` 提示。缺一模型就无法继续跟进这个后台任务。
+  - **失败必须抛出**：没有登记表时后台化抛 `ToolExecutionError`，不能返回一句「已在后台运行」——那会让模型以为进程还活着。
 
 ## 测试用例清单
 
@@ -160,27 +165,38 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 104 | 后台任务 | 删除会话会停止该会话的全部后台任务 | 两个会话各有一个任务 | 停止某会话的任务 | 该会话进程被杀，另一会话不受影响 | P0 | ✅ 已覆盖 | `deletingConversationStopsItsBackgroundTasks` |
 | 105 | 后台任务 | 重启后运行中的记录被标记为已中断 | 重新打开同一数据目录 | 读取任务记录 | 状态为 interrupted，不重挂孤儿进程 | P0 | ✅ 已覆盖 | `runningRecordsBecomeInterruptedAfterRestart` |
 | 106 | 后台任务 | 输出路径位于 background-tasks 目录且以任务 ID 命名 | — | 读取输出路径 | 路径为 `<root>/background-tasks/<taskID>.log` | P1 | ✅ 已覆盖 | `outputPathLivesInCanonicalDirectory` |
+| 107 | 非阻塞命令 | schema 声明了 run_in_background 与新的 timeout 语义 | — | 读取 inputSchema | 含 `run_in_background`，timeout 描述含「foreground budget」与 600 上限 | P0 | ✅ 已覆盖 | `schemaAdvertisesBackgroundArguments` |
+| 108 | 非阻塞命令 | description 说明长命令不会阻塞回合 | — | 读取工具描述 | 提到 background 与 read_file | P1 | ✅ 已覆盖 | `descriptionMentionsNonBlockingBehaviour` |
+| 109 | 非阻塞命令 | 以 sleep 开头的命令被识别为故意等待 | — | 调用 `isDeliberateWait` | `sleep 5`、`/bin/sleep 5`、`SLEEP 5` 均命中 | P0 | ✅ 已覆盖 | `sleepFirstCommandsAreDeliberateWaits` |
+| 110 | 非阻塞命令 | 非 sleep 开头的命令不算故意等待 | — | 调用 `isDeliberateWait` | `swift build`、`echo sleep`、空串均不命中 | P1 | ✅ 已覆盖 | `otherCommandsAreNotDeliberateWaits` |
+| 111 | 非阻塞命令 | sleep 命令不自动转后台：仍然等它跑完 | — | 执行 `sleep 1` | 返回执行结果而非后台提示 | P0 | ✅ 已覆盖 | `sleepCommandWaitsInForeground` |
+| 112 | 非阻塞命令 | 后台结果文本含任务 ID、输出路径与 read_file 提示 | 已注入登记表 | 执行 `run_in_background=true` | 文本含三要素，且输出文件真实存在 | P0 | ✅ 已覆盖 | `backgroundResultTextContainsTaskIDPathAndHint` |
+| 113 | 非阻塞命令 | 显式后台模式立即返回，不等命令跑完 | 已注入登记表 | 执行 `run_in_background=true` | 远早于命令结束就返回后台提示 | P0 | ✅ 已覆盖 | `explicitBackgroundReturnsImmediately` |
+| 114 | 非阻塞命令 | 预算耗尽时命令转入后台且进程继续运行 | 已注入登记表、预算 1s | 执行长命令 | 预算内返回后台提示，任务状态为 running | P0 | ✅ 已覆盖 | `budgetExpiryHandsOffToBackground` |
+| 115 | 非阻塞命令 | 没有登记表时后台化显式失败而不是谎称成功 | 未注入登记表 | 执行 `run_in_background=true` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `backgroundWithoutRegistryThrows` |
+| 116 | 非阻塞命令 | 超时上限被钳制到 600 秒 | — | 读取常量 | 上限为 600 秒 | P1 | ✅ 已覆盖 | `timeoutIsClampedToCeiling` |
+| 117 | 非阻塞命令 | 短命令行为不变：返回执行结果而不是后台提示 | — | 执行 `echo hello` | 返回输出，不含后台提示 | P0 | ✅ 已覆盖 | `shortCommandStillReturnsResult` |
 
-> 说明：全部 **106 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **117 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 89 / 89
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 92 / 92
 - P2: 已覆盖 6 / 6
-- **合计: 106 / 106**（仅表示清单场景，非源码覆盖率）
+- **合计: 117 / 117**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（89 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（92 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 106 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 117 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -137,6 +137,14 @@ public struct ShellOptions: Sendable {
     /// Maximum time spent draining pipe data after the process exits.
     public let outputDrainTimeout: TimeInterval
 
+    /// Whether the process should be handed off to the background
+    /// **immediately** after it starts.
+    ///
+    /// This is the explicit "run it in the background" mode: the caller gets a
+    /// `BackgroundShellHandle` straight away instead of waiting for a
+    /// foreground budget to expire. The process is never terminated.
+    public let handsOffImmediately: Bool
+
     /// Creates new ShellOptions
     public init(
         shellExecutable: String = "/bin/bash",
@@ -148,7 +156,8 @@ public struct ShellOptions: Sendable {
         terminatesProcessTree: Bool = true,
         terminationGracePeriod: TimeInterval = 2.0,
         maxOutputBytes: Int = 64 * 1024,
-        outputDrainTimeout: TimeInterval = 0.5
+        outputDrainTimeout: TimeInterval = 0.5,
+        handsOffImmediately: Bool = false
     ) {
         self.shellExecutable = shellExecutable
         self.workingDirectory = workingDirectory
@@ -160,6 +169,7 @@ public struct ShellOptions: Sendable {
         self.terminationGracePeriod = terminationGracePeriod
         self.maxOutputBytes = max(0, maxOutputBytes)
         self.outputDrainTimeout = max(0, outputDrainTimeout)
+        self.handsOffImmediately = handsOffImmediately
     }
 
     /// Default options

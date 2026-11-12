@@ -48,6 +48,7 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 - `shellExecutable` / `workingDirectory` / `environment` / `timeout` / `qos`
 - `throwsOnError` / `terminatesProcessTree` / `terminationGracePeriod`
 - `maxOutputBytes` / `outputDrainTimeout`
+- `handsOffImmediately` - 进程一起来就交接给后台，不设前台预算
 - `static let defaultOptions`
 
 ### ShellError
@@ -151,8 +152,10 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 | 55 | 后台交接 | 显式停止会杀掉整个进程树 | 命令派生子进程 | `handle.terminate()` | 子进程与父进程一并终止 | P0 | ✅ 已覆盖 | `testExplicitStopTerminatesProcessTree` |
 | 56 | 后台交接 | 前台任务在启动前被取消时不会启动进程 | 取消先于 `Process.run()` | 取消后等待 | 抛 `.cancelled`，进程未启动 | P1 | ✅ 已覆盖 | `testCancellationBeforeStartNeverLaunchesProcess` |
 | 57 | 后台交接 | 交接之后取消前台任务不会终止后台进程 | 已完成交接 | 取消前台任务 | 后台进程仍在运行 | P0 | ✅ 已覆盖 | `testCancellationAfterHandoffKeepsProcessAlive` |
+| 58 | 后台交接 | 显式后台模式在进程启动后立即交接 | `handsOffImmediately = true` | 执行长命令 | 返回 `.backgrounded`，句柄 pid 仍存活 | P0 | ✅ 已覆盖 | `testImmediateHandoffReturnsHandleRightAway` |
+| 59 | 后台交接 | 显式后台模式不设前台预算：命令再久也立刻返回 | `handsOffImmediately = true` | 执行 `sleep 30` | 远早于命令结束就返回 | P0 | ✅ 已覆盖 | `testImmediateHandoffDoesNotWaitForBudget` |
 
-> 说明：全部 **57 条场景**（6 个 suite + 51 个自由函数用例）已在 macOS 上实跑通过。
+> 说明：全部 **59 条场景**（6 个 suite + 53 个自由函数用例）已在 macOS 上实跑通过。
 >
 > 本套件的价值集中在**故障复现而非功能断言**，三条易错约定已在用例里显式锁定：
 > - **管道 fd 泄漏的真实形态是「同 pool 内同步反复创建」**（ID 46）：不显式关闭时，
@@ -172,10 +175,10 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 
 ## 覆盖率统计
 
-- P0: 已覆盖 29 / 29
+- P0: 已覆盖 31 / 31
 - P1: 已覆盖 19 / 19
 - P2: 已覆盖 9 / 9
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

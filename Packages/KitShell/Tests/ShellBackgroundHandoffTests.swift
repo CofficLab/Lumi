@@ -72,6 +72,45 @@ struct ShellBackgroundHandoffTests {
         _ = await handle.waitForExit()
     }
 
+    @Test("显式后台模式在进程启动后立即交接")
+    func testImmediateHandoffReturnsHandleRightAway() async throws {
+        let outcome = try await ShellExecutor.executeStreamingWithBackgroundHandoff(
+            "sleep 30",
+            options: .init(timeout: nil, throwsOnError: false, handsOffImmediately: true)
+        )
+
+        guard case .backgrounded(let handle) = outcome else {
+            Issue.record("显式后台模式应返回 .backgrounded")
+            return
+        }
+
+        #expect(handle.processIdentifier > 0)
+        #expect(isProcessRunning(handle.processIdentifier))
+
+        handle.terminate()
+        await waitUntilNotRunning(handle.processIdentifier)
+    }
+
+    @Test("显式后台模式不设前台预算：命令再久也立刻返回")
+    func testImmediateHandoffDoesNotWaitForBudget() async throws {
+        let startedAt = Date()
+        let outcome = try await ShellExecutor.executeStreamingWithBackgroundHandoff(
+            "sleep 30",
+            options: .init(timeout: nil, throwsOnError: false, handsOffImmediately: true)
+        )
+        let elapsed = Date().timeIntervalSince(startedAt)
+
+        guard case .backgrounded(let handle) = outcome else {
+            Issue.record("显式后台模式应返回 .backgrounded")
+            return
+        }
+
+        #expect(elapsed < 2.0)
+
+        handle.terminate()
+        await waitUntilNotRunning(handle.processIdentifier)
+    }
+
     // MARK: - 快速命令
 
     @Test("预算内完成的命令仍然返回 .completed")
