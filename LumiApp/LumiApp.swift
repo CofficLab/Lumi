@@ -199,7 +199,7 @@ struct LumiApp: App {
             }
         }
 
-        Window("设置", id: "lumi.settings") {
+        Window("Settings", id: "lumi.settings") {
             settingsView
         }
         .windowStyle(.hiddenTitleBar)
@@ -220,10 +220,12 @@ struct LumiApp: App {
     private func warnIfDiskSpaceLow() {
         guard case .insufficient(let availableBytes, let requiredBytes) = spaceVerdict else { return }
         toastCenter?.presentError(
-            title: "磁盘空间不足",
-            message: "Lumi 至少需要 \(BootstrapByteFormat.string(requiredBytes)) 的可用磁盘空间，"
-                + "当前只剩 \(BootstrapByteFormat.string(availableBytes))。"
-                + "空间不足会导致插件启动失败或数据写入失败，请尽快清理磁盘。",
+            title: NSLocalizedString("Insufficient Disk Space", comment: ""),
+            message: String(
+                format: NSLocalizedString("Lumi needs at least %@ of free disk space to run. Only %@ remains. Low disk space can cause plugin startup or data write failures; free up space soon.", comment: ""),
+                BootstrapByteFormat.string(requiredBytes),
+                BootstrapByteFormat.string(availableBytes)
+            ),
             sourceWindowID: nil
         )
     }
@@ -295,11 +297,11 @@ private struct BootstrapFailureView: View {
     private var title: String {
         switch failure.kind {
         case .insufficientDiskSpace:
-            return "磁盘空间不足"
+            return NSLocalizedString("Insufficient Disk Space", comment: "")
         case .pluginBootFailed:
-            return "插件启动失败"
+            return NSLocalizedString("Plugin Failed to Start", comment: "")
         case .unknown:
-            return "LumiMinimal 启动失败"
+            return NSLocalizedString("LumiMinimal Failed to Start", comment: "")
         }
     }
 
@@ -315,25 +317,31 @@ private struct BootstrapFailureView: View {
     private var explanationText: String {
         switch failure.kind {
         case .insufficientDiskSpace(let availableBytes, let requiredBytes):
-            return "Lumi 至少需要 \(BootstrapByteFormat.string(requiredBytes)) 的可用磁盘空间才能启动，"
-                + "当前只剩 \(BootstrapByteFormat.string(availableBytes))。"
-                + "释放磁盘空间后重新启动即可——数据目录里通常藏着可以清理的大文件。"
+            return String(
+                format: NSLocalizedString("Lumi needs at least %@ of free disk space to start. Only %@ remains. Free up disk space and restart — the data directory often contains large files you can clean up.", comment: ""),
+                BootstrapByteFormat.string(requiredBytes),
+                BootstrapByteFormat.string(availableBytes)
+            )
         case .pluginBootFailed:
-            let plugin = failure.pluginID.map { "「\($0)」" } ?? "某个插件"
-            return "插件 \(plugin) 在\(phaseDescription(failure.phase))阶段失败。"
-                + "原始报错在下方技术详情里，可复制后排查。"
+            let plugin = failure.pluginID.map { "\"\($0)\"" }
+                ?? NSLocalizedString("a plugin", comment: "")
+            return String(
+                format: NSLocalizedString("Plugin %@ failed during the %@ phase. The original error is in the technical details below; copy it to investigate.", comment: ""),
+                plugin,
+                phaseDescription(failure.phase)
+            )
         case .unknown:
-            return "启动过程中发生未预期的错误。原始报错在下方技术详情里，可复制后排查。"
+            return NSLocalizedString("An unexpected error occurred during startup. The original error is in the technical details below; copy it to investigate.", comment: "")
         }
     }
 
     /// 把 KernelCore 的生命周期阶段名翻译成人话。
     private func phaseDescription(_ phase: String?) -> String {
         switch phase {
-        case "boot": return "启动"
-        case "ready": return "就绪"
+        case "boot": return "boot"
+        case "ready": return "ready"
         case .some(let other): return other
-        case nil: return "启动"
+        case nil: return "boot"
         }
     }
 
@@ -345,16 +353,16 @@ private struct BootstrapFailureView: View {
         HStack(spacing: 12) {
             switch failure.kind {
             case .insufficientDiskSpace:
-                Button("在访达中打开数据目录") { self.openDataDirectory() }
+                Button("Open Data Directory in Finder") { self.openDataDirectory() }
                     .buttonStyle(.borderedProminent)
-                Button("重新启动") { self.relaunch() }
+                Button("Restart") { self.relaunch() }
                     .buttonStyle(.bordered)
-                Button("退出") { self.terminateApp() }
+                Button("Quit") { self.terminateApp() }
                     .buttonStyle(.bordered)
             case .pluginBootFailed, .unknown:
-                Button("复制技术详情") { self.copyTechnicalDetail() }
+                Button("Copy Technical Details") { self.copyTechnicalDetail() }
                     .buttonStyle(.borderedProminent)
-                Button("退出") { self.terminateApp() }
+                Button("Quit") { self.terminateApp() }
                     .buttonStyle(.bordered)
             }
         }
@@ -365,7 +373,7 @@ private struct BootstrapFailureView: View {
         DisclosureGroup(isExpanded: $showsTechnicalDetail) {
             detailCard
         } label: {
-            Label("技术详情", systemImage: "doc.text.magnifyingglass")
+            Label("Technical Details", systemImage: "doc.text.magnifyingglass")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
@@ -375,13 +383,13 @@ private struct BootstrapFailureView: View {
     private var detailCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let pluginID = failure.pluginID {
-                Text("插件：\(pluginID)")
+                Text(String(format: NSLocalizedString("Plugin: %@", comment: ""), pluginID))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
             if let phase = failure.phase {
-                Text("阶段：\(phase)")
+                Text(String(format: NSLocalizedString("Phase: %@", comment: ""), phase))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
