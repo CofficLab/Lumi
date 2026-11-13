@@ -388,6 +388,19 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 用作兜底校验：长度与当前正文不一致说明缓存已过期，需要重建。
     private var cachedLineTableLength: Int = -1
 
+    /// 当前正文的总行数。
+    ///
+    /// 原生输入路径每次按键都会重算总行数，全量扫描正文在大文件上是主线程重活
+    /// （见 issue #1329）。这里缓存总行数，让按键路径退化为 O(1) 读取：
+    /// - 已知编辑范围的原生输入 → 按编辑增量修正（换行数变化）；
+    /// - 整体替换 → 缓存失效，下次访问时重扫一次。
+    private var cachedTotalLineCount: Int = 0
+
+    /// 总行数缓存是否需要重新扫描正文。
+    ///
+    /// 整体替换（打开文件、外部修改、撤销重做）后缓存不可用，必须重扫。
+    private var totalLineCountRequiresRescan: Bool = true
+
     public var isSyntaxHighlightingEnabledInViewport: Bool {
         Self.isViewportSyntaxFeatureEnabled(
             viewportRange: viewportRenderLineRange,
@@ -1941,7 +1954,7 @@ public final class EditorState: ObservableObject, SuperLog {
                     let content = document.content
                     return DocumentDerivedScan(
                         longestLine: LongLineDetector.findLongestLine(in: content),
-                        totalLines: content.filter { $0 == "\n" }.count + 1
+                        totalLines: EditorTextMetrics.totalLineCount(in: content)
                     )
                 }.value
 
@@ -1999,7 +2012,9 @@ public final class EditorState: ObservableObject, SuperLog {
                                 self.detectedLanguage = nil
                             }
 
-                            self.totalLines = derivedScan?.totalLines ?? (content.filter { $0 == "\n" }.count + 1)
+                            self.totalLines = derivedScan?.totalLines ?? EditorTextMetrics.totalLineCount(in: content)
+                            self.cachedTotalLineCount = self.totalLines
+                            self.totalLineCountRequiresRescan = false
                             self.resetViewportObservation(totalLines: self.totalLines)
                             self.inlayHintProvider.clear()
                             self.codeActionProvider.clear()
@@ -2650,7 +2665,7 @@ public final class EditorState: ObservableObject, SuperLog {
             // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
             invalidateLineTableCache()
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            applyTotalLineCountAfterReplacement(of: result.snapshot.text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -2672,7 +2687,7 @@ public final class EditorState: ObservableObject, SuperLog {
             // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
             invalidateLineTableCache()
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            applyTotalLineCountAfterReplacement(of: result.snapshot.text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -2685,7 +2700,8 @@ public final class EditorState: ObservableObject, SuperLog {
             // 已知编辑范围：增量更新行偏移表，避免全量重建（见 issue #1278）。
             updateLineTableCache(editRange: range, newText: text)
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            // 按键路径：总行数由换行数增量修正，避免全量扫描正文（见 issue #1329）。
+            applyTotalLineCountAfterIncrementalEdit(editRange: range, newText: text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -3344,7 +3360,7 @@ public final class EditorState: ObservableObject, SuperLog {
         // 陈旧的行偏移表会被当作有效缓存返回，导致行号错位。
         invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = payload.totalLines
+        applyTotalLineCountAfterReplacement(of: payload.text)
         if let selectionSet = payload.canonicalSelectionSet,
            let selections = payload.multiCursorSelections {
             // Phase 2: 同时更新 canonical selection set 和外部 multiCursorState
@@ -3372,7 +3388,7 @@ public final class EditorState: ObservableObject, SuperLog {
         // 撤销/重做是整体替换：丢弃行偏移表缓存（见 issue #1278）。
         invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = payload.totalLines
+        applyTotalLineCountAfterReplacement(of: payload.text)
         canonicalSelectionSet = EditorSelectionSet(selections: state.selections)
         setSelections(canonicalSelectionSet.toMultiCursorSelections())
         pushCanonicalSelectionToView()
@@ -3441,6 +3457,50 @@ public final class EditorState: ObservableObject, SuperLog {
     func invalidateLineTableCache() {
         cachedLineTable = nil
         cachedLineTableLength = -1
+        // 行偏移表失效后无法再推导总行数，下一次读取时需要重新扫描正文。
+        totalLineCountRequiresRescan = true
+    }
+
+    /// 整体替换后记录总行数。
+    ///
+    /// 整体替换无法用增量更新推导行偏移表（见 issue #1278），但总行数可以直接给出：
+    /// 用零分配的字节扫描统计换行数，避免 `filter { $0 == "\n" }.count`
+    /// 构造 `Character` 数组再重新拼接字符串的额外开销（见 issue #1329）。
+    func applyTotalLineCountAfterReplacement(of text: String) {
+        let count = EditorTextMetrics.totalLineCount(in: text)
+        cachedTotalLineCount = count
+        totalLineCountRequiresRescan = false
+        totalLines = count
+    }
+
+    /// 按已知编辑范围增量修正总行数。
+    ///
+    /// 原生输入（每次按键）只改动一段已知范围，因此换行数的变化可以增量计算：
+    /// `新文本换行数 - 被替换范围换行数`。被替换范围的换行数来自被删除的旧文本，
+    /// 这里用编辑前后总长度变化与行偏移表的一致性作为兜底。
+    ///
+    /// - Important: 仅在行偏移表缓存可用时使用；缓存不可用时退回整体重扫。
+    /// - Parameters:
+    ///   - range: 被替换的范围（UTF-16 偏移）。
+    ///   - newText: 替换进去的新文本。
+    private func applyTotalLineCountAfterIncrementalEdit(editRange range: NSRange, newText: String) {
+        // 缓存不可用或与当前正文长度不符：退回整体扫描。
+        // （打开文件后的第一次按键会命中这条兜底路径。）
+        let currentLength = documentController.currentText?.utf16.count ?? -1
+        guard !totalLineCountRequiresRescan,
+              let table = cachedLineTable,
+              cachedLineTableLength == currentLength else {
+            if let text = documentController.currentText {
+                applyTotalLineCountAfterReplacement(of: text)
+            }
+            return
+        }
+
+        // 行偏移表的 lineCount 已经是「换行数 + 1」，直接用它即可得到最新总行数。
+        // `updateLineTableCache` 已把编辑增量应用到缓存表上。
+        let count = table.lineCount
+        cachedTotalLineCount = count
+        totalLines = count
     }
 
     /// 按已知编辑范围增量更新行偏移表。
@@ -3460,6 +3520,9 @@ public final class EditorState: ObservableObject, SuperLog {
         )
         cachedLineTable = table
         cachedLineTableLength = table.totalUTF16Length
+        // 行偏移表已增量更新，总行数同步为表中的行数（O(1)，见 issue #1329）。
+        cachedTotalLineCount = table.lineCount
+        totalLineCountRequiresRescan = false
     }
 
     private func currentFoldingState() -> EditorFoldingState {
