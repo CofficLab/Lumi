@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 20 条用例。
+ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 22 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 20
+测试文件: 4 个，用例总数: 22
 
 ## 公开 API
 
@@ -31,6 +31,7 @@ ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 
 - **AgentLoopFullLoop**（6 条）：由 `usesStreamingPath`、`emptyResponseKeepsReasoningOnErrorMessage`、`toolCallLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（13 条）：由 `networkFailureIsRetryable`、`systemTLSFailureIsRetryable`、`classifiesHTTPFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ThinkingDeltaStage**（1 条）：由 `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` 锁定；改动流式阶段分派时优先跑对应测试文件。
+- **DefaultAgentLoopToolCapability**（2 条）：由 `requestOmitsToolsWhenModelDoesNotSupportThem`、`requestKeepsToolsWhenModelSupportsThem` 锁定；改动请求组装的工具过滤时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -56,27 +57,29 @@ ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 18 | 综合 | 创建 Loop 时依赖全部注入，直接可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `constructorInjection` |
 | 19 | 综合 | resumeTurn 无挂起点时抛出 invalidResumeRequest | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeTurnWithoutSuspensionThrows` |
 | 20 | ThinkingDeltaStage | 端到端：思考增量不会让流式阶段翻成 generating | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` |
+| 21 | DefaultAgentLoopToolCapability | 模型声明不支持工具时请求不得带工具 Schema | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `requestOmitsToolsWhenModelDoesNotSupportThem` |
+| 22 | DefaultAgentLoopToolCapability | 模型声明支持工具时请求仍带工具 Schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestKeepsToolsWhenModelSupportsThem` |
 
-> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 12 / 12
 - P2: 已覆盖 1 / 1
-- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（12 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
