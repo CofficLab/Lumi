@@ -275,6 +275,12 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
             toolManager: toolManager,
             conversationResolver: { @MainActor in
                 conversations?.selectedConversationID
+            },
+            conversationExists: { @MainActor id in
+                // 没有会话管理器时任何 ID 都无法证实存在，一律拒绝，
+                // 避免虚构会话被策略层当成 Build（issue #1153）。
+                guard let conversations else { return false }
+                return await conversations.fetchConversation(id: id) != nil
             }
         )
         self.toolBridge = bridge

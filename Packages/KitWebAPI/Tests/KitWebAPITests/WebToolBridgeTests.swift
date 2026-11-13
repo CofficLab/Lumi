@@ -471,6 +471,71 @@ struct WebToolBridgeTests {
         #expect(result.isError == true)
         #expect(result.content == "boom")
     }
+
+    @Test("不存在的会话在授权与执行之前被拒绝（#1153）")
+    func nonexistentConversationRejectedBeforeAuthorization() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let existing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            conversationExists: { id in id == existing }
+        )
+
+        do {
+            _ = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: UUID())
+            Issue.record("不存在的会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 404)
+            #expect(error.code == "not_found")
+            #expect(error.message.contains("Conversation not found"))
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        // 校验先于策略与执行：虚构 UUID 连授权判断都不能触发，
+        // 否则策略层会把它当成 Build 会话放行（#1153 的绕过路径）。
+        #expect(manager.lastAuthorizationConversationID == nil)
+        #expect(manager.lastExecutedCall == nil)
+    }
+
+    @Test("真实存在的会话不受存在性校验影响（#1153）")
+    func existingConversationStillExecutes() async throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let existing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            conversationExists: { id in id == existing }
+        )
+
+        let result = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: existing)
+        #expect(result.isError == false)
+        #expect(manager.lastExecutedConversationID == existing)
+    }
+
+    @Test("缺省解析出的不存在会话同样被拒绝（#1153）")
+    func resolvedMissingConversationRejected() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let missing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            fallbackConversationID: missing,
+            conversationExists: { _ in false }
+        )
+
+        do {
+            _ = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: nil)
+            Issue.record("解析出的不存在会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 404)
+            #expect(error.code == "not_found")
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        #expect(manager.lastAuthorizationConversationID == nil)
+        #expect(manager.lastExecutedCall == nil)
+    }
 }
 
 // MARK: - Route Tests

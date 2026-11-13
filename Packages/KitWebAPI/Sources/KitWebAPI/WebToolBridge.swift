@@ -205,21 +205,28 @@ public final class WebToolBridge {
     /// 会话解析器。优先级高于 `fallbackConversationID`。
     private let conversationResolver: (@MainActor @Sendable () -> UUID?)?
 
+    /// 会话存在性校验器。执行前验证会话 ID 真实存在。
+    private let conversationExists: (@MainActor @Sendable (UUID) async -> Bool)?
+
     /// 创建桥接器。
     ///
     /// - Parameters:
     ///   - toolManager: 工具管理器。
     ///   - fallbackConversationID: 缺省会话 ID。
     ///   - conversationResolver: 会话解析器，优先于缺省值。
+    ///   - conversationExists: 会话存在性校验器；提供时，不存在的会话 ID
+    ///     会在授权与执行之前被拒绝（404）。
     public init(
         toolManager: any ToolManagerProviding,
         fallbackConversationID: UUID? = nil,
-        conversationResolver: (@MainActor @Sendable () -> UUID?)? = nil
+        conversationResolver: (@MainActor @Sendable () -> UUID?)? = nil,
+        conversationExists: (@MainActor @Sendable (UUID) async -> Bool)? = nil
     ) {
         self.toolManager = toolManager
         self.pluginIndex = Self.buildPluginIndex(from: toolManager)
         self.fallbackConversationID = fallbackConversationID
         self.conversationResolver = conversationResolver
+        self.conversationExists = conversationExists
     }
 
     /// 从工具管理器构建「工具名 → 插件 ID」索引。
@@ -285,7 +292,8 @@ public final class WebToolBridge {
     ///   - arguments: 工具参数（JSON 兼容的字典）。
     ///   - conversationID: 会话 ID；为 `nil` 时用缺省值或解析器兜底。
     /// - Returns: 执行结果。
-    /// - Throws: `WebAPIError`：工具不存在（404）、缺少会话上下文（400）。
+    /// - Throws: `WebAPIError`：工具不存在（404）、会话不存在（404）、
+    ///   缺少会话上下文（400）。
     public func invoke(
         tool name: String,
         arguments: [String: Any],
@@ -299,6 +307,15 @@ public final class WebToolBridge {
             throw WebAPIError.badRequest(
                 message: "conversationID is required to invoke a tool",
                 field: "conversationID"
+            )
+        }
+
+        // 会话必须真实存在：策略层会把未知 ID 映射成 Build，调用方就能
+        // 用一个虚构 UUID 绕过当前选中会话的 Chat 边界（issue #1153）。
+        // 校验放在授权之前，不存在的会话不触发任何授权或执行。
+        if let conversationExists, !(await conversationExists(resolvedConversationID)) {
+            throw WebAPIError.notFound(
+                message: "Conversation not found: \(resolvedConversationID.uuidString)"
             )
         }
 
