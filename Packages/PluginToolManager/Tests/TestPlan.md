@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 167 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 168 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 167
+测试文件: 15 个，用例总数: 168
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -39,7 +39,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（27 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（28 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
@@ -240,27 +240,28 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 165 | 工具参数安全 | read_file 大文件未指定范围的整文件读取仍受 10 MiB 限制（**#393**） | >10 MiB 文本文件 | 不带 offset/limit 调用 execute | 抛出 ToolExecutionError（总大小保护未被移除） | P0 | ✅ 已覆盖 | `readFileLargeFileWholeReadStillRejected` |
 | 166 | 工具参数安全 | read_file 大文件分块输出仍受 250 行上限（**#393**） | >10 MiB 文本文件 | offset=1 limit=250 调用 execute | 含第 250 行、不含第 251 行、含续读提示 | P0 | ✅ 已覆盖 | `readFileLargeFileChunkRespectsLineLimit` |
 | 167 | 工具参数安全 | read_file 大文件中段分块读取正确（**#393**） | >10 MiB 文本文件 | offset=100000 limit=2 调用 execute | 含第 100000/100001 行、不含第 100002 行 | P1 | ✅ 已覆盖 | `readFileLargeFileMiddleChunk` |
+| 168 | 综合 | run_command 的 workspace 回退路径首尾空白是合法字符，裁剪后会在错误目录执行（**回归 #499**） | 同时创建 `lumi` 与 `lumi `（带尾空格）两目录，各放不同 marker.txt | 注入返回 `lumi ` 的 workspaceRootProvider，执行 `cat marker.txt` | 读到带尾空格目录的 MARKER_SPACED_DIR，不读无空格目录的 MARKER_PLAIN_DIR | P1 | ✅ 已覆盖 | `shellToolWorkspaceFallbackPreservesPathWhitespace` |
 
-> 说明：全部 **167 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **168 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 52 / 52
-- P1: 已覆盖 105 / 105
+- P1: 已覆盖 106 / 106
 - P2: 已覆盖 10 / 10
-- **合计: 167 / 167**（仅表示清单场景，非源码覆盖率）
+- **合计: 168 / 168**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
-- **P1**: 其余功能性用例（105 条）
+- **P1**: 其余功能性用例（106 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 167 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 168 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

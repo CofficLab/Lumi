@@ -158,6 +158,31 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     )
 }
 
+/// 回归 #499：workspace 回退路径的首尾空白是合法文件名字符。
+/// 同时创建 `lumi` 与 `lumi `（带尾空格）并放入不同 marker，裁剪的实现会
+/// 在无空格目录执行 `cat`，保留原字节才读到带尾空格目录的 marker。
+/// 用文件内容而非 `pwd` 断言：resultText 会裁掉输出尾部空白，pwd 无法区分。
+@MainActor
+@Test func shellToolWorkspaceFallbackPreservesPathWhitespace() async throws {
+    let base = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-shell-ws-\(UUID().uuidString)", isDirectory: true)
+    let plain = base.appendingPathComponent("lumi", isDirectory: true)
+    let spaced = base.appendingPathComponent("lumi ", isDirectory: true)
+    try FileManager.default.createDirectory(at: plain, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: base) }
+    try "MARKER_PLAIN_DIR".write(to: plain.appendingPathComponent("marker.txt"), atomically: true, encoding: .utf8)
+    try "MARKER_SPACED_DIR".write(to: spaced.appendingPathComponent("marker.txt"), atomically: true, encoding: .utf8)
+
+    let tool = ShellTool(workspaceRootProvider: { spaced.path })
+    let result = try await tool.execute(arguments: [
+        "command": ToolArgument("cat marker.txt"),
+    ])
+
+    #expect(result.contains("MARKER_SPACED_DIR"))
+    #expect(!result.contains("MARKER_PLAIN_DIR"))
+}
+
 @MainActor
 @Test func shellToolUsesTheOwningConversationProjectWhenProvided() async throws {
     let projectURL = FileManager.default.temporaryDirectory
