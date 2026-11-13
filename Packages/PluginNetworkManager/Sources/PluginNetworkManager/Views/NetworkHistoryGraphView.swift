@@ -2,6 +2,45 @@ import LumiUI
 import SwiftUI
 import KernelCore
 
+/// 图表的几何量。
+///
+/// 一次 body 求值只算一次，供所有 Shape 共用：
+/// 原先每个 Shape 各自拿一份 `dataPoints.map { ... }`，
+/// `maxValue` 与 `timeFractions` 也是计算属性 —— 一次求值要跑
+/// 4 次全量 map 加 2 次全量扫描，鼠标每移动一次就重跑一遍
+/// （见 issue #1211）。
+struct ChartGeometry {
+    /// 下载速率序列。
+    let downloadValues: [Double]
+    /// 上传速率序列。
+    let uploadValues: [Double]
+    /// 纵轴最大值。
+    let maxValue: Double
+    /// 每个点在图表中的水平位置（0...1）。
+    let timeFractions: [Double]?
+
+    init(points: [NetworkDataPoint]) {
+        var download: [Double] = []
+        var upload: [Double] = []
+        download.reserveCapacity(points.count)
+        upload.reserveCapacity(points.count)
+        var maxDown: Double = 0
+        var maxUp: Double = 0
+
+        for point in points {
+            download.append(point.downloadSpeed)
+            upload.append(point.uploadSpeed)
+            if point.downloadSpeed > maxDown { maxDown = point.downloadSpeed }
+            if point.uploadSpeed > maxUp { maxUp = point.uploadSpeed }
+        }
+
+        self.downloadValues = download
+        self.uploadValues = upload
+        self.maxValue = max(max(maxDown, maxUp) * 1.1, 1024 * 10) // Min 10KB/s scale
+        self.timeFractions = NetworkHistoryGraphView.timeFractions(for: points)
+    }
+}
+
 public struct NetworkHistoryGraphView: View {
     public let dataPoints: [NetworkDataPoint]
     public let timeRange: TimeRange
@@ -13,25 +52,33 @@ public struct NetworkHistoryGraphView: View {
     private let xAxisHeight: CGFloat = 30
 
     public var body: some View {
+        // 几何量在这里一次性算好，body 内部不再重复计算。
+        //
+        // - Important: 原先每个图表 Shape 都各自拿一份 `dataPoints.map { ... }`，
+        //   `maxValue` 与 `timeFractions` 也是计算属性 —— 一次 body 求值要跑
+        //   4 次全量 map 加 2 次全量扫描。鼠标在图上移动时每次 hover 更新
+        //   都会重跑一遍，30 天范围下是数万次元素操作（见 issue #1211）。
+        let geometry = ChartGeometry(points: dataPoints)
+
         VStack(spacing: 0) {
             // 图表区域（包含 y 轴）
             HStack(spacing: 0) {
                 // Y 轴
-                yAxisView
+                yAxisView(maxValue: geometry.maxValue)
                     .frame(width: yAxisWidth)
 
                 // 主图表
-                GeometryReader { geometry in
+                GeometryReader { proxy in
                     ZStack(alignment: .topLeading) {
                         // 背景网格
-                        gridLines(for: geometry.size)
+                        gridLines(for: proxy.size)
 
                         if !dataPoints.isEmpty {
                             // Download Graph (Green)
                             MiniGraphArea(
-                                data: dataPoints.map { $0.downloadSpeed },
-                                maxValue: maxValue,
-                                xFractions: timeFractions
+                                data: geometry.downloadValues,
+                                maxValue: geometry.maxValue,
+                                xFractions: geometry.timeFractions
                             )
                                 .fill(
                                     LinearGradient(
@@ -42,17 +89,17 @@ public struct NetworkHistoryGraphView: View {
                                 )
 
                             MiniGraphLine(
-                                data: dataPoints.map { $0.downloadSpeed },
-                                maxValue: maxValue,
-                                xFractions: timeFractions
+                                data: geometry.downloadValues,
+                                maxValue: geometry.maxValue,
+                                xFractions: geometry.timeFractions
                             )
                                 .stroke(.green, lineWidth: 1.5)
 
                             // Upload Graph (Red)
                             MiniGraphArea(
-                                data: dataPoints.map { $0.uploadSpeed },
-                                maxValue: maxValue,
-                                xFractions: timeFractions
+                                data: geometry.uploadValues,
+                                maxValue: geometry.maxValue,
+                                xFractions: geometry.timeFractions
                             )
                                 .fill(
                                     LinearGradient(
@@ -63,9 +110,9 @@ public struct NetworkHistoryGraphView: View {
                                 )
 
                             MiniGraphLine(
-                                data: dataPoints.map { $0.uploadSpeed },
-                                maxValue: maxValue,
-                                xFractions: timeFractions
+                                data: geometry.uploadValues,
+                                maxValue: geometry.maxValue,
+                                xFractions: geometry.timeFractions
                             )
                                 .stroke(.red, lineWidth: 1.5)
                         } else {
@@ -80,13 +127,13 @@ public struct NetworkHistoryGraphView: View {
                             // Vertical Line
                             Path { path in
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
-                                path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
+                                path.addLine(to: CGPoint(x: hoverLocation.x, y: proxy.size.height))
                             }
                             .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Info Tooltip
                             TooltipView(point: point, timeRange: timeRange)
-                                .position(x: clampedX(hoverLocation.x, width: geometry.size.width), y: 40)
+                                .position(x: clampedX(hoverLocation.x, width: proxy.size.width), y: 40)
                         }
                     }
                     .background(Color.white.opacity(0.01))
@@ -94,7 +141,7 @@ public struct NetworkHistoryGraphView: View {
                         switch phase {
                         case let .active(location):
                             hoverLocation = location
-                            updateHoverDataPoint(at: location.x, width: geometry.size.width)
+                            updateHoverDataPoint(at: location.x, width: proxy.size.width)
                         case .ended:
                             hoverLocation = nil
                             hoverDataPoint = nil
@@ -112,7 +159,7 @@ public struct NetworkHistoryGraphView: View {
 
     // MARK: - Y Axis View
 
-    private var yAxisView: some View {
+    private func yAxisView(maxValue: Double) -> some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 Spacer()
@@ -120,7 +167,7 @@ public struct NetworkHistoryGraphView: View {
                 // Y 轴标签（从上到下，5 个刻度）
                 ForEach(0..<5, id: \.self) { index in
                     if index > 0 {
-                        Text(formatYValue(for: index))
+                        Text(formatYValue(for: index, maxValue: maxValue))
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
@@ -183,7 +230,7 @@ public struct NetworkHistoryGraphView: View {
 
     // MARK: - Formatting Helpers
 
-    private func formatYValue(for index: Int) -> String {
+    private func formatYValue(for index: Int, maxValue: Double) -> String {
         let value = maxValue * (1.0 - Double(index) / 5.0)
         if value >= 1024 * 1024 * 1024 {
             return String(format: "%.1fG", value / (1024 * 1024 * 1024))
@@ -207,12 +254,6 @@ public struct NetworkHistoryGraphView: View {
             formatter.dateFormat = "MM-dd"
         }
         return formatter.string(from: date)
-    }
-
-    private var maxValue: Double {
-        let maxDown = dataPoints.map { $0.downloadSpeed }.max() ?? 0
-        let maxUp = dataPoints.map { $0.uploadSpeed }.max() ?? 0
-        return max(max(maxDown, maxUp) * 1.1, 1024 * 10) // Min 10KB/s scale
     }
 
     private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
@@ -258,10 +299,6 @@ public struct NetworkHistoryGraphView: View {
             }
         }
         return bestIndex
-    }
-
-    private var timeFractions: [Double]? {
-        Self.timeFractions(for: dataPoints)
     }
 
     private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
