@@ -62,15 +62,25 @@ public final class CacheCleanerService: @unchecked Sendable {
         await coordinator.cancelCurrentScan()
     }
 
-    public func cleanup(paths: [CachePath]) async throws -> Int64 {
+    public func cleanup(paths: [CachePath], toleratingMissing: Bool = false) async throws -> Int64 {
         let freedSpace = try await Task.detached(priority: .utility) {
             var total: Int64 = 0
             let fileManager = FileManager.default
+            // 「应用缓存」展开 ~/Library/Caches 子项时会列出 Firefox/Safari，
+            // 「浏览器缓存」又显式列出同一路径；按规范化路径去重，避免重复
+            // 删除与重复计入释放空间（#225）。
+            var seen = Set<String>()
             for item in paths {
+                let normalized = URL(fileURLWithPath: item.path).standardizedFileURL.path
+                guard seen.insert(normalized).inserted else { continue }
                 do {
                     try fileManager.removeItem(atPath: item.path)
                     total += item.size
                 } catch {
+                    // 嵌套重叠（父目录先删导致子路径消失）或并发清理时路径可能已
+                    // 不存在；UI 清理流程跳过而不是中断，保证后续选中项仍被处理
+                    // （#225）。工具流程保持删除失败即抛错的契约（#740）。
+                    if toleratingMissing, !fileManager.fileExists(atPath: item.path) { continue }
                     throw CacheCleanupError(path: item.path, underlyingDescription: error.localizedDescription)
                 }
             }

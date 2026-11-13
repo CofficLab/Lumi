@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 64 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 53
+测试文件: 7 个，用例总数: 64
 
 核心组件（源码目录）:
 - `Internal/`
@@ -38,6 +38,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CacheCleanerTrash**（2 条）：由 `scanExpandsTrashIntoChildren`、`cleanupKeepsTrashRoot` 锁定；改动废纸篓/缓存扫描与清理逻辑时优先跑对应测试文件。
+- **CacheCleanerDuplicatePath**（5 条）：由 `cleanupDeduplicatesIdenticalPathsAndProcessesRest`、`cleanupToleratesAlreadyMissingPath`、`cleanupStillThrowsOnMissingPathByDefault` 锁定；改动缓存清理去重/容错逻辑时优先跑对应测试文件。
 - **DiskManagerLumiTools**（27 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -105,27 +106,32 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 57 | CacheCleanerSafety | 开发者工具缓存不再包含 Archives | 真实扫描规则集合 | 取 `dev_cache` 规则的路径 | 路径中不含 `Xcode/Archives` | P1 | ✅ 已覆盖 | `developerToolCacheNoLongerContainsArchives` |
 | 58 | DiskManagerLumiTools | clean-caches 对普通文件根路径报告真实释放字节 | 临时目录下 8192 字节普通文件 | 调用 `sizeOfPath` 与 `CleanCachesTool.execute` | 测得 8192 字节，输出含实际大小且不含 0 字节 | P0 | ✅ 已覆盖 | `cleanCachesToolReportsActualSizeForRegularFile` |
 | 59 | DiskManagerLumiTools | 删除大文件成功后发出磁盘用量变化通知 | 临时目录下普通文件 | 调用 `LargeFilesService.deleteFile` | 收到 `diskManagerDiskUsageDidChange` 通知且文件已删除 | P0 | ✅ 已覆盖 | `deletingLargeFilePostsDiskUsageChangeNotification` |
+| 60 | CacheCleanerDuplicatePath | 相同路径来自两个分类时只删一次、只计一次释放空间，并继续处理后续项 | 临时目录下 Firefox(128B) 与 Safari(64B)，Firefox 列出两次 | 调用 `cleanup` | 释放 192B，Firefox 只计一次，Safari 仍被删除 | P0 | ✅ 已覆盖 | `cleanupDeduplicatesIdenticalPathsAndProcessesRest` |
+| 61 | CacheCleanerDuplicatePath | UI 清理遇到已不存在的路径时跳过而不中断后续项 | 一个缺失路径 + 一个有效目录(256B) | 调用 `cleanup(toleratingMissing: true)` | 释放 256B，有效项被删除，不抛错 | P0 | ✅ 已覆盖 | `cleanupToleratesAlreadyMissingPath` |
+| 62 | CacheCleanerDuplicatePath | 嵌套父子路径重叠时先删父目录，子路径消失后跳过且不重复计入 | Google(含 Chrome) 父目录 192B + 子路径 Chrome 64B | 调用 `cleanup(toleratingMissing: true)` | 释放 192B，父目录删除，不抛错 | P1 | ✅ 已覆盖 | `cleanupNestedParentChildDoesNotAbort` |
+| 63 | CacheCleanerDuplicatePath | 按规范化路径去重：尾斜杠变体视为同一路径 | Firefox 路径与其尾斜杠变体各一次 | 调用 `cleanup`（默认严格模式） | 释放 128B，只删一次 | P1 | ✅ 已覆盖 | `cleanupDeduplicatesByNormalizedPath` |
+| 64 | CacheCleanerDuplicatePath | 工具流程（默认）删除缺失路径仍抛错，保持 #740 契约 | 不存在的绝对路径 | 调用 `cleanup`（默认） | 抛出 `CacheCleanupError` | P0 | ✅ 已覆盖 | `cleanupStillThrowsOnMissingPathByDefault` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 40 / 40
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 8 / 8
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（38 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（42 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 64 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
