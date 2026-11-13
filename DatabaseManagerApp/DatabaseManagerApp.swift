@@ -61,7 +61,7 @@ struct DatabaseManagerApp: App {
         }
         .defaultSize(width: 1100, height: 760)
 
-        Window("设置", id: "database-manager.settings") {
+        Window("Settings", id: "database-manager.settings") {
             settingsView
         }
         .defaultSize(width: 780, height: 600)
