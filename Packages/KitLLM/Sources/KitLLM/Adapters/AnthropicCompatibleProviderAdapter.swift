@@ -190,7 +190,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         cacheTotalInputTokens: Int?,
         responseID: String?,
         stopReason: String?,
-        redactedThinking: [LLMRedactedThinkingBlock]
+        redactedThinking: [LLMRedactedThinkingBlock],
+        /// 归一后的 token 计数。
+        ///
+        /// 随响应一起解码得出，调用方不必把整份响应再解析一遍只为读
+        /// `usage`（Issue #1270）。
+        tokenUsage: ResponseTokenUsage.Counts
     ) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
@@ -247,7 +252,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             ),
             response.id,
             response.stopReason,
-            redactedThinking
+            redactedThinking,
+            ResponseTokenUsage.counts(from: usage, anthropic: true)
         )
     }
 

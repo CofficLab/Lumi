@@ -369,6 +369,50 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         ]
     }
 
+    /// 响应解析次数计数器（仅供测试观察）。
+    ///
+    /// 生产路径不会使用它；它让测试能断言「成功响应只被解析一次」。
+    nonisolated(unsafe) static let responseParseCounter = ParseCounter()
+
+    /// 解析次数计数器。
+    public final class ParseCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var total = 0
+        private var mainThreadHits = 0
+
+        /// 累计解析次数。
+        public var count: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return total
+        }
+
+        /// 其中发生在主线程上的次数。
+        public var mainThreadCount: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return mainThreadHits
+        }
+
+        /// 记录一次解析。
+        public func record() {
+            lock.lock()
+            total += 1
+            if pthread_main_np() != 0 {
+                mainThreadHits += 1
+            }
+            lock.unlock()
+        }
+
+        /// 归零。
+        public func reset() {
+            lock.lock()
+            total = 0
+            mainThreadHits = 0
+            lock.unlock()
+        }
+    }
+
     public func parseResponse(
         data: Data,
         reverseMap: [String: String]? = nil
@@ -378,13 +422,26 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         reasoningContent: String?,
         images: [MessageImage]?,
         responseID: String?,
-        stopReason: String?
+        stopReason: String?,
+        tokenUsage: ResponseTokenUsage.Counts
     ) {
-        if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
-            throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
+        // 只解析一次。
+        //
+        // 此前先投机性地解一遍错误信封——**成功响应也要走完整个 payload
+        // 才因 keyNotFound 失败**——再解一遍正式响应。错误信封改为在正式
+        // 解析失败后才尝试：成功路径因此只解析一次，错误路径多一次解析
+        // 但那是罕见分支（Issue #1270）。
+        let response: OpenAICompatibleResponse
+        do {
+            response = try JSONDecoder().decode(OpenAICompatibleResponse.self, from: data)
+            Self.responseParseCounter.record()
+        } catch {
+            Self.responseParseCounter.record()
+            if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
+                throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
+            }
+            throw error
         }
-
-        let response = try JSONDecoder().decode(OpenAICompatibleResponse.self, from: data)
 
         guard let choiceMessage = response.choices.first?.message else {
             throw OpenAICompatibleProviderError.noChoices
@@ -426,7 +483,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             choiceMessage.reasoningContent,
             images,
             response.id,
-            response.choices.first?.finishReason
+            response.choices.first?.finishReason,
+            ResponseTokenUsage.counts(from: response.usage, anthropic: false)
         )
     }
 

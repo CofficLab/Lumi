@@ -14,6 +14,131 @@ struct OpenAICompatibleResponse: Decodable {
     ///
     /// 这是供应商的关联标识，下游要靠它把一次请求与它的日志对上。
     let id: String?
+    /// token 用量。
+    ///
+    /// 随响应一起解码，而不是事后用 `JSONSerialization` 把同一份响应
+    /// 再解析一遍只为读 `usage`——那一步占了大响应解析开销的近六成
+    /// （Issue #1270）。
+    let usage: Usage?
+
+    /// token 用量。
+    ///
+    /// 各家供应商的字段名不统一（`prompt_tokens` / `input_tokens`、
+    /// `completion_tokens` / `output_tokens`…），缓存相关的计数还嵌在
+    /// `*_tokens_details` 里。这里用**宽松解码**：所有字段都可选，缺失
+    /// 即为 `nil`，由调用方按既有规则回退。
+    struct Usage: Decodable {
+        let promptTokens: Int?
+        let inputTokens: Int?
+        let completionTokens: Int?
+        let outputTokens: Int?
+        let totalTokens: Int?
+        let cachedInputTokens: Int?
+        let cacheWriteTokens: Int?
+        let cacheCreationInputTokens: Int?
+        /// 缓存读计数（OpenAI 形态：`prompt_tokens_details.cached_tokens`）。
+        let promptTokensDetailsCachedTokens: Int?
+        /// 缓存写计数（OpenRouter 形态，嵌在 `prompt_tokens_details`）。
+        let promptTokensDetailsCacheWriteTokens: Int?
+        /// 缓存读计数（嵌在 `input_tokens_details`）。
+        let inputTokensDetailsCachedTokens: Int?
+        /// 缓存写计数（Anthropic 形态，嵌在 `prompt_tokens_details`）。
+        let promptTokensDetailsCacheCreationInputTokens: Int?
+        /// 缓存写计数（Anthropic 形态，嵌在 `input_tokens_details`）。
+        let inputTokensDetailsCacheCreationInputTokens: Int?
+        /// 缓存写计数（Anthropic 形态，嵌在 `input_tokens_details`）。
+        let inputTokensDetailsCacheWriteTokens: Int?
+        /// 缓存读计数（Anthropic 形态：`cache_read_input_tokens`）。
+        let cacheReadInputTokens: Int?
+        /// 缓存读计数（DeepSeek OpenAI API 形态：`prompt_cache_hit_tokens`）。
+        let promptCacheHitTokens: Int?
+        /// 缓存读计数（部分网关直接放在 usage 顶层：`cached_tokens`）。
+        let cachedTokens: Int?
+        /// 输入 token 数（部分网关形态：`prompt_token_count`）。
+        let promptTokenCount: Int?
+        /// 输入 token 数（部分网关形态：`input_token_count`）。
+        let inputTokenCount: Int?
+        /// 输出 token 数（部分网关形态：`candidates_token_count`）。
+        let candidatesTokenCount: Int?
+        /// 输出 token 数（部分网关形态：`output_token_count`）。
+        let outputTokenCount: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case promptTokens = "prompt_tokens"
+            case inputTokens = "input_tokens"
+            case completionTokens = "completion_tokens"
+            case outputTokens = "output_tokens"
+            case totalTokens = "total_tokens"
+            case cachedInputTokens = "cached_input_tokens"
+            case cacheWriteTokens = "cache_write_tokens"
+            case cacheCreationInputTokens = "cache_creation_input_tokens"
+            case cacheReadInputTokens = "cache_read_input_tokens"
+            case promptCacheHitTokens = "prompt_cache_hit_tokens"
+            case cachedTokens = "cached_tokens"
+            case promptTokenCount = "prompt_token_count"
+            case inputTokenCount = "input_token_count"
+            case candidatesTokenCount = "candidates_token_count"
+            case outputTokenCount = "output_token_count"
+            case promptTokensDetails = "prompt_tokens_details"
+            case inputTokensDetails = "input_tokens_details"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            promptTokens = try container.decodeIfPresent(Int.self, forKey: .promptTokens)
+            inputTokens = try container.decodeIfPresent(Int.self, forKey: .inputTokens)
+            completionTokens = try container.decodeIfPresent(Int.self, forKey: .completionTokens)
+            outputTokens = try container.decodeIfPresent(Int.self, forKey: .outputTokens)
+            totalTokens = try container.decodeIfPresent(Int.self, forKey: .totalTokens)
+            cachedInputTokens = try container.decodeIfPresent(Int.self, forKey: .cachedInputTokens)
+            cacheWriteTokens = try container.decodeIfPresent(Int.self, forKey: .cacheWriteTokens)
+            cacheCreationInputTokens = try container.decodeIfPresent(Int.self, forKey: .cacheCreationInputTokens)
+            cacheReadInputTokens = try container.decodeIfPresent(Int.self, forKey: .cacheReadInputTokens)
+            promptCacheHitTokens = try container.decodeIfPresent(Int.self, forKey: .promptCacheHitTokens)
+            cachedTokens = try container.decodeIfPresent(Int.self, forKey: .cachedTokens)
+            promptTokenCount = try container.decodeIfPresent(Int.self, forKey: .promptTokenCount)
+            inputTokenCount = try container.decodeIfPresent(Int.self, forKey: .inputTokenCount)
+            candidatesTokenCount = try container.decodeIfPresent(Int.self, forKey: .candidatesTokenCount)
+            outputTokenCount = try container.decodeIfPresent(Int.self, forKey: .outputTokenCount)
+
+            let promptDetails = try container.decodeIfPresent(
+                TokenDetails.self, forKey: .promptTokensDetails
+            )
+            promptTokensDetailsCachedTokens = promptDetails?.cachedTokens
+            promptTokensDetailsCacheWriteTokens = promptDetails?.cacheWriteTokens
+            promptTokensDetailsCacheCreationInputTokens = promptDetails?.cacheCreationInputTokens
+
+            let inputDetails = try container.decodeIfPresent(
+                TokenDetails.self, forKey: .inputTokensDetails
+            )
+            inputTokensDetailsCachedTokens = inputDetails?.cachedTokens
+            inputTokensDetailsCacheWriteTokens = inputDetails?.cacheWriteTokens
+            inputTokensDetailsCacheCreationInputTokens = inputDetails?.cacheCreationInputTokens
+        }
+
+        /// `*_tokens_details` 子对象。
+        ///
+        /// 用自定义 init 让三个字段全部可选：不同网关只会给其中一部分。
+        struct TokenDetails: Decodable {
+            let cachedTokens: Int?
+            let cacheWriteTokens: Int?
+            let cacheCreationInputTokens: Int?
+
+            enum CodingKeys: String, CodingKey {
+                case cachedTokens = "cached_tokens"
+                case cacheWriteTokens = "cache_write_tokens"
+                case cacheCreationInputTokens = "cache_creation_input_tokens"
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                cachedTokens = try container.decodeIfPresent(Int.self, forKey: .cachedTokens)
+                cacheWriteTokens = try container.decodeIfPresent(Int.self, forKey: .cacheWriteTokens)
+                cacheCreationInputTokens = try container.decodeIfPresent(Int.self, forKey: .cacheCreationInputTokens)
+            }
+        }
+    }
+
 
     struct Choice: Decodable {
         let message: Message

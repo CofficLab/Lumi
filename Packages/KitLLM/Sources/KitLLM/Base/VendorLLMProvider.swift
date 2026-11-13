@@ -134,8 +134,18 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
             bodyData: bodyData
         )
-        let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
-        let tokenCounts = tokenCounts(from: data, anthropic: false)
+        // 响应解析在后台线程完成：这一步要解码整份响应，并解开内联
+        // 生成图片的 base64（一张 1.5 MB 的图约 1.6 ms）。放在主线程上
+        // 会卡住滚动与输入（Issue #1270）。
+        //
+        // 必须用 `Task.detached`：实测直接调用与 `Task {}`（继承 actor
+        // 上下文）都仍在主线程上执行，只有 `Task.detached` 才会真正离开。
+        let parsed = try await Task.detached(priority: .userInitiated) {
+            try adapter.parseResponse(data: data, reverseMap: reverseMap)
+        }.value
+        // token 用量随响应一起解码，不再把同一份响应重新解析一遍
+        // （Issue #1270）。
+        let tokenCounts = parsed.tokenUsage
         return LLMResponse(
             content: parsed.content,
             model: model,
@@ -177,8 +187,18 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
             bodyData: bodyData
         )
-        let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
-        let tokenCounts = tokenCounts(from: data, anthropic: true)
+        // 响应解析在后台线程完成：这一步要解码整份响应，并解开内联
+        // 生成图片的 base64（一张 1.5 MB 的图约 1.6 ms）。放在主线程上
+        // 会卡住滚动与输入（Issue #1270）。
+        //
+        // 必须用 `Task.detached`：实测直接调用与 `Task {}`（继承 actor
+        // 上下文）都仍在主线程上执行，只有 `Task.detached` 才会真正离开。
+        let parsed = try await Task.detached(priority: .userInitiated) {
+            try adapter.parseResponse(data: data, reverseMap: reverseMap)
+        }.value
+        // token 用量随响应一起解码，不再把同一份响应重新解析一遍
+        // （Issue #1270）。
+        let tokenCounts = parsed.tokenUsage
         return LLMResponse(
             content: parsed.content,
             model: model,
@@ -217,29 +237,52 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let data = try await apiService.sendJSON(request: httpRequest, body: body)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-        // 终态失败必须被识别为供应商失败。
+        // 响应解析在后台线程完成。
         //
-        // Responses 协议用 `status: "failed"` + `error` 表达终态失败，且它
-        // 走 HTTP 200。解析器此前从不检查这两个字段，于是失败的响应被当成
-        // 「成功但内容为空」——没有 output 时 AgentLoop 报通用的、不可恢复
-        // 的 `emptyResponse`，供应商给的错误全部丢失；有部分文本时甚至会
-        // 被当成成功的助手消息落库。
-        try Self.throwIfResponsesFailed(object)
-        let text = Self.responsesText(from: object)
-        let tokenCounts = tokenCounts(from: data, anthropic: false)
+        // `JSONSerialization` 把整份响应解析成 `Any` 字典树，成本与响应
+        // 体积成正比；放在主线程上会卡住滚动与输入（Issue #1270）。
+        //
+        // `[String: Any]` 不满足 `Sendable`，因此**全部**提取工作都在后台
+        // 完成，只把纯值结果带回来。
+        //
+        // 必须用 `Task.detached`：实测直接调用与 `Task {}`（继承 actor
+        // 上下文）都仍在主线程上执行，只有 `Task.detached` 才会真正离开。
+        let extracted = try await Task.detached(priority: .userInitiated) { () -> ResponsesExtraction in
+            let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+            // 终态失败必须被识别为供应商失败。
+            //
+            // Responses 协议用 `status: "failed"` + `error` 表达终态失败，且它
+            // 走 HTTP 200。解析器此前从不检查这两个字段，于是失败的响应被当成
+            // 「成功但内容为空」——没有 output 时 AgentLoop 报通用的、不可恢复
+            // 的 `emptyResponse`，供应商给的错误全部丢失；有部分文本时甚至会
+            // 被当成成功的助手消息落库。
+            try Self.throwIfResponsesFailed(object)
+            let text = Self.responsesText(from: object)
+            // usage 直接从上面那次 `JSONSerialization` 的结果里读，不再把
+            // 同一份响应重新解析一遍（Issue #1270）。
+            let usage = self.tokenCounts(from: object["usage"] as? [String: Any], anthropic: false)
+            return ResponsesExtraction(
+                text: text,
+                responseID: object["id"] as? String,
+                inputTokens: usage.input,
+                outputTokens: usage.output,
+                cachedInputTokens: usage.cachedInput,
+                cacheWriteTokens: usage.cacheWrite,
+                cacheTotalInputTokens: usage.cacheTotal
+            )
+        }.value
         return LLMResponse(
-            content: text,
+            content: extracted.text,
             model: model,
-            inputTokenCount: tokenCounts.input,
-            outputTokenCount: tokenCounts.output,
-            cachedInputTokenCount: tokenCounts.cachedInput,
-            cacheWriteInputTokenCount: tokenCounts.cacheWrite,
-            cacheTotalInputTokenCount: tokenCounts.cacheTotal,
+            inputTokenCount: extracted.inputTokens,
+            outputTokenCount: extracted.outputTokens,
+            cachedInputTokenCount: extracted.cachedInputTokens,
+            cacheWriteInputTokenCount: extracted.cacheWriteTokens,
+            cacheTotalInputTokenCount: extracted.cacheTotalInputTokens,
             // 顶层响应 ID（`resp_...`）：供应商的关联标识，下游要靠它把一次
             // 请求与它的日志对上。自定义 `.responses` 供应商走的就是这条
             // 路径，丢掉它就无法在下游恢复（issue #1147）。
-            responseID: object["id"] as? String
+            responseID: extracted.responseID
         )
     }
 
@@ -396,7 +439,7 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     ///
     /// 失败信息优先取 `error.message`，其次取 `error.code`；两者都没有时用
     /// 状态值兜底，保证错误永远带得出一条可读的原因。
-    private static func throwIfResponsesFailed(_ object: [String: Any]) throws {
+    private nonisolated static func throwIfResponsesFailed(_ object: [String: Any]) throws {
         guard let status = object["status"] as? String, status == "failed" else { return }
         let error = object["error"] as? [String: Any]
         let message = error?["message"] as? String
@@ -415,7 +458,7 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         throw OpenAICompatibleProviderError.apiError(message: detail)
     }
 
-    private static func responsesText(from object: [String: Any]) -> String {
+    private nonisolated static func responsesText(from object: [String: Any]) -> String {
         if let text = object["output_text"] as? String { return text }
         guard let output = object["output"] as? [[String: Any]] else { return "" }
         return output
@@ -433,7 +476,7 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     /// 拒答块此前被忽略，于是一次**合法完成的拒答**变成空内容，AgentLoop
     /// 把它归类成通用的、不可恢复的 `emptyResponse`——用户看不到模型给出
     /// 的拒绝说明（与 Chat Completions 的 `message.refusal` 同类问题）。
-    private static func responsesContentText(from block: [String: Any]) -> String? {
+    private nonisolated static func responsesContentText(from block: [String: Any]) -> String? {
         if let text = block["text"] as? String { return text }
         if let refusal = block["refusal"] as? String { return refusal }
         return nil
@@ -441,15 +484,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
     /// Normalize the usage shapes used by OpenAI, Anthropic-compatible
     /// gateways, Responses proxies, and common OpenAI-compatible gateways.
-    private func tokenCounts(from data: Data, anthropic: Bool) -> (
+    private nonisolated func tokenCounts(from usage: [String: Any]?, anthropic: Bool) -> (
         input: Int?,
         output: Int?,
         cachedInput: Int?,
         cacheWrite: Int?,
         cacheTotal: Int?
     ) {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let usage = object["usage"] as? [String: Any] else {
+        guard let usage else {
             return (nil, nil, nil, nil, nil)
         }
 
@@ -488,6 +530,20 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             : input
         return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
+}
+
+/// Responses 协议的响应提取结果。
+///
+/// 全部是纯值类型，因此可以从后台线程安全地带回主线程
+/// （`[String: Any]` 不满足 `Sendable`）。
+private struct ResponsesExtraction: Sendable {
+    let text: String
+    let responseID: String?
+    let inputTokens: Int?
+    let outputTokens: Int?
+    let cachedInputTokens: Int?
+    let cacheWriteTokens: Int?
+    let cacheTotalInputTokens: Int?
 }
 
 // MARK: - Tool schema adapter
