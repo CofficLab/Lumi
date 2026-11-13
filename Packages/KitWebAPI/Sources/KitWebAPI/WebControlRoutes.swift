@@ -169,6 +169,12 @@ public enum WebControlRoutes {
                 guard let uuid = UUID(uuidString: id) else {
                     throw WebAPIError.badRequest(message: "Invalid conversation id", field: "id")
                 }
+                // 只允许选中真实存在的会话：与详情路由相同的存在性检查
+                // （缓存命中或 Store 补载）。不存在的 ID 返回 404 且不改动
+                // 当前选中，避免把无效选择落库（issue #1152）。
+                guard await conversations.fetchConversation(id: uuid) != nil else {
+                    throw WebAPIError.notFound(message: "Conversation not found: \(id)")
+                }
                 conversations.selectConversation(id: uuid)
                 return try .api(["selected": uuid.uuidString] as [String: String])
             }

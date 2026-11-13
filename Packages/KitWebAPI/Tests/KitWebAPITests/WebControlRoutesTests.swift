@@ -233,6 +233,33 @@ struct WebControlRoutesTests {
         #expect(conversations.manager.selectedConversationID == targetID)
     }
 
+    @Test("选择不存在的会话返回 404 且保留原选中")
+    func selectRouteRejectsMissingConversation() async throws {
+        let (context, conversations, _) = makeContext(conversationCount: 1)
+        let routes = makeRoutes(context: context)
+        let route = try #require(routes.first { $0.path == "/api/v1/conversations/:id/select" })
+
+        let existingID = try #require(conversations.conversations.first?.id)
+        conversations.manager.selectConversation(id: existingID)
+
+        let missingID = UUID()
+        do {
+            _ = try await route.handler(
+                WebRouteRequest(
+                    method: .post,
+                    path: "/api/v1/conversations/\(missingID)/select",
+                    pathParameters: ["id": missingID.uuidString]
+                )
+            )
+            Issue.record("应当抛出 notFound")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 404)
+            #expect(error.code == "not_found")
+        }
+
+        #expect(conversations.manager.selectedConversationID == existingID)
+    }
+
     @Test("重命名会话写入新标题")
     func titleRouteRenamesConversation() async throws {
         let (context, conversations, _) = makeContext(conversationCount: 1)
