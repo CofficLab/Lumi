@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 10 条用例。
+PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 10
+测试文件: 3 个，用例总数: 16
 
 核心组件（源码目录）:
 - `Models/`
@@ -34,6 +34,7 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 10 条
 
 - **综合**（7 条）：由 `saveAndLoad`、`saveUpdatesPreservesCreatedAt`、`listAndDelete` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeleteMemoryTool（不存在目标）**（3 条）：由 `deletingMissingMemoryThrows`、`secondDeleteOfSameIDThrows`、`storageDeleteMissingThrowsNotFound` 锁定。删除不存在的记忆必须抛出工具错误，不得返回 `Memory Deleted` 成功文案；存储层对缺失文件抛 `MemoryError.notFound`，重复删除同一 ID 第二次必须失败（**回归 #809**）。改动 `delete_memory` 或 `MemoryFileStorage.delete` 时优先跑对应测试文件。
+- **MemoryID 路径穿越防护**（6 条）：由 `fileNameEncodesPathSeparators`、`saveTraversalIDGlobalStaysWithinRoot`、`backslashAndAbsoluteIDStayWithinRoot` 等用例锁定。`fileName(forID:)` 的允许字符集为 `alphanumerics ∪ {-_.}`，`/`、`\` 等一律百分号编码为单一路径分量；含 `../`、反斜杠、绝对路径或纯点号的 id 经 save/load/delete 后，文件标准化路径必须仍落在 Memory 根目录内，不得逃出（**回归 #198**）。改动 `fileName(forID:)`、`allowedIDCharacters` 或存储路径拼接时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -49,27 +50,33 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 10 条
 | 8 | DeleteMemoryTool | 删除不存在的记忆必须抛出错误而非报成功（**回归 #809**） | 空存储，ID `definitely-missing` 不存在 | 调用 `delete_memory(id, scope=global)` | 抛出 `ToolExecutionError`，不返回成功文案 | P0 | ✅ 已覆盖 | `deletingMissingMemoryThrows` |
 | 9 | DeleteMemoryTool | 重复删除同一 ID：首次成功，第二次必须报错（**回归 #809**） | 已保存 ID `once` | 连续两次调用 `delete_memory` | 首次成功且文件被删，第二次抛出 `ToolExecutionError` | P0 | ✅ 已覆盖 | `secondDeleteOfSameIDThrows` |
 | 10 | DeleteMemoryTool | 存储层删除不存在的记忆抛出 notFound | 空存储 | 调用 `storage.delete(id: "ghost")` | 抛出 `MemoryError.notFound("ghost")` | P1 | ✅ 已覆盖 | `storageDeleteMissingThrowsNotFound` |
+| 11 | ID 穿越防护 | 穿越 id 的文件名编码不得保留真实路径分隔符（**回归 #198**） | — | 调用 `fileName(forID: "../../../outside")` | 结果不含 `/` 与反斜杠，等于 `..%2F..%2F..%2Foutside` | P0 | ✅ 已覆盖 | `fileNameEncodesPathSeparators` |
+| 12 | ID 穿越防护 | project 作用域 save 穿越 id 必须落在 Memory 根目录内（**回归 #198**） | 空存储 | save(id 含 `../`, scope=project) | 文件标准化路径仍在根目录内且存在 | P0 | ✅ 已覆盖 | `saveTraversalIDProjectStaysWithinRoot` |
+| 13 | ID 穿越防护 | global 作用域 save 穿越 id 必须落在 Memory 根目录内（**回归 #198**） | 空存储 | save(id 含 `../`, scope=global) | 文件标准化路径仍在根目录内且存在 | P0 | ✅ 已覆盖 | `saveTraversalIDGlobalStaysWithinRoot` |
+| 14 | ID 穿越防护 | 反斜杠与绝对路径 id 不得逃出 Memory 根目录（**回归 #198**） | 空存储 | save 反斜杠穿越 id 与绝对路径 id `/etc/passwd` | 两者文件均在根目录内，编码不含分隔符 | P0 | ✅ 已覆盖 | `backslashAndAbsoluteIDStayWithinRoot` |
+| 15 | ID 穿越防护 | 纯点号 id 不得逃出 Memory 根目录（**回归 #198**） | 空存储 | save(id: "..") 与 save(id: ".") | 两者文件均在根目录内 | P0 | ✅ 已覆盖 | `dotOnlyIDStaysWithinRoot` |
+| 16 | ID 穿越防护 | load/delete 穿越 id 仅命中根目录内文件，不触及外部（**回归 #198**） | 已保存穿越 id | load 后 delete 同一 id | 召回内容一致，删除仅移除根目录内文件 | P1 | ✅ 已覆盖 | `loadAndDeleteTraversalIDStayContained` |
 
-> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 8 / 8
 - P2: 已覆盖 0 / 0
-- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（8 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
