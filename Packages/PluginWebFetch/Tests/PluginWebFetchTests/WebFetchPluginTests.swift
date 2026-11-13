@@ -38,6 +38,13 @@ struct PluginWebFetchTests {
         #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
     }
 
+    // MARK: - #1312：并行只读调度声明
+
+    @Test("tool declares parallel read-only scheduling capability")
+    func toolDeclaresParallelReadOnly() {
+        #expect(WebFetchTool().executionCapability == .parallelReadOnly)
+    }
+
     @Test("tool rejects missing url")
     func toolRejectsMissingURL() async throws {
         // 回归：缺参曾经返回 "Error: ..." 字符串，默认 executeResult
