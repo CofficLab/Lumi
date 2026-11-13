@@ -11,6 +11,7 @@
       "zh-HK",
       "zh-Hans",
       "zh-Hant",
+      "zh-TW",
     ],
   },
   "packages": [
