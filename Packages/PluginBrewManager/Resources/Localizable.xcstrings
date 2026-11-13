@@ -309,6 +309,12 @@
     },
     "cask": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cask"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
