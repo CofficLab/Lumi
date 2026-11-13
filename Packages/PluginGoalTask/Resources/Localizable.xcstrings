@@ -377,6 +377,12 @@
             "state": "translated",
             "value": "未完成的任務"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未完成的任務"
+          }
         }
       }
     },
