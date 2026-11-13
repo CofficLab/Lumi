@@ -721,7 +721,6 @@ extension AgentLoopManager {
         let contextProvider = self.contextProvider
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        var llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
 
         // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
         //
@@ -729,24 +728,23 @@ extension AgentLoopManager {
         // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
         // 模型（如内置的 `gpt-4` / `gpt-3.5-turbo`）仍然收到 base64 图片
         // 块——一个本地就能拦下的能力错误被推迟成供应商的协议失败。
-        if modelInfo?.supportsVision == false {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)模型不支持视觉，剥离图片 model=\(modelName ?? "unknown")")
-            }
-            llmHistory = llmHistory.map { message in
-                message.images.isEmpty
-                    ? message
-                    : LLMMessage(
-                        role: message.role,
-                        content: message.content,
-                        toolCalls: message.toolCalls,
-                        toolCallID: message.toolCallID,
-                        reasoningContent: message.reasoningContent,
-                        redactedThinking: message.redactedThinking,
-                        isError: message.isError
-                    )
-            }
+        //
+        // 判定必须在**转换之前**：`includesImages == false` 时历史转换
+        // 根本不解码图片字节。此前是「先解码再剥离」，图片白白解码一遍
+        // 随即丢弃——一张 1.5 MB 截图解码一次约 1.2 ms，一段带图历史实测
+        // 38 ms，全在主线程上（Issue #1268）。
+        let includesImages = modelInfo?.supportsVision != false
+        if !includesImages, Self.verbose {
+            Self.logger.info("\(Self.t)模型不支持视觉，跳过图片解码 model=\(modelName ?? "unknown")")
         }
+        // 历史转换在后台线程完成：它要遍历全部历史消息、JSON 解码附件
+        // metadata 并解码图片 base64，实测一段带图历史耗时 38 ms。放在
+        // 主线程上会卡住滚动与输入（Issue #1268）。
+        let llmHistory = await llmMessagesOffMainActor(
+            from: history,
+            omittedArgumentKeys: omittedArgumentKeys,
+            includesImages: includesImages
+        )
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(

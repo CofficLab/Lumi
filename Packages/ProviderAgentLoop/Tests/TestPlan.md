@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderAgentLoop 的实现包，包含 13 个主要类型；当前测试覆盖 25 条用例。
+ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 29 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 25
+测试文件: 6 个，用例总数: 29
 
 ## 公开 API
 
@@ -16,8 +16,6 @@ ProviderAgentLoop 的实现包，包含 13 个主要类型；当前测试覆盖 
 - `AgentLoopOutcome`
 - `AgentLoopProviding`
 - `AgentLoopRetryLifecycleEvent`
-- `AgentLoopRetryLifecycleObserverHandle`
-- `AgentLoopRetryLifecycleProviding`
 - `AgentLoopState`
 - `AgentLoopSuspension`
 - `AgentTurnResumeRequest`
@@ -29,11 +27,12 @@ ProviderAgentLoop 的实现包，包含 13 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AgentLoopFullLoop**（6 条）：由 `usesStreamingPath`、`emptyResponseKeepsReasoningOnErrorMessage`、`toolCallLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentLoopFullLoop**（6 条）：由 `usesStreamingPath`、`emptyResponseKeepsReasoningOnErrorMessage`、`persistsCacheTokenUsage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DefaultAgentLoopToolCapability**（2 条）：由 `requestOmitsToolsWhenModelDoesNotSupportThem`、`requestKeepsToolsWhenModelSupportsThem` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderAgentLoopHistoryImageDecoding**（4 条）：由 `nonVisionModeDoesNotDecodeUserImages`、`visionModeStillDecodesImages`、`historyConversionRunsOffMainThread` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（13 条）：由 `networkFailureIsRetryable`、`systemTLSFailureIsRetryable`、`classifiesHTTPFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ThinkingDeltaStage**（1 条）：由 `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` 锁定；改动流式阶段分派时优先跑对应测试文件。
-- **DefaultAgentLoopToolCapability**（2 条）：由 `requestOmitsToolsWhenModelDoesNotSupportThem`、`requestKeepsToolsWhenModelSupportsThem` 锁定；改动请求组装的工具过滤时优先跑对应测试文件。
-- **SubagentToolPolicy**（3 条）：由 `childToolsExcludeDelegationToolItself`、`childToolsKeepOnlyParallelReadOnlyInOrder`、`childToolsOfEmptyRegistryIsEmpty` 锁定；改动子会话工具过滤契约时优先跑对应测试文件。
+- **SubagentToolPolicy**（3 条）：由 `childToolsExcludeDelegationToolItself`、`childToolsKeepOnlyParallelReadOnlyInOrder`、`childToolsOfEmptyRegistryIsEmpty` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ThinkingDeltaStage**（1 条）：由 `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -41,50 +40,54 @@ ProviderAgentLoop 的实现包，包含 13 个主要类型；当前测试覆盖 
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | AgentLoopFullLoop | 流式 Provider 优先走 streamComplete 并写入流式 store | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesStreamingPath` |
 | 2 | AgentLoopFullLoop | 空响应失败时思考内容随错误消息落库 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyResponseKeepsReasoningOnErrorMessage` |
-| 3 | AgentLoopFullLoop | 工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolCallLoop` |
-| 4 | AgentLoopFullLoop | build 模式高风险工具挂起等待用户响应，响应后执行并完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highRiskSuspensionAndResume` |
-| 5 | AgentLoopFullLoop | chat 模式拒绝执行工具 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `chatModeBlocksTools` |
-| 6 | AgentLoopFullLoop | 缓存 token 用量随 assistant 消息落库 | Provider 返回 cached=80 / cacheWrite=7 / cacheTotal=100 | `runTurn` 后读取 assistant 消息 | 三个缓存字段与响应一致 | P1 | ✅ 已覆盖 | `persistsCacheTokenUsage` |
-| 7 | 综合 | 结构化失败将网络错误标记为可重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `networkFailureIsRetryable` |
-| 8 | 综合 | 系统 TLS 错误会归类为可重试网络失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `systemTLSFailureIsRetryable` |
-| 9 | 综合 | 结构化失败区分限流、服务端和鉴权错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `classifiesHTTPFailures` |
-| 10 | 综合 | 529 过载失败保留服务端给出的退避建议 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overloadedFailureCarriesRetryAfter` |
-| 11 | 综合 | 没有服务端建议时退避时长为空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `failureWithoutRetryAfterHasNoDelay` |
-| 12 | 综合 | 鉴权、配置和上下文错误默认不可自动重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonRetryableFailuresRemainNonRetryable` |
-| 13 | 综合 | 空响应归类为可重试失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyResponseIsRetryable` |
-| 14 | 综合 | 用户文本文件附件会转换为 LLM 用户正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageToLLMMessagePreservesUserFile` |
-| 15 | 综合 | 工具结果图片关联到 tool 消息而不是 assistant | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultImageIsAttachedToToolMessage` |
-| 16 | 综合 | Loop 通过 LLM Provider 生成 assistant 消息并更新状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runsTurn` |
-| 17 | 综合 | Loop 通过 LLM Provider 生成 assistant 消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runsWithLLMProvider` |
-| 18 | 综合 | 创建 Loop 时依赖全部注入，直接可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `constructorInjection` |
-| 19 | 综合 | resumeTurn 无挂起点时抛出 invalidResumeRequest | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeTurnWithoutSuspensionThrows` |
-| 20 | ThinkingDeltaStage | 端到端：思考增量不会让流式阶段翻成 generating | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` |
-| 21 | DefaultAgentLoopToolCapability | 模型声明不支持工具时请求不得带工具 Schema | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `requestOmitsToolsWhenModelDoesNotSupportThem` |
-| 22 | DefaultAgentLoopToolCapability | 模型声明支持工具时请求仍带工具 Schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestKeepsToolsWhenModelSupportsThem` |
-| 23 | SubagentToolPolicy | 子会话工具表不得包含委托工具自身 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `childToolsExcludeDelegationToolItself` |
-| 24 | SubagentToolPolicy | 子会话工具表只保留只读并发工具且保持注册顺序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `childToolsKeepOnlyParallelReadOnlyInOrder` |
-| 25 | SubagentToolPolicy | 空工具表过滤后仍为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `childToolsOfEmptyRegistryIsEmpty` |
+| 3 | AgentLoopFullLoop | 缓存 token 用量随 assistant 消息落库 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistsCacheTokenUsage` |
+| 4 | AgentLoopFullLoop | 工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolCallLoop` |
+| 5 | AgentLoopFullLoop | build 模式高风险工具挂起等待用户响应，响应后执行并完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highRiskSuspensionAndResume` |
+| 6 | AgentLoopFullLoop | chat 模式拒绝执行工具 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `chatModeBlocksTools` |
+| 7 | DefaultAgentLoopToolCapability | 模型声明不支持工具时请求不带工具 Schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestOmitsToolsWhenModelDoesNotSupportThem` |
+| 8 | DefaultAgentLoopToolCapability | 模型声明支持工具时请求仍带工具 Schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestKeepsToolsWhenModelSupportsThem` |
+| 9 | ProviderAgentLoopHistoryImageDecoding | 非视觉模式不解码用户图片附件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonVisionModeDoesNotDecodeUserImages` |
+| 10 | ProviderAgentLoopHistoryImageDecoding | 视觉模式照常解码图片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `visionModeStillDecodesImages` |
+| 11 | ProviderAgentLoopHistoryImageDecoding | 历史转换不在主线程上执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `historyConversionRunsOffMainThread` |
+| 12 | ProviderAgentLoopHistoryImageDecoding | 离主线程转换的结果与同步转换完全一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offMainActorConversionMatchesSyncConversion` |
+| 13 | 综合 | 结构化失败将网络错误标记为可重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `networkFailureIsRetryable` |
+| 14 | 综合 | 系统 TLS 错误会归类为可重试网络失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `systemTLSFailureIsRetryable` |
+| 15 | 综合 | 结构化失败区分限流、服务端和鉴权错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `classifiesHTTPFailures` |
+| 16 | 综合 | 529 过载失败保留服务端给出的退避建议 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overloadedFailureCarriesRetryAfter` |
+| 17 | 综合 | 没有服务端建议时退避时长为空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `failureWithoutRetryAfterHasNoDelay` |
+| 18 | 综合 | 鉴权、配置和上下文错误默认不可自动重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonRetryableFailuresRemainNonRetryable` |
+| 19 | 综合 | 空响应归类为可重试失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyResponseIsRetryable` |
+| 20 | 综合 | 用户文本文件附件会转换为 LLM 用户正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageToLLMMessagePreservesUserFile` |
+| 21 | 综合 | 工具结果图片关联到 tool 消息而不是 assistant | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultImageIsAttachedToToolMessage` |
+| 22 | 综合 | Loop 通过 LLM Provider 生成 assistant 消息并更新状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runsTurn` |
+| 23 | 综合 | Loop 通过 LLM Provider 生成 assistant 消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runsWithLLMProvider` |
+| 24 | 综合 | 创建 Loop 时依赖全部注入，直接可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `constructorInjection` |
+| 25 | 综合 | resumeTurn 无挂起点时抛出 invalidResumeRequest | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeTurnWithoutSuspensionThrows` |
+| 26 | SubagentToolPolicy | 子会话工具表不得包含委托工具自身 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `childToolsExcludeDelegationToolItself` |
+| 27 | SubagentToolPolicy | 子会话工具表只保留只读并发工具且保持注册顺序 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `childToolsKeepOnlyParallelReadOnlyInOrder` |
+| 28 | SubagentToolPolicy | 空工具表过滤后仍为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `childToolsOfEmptyRegistryIsEmpty` |
+| 29 | ThinkingDeltaStage | 端到端：思考增量不会让流式阶段翻成 generating | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 10 / 10
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 2 / 2
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

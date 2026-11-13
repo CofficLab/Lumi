@@ -17,13 +17,24 @@ extension Message {
         llmMessage(toolImages: [])
     }
 
-    func llmMessage(toolImages: [KitLLM.MessageImage]) -> LLMMessage {
-        let userImages: [KitLLM.MessageImage] = UserAttachmentMetadata
-            .decodeImageAttachments(from: metadata)
-            .compactMap { attachment -> KitLLM.MessageImage? in
-                guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
-                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
-            }
+    func llmMessage(
+        toolImages: [KitLLM.MessageImage],
+        includesImages: Bool = true,
+        imageDecoder: ImageBase64Decoder = .shared
+    ) -> LLMMessage {
+        // 非视觉模型不该收到图片，因此**根本不要解码**图片字节。
+        //
+        // 此前是「先解码、再剥离」：图片白白解码一遍随即丢弃，而解码
+        // 一张 1.5 MB 截图约 1.2 ms，一段带图历史实测 38 ms，全部发生在
+        // 主线程上（Issue #1268）。
+        let userImages: [KitLLM.MessageImage] = includesImages
+            ? UserAttachmentMetadata
+                .decodeImageAttachments(from: metadata)
+                .compactMap { attachment -> KitLLM.MessageImage? in
+                    guard let data = imageDecoder.decode(attachment.base64Data) else { return nil }
+                    return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+                }
+            : []
         let userFiles = role == .user
             ? UserAttachmentMetadata.decodeFileAttachments(from: metadata)
             : []
@@ -46,16 +57,26 @@ extension Message {
 /// 将持久化消息转换为 LLM 消息，并把 assistant 工具调用结果中的图片
 /// 关联到对应的 tool 消息。图片仍只保存在 assistant 的嵌套结果中，避免
 /// 为传输格式额外复制一份大体积 base64 数据。
-func llmMessages(from messages: [Message]) -> [LLMMessage] {
+///
+/// - Parameter includesImages: 是否携带图片。`false` 表示目标模型不支持
+///   视觉（`LLMModelInfo.supportsVision == false`），此时**不解码任何图片
+///   字节**（Issue #1268）。
+func llmMessages(
+    from messages: [Message],
+    includesImages: Bool = true,
+    imageDecoder: ImageBase64Decoder = .shared
+) -> [LLMMessage] {
     var pendingImagesByToolCallID: [String: [[KitLLM.MessageImage]]] = [:]
-    for message in messages where message.role == .assistant {
-        for toolCall in message.toolCalls ?? [] {
-            let images = toolCall.result?.imageAttachments.compactMap { attachment -> KitLLM.MessageImage? in
-                guard let data = Data(base64Encoded: attachment.data) else { return nil }
-                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
-            } ?? []
-            guard !images.isEmpty else { continue }
-            pendingImagesByToolCallID[toolCall.id, default: []].append(images)
+    if includesImages {
+        for message in messages where message.role == .assistant {
+            for toolCall in message.toolCalls ?? [] {
+                let images = toolCall.result?.imageAttachments.compactMap { attachment -> KitLLM.MessageImage? in
+                    guard let data = imageDecoder.decode(attachment.data) else { return nil }
+                    return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+                } ?? []
+                guard !images.isEmpty else { continue }
+                pendingImagesByToolCallID[toolCall.id, default: []].append(images)
+            }
         }
     }
 
@@ -63,16 +84,47 @@ func llmMessages(from messages: [Message]) -> [LLMMessage] {
     result.reserveCapacity(messages.count)
     for message in messages {
         var toolImages: [KitLLM.MessageImage] = []
-        if message.role == .tool,
+        if includesImages,
+           message.role == .tool,
            let toolCallID = message.toolCallID,
            var pendingImages = pendingImagesByToolCallID[toolCallID],
            !pendingImages.isEmpty {
             toolImages = pendingImages.removeFirst()
             pendingImagesByToolCallID[toolCallID] = pendingImages
         }
-        result.append(message.llmMessage(toolImages: toolImages))
+        result.append(
+            message.llmMessage(
+                toolImages: toolImages,
+                includesImages: includesImages,
+                imageDecoder: imageDecoder
+            )
+        )
     }
     return result
+}
+
+/// 在后台线程把持久化消息转换为 LLM 消息。
+///
+/// 历史转换要遍历全部历史消息、JSON 解码每条消息的附件 metadata、并解码
+/// 每张图片的 base64——实测一段带图的十消息历史耗时 38 ms。放在主线程上
+/// 会卡住滚动与输入（Issue #1268）。
+///
+/// 必须用 `Task.detached`：实测直接调用 `nonisolated` 静态函数与
+/// `Task {}`（继承 actor 上下文）**都仍在主线程上执行**，只有
+/// `Task.detached` 才会真正离开。转换结果 `[LLMMessage]` 是 `Sendable`，
+/// 可以安全地带回主线程。
+func llmMessagesOffMainActor(
+    from messages: [Message],
+    includesImages: Bool = true,
+    imageDecoder: ImageBase64Decoder = .shared
+) async -> [LLMMessage] {
+    await Task.detached(priority: .userInitiated) {
+        llmMessages(
+            from: messages,
+            includesImages: includesImages,
+            imageDecoder: imageDecoder
+        )
+    }.value
 }
 
 // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
@@ -420,28 +472,21 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let schemas = tools.compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
-        var llmHistory = llmMessages(from: history)
         // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
         //
         // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
         // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
         // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
         // 供应商的协议失败。
-        if route?.modelInfo.supportsVision == false {
-            llmHistory = llmHistory.map { message in
-                message.images.isEmpty
-                    ? message
-                    : LLMMessage(
-                        role: message.role,
-                        content: message.content,
-                        toolCalls: message.toolCalls,
-                        toolCallID: message.toolCallID,
-                        reasoningContent: message.reasoningContent,
-                        redactedThinking: message.redactedThinking,
-                        isError: message.isError
-                    )
-            }
-        }
+        //
+        // 判定必须在**转换之前**：`includesImages == false` 时历史转换
+        // 根本不解码图片字节。此前是「先解码再剥离」，图片白白解码一遍
+        // 随即丢弃（Issue #1268）。
+        let includesImages = route?.modelInfo.supportsVision != false
+        let llmHistory = await llmMessagesOffMainActor(
+            from: history,
+            includesImages: includesImages
+        )
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
@@ -655,28 +700,16 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
-        var llmHistory = llmMessages(from: history)
             // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
             //
-            // `LLMModelInfo.supportsVision` 与 `supportsTools` 一样是能力契约，
-            // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
-            // 模型仍然收到 base64 图片块——本地就能拦下的能力错误被推迟成
-            // 供应商的协议失败。
-            if legacyRoute?.modelInfo.supportsVision == false {
-                llmHistory = llmHistory.map { message in
-                    message.images.isEmpty
-                        ? message
-                        : LLMMessage(
-                            role: message.role,
-                            content: message.content,
-                            toolCalls: message.toolCalls,
-                            toolCallID: message.toolCallID,
-                            reasoningContent: message.reasoningContent,
-                            redactedThinking: message.redactedThinking,
-                            isError: message.isError
-                        )
-                }
-            }
+            // 判定必须在**转换之前**：`includesImages == false` 时历史转换
+            // 根本不解码图片字节。此前是「先解码再剥离」，图片白白解码一遍
+            // 随即丢弃（Issue #1268）。
+            let includesImages = legacyRoute?.modelInfo.supportsVision != false
+            let llmHistory = await llmMessagesOffMainActor(
+                from: history,
+                includesImages: includesImages
+            )
             var preparedMessages = llmHistory
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {
