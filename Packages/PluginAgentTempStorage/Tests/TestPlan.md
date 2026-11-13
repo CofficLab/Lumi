@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 18 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 18
+测试文件: 3 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Services/`
@@ -30,6 +30,7 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 
 - **AgentTempStorageRuntimeBridge**（3 条）：由 `injectedDirectoryResolvesToInjectedDirectory`、`sharedStorageUsesInjectedDirectory`、`refusesFallbackWithoutInjection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（14 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk`、`unreadableSettingsAbortPurgeAndSurfaceError` 等用例锁定；其中 `storageSupportsNestedReadWriteAndList` 锁定列表必须递归枚举嵌套文件，`purgeRemovesExpiredNestedFiles` 锁定清理必须递归删除过期嵌套文件（#200）；改动该模块时优先跑对应测试文件。
+- **TempFileStorageSymlink**（6 条）：由 `writeRejectsFileSymlinkPointingOutsideStorage`、`readRejectsFileSymlinkPointingOutsideStorage`、`writeRejectsNestedPathThroughSymlinkDirectory` 等用例锁定（#232）：路径边界检查必须解析符号链接，指向存储外部的文件/目录链接不得越界读写；指向内部的链接保持可用，经悬空链接目录写入必须失败且无外部副作用。改动 `resolveSafeURL` 时优先跑 `TempFileStorageSymlinkTests.swift`。
 
 ## 测试用例清单
 
@@ -53,27 +54,33 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 16 | 综合 | 过期文件删除失败时读取不得返回过期内容（**回归 #974**） | 顶层文件修改时间早于保留期，父目录置为 0o555 使删除失败但文件仍可读 | 调用 `read` 触发清理 | 抛出 `purgeFailed` 且详情包含文件名，过期文件仍存在于磁盘但不再被当作正常结果返回 | P1 | ✅ 已覆盖 | `readFailsWhenExpiredFileCannotBeDeleted` |
 | 17 | 综合 | 过期嵌套文件必须被递归清理（**回归 #200**） | 写入 `exports/data.json` 并把修改时间设为 40 天前 | 调用 `purgeExpiredFiles` 后 read/list | read 抛出 `fileNotFound`，列表为空 | P0 | ✅ 已覆盖 | `purgeRemovesExpiredNestedFiles` |
 | 18 | 综合 | 递归清理只删过期文件，保留新鲜嵌套与顶层文件（**回归 #200**） | 嵌套旧文件 + 嵌套新文件 + 顶层新文件 | 调用 `purgeExpiredFiles` 后 list/read | 仅剩 `fresh.md` 与 `logs/fresh.log`，新嵌套文件内容可读 | P1 | ✅ 已覆盖 | `purgeKeepsFreshNestedFilesWhileRemovingExpiredOnes` |
+| 19 | TempFileStorageSymlink | 写入必须拒绝指向存储外的文件符号链接（**回归 #232**） | 存储内 `link.md` 链接到外部 `target.md`（内容 original） | 调用 `write(filename: "link.md")` | 抛出 `pathTraversal`，外部文件内容保持 original | P0 | ✅ 已覆盖 | `writeRejectsFileSymlinkPointingOutsideStorage` |
+| 20 | TempFileStorageSymlink | 读取不得经指向存储外的文件符号链接越界（**回归 #232**） | 存储内 `link.md` 链接到外部 `secret.md` | 调用 `read(filename: "link.md")` | 抛出 `pathTraversal`，外部内容不被返回 | P0 | ✅ 已覆盖 | `readRejectsFileSymlinkPointingOutsideStorage` |
+| 21 | TempFileStorageSymlink | 写入不得经符号链接目录越界创建外部文件（**回归 #232**） | 存储内 `exports` 目录链接指向外部目录，叶子 `data.json` 尚不存在 | 调用 `write(filename: "exports/data.json")` | 抛出 `pathTraversal`，外部目录不出现 `data.json` | P0 | ✅ 已覆盖 | `writeRejectsNestedPathThroughSymlinkDirectory` |
+| 22 | TempFileStorageSymlink | 读取经符号链接目录的嵌套路径被拒绝（**回归 #232**） | 存储内 `exports` 链接指向含 `secret.txt` 的外部目录 | 调用 `read(filename: "exports/secret.txt")` | 抛出 `pathTraversal` | P1 | ✅ 已覆盖 | `readRejectsNestedPathThroughSymlinkDirectory` |
+| 23 | TempFileStorageSymlink | 指向存储内部的符号链接保持可用（**回归 #232**） | 写入 `real.md` 后创建内部链接 `alias.md` | 调用 `read(filename: "alias.md")` | 返回 real.md 内容，内部链接不被误杀 | P1 | ✅ 已覆盖 | `symlinksStayingInsideStorageRemainUsable` |
+| 24 | TempFileStorageSymlink | 经悬空符号链接目录写入失败且不产生外部副作用（**回归 #232**） | `exports` 链接指向尚不存在的外部目录 | 调用 `write(filename: "exports/data.json")` | 写入抛出错误，外部目录保持为空 | P1 | ✅ 已覆盖 | `writeThroughDanglingSymlinkDirectoryFailsWithoutExternalSideEffects` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 12 / 12
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 1 / 1
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
