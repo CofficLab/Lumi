@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 63
+测试文件: 4 个，用例总数: 64
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,7 +29,7 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DockerManagerLogic**（37 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DockerManagerLogic**（38 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `multipleTagsOfSameImageHaveUniqueStableIDs` 锁定（**回归 #251**）：`DockerImage.id` 必须按 imageID+repository+tag 组合唯一，同一镜像多标签不得共享列表身份，同一引用的身份必须稳定；改动 `DockerImage.id` 或 List 行身份时优先跑该用例。
 - **DockerManagerPluginLifecycle**（9 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootRegistersActivityBarItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`selectingAnotherImageIgnoresStaleDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Docker history decoding**（5 条）：由 `decodesRealHistoryLine`、`decodesMultiLayerHistory`、`allInvalidHistoryLinesThrow` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -101,27 +101,28 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 61 | Docker history decoding | 全部历史行解析失败时抛错，而不是返回成功的空历史 | 只有无效 JSON 行 | 调用 `decodeHistory` | 抛出 `DockerError.parsingFailed` | P0 | ✅ 已覆盖 | `allInvalidHistoryLinesThrow` |
 | 62 | Docker history decoding | 部分历史行解析失败时保留成功行 | 一行有效 + 一行无效 | 调用 `decodeHistory` | 返回有效历史，不抛错 | P1 | ✅ 已覆盖 | `partialHistoryFailureKeepsValid` |
 | 63 | Docker history decoding | 空历史输出返回空列表 | 空字符串 | 调用 `decodeHistory` | 返回空数组 | P2 | ✅ 已覆盖 | `emptyHistoryOutputReturnsEmpty` |
+| 64 | DockerManagerLogic | 同一镜像多标签的列表标识必须唯一且稳定，不得碰撞 | 同一 imageID 的不同 repository/tag，及同引用不同元数据 | 比较 `DockerImage.id` | 不同引用 id 互异且不等于裸 imageID；同引用 id 稳定 | P0 | ✅ 已覆盖 | `multipleTagsOfSameImageHaveUniqueStableIDs` |
 
-> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
+- P0: 已覆盖 15 / 15
 - P1: 已覆盖 45 / 45
 - P2: 已覆盖 4 / 4
-- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
 - **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 64 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
