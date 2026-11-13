@@ -420,3 +420,97 @@ struct GitRepositoryWatchProviderTests {
         return condition()
     }
 }
+
+// MARK: - HEAD 符号引用（回归 #213）
+
+/// 回归 #213：两个分支指向同一 commit 时，外部 `git switch` 只改变 HEAD 的
+/// 符号引用，不改变 commit hash / index / refs 内容。快照若只存解析后的 hash，
+/// 切换分支后所有字段都不变，watcher 直接 return，工具栏停留在旧分支。
+@Suite("HEAD 符号引用")
+@MainActor
+struct GitHeadSymbolicRefTests {
+
+    @Test("同一 commit 的两个分支：切换 HEAD 后快照必须不同（回归 #213）")
+    func snapshotDistinguishesBranchesAtSameCommit() throws {
+        let fixture = try GitFixture.makeProject(label: "headref-snapshot")
+        try fixture.writeGitFile("refs/heads/main", contents: "deadbeef\n")
+        try fixture.writeGitFile("refs/heads/feature", contents: "deadbeef\n")
+        try fixture.writeGitFile("HEAD", contents: "ref: refs/heads/main\n")
+
+        let onMain = GitDirectoryResolver.readSnapshot(gitDirectory: fixture.gitDirectory)
+        try fixture.writeGitFile("HEAD", contents: "ref: refs/heads/feature\n")
+        let onFeature = GitDirectoryResolver.readSnapshot(gitDirectory: fixture.gitDirectory)
+
+        #expect(onMain.head == "deadbeef")
+        #expect(onMain.head == onFeature.head, "两个分支指向同一 commit，hash 应相同")
+        #expect(onMain != onFeature, "切换分支后快照必须不同，否则 watcher 不会广播 headChanged")
+    }
+
+    @Test("进程内切换同 commit 分支也会广播 headChanged（回归 #213）")
+    func broadcastsHeadChangedOnBranchSwitchAtSameCommit() async throws {
+        let fixture = try GitFixture.makeProject(label: "headref-provider")
+        try fixture.writeGitFile("refs/heads/main", contents: "deadbeef\n")
+        try fixture.writeGitFile("refs/heads/feature", contents: "deadbeef\n")
+        try fixture.writeGitFile("HEAD", contents: "ref: refs/heads/main\n")
+
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+        let handle = provider.addObserver { events.append($0) }
+        defer {
+            handle.cancel()
+            provider.stopWatching()
+        }
+
+        provider.startWatching(repositoryURL: fixture.projectURL)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // 与外部 `git switch feature` 一致：只改 HEAD 的符号引用，commit 不变。
+        try fixture.writeGitFile("HEAD", contents: "ref: refs/heads/feature\n")
+
+        let sawHeadChange = await waitUntil(timeout: 5) {
+            events.contains {
+                if case .headChanged = $0 { return true }
+                return false
+            }
+        }
+
+        #expect(sawHeadChange, "同 commit 切换分支没有触发 headChanged，工具栏会停留在旧分支")
+    }
+
+    @Test("符号 HEAD 返回 ref 目标")
+    func readHeadRefReturnsSymbolicTarget() throws {
+        let fixture = try GitFixture.makeProject(label: "headref-symbolic")
+        try fixture.writeGitFile("HEAD", contents: "ref: refs/heads/main\n")
+
+        #expect(GitDirectoryResolver.readHeadRef(gitDirectory: fixture.gitDirectory) == "refs/heads/main")
+    }
+
+    @Test("detached HEAD 返回 nil")
+    func readHeadRefIsNilForDetachedHead() throws {
+        let fixture = try GitFixture.makeProject(label: "headref-detached")
+        try fixture.writeGitFile("HEAD", contents: "abc123\n")
+
+        #expect(GitDirectoryResolver.readHeadRef(gitDirectory: fixture.gitDirectory) == nil)
+    }
+
+    @Test("HEAD 缺失时符号引用为 nil")
+    func readHeadRefIsNilWhenHeadMissing() throws {
+        let fixture = try GitFixture.makeProject(label: "headref-missing")
+
+        #expect(GitDirectoryResolver.readHeadRef(gitDirectory: fixture.gitDirectory) == nil)
+    }
+
+    /// 轮询等待条件成立，避免依赖固定 sleep 时长。
+    private func waitUntil(
+        timeout: TimeInterval,
+        poll: TimeInterval = 0.1,
+        _ condition: @MainActor () -> Bool
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: UInt64(poll * 1_000_000_000))
+        }
+        return condition()
+    }
+}

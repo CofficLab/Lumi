@@ -2,6 +2,9 @@ import Foundation
 
 struct GitDirectorySnapshot: Equatable, Sendable {
     let head: String?
+    /// HEAD 的符号引用（如 `refs/heads/main`）；detached 时为 nil。
+    /// 同 commit 切换分支只改这里，hash 不变（#213）。
+    let headRef: String?
     let index: String?
     let stash: String?
     let refs: String?
@@ -65,10 +68,24 @@ enum GitDirectoryResolver {
     static func readSnapshot(gitDirectory: URL) -> GitDirectorySnapshot {
         GitDirectorySnapshot(
             head: readHeadHash(gitDirectory: gitDirectory),
+            headRef: readHeadRef(gitDirectory: gitDirectory),
             index: fileContentFingerprint(gitDirectory.appendingPathComponent("index")),
             stash: stashFingerprint(gitDirectory: gitDirectory),
             refs: refsFingerprint(gitDirectory: gitDirectory)
         )
+    }
+
+    /// 读取 HEAD 的符号引用目标；detached（直接 hash）或缺失时返回 nil。
+    static func readHeadRef(gitDirectory: URL) -> String? {
+        let headURL = gitDirectory.appendingPathComponent("HEAD")
+        guard let content = try? String(contentsOf: headURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines), !content.isEmpty else {
+            return nil
+        }
+        guard content.hasPrefix("ref:") else { return nil }
+        return content
+            .replacingOccurrences(of: "ref:", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func readHeadHash(gitDirectory: URL) -> String? {

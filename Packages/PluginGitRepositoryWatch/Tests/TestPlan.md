@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 27 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 32 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 27
+测试文件: 2 个，用例总数: 32
 
 核心组件（源码目录）:
 - `Providers/`
@@ -28,9 +28,11 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 - **Git目录解析**（7 条）：由 `resolvesGitDirectory`、`resolvesAbsoluteGitFile`、`picksGitDirLineFromMultiLineFile` 等用例锁定。
 - **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
 - **Git仓库监听Provider**（9 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
+- **HEAD符号引用**（5 条）：由 `snapshotDistinguishesBranchesAtSameCommit`、`broadcastsHeadChangedOnBranchSwitchAtSameCommit`、`readHeadRefReturnsSymbolicTarget` 等用例锁定。
 - **订阅令牌生命周期**：Provider 弱引用持有订阅令牌，释放令牌即注销（下次广播清理失效注册）；面板销毁后不得残留回调（#921）。
 - **仓库根向上发现**：项目路径位于仓库子目录时，解析器须与 git 一致向上查找最近的 `.git`；遇到存在但格式非法的 `.git` 立即报错，不越过该仓库边界（#913）。
 - **进程内工作区写入**：工作区 FSEventStream 不得设置 `IgnoreSelf`；内置编辑器保存、Agent 工具写文件都在同一进程内，过滤自身事件会让已打开的 Changes 停在旧状态（#911）。
+- **HEAD 符号引用**：快照须保留 HEAD 的符号引用（`headRef`），不能只比解析后的 commit hash；同 commit 切换分支时 hash/index/refs 均不变，唯有符号引用变化，须据此广播 `.headChanged` 刷新工具栏（#213）。
 
 ## 测试用例清单
 
@@ -63,27 +65,32 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 | 25 | Git目录解析 | 项目目录是仓库子目录时向上找到仓库根的 .git（回归 #913） | 项目目录含嵌套子目录 | 以子目录为项目路径解析 | 返回仓库根的 `.git` | P1 | ✅ 已覆盖 | `resolvesAncestorGitDirectory` |
 | 26 | Git仓库监听Provider | 项目路径是仓库子目录时正常监听并广播 started（回归 #913） | 项目目录含嵌套子目录 | 以子目录启动监听 | 监听器就绪且广播一次 started | P1 | ✅ 已覆盖 | `startsWatchingFromNestedProjectDirectory` |
 | 27 | Git仓库监听Provider | 进程内写入工作区也会广播 workingTreeChanged（回归 #911） | 真实仓库，Provider 已启动监听 | 由测试进程（与编辑器保存同一进程）写入文件 | 节流与防抖后收到 `.workingTreeChanged` | P1 | ✅ 已覆盖 | `reportsInProcessWorkingTreeWrites` |
+| 28 | HEAD符号引用 | 同一 commit 的两个分支：切换 HEAD 后快照必须不同（回归 #213） | 两分支 ref 指向同一 hash | 改写 HEAD 符号引用后重读快照 | hash 相同但快照不相等 | P0 | ✅ 已覆盖 | `snapshotDistinguishesBranchesAtSameCommit` |
+| 29 | HEAD符号引用 | 进程内切换同 commit 分支也会广播 headChanged（回归 #213） | 真实仓库，Provider 已启动监听 | 由测试进程改写 HEAD 符号引用 | 防抖后收到 `.headChanged` | P0 | ✅ 已覆盖 | `broadcastsHeadChangedOnBranchSwitchAtSameCommit` |
+| 30 | HEAD符号引用 | 符号 HEAD 返回 ref 目标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readHeadRefReturnsSymbolicTarget` |
+| 31 | HEAD符号引用 | detached HEAD 返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readHeadRefIsNilForDetachedHead` |
+| 32 | HEAD符号引用 | HEAD 缺失时符号引用为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `readHeadRefIsNilWhenHeadMissing` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 23 / 23
-- P2: 已覆盖 4 / 4
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 25 / 25
+- P2: 已覆盖 5 / 5
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（23 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（25 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

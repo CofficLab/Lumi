@@ -97,7 +97,8 @@ public final class GitRepositoryWatchProvider: GitRepositoryWatching {
             gitDirectory: URL(fileURLWithPath: watchedGitDirectory, isDirectory: true)
         )
         let previous = lastSnapshot
-        let headChanged = current.head != previous?.head
+        // 同 commit 切换分支只改 HEAD 符号引用，hash 不变；两者任一变化都算 HEAD 变化（#213）。
+        let headChanged = current.head != previous?.head || current.headRef != previous?.headRef
         let indexChanged = current.index != previous?.index
         let stashChanged = current.stash != previous?.stash
         let refsChanged = current.refs != previous?.refs
