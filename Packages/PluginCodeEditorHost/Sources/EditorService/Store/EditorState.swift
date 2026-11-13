@@ -11,6 +11,15 @@ import UniformTypeIdentifiers
 import LumiLoggingKit
 import os
 
+/// 文件加载后需要在后台计算的内容派生信息。
+///
+/// 长行检测与总行数统计都要完整扫描正文，在大文件上是主线程重活，
+/// 因此在后台线程计算后再带回主线程（见 issue #1277）。
+struct DocumentDerivedScan: Sendable {
+    let longestLine: LongestDetectedLine?
+    let totalLines: Int
+}
+
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
@@ -1178,7 +1187,11 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - File Loading Constants
     
     /// 截断读取字节数（256KB）
-    static let truncationReadBytes: Int = 256 * 1024
+    /// 截断预览的读取字节上限。
+    ///
+    /// - Important: 必须 `nonisolated` —— 该常量会在后台线程的文档加载任务中被读取
+    ///   （见 issue #1277）。
+    nonisolated static let truncationReadBytes: Int = 256 * 1024
     
     // MARK: - Init
     
@@ -1892,11 +1905,25 @@ public final class EditorState: ObservableObject, SuperLog {
 
         Task {
             do {
-                let loadedDocument = try documentController.loadDocument(
-                    from: url,
-                    truncationReadBytes: Self.truncationReadBytes,
-                    forceFullLoad: fullLoadOverrides.contains(loadingURL.standardizedFileURL)
-                )
+                // 文件读取与解码在后台线程完成，避免大文件阻塞主线程（见 issue #1277）。
+                let forceFullLoad = fullLoadOverrides.contains(loadingURL.standardizedFileURL)
+                let loadedDocument = try await Task.detached(priority: .userInitiated) {
+                    try EditorDocumentController.loadDocument(
+                        from: url,
+                        truncationReadBytes: Self.truncationReadBytes,
+                        forceFullLoad: forceFullLoad
+                    )
+                }.value
+
+                // 长行检测与总行数统计都要完整扫描正文，放在后台完成（见 issue #1277）。
+                let derivedScan = await Task.detached(priority: .utility) { () -> DocumentDerivedScan? in
+                    guard case let .text(document) = loadedDocument else { return nil }
+                    let content = document.content
+                    return DocumentDerivedScan(
+                        longestLine: LongLineDetector.findLongestLine(in: content),
+                        totalLines: content.filter { $0 == "\n" }.count + 1
+                    )
+                }.value
 
                 await MainActor.run { [weak self] in
                     guard let self else { return }
@@ -1921,7 +1948,7 @@ public final class EditorState: ObservableObject, SuperLog {
                         self.fileLoadErrorMessage = nil
                     case .text(let document):
                         let content = document.content
-                        let longestLine = LongLineDetector.findLongestLine(in: content)
+                        let longestLine = derivedScan?.longestLine
                         self.withoutSessionSync {
                             self.currentFileURL = loadingURL
                             _ = self.documentController.load(text: content)
@@ -1950,7 +1977,7 @@ public final class EditorState: ObservableObject, SuperLog {
                                 self.detectedLanguage = nil
                             }
 
-                            self.totalLines = content.filter { $0 == "\n" }.count + 1
+                            self.totalLines = derivedScan?.totalLines ?? (content.filter { $0 == "\n" }.count + 1)
                             self.resetViewportObservation(totalLines: self.totalLines)
                             self.inlayHintProvider.clear()
                             self.codeActionProvider.clear()
