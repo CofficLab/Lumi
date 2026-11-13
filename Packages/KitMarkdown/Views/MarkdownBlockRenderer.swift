@@ -462,14 +462,51 @@ final class MarkdownBlockCache: @unchecked Sendable {
     }
 
     /// Returns the length of the prefix of `markdown` that ends at the last
-    /// block boundary (a blank line). Content after it may still be growing and
-    /// must be re-parsed on the next append; content before it is stable.
-    /// Falls back to 0 (re-parse everything) when there is no boundary yet.
+    /// block boundary (a blank line) **outside any fenced code block**. Content
+    /// after it may still be growing and must be re-parsed on the next append;
+    /// content before it is stable. Falls back to 0 (re-parse everything) when
+    /// there is no such boundary yet.
+    ///
+    /// 围栏内的空行不是块边界：若把代码块中途当作稳定前缀，前缀会是一个未闭合的
+    /// 代码块，追加时尾段从代码中间独立解析，拼出的块结构与整体解析不一致（#340）。
     private static func nextStableBoundary(in markdown: String) -> Int {
-        if let range = markdown.range(of: "\n\n", options: .backwards) {
-            return markdown.distance(from: markdown.startIndex, to: range.upperBound)
+        var activeFence: (character: Character, length: Int)?
+        var lastBoundary = 0
+        var offset = 0
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false)
+        for (index, sub) in lines.enumerated() {
+            let line = String(sub)
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if let fence = activeFence {
+                if isClosingFence(trimmed, for: fence) { activeFence = nil }
+            } else if let fence = openingFence(in: trimmed) {
+                activeFence = fence
+            }
+            // 只有围栏外的空行才是稳定边界；末尾的幻影空行（结尾换行产生）不计。
+            if line.isEmpty && activeFence == nil && index < lines.count - 1 {
+                lastBoundary = offset + 1
+            }
+            offset += line.count + 1
         }
-        return 0
+        return lastBoundary
+    }
+
+    /// 开围栏：≥3 个连续反引号或波浪号（行首已去空白）。
+    private static func openingFence(in line: String) -> (character: Character, length: Int)? {
+        guard let first = line.first, first == "`" || first == "~" else { return nil }
+        let length = line.prefix { $0 == first }.count
+        guard length >= 3 else { return nil }
+        return (first, length)
+    }
+
+    /// 闭围栏：同种字符、长度不短于开围栏，其后仅余空白。
+    private static func isClosingFence(
+        _ line: String,
+        for fence: (character: Character, length: Int)
+    ) -> Bool {
+        let length = line.prefix { $0 == fence.character }.count
+        guard length >= fence.length else { return false }
+        return line.dropFirst(length).allSatisfy { $0 == " " || $0 == "\t" }
     }
 
     private func evictIfNeeded() {
