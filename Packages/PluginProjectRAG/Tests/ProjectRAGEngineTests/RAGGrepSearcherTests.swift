@@ -30,21 +30,21 @@ import Testing
         try #require(process.terminationStatus == 0)
     }
 
-    @Test func findsLiteralAndRegexMatches() throws {
+    @Test func findsLiteralAndRegexMatches() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try write("func handleRequest() {}\nfunc HandleRequest() {}\n", to: root.appendingPathComponent("Core.swift"))
 
-        let literal = try RAGGrepSearcher.search(pattern: "handleRequest", projectPath: root.path)
+        let literal = try await RAGGrepSearcher.search(pattern: "handleRequest", projectPath: root.path)
         #expect(literal.totalMatchCount == 1)
         #expect(literal.matches.first?.lineNumber == 1)
 
-        let regex = try RAGGrepSearcher.search(pattern: "[Hh]andleRequest", projectPath: root.path)
+        let regex = try await RAGGrepSearcher.search(pattern: "[Hh]andleRequest", projectPath: root.path)
         #expect(regex.totalMatchCount == 2)
         #expect(regex.matches.allSatisfy { !$0.isContext })
     }
 
-    @Test func respectsNoIgnore() throws {
+    @Test func respectsNoIgnore() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try gitInit(root)
@@ -52,50 +52,50 @@ import Testing
         try write("let needle = 2\n", to: root.appendingPathComponent("generated/Ignored.swift"))
         try write("generated/\n", to: root.appendingPathComponent(".gitignore"))
 
-        let outcome = try RAGGrepSearcher.search(pattern: "needle", projectPath: root.path)
+        let outcome = try await RAGGrepSearcher.search(pattern: "needle", projectPath: root.path)
         let names = Set(outcome.matches.map { ($0.filePath as NSString).lastPathComponent })
         #expect(names.contains("Tracked.swift"))
         #expect(names.contains("Ignored.swift"))
     }
 
-    @Test func globFilterWorks() throws {
+    @Test func globFilterWorks() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try write("needle\n", to: root.appendingPathComponent("a.swift"))
         try write("needle\n", to: root.appendingPathComponent("notes.md"))
 
-        let outcome = try RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, glob: "*.swift")
+        let outcome = try await RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, glob: "*.swift")
         #expect(outcome.totalMatchCount == 1)
         #expect(outcome.matches.first?.filePath.hasSuffix("a.swift") == true)
     }
 
-    @Test func caseInsensitiveFlagWorks() throws {
+    @Test func caseInsensitiveFlagWorks() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try write("Needle\n", to: root.appendingPathComponent("A.swift"))
 
-        let sensitive = try RAGGrepSearcher.search(pattern: "needle", projectPath: root.path)
+        let sensitive = try await RAGGrepSearcher.search(pattern: "needle", projectPath: root.path)
         #expect(sensitive.totalMatchCount == 0)
 
-        let insensitive = try RAGGrepSearcher.search(
+        let insensitive = try await RAGGrepSearcher.search(
             pattern: "needle", projectPath: root.path, caseInsensitive: true
         )
         #expect(insensitive.totalMatchCount == 1)
     }
 
-    @Test func invalidRegexThrows() throws {
+    @Test func invalidRegexThrows() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try write("content\n", to: root.appendingPathComponent("A.swift"))
 
-        #expect(throws: RAGGrepError.self) {
-            _ = try RAGGrepSearcher.search(pattern: "[", projectPath: root.path)
+        await #expect(throws: RAGGrepError.self) {
+            _ = try await RAGGrepSearcher.search(pattern: "[", projectPath: root.path)
         }
     }
 
-    @Test func missingRipgrepThrows() {
-        #expect(throws: RAGGrepError.self) {
-            _ = try RAGGrepSearcher.search(
+    @Test func missingRipgrepThrows() async {
+        await #expect(throws: RAGGrepError.self) {
+            _ = try await RAGGrepSearcher.search(
                 pattern: "x",
                 projectPath: FileManager.default.temporaryDirectory.path,
                 ripgrepURL: URL(fileURLWithPath: "/nonexistent/rg-\(UUID().uuidString)")
@@ -103,23 +103,23 @@ import Testing
         }
     }
 
-    @Test func maxResultsCapsMatchesButCountsAll() throws {
+    @Test func maxResultsCapsMatchesButCountsAll() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         let lines = (1...10).map { "line \($0) needle" }.joined(separator: "\n")
         try write(lines + "\n", to: root.appendingPathComponent("Many.swift"))
 
-        let outcome = try RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, maxResults: 3)
+        let outcome = try await RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, maxResults: 3)
         #expect(outcome.matches.filter { !$0.isContext }.count == 3)
         #expect(outcome.totalMatchCount == 10)
     }
 
-    @Test func contextLinesIncluded() throws {
+    @Test func contextLinesIncluded() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try write("alpha\nneedle\nomega\n", to: root.appendingPathComponent("Ctx.swift"))
 
-        let outcome = try RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, contextLines: 1)
+        let outcome = try await RAGGrepSearcher.search(pattern: "needle", projectPath: root.path, contextLines: 1)
         #expect(outcome.matches.count == 3)
         #expect(outcome.matches.filter(\.isContext).count == 2)
         #expect(outcome.totalMatchCount == 1)

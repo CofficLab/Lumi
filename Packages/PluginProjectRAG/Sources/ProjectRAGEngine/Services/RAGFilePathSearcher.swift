@@ -11,7 +11,7 @@ public enum RAGFilePathSearcher {
         query: String,
         projectPath: String,
         topK: Int
-    ) throws -> [RAGSearchResult] {
+    ) async throws -> [RAGSearchResult] {
         guard hasPathHint(query) else { return [] }
 
         let queryTerms = RAGTextUtils.tokenize(query.lowercased())
@@ -22,7 +22,7 @@ public enum RAGFilePathSearcher {
             return directMatches.prefix(max(topK, 1)).map { $0 }
         }
 
-        let filePaths = try searchWithRipgrep(projectPath: projectPath)
+        let filePaths = try await searchWithRipgrep(projectPath: projectPath)
             ?? RAGFileScanner.discoverFilesCached(in: projectPath)
         let matches = filePaths.compactMap { filePath -> RAGSearchResult? in
             let source = RAGPathUtils.displayPath(filePath: filePath, projectPath: projectPath)
@@ -48,7 +48,7 @@ public enum RAGFilePathSearcher {
     }
 
     /// 优先让 ripgrep 枚举路径；返回 nil 表示工具不可用或执行失败，调用方再回退到文件扫描。
-    private static func searchWithRipgrep(projectPath: String) throws -> [String]? {
+    private static func searchWithRipgrep(projectPath: String) async throws -> [String]? {
         guard let executable = RAGRipgrepLocator.executable() else { return nil }
 
         var arguments = [
@@ -64,28 +64,23 @@ public enum RAGFilePathSearcher {
         }
         arguments.append(projectPath)
 
-        let outputPipe = Pipe()
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        process.standardOutput = outputPipe
-        process.standardError = FileHandle.nullDevice
-        // 确定性回收管道 fd，避免热路径上依赖 autorelease pool 造成 fd 泄漏。
-        defer {
-            try? outputPipe.fileHandleForReading.close()
-            try? outputPipe.fileHandleForWriting.close()
-        }
-
+        // ripgrep 调用必须离开协作线程池：`readDataToEndOfFile()` 与
+        // `waitUntilExit()` 都是阻塞调用，大项目扫描会占住负责调度
+        // MainActor 的线程，导致 UI 卡死（#1288 同类问题）。
+        let result: RAGProcessRunner.Result
         do {
-            try process.run()
+            result = try await RAGProcessRunner.run(
+                executable: executable,
+                arguments: arguments,
+                discardStandardError: true
+            )
         } catch {
             return nil
         }
-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
         try Task.checkCancellation()
+        let output = result.standardOutput
 
-        guard process.terminationStatus == 0 || process.terminationStatus == 1 else { return nil }
+        guard result.terminationStatus == 0 || result.terminationStatus == 1 else { return nil }
         let projectRoot = RAGPathUtils.normalizeProjectPath(projectPath)
         return String(decoding: output, as: UTF8.self)
             .split(separator: "\n")

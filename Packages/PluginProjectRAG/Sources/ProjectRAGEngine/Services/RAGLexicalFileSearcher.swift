@@ -16,11 +16,11 @@ public enum RAGLexicalFileSearcher {
         query: String,
         projectPath: String,
         topK: Int
-    ) throws -> [RAGSearchResult] {
+    ) async throws -> [RAGSearchResult] {
         let terms = RAGTextUtils.tokenize(query.lowercased())
         guard !terms.isEmpty else { return [] }
 
-        if let ripgrepResults = try searchWithRipgrep(query: query, terms: terms, projectPath: projectPath, topK: topK),
+        if let ripgrepResults = try await searchWithRipgrep(query: query, terms: terms, projectPath: projectPath, topK: topK),
            !ripgrepResults.isEmpty {
             return ripgrepResults
         }
@@ -65,34 +65,29 @@ public enum RAGLexicalFileSearcher {
         terms: [String],
         projectPath: String,
         topK: Int
-    ) throws -> [RAGSearchResult]? {
+    ) async throws -> [RAGSearchResult]? {
         guard let executable = RAGRipgrepLocator.executable() else { return nil }
 
         let arguments = ripgrepArguments(terms: terms, projectPath: projectPath)
 
-        let outputPipe = Pipe()
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        process.standardOutput = outputPipe
-        process.standardError = FileHandle.nullDevice
-        // 确定性回收管道 fd，避免热路径上依赖 autorelease pool 造成 fd 泄漏。
-        defer {
-            try? outputPipe.fileHandleForReading.close()
-            try? outputPipe.fileHandleForWriting.close()
-        }
-
+        // ripgrep 调用必须离开协作线程池：`readDataToEndOfFile()` 与
+        // `waitUntilExit()` 都是阻塞调用，大项目扫描会占住负责调度
+        // MainActor 的线程，导致 UI 卡死（#1288 同类问题）。
+        let result: RAGProcessRunner.Result
         do {
-            try process.run()
+            result = try await RAGProcessRunner.run(
+                executable: executable,
+                arguments: arguments,
+                discardStandardError: true
+            )
         } catch {
             return nil
         }
-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
         try Task.checkCancellation()
+        let output = result.standardOutput
 
         // rg 的 1 表示“没有匹配”，大于 1 才是执行错误。
-        guard process.terminationStatus == 0 || process.terminationStatus == 1 else { return nil }
+        guard result.terminationStatus == 0 || result.terminationStatus == 1 else { return nil }
 
         struct Match {
             let filePath: String

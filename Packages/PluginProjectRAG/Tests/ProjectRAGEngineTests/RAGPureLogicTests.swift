@@ -341,7 +341,7 @@ import Foundation
 
 @Suite struct RAGLexicalFileSearcherTests {
 
-    @Test func findsMatchingSourceWithoutAnIndex() throws {
+    @Test func findsMatchingSourceWithoutAnIndex() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-lexical-search-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -351,7 +351,7 @@ import Foundation
         try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "func handleRequest() {}".write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGLexicalFileSearcher.search(
+        let results = try await RAGLexicalFileSearcher.search(
             query: "handleRequest",
             projectPath: projectURL.path,
             topK: 3
@@ -364,7 +364,7 @@ import Foundation
         #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 1))
     }
 
-    @Test func respectsSearchFileFilters() throws {
+    @Test func respectsSearchFileFilters() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-lexical-filters-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -380,7 +380,7 @@ import Foundation
         try "let value = \(query)".write(to: generatedURL, atomically: true, encoding: .utf8)
         try query.write(to: notesURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGLexicalFileSearcher.search(
+        let results = try await RAGLexicalFileSearcher.search(
             query: query,
             projectPath: projectURL.path,
             topK: 10
@@ -389,7 +389,7 @@ import Foundation
         #expect(results.map(\.source) == ["Sources/Visible.swift"])
     }
 
-    @Test func includesContextAroundRipgrepMatch() throws {
+    @Test func includesContextAroundRipgrepMatch() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-lexical-context-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -407,7 +407,7 @@ import Foundation
         line seven
         """.write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGLexicalFileSearcher.search(
+        let results = try await RAGLexicalFileSearcher.search(
             query: "contextToken",
             projectPath: projectURL.path,
             topK: 3
@@ -419,12 +419,12 @@ import Foundation
         #expect(results[0].content.contains("7\tline seven"))
     }
 
-    @Test func returnsNoResultsForMissingProject() throws {
+    @Test func returnsNoResultsForMissingProject() async throws {
         let missingProjectPath = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-missing-\(UUID().uuidString)", isDirectory: true)
             .path
 
-        let results = try RAGLexicalFileSearcher.search(
+        let results = try await RAGLexicalFileSearcher.search(
             query: "missingProjectToken",
             projectPath: missingProjectPath,
             topK: 3
@@ -436,7 +436,7 @@ import Foundation
 
 @Suite struct RAGFilePathSearcherTests {
 
-    @Test func findsExplicitFilePathWithoutReadingContent() throws {
+    @Test func findsExplicitFilePathWithoutReadingContent() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-path-search-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -446,7 +446,7 @@ import Foundation
         try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGFilePathSearcher.search(
+        let results = try await RAGFilePathSearcher.search(
             query: "Sources/RequestHandler.swift",
             projectPath: projectURL.path,
             topK: 3
@@ -459,7 +459,7 @@ import Foundation
         #expect(results[0].lineRange == nil)
     }
 
-    @Test func extractsExplicitPathFromNaturalLanguage() throws {
+    @Test func extractsExplicitPathFromNaturalLanguage() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-path-extraction-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -469,7 +469,7 @@ import Foundation
         try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGFilePathSearcher.search(
+        let results = try await RAGFilePathSearcher.search(
             query: "请查看 Sources/RequestHandler.swift 的实现",
             projectPath: projectURL.path,
             topK: 3
@@ -478,7 +478,7 @@ import Foundation
         #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
     }
 
-    @Test func findsFilenameWithFastPathEnumeration() throws {
+    @Test func findsFilenameWithFastPathEnumeration() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-path-filename-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -488,7 +488,7 @@ import Foundation
         try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGFilePathSearcher.search(
+        let results = try await RAGFilePathSearcher.search(
             query: "RequestHandler.swift",
             projectPath: projectURL.path,
             topK: 3
@@ -497,7 +497,7 @@ import Foundation
         #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
     }
 
-    @Test func doesNotScanPathsForOrdinaryQueries() throws {
+    @Test func doesNotScanPathsForOrdinaryQueries() async throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-path-gate-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -507,7 +507,7 @@ import Foundation
         try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let results = try RAGFilePathSearcher.search(
+        let results = try await RAGFilePathSearcher.search(
             query: "RequestHandler",
             projectPath: projectURL.path,
             topK: 3

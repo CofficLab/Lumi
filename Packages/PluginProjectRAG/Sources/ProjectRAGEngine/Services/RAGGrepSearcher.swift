@@ -56,7 +56,7 @@ public enum RAGGrepSearcher {
         maxResults: Int = 100,
         contextLines: Int = 0,
         ripgrepURL: URL? = nil
-    ) throws -> RAGGrepOutcome {
+    ) async throws -> RAGGrepOutcome {
         let executable = ripgrepURL ?? RAGRipgrepLocator.executable()
         guard let executable, FileManager.default.isExecutableFile(atPath: executable.path) else {
             throw RAGGrepError.ripgrepUnavailable
@@ -77,33 +77,29 @@ public enum RAGGrepSearcher {
         }
         arguments.append(contentsOf: ["--regexp", pattern, projectPath])
 
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-        // 确定性回收管道 fd，避免热路径上依赖 autorelease pool 造成 fd 泄漏。
-        defer {
-            try? outputPipe.fileHandleForReading.close()
-            try? outputPipe.fileHandleForWriting.close()
-            try? errorPipe.fileHandleForReading.close()
-            try? errorPipe.fileHandleForWriting.close()
-        }
-
+        // ripgrep 调用必须离开协作线程池：`readDataToEndOfFile()` 与
+        // `waitUntilExit()` 都是阻塞调用，大项目扫描会占住负责调度
+        // MainActor 的线程，导致 UI 卡死（#1288 同类问题）。
+        let result: RAGProcessRunner.Result
         do {
-            try process.run()
+            result = try await RAGProcessRunner.run(
+                executable: executable,
+                arguments: arguments
+            )
+        } catch let error as RAGProcessRunner.LaunchError {
+            throw RAGGrepError.searchFailed(error.localizedDescription)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             throw RAGGrepError.searchFailed(error.localizedDescription)
         }
-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorOutput = errorPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
         try Task.checkCancellation()
 
+        let output = result.standardOutput
+        let errorOutput = result.standardError
+
         // rg 的 1 表示“没有匹配”，大于 1 才是执行错误（含非法正则）。
-        let status = process.terminationStatus
+        let status = result.terminationStatus
         guard status == 0 || status == 1 else {
             let detail = String(decoding: errorOutput, as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
