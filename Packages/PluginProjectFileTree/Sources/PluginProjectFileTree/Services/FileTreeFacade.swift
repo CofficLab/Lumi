@@ -172,35 +172,43 @@ public enum FileTreeFacade {
     // MARK: - 外部应用（插件特有，依赖 AppKit）
 
     /// 在终端中打开指定路径
+    ///
+    /// - Important: `NSAppleScript.executeAndReturnError` 是**同步** Apple Event，
+    ///   要等 Terminal.app 回应。主线程上调用会把 UI 卡住
+    ///   （见 issue #1296），因此放到后台线程执行。
     /// - Parameter url: 文件或目录 URL
     public static func openInTerminal(_ url: URL) {
-        let targetPath: String
-        let isDir = FileTreeService.isDirectory(url)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let targetPath = terminalTargetPath(for: url)
 
-        if isDir {
-            targetPath = url.path
-        } else {
-            targetPath = url.deletingLastPathComponent().path
-        }
+            let script = """
+            tell application "Terminal"
+                activate
+                if (count of windows) > 0 then
+                    do script "cd '\(targetPath)'" in front window
+                else
+                    do script "cd '\(targetPath)'"
+                end if
+            end tell
+            """
 
-        let script = """
-        tell application "Terminal"
-            activate
-            if (count of windows) > 0 then
-                do script "cd '\(targetPath)'" in front window
-            else
-                do script "cd '\(targetPath)'"
-            end if
-        end tell
-        """
-
-        if let scriptObject = NSAppleScript(source: script) {
+            guard let scriptObject = NSAppleScript(source: script) else { return }
             var errorDict: NSDictionary?
             scriptObject.executeAndReturnError(&errorDict)
             if errorDict != nil {
-                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+                Task { @MainActor in
+                    NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+                }
             }
         }
+    }
+
+    /// 终端要切换到的目录：文件取其所在目录，目录取自身。
+    static func terminalTargetPath(for url: URL) -> String {
+        if FileTreeService.isDirectory(url) {
+            return url.path
+        }
+        return url.deletingLastPathComponent().path
     }
 
     /// 在 VS Code 中打开文件或文件夹
