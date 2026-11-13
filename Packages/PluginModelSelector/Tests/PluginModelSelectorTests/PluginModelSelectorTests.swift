@@ -51,6 +51,24 @@ struct ModelCategoryTests {
         #expect(!ModelCategory.tools.includes(model: "unknown-model", modelInfo: nil))
         #expect(ModelCategory.audio.includes(model: "some-tts-model", modelInfo: nil))
     }
+
+    @Test("Language category excludes vision models (#415)")
+    func languageCategoryExcludesVisionModels() {
+        // MiniMax-M3 / M3.1-Flash 显式声明视觉能力，应只落入 Vision，不落入 Language。
+        let visionModel = LLMModelInfo(id: "MiniMax-M3", supportsVision: true, supportsTools: true)
+        let visionFlash = LLMModelInfo(id: "MiniMax-M3.1-Flash", supportsVision: true, supportsTools: true)
+        let plainLanguage = LLMModelInfo(id: "MiniMax-M2.1", supportsVision: false, supportsTools: true)
+
+        #expect(!ModelCategory.language.includes(model: visionModel.id, modelInfo: visionModel))
+        #expect(!ModelCategory.language.includes(model: visionFlash.id, modelInfo: visionFlash))
+        #expect(ModelCategory.vision.includes(model: visionModel.id, modelInfo: visionModel))
+        #expect(ModelCategory.vision.includes(model: visionFlash.id, modelInfo: visionFlash))
+
+        // 纯语言模型仍归 Language；缺失元数据时按语言兜底，不被误筛。
+        #expect(ModelCategory.language.includes(model: plainLanguage.id, modelInfo: plainLanguage))
+        #expect(!ModelCategory.vision.includes(model: plainLanguage.id, modelInfo: plainLanguage))
+        #expect(ModelCategory.language.includes(model: "unknown-model", modelInfo: nil))
+    }
 }
 
 @Suite("Provider scope")
