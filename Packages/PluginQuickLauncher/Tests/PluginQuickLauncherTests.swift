@@ -431,4 +431,49 @@ struct QuickLauncherTests {
         let resolvedIndex = try #require(model.results.firstIndex(where: { $0.id == secondCopy.id }))
         #expect(model.results[resolvedIndex].app?.path == "/Users/test/Applications/Bar.app", "按 ID 反查必须落到第二份副本自身")
     }
+
+    // MARK: - 回归 #299：Utilities 子目录必须列为扫描根
+
+    @Test func searchDirectoriesIncludeUtilitiesRoots() {
+        let roots = AppSearchService.searchDirectories
+        // 扫描不递归，系统自带 Terminal/Activity Monitor/Console 位于 Utilities，
+        // 必须把 Utilities 显式列为根，否则永远扫不到。
+        #expect(roots.contains("/System/Applications/Utilities"), "系统 Utilities 必须显式列为扫描根（#299）")
+        #expect(roots.contains("/Applications/Utilities"), "用户级 Utilities 也应列为扫描根（#299）")
+        // 既有标准根不得丢失。
+        #expect(roots.contains("/Applications"))
+        #expect(roots.contains("/System/Applications"))
+    }
+
+    @Test func productionRootsDiscoverUtilitiesApp() throws {
+        let fm = FileManager.default
+        let base = fm.temporaryDirectory.appendingPathComponent("lumi-299-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: base) }
+
+        // 在临时 base 下镜像生产目录布局，把 Terminal.app 放进 Utilities 子目录。
+        let utilities = base.appendingPathComponent("System/Applications/Utilities")
+        let terminal = utilities.appendingPathComponent("Terminal.app")
+        let contents = terminal.appendingPathComponent("Contents")
+        try fm.createDirectory(at: contents, withIntermediateDirectories: true)
+        let plist: [String: Any] = [
+            "CFBundleName": "Terminal",
+            "CFBundleDisplayName": "Terminal",
+            "CFBundleIdentifier": "com.apple.Terminal",
+            "CFBundlePackageType": "APPL",
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: contents.appendingPathComponent("Info.plist"))
+
+        // 把生产扫描根整体重定位到临时 base 下，复刻 scanApplications 的根选择。
+        // 修复前根列表不含 Utilities，非递归扫描会漏掉其中的 Terminal.app。
+        let mappedRoots = AppSearchService.searchDirectories.map { base.path + $0 }
+        let items = AppSearchService.scanDirectories(mappedRoots)
+
+        // FileManager 枚举返回 /private/var… 前缀，而构造路径为 /var…（符号链接），
+        // 用 UUID base 下唯一的相对后缀匹配，避免绝对路径前缀差异造成误判。
+        let relative = "System/Applications/Utilities/Terminal.app"
+        let hit = try #require(items.first { $0.path.hasSuffix(relative) }, "生产扫描根必须能发现 Utilities 中的 Terminal（#299）")
+        #expect(hit.name == "Terminal")
+        #expect(hit.bundleIdentifier == "com.apple.Terminal")
+    }
 }

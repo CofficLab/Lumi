@@ -63,9 +63,15 @@ public final class AppSearchService: ObservableObject, SuperLog {
     private var searchIndex: [AppSearchEntry] = []
 
     /// 标准应用目录
+    ///
+    /// 扫描只取各根目录的直接 `.app` 子项、不递归，因此系统自带的
+    /// Terminal / Activity Monitor / Console 等位于 Utilities 子目录的应用
+    /// 必须把 Utilities 显式列为扫描根，否则永远扫不到（#299）。
     static let searchDirectories: [String] = [
         "/Applications",
+        "/Applications/Utilities",
         "/System/Applications",
+        "/System/Applications/Utilities",
         NSString(string: NSHomeDirectory()).appendingPathComponent("Applications"),
     ]
 
