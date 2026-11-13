@@ -210,6 +210,32 @@ struct OpenInRemoteToolTests {
             #expect(!reason.contains("/current"))
         }
     }
+
+    /// 回归 #298：remote 内嵌的凭据不得进入打开的 URL，也不得写进工具结果。
+    @Test("打开的 URL 与工具结果都不得携带 remote 凭据")
+    func doesNotLeakRemoteCredentials() async throws {
+        final class OpenedURLBox: @unchecked Sendable { var url: URL? }
+        let box = OpenedURLBox()
+        let tool = OpenInRemoteTool(
+            projectCapability: StubProjectCapability(currentProjectPath: "/repo"),
+            resolver: RemoteRepositoryResolver(
+                gitCapability: StubGitCapability(rawRemote: "https://user:secret@github.com/acme/repo.git")
+            ),
+            openURL: { url in
+                box.url = url
+                return true
+            }
+        )
+
+        let result = try await tool.execute(arguments: [:])
+
+        #expect(box.url?.absoluteString == "https://github.com/acme/repo")
+        #expect(box.url?.user == nil)
+        #expect(box.url?.password == nil)
+        #expect(result.contains("https://github.com/acme/repo"))
+        #expect(!result.contains("secret"))
+        #expect(!result.contains("user:secret"))
+    }
 }
 
 /// 测试用的空观察句柄。

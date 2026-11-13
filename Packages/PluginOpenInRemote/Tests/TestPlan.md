@@ -5,7 +5,7 @@
 PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项目的远程仓库。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 35
+测试文件: 4 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,9 +38,9 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **OpenInRemotePlugin**（3 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders`、`pluginResolvesRemoteWebURLWithProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **OpenInRemoteTool**（9 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInRemoteTool**（12 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RemoteRepositoryResolver**（7 条）：由 `resolvesWebURLFromOriginRemote`、`resolvesWebURLFromNamedRemote`、`returnsNilWhenRemoteIsMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RemoteWebURLResolver**（13 条）：由 `convertsScpLikeRemote`、`convertsScpLikeRemoteWithoutGitSuffix`、`convertsScpLikeRemoteWithGroupPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RemoteWebURLResolver**（18 条）：由 `convertsScpLikeRemote`、`convertsScpLikeRemoteWithoutGitSuffix`、`convertsScpLikeRemoteWithGroupPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -81,27 +81,32 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 33 | OpenInRemoteTool | 本地 `file://` remote 报告没有可打开的 web 地址（**回归 #1067**） | origin 为 `file:///tmp/repo.git` | 调用 `execute(arguments:)` | 抛出「No remote repository URL」类错误，不误报打开成功 | P1 | ✅ 已覆盖 | `reportsMissingWebURLForFileRemote` |
 | 34 | RemoteWebURLResolver | SSH/Git 地址保留路径中的百分号编码，不把 `%23` 变成 fragment（**回归 #1095**） | origin 为 `ssh://git@code.example.com/acme/repo%23draft.git` | 解析为 web 链接 | 结果为 `https://code.example.com/acme/repo%23draft`，path 含 `#` 且无 fragment；`%3F`、`%25` 同样保留 | P0 | ✅ 已覆盖 | `preservesEncodedCharactersInSchemePath` |
 | 35 | OpenInRemoteTool | 浏览器拒绝打开时抛出工具执行错误，不再以普通字符串报告成功（**回归 #1096**） | remote 可解析为 web 链接，注入的打开动作返回 `false` | 调用 `execute(arguments:)` | 抛出 `ToolExecutionError.executionFailed`，reason 指向浏览器无法打开 | P1 | ✅ 已覆盖 | `reportsBrowserOpenFailure` |
+| 36 | RemoteWebURLResolver | https remote 内嵌的 `user:password@` 必须被剥离，不得进入浏览器链接（**回归 #298**） | — | 解析 `https://user:secret@github.com/acme/repo.git` | 结果为 `https://github.com/acme/repo`，`user`/`password` 均为 nil | P0 | ✅ 已覆盖 | `stripsUserinfoFromHTTPSRemote` |
+| 37 | RemoteWebURLResolver | http remote 内嵌的凭据同样必须被剥离（**回归 #298**） | — | 解析 `http://user:secret@github.com/acme/repo.git` | 结果为 `http://github.com/acme/repo`，`user`/`password` 均为 nil | P0 | ✅ 已覆盖 | `stripsUserinfoFromHTTPRemote` |
+| 38 | RemoteWebURLResolver | https remote 仅含 `user@`（无密码）时也要剥离（**回归 #298**） | — | 解析 `https://user@github.com/acme/repo.git` | 结果为 `https://github.com/acme/repo`，`user` 为 nil | P1 | ✅ 已覆盖 | `stripsUserOnlyFromHTTPSRemote` |
+| 39 | RemoteWebURLResolver | 剥离凭据时不得解码路径中的百分号编码（**回归 #298**，与 #1095 一致） | — | 解析 `https://user:secret@code.example.com/acme/repo%23draft.git` | 结果为 `https://code.example.com/acme/repo%23draft`，path 含 `#` 且无 fragment | P1 | ✅ 已覆盖 | `stripsUserinfoPreservesEncodedPath` |
+| 40 | OpenInRemoteTool | 打开的 URL 与工具结果都不得携带 remote 凭据（**回归 #298**） | origin 为 `https://user:secret@github.com/acme/repo.git`，注入打开动作捕获 URL | 调用 `execute(arguments:)` | 捕获 URL 为 `https://github.com/acme/repo` 且无 user/password；结果含该链接、不含 `secret` | P0 | ✅ 已覆盖 | `doesNotLeakRemoteCredentials` |
 
-> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 31 / 31
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 33 / 33
 - P2: 已覆盖 1 / 1
-- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（31 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（33 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
