@@ -30,17 +30,22 @@ public enum SubagentTimeline {
         public let childConversationID: UUID
         /// 父会话里 run_subagent 的 ToolJob ID：卡片据此读状态与耗时。
         public let jobID: String
+        /// 树内寻址用的稳定名字（#1328）。旧载荷没有该字段，解码为 nil，
+        /// 这类历史委托不可寻址但卡片仍可正常展示。
+        public let name: String?
 
         public init(
             label: String,
             parentConversationID: UUID,
             childConversationID: UUID,
-            jobID: String
+            jobID: String,
+            name: String? = nil
         ) {
             self.label = label
             self.parentConversationID = parentConversationID
             self.childConversationID = childConversationID
             self.jobID = jobID
+            self.name = name
         }
     }
 

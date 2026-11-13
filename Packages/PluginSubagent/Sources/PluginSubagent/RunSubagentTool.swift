@@ -86,6 +86,9 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
         For long-running tasks, set run_in_background to true: the call returns immediately with a \
         background task ID, and you are notified with the conclusion when the subagent finishes. \
         Keep working on other things meanwhile; do not poll or re-dispatch the same task.
+
+        Give each delegation a stable `name` (lowercase letters, digits, hyphens) so you and other \
+        subagents can address it later. If omitted, a default name such as `agent-1` is assigned.
         """
     }
 
@@ -100,6 +103,13 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
                 "description": [
                     "type": "string",
                     "description": "A short 3-5 word label for the delegation, shown in the timeline.",
+                ],
+                "name": [
+                    "type": "string",
+                    "minLength": SubagentIdentity.minLength,
+                    "maxLength": SubagentIdentity.maxLength,
+                    "pattern": SubagentIdentity.pattern,
+                    "description": "Optional stable name used to address this subagent later. 3-32 lowercase letters, digits, or hyphens, starting with a letter; must be unique among this conversation's subagents. Defaults to agent-1, agent-2, ...",
                 ],
                 "max_characters": [
                     "type": "integer",
@@ -171,11 +181,17 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             )
         }
 
+        let name = try await resolveName(
+            requested: Self.string(from: arguments, key: "name"),
+            in: context.conversationID
+        )
+
         if (arguments["run_in_background"]?.value as? Bool) == true {
             return try await runInBackground(
                 context: context,
                 task: task,
                 label: label,
+                name: name,
                 conclusionLimit: conclusionLimit
             )
         }
@@ -185,7 +201,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             parentID: context.conversationID,
             description: label
         )
-        insertTimelineCard(context: context, label: label, childID: childID)
+        insertTimelineCard(context: context, label: label, name: name, childID: childID)
         let conclusion = try await runChildTurn(
             childID: childID,
             task: task,
@@ -204,6 +220,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
         context: ToolExecutionContext,
         task: String,
         label: String,
+        name: String,
         conclusionLimit: Int
     ) async throws -> ToolCallResult {
         guard let registry = backgroundRegistryProvider() else {
@@ -218,7 +235,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             parentID: context.conversationID,
             description: label
         )
-        insertTimelineCard(context: context, label: label, childID: childID)
+        insertTimelineCard(context: context, label: label, name: name, childID: childID)
         let taskID = await registry.allocateTaskID()
         let record = await registry.adoptInProcess(
             taskID: taskID,
@@ -267,13 +284,15 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
     private func insertTimelineCard(
         context: ToolExecutionContext,
         label: String,
+        name: String,
         childID: UUID
     ) {
         let payload = SubagentTimeline.Payload(
             label: label,
             parentConversationID: context.conversationID,
             childConversationID: childID,
-            jobID: context.jobID
+            jobID: context.jobID,
+            name: name
         )
         messages.insertMessage(
             SubagentTimeline.message(
@@ -377,6 +396,25 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
         }
         let seconds = String(format: "%.1f", duration)
         return body + "\n\n[subagent] tool calls: \(toolUseCount) · duration: \(seconds)s"
+    }
+
+    /// 解析本次委托的稳定名字：未提供时取默认名，提供时校验合法性与同级唯一。
+    @MainActor
+    private func resolveName(requested: String?, in parentID: UUID) async throws -> String {
+        let existing = await messages.messagesSnapshot(in: parentID)
+            .compactMap { SubagentTimeline.decodePayload(from: $0.metadata)?.name }
+        do {
+            return try SubagentIdentity.resolve(requested: requested, existing: existing)
+        } catch let error as SubagentIdentityError {
+            let reason: String
+            switch error {
+            case .invalidName(let name):
+                reason = "Invalid subagent name \"\(name)\": use 3-32 lowercase letters, digits, or hyphens, starting with a letter."
+            case .duplicateName(let name):
+                reason = "A subagent named \"\(name)\" already exists in this conversation."
+            }
+            throw ToolExecutionError.executionFailed(toolName: Self.toolName, reason: reason)
+        }
     }
 
     /// 读取字符串参数并去掉首尾空白；缺失或空白返回 nil。
