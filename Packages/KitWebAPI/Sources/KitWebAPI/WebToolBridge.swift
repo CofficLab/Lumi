@@ -48,9 +48,34 @@ public enum JSONValue: Codable, Sendable, Equatable {
     case null
     case bool(Bool)
     case number(Double)
+    /// 超出 Double 精确整数范围（±2^53）的整数。
+    ///
+    /// `Double` 无法精确表示 2^53+1 这类 64 位整数（雪花 ID、数据库主键、
+    /// 时间戳）。单独用 `Int64` 保存，避免请求里的合法整数在执行前被悄悄
+    /// 舍入（issue #1155）。范围内的整数仍走 `.number`，保持既有行为。
+    case integer(Int64)
     case string(String)
     case array([JSONValue])
     case object([String: JSONValue])
+
+    /// Double 能精确表示的最大整数绝对值（2^53）。
+    private static let maxExactInteger: Int64 = 9_007_199_254_740_992
+
+    /// 按精度把整数路由到合适的 case：超出 Double 精确范围用 `.integer`。
+    static func number(fromInt64 value: Int64) -> JSONValue {
+        if value > maxExactInteger || value < -maxExactInteger {
+            return .integer(value)
+        }
+        return .number(Double(value))
+    }
+
+    /// NSNumber 是否为整数类型（非 float/double）。布尔已在调用前排除。
+    private static func isIntegerNSNumber(_ value: NSNumber) -> Bool {
+        switch value.objCType.pointee {
+        case 0x66, 0x64: return false // 'f' float, 'd' double
+        default: return true
+        }
+    }
 
     /// 把任意值转换为 JSON 值。
     ///
@@ -62,6 +87,8 @@ public enum JSONValue: Codable, Sendable, Equatable {
             // 否则 JSON 数字 0/1 会被 `as Bool` 误判为布尔（#1151）。
             if CFGetTypeID(value) == CFBooleanGetTypeID() {
                 self = .bool(value.boolValue)
+            } else if Self.isIntegerNSNumber(value) {
+                self = Self.number(fromInt64: value.int64Value)
             } else {
                 self = .number(value.doubleValue)
             }
@@ -87,6 +114,10 @@ public enum JSONValue: Codable, Sendable, Equatable {
             self = .null
         } else if let value = try? container.decode(Bool.self) {
             self = .bool(value)
+        } else if let value = try? container.decode(Int64.self) {
+            // 先按整数解码：超出 Double 精确范围的整数才能无损保留（#1155）。
+            // 范围内的整数仍归一为 `.number`，小数走下面的 Double 分支。
+            self = Self.number(fromInt64: value)
         } else if let value = try? container.decode(Double.self) {
             self = .number(value)
         } else if let value = try? container.decode(String.self) {
@@ -111,6 +142,8 @@ public enum JSONValue: Codable, Sendable, Equatable {
         case .bool(let value):
             try container.encode(value)
         case .number(let value):
+            try container.encode(value)
+        case .integer(let value):
             try container.encode(value)
         case .string(let value):
             try container.encode(value)

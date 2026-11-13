@@ -75,6 +75,8 @@ extension JSONValue {
             return value
         case .number(let value):
             return value
+        case .integer(let value):
+            return value
         case .string(let value):
             return value
         case .array(let values):

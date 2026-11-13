@@ -249,6 +249,44 @@ struct JSONValueTests {
         #expect(JSONValue(from: false) == .bool(false))
         #expect(JSONValue(from: true) == .bool(true))
     }
+
+    @Test("超出 Double 精确范围的整数解码后无损保留（#1155）")
+    func decodesLargeIntegerLosslessly() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("9007199254740993".utf8))
+        #expect(decoded == .integer(9_007_199_254_740_993))
+        #expect(decoded.anyValue as? Int64 == 9_007_199_254_740_993)
+    }
+
+    @Test("大整数编解码往返保持原始字面量（#1155）")
+    func roundTripsLargeInteger() throws {
+        let original = JSONValue.integer(9_007_199_254_740_993)
+        let data = try JSONEncoder().encode(original)
+        #expect(String(data: data, encoding: .utf8) == "9007199254740993")
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: data)
+        #expect(decoded == original)
+    }
+
+    @Test("schema 中的大整数叶子无损保留（#1155）")
+    func preservesLargeIntegerInSchema() throws {
+        let json = #"{"id": 9007199254740993}"#
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+        #expect(JSONValue(schema: schema) == .object(["id": .integer(9_007_199_254_740_993)]))
+    }
+
+    @Test("负大整数同样无损保留（#1155）")
+    func preservesNegativeLargeInteger() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("-9007199254740993".utf8))
+        #expect(decoded == .integer(-9_007_199_254_740_993))
+    }
+
+    @Test("精确范围内的整数仍归一为 number（#1155）")
+    func safeRangeIntegersStayNumber() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("42".utf8))
+        #expect(decoded == .number(42))
+        #expect(JSONValue(from: 9_007_199_254_740_992) == .number(9_007_199_254_740_992))
+    }
 }
 
 // MARK: - Argument Encoding Tests
@@ -766,5 +804,29 @@ struct WebToolRoutesTests {
         #expect(image.data == png)
         #expect(image.mimeType == "image/png")
         #expect(image.fileName == "shot.png")
+    }
+
+    @Test("invoke 路由保留大整数参数精度（#1155）")
+    func invokeRoutePreservesLargeIntegerArgument() async throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "echo", resultText: "ok"), pluginID: "com.test.misc")
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let invokeRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name/invoke" })
+
+        let body = Data(#"{"arguments":{"id":9007199254740993},"conversationID":"\#(UUID().uuidString)"}"#.utf8)
+        _ = try await invokeRoute.handler(
+            WebRouteRequest(
+                method: .post,
+                path: "/api/v1/tools/echo/invoke",
+                pathParameters: ["name": "echo"],
+                body: body
+            )
+        )
+
+        // 工具实际收到的参数 JSON 必须保留原始整数，不能被舍入成 ...992。
+        let argumentsJSON = try #require(manager.lastExecutedCall?.arguments)
+        #expect(argumentsJSON.contains("9007199254740993"))
+        #expect(!argumentsJSON.contains("9007199254740992"))
     }
 }
