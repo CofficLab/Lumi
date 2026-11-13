@@ -11,7 +11,7 @@ final class EditorDocumentController: SuperLog {
     nonisolated(unsafe) static var verbose: Bool = false
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
-    struct LoadedTextDocument {
+    struct LoadedTextDocument: Sendable {
         let content: String
         let fileSize: Int64
         let isTruncated: Bool
@@ -22,14 +22,14 @@ final class EditorDocumentController: SuperLog {
         let encoding: String.Encoding
     }
 
-    struct LoadedBinaryDocument {
+    struct LoadedBinaryDocument: Sendable {
         let fileSize: Int64
         let largeFileMode: LargeFileMode
         let fileExtension: String
         let fileName: String
     }
 
-    enum LoadedDocument {
+    enum LoadedDocument: Sendable {
         case text(LoadedTextDocument)
         case binary(LoadedBinaryDocument)
     }
@@ -135,13 +135,22 @@ final class EditorDocumentController: SuperLog {
         return text != persistedTextSnapshot
     }
 
-    func loadDocument(from url: URL, truncationReadBytes: Int, forceFullLoad: Bool = false) throws -> LoadedDocument {
+    /// 在**后台线程**读取并解码文档。
+    ///
+    /// - Important: 必须是 `static` + `nonisolated`：调用方（`EditorState.loadFile`）
+    ///   在 `@MainActor` 上，若在主线程直接调用本方法，整个文件读取与解码都会阻塞 UI
+    ///   （见 issue #1277）。静态化后可直接放进 `Task.detached` 执行。
+    nonisolated static func loadDocument(
+        from url: URL,
+        truncationReadBytes: Int,
+        forceFullLoad: Bool = false
+    ) throws -> LoadedDocument {
         let fileSize = Int64((try url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
         let largeFileMode = LargeFileMode.mode(for: fileSize)
         let fileExtension = url.pathExtension.lowercased()
         let fileName = url.lastPathComponent
 
-        let isLikelyText = try isLikelyTextFile(url: url)
+        let isLikelyText = try Self.isLikelyTextFile(url: url)
         if Self.verbose {
             Self.logger.info("\(self.t)loadDocument: url=\(url.path), fileSize=\(fileSize), ext=\(fileExtension), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
         }
@@ -160,11 +169,11 @@ final class EditorDocumentController: SuperLog {
             )
         }
 
-        let shouldTruncate = !forceFullLoad && shouldUseTruncatedPreview(for: url, fileSize: fileSize)
+        let shouldTruncate = !forceFullLoad && Self.shouldUseTruncatedPreview(for: url, fileSize: fileSize)
         let content: String
         var detectedEncoding = String.Encoding.utf8
         if shouldTruncate {
-            content = try readTruncatedContent(from: url, maxBytes: truncationReadBytes)
+            content = try Self.readTruncatedContent(from: url, maxBytes: truncationReadBytes)
         } else {
             content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
         }
@@ -182,6 +191,15 @@ final class EditorDocumentController: SuperLog {
         )
     }
 
+    /// 实例入口：保留给既有调用方与测试。
+    func loadDocument(
+        from url: URL,
+        truncationReadBytes: Int,
+        forceFullLoad: Bool = false
+    ) throws -> LoadedDocument {
+        try Self.loadDocument(from: url, truncationReadBytes: truncationReadBytes, forceFullLoad: forceFullLoad)
+    }
+
     private func syncTextStorage(from text: String) {
         if let textStorage {
             if textStorage.string != text {
@@ -192,7 +210,7 @@ final class EditorDocumentController: SuperLog {
         }
     }
 
-    private func shouldUseTruncatedPreview(for url: URL, fileSize: Int64) -> Bool {
+    nonisolated private static func shouldUseTruncatedPreview(for url: URL, fileSize: Int64) -> Bool {
         let ext = url.pathExtension.lowercased()
         let alwaysFullLoadExtensions: Set<String> = ["md", "markdown", "txt"]
         if alwaysFullLoadExtensions.contains(ext) {
@@ -201,7 +219,7 @@ final class EditorDocumentController: SuperLog {
         return fileSize > Self.truncationFileSizeThreshold
     }
 
-    private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
+    nonisolated private static func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
 
@@ -216,7 +234,7 @@ final class EditorDocumentController: SuperLog {
         return preview + suffix
     }
 
-    private func isLikelyTextFile(url: URL) throws -> Bool {
+    nonisolated private static func isLikelyTextFile(url: URL) throws -> Bool {
         let ext = url.pathExtension.lowercased()
         let obviousTextExts: Set<String> = [
             "swift", "m", "mm", "h", "hpp", "c", "cc", "cpp", "rs", "go", "py", "rb", "php", "java", "kt", "kts", "js", "ts", "tsx", "jsx", "json", "md", "txt", "yml", "yaml", "toml", "ini", "conf", "sh", "zsh", "bash", "fish", "html", "css", "scss", "sass", "less", "xml", "plist", "sql", "graphql", "proto", "env", "gitignore", "editorconfig", "xcodeproj", "pbxproj",
