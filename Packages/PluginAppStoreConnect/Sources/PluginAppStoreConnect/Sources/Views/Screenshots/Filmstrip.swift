@@ -139,7 +139,7 @@ private struct FilmstripRemoteCard: View {
             .onTapGesture(count: 2) {
                 showsPreview = true
             }
-            .help("双击查看大图")
+            .help(AppStoreConnectLocalization.string("Double-click to view full size"))
         } else {
             placeholder
         }
