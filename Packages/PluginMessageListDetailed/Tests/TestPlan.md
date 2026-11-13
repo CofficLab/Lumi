@@ -5,7 +5,7 @@
 PluginMessageListDetailed Lumi 消息列表 **V3（详细）** 实现包。工具栏 **消息列表风格** 处于 `详细` 时， 聊天区由本包接管；`V1` / `V2` 分别由 `PluginMessageListBrief` / `PluginMessageListStandard` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 124
+测试文件: 19 个，用例总数: 128
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -53,6 +53,7 @@ PluginMessageListDetailed Lumi 消息列表 **V3（详细）** 实现包。工�
 - **MessageListSuspendedToolRowIdentity**（3 条）：由 `mergedGroupRowIdentityChangesWhenMemberJoins`、`mergedGroupRowIdentityStableWhenMembersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListSyntheticRowOrdering**（3 条）：由 `toolGroupsSeparatedByTextMessageMustNotMerge`、`syntheticRowMustNotPrecedeItsSuspensionPoint` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListToolGroupReasoning**（3 条）：由 `singleMemberToolGroupPreservesReasoningContent`、`multiMemberToolGroupPreservesAllReasoningInOrder`、`ordinaryToolGroupWithoutReasoningStaysNil` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListV3HistoryFingerprint**（4 条）：由 `sameIDSameBodyNewReasoningRebuildsRows`、`equalLengthToolResultTextRebuildsRows`、`toolResultErrorFlagChangeRebuildsRows` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -182,27 +183,31 @@ PluginMessageListDetailed Lumi 消息列表 **V3（详细）** 实现包。工�
 | 122 | MessageListToolGroupReasoning | 单条工具消息合成后必须原样保留 reasoningContent，不得丢失（#148） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `singleMemberToolGroupPreservesReasoningContent` |
 | 123 | MessageListToolGroupReasoning | 多条工具消息合成后按时间顺序合并保留全部 reasoningContent（#148） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multiMemberToolGroupPreservesAllReasoningInOrder` |
 | 124 | MessageListToolGroupReasoning | 无思考内容的普通工具消息合成后 reasoningContent 仍为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `ordinaryToolGroupWithoutReasoningStaysNil` |
+| 125 | ListV3HistoryFingerprint | 同 id 同正文的消息新增 reasoningContent 后历史行必须重建（#147） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `sameIDSameBodyNewReasoningRebuildsRows` |
+| 126 | ListV3HistoryFingerprint | 工具结果等长文本替换后历史行必须更新，不得保留旧输出（#147） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `equalLengthToolResultTextRebuildsRows` |
+| 127 | ListV3HistoryFingerprint | 工具结果 isError 翻转后历史行随之更新（#147） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultErrorFlagChangeRebuildsRows` |
+| 128 | ListV3HistoryFingerprint | 工具结果 interactionState 变化后历史行随之更新（#147） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultInteractionStateChangeRebuildsRows` |
 
-> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **128 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 35 / 35
-- P1: 已覆盖 74 / 74
+- P0: 已覆盖 37 / 37
+- P1: 已覆盖 76 / 76
 - P2: 已覆盖 15 / 15
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
-- **P1**: 其余功能性用例（74 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
+- **P1**: 其余功能性用例（76 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
