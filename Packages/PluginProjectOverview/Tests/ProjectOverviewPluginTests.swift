@@ -101,6 +101,24 @@ struct PluginProjectOverviewTests {
         try? FileManager.default.removeItem(at: tempDir)
     }
 
+    /// 回归 #479：KeyFilesSection 只查 README.md / README，漏掉 README.markdown，
+    /// 导致仅含 README.markdown 的项目「预览有内容、关键文件却显示 README: None」。
+    /// 关键文件与 README 预览必须共用同一套候选文件。
+    @Test("KeyFilesSection detects README.markdown consistently with the preview")
+    func keyFilesDetectsReadmeMarkdown() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_readme_markdown_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try "# Test".write(to: root.appendingPathComponent("README.markdown"), atomically: true, encoding: .utf8)
+
+        let keyFiles = KeyFilesSection.render(at: root)
+        #expect(keyFiles.contains("README: README.markdown"))
+        #expect(!keyFiles.contains("README: None"))
+        #expect(ReadmePreviewSection.render(at: root) == "# Test")
+    }
+
     @Test("GitSection handles non-git directory")
     func gitSectionHandlesNonGit() {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("test_nongit_\(UUID().uuidString)")
