@@ -118,4 +118,69 @@ struct RAGCodeSearchToolContractTests {
         #expect(output.contains("No code matched"))
         #expect(!output.contains("Error"))
     }
+
+    // MARK: - #1312：并行只读调度声明
+
+    @Test("declares parallel read-only scheduling capability")
+    func declaresParallelReadOnlyCapability() {
+        #expect(RAGCodeSearchTool().executionCapability == .parallelReadOnly)
+    }
+
+    @Test("concurrent searches keep results independent")
+    func concurrentSearchesKeepResultsIndependent() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let provider = EchoStubProvider()
+        let tool = RAGCodeSearchTool(provider: provider)
+        let queries = ["alphaQuery", "betaQuery", "gammaQuery", "deltaQuery"]
+        try await withThrowingTaskGroup(of: (String, String).self) { group in
+            for query in queries {
+                group.addTask {
+                    let output = try await tool.execute(arguments: [
+                        "query": ToolArgument(query),
+                        "project_path": ToolArgument(dir.path),
+                    ])
+                    return (query, output)
+                }
+            }
+            var seen: Set<String> = []
+            for try await (query, output) in group {
+                seen.insert(query)
+                #expect(output.contains("echo-\(query)"))
+                for other in queries where other != query {
+                    #expect(!output.contains("echo-\(other)"))
+                }
+            }
+            #expect(seen.count == queries.count)
+        }
+    }
+}
+
+/// 按查询回显唯一标记的桩：并发调用时用于检测结果串扰。
+@MainActor
+private final class EchoStubProvider: ProjectRAGProviding {
+    var currentProjectPath: String?
+    let isInitialized = true
+
+    func isIndexing(projectPath: String) -> Bool { false }
+
+    @discardableResult
+    func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
+        NoopProjectRAGObserverHandle()
+    }
+
+    func search(query: String, projectPath: String?, topK: Int) async throws -> ProjectRAGResponse {
+        ProjectRAGResponse(query: query, results: [
+            ProjectRAGSearchResult(
+                content: "echo-\(query)",
+                source: "Echo.swift",
+                score: 0.9,
+                matchKind: .semantic
+            ),
+        ])
+    }
+
+    func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws {}
+
+    func indexStatus(projectPath: String) async throws -> ProjectRAGIndexStatus? { nil }
 }

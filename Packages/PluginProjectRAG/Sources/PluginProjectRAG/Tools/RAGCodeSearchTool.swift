@@ -7,6 +7,8 @@ import ProviderProjectRAG
 public struct RAGCodeSearchTool: SuperAgentTool {
     public static let toolName = "search_code"
     public let name = Self.toolName
+    // 索引访问经 RAGService actor 内部串行，工具层无共享可变状态，可并行。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let providerOverride: (any ProjectRAGProviding)?
     private let searchMemory: ProjectRAGSearchMemory?
 

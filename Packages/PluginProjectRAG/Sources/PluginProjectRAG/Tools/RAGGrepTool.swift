@@ -8,6 +8,9 @@ public struct RAGGrepTool: SuperAgentTool {
     public static let toolName = "grep"
     public let name = Self.toolName
 
+    // 每次调用独立 ripgrep 进程（协作池外执行），无共享可变状态，可并行。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
@@ -89,7 +92,7 @@ public struct RAGGrepTool: SuperAgentTool {
 
         let outcome: RAGGrepOutcome
         do {
-            outcome = try RAGGrepSearcher.search(
+            outcome = try await RAGGrepSearcher.search(
                 pattern: pattern,
                 projectPath: projectPath,
                 glob: glob?.isEmpty == false ? glob : nil,

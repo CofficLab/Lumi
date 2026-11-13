@@ -149,4 +149,48 @@ struct RAGGrepToolTests {
         #expect(output.contains("Ctx.swift:2:needle"))
         #expect(output.contains("Ctx.swift-3-omega"))
     }
+
+    // MARK: - #1312：并行只读调度声明
+
+    @Test("declares parallel read-only scheduling capability")
+    func declaresParallelReadOnlyCapability() {
+        #expect(RAGGrepTool().executionCapability == .parallelReadOnly)
+    }
+
+    @Test("concurrent greps keep results independent")
+    func concurrentGrepsKeepResultsIndependent() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try "alpha needle\nbeta needle\n".write(
+            to: dir.appendingPathComponent("A.swift"), atomically: true, encoding: .utf8
+        )
+        try "gamma other\n".write(
+            to: dir.appendingPathComponent("B.swift"), atomically: true, encoding: .utf8
+        )
+        let tool = RAGGrepTool()
+        let expectations: [(pattern: String, marker: String)] = [
+            ("needle", "A.swift:2:beta needle"),
+            ("other", "B.swift:1:gamma other"),
+            ("alpha", "A.swift:1:alpha needle"),
+            ("gamma", "B.swift:1:gamma other"),
+        ]
+        try await withThrowingTaskGroup(of: (String, String).self) { group in
+            for expectation in expectations {
+                group.addTask {
+                    let output = try await tool.execute(arguments: [
+                        "pattern": ToolArgument(expectation.pattern),
+                        "path": ToolArgument(dir.path),
+                    ])
+                    return (expectation.pattern, output)
+                }
+            }
+            var seen: Set<String> = []
+            for try await (pattern, output) in group {
+                seen.insert(pattern)
+                let marker = expectations.first { $0.pattern == pattern }?.marker ?? ""
+                #expect(output.contains(marker))
+            }
+            #expect(seen.count == expectations.count)
+        }
+    }
 }
