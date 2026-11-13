@@ -78,10 +78,12 @@ actor TempFileStorageService {
 
         // 写入支持嵌套相对路径，清理必须与 listFiles 一样递归枚举，
         // 否则子目录里的过期文件永远不会被删除（#200）。
+        // 不能跳过隐藏文件：`.audit.txt` 这类点文件是合法临时文件，可写可读，
+        // 若清理跳过它们就永远不会过期删除（#327）。
         guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            options: [.skipsPackageDescendants]
         ) else {
             return
         }
@@ -140,10 +142,12 @@ actor TempFileStorageService {
     func listFiles() throws -> [TempFileInfo] {
         try purgeExpiredFiles()
         let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey]
+        // 与清理一致：点文件是合法临时文件，列表不得跳过隐藏文件，
+        // 否则 `.audit.txt` 可写可读却永远不可见（#327）。
         guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: keys,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            options: [.skipsPackageDescendants]
         ) else {
             return []
         }

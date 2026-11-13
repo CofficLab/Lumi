@@ -269,6 +269,42 @@ struct PluginAgentTempStorageTests {
         #expect(TempFileStorageError.purgeFailed("old.md").errorDescription?.contains("old.md") == true)
     }
 
+    /// 回归 #327：点文件（如 `.audit.txt`）是合法临时文件，可写可读，
+    /// 列表不得因 `.skipsHiddenFiles` 而把它隐藏，否则用户看不到自己写入的文件。
+    @Test
+    func listsAndReadsRootDotfile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        _ = try await service.write(filename: ".audit.txt", content: "audit")
+
+        #expect(try await service.read(filename: ".audit.txt") == "audit")
+        #expect(try await service.listFiles().map(\.name) == [".audit.txt"])
+    }
+
+    /// 回归 #327：过期点文件必须被清理删除，随后 read 抛 fileNotFound，
+    /// 不得因 `.skipsHiddenFiles` 而永久残留、绕过保留期。
+    @Test
+    func purgeRemovesExpiredRootDotfile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let path = try await service.write(filename: ".audit-old.txt", content: "old")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: path
+        )
+
+        try await service.purgeExpiredFiles()
+
+        await #expect(throws: TempFileStorageError.fileNotFound(".audit-old.txt")) {
+            _ = try await service.read(filename: ".audit-old.txt")
+        }
+        #expect(try await service.listFiles().map(\.name).isEmpty)
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("PluginAgentTempStorageTests-\(UUID().uuidString)", isDirectory: true)

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 24 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 26 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 24
+测试文件: 3 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Services/`
@@ -31,6 +31,7 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 - **AgentTempStorageRuntimeBridge**（3 条）：由 `injectedDirectoryResolvesToInjectedDirectory`、`sharedStorageUsesInjectedDirectory`、`refusesFallbackWithoutInjection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（14 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk`、`unreadableSettingsAbortPurgeAndSurfaceError` 等用例锁定；其中 `storageSupportsNestedReadWriteAndList` 锁定列表必须递归枚举嵌套文件，`purgeRemovesExpiredNestedFiles` 锁定清理必须递归删除过期嵌套文件（#200）；改动该模块时优先跑对应测试文件。
 - **TempFileStorageSymlink**（6 条）：由 `writeRejectsFileSymlinkPointingOutsideStorage`、`readRejectsFileSymlinkPointingOutsideStorage`、`writeRejectsNestedPathThroughSymlinkDirectory` 等用例锁定（#232）：路径边界检查必须解析符号链接，指向存储外部的文件/目录链接不得越界读写；指向内部的链接保持可用，经悬空链接目录写入必须失败且无外部副作用。改动 `resolveSafeURL` 时优先跑 `TempFileStorageSymlinkTests.swift`。
+- **点文件可见且可清理**（2 条）：由 `listsAndReadsRootDotfile`、`purgeRemovesExpiredRootDotfile` 锁定（**回归 #327**）：`.audit.txt` 这类点文件是合法临时文件，可写可读；`listFiles` 与 `purgeExpiredFiles` 的枚举都不得用 `.skipsHiddenFiles`，否则点文件可读写却永远不可见、过期也永不删除。改动两处枚举 options 时优先跑对应用例。
 
 ## 测试用例清单
 
@@ -60,27 +61,29 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 22 | TempFileStorageSymlink | 读取经符号链接目录的嵌套路径被拒绝（**回归 #232**） | 存储内 `exports` 链接指向含 `secret.txt` 的外部目录 | 调用 `read(filename: "exports/secret.txt")` | 抛出 `pathTraversal` | P1 | ✅ 已覆盖 | `readRejectsNestedPathThroughSymlinkDirectory` |
 | 23 | TempFileStorageSymlink | 指向存储内部的符号链接保持可用（**回归 #232**） | 写入 `real.md` 后创建内部链接 `alias.md` | 调用 `read(filename: "alias.md")` | 返回 real.md 内容，内部链接不被误杀 | P1 | ✅ 已覆盖 | `symlinksStayingInsideStorageRemainUsable` |
 | 24 | TempFileStorageSymlink | 经悬空符号链接目录写入失败且不产生外部副作用（**回归 #232**） | `exports` 链接指向尚不存在的外部目录 | 调用 `write(filename: "exports/data.json")` | 写入抛出错误，外部目录保持为空 | P1 | ✅ 已覆盖 | `writeThroughDanglingSymlinkDirectoryFailsWithoutExternalSideEffects` |
+| 25 | 综合 | 根级点文件可写可读且列表可见（**回归 #327**） | 写入 `.audit.txt`（新鲜） | 调用 `read` 与 `listFiles` | read 返回内容，列表为 `[".audit.txt"]`，不因隐藏文件选项而消失 | P0 | ✅ 已覆盖 | `listsAndReadsRootDotfile` |
+| 26 | 综合 | 过期根级点文件必须被清理删除（**回归 #327**） | 写入 `.audit-old.txt` 并把修改时间设为 40 天前 | 调用 `purgeExpiredFiles` 后 read/list | read 抛出 `fileNotFound`，列表为空，点文件不再永久残留 | P0 | ✅ 已覆盖 | `purgeRemovesExpiredRootDotfile` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 15 / 15
 - P2: 已覆盖 1 / 1
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
 - **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
