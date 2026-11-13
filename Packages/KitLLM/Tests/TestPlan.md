@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 210 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 217 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 210
+测试文件: 9 个，用例总数: 217
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -261,27 +261,34 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 210 条用�
 | 208 | 生成参数映射 | 回归 #951：输出上限 4096 的 Claude 3 模型默认 max_tokens 被限幅 | Claude 3 Opus/Sonnet/Haiku + 默认配置 8192 | 构建流式请求体 | `max_tokens` 均为 4096 | P0 | ✅ 已覆盖 | `clampsDefaultMaxTokensForClaude3Models` |
 | 209 | 生成参数映射 | 用户显式超过模型上限的 max_tokens 同样被限幅 | Claude 3 Haiku + 显式 8192 | 构建流式请求体 | `max_tokens` 为 4096 | P1 | ✅ 已覆盖 | `clampsExplicitMaxTokensAboveModelCap` |
 | 210 | 生成参数映射 | 输出上限更高的模型不会被统一降低 | Claude 3.5 Sonnet / Sonnet 4 + 8192 | 构建流式请求体 | `max_tokens` 保持 8192 | P1 | ✅ 已覆盖 | `keepsHigherMaxTokensForCapableModels` |
+| 211 | Anthropic 整段 JSON 回退 | 回归 #1167：整段 JSON 回退保留单个 redacted_thinking 块，不丢失 opaque data | 网关在 stream=true 时返回整段 JSON | 解析含 redacted_thinking 与 tool_use 的响应 | `redactedThinkingBlocks` 等于原文，工具调用仍在 | P0 | ✅ 已覆盖 | `fallbackPreservesSingleRedactedBlock` |
+| 212 | Anthropic 整段 JSON 回退 | 整段 JSON 回退按到达顺序保留多个 redacted_thinking 块 | 响应含两个 redacted_thinking 块 | 解析整段 JSON | 两段 opaque data 按顺序保留，不丢失 | P0 | ✅ 已覆盖 | `fallbackPreservesMultipleRedactedBlocks` |
+| 213 | Anthropic 整段 JSON 回退 | 整段 JSON 回退经累积器后最终响应含 redactedThinking，不丢失 | 回退 chunk 进入 StreamingAccumulator | 消费 chunk 并 finish | 最终响应 `redactedThinking` 等于原文块 | P0 | ✅ 已覆盖 | `fallbackProducesRedactedThinkingInFinalResponse` |
+| 214 | Anthropic 整段 JSON 回退 | 整段 JSON 与等价 SSE 的最终 redactedThinking 一致 | 同一 opaque data 分别走 SSE 与回退 | 两路各自累积并 finish | 两条路径最终 `redactedThinking` 相同 | P1 | ✅ 已覆盖 | `fallbackAndSSEAgreeOnRedactedThinking` |
+| 215 | Anthropic 整段 JSON 回退 | 仅含 redacted_thinking 的整段 JSON 仍产生 chunk，不被当成空响应丢弃 | 响应只有 redacted_thinking 块 | 解析整段 JSON | 产出带 opaque data 的 done chunk | P0 | ✅ 已覆盖 | `redactedOnlyResponseStillProducesChunk` |
+| 216 | Anthropic 非流式解析 | 非流式 parseResponse 同样返回 redactedThinking | 直接调用 parseResponse | 解析含 redacted_thinking 的响应 | 返回的 `redactedThinking` 等于原文块 | P1 | ✅ 已覆盖 | `parseResponseReturnsRedactedThinking` |
+| 217 | Anthropic 整段 JSON 回退 | 无 redacted_thinking 时字段为空，不引入额外块 | 响应只含普通文本 | 解析并累积 | `redactedThinkingBlocks` 与最终 `redactedThinking` 均为 nil | P2 | ✅ 已覆盖 | `noRedactedBlocksWhenAbsent` |
 
-> 说明：全部 **210 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **217 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 44 / 44
-- P1: 已覆盖 152 / 152
-- P2: 已覆盖 14 / 14
-- **合计: 210 / 210**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 48 / 48
+- P1: 已覆盖 154 / 154
+- P2: 已覆盖 15 / 15
+- **合计: 217 / 217**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（44 条）
-- **P1**: 其余功能性用例（152 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
+- **P1**: 其余功能性用例（154 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 210 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 217 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
