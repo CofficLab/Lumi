@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 /// V4（ZCode）轮次投影缓存。
 ///

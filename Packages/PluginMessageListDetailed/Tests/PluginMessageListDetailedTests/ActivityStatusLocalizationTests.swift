@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversationState
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 活动状态行的本地化契约（#886）。

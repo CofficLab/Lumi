@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListZCode
 
 /// 「正在加载消息…」遮罩**卡死**的复现用例。

@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 /// Projects the verbose message timeline into one user-facing row per
 /// AgentTurn for the brief (V1) presentation.

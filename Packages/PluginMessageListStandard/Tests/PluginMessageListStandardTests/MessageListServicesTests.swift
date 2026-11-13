@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversationState
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 // MARK: - activityMessage 投影

@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversationState
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 大数据量场景下的消息列表行为测试（V3 / detailed 模式）。

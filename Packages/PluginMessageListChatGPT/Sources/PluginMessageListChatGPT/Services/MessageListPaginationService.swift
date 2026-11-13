@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 /// V5（ChatGPT）消息窗口的分页服务。
 ///

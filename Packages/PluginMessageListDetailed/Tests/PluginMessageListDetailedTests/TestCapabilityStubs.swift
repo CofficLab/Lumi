@@ -5,6 +5,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 测试用能力 stub 集合。

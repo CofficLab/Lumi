@@ -1,6 +1,7 @@
 import Foundation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 // MARK: - 合成行跨文本消息吞并后续工具组（授权卡片「之后又继续跑」的错觉）

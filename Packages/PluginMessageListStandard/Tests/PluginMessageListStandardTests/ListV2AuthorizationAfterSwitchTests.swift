@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 /// 复现：**用户已处理过工具授权，切到其他对话再切回来，授权界面又出现。**

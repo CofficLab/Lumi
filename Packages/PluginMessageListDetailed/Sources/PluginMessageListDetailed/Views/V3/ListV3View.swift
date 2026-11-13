@@ -3,6 +3,7 @@ import LumiUI
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
+import KitMessageList
 
 /// Message List V3 View (detailed / 详细模式)
 ///

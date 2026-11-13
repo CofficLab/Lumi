@@ -15,6 +15,7 @@ import ProviderProject
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
+import KitMessageList
 
 /// ZCode（V4）消息列表插件。
 ///
@@ -51,7 +52,7 @@ public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
     private var streamingObserver: (any MessageStreamingObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
-    private var verbosityObservation: ZCodeVerbosityObservationBox?
+    private var verbosityObservation: VerbosityObservationBox?
     /// UI 测试夹具的 seed 句柄（仅 DEBUG 下存在）。
     private var uiTestingSeedHandle: (any ConversationObserverHandle)?
 
@@ -101,10 +102,11 @@ public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
         let viewModel = ListV4ViewModel(services: services)
         self.viewModel = viewModel
 
-        let verbosityObservation = ZCodeVerbosityObservationBox(
+        let verbosityObservation = VerbosityObservationBox(
             conversations: conversations,
             chat: chat,
             pluginID: id,
+            order: order,
             expectedVerbosity: .zcode,
             makeView: { [weak viewModel, services] in
                 guard let viewModel else { return AnyView(EmptyView()) }

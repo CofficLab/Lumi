@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListZCode
 
 @Suite("底部边缘判定")

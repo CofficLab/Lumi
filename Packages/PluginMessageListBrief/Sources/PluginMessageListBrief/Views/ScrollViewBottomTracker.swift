@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import KitMessageList
 
 /// 通过观察底层 `NSScrollView` 的滚动位置来判断「用户是否停在列表底部」，
 /// **完全替代** SwiftUI 的 `GeometryReader` + `PreferenceKey` 方案。

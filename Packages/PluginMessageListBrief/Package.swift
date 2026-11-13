@@ -11,6 +11,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../KitMarkdown"),
+        .package(path: "../KitMessageList"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
@@ -27,6 +28,7 @@ let package = Package(
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiUI", package: "LumiUI"),
             .product(name: "KitMarkdown", package: "KitMarkdown"),
+            .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -40,6 +42,7 @@ let package = Package(
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListBriefTests", dependencies: [
             "PluginMessageListBrief",
+            .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiUI", package: "LumiUI"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),

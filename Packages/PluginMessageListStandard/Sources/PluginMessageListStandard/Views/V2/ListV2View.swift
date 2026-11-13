@@ -5,6 +5,7 @@ import ProviderConversation
 import ProviderMessage
 import LumiLoggingKit
 import SwiftUI
+import KitMessageList
 
 /// Message List V2 View (standard / 标准模式)
 struct ListV2View: View, SuperLog {

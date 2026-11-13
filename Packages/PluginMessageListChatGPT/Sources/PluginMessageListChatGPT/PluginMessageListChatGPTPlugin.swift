@@ -10,6 +10,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT）消息列表插件。
 ///
@@ -39,7 +40,7 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var verbosityObservation: ChatGPTVerbosityObservationBox?
+    private var verbosityObservation: VerbosityObservationBox?
     /// V5 自己的视图模型实例；不与其它档位共享。
     private var viewModel: ChatGPTListViewModel?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
@@ -83,7 +84,7 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
         )
         self.viewModel = viewModel
 
-        verbosityObservation = ChatGPTVerbosityObservationBox(
+        verbosityObservation = VerbosityObservationBox(
             conversations: conversations,
             chat: chat,
             pluginID: id,

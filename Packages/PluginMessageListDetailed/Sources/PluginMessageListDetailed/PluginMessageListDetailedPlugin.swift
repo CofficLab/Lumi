@@ -15,6 +15,7 @@ import ProviderProject
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
+import KitMessageList
 
 /// 详细（V3 / detailed）消息列表插件。
 @MainActor
@@ -92,6 +93,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             chat: chat,
             pluginID: id,
+            order: order,
             expectedVerbosity: .detailed,
             makeView: { [weak viewModel, services] in
                 guard let viewModel else { return AnyView(EmptyView()) }

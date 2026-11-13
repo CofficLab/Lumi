@@ -3,6 +3,7 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// UI 测试夹具的 seed 行为验证（不启动 App）。

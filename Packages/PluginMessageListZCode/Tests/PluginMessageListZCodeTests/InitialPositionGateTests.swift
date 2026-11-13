@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListZCode
 
 /// 首屏就绪兜底（`InitialPositionGate`）的行为不变式。

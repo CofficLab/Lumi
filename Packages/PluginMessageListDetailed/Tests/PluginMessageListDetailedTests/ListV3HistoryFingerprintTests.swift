@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversationState
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// V3（detailed）历史行指纹必须覆盖**所有影响渲染的输入**（#147）。

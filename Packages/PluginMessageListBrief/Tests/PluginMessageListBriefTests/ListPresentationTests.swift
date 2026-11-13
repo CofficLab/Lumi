@@ -6,6 +6,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageStreaming
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// README §1 First open / §4 Load earlier / §5 Scrolling / §6 Bottom status

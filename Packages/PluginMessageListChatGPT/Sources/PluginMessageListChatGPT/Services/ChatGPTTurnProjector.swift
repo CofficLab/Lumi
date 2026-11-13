@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 /// V5（ChatGPT）轮次投影器。
 ///

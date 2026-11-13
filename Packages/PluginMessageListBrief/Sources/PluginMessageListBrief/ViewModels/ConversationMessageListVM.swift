@@ -1,6 +1,7 @@
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
+import KitMessageList
 
 /// 当前对话的消息列表数据源：负责消息窗口、分页和列表行投影，并为每个
 /// AgentTurn 保持对应的子 VM。持久化过程消息从有限消息窗口重建；

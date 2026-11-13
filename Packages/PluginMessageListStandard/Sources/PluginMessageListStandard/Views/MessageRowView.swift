@@ -3,6 +3,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
+import KitMessageList
 
 /// Renders a single message using the injected message renderer,
 /// or a fallback if no renderer is available.

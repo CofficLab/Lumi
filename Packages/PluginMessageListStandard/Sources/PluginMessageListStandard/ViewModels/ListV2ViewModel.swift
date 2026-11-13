@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
 import ProviderToolManager
+import KitMessageList
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array

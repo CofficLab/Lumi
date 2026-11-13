@@ -4,6 +4,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
+import KitMessageList
 @testable import PluginMessageListChatGPT
 
 // MARK: - 消息能力替身
@@ -17,6 +18,12 @@ final class StubMessageCapability: MessageListMessageCapability {
     var gate: AsyncGate?
     /// 分页请求次数。
     private(set) var pageRequestCount = 0
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        messages
+            .filter { $0.conversationID == conversationID }
+            .sorted(by: stubMessageOrdering)
+    }
 
     func messagePageAsync(
         for conversationID: UUID,

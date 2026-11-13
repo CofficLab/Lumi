@@ -8,6 +8,7 @@ import ProviderMessageRendering
 import ProviderMessageStreaming
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 // MARK: - Test doubles for narrow capabilities

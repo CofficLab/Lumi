@@ -1,6 +1,7 @@
 import Foundation
 import ProviderConversation
 import ProviderMessage
+import KitMessageList
 
 /// Message List Row Builder
 ///

@@ -5,6 +5,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 复现：**用户已处理过工具授权，切到其他对话再切回来，授权界面又出现。**

@@ -1,6 +1,7 @@
 import Foundation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// README §4 翻页 / §5 滚动 / §6 状态卡 隐含的纯函数/actor 行为测试。
@@ -99,7 +100,7 @@ struct MessageListServicesTests {
                 createdAt: base.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let svc = MessageListPaginationService(pageSize: 40)
+        let svc = PluginMessageListBrief.MessageListPaginationService(pageSize: 40)
         let first = await svc.loadFirstPage(
             conversationID: conversationID,
             messageManager: stub
@@ -120,7 +121,7 @@ struct MessageListServicesTests {
                 createdAt: base.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let svc = MessageListPaginationService(pageSize: 40)
+        let svc = PluginMessageListBrief.MessageListPaginationService(pageSize: 40)
         let first = await svc.loadFirstPage(
             conversationID: conversationID,
             messageManager: stub
@@ -141,7 +142,7 @@ struct MessageListServicesTests {
             )
         }
         stub.allMessages = initial
-        let svc = MessageListPaginationService(pageSize: 5)
+        let svc = PluginMessageListBrief.MessageListPaginationService(pageSize: 5)
         let merged = await svc.refreshTail(
             conversationID: conversationID,
             messageManager: stub,
@@ -162,7 +163,7 @@ struct MessageListServicesTests {
                 createdAt: base.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let svc = MessageListPaginationService(pageSize: 3)
+        let svc = PluginMessageListBrief.MessageListPaginationService(pageSize: 3)
         let merged = await svc.refreshTail(
             conversationID: conversationID,
             messageManager: stub,
@@ -192,7 +193,7 @@ struct MessageListServicesTests {
                 createdAt: base
             )
         ]
-        let svc = MessageListPaginationService(pageSize: 3)
+        let svc = PluginMessageListBrief.MessageListPaginationService(pageSize: 3)
         let merged = await svc.refreshTail(
             conversationID: conversationID,
             messageManager: stub,

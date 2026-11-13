@@ -4,6 +4,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT 风格）消息列表视图。
 ///

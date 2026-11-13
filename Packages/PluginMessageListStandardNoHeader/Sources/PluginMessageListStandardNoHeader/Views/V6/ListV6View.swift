@@ -5,6 +5,7 @@ import ProviderConversation
 import ProviderMessage
 import LumiLoggingKit
 import SwiftUI
+import KitMessageList
 
 /// Message List V6 View（standardNoHeader / 标准布局，不显示消息头）
 struct ListV6View: View, SuperLog {

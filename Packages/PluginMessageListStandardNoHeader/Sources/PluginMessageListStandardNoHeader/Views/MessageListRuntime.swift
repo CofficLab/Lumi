@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import KitMessageList
 
 /// 消息列表视图的**运行时状态容器**。
 ///

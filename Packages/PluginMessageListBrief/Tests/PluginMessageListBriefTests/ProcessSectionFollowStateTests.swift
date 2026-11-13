@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// 过程折叠区的**贴底跟随状态**。

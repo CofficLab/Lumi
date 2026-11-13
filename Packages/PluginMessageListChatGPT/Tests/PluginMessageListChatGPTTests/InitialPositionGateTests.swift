@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListChatGPT
 
 /// V5（ChatGPT）首屏定位 gate 测试。

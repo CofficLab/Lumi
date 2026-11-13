@@ -4,6 +4,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
+import KitMessageList
 
 /// `MessageListRowBuilder.buildHistory` 输入的廉价指纹。
 ///

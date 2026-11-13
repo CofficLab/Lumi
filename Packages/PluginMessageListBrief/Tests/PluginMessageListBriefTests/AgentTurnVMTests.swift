@@ -2,6 +2,7 @@ import Foundation
 import ProviderAgentLoop
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 @MainActor

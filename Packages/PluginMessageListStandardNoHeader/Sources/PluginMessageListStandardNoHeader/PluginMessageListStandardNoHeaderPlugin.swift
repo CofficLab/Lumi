@@ -15,6 +15,7 @@ import ProviderProject
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
+import KitMessageList
 
 /// 标准布局、无消息头（V6 / standardNoHeader）消息列表插件。
 ///

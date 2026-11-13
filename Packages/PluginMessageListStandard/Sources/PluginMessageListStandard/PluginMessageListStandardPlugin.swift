@@ -15,6 +15,7 @@ import ProviderProject
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
+import KitMessageList
 
 /// 标准（V2 / standard）消息列表插件。
 @MainActor

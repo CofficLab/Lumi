@@ -3,6 +3,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT）单条消息行。
 ///

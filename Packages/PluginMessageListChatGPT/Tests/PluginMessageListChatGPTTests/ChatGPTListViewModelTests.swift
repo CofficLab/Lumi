@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListChatGPT
 
 /// V5（ChatGPT）消息窗口与异步身份的视图模型测试。
@@ -131,14 +132,14 @@ struct ChatGPTListViewModelTests {
 
     @Test("分页服务使用 pageSize 40 与 retained 300")
     func paginationBounds() {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         #expect(service.pageSize == 40)
         #expect(service.maxRetainedCount == 300)
     }
 
     @Test("窗口回收后长度不超过上限")
     func evictionKeepsWindowBounded() {
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let messages = (0..<500).map { index in
             makeStubMessage(
                 conversationID: UUID(),
@@ -156,7 +157,7 @@ struct ChatGPTListViewModelTests {
 
     @Test("窗口未超限时不被裁剪")
     func evictionKeepsShortWindow() {
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let messages = (0..<10).map {
             makeStubMessage(conversationID: UUID(), role: .user, content: "\($0)")
         }
@@ -176,7 +177,7 @@ struct ChatGPTListViewModelTests {
             )
         }
 
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         let result = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages

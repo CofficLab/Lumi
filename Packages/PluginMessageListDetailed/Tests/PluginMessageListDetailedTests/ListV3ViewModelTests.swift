@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 构造一条测试消息。

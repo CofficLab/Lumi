@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT）首屏遮罩。
 ///

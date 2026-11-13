@@ -1,4 +1,5 @@
 import ProviderDeveloperMode
+import KitMessageList
 
 /// 将开发者模式变化转发为当前对话消息列表 VM 状态。
 @MainActor

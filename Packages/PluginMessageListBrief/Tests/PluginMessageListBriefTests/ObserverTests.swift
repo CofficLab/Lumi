@@ -8,6 +8,7 @@ import ProviderMessageRendering
 import ProviderMessageStreaming
 import SwiftUI
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// `Observers/` 五个订阅器的单元测试。
@@ -452,6 +453,7 @@ struct ObserverTests {
             conversations: nil,
             chat: chat,
             pluginID: "test.plugin",
+            order: 82,
             expectedVerbosity: .brief,
             makeView: { AnyView(EmptyView()) }
         )
@@ -479,6 +481,7 @@ struct ObserverTests {
             conversations: conversations,
             chat: chat,
             pluginID: "test.plugin",
+            order: 82,
             expectedVerbosity: .brief,
             makeView: { AnyView(EmptyView()) }
         )
@@ -509,6 +512,7 @@ struct ObserverTests {
             conversations: conversations,
             chat: chat,
             pluginID: "test.plugin",
+            order: 82,
             expectedVerbosity: .brief,
             makeView: { AnyView(EmptyView()) }
         )
@@ -533,6 +537,7 @@ struct ObserverTests {
             conversations: conversations,
             chat: chat,
             pluginID: "test.plugin",
+            order: 82,
             expectedVerbosity: .brief,
             makeView: { AnyView(EmptyView()) }
         )
