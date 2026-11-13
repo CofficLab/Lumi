@@ -363,9 +363,32 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **171 条场景 / 177 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 177 tests in 25 suites；其中 6 条 chip 几何用例在本机
-> Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
+### 折叠粘贴原文保真（回归 #336）与命中 / 缓存 / 分流用例补登记
+
+> ID 176–177 是本轮 #336 的回归用例；ID 178–189 为此前已实跑通过、但漏登记到
+> 清单的既有用例（非文件 URL 分流、附件位图解码缓存、粘贴 chip 命中测试），
+> 本轮一并补齐，使 `verify-testplan.py` 的双向方法核对恢复绿色。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 176 | 折叠块 | 折叠粘贴保留原文首尾换行，发送正文不黏连（**回归 #336**） | 正文 `"prefix"` + 粘贴「换行 + 1200 个 A + 换行」+ `"suffix"` | `handlePaste` 后发布正文 | draft 为 `prefix + 原文 + suffix`（首尾换行保留），折叠区间 start=6、length=原文长度 | P0 | ✅ 已覆盖 | `collapsedPastePreservesOriginalNewlines` |
+| 177 | 折叠块 | 纯换行粘贴不折叠，交回普通粘贴通道（#336） | 粘贴 `"\n\n\n"` | `handlePaste` | 返回 false，不插入 chip | P1 | ✅ 已覆盖 | `newlineOnlyPasteIsNotCollapsed` |
+| 178 | 拖放 | mailto 链接不进入附件链 | 空能力层 | `attach(droppedURL: mailto:)` | 文件 / 图片池均空，无错误提示 | P1 | ✅ 已覆盖 | `mailtoLinkIsRejected` |
+| 179 | 拖放 | https 链接不进入附件链 | 空能力层 | `attach(droppedURL: https:)` | 文件 / 图片池均空，无错误提示 | P1 | ✅ 已覆盖 | `httpsLinkIsRejected` |
+| 180 | 拖放 | 非文件 URL 不被当成目录插入文本 | 空能力层 | `attach(droppedURL: mailto:)` | `pendingBlock == nil` | P1 | ✅ 已覆盖 | `nonFileURLDoesNotInsertDirectoryPath` |
+| 181 | 拖放 | 输入框拖放只把本地文件交给附件处理器 | 文件 / 远程 / mailto URL | 校验 `isFileAttachmentURL` | 文件为 true，远程与 mailto 为 false | P1 | ✅ 已覆盖 | `editorOnlyRoutesLocalFilesToAttachmentHandler` |
+| 182 | 附件缓存 | 同一附件重复取图只解码一次 | 1×1 PNG 附件 | 连续两次 `image(for:)` | 返回同一实例（命中缓存） | P1 | ✅ 已覆盖 | `sameAttachmentDecodesOnlyOnce` |
+| 183 | 附件缓存 | 文本变化后仍复用同一份位图 | 挂起图片 + 连续 `setText` | 多次按键后 `image(for:)` | 与首次为同一实例 | P1 | ✅ 已覆盖 | `reusesImageAcrossTextChanges` |
+| 184 | 附件缓存 | 移除附件后释放其位图缓存 | 挂起图片 | 移除附件并 refresh 后重新取图 | 重新解码（不再命中旧缓存） | P1 | ✅ 已覆盖 | `removingAttachmentReleasesCache` |
+| 185 | 附件缓存 | 非法 Base64 返回 nil 且不缓存 | 损坏的 base64 附件 | 两次 `image(for:)` | 均为 nil | P1 | ✅ 已覆盖 | `invalidBase64ReturnsNil` |
+| 186 | 附件缓存 | 只保留挂起中的附件缓存 | 两个附件 | `retainOnly(ids: [kept])` | kept 命中旧实例，dropped 重新解码 | P1 | ✅ 已覆盖 | `retainOnlyKeepsPendingAttachments` |
+| 187 | 命中测试 | chip 矩形内的点命中 chip | 仅含一个粘贴 chip 的编辑器 | `pastePreviewHit(at: 矩形中心)` | 非 nil | P1 | ✅ 已覆盖 | `pointInsideChipHitsChip` |
+| 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
+| 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
+
+> 说明：清单 **189 条场景 / 195 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 195 tests in 29 suites，全部通过；早期记录的 6 条 chip 几何
+> 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -386,10 +409,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 55 / 55
-- P1: 已覆盖 102 / 102
+- P0: 已覆盖 56 / 56
+- P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 175 / 175**（仅表示清单场景，非源码覆盖率）
+- **合计: 189 / 189**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

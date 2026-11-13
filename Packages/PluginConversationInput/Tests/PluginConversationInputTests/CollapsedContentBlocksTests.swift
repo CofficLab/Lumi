@@ -205,6 +205,85 @@ struct CollapsedContentBlocksTests {
         #expect(reported.first?.length == pasted.count)
         #expect(textView.hasPastePreviewAttachments)
     }
+
+    @Test("折叠粘贴必须保留原文首尾换行，发送正文不黏连（#336）")
+    func collapsedPastePreservesOriginalNewlines() throws {
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+        var reported: [CollapsedContentBlock] = []
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            onCollapsedBlocksChanged: { reported = $0 },
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = EditorTextView()
+        coordinator.attach(to: textView)
+
+        // 用户先写了 prefix（无尾换行），光标停在末尾。
+        textView.textStorage?.setAttributedString(NSAttributedString(string: "prefix"))
+        textView.setSelectedRange(NSRange(location: textView.string.count, length: 0))
+
+        // 粘贴「换行 + 1200 个 A + 换行」，达到折叠阈值。用独立命名 pasteboard，
+        // 不触碰系统剪贴板。
+        let raw = "\n" + String(repeating: "A", count: 1200) + "\n"
+        let pasteboard = NSPasteboard(name: .init("PluginConversationInputTests.\(UUID().uuidString)"))
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.setString(raw, forType: .string)
+
+        #expect(coordinator.handlePaste(pasteboard, in: textView))
+
+        // chip 之后紧接着写 suffix 并发送。
+        textView.setSelectedRange(NSRange(location: textView.string.count, length: 0))
+        textView.insertText("suffix", replacementRange: textView.selectedRange())
+        coordinator.publishCommittedTextForTesting(from: textView)
+
+        // 原文首尾换行必须保留：prefix、长文本、suffix 各自保持换行边界，
+        // 而不是被 trim 成 "prefixAAA...AAAsuffix"。
+        #expect(draft == "prefix" + raw + "suffix")
+        #expect(reported.count == 1)
+        let block = try #require(reported.first)
+        #expect(block.start == "prefix".count)
+        #expect(block.length == raw.count)
+    }
+
+    @Test("纯换行粘贴不折叠，交回普通粘贴处理（#336）")
+    func newlineOnlyPasteIsNotCollapsed() {
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            onCollapsedBlocksChanged: { _ in },
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = EditorTextView()
+        coordinator.attach(to: textView)
+
+        let pasteboard = NSPasteboard(name: .init("PluginConversationInputTests.\(UUID().uuidString)"))
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.setString("\n\n\n", forType: .string)
+
+        // trim 后为空：不折叠、不插入 chip，由普通粘贴通道处理。
+        #expect(!coordinator.handlePaste(pasteboard, in: textView))
+        #expect(!textView.hasPastePreviewAttachments)
+    }
 }
 /// 内联 chip 的排版几何。
 ///
