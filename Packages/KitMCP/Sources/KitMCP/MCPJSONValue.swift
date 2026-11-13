@@ -97,7 +97,9 @@ public enum MCPJSONValue: Sendable, Hashable {
             return MCPJSONValue(from: value)
         case is NSNull:
             return .null
-        case let value as Bool:
+        // NSNumber(0)/NSNumber(1) 也能桥接成 Bool；必须检查原始对象的
+        // CFTypeID 是否真为 CFBoolean，否则 JSON 数字 0/1 被误判为布尔（#1154）。
+        case let value as Bool where CFGetTypeID(any as AnyObject) == CFBooleanGetTypeID():
             return .bool(value)
         case let value as Int:
             return .int(value)

@@ -5,7 +5,7 @@
 KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提供与 UI/插件无关的 MCP 客户端能力：服务器配置模型、传输层（stdio / Streamable HTTP）、 会话生命周期（initialize / listTools / callTool）、工具描述与调用结果模型。 - 底层使用官方 `modelcontextprotocol/swift-sdk`（精确锁版 `0.12.1`，官方分级 Tier 3）， 通过 `MCPServerServing` 薄抽象隔离，替换实现不影响上层调用方。 - 不依赖任何其他 Lumi 包；只被 `PluginMCP`（或宿主）依赖。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 12
+测试文件: 3 个，用例总数: 15
 
 ## 公开 API
 
@@ -24,7 +24,7 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MCPContentCodec**（3 条）：由 `textAndImage`、`resourceLink`、`errorFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPJSONValue**（5 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation`、`jsonZeroAndOneStayNumbers`、`mcpArgumentsPreserveJSONZeroAndOne`、`nativeSwiftBoolAndNumbersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerSession**（4 条）：由 `listAndCallTool`、`errorResult`、`notConnected` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -43,27 +43,30 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 | 10 | MCPServerSession | 服务器报错时 isError 透传 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorResult` |
 | 11 | MCPServerSession | 未连接时调用抛 notConnected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `notConnected` |
 | 12 | MCPServerSession | 重复连接是幂等的 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `connectIdempotent` |
+| 13 | MCPJSONValue | JSON 数字 0/1 不得被误判为布尔（**#1154**） | JSONSerialization 解析出的 NSNumber 数字叶子 | fromFoundation 转换含 0/1/2/true/false 与嵌套的对象 | 0/1/2 为 .int，true/false 为 .bool，嵌套数组与对象同样保真 | P0 | ✅ 已覆盖 | `jsonZeroAndOneStayNumbers` |
+| 14 | MCPJSONValue | MCP 调用参数中的 JSON 0/1 以数字送达（**#1154**） | JSONSerialization 解析出的参数字典 | MCPValueCoding.mcpArguments | count/mode 为 Value.int(0) 与 .int(1) | P1 | ✅ 已覆盖 | `mcpArgumentsPreserveJSONZeroAndOne` |
+| 15 | MCPJSONValue | 原生 Swift 布尔与数字的桥接行为不变（**#1154**） | 原生 Bool/Int 字面量 | fromFoundation 与 jsonString | 布尔仍为布尔、数字仍为数字，输出 {"count":0} | P1 | ✅ 已覆盖 | `nativeSwiftBoolAndNumbersUnchanged` |
 
-> 说明：全部 **12 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 13 / 13
 - P2: 已覆盖 0 / 0
-- **合计: 12 / 12**（仅表示清单场景，非源码覆盖率）
+- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（13 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 12 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
