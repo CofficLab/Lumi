@@ -285,6 +285,62 @@ struct PluginConversationVerbosityTests {
         #expect(viewModel.selectedVerbosity == .brief)
         observer.cancel()
     }
+
+    /// 回归 #217：快速切换详细度时，旧写入不得覆盖新选择。
+    ///
+    /// 用门闩构造「旧请求晚到」：先放行新写入、再放行旧写入，
+    /// 断言最终落盘的仍是最后一次选择，而不是晚到的旧值。
+    @Test("快速切换详细度时旧写入晚到也不能覆盖新选择（回归 #217）")
+    func lastSelectionWinsWhenEarlierWriteCompletesLast() async {
+        let id = UUID()
+        let capability = GatedVerbosityCapability(selectedConversationID: id)
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        viewModel.select(.brief)      // 旧选择
+        viewModel.select(.detailed)   // 新选择（最终必须生效）
+        await settle()
+
+        // 故意先完成新写入、再完成旧写入，模拟旧请求晚到。
+        capability.complete(.detailed)
+        await settle()
+        capability.complete(.brief)
+        await settle()
+        // 串行化下 .detailed 可能在 .brief 完成后才提交，这里再放行一次。
+        capability.complete(.detailed)
+        await settle()
+
+        #expect(capability.persisted == .detailed)
+    }
+
+    /// 回归 #217：旧写入已经在途时，新选择必须等它结束再落盘，不能被旧写入反超。
+    @Test("在途旧写入未结束前新选择不得提前落盘（回归 #217）")
+    func inFlightEarlierWriteCannotOverwriteLaterSelection() async {
+        let id = UUID()
+        let capability = GatedVerbosityCapability(selectedConversationID: id)
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        viewModel.select(.brief)
+        await settle()   // 让 .brief 写入开始并悬停在门闩上（在途）
+        #expect(capability.submitted == [.brief])
+
+        viewModel.select(.detailed)   // .brief 仍在途
+        await settle()
+        // 串行化：.brief 完成前 .detailed 不得提交。
+        #expect(capability.submitted == [.brief])
+
+        capability.complete(.brief)   // 旧写入完成
+        await settle()
+        #expect(capability.submitted == [.brief, .detailed])
+
+        capability.complete(.detailed)
+        await settle()
+        #expect(capability.persisted == .detailed)
+    }
+
+    /// 让主 actor 上排队的写入任务充分推进（链深最多 2，50 次 yield 足够）。
+    private func settle() async {
+        for _ in 0..<50 { await Task.yield() }
+    }
 }
 
 @MainActor
@@ -321,4 +377,45 @@ private final class FakeVerbosityCapability: ConversationVerbosityCapability {
 @MainActor
 private final class NoopConversationObserverHandle: ConversationObserverHandle {
     func cancel() {}
+}
+
+/// 可控门闩替身：`setVerbosityAndWait` 提交后悬停，直到测试显式放行，
+/// 用来构造「旧写入晚到」的竞态（回归 #217）。`persisted` 按完成顺序赋值，
+/// 模拟落盘写回——最后完成的那次写入决定最终值。
+@MainActor
+private final class GatedVerbosityCapability: ConversationVerbosityCapability {
+    var selectedConversationID: UUID?
+    var globalVerbosity: ResponseVerbosity = .standard
+    private(set) var persisted: ResponseVerbosity?
+    private(set) var submitted: [ResponseVerbosity] = []
+    private var gates: [ResponseVerbosity: CheckedContinuation<Void, Never>] = [:]
+
+    init(selectedConversationID: UUID?) {
+        self.selectedConversationID = selectedConversationID
+    }
+
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { persisted ?? .standard }
+
+    func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        submitted.append(verbosity)
+        await withCheckedContinuation { continuation in
+            gates[verbosity] = continuation
+        }
+        persisted = verbosity
+    }
+
+    func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
+        globalVerbosity = verbosity
+    }
+
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        NoopConversationObserverHandle()
+    }
+
+    /// 放行指定详细度的在途写入；尚未提交时为空操作。
+    func complete(_ verbosity: ResponseVerbosity) {
+        gates.removeValue(forKey: verbosity)?.resume()
+    }
 }
