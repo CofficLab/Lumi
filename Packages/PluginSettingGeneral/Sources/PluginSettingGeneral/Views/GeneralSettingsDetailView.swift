@@ -162,15 +162,15 @@ struct GeneralSettingsDetailView: View {
                         .padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: "更新通道",
+                        title: pluginLocalization.string("Update Channel"),
                         description: viewModel.selectedUpdateChannel == .preview
                             ? "获取 pre 分支发布的预览版本，可能包含未修复的问题。"
                             : "获取 main 分支发布的稳定版本。",
                         icon: viewModel.selectedUpdateChannel == .preview ? "flask" : "checkmark.seal"
                     ) {
-                        Picker("更新通道", selection: $viewModel.selectedUpdateChannel) {
-                            Text("稳定版").tag(AppUpdateChannel.stable)
-                            Text("预览版").tag(AppUpdateChannel.preview)
+                        Picker(pluginLocalization.string("Update Channel"), selection: $viewModel.selectedUpdateChannel) {
+                            Text(pluginLocalization.string("Stable")).tag(AppUpdateChannel.stable)
+                            Text(pluginLocalization.string("Preview")).tag(AppUpdateChannel.preview)
                         }
                         .labelsHidden()
                         .pickerStyle(.menu)
@@ -232,7 +232,7 @@ struct GeneralSettingsDetailView: View {
             titleAlignment: .leading
         ) {
             AppSettingRow(
-                title: "彻底卸载 Lumi",
+                title: pluginLocalization.string("Completely Uninstall Lumi"),
                 description: "清除 Lumi 的插件数据、偏好设置、扩展数据和可选凭据。",
                 icon: "trash"
             ) {
@@ -251,10 +251,10 @@ struct GeneralSettingsDetailView: View {
 
     private var uninstallSheet: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("彻底卸载 Lumi")
+            Text(pluginLocalization.string("Completely Uninstall Lumi"))
                 .font(.appTitle)
 
-            Text("此操作会永久删除 Lumi 自己保存的数据。用户项目、源码和导出的文件不会被删除。")
+            Text(pluginLocalization.string("This permanently removes data saved by Lumi itself. Your projects, source code, and exported files will not be deleted."))
                 .font(.appBody)
                 .foregroundStyle(.secondary)
 
@@ -322,7 +322,7 @@ struct GeneralSettingsDetailView: View {
         )
 
         if summary.targets.isEmpty {
-            Text("当前选项不会删除任何项目。")
+            Text(pluginLocalization.string("The current selection will not delete any projects."))
                 .font(.appBody)
                 .foregroundStyle(.secondary)
         } else {
@@ -347,7 +347,7 @@ struct GeneralSettingsDetailView: View {
                     }
 
                     if summary.targets.count > 8 {
-                        Text("还有 \(summary.targets.count - 8) 项，将在确认后一起处理。")
+                        Text(String(format: pluginLocalization.string("%lld more items will be processed after confirmation."), Int64(summary.targets.count - 8)))
                             .font(.appCaption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)

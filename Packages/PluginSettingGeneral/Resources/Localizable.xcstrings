@@ -4,6 +4,41 @@
     "%lld" : {
 
     },
+    "%lld more items will be processed after confirmation." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld more items will be processed after confirmation."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还有 %lld 项，将在确认后一起处理。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %lld 項，將在確認後一起處理。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %lld 項，將在確認後一起處理。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %lld 項，將在確認後一起處理。"
+          }
+        }
+      }
+    },
     "Add %@ to your PATH to use the command right away." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -215,6 +250,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "命令列工具"
+          }
+        }
+      }
+    },
+    "Completely Uninstall Lumi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completely Uninstall Lumi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "彻底卸载 Lumi"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徹底卸載 Lumi"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徹底卸載 Lumi"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徹底卸載 Lumi"
           }
         }
       }
@@ -470,6 +540,41 @@
     "Lumi 数据已清除，应用即将退出。" : {
 
     },
+    "Manuals" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manuals"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说明书"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說明書"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說明書"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說明書"
+          }
+        }
+      }
+    },
     "Name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -501,6 +606,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "名称"
+          }
+        }
+      }
+    },
+    "No manuals available yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No manuals available yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时还没有说明书。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時還沒有說明書。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時還沒有說明書。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時還沒有說明書。"
           }
         }
       }
@@ -540,6 +680,41 @@
         }
       }
     },
+    "Preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览版"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽版"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽版"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽版"
+          }
+        }
+      }
+    },
     "Registers the General settings entry with app info, website and updates." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -571,6 +746,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在設定中註冊「一般」入口，包含應用程式資訊、網站與更新。"
+          }
+        }
+      }
+    },
+    "Removing plugin data, preferences, extension data, and credentials." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing plugin data, preferences, extension data, and credentials."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在清除插件数据、偏好设置、扩展数据和凭据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在清除插件數據、偏好設置、擴展數據和憑據。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在清除插件數據、偏好設置、擴展數據和憑據。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在清除插件數據、偏好設置、擴展數據和憑據。"
+          }
+        }
+      }
+    },
+    "Seconds Until Automatic Quit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seconds Until Automatic Quit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "秒后自动退出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "秒後自動退出"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "秒後自動退出"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "秒後自動退出"
           }
         }
       }
@@ -610,6 +855,111 @@
         }
       }
     },
+    "Some data could not be removed. The app was not deleted." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some data could not be removed. The app was not deleted."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分数据未能清除，应用未移除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分數據未能清除，應用未移除。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分數據未能清除，應用未移除。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分數據未能清除，應用未移除。"
+          }
+        }
+      }
+    },
+    "Stable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稳定版"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "穩定版"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "穩定版"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "穩定版"
+          }
+        }
+      }
+    },
+    "The current selection will not delete any projects." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current selection will not delete any projects."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前选项不会删除任何项目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前選項不會刪除任何項目。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前選項不會刪除任何項目。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前選項不會刪除任何項目。"
+          }
+        }
+      }
+    },
     "The lumi command is ready to use." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -645,6 +995,41 @@
         }
       }
     },
+    "This permanently removes data saved by Lumi itself. Your projects, source code, and exported files will not be deleted." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This permanently removes data saved by Lumi itself. Your projects, source code, and exported files will not be deleted."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作会永久删除 Lumi 自己保存的数据。用户项目、源码和导出的文件不会被删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作會永久刪除 Lumi 自己保存的數據。用戶項目、源碼和導出的文件不會被刪除。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作會永久刪除 Lumi 自己保存的數據。用戶項目、源碼和導出的文件不會被刪除。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作會永久刪除 Lumi 自己保存的數據。用戶項目、源碼和導出的文件不會被刪除。"
+          }
+        }
+      }
+    },
     "Uninstall" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -676,6 +1061,146 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解除安裝"
+          }
+        }
+      }
+    },
+    "Uninstall Complete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstall Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載完成"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載完成"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載完成"
+          }
+        }
+      }
+    },
+    "Uninstall Incomplete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstall Incomplete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载未完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載未完成"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載未完成"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載未完成"
+          }
+        }
+      }
+    },
+    "Uninstalling Lumi…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstalling Lumi…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在卸载 Lumi…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在卸載 Lumi…"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在卸載 Lumi…"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在卸載 Lumi…"
+          }
+        }
+      }
+    },
+    "Update Channel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Channel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新通道"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新通道"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新通道"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新通道"
           }
         }
       }
@@ -776,7 +1301,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "将处理 %1$lld 项 Lumi 数据，总计 %2$@。"
+            "value" : "Will process %1$lld Lumi items, %2$@ in total."
           }
         }
       }
