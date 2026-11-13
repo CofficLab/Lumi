@@ -52,8 +52,11 @@ public final class ClipboardHistoryItem: @unchecked Sendable {
         self.content = content
         self.isPinned = isPinned
         self.appName = appName
-        // 确保搜索关键词以小写存储
-        self.searchKeywords = searchKeywords.lowercased()
+        // 确保搜索关键词以小写存储，并限制长度（见 issue #1192）。
+        let lowered = searchKeywords.lowercased()
+        self.searchKeywords = lowered.count > ClipboardItem.searchKeywordLimit
+            ? String(lowered.prefix(ClipboardItem.searchKeywordLimit))
+            : lowered
         self.richTextRTF = richTextRTF
         self.richTextHTML = richTextHTML
     }
