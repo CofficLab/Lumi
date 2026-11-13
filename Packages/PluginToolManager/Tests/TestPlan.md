@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 142 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 146 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 142
+测试文件: 13 个，用例总数: 146
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -41,7 +41,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 - **综合**（27 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolExecutionScheduling**（7 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **后台任务**（9 条）：由 `taskFinishesExactlyOnceOnProcessExit`、`explicitStopTerminatesProcessAndEmitsOnce`、`deletingConversationStopsItsBackgroundTasks` 等用例锁定；改动 `BackgroundTaskRegistry` 时优先跑 `BackgroundTaskRegistryTests`。三条易错约定：
@@ -214,27 +214,31 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 140 | 端到端 | 短命令不进入后台，行为与之前一致 | 已注入登记表 | 执行 `echo quick` | 返回输出，不进后台，登记表为空 | P0 | ✅ 已覆盖 | `shortCommandNeverEntersBackground` |
 | 141 | 端到端 | 无上下文时后台任务归属当前选中的会话 | 已注入登记表与当前会话 | 执行长命令 | 任务挂在当前选中的会话上 | P0 | ✅ 已覆盖 | `backgroundTaskUsesSelectedConversationWhenContextIsAbsent` |
 | 142 | 端到端 | 输出文件能被 read_file 用绝对路径读到 | 已注入登记表 | 执行长命令后用 read_file 读输出 | 读到命令的输出内容 | P0 | ✅ 已覆盖 | `outputFileIsReadableByReadFileWithAbsolutePath` |
+| 143 | ToolExecutionScheduling | 混合批次：前序读并行，副作用屏障等齐前序读，后续读在屏障后并行且不超上限（#1312） | 同一回合提交 2 读 + 1 写 + 5 读的混合批次 | 提交批次并等待全部 Job 结束 | 前序读重叠执行，屏障等齐两个前序读结束才启动，后 5 个读真实并行且峰值并发为 4 | P0 | ✅ 已覆盖 | `mixedBatchKeepsReadsOverlappingAndBarrierOrdered` |
+| 144 | ToolExecutionScheduling | 取消一个并行读不影响同批其他读（#1312） | 三个并行读同时在跑 | 取消其中一个 | 被取消 Job 为 cancelled 终态，另两个正常完成，峰值并发保持 3 | P0 | ✅ 已覆盖 | `cancellingOneParallelReadDoesNotCancelSiblings` |
+| 145 | ToolExecutionScheduling | 取消屏障后排队的读：立即终态，屏障照常完成（#1312） | 读被更早的副作用屏障挡住仍在排队 | 取消该排队读 | 读立即进入 cancelled 且从未执行，屏障正常完成 | P0 | ✅ 已覆盖 | `cancellingQueuedReadBehindBarrierFinishesImmediately` |
+| 146 | ToolExecutionScheduling | 整回合取消：每个调用都拿到终态结果，不留无结果孤儿（#1312） | 读写混合批次正在运行 | 取消该回合的全部 Job | 每个 Job 都能等到非 nil 结果且状态为 cancelled | P0 | ✅ 已覆盖 | `turnCancellationSettlesEveryJobWithAResult` |
 
-> 说明：全部 **142 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **146 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
+- P0: 已覆盖 41 / 41
 - P1: 已覆盖 99 / 99
 - P2: 已覆盖 6 / 6
-- **合计: 142 / 142**（仅表示清单场景，非源码覆盖率）
+- **合计: 146 / 146**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（41 条）
 - **P1**: 其余功能性用例（99 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 142 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 146 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
