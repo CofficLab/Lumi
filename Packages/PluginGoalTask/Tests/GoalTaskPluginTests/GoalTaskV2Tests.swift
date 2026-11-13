@@ -216,5 +216,85 @@ extension SharedManagerSuite {
                 #expect(error.localizedDescription.contains("Candidate Listing Goal"))
             }
         }
+
+        /// 回归 #189：带会话上下文的工具只能用精确 goal_id 解析本会话的 Goal。
+        /// 另一个会话的精确 ID 必须 goal not found，且不得读取 / 改写 / 追加对方数据。
+        @Test("精确 goal_id 不得跨会话解析（回归 #189）")
+        @MainActor
+        func testPreciseGoalIdCannotCrossConversations() async throws {
+            let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent("GoalTaskCrossConv-\(UUID().uuidString)")
+            let manager = try GoalStateManager(databaseRootURL: tempDir)
+            GoalTaskPluginSupport._sharedManager = manager
+            defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+
+            let conversations = DefaultConversationManager()
+            let convA = try conversations.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+            let convB = try conversations.createConversation(title: "B", projectPath: nil, providerID: nil, modelName: nil)
+            let contextA = ToolExecutionContext(jobID: "job-a", conversationID: convA, turnID: UUID())
+            let contextB = ToolExecutionContext(jobID: "job-b", conversationID: convB, turnID: UUID())
+
+            let created = try await CreateGoalV2Tool().executeResult(context: contextA, arguments: [
+                "title": ToolArgument("Goal in A"),
+                "tasks": ToolArgument([["title": "T1"]]),
+            ])
+            #expect(created.isError == false)
+            let goalId = try #require(await manager.fetchGoals(conversationId: convA.uuidString).first?.id)
+            let tasksBefore = await manager.fetchTasks(goalId: goalId).count
+
+            // 会话 B 用 A 的精确 goal_id 读进度：必须 goal not found。
+            do {
+                _ = try await GetGoalProgressV2Tool().executeResult(context: contextB, arguments: ["goal_id": ToolArgument(goalId)])
+                Issue.record("get_goal_progress should not resolve another conversation's goal")
+            } catch {
+                #expect(error.localizedDescription.contains("goal not found"))
+            }
+
+            // 会话 B 用 A 的精确 goal_id 改状态：必须失败。
+            do {
+                _ = try await UpdateGoalStatusV2Tool().executeResult(context: contextB, arguments: ["goal_id": ToolArgument(goalId), "status": ToolArgument("completed")])
+                Issue.record("update_goal_status should not modify another conversation's goal")
+            } catch {
+                #expect(error.localizedDescription.contains("goal not found"))
+            }
+
+            // 会话 B 用 A 的精确 goal_id 追加任务：必须失败。
+            do {
+                _ = try await AddTasksToGoalV2Tool().executeResult(context: contextB, arguments: ["goal_id": ToolArgument(goalId), "tasks": ToolArgument([["title": "Injected"]])])
+                Issue.record("add_tasks_to_goal should not append to another conversation's goal")
+            } catch {
+                #expect(error.localizedDescription.contains("goal not found"))
+            }
+
+            // A 的 Goal 状态与任务数必须原样保留。
+            let goalA = try #require(await manager.fetchGoals(conversationId: convA.uuidString).first)
+            #expect(goalA.status == .inProgress)
+            #expect(await manager.fetchTasks(goalId: goalId).count == tasksBefore)
+        }
+
+        /// 正向对照：精确 goal_id 在本会话内仍可解析，终态 Goal 也不例外，
+        /// 确保 #189 的会话隔离没有误伤合法的精确 ID 用法。
+        @Test("精确 goal_id 在本会话内仍可解析（含终态 Goal）")
+        @MainActor
+        func testPreciseGoalIdResolvesWithinSameConversation() async throws {
+            let (manager, context, tempDir) = try makeHarness()
+            defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+
+            _ = try await CreateGoalV2Tool().executeResult(context: context, arguments: [
+                "title": ToolArgument("Same Conv Goal"),
+                "tasks": ToolArgument([["title": "T1"]]),
+            ])
+            let goalId = try #require(await manager.fetchGoals(conversationId: context.conversationID.uuidString).first?.id)
+
+            let progress = try await GetGoalProgressV2Tool().executeResult(context: context, arguments: ["goal_id": ToolArgument(goalId)])
+            #expect(progress.isError == false)
+            #expect(progress.content.contains("Same Conv Goal"))
+
+            // 完成后仍可用精确 ID 解析（终态 Goal 依然属于本会话）。
+            _ = try await UpdateGoalStatusV2Tool().executeResult(context: context, arguments: ["goal_id": ToolArgument(goalId), "status": ToolArgument("completed")])
+            let after = try await GetGoalProgressV2Tool().executeResult(context: context, arguments: ["goal_id": ToolArgument(goalId)])
+            #expect(after.isError == false)
+            #expect(after.content.contains("completed"))
+        }
     }
 }
