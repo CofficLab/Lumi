@@ -120,11 +120,11 @@ struct PluginProjectOverviewTests {
     }
 
     @Test("GitSection handles non-git directory")
-    func gitSectionHandlesNonGit() {
+    func gitSectionHandlesNonGit() async {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("test_nongit_\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        let result = GitSection.render(at: tempDir)
+        let result = await GitSection.render(at: tempDir)
         #expect(result == "Not a Git repository.")
 
         try? FileManager.default.removeItem(at: tempDir)
@@ -133,7 +133,7 @@ struct PluginProjectOverviewTests {
     /// 回归 #978：传入仓库子目录时，GitSection 只检查 `子目录/.git` 就直接返回
     /// "Not a Git repository."，而 Git 本身能向祖先目录发现工作树。
     @Test("GitSection detects the enclosing worktree from a subdirectory")
-    func gitSectionDetectsEnclosingWorktree() throws {
+    func gitSectionDetectsEnclosingWorktree() async throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("test_git_subdir_\(UUID().uuidString)", isDirectory: true)
         let subdirectory = root.appendingPathComponent("Sources", isDirectory: true)
@@ -156,7 +156,7 @@ struct PluginProjectOverviewTests {
             encoding: .utf8
         )
 
-        let result = GitSection.render(at: subdirectory)
+        let result = await GitSection.render(at: subdirectory)
 
         #expect(result.contains("Repository: Yes"))
         #expect(result.contains("Status: Uncommitted changes"))

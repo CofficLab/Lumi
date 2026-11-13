@@ -88,7 +88,7 @@ public struct ProjectOverviewV2Tool: SuperAgentTool, @unchecked Sendable {
         guard (try? FileManager.default.contentsOfDirectory(atPath: root.path)) != nil else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Cannot read directory.")
         }
-        var sections = ["## Project Overview\n\n**Path**: \(root.path)", "### Project type\n\(ProjectTypeSection.render(at: root))", "### Structure (root + one level down)\n\(StructureSection.render(at: root))", "### Git\n\(GitSection.render(at: root))", "### Manifest & config\n\(ManifestSection.render(at: root))"]
+        var sections = ["## Project Overview\n\n**Path**: \(root.path)", "### Project type\n\(ProjectTypeSection.render(at: root))", "### Structure (root + one level down)\n\(StructureSection.render(at: root))", "### Git\n\(await GitSection.render(at: root))", "### Manifest & config\n\(ManifestSection.render(at: root))"]
         let readme = ReadmePreviewSection.render(at: root); if !readme.isEmpty { sections.append("### README preview\n\(readme)") }
         sections.append("### Key files\n\(KeyFilesSection.render(at: root))")
         return sections.joined(separator: "\n\n")
