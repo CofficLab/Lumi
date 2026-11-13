@@ -67,6 +67,13 @@ public enum MessageTimelineEvent {
     /// 因此不应进入后续 LLM 上下文。
     public static let deviceStatus = "device-status"
     public static let deviceStatusRenderKind = "device-status"
+    /// 子代理委托插件的卡片时间线事件（#1313 Task 6）。
+    ///
+    /// 派发委托时插入一条带该标记的消息，由插件自己注册的渲染器画成
+    /// 一张进度卡片（工具数、耗时）。这条消息只是给人看的界面产物，
+    /// 不是一次对话轮次，因此不应进入后续 LLM 上下文。
+    public static let subagentDelegation = "subagent-delegation"
+    public static let subagentDelegationRenderKind = "subagent-delegation"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"
     public static let goalTaskContinuationAttemptKey = "goalTaskContinuationAttempt"
     public static let goalTaskContinuationMaxAttemptsKey = "goalTaskContinuationMaxAttempts"
@@ -157,6 +164,12 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == deviceStatus
     }
 
+    /// 是否属于子代理委托插件的卡片时间线事件。
+    public static func isSubagentDelegation(_ message: Message) -> Bool {
+        message.renderKind == subagentDelegationRenderKind
+            || message.metadata[metadataKey] == subagentDelegation
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
         isContextCompaction(message)
@@ -168,6 +181,7 @@ public enum MessageTimelineEvent {
             || isHTMLCanvas(message)
             || isDiskSpeed(message)
             || isDeviceStatus(message)
+            || isSubagentDelegation(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。

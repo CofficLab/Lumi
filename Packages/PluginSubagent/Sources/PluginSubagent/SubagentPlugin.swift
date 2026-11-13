@@ -6,15 +6,16 @@ import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
+import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
 
 /// 子代理委托插件（#1313）。
 ///
 /// `onBoot` 把 `run_subagent` 工具注册进工具管理器，并在 ChatToolbar
-/// 注册一个子代理运行指示器（有运行中的委托才占位）；`onDisable` /
-/// `onShutdown` 一并撤回。工具经 `SubagentConversationBridge` 创建隐藏
-/// 子会话，在隔离回合里跑完任务后只把结论带回父上下文。
+/// 注册一个子代理运行指示器（有运行中的委托才占位）、注册委托卡片渲染器；
+/// `onDisable` / `onShutdown` 一并撤回。工具经 `SubagentConversationBridge`
+/// 创建隐藏子会话，在隔离回合里跑完任务后只把结论带回父上下文。
 ///
 /// - Important: 与 FinderPlugin 相同，内核禁用插件时只撤回显式登记的贡献，
 ///   工具必须由本插件自己在 `onDisable` 里撤回，否则禁用后 LLM 仍能调用。
@@ -122,6 +123,7 @@ public final class SubagentPlugin: SuperPlugin {
         )
 
         registerToolbarItem(kernel: kernel, conversations: conversations, toolManager: toolManager)
+        registerCardRenderer(kernel: kernel, toolManager: toolManager)
     }
 
     /// 后台任务结束：显式停止时级联取消子回合。
@@ -170,6 +172,23 @@ public final class SubagentPlugin: SuperPlugin {
         ])
     }
 
+    /// 委托卡片渲染器（#1313 Task 6）。缺席只影响卡片呈现，不阻止工具注册。
+    private func registerCardRenderer(
+        kernel: KernelCoreContainer,
+        toolManager: any ToolManagerProviding
+    ) {
+        guard let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) else {
+            Self.logger.error("MessageRenderingProviding not found; subagent card renderer skipped")
+            return
+        }
+        rendering.register(
+            SubagentCardRenderer.item(
+                order: order + 10,
+                toolManagerProvider: { [weak toolManager] in toolManager }
+            )
+        )
+    }
+
     private func unregisterContributions(kernel: KernelCoreContainer) {
         guard isRegistered else { return }
         isRegistered = false
@@ -183,6 +202,8 @@ public final class SubagentPlugin: SuperPlugin {
             .removeBarItem(id: "\(id).toolbar")
         activityViewModel?.cancel()
         activityViewModel = nil
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: SubagentTimeline.rendererID)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .remove(id: RunSubagentTool.toolName)
     }

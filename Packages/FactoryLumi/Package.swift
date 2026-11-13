@@ -482,6 +482,8 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "PluginToolManager", package: "PluginToolManager"),
+                .product(name: "PluginSubagent", package: "PluginSubagent"),
+                .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         )

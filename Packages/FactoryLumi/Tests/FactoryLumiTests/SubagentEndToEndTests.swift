@@ -2,11 +2,13 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitLLM
+import PluginSubagent
 import PluginToolManager
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessage
+import ProviderMessageRendering
 import ProviderStorage
 import ProviderToolManager
 import Testing
@@ -717,6 +719,188 @@ struct SubagentEndToEndTests {
             messages: messages, conversationID: parentID, count: 1
         )
         #expect(notifications.first?.content.contains(conclusion) == true)
+    }
+
+    // MARK: - UI 卡片（#1313 Task 6）
+
+    @Test("同步委托在父会话插入时间线卡片，载荷指向真实子会话且不进 LLM 上下文")
+    func syncDelegationInsertsTimelineCard() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "Research the auth flow."
+        stub.scripts[task] = .text("Auth uses JWT.")
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Auth research",
+            conversationID: parentID
+        )
+        #expect(result.isError == false)
+
+        let cards = messages.messages(for: parentID).filter {
+            MessageTimelineEvent.isSubagentDelegation($0)
+        }
+        #expect(cards.count == 1)
+        let card = try #require(cards.first)
+        let payload = try #require(SubagentTimeline.decodePayload(from: card.metadata))
+        #expect(payload.label == "Auth research")
+        #expect(!payload.jobID.isEmpty)
+
+        let all = await conversations.fetchConversationPage(
+            limit: 100, beforeUpdatedAt: nil, beforeID: nil, includingChildConversations: true
+        )
+        let child = try #require(all.first(where: { $0.parentConversationID == parentID }))
+        #expect(payload.childConversationID == child.id)
+
+        // 卡片是界面产物：LLM 上下文构造器据 isTimelineEvent 将其排除。
+        #expect(MessageTimelineEvent.isTimelineEvent(card))
+        #expect(card.content.contains("Auth research"))
+    }
+
+    @Test("后台委托派发即插入时间线卡片，完成后卡片仍在")
+    func backgroundDelegationInsertsTimelineCard() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "Background research task."
+        let conclusion = "Background conclusion."
+        stub.scripts[task] = .text(conclusion)
+        stub.delays[task] = 0.5
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Background research",
+            conversationID: parentID,
+            extraArguments: ["run_in_background": true]
+        )
+        #expect(result.isError == false)
+
+        // 立即返回时卡片已就位，载荷指向真实子会话。
+        let cards = messages.messages(for: parentID).filter {
+            MessageTimelineEvent.isSubagentDelegation($0)
+        }
+        #expect(cards.count == 1)
+        let payload = try #require(SubagentTimeline.decodePayload(from: cards.first?.metadata ?? [:]))
+        let all = await conversations.fetchConversationPage(
+            limit: 100, beforeUpdatedAt: nil, beforeID: nil, includingChildConversations: true
+        )
+        let child = try #require(all.first(where: { $0.parentConversationID == parentID }))
+        #expect(payload.childConversationID == child.id)
+
+        // 等后台完成，卡片不因完成事件被重复插入或移除。
+        _ = try await waitForNotifications(messages: messages, conversationID: parentID, count: 1)
+        let cardsAfter = messages.messages(for: parentID).filter {
+            MessageTimelineEvent.isSubagentDelegation($0)
+        }
+        #expect(cardsAfter.count == 1)
+        #expect(cardsAfter.first?.id == cards.first?.id)
+    }
+
+    @Test("内核装配了子代理卡片渲染器，卡片消息被路由到它")
+    func cardRendererIsRegisteredAndRoutes() throws {
+        let kernel = try makeKernel(stub: ScriptedLLMManager())
+        let rendering = try #require(kernel.resolveProvider((any MessageRenderingProviding).self))
+
+        let payload = SubagentTimeline.Payload(
+            label: "Routing check",
+            parentConversationID: UUID(),
+            childConversationID: UUID(),
+            jobID: "job-routing"
+        )
+        let message = SubagentTimeline.message(
+            conversationID: UUID(), turnID: nil, payload: payload
+        )
+        let renderer = try #require(rendering.renderer(for: message))
+        #expect(renderer.id == SubagentTimeline.rendererID)
+    }
+
+    @Test("三路并行委托各插一张卡片，载荷互不串扰")
+    func threeParallelDelegationsInsertThreeCards() async throws {
+        let stub = ScriptedLLMManager()
+        let tasks = (1...3).map { "Card parallel task \($0)." }
+        for task in tasks { stub.scripts[task] = .text("Done.") }
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let turnID = UUID()
+        async let first = runSubagent(
+            toolManager: toolManager, task: tasks[0], description: "Card one",
+            conversationID: parentID, turnID: turnID
+        )
+        async let second = runSubagent(
+            toolManager: toolManager, task: tasks[1], description: "Card two",
+            conversationID: parentID, turnID: turnID
+        )
+        async let third = runSubagent(
+            toolManager: toolManager, task: tasks[2], description: "Card three",
+            conversationID: parentID, turnID: turnID
+        )
+        let results = try await [first, second, third]
+        #expect(results.allSatisfy { !$0.isError })
+
+        let cards = messages.messages(for: parentID).filter {
+            MessageTimelineEvent.isSubagentDelegation($0)
+        }
+        #expect(cards.count == 3)
+        let payloads = cards.compactMap { SubagentTimeline.decodePayload(from: $0.metadata) }
+        #expect(payloads.count == 3)
+        #expect(Set(payloads.map(\.childConversationID)).count == 3)
+        #expect(Set(payloads.map(\.jobID)).count == 3)
+        #expect(Set(payloads.map(\.label)) == ["Card one", "Card two", "Card three"])
+    }
+
+    @Test("失败委托同样留下卡片，对应 Job 达终态")
+    func failedDelegationStillInsertsCard() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "This card task will fail."
+        stub.scripts[task] = .failure("model exploded")
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Failing card",
+            conversationID: parentID
+        )
+        #expect(result.isError == true)
+
+        let cards = messages.messages(for: parentID).filter {
+            MessageTimelineEvent.isSubagentDelegation($0)
+        }
+        #expect(cards.count == 1)
+        let payload = try #require(SubagentTimeline.decodePayload(from: cards.first?.metadata ?? [:]))
+        let job = try #require(
+            toolManager.jobs(forConversationID: parentID).first(where: { $0.id == payload.jobID })
+        )
+        #expect(job.status.isTerminal)
     }
 
     // MARK: - Helpers

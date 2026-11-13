@@ -5,7 +5,7 @@
 FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核、全部 Provider 默认实现、 100+ 插件与视图组装集中在一个包中完成接线，是 Lumi 主应用启动的唯一入口。 ## 职责 FactoryLumi 不包含业务逻辑，只负责**把正确的事情在正确的时机做对**： | 职责 | 实现 | 说明 | | --- | --- | --- | | 内核创建 | `KernelFactory` | 创建 `KernelCoreContainer`，装配 Provider，启动插件 | | Provider 工厂 | `DefaultProviderFactory` | 产出 30+ 个 Provider 默认实现并按依赖顺序注册 | | Plugin 工厂 | `DefaultPluginFactory` | 产出 100+ 个插件，统一校验、排序、原子启动 | | View 工厂 | `DefaultViewFactory` | 用内核 Provider 组装主视图与设置视图 | | 菜单集成 | `AppCommands` | 把 `CommandProviding` 贡献映射到 macOS 系统菜单 | | 主题桥接 | `PaletteChromeTheme` | 把新版 `LumiThemePalette` 适配回 LumiUI 旧版 chrome 主题 | ## 三大工厂协议 ```swift /// 产出全部插件。宿主可实现该协议覆盖插件列表。 protocol PluginFactory {
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 96
+测试文件: 16 个，用例总数: 101
 
 核心组件（源码目录）:
 - `Contracts/`
@@ -144,27 +144,32 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 | 94 | SubagentEndToEnd | 父回合正忙时通知入队，回合结束后排空并唤醒 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `busyParentDrainsNotificationAfterTurnFinishes` |
 | 95 | SubagentEndToEnd | 停止后台子代理任务会级联取消子回合，且只通知一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stoppingBackgroundSubagentCancelsChildAndNotifiesOnce` |
 | 96 | SubagentEndToEnd | 取消父回合不得杀死后台子代理，完成后照常通知 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancellingParentTurnDoesNotKillBackgroundChild` |
+| 97 | SubagentEndToEnd | 同步委托插入一张时间线卡片，载荷指向真实子会话与父 Job | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `syncDelegationInsertsTimelineCard` |
+| 98 | SubagentEndToEnd | 后台委托立即插入卡片，完成后不得重复插入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `backgroundDelegationInsertsTimelineCard` |
+| 99 | SubagentEndToEnd | 卡片渲染器已注册并把委托消息路由到子代理渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cardRendererIsRegisteredAndRoutes` |
+| 100 | SubagentEndToEnd | 三路并行委托各插一张卡片，载荷互不串扰 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `threeParallelDelegationsInsertThreeCards` |
+| 101 | SubagentEndToEnd | 失败委托同样留下卡片，对应 Job 达终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedDelegationStillInsertsCard` |
 
-> 说明：全部 **96 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 55 / 55
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 26 / 26
-- **合计: 96 / 96**（仅表示清单场景，非源码覆盖率）
+- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（55 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 96 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

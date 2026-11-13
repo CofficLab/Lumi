@@ -185,6 +185,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             parentID: context.conversationID,
             description: label
         )
+        insertTimelineCard(context: context, label: label, childID: childID)
         let conclusion = try await runChildTurn(
             childID: childID,
             task: task,
@@ -217,6 +218,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             parentID: context.conversationID,
             description: label
         )
+        insertTimelineCard(context: context, label: label, childID: childID)
         let taskID = await registry.allocateTaskID()
         let record = await registry.adoptInProcess(
             taskID: taskID,
@@ -254,6 +256,32 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             The subagent keeps running; you will be notified when it completes.
             To check interim output, use read_file on the output file path.
             """
+        )
+    }
+
+    /// 派发即插入时间线卡片（#1313 Task 6）：只给人看，不进 LLM 上下文。
+    ///
+    /// 卡片载荷只存标识；状态、工具数与耗时由卡片视图从工具管理器实时读取，
+    /// 失败/取消的委托同样留下卡片，Job 终态即卡片终态。
+    @MainActor
+    private func insertTimelineCard(
+        context: ToolExecutionContext,
+        label: String,
+        childID: UUID
+    ) {
+        let payload = SubagentTimeline.Payload(
+            label: label,
+            parentConversationID: context.conversationID,
+            childConversationID: childID,
+            jobID: context.jobID
+        )
+        messages.insertMessage(
+            SubagentTimeline.message(
+                conversationID: context.conversationID,
+                turnID: context.turnID,
+                payload: payload
+            ),
+            to: context.conversationID
         )
     }
 

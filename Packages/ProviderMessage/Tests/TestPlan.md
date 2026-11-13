@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 42 条用例。
+ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 49 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 42
+测试文件: 4 个，用例总数: 49
 
 ## 公开 API
 
@@ -22,9 +22,11 @@ ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 42 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CollapsedContentBlock**（7 条）：由 `encodesAndDecodesBlocks`、`decodesEmptyForLegacyData`、`encodesNothingForEmptyBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentBlock**（10 条）：由 `encodesAndDecodesBlocks`、`decodesEmptyForLegacyData`、`clipsSurroundingWhitespaceInsteadOfDroppingBlock` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChipStyle**（5 条）：由 `keepsTypographyScale`、`splitsTitleAndDetail`、`dropsEmptyDetail` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（26 条）：由 `lifecycle`、`asyncSnapshot`、`dailyAggregates` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UserAttachment**（1 条）：由 `escapesStructureTagsInTextAttachmentBody` 锁定，正文结构标签不得伪造附件。
+- **CompactionAccounting**（5 条）：由 `savedTokensIsOriginalMinusCompacted`、`netTokensIsSavedMinusSpent`、`netTokensNilWhenSpentMissing` 等用例锁定压缩节省/净收益口径，缺失数据不得当零计算。
+- **综合**（28 条）：由 `lifecycle`、`asyncSnapshot`、`subagentDelegationTimelineDetection` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -72,27 +74,34 @@ ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 42 
 | 40 | CollapsedContentBlock | 只含尾随空白时同样裁短保留 | 区间延伸到换行之后 | 按 trim 后正文重算区间 | 区间裁短到正文末尾 | P1 | ✅ 已覆盖 | `clipsTrailingWhitespaceOnly` |
 | 41 | CollapsedContentBlock | 部分与空白重叠的块裁短，完全落在空白里的块删除 | 块分别覆盖全空白与部分正文 | 按 trim 后正文重算区间 | 全空白块删除，部分重叠块裁短 | P1 | ✅ 已覆盖 | `dropsOnlyFullyTrimmedBlocks` |
 | 42 | UserAttachment | 文本附件正文中的结构标签被转义，不能伪造额外附件 | 正文含 `</attached_file>` 与伪开始标签 | 序列化到 LLM 正文 | 结构标签只来自真实附件，正文标签被转义 | P0 | ✅ 已覆盖 | `escapesStructureTagsInTextAttachmentBody` |
+| 43 | CompactionAccounting | 节省 = 压缩前 − 压缩后 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `savedTokensIsOriginalMinusCompacted` |
+| 44 | CompactionAccounting | 净收益 = 节省 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `netTokensIsSavedMinusSpent` |
+| 45 | CompactionAccounting | 消耗缺失时净收益为 nil，而不是把消耗当零 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `netTokensNilWhenSpentMissing` |
+| 46 | CompactionAccounting | 估算口径标记被正确读取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `estimatedFlagReadFromMetadata` |
+| 47 | CompactionAccounting | 节省任一端缺失时为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `savedTokensNilWhenEitherEndMissing` |
+| 48 | 综合 | 子代理委托时间线事件可识别且不回流 LLM | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `subagentDelegationTimelineDetection` |
+| 49 | 综合 | 子代理委托事件仅凭 renderKind 也可识别 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `subagentDelegationDetectionByRenderKind` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 3 / 3
-- P1: 已覆盖 31 / 31
-- P2: 已覆盖 8 / 8
-- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 37 / 37
+- P2: 已覆盖 9 / 9
+- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（29 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（37 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
