@@ -224,6 +224,50 @@ struct WebPaginationTests {
         #expect(result.items.count == 1)
         #expect(result.hasMore == false)
     }
+
+    @Test("page 接近 Int.max 时偏移计算不得崩溃进程（#1161）")
+    func overflowingPageFallsBackToDefaultOffset() {
+        // 这些组合都能解析为正 Int，但 (page - 1) * pageSize 溢出 Int；
+        // 修复前 trapping 算术会直接终止进程，一个 GET 请求即可打崩 Lumi。
+        let queries: [[String: String]] = [
+            ["page": "\(Int.max)", "pageSize": "2"],
+            ["page": "\(Int.max)", "limit": "500"],
+            ["page": "\(Int.max / 2)", "pageSize": "4"],
+        ]
+        for query in queries {
+            let pagination = WebPagination(query: query)
+            #expect(pagination.offset == 0, "溢出时应回退默认偏移，query=\(query)")
+        }
+        // 回退后仍是可用的正常分页。
+        let pagination = WebPagination(query: ["page": "\(Int.max)", "pageSize": "2"])
+        #expect(pagination.limit == 2)
+        #expect(pagination.page(of: Array(0..<5)) == [0, 1])
+    }
+
+    @Test("不溢出的最大 page 仍按原值计算偏移")
+    func maxNonOverflowingPageKeepsExactOffset() {
+        // (Int.max / 2) * 2 == Int.max - 1，恰好不溢出，必须保留精确偏移。
+        let page = Int.max / 2 + 1
+        let pagination = WebPagination(query: ["page": "\(page)", "pageSize": "2"])
+        #expect(pagination.offset == Int.max - 1)
+        #expect(pagination.page(of: Array(0..<5)).isEmpty)
+
+        let result = WebPageResult(items: Array(0..<5), pagination: pagination)
+        #expect(result.items.isEmpty)
+        #expect(result.hasMore == false)
+    }
+
+    @Test("Int.max 的 offset 查询安全返回空页")
+    func hugeOffsetReturnsEmptyPageSafely() {
+        let pagination = WebPagination(query: ["offset": "\(Int.max)", "limit": "500"])
+        #expect(pagination.offset == Int.max)
+        #expect(pagination.limit == WebPagination.maxLimit)
+        #expect(pagination.page(of: Array(0..<5)).isEmpty)
+
+        let result = WebPageResult(items: Array(0..<5), pagination: pagination)
+        #expect(result.items.isEmpty)
+        #expect(result.hasMore == false)
+    }
 }
 
 // MARK: - Request Log Tests
