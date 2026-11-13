@@ -122,9 +122,18 @@ public class ClipboardManagerViewModel: ObservableObject {
 
     @discardableResult
     public static func write(_ item: ClipboardHistoryItem, to pasteboard: NSPasteboard) -> Bool {
+        let type = ClipboardItemType(rawValue: item.type)
+
+        // 图片须先成功加载再清空剪贴板，否则缺失/损坏的 PNG 会清掉用户原有内容却写不进去（#243）。
+        var image: NSImage?
+        if type == .image {
+            guard let loaded = NSImage(contentsOfFile: item.content) else { return false }
+            image = loaded
+        }
+
         pasteboard.clearContents()
-        
-        switch ClipboardItemType(rawValue: item.type) {
+
+        switch type {
         case .text:
             // 纯文本 + 富文本负载一起写回，接收方可按能力选择 RTF / HTML 恢复格式与链接。
             var succeeded = pasteboard.setString(item.content, forType: .string)
@@ -140,9 +149,7 @@ public class ClipboardManagerViewModel: ObservableObject {
         case .file:
             return pasteboard.writeObjects([URL(fileURLWithPath: item.content) as NSPasteboardWriting])
         case .image:
-            guard let image = NSImage(contentsOfFile: item.content) else {
-                return false
-            }
+            guard let image else { return false }
             return pasteboard.writeObjects([image])
         case .none:
             return pasteboard.setString(item.content, forType: .string)
