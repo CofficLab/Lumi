@@ -401,6 +401,16 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 整体替换（打开文件、外部修改、撤销重做）后缓存不可用，必须重扫。
     private var totalLineCountRequiresRescan: Bool = true
 
+    /// 待执行的查找匹配任务。
+    ///
+    /// 内容变化会触发一次全文档正则匹配，而查找面板关闭时这份结果并没有人看，
+    /// 却在每次按键时都要重算一遍（见 issue #1279）。这里用防抖把连续按键
+    /// 合并成一次扫描。
+    private var pendingFindMatchTask: Task<Void, Never>?
+
+    /// 查找匹配的防抖间隔（秒）。
+    private static let findMatchDebounceInterval: Double = 0.2
+
     public var isSyntaxHighlightingEnabledInViewport: Bool {
         Self.isViewportSyntaxFeatureEnabled(
             viewportRange: viewportRenderLineRange,
@@ -2232,7 +2242,39 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    /// 立即重算查找匹配。
+    ///
+    /// 用于查找面板自身的状态变化（打开面板、改查询词、切换选项）——
+    /// 这些场景用户正等着看结果，必须同步给出。
     func refreshFindMatches() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = nil
+        performFindMatchRefresh()
+    }
+
+    /// 调度一次带防抖的查找匹配。
+    ///
+    /// 用于内容变化（每次按键）：查找面板关闭时这份结果没人看，
+    /// 却要在每次按键时全文档跑一次正则（见 issue #1279）。
+    /// 连续按键只保留最后一次扫描。
+    func scheduleFindMatchRefresh() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(Int(Self.findMatchDebounceInterval * 1000)))
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            self.performFindMatchRefresh()
+        }
+    }
+
+    /// 取消待执行的查找匹配。
+    func cancelPendingFindMatchRefresh() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = nil
+    }
+
+    /// 真正执行查找匹配扫描。
+    private func performFindMatchRefresh() {
         guard let text = content?.string else {
             applyFindMatchesResult(
                 EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
@@ -2647,7 +2689,8 @@ public final class EditorState: ObservableObject, SuperLog {
             // 内容与磁盘一致时取消待执行的自动保存
             autoSaveScheduler.cancel()
         }
-        refreshFindMatches()
+        // 内容变化触发的查找匹配走防抖：连续按键只扫描一次（见 issue #1279）。
+        scheduleFindMatchRefresh()
 
         syncActiveSessionState()
         updateBracketMatch()

@@ -22,12 +22,18 @@ public enum EditorFindReplaceController {
             primarySelection: primarySelection
         )
 
+        // 用 NSString 取子串：`Range(_:in:)` 每次都要做一次 UTF-16 → String.Index
+        // 的换算，代价随文档长度增长，于是「匹配数 × 文档长度」。
+        // NSString 的换算只与匹配本身的长度有关。
+        let nsText = text as NSString
         let matches: [EditorFindMatch] = searchScopes.flatMap { scope -> [EditorFindMatch] in
             regularExpression.matches(in: text, options: [], range: scope.nsRange).compactMap { match in
-                guard let swiftRange = Range(match.range, in: text) else { return nil }
+                guard match.range.location >= 0,
+                      match.range.length >= 0,
+                      NSMaxRange(match.range) <= nsText.length else { return nil }
                 return EditorFindMatch(
                     range: EditorRange(location: match.range.location, length: match.range.length),
-                    matchedText: String(text[swiftRange])
+                    matchedText: nsText.substring(with: match.range)
                 )
             }
         }
@@ -66,6 +72,12 @@ public enum EditorFindReplaceController {
         return (selectedMatchIndex - 1 + matches.count) % matches.count
     }
 
+    /// 编译好的正则缓存。
+    ///
+    /// 正则的编译不便宜，而查找面板关闭后每次按键仍会触发一次全文档匹配
+    /// （见 issue #1279）。缓存让「同一查询词 + 同一选项」只编译一次。
+    private static let regularExpressionCache: RegexCache = RegexCache()
+
     private static func regularExpression(
         for state: EditorFindReplaceState
     ) -> NSRegularExpression? {
@@ -78,7 +90,55 @@ public enum EditorFindReplaceController {
             : pattern
 
         let options: NSRegularExpression.Options = state.options.isCaseSensitive ? [] : [.caseInsensitive]
-        return try? NSRegularExpression(pattern: wrappedPattern, options: options)
+        return regularExpressionCache.expression(
+            pattern: wrappedPattern,
+            options: options
+        )
+    }
+
+    /// 正则缓存：有界、按 (pattern, options) 键控。
+    private final class RegexCache: @unchecked Sendable {
+        private struct Key: Hashable {
+            let pattern: String
+            /// `NSRegularExpression.Options` 不保证 `Hashable`，用其 rawValue 做键。
+            let options: UInt
+        }
+
+        private let lock = NSLock()
+        private var storage: [Key: NSRegularExpression] = [:]
+        private var insertionOrder: [Key] = []
+        private let limit = 32
+
+        func expression(
+            pattern: String,
+            options: NSRegularExpression.Options
+        ) -> NSRegularExpression? {
+            let key = Key(pattern: pattern, options: options.rawValue)
+
+            lock.lock()
+            let cached = storage[key]
+            lock.unlock()
+            if let cached { return cached }
+
+            guard let compiled = try? NSRegularExpression(pattern: pattern, options: options) else {
+                return nil
+            }
+
+            lock.lock()
+            defer { lock.unlock() }
+            if storage[key] == nil {
+                insertionOrder.append(key)
+            }
+            storage[key] = compiled
+            if insertionOrder.count > limit {
+                let overflow = insertionOrder.count - limit
+                for expired in insertionOrder.prefix(overflow) {
+                    storage.removeValue(forKey: expired)
+                }
+                insertionOrder.removeFirst(overflow)
+            }
+            return compiled
+        }
     }
 
     private static func searchScopes(
