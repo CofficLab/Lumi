@@ -88,7 +88,9 @@ struct StoryEditorView: View {
                         StatItem(title: L("Chapters"), value: "\(viewModel.chapters.count)")
                         StatItem(
                             title: L("Total Words"),
-                            value: "\(viewModel.chapters.reduce(0) { $0 + $1.wordCount })"
+                            // 总字数由 ViewModel 缓存，避免每次按键重算全部章节
+                            // （见 issue #1295）。
+                            value: "\(viewModel.totalWordCount)"
                         )
                     }
                 }
