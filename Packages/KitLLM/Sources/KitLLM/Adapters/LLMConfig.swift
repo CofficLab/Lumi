@@ -39,6 +39,12 @@ public struct LLMConfig: Codable, Sendable, Equatable {
     /// 具体供应商适配器会按模型能力决定是否映射到请求体。
     public var reasoningEffort: String?
 
+    /// 用户显式关闭了思考（与「未指定档位」区分）。
+    public var reasoningOff: Bool
+
+    /// 模型的思考能力契约；`nil` 表示模型未声明能力。
+    public var reasoningCapability: LLMReasoningCapability?
+
     /// 默认配置
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
@@ -55,13 +61,17 @@ public struct LLMConfig: Codable, Sendable, Equatable {
         providerId: String,
         temperature: Double? = nil,
         maxTokens: Int? = nil,
-        reasoningEffort: String? = nil
+        reasoningEffort: String? = nil,
+        reasoningOff: Bool = false,
+        reasoningCapability: LLMReasoningCapability? = nil
     ) {
         self.model = model
         self.providerId = providerId
         self.temperature = temperature
         self.maxTokens = maxTokens
         self.reasoningEffort = reasoningEffort
+        self.reasoningOff = reasoningOff
+        self.reasoningCapability = reasoningCapability
     }
 
     /// 校验配置完整性，在发起请求前调用以便给出明确错误提示。

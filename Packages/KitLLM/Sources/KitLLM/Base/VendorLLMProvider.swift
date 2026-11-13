@@ -369,8 +369,18 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             providerId: providerInfo.id,
             temperature: nil,
             maxTokens: nil,
-            reasoningEffort: normalizedReasoningEffort(request.reasoningEffort)
+            reasoningEffort: normalizedReasoningEffort(request.reasoningEffort),
+            reasoningOff: request.reasoningOff,
+            reasoningCapability: reasoningCapability(for: model)
         )
+    }
+
+    /// 模型声明的思考能力；模型未声明时返回 `nil`（按通用行为处理）。
+    ///
+    /// 能力来自模型池（含远程刷新后的快照），因此供应商新增模型时，
+    /// 「关闭思考」的真实语义与 UI 提示都跟着模型走。
+    private func reasoningCapability(for model: String) -> LLMReasoningCapability? {
+        availableModels.first { $0.id == model }?.reasoning
     }
 
     /// 归一化推理档位字符串，供子类覆写协议路由时复用（如 GoProvider 的 Responses 路径）。

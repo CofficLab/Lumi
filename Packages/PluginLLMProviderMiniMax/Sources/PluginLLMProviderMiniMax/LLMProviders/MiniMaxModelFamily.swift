@@ -87,8 +87,73 @@ enum MiniMaxModelFamily: Sendable, Equatable {
         return LLMModelInfo(
             id: modelID,
             contextWindowSize: family.contextWindowSize,
-            supportsVision: family.supportsVision
+            supportsVision: family.supportsVision,
+            reasoning: reasoningCapability(for: modelID)
         )
+    }
+
+    // MARK: - 思考能力
+
+    /// 官方文档给出的思考能力（2026-11）：
+    ///
+    /// - **M3.1-Flash**：强制开启思考，传入 `thinking: {"type": "disabled"}`
+    ///   或 `reasoning_effort: "none"` 都会返回 400；思考深度用
+    ///   `reasoning_effort` 调节（low / medium / high / xhigh / max，省略时
+    ///   默认 `max`）。
+    /// - **M3**：默认开启 adaptive thinking，传入 `thinking: {"type":
+    ///   "disabled"}` 可真正关闭；但 `reasoning_effort` 只对 M3.1-Flash
+    ///   生效，M3 上会被忽略。
+    /// - **M2.x**：思考无法关闭，传入 disabled 虽被接受但不生效。
+    ///
+    /// 未知家族不声明能力（返回 `nil`），按通用行为处理。
+    static func reasoningCapability(for modelID: String) -> LLMReasoningCapability? {
+        switch family(for: modelID) {
+        case .m3:
+            guard (minorVersion(of: modelID) ?? 0) >= 1 else {
+                // M3：可关闭，但不支持档位调节。
+                return LLMReasoningCapability(
+                    supportedEfforts: [],
+                    offStrategy: .disableThinkingParameter
+                )
+            }
+            // M3.1：强制思考，只能降档；关闭 = 最低档位。
+            return LLMReasoningCapability(
+                supportedEfforts: ["low", "medium", "high", "xhigh", "max"],
+                offStrategy: .lowestEffort("low")
+            )
+        case .m2:
+            // M2.x：关不掉，也不认档位参数。
+            return LLMReasoningCapability(
+                supportedEfforts: [],
+                offStrategy: .omitParameters
+            )
+        case .unknown:
+            return nil
+        }
+    }
+
+    /// 抽取模型 id 中的次版本号（`MiniMax-M3.1-Flash` → 1；`MiniMax-M3` → 0）。
+    ///
+    /// 次版本号决定 M3.1 与 M3 的思考能力差异，必须单独解析。
+    static func minorVersion(of modelID: String) -> Int? {
+        var rest = modelID
+        if rest.lowercased().hasPrefix("minimax") {
+            rest = String(rest.dropFirst("MiniMax".count))
+        }
+        if rest.hasPrefix("-") {
+            rest = String(rest.dropFirst())
+        }
+        if rest.lowercased().hasPrefix("m") {
+            rest = String(rest.dropFirst())
+        }
+        let majorDigits = rest.prefix { $0.isASCII && $0.isNumber }
+        guard !majorDigits.isEmpty else { return nil }
+        var remainder = rest.dropFirst(majorDigits.count)
+        guard remainder.hasPrefix(".") else { return 0 }
+        remainder = remainder.dropFirst()
+        let minorDigits = remainder.prefix { $0.isASCII && $0.isNumber }
+        guard !minorDigits.isEmpty else { return 0 }
+        return Int(minorDigits)
     }
 
     // MARK: - 私有

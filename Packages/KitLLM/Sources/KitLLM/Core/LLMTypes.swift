@@ -132,6 +132,13 @@ public struct LLMRequest: Sendable {
     public let model: String?
     public let tools: [LLMFunctionSchema]?
     public let reasoningEffort: String?
+    /// 用户显式关闭了思考。
+    ///
+    /// 必须与「未指定档位」区分开：档位为空时请求不下发任何推理参数，服务端
+    /// 会按自身默认档位思考（MiniMax-M3.1-Flash 即为 `max`）；而「用户关了
+    /// 思考」需要按下发模型的实际能力映射——能关就下发关闭参数，不能关就
+    /// 降档，否则用户选了「关闭」反而拿到最高档位的思考。
+    public let reasoningOff: Bool
 
     public init(
         conversationID: UUID = UUID(),
@@ -140,7 +147,8 @@ public struct LLMRequest: Sendable {
         messages: [LLMMessage],
         model: String? = nil,
         tools: [LLMFunctionSchema]? = nil,
-        reasoningEffort: String? = nil
+        reasoningEffort: String? = nil,
+        reasoningOff: Bool = false
     ) {
         self.conversationID = conversationID
         self.providerID = providerID
@@ -149,6 +157,7 @@ public struct LLMRequest: Sendable {
         self.model = model
         self.tools = tools
         self.reasoningEffort = reasoningEffort
+        self.reasoningOff = reasoningOff
     }
 }
 

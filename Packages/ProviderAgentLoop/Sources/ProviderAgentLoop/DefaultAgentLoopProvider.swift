@@ -447,7 +447,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
             preparedMessages = result.messages
         }
-        let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
+        let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
+        let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: reasoningEffort?.rawValue, reasoningOff: reasoningEffort == nil)
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
         let response: LLMResponse
@@ -644,8 +645,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     parameters: tool.inputSchema(for: language)
                 )
             }
-            let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
-                .flatMap { $0.rawValue }
+            let reasoningPreference = conversations.reasoningEffortOptional(for: conversationID)
+            let reasoningEffort = reasoningPreference?.rawValue
+
+            /// 档位为空 = 用户关闭了思考；必须与「未指定」区分下发，
+            /// 否则模型会按服务端默认档位思考（MiniMax-M3.1-Flash 即为 max）。
+            let reasoningOff = reasoningPreference == nil
 
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
@@ -690,7 +695,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 messages: preparedMessages,
                 model: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.modelName,
                 tools: schemas.isEmpty ? nil : schemas,
-                reasoningEffort: reasoningEffort
+                reasoningEffort: reasoningEffort,
+                reasoningOff: reasoningOff
             )
 
             streaming.start(conversationID: conversationID)

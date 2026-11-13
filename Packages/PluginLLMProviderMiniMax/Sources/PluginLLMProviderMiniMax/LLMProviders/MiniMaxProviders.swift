@@ -17,8 +17,18 @@ import ProviderLLMManager
 ///   已修正。
 enum MiniMaxVendorModels {
     static let all: [LLMModelInfo] = [
-        LLMModelInfo(id: "MiniMax-M3.1-Flash", contextWindowSize: 1_000_000, supportsVision: true),
-        LLMModelInfo(id: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
+        LLMModelInfo(
+            id: "MiniMax-M3.1-Flash",
+            contextWindowSize: 1_000_000,
+            supportsVision: true,
+            reasoning: MiniMaxModelFamily.reasoningCapability(for: "MiniMax-M3.1-Flash")
+        ),
+        LLMModelInfo(
+            id: "MiniMax-M3",
+            contextWindowSize: 1_000_000,
+            supportsVision: true,
+            reasoning: MiniMaxModelFamily.reasoningCapability(for: "MiniMax-M3")
+        ),
     ]
 }
 

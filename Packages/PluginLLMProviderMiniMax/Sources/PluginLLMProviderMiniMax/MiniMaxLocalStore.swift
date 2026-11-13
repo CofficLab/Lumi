@@ -101,7 +101,8 @@ final class MiniMaxLocalStore: SuperLog, @unchecked Sendable {
                     contextWindowSize: cached.contextWindowSize
                         ?? MiniMaxModelFamily.family(for: cached.id).contextWindowSize,
                     supportsVision: cached.supportsVision
-                        ?? MiniMaxModelFamily.family(for: cached.id).supportsVision
+                        ?? MiniMaxModelFamily.family(for: cached.id).supportsVision,
+                    reasoning: MiniMaxModelFamily.reasoningCapability(for: cached.id)
                 )
             },
             syncedAt: snapshot.syncedAt,

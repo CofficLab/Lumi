@@ -663,8 +663,10 @@ extension AgentLoopManager {
         // 与当前回合是否允许调用工具无关。
         let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
         let language = languagePreference(for: conversationID)
-        let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
-            .flatMap { $0.rawValue }
+        let reasoningPreference = conversations.reasoningEffortOptional(for: conversationID)
+        let reasoningEffort = reasoningPreference?.rawValue
+        // 档位为空 = 用户关闭了思考；必须与「未指定」区分下发。
+        let reasoningOff = reasoningPreference == nil
         var runtime = runtimes[conversationID] ?? TurnRuntime()
         if runtime.modelRoute == nil {
             runtime.modelRoute = resolveModelRoute(for: conversationID)
@@ -786,7 +788,8 @@ extension AgentLoopManager {
             messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
-            reasoningEffort: reasoningEffort
+            reasoningEffort: reasoningEffort,
+            reasoningOff: reasoningOff
         )
 
         streaming.start(conversationID: conversationID)
