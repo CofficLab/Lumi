@@ -221,7 +221,11 @@ final class AppService: @unchecked Sendable, SuperLog {
 
                     // 策略 A: 精确匹配 Bundle ID
                     let candidatePath1 = "\(fullPath)/\(bundleId)"
-                    if fileManager.fileExists(atPath: candidatePath1) {
+                    // Bundle ID 来自应用自带的 Info.plist，不可信：必须是安全单分量，
+                    // 且 standardized 后仍位于该 Library 子目录内，防止 `../` 逃逸（#211）。
+                    if AppModel.isValidPathComponent(bundleId),
+                       AppService.isContained(path: candidatePath1, in: fullPath),
+                       fileManager.fileExists(atPath: candidatePath1) {
                         let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath1))
                         return RelatedFile(path: candidatePath1, size: size, type: AppService.getType(from: libSubPath))
                     }
@@ -244,7 +248,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                     // 策略 C: Preferences plist
                     if libSubPath.contains("Preferences") {
                         let plistPath = "\(fullPath)/\(bundleId).plist"
-                        if fileManager.fileExists(atPath: plistPath) {
+                        if AppModel.isValidPathComponent(bundleId),
+                           AppService.isContained(path: plistPath, in: fullPath),
+                           fileManager.fileExists(atPath: plistPath) {
                             let size = await AppService.calculateSize(for: URL(fileURLWithPath: plistPath))
                             return RelatedFile(path: plistPath, size: size, type: .preferences)
                         }
@@ -253,7 +259,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                     // 策略 D: Saved State
                     if libSubPath.contains("Saved Application State") {
                         let statePath = "\(fullPath)/\(bundleId).savedState"
-                        if fileManager.fileExists(atPath: statePath) {
+                        if AppModel.isValidPathComponent(bundleId),
+                           AppService.isContained(path: statePath, in: fullPath),
+                           fileManager.fileExists(atPath: statePath) {
                             let size = await AppService.calculateSize(for: URL(fileURLWithPath: statePath))
                             return RelatedFile(path: statePath, size: size, type: .state)
                         }
