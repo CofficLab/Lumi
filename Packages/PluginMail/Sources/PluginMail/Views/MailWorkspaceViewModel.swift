@@ -246,20 +246,19 @@ final class MailWorkspaceViewModel: ObservableObject {
         guard let context = currentContext,
               let account = accounts.first(where: { $0.id == context.accountID }) else { return }
         do {
-            if let sync {
-                let session = try await sessionManager.session(for: account)
-                let detail = try await session.fetchBody(uid: message.uid, folder: context.folder)
-                try await cache.upsertDetail(detail, accountID: context.accountID, folder: context.folder)
-                // 旧邮件的正文晚到，不能盖掉用户后来点开的邮件。
-                guard currentContext == context, selectedMessage?.uid == message.uid else { return }
-                selectedDetail = detail
-                // 阅读即已读（写缓存 + 服务端）
-                try await cache.setFlags(
-                    accountID: context.accountID, folder: context.folder, uid: message.uid,
-                    isRead: true, isFlagged: nil
-                )
-                await refreshUnreadBadges()
-            }
+            // 正文经 session 直取，不以 sync 是否存在为门槛（生产无 sync，#306）。
+            let session = try await sessionManager.session(for: account)
+            let detail = try await session.fetchBody(uid: message.uid, folder: context.folder)
+            try await cache.upsertDetail(detail, accountID: context.accountID, folder: context.folder)
+            // 旧邮件的正文晚到，不能盖掉用户后来点开的邮件。
+            guard currentContext == context, selectedMessage?.uid == message.uid else { return }
+            selectedDetail = detail
+            // 阅读即已读（写缓存 + 服务端）
+            try await cache.setFlags(
+                accountID: context.accountID, folder: context.folder, uid: message.uid,
+                isRead: true, isFlagged: nil
+            )
+            await refreshUnreadBadges()
         } catch {
             guard currentContext == context, selectedMessage?.uid == message.uid else { return }
             handleError(error, context: "读取邮件")

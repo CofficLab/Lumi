@@ -168,4 +168,40 @@ final class MailWorkspaceViewModelTests: XCTestCase {
         XCTAssertEqual(vm.messages.map(\.uid), [9], "旧文件夹的同步结果不能覆盖当前文件夹列表")
         XCTAssertFalse(vm.isSyncing)
     }
+
+    /// 回归 #306：生产装配不构造 MailSyncService（sync 默认 nil），点选邮件仍必须
+    /// 经 sessionManager 取正文、写缓存并置已读，而不是永远停在「Loading message body…」。
+    func testSelectMessageFetchesBodyWithoutSyncService() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+
+        let summaries = [makeCacheSummary(accountID: account.id, uid: 1, subject: "First")]
+        try await cache.upsertMessages(summaries, accountID: account.id, folder: "INBOX")
+
+        let session = MockMailSession(messages: summaries)
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(messages: summaries, session: session),
+            accountStore: store
+        )
+        // 不传 sync，复刻 MailPlugin 的生产装配。
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory
+        )
+        await vm.load()
+
+        let message = try XCTUnwrap(vm.messages.first { $0.uid == 1 })
+        await vm.selectMessage(message)
+
+        XCTAssertEqual(vm.selectedMessage?.uid, 1)
+        XCTAssertNotNil(vm.selectedDetail, "未注入 sync 时点选邮件仍应取到正文")
+        XCTAssertEqual(vm.selectedDetail?.summary.uid, 1)
+        XCTAssertEqual(vm.selectedDetail?.plainTextBody, "Hello")
+        // 阅读即已读：生产 selectMessage 把已读写进本地缓存（未读计数归零）。
+        let unread = try await cache.unreadCount(accountID: account.id, folder: "INBOX")
+        XCTAssertEqual(unread, 0, "点选阅读后应把已读写入缓存")
+    }
 }
