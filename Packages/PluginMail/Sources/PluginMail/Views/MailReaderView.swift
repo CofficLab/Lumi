@@ -61,7 +61,7 @@ public struct MailReaderView: View {
             Image(systemName: "shield.lefthalf.filled")
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
-            Text("为保护隐私，已拦截远程图片和样式。")
+            Text(pluginLocalization.string("Remote images and styles were blocked to protect your privacy."))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
             Spacer()
@@ -83,7 +83,7 @@ public struct MailReaderView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
             HStack(spacing: 6) {
-                Text("发件人")
+                Text(pluginLocalization.string("From"))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
                 Text(fromText(detail.summary.from))
@@ -96,7 +96,7 @@ public struct MailReaderView: View {
             }
             if !detail.summary.to.isEmpty {
                 HStack(spacing: 6) {
-                    Text("收件人")
+                    Text(pluginLocalization.string("To"))
                         .font(.appCaption)
                         .foregroundColor(theme.textTertiary)
                     Text(detail.summary.to.map(\.email).joined(separator: ", "))
@@ -269,7 +269,7 @@ public struct MailAttachmentBarView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("附件（\(attachments.count)）")
+            Text(String(format: pluginLocalization.string("Attachment count: %lld"), Int64(attachments.count)))
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
             ForEach(attachments) { attachment in

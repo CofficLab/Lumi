@@ -1,134 +1,638 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
           }
         }
       }
     },
-    "%lld" : {
-
-    },
-    "%lld 个附件" : {
-
-    },
-    "⚠ %@" : {
-
-    },
-    "✓ %@" : {
-
-    },
-    "IMAP 服务器" : {
-
-    },
-    "Mail" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Mail"
+    "%lld": {},
+    "%lld attachments": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld attachments"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "邮件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个附件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "郵件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個附件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "郵件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個附件"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "郵件"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個附件"
           }
         }
       }
     },
-    "SMTP 服务器" : {
-
+    "%lld 个附件": {},
+    "Add an IMAP/SMTP account in Settings → Mail.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an IMAP/SMTP account in Settings → Mail."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请到「设置 → 邮件」添加 IMAP/SMTP 账户。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請到「設置 → 郵件」添加 IMAP/SMTP 賬戶。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請到「設置 → 郵件」添加 IMAP/SMTP 賬戶。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請到「設置 → 郵件」添加 IMAP/SMTP 賬戶。"
+          }
+        }
+      }
     },
-    "为保护隐私，已拦截远程图片和样式。" : {
-
+    "Attachment count: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachments (%lld)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "附件数量：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "附件數量：%lld"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "附件數量：%lld"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "附件數量：%lld"
+          }
+        }
+      }
     },
-    "发件人" : {
-
+    "Draft saved at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft saved at %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "草稿已保存 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "草稿已保存 %@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "草稿已保存 %@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "草稿已保存 %@"
+          }
+        }
+      }
     },
-    "拖入附件到窗口，或点击添加" : {
-
+    "Drag attachments into the window, or click to add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag attachments into the window, or click to add"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入附件到窗口，或点击添加"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入附件到窗口，或點擊添加"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入附件到窗口，或點擊添加"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入附件到窗口，或點擊添加"
+          }
+        }
+      }
     },
-    "搜索邮件" : {
-
+    "From": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发件人"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發件人"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發件人"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發件人"
+          }
+        }
+      }
     },
-    "收件人" : {
-
+    "IMAP 服务器": {},
+    "Loading message body…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading message body…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载正文…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加載正文…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加載正文…"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加載正文…"
+          }
+        }
+      }
     },
-    "显示名称（可选）" : {
-
+    "Mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Mail"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "邮件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "郵件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "new",
+            "value": "郵件"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "new",
+            "value": "郵件"
+          }
+        }
+      }
     },
-    "服务商" : {
-
+    "No Mail Accounts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Mail Accounts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有邮件账户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶"
+          }
+        }
+      }
     },
-    "正在加载正文…" : {
-
+    "No mail accounts yet. Click Add Account below to get started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No mail accounts yet. Click Add Account below to get started."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有邮件账户。点击下方「添加账户」开始配置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶。點擊下方「添加賬戶」開始配置。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶。點擊下方「添加賬戶」開始配置。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有郵件賬戶。點擊下方「添加賬戶」開始配置。"
+          }
+        }
+      }
     },
-    "正在同步…" : {
-
+    "Port must be between 1 and 65535.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port must be between 1 and 65535."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口必须在 1–65535 之间。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口必須在 1–65535 之間。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口必須在 1–65535 之間。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口必須在 1–65535 之間。"
+          }
+        }
+      }
     },
-    "没有匹配「%@」的结果" : {
-
+    "Provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務商"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務商"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務商"
+          }
+        }
+      }
     },
-    "没有邮件" : {
-
+    "Remote images and styles were blocked to protect your privacy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote images and styles were blocked to protect your privacy."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为保护隐私，已拦截远程图片和样式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為保護隱私，已攔截遠程圖片和樣式。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為保護隱私，已攔截遠程圖片和樣式。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為保護隱私，已攔截遠程圖片和樣式。"
+          }
+        }
+      }
     },
-    "登录用户名" : {
-
+    "SMTP 服务器": {},
+    "Search mail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search mail"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索邮件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索郵件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索郵件"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索郵件"
+          }
+        }
+      }
     },
-    "端口必须在 1–65535 之间。" : {
-
+    "Select a message to view its content": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a message to view its content"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一封邮件查看内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一封郵件查看內容"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一封郵件查看內容"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一封郵件查看內容"
+          }
+        }
+      }
     },
-    "草稿已保存 %@" : {
-
+    "Syncing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步…"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步…"
+          }
+        }
+      }
     },
-    "请到「设置 → 邮件」添加 IMAP/SMTP 账户。" : {
-
+    "To": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收件人"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收件人"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收件人"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收件人"
+          }
+        }
+      }
     },
-    "还没有邮件账户" : {
-
-    },
-    "还没有邮件账户。点击下方「添加账户」开始配置。" : {
-
-    },
-    "选择一封邮件查看内容" : {
-
-    },
-    "邮件" : {
-
-    },
-    "邮箱地址" : {
-
-    },
-    "附件（%lld）" : {
-
-    }
+    "⚠ %@": {},
+    "✓ %@": {},
+    "为保护隐私，已拦截远程图片和样式。": {},
+    "发件人": {},
+    "拖入附件到窗口，或点击添加": {},
+    "搜索邮件": {},
+    "收件人": {},
+    "显示名称（可选）": {},
+    "服务商": {},
+    "正在加载正文…": {},
+    "正在同步…": {},
+    "没有匹配「%@」的结果": {},
+    "没有邮件": {},
+    "登录用户名": {},
+    "端口必须在 1–65535 之间。": {},
+    "草稿已保存 %@": {},
+    "请到「设置 → 邮件」添加 IMAP/SMTP 账户。": {},
+    "还没有邮件账户": {},
+    "还没有邮件账户。点击下方「添加账户」开始配置。": {},
+    "选择一封邮件查看内容": {},
+    "邮件": {},
+    "邮箱地址": {},
+    "附件（%lld）": {}
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

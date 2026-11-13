@@ -69,7 +69,7 @@ public struct MailFolderSidebarView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
             } else {
-                Text("邮件")
+                Text(pluginLocalization.string("Mail"))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
             }
