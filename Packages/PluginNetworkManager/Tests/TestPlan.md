@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 101
+测试文件: 16 个，用例总数: 104
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -52,6 +52,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **综合**（25 条）：由 `brotliSSEDecompressionHandlesHighCompressionRatio`、`publicIPRefreshUsesCache`、`publicIPRefreshCanBeForced` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HTTPExchangeStorePaginationOverflow**（3 条）：由 `overflowMatchesSurviveWhenScanEndsBelowWindow`、`overflowMatchesSurviveWhenScanFillsWindow`、`overflowMatchesSurviveWithDomainFilter` 锁定 `loadListPage` 一次扫描产出多于 limit 的匹配时，游标只前进到本页实际返回的最后一条匹配，溢出匹配必须能在后续页取回、不得永久丢弃（**回归 #215**）；改动 HTTP 日志分页游标逻辑时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -158,27 +159,30 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 99 | ProcessMonitorUTF8ChunkBoundary | 进程名跨 chunk 边界时整行不得丢失（**回归 #824**） | 中文进程名「微信」，第二帧在「微」的首字节后切成两个 chunk | 依次 `processOutput` 两个 chunk + flush | 进程行完整发布，名称为「微信」，速率 1024/2048 | P0 | ✅ 已覆盖 | `multibyteNameSplitAcrossChunksSurvives` |
 | 100 | ProcessMonitorUTF8ChunkBoundary | 解码失败的 chunk 中已完整的 ASCII 行不得被连带丢弃（**回归 #824**） | chunk1 = 完整 Lumi 行 + 「中」首字节，chunk2 = 剩余字节 + 完整行 | 依次 `processOutput` 两个 chunk + flush | Lumi 与「中」两条进程行均发布，速率各自正确 | P0 | ✅ 已覆盖 | `completeASCIIRowInFailedChunkIsNotLost` |
 | 101 | ProcessMonitorUTF8ChunkBoundary | 真正非法的字节不得吞掉同一 chunk 里的有效进程行（**回归 #824**） | chunk 以非法字节 0xFF 开头，后接完整 Lumi 行 | `processOutput` + flush | 有效进程行仍发布，速率 1024/2048 | P0 | ✅ 已覆盖 | `invalidBytesDoNotDiscardValidRows` |
+| 102 | HTTPExchangeStorePaginationOverflow | 扫描不足一窗时溢出匹配仍须可翻页取回，不得永久丢弃（#215） | limit=3（窗口 12），仅 4 条匹配 | drain 所有页 | 首页 hasMore=true，4 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanEndsBelowWindow` |
+| 103 | HTTPExchangeStorePaginationOverflow | 满窗扫描溢出时游标不得越过未返回的匹配（#215） | limit=2（窗口 8），9 条匹配 | drain 所有页 | 9 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanFillsWindow` |
+| 104 | HTTPExchangeStorePaginationOverflow | 带域名过滤的溢出翻页须取回全部匹配且不混入他域（#215） | limit=3（窗口 12），12 行中 5 行匹配目标域名 | 按域名 drain 所有页 | 5 条匹配全部取回，无他域记录 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWithDomainFilter` |
 
-> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 38 / 38
+- P0: 已覆盖 41 / 41
 - P1: 已覆盖 57 / 57
 - P2: 已覆盖 6 / 6
-- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
+- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（41 条）
 - **P1**: 其余功能性用例（57 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

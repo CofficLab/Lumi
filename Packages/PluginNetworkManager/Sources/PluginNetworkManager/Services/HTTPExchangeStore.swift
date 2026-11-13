@@ -786,8 +786,17 @@ public final class HTTPExchangeStore {
             hasMore = true
         }
 
+        let returned = Array(matches.prefix(limit))
+        // 溢出匹配（matches.count > limit）：游标只前进到本页实际返回的最后一条匹配，而非扫描窗口末端，否则溢出匹配被永久跳过（#215）。
+        if matches.count > limit {
+            return HTTPExchangeListPage(
+                records: returned,
+                nextCursor: returned.last?.startedAt,
+                hasMore: true
+            )
+        }
         return HTTPExchangeListPage(
-            records: Array(matches.prefix(limit)),
+            records: returned,
             nextCursor: cursor,
             hasMore: hasMore
         )
