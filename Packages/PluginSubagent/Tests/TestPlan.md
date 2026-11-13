@@ -2,16 +2,22 @@
 
 ## 包概述
 
-PluginSubagent 的实现包：子代理委托（#1313）的隐藏子会话管道、`run_subagent` 工具、工具栏活动指示器与委托时间线卡片。当前测试覆盖 18 条用例。
+PluginSubagent 的实现包：子代理委托（#1313）的隐藏子会话管道、`run_subagent` 工具、工具栏活动指示器与委托时间线卡片；#1328 增加的树内寻址、`list_subagents` / `send_subagent_message`、收件箱协调器与活动优先的工具栏。当前测试覆盖 58 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 18
+测试文件: 7 个，用例总数: 58
 
 核心组件（源码目录）:
 - `SubagentConversationBridge.swift`
 - `RunSubagentTool.swift`
+- `ListSubagentsTool.swift`
+- `SendSubagentMessageTool.swift`
+- `SubagentInboxCoordinator.swift`
 - `SubagentPlugin.swift`
 - `SubagentActivityViewModel.swift`
+- `SubagentActivityToolbarButton.swift`
+- `Models/SubagentIdentity.swift`
+- `Models/SubagentRegistry.swift`
 - `Models/SubagentTimeline.swift`
 - `Renderers/SubagentCardRenderer.swift`
 - `Views/SubagentCardView.swift`
@@ -22,7 +28,12 @@ PluginSubagent 的实现包：子代理委托（#1313）的隐藏子会话管道
 
 - `SubagentConversationError`
 - `SubagentConversationBridge`
+- `SubagentIdentity`
+- `SubagentRegistry`
 - `RunSubagentTool`
+- `ListSubagentsTool`
+- `SendSubagentMessageTool`
+- `SubagentInboxCoordinator`
 - `SubagentPlugin`
 - `SubagentActivityViewModel`
 - `SubagentTimeline`
@@ -33,7 +44,11 @@ PluginSubagent 的实现包：子代理委托（#1313）的隐藏子会话管道
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **SubagentChildConversation**（7 条）：由 `childIsHiddenFromListAndKeepsSelection`、`childInheritsParentProjectModelAndAutomation`、`unboundParentDoesNotBindChildToCurrentProject` 等用例锁定。子会话以 `parentConversationID` 标记归属：不进入会话列表缓存、不改变选中、不发 `.created`；继承父会话的项目绑定（含「明确不绑定」，不得回退当前项目）、模型与自动化等级；消息与父会话完全隔离；删除父会话时连带取消回合、清消息、删工具记录、删库行。
-- **SubagentActivityViewModel**（8 条）：由 `onlySubagentJobsCountTowardBadge`、`staleEventsAfterConversationSwitchAreDropped`、`tickingFollowsActiveJobsAndSilentDurationAdvances` 等用例锁定。只有当前选中会话的 `run_subagent` Job 计入徽标；其他会话与切换后的晚到事件不得写回状态；运行中驱动计时、全部终态后停止（ToolActivity #960 同款回归）。
+- **SubagentIdentity**（11 条）：由 `acceptsValidNames`、`rejectsInvalidNames`、`resolveThrowsForReservedName`、`legacyPayloadWithoutNameDecodes` 等用例锁定。名字 3-32 位、小写字母开头、只含小写字母/数字/连字符；`lead` 保留给根会话；重名拒绝；默认名取第一个空位；名字随卡片载荷往返，旧载荷无名字时解码为 nil 且历史卡片仍可读。
+- **SubagentRegistry**（8 条）：由 `rebuildsMembersFromPersistedCards`、`rejectsUnknownAndForeignNames`、`deletedChildIsNotAddressable`、`mergesJobAndAgentLoopState` 等用例锁定。成员只从持久化卡片与 `parentConversationID` 派生，新建实例即可重建；寻址严格限制在当前树内，未知/跨树/已删除/重名目标一律拒绝；无名字的历史卡片保留展示但不可寻址。
+- **ListSubagentsTool**（7 条）：由 `listsLeadAndMembers`、`childCallerSeesItselfAndSiblings`、`legacyCardIsNotAddressable`、`toolMetadata` 等用例锁定。输出 lead 与成员的实时状态、耗时、任务标签与投递方式；从子代理视角发起时标明「你是谁」；缺少上下文或会话已不存在时抛错；工具声明为只读并发、低风险。
+- **SendSubagentMessageTool**（8 条）：由 `queueDeliversWithoutStartingTurn`、`followupWakesIdleTarget`、`followupWaitsForRunningTurnExactlyOnce`、`rejectsInvalidTargets`、`childToolAllowlist` 等用例锁定。`queue` 只写入不启动回合并恢复自动回复状态；`followup` 对空闲目标立即唤醒、对运行中目标等终态且恰好一次；子代理可联系 lead 与兄弟；自发、未知、跨树、重名目标与非法参数均抛错；子会话工具表显式放行通信工具但仍排除 `run_subagent`。
+- **SubagentActivityViewModel**（14 条）：由 `onlySubagentJobsCountTowardBadge`、`staleEventsAfterConversationSwitchAreDropped`、`tickingFollowsActiveJobsAndSilentDurationAdvances`、`attentionGroupingOrdersWaitingThenFailed`、`itemsExposeIdentityAndChildActivity` 等用例锁定。只有当前选中会话的 `run_subagent` Job 计入徽标；其他会话与切换后的晚到事件不得写回状态；运行中驱动计时、全部终态后停止（ToolActivity #960 同款回归）。活动层从卡片载荷取名字、从子会话 Job 取当前工具与工具数、从收件箱取待读取消息数；排序为等待/失败 → 运行中 → 已结束；胶囊颜色按失败 > 等待 > 运行 > 空闲降级。
 - **SubagentTimeline**（3 条）：由 `payloadRoundTrip`、`corruptedPayloadDecodesToNil`、`messageShape` 锁定。卡片载荷只存标识（label、父/子会话 ID、jobID），经 metadata 编解码往返一致；损坏载荷解码为 nil 走回退视图；卡片消息为系统角色、携带渲染标识且被 `isTimelineEvent` 排除出 LLM 上下文。
 
 ## 测试用例清单
@@ -58,27 +73,67 @@ PluginSubagent 的实现包：子代理委托（#1313）的隐藏子会话管道
 | 16 | SubagentTimeline | 卡片载荷可编码进 metadata 并原样解码 | 构造含 label、父/子会话 ID、jobID 的载荷 | metadata 编码后解码 | 解码载荷与原始载荷相等 | P1 | ✅ 已覆盖 | `payloadRoundTrip` |
 | 17 | SubagentTimeline | 损坏或缺失的载荷解码为 nil 而不崩溃 | metadata 为空或非法 JSON | decodePayload | 返回 nil，渲染走回退视图 | P0 | ✅ 已覆盖 | `corruptedPayloadDecodesToNil` |
 | 18 | SubagentTimeline | 时间线卡片消息携带系统角色、渲染标识与载荷 | 构造载荷 | 生成卡片消息 | role 为 system；renderKind/preferredRendererID 指向子代理渲染器；isTimelineEvent 为真；正文含 label | P1 | ✅ 已覆盖 | `messageShape` |
+| 19 | SubagentIdentity | 合法名字：3-32 位、小写字母开头、允许数字与连字符 | 一组合法名字 | 调用名字校验 | 全部通过 | P1 | ✅ 已覆盖 | `acceptsValidNames` |
+| 20 | SubagentIdentity | 非法名字：长度、大小写、首字符与字符集 | 一组非法名字 | 调用名字校验 | 全部拒绝 | P0 | ✅ 已覆盖 | `rejectsInvalidNames` |
+| 21 | SubagentIdentity | 没有子代理时默认 agent-1 | 已有名字为空 | defaultName(existing:) | 返回 agent-1 | P1 | ✅ 已覆盖 | `defaultNameStartsAtOne` |
+| 22 | SubagentIdentity | 默认名取第一个空位，不因中间空号继续增长 | 已有 agent-1、agent-3 | defaultName(existing:) | 返回 agent-2 | P1 | ✅ 已覆盖 | `defaultNameUsesFirstFreeSlot` |
+| 23 | SubagentIdentity | 未提供名字时使用默认名 | 已有 agent-1 | resolve(requested: nil, existing:) | 返回 agent-2 | P1 | ✅ 已覆盖 | `resolveWithoutRequestedUsesDefault` |
+| 24 | SubagentIdentity | 提供合法且唯一的名字时原样返回 | 已有 agent-1 | resolve(requested: "explorer", existing:) | 返回 explorer | P1 | ✅ 已覆盖 | `resolveKeepsUniqueRequestedName` |
+| 25 | SubagentIdentity | 提供非法名字时抛出 invalidName | requested 为 "Explorer" | resolve(requested:existing:) | 抛出 SubagentIdentityError.invalidName | P0 | ✅ 已覆盖 | `resolveThrowsForInvalidName` |
+| 26 | SubagentIdentity | lead 是根代理保留名，不能分配给子代理 | requested 为 "lead" | resolve(requested:existing:) | 抛出 SubagentIdentityError.reservedName | P0 | ✅ 已覆盖 | `resolveThrowsForReservedName` |
+| 27 | SubagentIdentity | 提供同名子代理时抛出 duplicateName | 已有 explorer | resolve(requested: "explorer", existing:) | 抛出 SubagentIdentityError.duplicateName | P0 | ✅ 已覆盖 | `resolveThrowsForDuplicateName` |
+| 28 | SubagentIdentity | 名字随卡片载荷往返 | 构造含 name 的载荷 | 编码后再解码 | 解码载荷的 name 与原值一致 | P1 | ✅ 已覆盖 | `payloadRoundTripsName` |
+| 29 | SubagentIdentity | 旧载荷没有 name 字段时解码为 nil，历史委托仍可读 | 无 name 字段的旧 JSON | decodePayload | name 为 nil，其余字段正常解码 | P2 | ✅ 已覆盖 | `legacyPayloadWithoutNameDecodes` |
+| 30 | SubagentRegistry | 从根会话的委托卡片重建成员与 Job 关联 | 夹具创建根会话与两张委托卡片 | snapshot(for: root) | 成员含名字、子会话 ID、Job ID，按创建时间排序 | P0 | ✅ 已覆盖 | `rebuildsMembersFromPersistedCards` |
+| 31 | SubagentRegistry | 子会话视角能解析 lead 与兄弟代理 | 根会话下有两个带名字的子会话 | resolve(name:from: child) | lead 指向根会话；兄弟解析到各自子会话 | P1 | ✅ 已覆盖 | `resolvesLeadAndSiblingsFromChild` |
+| 32 | SubagentRegistry | 新建注册表实例仍能从同一份持久化数据重建 | 同一份持久化卡片数据 | 新建 SubagentRegistry 后 snapshot | 成员与旧实例一致，不依赖内存缓存 | P1 | ✅ 已覆盖 | `rebuildsInFreshRegistryInstance` |
+| 33 | SubagentRegistry | 未知名字与另一棵树的成员都被拒绝 | 当前树与其他树各有一个子代理 | resolve(name:from:) | 均抛出 unknownName | P0 | ✅ 已覆盖 | `rejectsUnknownAndForeignNames` |
+| 34 | SubagentRegistry | 已删除的子会话不参与寻址 | 子会话已被删除 | snapshot / resolve | 成员不含该子会话，按名字解析失败 | P0 | ✅ 已覆盖 | `deletedChildIsNotAddressable` |
+| 35 | SubagentRegistry | 没有名字的历史卡片保留展示但不可寻址 | 插入无 name 的旧卡片 | snapshot | 成员仍在列表中，isAddressable 为 false | P2 | ✅ 已覆盖 | `legacyCardsStayVisibleButAreNotAddressable` |
+| 36 | SubagentRegistry | 同一棵树内出现重名数据时拒绝猜测目标 | 持久化数据出现两个同名成员 | resolve(name:from:) | 抛出 ambiguousName | P0 | ✅ 已覆盖 | `duplicateNamesAreAmbiguous` |
+| 37 | SubagentRegistry | 运行状态合并 Job 状态与 AgentLoop 活跃状态 | 注入 Job 快照与运行中的子会话 | snapshot | isRunning/isActive/jobStatus 与注入一致 | P1 | ✅ 已覆盖 | `mergesJobAndAgentLoopState` |
+| 38 | ListSubagentsTool | 列出 lead 与子代理的实时状态、时长和投递方式 | 固定时钟；一个运行中、一个已完成成员 | executeResult | 表格含 lead 行与两成员；状态、耗时、messageable/resumable 正确 | P1 | ✅ 已覆盖 | `listsLeadAndMembers` |
+| 39 | ListSubagentsTool | 没有名字的历史卡片标记为不可寻址 | 插入无 name 的旧卡片 | executeResult | 行显示 (unnamed) 与 not addressable | P2 | ✅ 已覆盖 | `legacyCardIsNotAddressable` |
+| 40 | ListSubagentsTool | 子代理视角知道自己是谁并能看到兄弟 | 从子会话调用工具 | executeResult | 页脚标明调用方名字，列表含其他成员 | P1 | ✅ 已覆盖 | `childCallerSeesItselfAndSiblings` |
+| 41 | ListSubagentsTool | 空树只显示 lead 与创建提示 | 根会话没有委托 | executeResult | 只有 lead 行，并提示暂无子代理 | P2 | ✅ 已覆盖 | `emptyTree` |
+| 42 | ListSubagentsTool | 缺少会话上下文时抛错而不是返回空表 | 以无 context 调用工具 | execute(arguments:) | 抛出 ToolExecutionError | P1 | ✅ 已覆盖 | `missingContextThrows` |
+| 43 | ListSubagentsTool | 调用方会话已不存在时抛错 | 传入不存在的会话 ID | executeResult | 抛错而不是返回空表 | P0 | ✅ 已覆盖 | `missingConversationThrows` |
+| 44 | ListSubagentsTool | 工具元数据：只读并发、低风险、提示先查名字 | 构造工具 | 读取 capability、风险与 schema | parallelReadOnly、low 风险，描述提示先查名字再发消息 | P2 | ✅ 已覆盖 | `toolMetadata` |
+| 45 | SendSubagentMessageTool | queue 只写入消息，不启动回合，并恢复自动回复状态 | 目标空闲且未抑制自动回复 | 发送 queue 消息 | 不调用 runTurn；自动回复恢复；待读取数为 1；消息带来源 metadata | P0 | ✅ 已覆盖 | `queueDeliversWithoutStartingTurn` |
+| 46 | SendSubagentMessageTool | followup 到空闲目标会立即启动回合 | 目标空闲 | 发送 followup 给 editor | runTurn 调用列表为 [editor] | P0 | ✅ 已覆盖 | `followupWakesIdleTarget` |
+| 47 | SendSubagentMessageTool | followup 到运行中目标要等终态，重复终态只唤醒一次 | 目标运行中 | 发送 followup 后连续发两次 completed | 首次终态后唤醒一次，重复事件不再启动 | P0 | ✅ 已覆盖 | `followupWaitsForRunningTurnExactlyOnce` |
+| 48 | SendSubagentMessageTool | queue 到运行中目标在回合结束后也不会被唤醒 | 目标运行中 | 发送 queue 后发 completed | 不调用 runTurn | P0 | ✅ 已覆盖 | `queueDoesNotWakeOnTurnEnd` |
+| 49 | SendSubagentMessageTool | 子代理可以联系 lead 与兄弟，来源名是它自己 | 从 explorer 子会话调用 | 分别发给 lead 与 editor | 消息落入目标会话，senderName 为 explorer | P1 | ✅ 已覆盖 | `childCanMessageLeadAndSibling` |
+| 50 | SendSubagentMessageTool | 不能给自己、未知名字、跨树成员或重名目标发消息 | 当前树、其他树与重名数据 | 逐个发送 | 均抛错；根会话消息数不变 | P0 | ✅ 已覆盖 | `rejectsInvalidTargets` |
+| 51 | SendSubagentMessageTool | 缺少参数、非法模式或会话不存在时抛错 | 构造非法调用 | executeResult | 分别抛错并给出可纠正的提示 | P1 | ✅ 已覆盖 | `rejectsInvalidArguments` |
+| 52 | SendSubagentMessageTool | 子会话工具表显式放行通信工具，但仍排除委托工具 | 构造只读与副作用工具 | SubagentToolPolicy.childTools | 通信工具保留、run_subagent 与其余副作用工具被排除 | P0 | ✅ 已覆盖 | `childToolAllowlist` |
+| 53 | SubagentActivityViewModel | 活动行带出名字、当前工具与已完成工具数 | 卡片载荷 + 子会话两个 Job | 读取 items | name/currentToolName/completedToolCount 正确 | P1 | ✅ 已覆盖 | `itemsExposeIdentityAndChildActivity` |
+| 54 | SubagentActivityViewModel | 待读取消息数来自注入的收件箱 | 注入对目标返回 2 的 pending provider | 读取 item.pendingMessageCount | 为 2 | P1 | ✅ 已覆盖 | `pendingMessageCountComesFromInjectedProvider` |
+| 55 | SubagentActivityViewModel | 注意力优先：等待在前、失败其次、运行与结束各归组 | 等待/失败/运行/已完成各一个 | 读取分组与 status | attention 为 [waiting, failed]、running 为 [running]、finished 为 [finished]、status 为 failure | P1 | ✅ 已覆盖 | `attentionGroupingOrdersWaitingThenFailed` |
+| 56 | SubagentActivityViewModel | 胶囊状态按失败、等待、运行、空闲降级 | 依次注入不同状态组合 | 读取 status | idle → running → waiting → idle | P1 | ✅ 已覆盖 | `capsuleStatusFollowsPriority` |
+| 57 | SubagentActivityViewModel | 卡片晚到也能补上身份；没有名字的旧委托显示 unnamed | 先发 started 事件，后插入卡片 | 等待异步载荷读取 | childConversationID 补上；无名字时 name(for:) 为 (unnamed) | P1 | ✅ 已覆盖 | `lateCardEnrichesIdentity` |
+| 58 | SubagentActivityViewModel | 子会话工具事件刷新活动行但不进入父会话徽标 | 父 Job 运行中且已关联子会话 | 发送子会话 started/completed 事件 | 当前工具与工具数更新；activeCount 恒为 1 | P0 | ✅ 已覆盖 | `childToolEventsRefreshItemsOnly` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 7 / 7
-- P2: 已覆盖 1 / 1
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 26 / 26
+- P2: 已覆盖 6 / 6
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（7 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（26 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
