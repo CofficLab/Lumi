@@ -14,7 +14,7 @@
 
 | 状态 | 数量 | 说明 |
 |---|---|---|
-| ✅ 本轮已修复并提交 | 16 | 每条有对应提交与守卫测试 |
+| ✅ 本轮已修复并提交 | 20 | 每条有对应提交与守卫测试 |
 | ✔️ 此前已修复（本次核实并关闭 issue） | 4 | 代码已正确，issue 状态滞后 |
 | 📦 属外置仓库（PluginDevice） | 4 | 本仓库无法修复，已在 issue 留言指明方案 |
 | ⬜ 待处理 | — | 见下方各分类 |
@@ -31,13 +31,17 @@
 | [#1224](https://github.com/CofficLab/Lumi/issues/1224) | `1d16f1672` | 修复：hover 移出 Canvas 重绘路径 |
 | [#1245](https://github.com/CofficLab/Lumi/issues/1245) | `97850fb00` | 修复：文件元数据探测移出主线程 |
 | [#1267](https://github.com/CofficLab/Lumi/issues/1267) | `6eea7572b` | 修复：去二次方扫描 |
+| [#1268](https://github.com/CofficLab/Lumi/issues/1268) | `2f2c4e8f1` | 修复：历史图片解码缓存 + 非视觉模型跳过解码 + 转换移出主线程 |
+| [#1269](https://github.com/CofficLab/Lumi/issues/1269) | `bb74ddd2a` | 修复：图片 Base64 编码缓存 + 工具参数解析缓存 + 请求体构建移出主线程 |
 | [#1272](https://github.com/CofficLab/Lumi/issues/1272) | `d2c21ba4d` | 修复：定向查询窗口存在性 |
 | [#1273](https://github.com/CofficLab/Lumi/issues/1273) | `867dc2b2b` | 修复：摘要反向扫描 |
+| [#1275](https://github.com/CofficLab/Lumi/issues/1275) | `6197d97ee` | 修复：MCP schema 注册时解析一次 + 复用规范化文本免重复序列化 |
 | [#1279](https://github.com/CofficLab/Lumi/issues/1279) | `669aeb38d` | 修复：查找匹配防抖 + 正则缓存 |
 | [#1295](https://github.com/CofficLab/Lumi/issues/1295) | `e3f355ca4` | 修复：章节字数与故事总字数缓存 |
 | [#1298](https://github.com/CofficLab/Lumi/issues/1298) | `80ce4fad9` | 修复：附件位图解码缓存 |
 | [#1300](https://github.com/CofficLab/Lumi/issues/1300) | `fe62ff3bd` | 修复：workingChanges 缓存 |
 | [#1304](https://github.com/CofficLab/Lumi/issues/1304) | `87ac26b0d` | 修复：记忆搜索防抖 + 单次过滤 |
+| [#1309](https://github.com/CofficLab/Lumi/issues/1309) | `cc0311de6` | 修复：流式 chunk 原地追加，消除 COW 全量拷贝 |
 | [#1329](https://github.com/CofficLab/Lumi/issues/1329) | `c1818bff6` | 修复：总行数走行偏移表缓存 |
 
 ### 此前已修复（本次核实）
@@ -99,12 +103,12 @@
 - ⬜ 待处理 · OPEN **#1280** [HTML preview re-reads and re-compares the whole file from disk on every SwiftUI update, even when nothing changed](https://github.com/CofficLab/Lumi/issues/1280)
 - ⬜ 待处理 · CLOSED **#1277** [Opening a file in the code editor reads the whole document synchronously on the main actor](https://github.com/CofficLab/Lumi/issues/1277)
 - ⬜ 待处理 · CLOSED **#1276** [Code-editor highlight prewarm reads and tree-sitter-parses whole documents on the main actor](https://github.com/CofficLab/Lumi/issues/1276)
-- ⬜ 待处理 · OPEN **#1275** [MCP tool schemas are re-decoded from JSON and re-serialized on the main actor on every LLM request](https://github.com/CofficLab/Lumi/issues/1275)
+- ✅ 已修复 `6197d97ee` · OPEN **#1275** [MCP tool schemas are re-decoded from JSON and re-serialized on the main actor on every LLM request](https://github.com/CofficLab/Lumi/issues/1275)
 - ⬜ 待处理 · OPEN **#1274** [Tool-call renderer dispatch Base64-decodes every result image on the main actor, then discards it](https://github.com/CofficLab/Lumi/issues/1274)
 - ⬜ 待处理 · OPEN **#1271** [Git repository watcher hashes the whole index and refs on the main actor](https://github.com/CofficLab/Lumi/issues/1271)
 - ⬜ 待处理 · OPEN **#1270** [Non-streaming LLM responses are fully parsed three times on the main actor](https://github.com/CofficLab/Lumi/issues/1270)
-- ⬜ 待处理 · OPEN **#1269** [Every streaming LLM request re-encodes all history images on the main actor](https://github.com/CofficLab/Lumi/issues/1269)
-- ⬜ 待处理 · OPEN **#1268** [Every LLM request Base64-decodes all prepared-history images on the main actor](https://github.com/CofficLab/Lumi/issues/1268)
+- ✅ 已修复 `bb74ddd2a` · OPEN **#1269** [Every streaming LLM request re-encodes all history images on the main actor](https://github.com/CofficLab/Lumi/issues/1269)
+- ✅ 已修复 `2f2c4e8f1` · OPEN **#1268** [Every LLM request Base64-decodes all prepared-history images on the main actor](https://github.com/CofficLab/Lumi/issues/1268)
 - ⬜ 待处理 · OPEN **#1266** [Screenshot dragging invalidates every full-screen overlay on every mouse update](https://github.com/CofficLab/Lumi/issues/1266)
 - ⬜ 待处理 · OPEN **#1265** [Screenshot completion scales, JPEG-encodes, and Base64-encodes on the main actor](https://github.com/CofficLab/Lumi/issues/1265)
 - ⬜ 待处理 · OPEN **#1264** [HTML Canvas cards synchronously reopen snapshot PNGs during view evaluation](https://github.com/CofficLab/Lumi/issues/1264)
@@ -268,7 +272,7 @@
 
 ## N² / 全量重扫算法复杂度（10）
 
-- ⬜ 待处理 · OPEN **#1309** [Streaming provider re-copies the entire accumulated response on every chunk (quadratic main-thread work)](https://github.com/CofficLab/Lumi/issues/1309)
+- ✅ 已修复 `cc0311de6` · OPEN **#1309** [Streaming provider re-copies the entire accumulated response on every chunk (quadratic main-thread work)](https://github.com/CofficLab/Lumi/issues/1309)
 - ⬜ 待处理 · OPEN **#1292** [App Icon document store re-scans and decodes every document from disk on the main actor per list call and after every write tool](https://github.com/CofficLab/Lumi/issues/1292)
 - ⬜ 待处理 · OPEN **#1283** [Git Workspace panel renders the working tree in O(N²) on the main actor](https://github.com/CofficLab/Lumi/issues/1283)
 - ⬜ 待处理 · OPEN **#1260** [Tool Activity rescans and resorts all jobs for every output event](https://github.com/CofficLab/Lumi/issues/1260)
