@@ -1,0 +1,46 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginSubagent",
+    platforms: [.macOS("14.0"), .iOS(.v17)],
+    products: [
+        .library(name: "PluginSubagent", targets: ["PluginSubagent"]),
+    ],
+    dependencies: [
+        .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(path: "../PluginConversationManager"),
+    ],
+    targets: [
+        .target(
+            name: "PluginSubagent",
+            dependencies: [
+                "ProviderConversation",
+            ],
+            path: "Sources/PluginSubagent"
+        ),
+        .testTarget(
+            name: "PluginSubagentTests",
+            dependencies: [
+                "PluginSubagent",
+                "PluginConversationManager",
+                "ProviderConversation",
+                "ProviderMessage",
+                "ProviderAgentLoop",
+                "ProviderLifecycleHooks",
+                "KitLLM",
+                "KitAgentTool",
+                "ProviderToolManager",
+                .product(name: "ProviderProject", package: "LumiProviders"),
+            ],
+            path: "Tests/PluginSubagentTests"
+        ),
+    ]
+)

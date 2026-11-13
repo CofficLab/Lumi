@@ -196,6 +196,18 @@ public protocol ConversationManaging: AnyObject {
         parentConversationID: UUID?
     ) async throws -> UUID
 
+    /// 以显式项目绑定创建新对话并等待持久化完成。
+    ///
+    /// 与 `projectPath` 版本的区别：`ProjectBinding` 能表达「明确不绑定」。
+    /// 子代理会话必须继承父会话的绑定意图——父会话未绑定项目时，子会话
+    /// 不能回退到创建时刻的当前项目。
+    func createConversationAndWait(
+        title: String?,
+        binding: ProjectBinding,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID
+
     /// Creates a conversation with an optional parent conversation.
     func createConversation(
         title: String?,
@@ -472,6 +484,23 @@ public extension ConversationManaging {
             title: title,
             projectPath: projectPath,
             modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    /// 默认实现：没有持久化层的实现直接从同步接口返回。
+    func createConversationAndWait(
+        title: String?,
+        binding: ProjectBinding,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID {
+        let parsed = modelID.flatMap(LLMModelID.init(rawValue:))
+        return try createConversation(
+            title: title,
+            binding: binding,
+            providerID: parsed?.providerID,
+            modelName: parsed?.modelID,
             parentConversationID: parentConversationID
         )
     }
