@@ -50,7 +50,7 @@ Lumi 聊天区**空态**实现包：未选中会话，或当前会话没有可�
 | N 个文件有未提交改动 | `GitRepositoryReading.status` | 打开 Git 面板 |
 | 上次在这里：<会话标题> · 多久前 | `ConversationManaging.fetchConversationPage(projectPath:)` | 回到该会话 |
 
-展开后另有「本项目会话数」与关键文件标签（`Package.swift` / `README.md` 等）。
+展开后另有「本项目会话数」。
 
 **每一行都必须可点**：一行状态如果既不能点、又不表达任何可执行动作，
 它就是噪音。因此模型层只产出**带动作**的行，拿不到数据的行直接不渲染。

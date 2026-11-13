@@ -406,23 +406,6 @@ struct ProjectContextTests {
         #expect(detail.value.contains("2"), "别的项目的会话不该被算进来")
     }
 
-    @Test("notable entry files become labels")
-    func notableFilesBecomeLabels() async throws {
-        let root = try makeProject(files: ["Package.swift", "README.md", "AGENTS.md", "random.bin"])
-        defer { try? FileManager.default.removeItem(at: root) }
-
-        let provider = DefaultProjectProvider()
-        try await provider.openProject(at: root.path, reason: .userSelected)
-
-        let model = ProjectContextViewModel(project: provider, conversations: nil, projectRAG: nil, git: nil)
-        await model.loadIfNeeded()
-
-        #expect(model.keyFiles.contains("Package.swift"))
-        #expect(model.keyFiles.contains("README.md"))
-        #expect(model.keyFiles.contains("AGENTS.md"))
-        #expect(!model.keyFiles.contains("random.bin"), "无关文件不该出现在标签里")
-    }
-
     @Test("without a project everything is cleared")
     func noProjectClearsEverything() async throws {
         let provider = DefaultProjectProvider()

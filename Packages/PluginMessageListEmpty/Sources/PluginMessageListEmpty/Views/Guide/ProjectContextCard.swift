@@ -136,46 +136,28 @@ struct ProjectContextCard: View {
         .buttonStyle(.plain)
     }
 
-    /// 详情：键值对 + 关键文件标签。
+    /// 详情：键值对。
     ///
     /// 卡片不再提供折叠开关——项目上下文本来就少，多一次点击才看到信息
     /// 只会把它藏起来。默认展开，内容为空时整段不渲染。
     @ViewBuilder
     private var detail: some View {
-        if !model.details.isEmpty || !model.keyFiles.isEmpty {
+        if !model.details.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Divider()
                     .overlay(theme.primary.opacity(0.18))
 
-                if !model.details.isEmpty {
-                    VStack(alignment: .leading, spacing: 5) {
-                        ForEach(model.details) { item in
-                            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                Text(item.label)
-                                    .font(.system(size: 11.5))
-                                    .foregroundStyle(theme.textSecondary)
-                                    .frame(width: 92, alignment: .leading)
-                                Text(item.value)
-                                    .font(.system(size: 11.5))
-                                    .foregroundStyle(theme.textPrimary)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                }
-
-                if !model.keyFiles.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(model.keyFiles, id: \.self) { file in
-                            Text(file)
-                                .font(.system(size: 11, design: .monospaced))
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(model.details) { item in
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text(item.label)
+                                .font(.system(size: 11.5))
                                 .foregroundStyle(theme.textSecondary)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 3)
-                                .background {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(theme.textPrimary.opacity(0.05))
-                                }
+                                .frame(width: 92, alignment: .leading)
+                            Text(item.value)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
                         }
                     }
                 }
