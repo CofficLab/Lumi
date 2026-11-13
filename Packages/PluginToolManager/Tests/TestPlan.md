@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 146 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 160 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 149
+测试文件: 14 个，用例总数: 160
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -66,6 +66,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **后台任务必须挂在发起它的会话上**：生产路径从 `ToolExecutionContext.conversationID` 取会话；无上下文的 `execute(arguments:)` 路径退回**当前选中的会话**。用随机 UUID 会让完成通知投递到一个不存在的会话——通知不丢，但模型永远收不到。
   - **输出路径必须是 read_file 能直接解析的绝对路径**：`WorkspacePathResolver` 对绝对路径直接返回，因此模型只需把通知里的路径原样传给 `read_file`。
   - **取消回合不杀后台任务，删除会话才杀**：前者是后台化的意义所在；后者见「后台任务」小节。
+- **WorkspacePathResolver**（11 条）：由 `relativePathResolvesInsideWorkspaceWithoutTrailingSlash`、`writeFileToolWritesRelativePathInsideWorkspace`、`readFileToolDoesNotReadParentFileForRelativePath` 等用例锁定；改动路径解析或 read/write/edit 工具时优先跑 `WorkspacePathResolverTests`。工作区根必须按目录 URL 解析（`isDirectory: true`），相对路径不得落到项目父目录（**#140**）；绝对路径原样返回，nil/空白根回退到当前目录。注意 `URL(fileURLWithPath:)` 会 stat 已存在的目录从而掩盖该 bug，回归用例须用「磁盘上不存在的根」或父目录同名诱饵。
 
 ## 测试用例清单
 
@@ -221,27 +222,38 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 147 | 后台任务 | 进程内任务完成后发出恰好一次完成事件，输出落盘可读尾部（#1313） | 登记一个进程内任务并写入结论 | finishInProcess(exitCode: 0) | 状态 completed、完成事件恰好一次、输出文件与尾部可读 | P0 | ✅ 已覆盖 | `inProcessTaskFinishesExactlyOnce` |
 | 148 | 后台任务 | 进程内任务被停止后，迟到的完成写入不再发第二次事件（#1313） | 进程内任务运行中 | stop 之后再 finishInProcess | 完成事件仍只有一次且状态保持 stopped | P0 | ✅ 已覆盖 | `inProcessStopThenLateFinishEmitsOnce` |
 | 149 | 后台任务 | 进程内任务失败以非零退出码记录（#1313） | 进程内任务写入失败文案 | finishInProcess(exitCode: 1) | 状态 failed、退出码 1、完成事件恰好一次 | P1 | ✅ 已覆盖 | `inProcessFailureRecordsNonZeroExitCode` |
+| 150 | WorkspacePathResolver | 无尾斜杠且磁盘不存在的工作区根下，相对路径必须落在项目内（**#140**） | — | resolve("note.txt", "/tmp/project") | /tmp/project/note.txt | P0 | ✅ 已覆盖 | `relativePathResolvesInsideWorkspaceWithoutTrailingSlash` |
+| 151 | WorkspacePathResolver | 带尾斜杠的工作区根同样落在项目内 | — | resolve("note.txt", "/tmp/project/") | /tmp/project/note.txt | P1 | ✅ 已覆盖 | `relativePathResolvesInsideWorkspaceWithTrailingSlash` |
+| 152 | WorkspacePathResolver | 嵌套相对路径落在项目内 | — | resolve("a/b.txt", "/tmp/project") | /tmp/project/a/b.txt | P1 | ✅ 已覆盖 | `nestedRelativePathResolvesInsideWorkspace` |
+| 153 | WorkspacePathResolver | 绝对路径原样返回，不受工作区根影响 | — | resolve("/etc/hosts", "/tmp/project") | /etc/hosts | P1 | ✅ 已覆盖 | `absolutePathIsReturnedUnchanged` |
+| 154 | WorkspacePathResolver | 工作区根为 nil 时回退到当前目录相对解析 | — | resolve("note.txt", nil) | 等于 cwd 相对标准化路径 | P2 | ✅ 已覆盖 | `nilWorkspaceRootResolvesRelativeToCurrentDirectory` |
+| 155 | WorkspacePathResolver | 工作区根为空白时回退到当前目录相对解析 | — | resolve("note.txt", "   ") | 等于 cwd 相对标准化路径 | P2 | ✅ 已覆盖 | `blankWorkspaceRootResolvesRelativeToCurrentDirectory` |
+| 156 | WorkspacePathResolver | ~ 路径展开到用户主目录 | — | resolve("~/note.txt", "/tmp/project") | NSHomeDirectory()/note.txt | P2 | ✅ 已覆盖 | `tildePathIsExpandedToHomeDirectory` |
+| 157 | WorkspacePathResolver | 父级 traversal 相对工作区标准化 | — | resolve("../sibling.txt", "/tmp/project") | /tmp/sibling.txt | P2 | ✅ 已覆盖 | `parentTraversalIsStandardizedAgainstWorkspace` |
+| 158 | WorkspacePathResolver | write_file 相对路径写入项目内而非父目录（**#140**） | 临时容器，项目根不预创建 | 注入根 provider 后 write_file("note.txt") | project/note.txt 存在且内容正确，父目录无该文件 | P0 | ✅ 已覆盖 | `writeFileToolWritesRelativePathInsideWorkspace` |
+| 159 | WorkspacePathResolver | read_file 相对路径不得读取父目录同名诱饵（**#140**） | 项目根不存在，父目录 note.txt=outside | 注入根 provider 后 read_file("note.txt") | 不返回 outside（指向项目内不存在文件而抛错） | P0 | ✅ 已覆盖 | `readFileToolDoesNotReadParentFileForRelativePath` |
+| 160 | WorkspacePathResolver | edit_file 相对路径不得修改父目录同名诱饵（**#140**） | 项目根不存在，父目录 note.txt=outside | 注入根 provider 后 edit_file old→new | 父目录诱饵原样未动 | P0 | ✅ 已覆盖 | `editFileToolDoesNotModifyParentFileForRelativePath` |
 
-> 说明：全部 **149 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **160 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 43 / 43
-- P1: 已覆盖 100 / 100
-- P2: 已覆盖 6 / 6
-- **合计: 149 / 149**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 47 / 47
+- P1: 已覆盖 103 / 103
+- P2: 已覆盖 10 / 10
+- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（43 条）
-- **P1**: 其余功能性用例（100 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（47 条）
+- **P1**: 其余功能性用例（103 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 149 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 160 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -10,7 +10,9 @@ enum WorkspacePathResolver {
 
         if let workspaceRoot,
            !workspaceRoot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let rootURL = URL(fileURLWithPath: workspaceRoot).standardizedFileURL
+            // 工作区根必须按目录解析：不指定 isDirectory 时 URL(fileURLWithPath:)
+            // 会 stat 磁盘，根不存在时被当作文件，相对路径落到父目录（#140）。
+            let rootURL = URL(fileURLWithPath: workspaceRoot, isDirectory: true).standardizedFileURL
             return URL(fileURLWithPath: expandedPath, relativeTo: rootURL).standardizedFileURL
         }
 
