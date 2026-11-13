@@ -269,10 +269,12 @@ public struct WebFetchService: Sendable {
         }
 
         let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "text/plain"
+        // URLSession 自动跟随重定向后，相对链接必须以最终响应 URL 为基准解析，
+        // 否则子目录/版本文档里的相对地址会被解析到错误位置（#192）。
         let result = try processContent(
             data: data,
             contentType: contentType,
-            url: url,
+            url: httpResponse.url ?? url,
             statusCode: httpResponse.statusCode,
             duration: duration,
             prompt: prompt

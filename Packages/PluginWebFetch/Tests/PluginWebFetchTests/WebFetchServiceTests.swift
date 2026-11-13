@@ -50,6 +50,23 @@ struct WebFetchServiceTests {
         #expect(await requests.count() == 1)
     }
 
+    @Test("resolves relative links against the final post-redirect URL (#192)")
+    func resolvesRelativeLinksAgainstFinalURL() async throws {
+        let html = Data("<a href=\"guide.html\">Guide</a>".utf8)
+        let fetcher = StubFetcher(
+            data: html,
+            headers: ["Content-Type": "text/html; charset=utf-8"],
+            counter: RequestCounter(),
+            responseURL: URL(string: "https://example.com/docs/index.html")!
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: nil)
+
+        let result = try await service.fetch(urlString: "https://example.com/start")
+
+        #expect(result.contains("[Guide](https://example.com/docs/guide.html)"))
+        #expect(!result.contains("[Guide](https://example.com/guide.html)"))
+    }
+
     @Test("does not cache HTTP errors")
     func retriesFailedHTTPResponses() async {
         let requests = RequestCounter()
@@ -197,10 +214,12 @@ private struct StubFetcher: WebFetchFetching {
     var statusCode = 200
     var headers: [String: String] = ["Content-Type": "text/plain"]
     let counter: RequestCounter
+    /// 模拟 URLSession 自动跟随重定向后的最终响应 URL（默认与请求 URL 相同）。
+    var responseURL: URL?
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         await counter.record()
-        let url = request.url ?? URL(string: "https://example.com")!
+        let url = responseURL ?? request.url ?? URL(string: "https://example.com")!
         let response = HTTPURLResponse(
             url: url,
             statusCode: statusCode,

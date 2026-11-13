@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 95
+测试文件: 13 个，用例总数: 96
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -44,6 +44,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkProviderResponseHeaderTimeout**（1 条）：由 `stalledResponseHeaderTimeoutSurvivesRetryClassification` 锁定兜底超时必须带 `NSURLErrorTimedOut`；改动流式响应头超时或错误归一化时优先跑对应测试文件。
+- **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
@@ -149,27 +150,28 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 93 | DownloadFileToolExchangeLogging | 成功下载写入一条 HTTP exchange（**回归 #977**） | 注入返回 200 + 正文的下载桩，配置临时 exchange store | 调用 `network_download_file` | 记录 1 条 GET，URL/状态码/响应正文/完成时间/耗时齐全 | P1 | ✅ 已覆盖 | `successfulDownloadIsRecordedInExchangeLog` |
 | 94 | DownloadFileToolExchangeLogging | 网络失败下载写入带错误的 HTTP exchange（**回归 #977**） | 注入抛 `URLError(.timedOut)` 的下载桩 | 调用 `network_download_file` | 仍然记录 1 条 exchange，errorDomain/errorCode 为 NSURLError 超时，状态码为空 | P1 | ✅ 已覆盖 | `failedDownloadIsRecordedWithError` |
 | 95 | DownloadFileToolExchangeLogging | 非 2xx 下载写入带状态码的 HTTP exchange（**回归 #977**） | 注入返回 500 + 正文的下载桩 | 调用 `network_download_file` | 记录 1 条 exchange，状态码 500 且保留响应正文 | P1 | ✅ 已覆盖 | `non2xxDownloadIsRecordedWithStatus` |
+| 96 | NetworkProviderRedirectURL | 重定向后 request 返回最终响应 URL，供相对链接解析（**回归 #192**） | 注入 `/start` 302 → `/docs/index.html` 200 的 URLProtocol 桩 | 调用 `NetworkProvider.request` | 状态码 200，`response.url` 为 `/docs/index.html` 而非原始请求 URL | P1 | ✅ 已覆盖 | `requestReturnsFinalURLAfterRedirect` |
 
-> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **96 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 34 / 34
-- P1: 已覆盖 55 / 55
+- P1: 已覆盖 56 / 56
 - P2: 已覆盖 6 / 6
-- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
+- **合计: 96 / 96**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（55 条）
+- **P1**: 其余功能性用例（56 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 96 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -85,7 +85,9 @@ public final class NetworkProvider: NetworkProviding {
             statusCode: httpResponse.statusCode,
             headers: Self.headers(from: httpResponse),
             body: data,
-            url: request.url
+            // URLSession 自动跟随重定向后，响应 URL 才是最终地址；回写请求 URL
+            // 会让上层（如 WebFetch 解析相对链接）拿到重定向前的错误基准（#192）。
+            url: httpResponse.url ?? request.url
         )
     }
 
