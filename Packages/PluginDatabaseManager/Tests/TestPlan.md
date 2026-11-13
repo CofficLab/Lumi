@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 83
+测试文件: 6 个，用例总数: 86
 
 核心组件（源码目录）:
 - `Agent/`
@@ -45,6 +45,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseAgentToolServiceConnectionTests**（1 条）：真实 SQLite 连接复用规则，由 `queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited` 锁定。：由 `readonlySQLAcceptsSelect`、`readonlySQLPreservesExistingLimit`、`readonlySQLAcceptsPragmaForSQLite` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **只读策略**（10 条）：由 `readonlySQLAllowsWriteKeywordInsideStringLiteral`、`readonlySQLStillRejectsWriteKeywordOutsideLiteral` 等用例锁定；改动只读 SQL 判定或字面量/注释剥离时优先跑对应测试文件。
 - **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
+- **PostgreSQL 对象列举默认 schema**（3 条）：由 `loadObjectsUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadRoutinesUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadObjectsBindsExplicitSchemaAsLiteral` 锁定（**回归 #275**）：未指定 schema 时表/视图/函数列举必须调用 `current_schema()` 函数而非字符串字面量，否则侧边栏漏掉当前 schema 的全部对象；显式 schema 仍按转义字面量过滤。改动 `PostgreSQLIntrospector.loadObjects` 的 schema 过滤时优先跑对应测试文件。
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DatabaseViewModelConnectionRace**（4 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`staleSQLiteTablesDoNotOverwriteNewDatabase`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询/旧表列表覆盖当前连接状态，以及 Reload 命中旧结构缓存。
@@ -150,26 +151,34 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 82 | 空行插入 | SQLite 空行插入生成 DEFAULT VALUES | 带主键的表 t | `addInsert()` 后 `generatedInsertStatements(for: .sqlite)` | 等于 `INSERT INTO "t" DEFAULT VALUES;` | P1 | ✅ 已覆盖 | `sqliteEmptyInsertUsesDefaultValues` |
 | 83 | 空行插入 | PostgreSQL 带 schema 的空行插入仍用 DEFAULT VALUES 且限定名正确 | schema=public 的表 t | `addInsert()` 后 `generatedInsertStatements(for: .postgresql)` | 等于 `INSERT INTO "public"."t" DEFAULT VALUES;` | P1 | ✅ 已覆盖 | `postgresEmptyInsertWithSchemaUsesDefaultValues` |
 
-> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
+### PostgreSQL 对象列举的默认 schema（回归 #275）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 84 | 对象列举默认 schema | 未指定 schema 时表/视图列举必须调用 current_schema() 函数，不得当成字符串字面量（回归 #275） | 假 PG 连接记录 SQL | `loadObjects(of: .table, schema: nil)` | SQL 含 `table_schema = current_schema()`，不含 `table_schema = 'current_schema()'` | P0 | ✅ 已覆盖 | `loadObjectsUsesCurrentSchemaFunctionWhenSchemaUnspecified` |
+| 85 | 对象列举默认 schema | 未指定 schema 时函数/存储过程列举必须调用 current_schema() 函数（回归 #275） | 假 PG 连接记录 SQL | `loadObjects(of: .function, schema: nil)` | SQL 含 `n.nspname = current_schema()`，不含 `n.nspname = 'current_schema()'` | P0 | ✅ 已覆盖 | `loadRoutinesUsesCurrentSchemaFunctionWhenSchemaUnspecified` |
+| 86 | 对象列举默认 schema | 显式指定 schema 时仍按转义后的字符串字面量过滤 | 假 PG 连接记录 SQL | `loadObjects(of: .table, schema: "public")` | SQL 含 `table_schema = 'public'`，不含 `current_schema()` | P1 | ✅ 已覆盖 | `loadObjectsBindsExplicitSchemaAsLiteral` |
+
+> 说明：全部 **86 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 40 / 40
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 42 / 42
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 1 / 1
-- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
+- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（40 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（42 条）
+- **P1**: 其余功能性用例（43 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
