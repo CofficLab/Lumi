@@ -232,9 +232,9 @@ public actor AgentRulesService {
             )
         }
 
-        // 确保文件名以 .md 结尾
+        // 确保文件名以 .md 结尾，并把写入目标限制在规则根目录内（#347）。
         let finalFilename = filename.hasSuffix(".md") ? filename : "\(filename).md"
-        let fileURL = directoryURL.appending(path: finalFilename)
+        let fileURL = try safeRuleFileURL(in: directoryURL, filename: finalFilename)
 
         // 检查文件是否已存在
         guard !FileManager.default.fileExists(atPath: fileURL.path()) else {
@@ -277,6 +277,40 @@ public actor AgentRulesService {
     }
 
     // MARK: - Private Helpers
+
+    /// 把规则写入目标限制在规则根目录内（回归 #347）。
+    ///
+    /// `filename` 直接拼到 `.lumi/rules` 后面，`../../escaped` 之类的相对路径会
+    /// 越界写到项目根甚至更外层。这里拒绝绝对路径与 `..` 成分，并在标准化、解析
+    /// 符号链接后再次确认目标仍落在根目录内，否则抛错而不是静默越界写入。
+    private func safeRuleFileURL(in directoryURL: URL, filename: String) throws -> URL {
+        guard !filename.isEmpty, !filename.hasPrefix("/") else {
+            throw AgentRulesError.pathTraversal(filename)
+        }
+
+        let components = filename.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        guard !components.contains("..") else {
+            throw AgentRulesError.pathTraversal(filename)
+        }
+
+        let lexicalRoot = directoryURL.standardizedFileURL
+        let candidate = lexicalRoot.appendingPathComponent(filename).standardizedFileURL
+        guard candidate.path == lexicalRoot.path || candidate.path.hasPrefix(lexicalRoot.path + "/") else {
+            throw AgentRulesError.pathTraversal(filename)
+        }
+
+        // 解析后的路径也必须留在根目录内，避免经符号链接目录越界。
+        // 叶子文件尚不存在，`resolvingSymlinksInPath` 不会解析它途经的符号链接
+        // 目录，所以先解析已存在的父目录再拼回叶子名，才能真正发现链接逃逸。
+        let resolvedRoot = lexicalRoot.resolvingSymlinksInPath().standardizedFileURL
+        let resolvedParent = candidate.deletingLastPathComponent().resolvingSymlinksInPath().standardizedFileURL
+        let resolved = resolvedParent.appendingPathComponent(candidate.lastPathComponent).standardizedFileURL
+        guard resolved.path == resolvedRoot.path || resolved.path.hasPrefix(resolvedRoot.path + "/") else {
+            throw AgentRulesError.pathTraversal(filename)
+        }
+
+        return candidate
+    }
 
     /// 规则 ID 等于文件名去掉最后一个路径扩展名；不能删除文件名内部的 `.md` 片段，
     /// 否则 `foo.md` 与 `foo.md.md` 会得到相同的公开 ID。
@@ -341,6 +375,7 @@ public enum AgentRulesError: LocalizedError {
     case fileNotFound(String)
     case fileAlreadyExists(String)
     case invalidFileFormat(String)
+    case pathTraversal(String)
 
     public var errorDescription: String? {
         switch self {
@@ -356,6 +391,8 @@ public enum AgentRulesError: LocalizedError {
             return "Rule file already exists: \(path)"
         case .invalidFileFormat(let message):
             return "Invalid file format: \(message)"
+        case .pathTraversal(let filename):
+            return "Rule filename must stay within the rules directory: \(filename)"
         }
     }
 }
