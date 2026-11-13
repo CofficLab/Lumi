@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 22 条用例。
+ProviderAgentLoop 的实现包，包含 13 个主要类型；当前测试覆盖 25 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 22
+测试文件: 5 个，用例总数: 25
 
 ## 公开 API
 
@@ -23,6 +23,7 @@ ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 
 - `AgentTurnResumeRequest`
 - `DefaultAgentLoopObserverHandle`
 - `DefaultAgentLoopProvider`
+- `SubagentToolPolicy`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -32,6 +33,7 @@ ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 
 - **综合**（13 条）：由 `networkFailureIsRetryable`、`systemTLSFailureIsRetryable`、`classifiesHTTPFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ThinkingDeltaStage**（1 条）：由 `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` 锁定；改动流式阶段分派时优先跑对应测试文件。
 - **DefaultAgentLoopToolCapability**（2 条）：由 `requestOmitsToolsWhenModelDoesNotSupportThem`、`requestKeepsToolsWhenModelSupportsThem` 锁定；改动请求组装的工具过滤时优先跑对应测试文件。
+- **SubagentToolPolicy**（3 条）：由 `childToolsExcludeDelegationToolItself`、`childToolsKeepOnlyParallelReadOnlyInOrder`、`childToolsOfEmptyRegistryIsEmpty` 锁定；改动子会话工具过滤契约时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -59,27 +61,30 @@ ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 20 | ThinkingDeltaStage | 端到端：思考增量不会让流式阶段翻成 generating | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` |
 | 21 | DefaultAgentLoopToolCapability | 模型声明不支持工具时请求不得带工具 Schema | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `requestOmitsToolsWhenModelDoesNotSupportThem` |
 | 22 | DefaultAgentLoopToolCapability | 模型声明支持工具时请求仍带工具 Schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestKeepsToolsWhenModelSupportsThem` |
+| 23 | SubagentToolPolicy | 子会话工具表不得包含委托工具自身 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `childToolsExcludeDelegationToolItself` |
+| 24 | SubagentToolPolicy | 子会话工具表只保留只读并发工具且保持注册顺序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `childToolsKeepOnlyParallelReadOnlyInOrder` |
+| 25 | SubagentToolPolicy | 空工具表过滤后仍为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `childToolsOfEmptyRegistryIsEmpty` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 12 / 12
-- P2: 已覆盖 1 / 1
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 13 / 13
+- P2: 已覆盖 2 / 2
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（12 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（13 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

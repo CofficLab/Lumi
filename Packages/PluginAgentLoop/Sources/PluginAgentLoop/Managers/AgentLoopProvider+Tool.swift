@@ -654,6 +654,11 @@ extension AgentLoopManager {
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
         var tools = automationLevel.allowsTools ? rawTools : []
+        // 子代理会话只拿只读工具，且永远不含 run_subagent 自身（#1313）：
+        // 过滤规则与委托工具注册共用 SubagentToolPolicy，防止递归与副作用。
+        if await conversations.fetchConversation(id: conversationID)?.parentConversationID != nil {
+            tools = SubagentToolPolicy.childTools(from: tools)
+        }
         // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
         // 与当前回合是否允许调用工具无关。
         let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)

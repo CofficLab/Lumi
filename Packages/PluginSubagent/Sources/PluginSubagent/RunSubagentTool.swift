@@ -13,14 +13,22 @@ import ProviderToolManager
 /// 3. 等待子回合终态，取最后一条助手消息作为结论，附用量摘要；
 /// 4. 子回合的完整转录留在子会话里，绝不进入父会话历史。
 ///
+/// 并行与防递归（#1313 Task 3）：声明 `.parallelReadOnly`，同一回合的
+/// 多个委托可由调度器并发执行；子会话工具表经 `SubagentToolPolicy`
+/// 过滤为只读且不含本工具，执行入口也拒绝来自子会话的调用。
+/// 取消父 Job 时，`runTurn` 的等待器自带取消传播，会级联取消子回合。
+///
 /// 失败一律 `throw ToolExecutionError`，由 ToolExecutionManager 标记 isError。
 public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
-    public static let toolName = "run_subagent"
+    public static let toolName = SubagentToolPolicy.delegationToolName
 
     /// 回流到父上下文的结论字符上限；超出部分截断，避免撑爆父上下文。
     public static let conclusionCharacterLimit = 8_000
 
     public let name = Self.toolName
+
+    /// 委托本身不产生副作用（子会话隔离），允许同一回合内并发派发。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
@@ -98,6 +106,15 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             )
         }
         let label = Self.string(from: arguments, key: "description") ?? "Subagent task"
+
+        // 防递归兜底：子会话工具表虽已过滤掉本工具，执行入口仍须拒绝
+        // 来自子会话的调用，杜绝任何路径下的嵌套委托。
+        if await conversations.fetchConversation(id: context.conversationID)?.parentConversationID != nil {
+            throw ToolExecutionError.executionFailed(
+                toolName: Self.toolName,
+                reason: "run_subagent cannot be called from a subagent conversation (recursion is not allowed)."
+            )
+        }
 
         let bridge = SubagentConversationBridge(conversations: conversations)
         let childID = try await bridge.createChildConversation(
