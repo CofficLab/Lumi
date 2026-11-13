@@ -196,7 +196,7 @@ extension EditorState {
         // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
         invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        applyTotalLineCountAfterReplacement(of: result.snapshot.text)
         if viewportVisibleLineRange.isEmpty {
             resetViewportObservation(totalLines: totalLines)
         }

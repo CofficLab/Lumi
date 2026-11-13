@@ -255,6 +255,7 @@ struct ChatGPTListView: View {
     private var projection: ChatGPTTurnProjection {
         projectionStore.snapshot(
             history: viewModel.historyRows,
+            historyRevision: viewModel.historyRevision,
             streaming: viewModel.streamingRow,
             activity: viewModel.activityMessage
         )

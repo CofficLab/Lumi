@@ -77,6 +77,14 @@ final class ListV4ViewModel: ObservableObject {
     /// 稳定历史展示行：落库消息快照/结构化插入消息 + 状态行。
     @Published private(set) var historyRows: [Message] = []
 
+    /// 历史版本号：每次 `historyRows` 被真正替换时递增。
+    ///
+    /// - Important: 投影缓存用这个**版本号**判断历史是否变化，
+    ///   而不是对全部历史内容做哈希。哈希代价是 O(总历史字节)，
+    ///   流式刷新每帧都要做一次，长会话下会让主 actor 持续重扫整段历史
+    ///   （issue #1183）。版本号由历史的所有者维护，O(1) 且语义精确。
+    private(set) var historyRevision: UInt64 = 0
+
     /// 流式临时行（独立于历史行）。语义同 V2；详见 `ListV2ViewModel.streamingRow`。
     @Published private(set) var streamingRow: Message?
     @Published private(set) var activityMessage: Message?
@@ -472,6 +480,8 @@ final class ListV4ViewModel: ObservableObject {
         )
         if historyRows != rows {
             historyRows = rows
+            // 历史真的换了：推进版本号，让投影缓存知道要重建。
+            historyRevision &+= 1
         }
     }
 }

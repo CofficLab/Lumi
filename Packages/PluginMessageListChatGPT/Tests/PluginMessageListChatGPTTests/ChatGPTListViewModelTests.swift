@@ -300,13 +300,18 @@ struct ChatGPTListViewModelTests {
             )
         }
 
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
         #expect(store.historyRebuildCount == 1)
 
         // 50 次流式快照：历史没有变，不应重建。
         for _ in 0..<50 {
             let streaming = makeStubMessage(conversationID: UUID(), role: .assistant, content: "生成中")
-            _ = store.snapshot(history: history, streaming: streaming, activity: nil)
+            _ = store.snapshot(
+                history: history,
+                historyRevision: 1,
+                streaming: streaming,
+                activity: nil
+            )
         }
         #expect(store.historyRebuildCount == 1)
     }
@@ -321,16 +326,26 @@ struct ChatGPTListViewModelTests {
             role: .assistant,
             content: "AAAA"
         )
-        var projection = store.snapshot(history: [first], streaming: nil, activity: nil)
+        var projection = store.snapshot(
+            history: [first],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
         #expect(projection.turns.first?.assistantCopyText == "AAAA")
 
-        // 等长替换：长度不变，但内容变了。
+        // 等长替换：长度不变，但内容变了。ViewModel 推进版本号后重建投影。
         let second = makeStubMessage(
             conversationID: conversationID,
             role: .assistant,
             content: "BBBB"
         )
-        projection = store.snapshot(history: [second], streaming: nil, activity: nil)
+        projection = store.snapshot(
+            history: [second],
+            historyRevision: 2,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(store.historyRebuildCount == 2)
         #expect(projection.turns.first?.assistantCopyText == "BBBB")

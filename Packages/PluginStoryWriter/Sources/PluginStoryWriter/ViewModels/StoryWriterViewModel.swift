@@ -17,6 +17,12 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     @Published public private(set) var stories: [Story] = []
     @Published public var currentStoryID: UUID?
     @Published public private(set) var chapters: [Chapter] = []
+
+    /// 全部章节的总字数。
+    ///
+    /// 故事编辑页原先在 body 里对所有章节求和，每次 synopsis 按键都要
+    /// 重新遍历全部章节正文（见 issue #1295）。这里在章节列表变化时更新一次。
+    public private(set) var totalWordCount: Int = 0
     @Published public private(set) var characters: [Character] = []
 
     /// Currently selected node in the outline (story, chapter, or character).
@@ -87,12 +93,21 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     private func loadStoryContent(id: UUID?) async {
         if let id {
-            chapters = await store.loadChapters(storyID: id)
+            let loaded = await store.loadChapters(storyID: id)
+            chapters = loaded
             characters = await store.loadCharacters(storyID: id)
         } else {
             chapters = []
             characters = []
         }
+        refreshTotalWordCount()
+    }
+
+    /// 按当前章节列表重算总字数。
+    ///
+    /// 只在章节列表变化时调用，不在每次按键时调用（见 issue #1295）。
+    private func refreshTotalWordCount() {
+        totalWordCount = chapters.reduce(0) { $0 + $1.wordCount }
     }
 
     public func createStory(title: String) async -> Story {
@@ -127,6 +142,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
         guard let storyID = currentStoryID else { return nil }
         guard let chapter = await store.createChapter(storyID: storyID, title: title) else { return nil }
         chapters.append(chapter)
+        refreshTotalWordCount()
         selectedNodeID = chapter.id
         selectedNodeKind = .chapter
         return chapter
@@ -136,6 +152,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
         guard let storyID = currentStoryID else { return }
         await store.deleteChapter(id: id, storyID: storyID)
         chapters.removeAll { $0.id == id }
+        refreshTotalWordCount()
         if selectedNodeID == id {
             selectedNodeID = currentStoryID
             selectedNodeKind = .story
@@ -147,6 +164,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
         if let idx = chapters.firstIndex(where: { $0.id == chapter.id }) {
             chapters[idx] = chapter
         }
+        refreshTotalWordCount()
     }
 
     // MARK: - Characters

@@ -240,6 +240,7 @@ struct ListV4View: View {
     private var projection: ZCodeTurnProjection {
         projectionStore.snapshot(
             history: viewModel.historyRows,
+            historyRevision: viewModel.historyRevision,
             streaming: viewModel.streamingRow,
             activity: viewModel.activityMessage
         )
