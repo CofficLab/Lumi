@@ -20,6 +20,24 @@
             "state" : "translated",
             "value" : "原生 SwiftUI 思维导图编辑器。可在聊天中用 Agent 工具生长思维树，或直接在画布上编辑。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生 SwiftUI 思維導圖編輯器。可在聊天中用 Agent 工具生長思維樹，或直接在畫布上編輯。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生 SwiftUI 思維導圖編輯器。可在聊天中用 Agent 工具生長思維樹，或直接在畫布上編輯。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生 SwiftUI 思維導圖編輯器。可在聊天中用 Agent 工具生長思維樹，或直接在畫布上編輯。"
+          }
         }
       }
     },
@@ -36,6 +54,24 @@
             "state" : "translated",
             "value" : "Agent 驱动"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動"
+          }
         }
       }
     },
@@ -48,6 +84,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 工具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 工具"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 工具"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agent 工具"
@@ -69,6 +123,24 @@
             "state" : "translated",
             "value" : "Agent 驱动导图"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 驅動導圖"
+          }
         }
       }
     },
@@ -84,6 +156,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在聊天中让 Agent 创建导图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中讓 Agent 創建導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中讓 Agent 創建導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中讓 Agent 創建導圖"
           }
         }
       }
@@ -101,6 +191,24 @@
             "state" : "translated",
             "value" : "让 Agent 创建一个思维导图。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 Agent 創建一個思維導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 Agent 創建一個思維導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 Agent 創建一個思維導圖。"
+          }
         }
       }
     },
@@ -113,6 +221,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "基本操作"
@@ -133,6 +259,24 @@
             "state" : "translated",
             "value" : "双侧"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側"
+          }
         }
       }
     },
@@ -148,6 +292,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "双侧树"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側樹"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側樹"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側樹"
           }
         }
       }
@@ -165,6 +327,24 @@
             "state" : "translated",
             "value" : "底部工具栏：将当前思维导图导出为 Markdown 或 JSON。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底部工具欄：將當前思維導圖導出為 Markdown 或 JSON。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底部工具欄：將當前思維導圖導出為 Markdown 或 JSON。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底部工具欄：將當前思維導圖導出為 Markdown 或 JSON。"
+          }
         }
       }
     },
@@ -180,6 +360,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "画布"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布"
           }
         }
       }
@@ -198,6 +396,24 @@
             "state" : "translated",
             "value" : "画布编辑"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布編輯"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布編輯"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布編輯"
+          }
         }
       }
     },
@@ -213,6 +429,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "画布：显示当前思维导图的节点；点击节点即可选中，再次点击可在原位编辑文字。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布：顯示當前思維導圖的節點；點擊節點即可選中，再次點擊可在原位編輯文字。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布：顯示當前思維導圖的節點；點擊節點即可選中，再次點擊可在原位編輯文字。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布：顯示當前思維導圖的節點；點擊節點即可選中，再次點擊可在原位編輯文字。"
           }
         }
       }
@@ -230,6 +464,24 @@
             "state" : "translated",
             "value" : "中心主题"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中心主題"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中心主題"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中心主題"
+          }
         }
       }
     },
@@ -245,6 +497,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "子节点"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子節點"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子節點"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子節點"
           }
         }
       }
@@ -262,6 +532,24 @@
             "state" : "translated",
             "value" : "点击节点选中；再次点击即可输入文字。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中；再次點擊即可輸入文字。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中；再次點擊即可輸入文字。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中；再次點擊即可輸入文字。"
+          }
         }
       }
     },
@@ -277,6 +565,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "点击节点选中，再次点击原位编辑文字。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中，再次點擊原位編輯文字。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中，再次點擊原位編輯文字。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊節點選中，再次點擊原位編輯文字。"
           }
         }
       }
@@ -294,6 +600,24 @@
             "state" : "translated",
             "value" : "折叠"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "折疊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "折疊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "折疊"
+          }
         }
       }
     },
@@ -306,6 +630,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "核心能力"
@@ -325,6 +667,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在对话中根据主题创建思维导图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中根據主題創建思維導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中根據主題創建思維導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中根據主題創建思維導圖。"
           }
         }
       }
@@ -376,6 +736,24 @@
             "state" : "translated",
             "value" : "在聊天中用自然语言创建与生长导图。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中用自然語言創建與生長導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中用自然語言創建與生長導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中用自然語言創建與生長導圖。"
+          }
         }
       }
     },
@@ -392,6 +770,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "创建思维导图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
           }
         }
       }
@@ -410,6 +806,24 @@
             "state" : "translated",
             "value" : "创建思维导图"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "創建思維導圖"
+          }
         }
       }
     },
@@ -426,6 +840,24 @@
             "state" : "translated",
             "value" : "删除"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
+          }
         }
       }
     },
@@ -441,6 +873,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除当前思维导图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除當前思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除當前思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除當前思維導圖"
           }
         }
       }
@@ -459,6 +909,24 @@
             "state" : "translated",
             "value" : "在对话中描述一个主题、规划问题或 Markdown 大纲。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中描述一個主題、規劃問題或 Markdown 大綱。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中描述一個主題、規劃問題或 Markdown 大綱。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在對話中描述一個主題、規劃問題或 Markdown 大綱。"
+          }
         }
       }
     },
@@ -471,6 +939,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "向下"
@@ -491,6 +977,24 @@
             "state" : "translated",
             "value" : "编辑节点并导出当前思维导图。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯節點並導出當前思維導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯節點並導出當前思維導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯節點並導出當前思維導圖。"
+          }
         }
       }
     },
@@ -506,6 +1010,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
           }
         }
       }
@@ -523,6 +1045,24 @@
             "state" : "translated",
             "value" : "导出"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出"
+          }
         }
       }
     },
@@ -538,6 +1078,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出 JSON"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 JSON"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 JSON"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 JSON"
           }
         }
       }
@@ -555,6 +1113,24 @@
             "state" : "translated",
             "value" : "导出 Markdown"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
         }
       }
     },
@@ -570,6 +1146,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 界面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 界面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 界面佈局"
           }
         }
       }
@@ -587,6 +1181,24 @@
             "state" : "translated",
             "value" : "导入与导出"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入與導出"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入與導出"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入與導出"
+          }
         }
       }
     },
@@ -602,6 +1214,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "将大纲(如 Markdown 列表)导入为思维导图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將大綱(如 Markdown 列表)導入為思維導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將大綱(如 Markdown 列表)導入為思維導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將大綱(如 Markdown 列表)導入為思維導圖。"
           }
         }
       }
@@ -619,6 +1249,24 @@
             "state" : "translated",
             "value" : "导入大纲；导出 Markdown 或 JSON。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入大綱；導出 Markdown 或 JSON。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入大綱；導出 Markdown 或 JSON。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導入大綱；導出 Markdown 或 JSON。"
+          }
         }
       }
     },
@@ -635,6 +1283,24 @@
             "state" : "translated",
             "value" : "项目内"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內"
+          }
         }
       }
     },
@@ -650,6 +1316,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面說明"
           }
         }
       }
@@ -687,6 +1371,24 @@
             "state" : "translated",
             "value" : "导出 Markdown"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 Markdown"
+          }
         }
       }
     },
@@ -702,6 +1404,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "思维导图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
           }
         }
       }
@@ -756,6 +1476,24 @@
             "state" : "translated",
             "value" : "思维导图"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖"
+          }
         }
       }
     },
@@ -773,6 +1511,24 @@
             "state" : "translated",
             "value" : "思维导图按项目组织。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖按項目組織。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖按項目組織。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖按項目組織。"
+          }
         }
       }
     },
@@ -788,6 +1544,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "思维导图保存在当前项目的 `.lumi/mind-map` 中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 `.lumi/mind-map` 中。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 `.lumi/mind-map` 中。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 `.lumi/mind-map` 中。"
           }
         }
       }
@@ -806,6 +1580,24 @@
             "state" : "translated",
             "value" : "思维导图保存在当前项目中。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目中。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目中。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目中。"
+          }
         }
       }
     },
@@ -822,6 +1614,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "思维导图保存在当前项目的 .lumi 文件夹中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 .lumi 文件夾中。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 .lumi 文件夾中。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖保存在當前項目的 .lumi 文件夾中。"
           }
         }
       }
@@ -840,6 +1650,24 @@
             "state" : "translated",
             "value" : "思维导图随当前项目保存，仅在该项目中可用。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖隨當前項目保存，僅在該項目中可用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖隨當前項目保存，僅在該項目中可用。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思維導圖隨當前項目保存，僅在該項目中可用。"
+          }
         }
       }
     },
@@ -855,6 +1683,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "侧边栏中的「思维导图」标签页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的「思維導圖」標籤頁"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的「思維導圖」標籤頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的「思維導圖」標籤頁"
           }
         }
       }
@@ -872,6 +1718,24 @@
             "state" : "translated",
             "value" : "自由移动、折叠与修剪节点。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由移動、折疊與修剪節點。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由移動、折疊與修剪節點。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由移動、折疊與修剪節點。"
+          }
         }
       }
     },
@@ -888,6 +1752,24 @@
             "state" : "translated",
             "value" : "原生画布"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生畫布"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生畫布"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生畫布"
+          }
         }
       }
     },
@@ -901,6 +1783,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "新建"
@@ -921,6 +1821,24 @@
             "state" : "translated",
             "value" : "新分支"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新分支"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新分支"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新分支"
+          }
         }
       }
     },
@@ -936,6 +1854,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新思维导图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新思維導圖"
           }
         }
       }
@@ -954,6 +1890,24 @@
             "state" : "translated",
             "value" : "新节点"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新節點"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新節點"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新節點"
+          }
         }
       }
     },
@@ -971,6 +1925,24 @@
             "state" : "translated",
             "value" : "还没有思维导图"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有思維導圖"
+          }
         }
       }
     },
@@ -986,6 +1958,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "节点操作条"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條"
           }
         }
       }
@@ -1003,11 +1993,35 @@
             "state" : "translated",
             "value" : "节点操作条：选中节点后出现在底部，提供「子节点」「同级」「展开」/「折叠」与「删除」。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條：選中節點後出現在底部，提供「子節點」「同級」「展開」/「折疊」與「刪除」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條：選中節點後出現在底部，提供「子節點」「同級」「展開」/「折疊」與「刪除」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節點操作條：選中節點後出現在底部，提供「子節點」「同級」「展開」/「折疊」與「刪除」。"
+          }
         }
       }
     },
     "Node text" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Node text"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1047,6 +2061,24 @@
             "state" : "translated",
             "value" : "注意事项"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
         }
       }
     },
@@ -1062,6 +2094,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开一个项目以启用项目内存储。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開一個項目以啓用項目內存儲。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開一個項目以啓用項目內存儲。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開一個項目以啓用項目內存儲。"
           }
         }
       }
@@ -1079,6 +2129,24 @@
             "state" : "translated",
             "value" : "在侧边栏中打开「思维导图」标签页。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中打開「思維導圖」標籤頁。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中打開「思維導圖」標籤頁。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中打開「思維導圖」標籤頁。"
+          }
         }
       }
     },
@@ -1091,6 +2159,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "概述"
@@ -1111,6 +2197,24 @@
             "state" : "translated",
             "value" : "项目"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目"
+          }
         }
       }
     },
@@ -1126,6 +2230,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "项目内存储"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
           }
         }
       }
@@ -1144,6 +2266,24 @@
             "state" : "translated",
             "value" : "项目内存储位置。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲位置。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲位置。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲位置。"
+          }
         }
       }
     },
@@ -1160,6 +2300,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "项目内存储"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目內存儲"
           }
         }
       }
@@ -1178,6 +2336,24 @@
             "state" : "translated",
             "value" : "侧栏「思维导图」：项目文档列表（每行显示节点数量）与新建按钮。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側欄「思維導圖」：項目文檔列表（每行顯示節點數量）與新建按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側欄「思維導圖」：項目文檔列表（每行顯示節點數量）與新建按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側欄「思維導圖」：項目文檔列表（每行顯示節點數量）與新建按鈕。"
+          }
         }
       }
     },
@@ -1193,6 +2369,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重组结构"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重組結構"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重組結構"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重組結構"
           }
         }
       }
@@ -1211,6 +2405,24 @@
             "state" : "translated",
             "value" : "重置缩放"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置縮放"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置縮放"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置縮放"
+          }
         }
       }
     },
@@ -1228,6 +2440,24 @@
             "state" : "translated",
             "value" : "检查并扩展分支。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢查並擴展分支。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢查並擴展分支。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢查並擴展分支。"
+          }
         }
       }
     },
@@ -1240,6 +2470,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "向右"
@@ -1261,6 +2509,24 @@
             "state" : "translated",
             "value" : "作用域"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用域"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用域"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用域"
+          }
         }
       }
     },
@@ -1276,6 +2542,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请从左侧选择一个思维导图，或让 Agent 创建一个。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請從左側選擇一個思維導圖，或讓 Agent 創建一個。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請從左側選擇一個思維導圖，或讓 Agent 創建一個。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請從左側選擇一個思維導圖，或讓 Agent 創建一個。"
           }
         }
       }
@@ -1294,6 +2578,24 @@
             "state" : "translated",
             "value" : "选择节点来添加子节点或兄弟节点，也可以直接编辑文字。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇節點來添加子節點或兄弟節點，也可以直接編輯文字。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇節點來添加子節點或兄弟節點，也可以直接編輯文字。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇節點來添加子節點或兄弟節點，也可以直接編輯文字。"
+          }
         }
       }
     },
@@ -1311,6 +2613,24 @@
             "state" : "translated",
             "value" : "选择思维导图"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇思維導圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇思維導圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇思維導圖"
+          }
         }
       }
     },
@@ -1326,6 +2646,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同级"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同級"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同級"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同級"
           }
         }
       }
@@ -1343,6 +2681,24 @@
             "state" : "translated",
             "value" : "存储"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存儲"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存儲"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存儲"
+          }
         }
       }
     },
@@ -1358,6 +2714,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "根节点无法删除；如需删除，请从顶栏或侧栏列表删除整张导图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根節點無法刪除；如需刪除，請從頂欄或側欄列表刪除整張導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根節點無法刪除；如需刪除，請從頂欄或側欄列表刪除整張導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根節點無法刪除；如需刪除，請從頂欄或側欄列表刪除整張導圖。"
           }
         }
       }
@@ -1375,6 +2749,24 @@
             "state" : "translated",
             "value" : "本手册介绍「思维导图」的界面与基本操作：在画布上创建、编辑与组织思维导图。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「思維導圖」的界面與基本操作：在畫布上創建、編輯與組織思維導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「思維導圖」的界面與基本操作：在畫布上創建、編輯與組織思維導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「思維導圖」的界面與基本操作：在畫布上創建、編輯與組織思維導圖。"
+          }
         }
       }
     },
@@ -1390,6 +2782,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "整齐布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整齊佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整齊佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整齊佈局"
           }
         }
       }
@@ -1407,6 +2817,24 @@
             "state" : "translated",
             "value" : "顶栏"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄"
+          }
         }
       }
     },
@@ -1422,6 +2850,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顶栏：项目名称、当前思维导图和删除操作。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄：項目名稱、當前思維導圖和刪除操作。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄：項目名稱、當前思維導圖和刪除操作。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頂欄：項目名稱、當前思維導圖和刪除操作。"
           }
         }
       }
@@ -1439,6 +2885,24 @@
             "state" : "translated",
             "value" : "双侧平衡树布局，自动重排。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側平衡樹佈局，自動重排。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側平衡樹佈局，自動重排。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雙側平衡樹佈局，自動重排。"
+          }
         }
       }
     },
@@ -1454,6 +2918,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用节点操作条中的「子节点」与「同级」添加子节点或同级节点。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用節點操作條中的「子節點」與「同級」添加子節點或同級節點。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用節點操作條中的「子節點」與「同級」添加子節點或同級節點。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用節點操作條中的「子節點」與「同級」添加子節點或同級節點。"
           }
         }
       }
@@ -1471,6 +2953,24 @@
             "state" : "translated",
             "value" : "使用「删除」删除所选节点；使用顶栏的删除按钮删除整张导图。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「刪除」刪除所選節點；使用頂欄的刪除按鈕刪除整張導圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「刪除」刪除所選節點；使用頂欄的刪除按鈕刪除整張導圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「刪除」刪除所選節點；使用頂欄的刪除按鈕刪除整張導圖。"
+          }
         }
       }
     },
@@ -1486,6 +2986,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用「展开」/「折叠」展开或折叠子节点，使用缩放控制调整画布大小。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「展開」/「折疊」展開或折疊子節點，使用縮放控制調整畫布大小。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「展開」/「折疊」展開或折疊子節點，使用縮放控制調整畫布大小。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「展開」/「折疊」展開或折疊子節點，使用縮放控制調整畫布大小。"
           }
         }
       }
@@ -1504,6 +3022,24 @@
             "state" : "translated",
             "value" : "使用底部工具栏导出 Markdown 或 JSON。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用底部工具欄導出 Markdown 或 JSON。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用底部工具欄導出 Markdown 或 JSON。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用底部工具欄導出 Markdown 或 JSON。"
+          }
         }
       }
     },
@@ -1519,6 +3055,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
           }
         }
       }
@@ -1536,6 +3090,24 @@
             "state" : "translated",
             "value" : "让 AI 做什么"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 做什麼"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 做什麼"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 做什麼"
+          }
         }
       }
     },
@@ -1548,6 +3120,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
@@ -1569,6 +3159,24 @@
             "state" : "translated",
             "value" : "没有导图时，画布显示空状态及创建按钮。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有導圖時，畫布顯示空狀態及創建按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有導圖時，畫布顯示空狀態及創建按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有導圖時，畫布顯示空狀態及創建按鈕。"
+          }
         }
       }
     },
@@ -1582,6 +3190,24 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "放大"
@@ -1602,6 +3228,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缩小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小"
           }
         }
       }
