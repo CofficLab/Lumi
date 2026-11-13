@@ -14,6 +14,10 @@ import ProviderMessage
 
 extension MessageToolCall {
     /// Bridges `MessageToolCall` to KitAgentTool's registry-facing `ToolCall` model.
+    ///
+    /// 图片附件走 `ImageBase64Decoder` 缓存：工具结果里的截图往往很大
+    /// （一张 1.5 MB 的图解码一次约 1.6 ms），而这个桥接会在每次 SwiftUI
+    /// body 求值时被访问。
     var agentToolCall: ToolCall {
         ToolCall(
             id: id,
@@ -24,9 +28,45 @@ extension MessageToolCall {
                 ToolCallResult(
                     content: lumiResult.content,
                     images: lumiResult.imageAttachments.compactMap { attachment in
-                        guard let data = Data(base64Encoded: attachment.data) else { return nil }
+                        guard let data = ImageBase64Decoder.shared.decode(attachment.data) else { return nil }
                         return ImageAttachment(data: data, mimeType: attachment.mimeType)
                     },
+                    isError: lumiResult.isError,
+                    duration: lumiResult.duration,
+                    awaitingUserResponse: lumiResult.awaitingUserResponse,
+                    interactionState: lumiResult.interactionState?.agentInteractionState
+                )
+            },
+            displayDescription: displayDescription
+        )
+    }
+
+    /// 用于**渲染器匹配**的轻量桥接：不带结果图片。
+    ///
+    /// ## 为什么需要它
+    ///
+    /// 决定「这一行要不要交给自定义渲染器」时，每个渲染器的 `canRender`
+    /// 只读 `name` / `authorizationState` / `result?.content` /
+    /// `result?.awaitingUserResponse`——**从不读图片**。但完整桥接会把
+    /// 工具结果里的每张截图都 Base64 解码成二进制。
+    ///
+    /// 代价是实打实的：两张 1.5 MB 截图解码一次约 3.7 ms，而这段代码在
+    /// SwiftUI `body` 里，每次 body 求值都要付一次。匹配失败时结果被
+    /// 直接丢弃；匹配成功时渲染阶段又要重新解码一遍（Issue #1274）。
+    ///
+    /// 因此匹配阶段用这个不含图片的版本：**零解码**，且对 `canRender`
+    /// 而言信息完全等价。
+    var agentToolCallForMatching: ToolCall {
+        ToolCall(
+            id: id,
+            name: name,
+            arguments: arguments,
+            authorizationState: authorizationState.flatMap(ToolCallAuthorizationState.init(rawValue:)) ?? .pendingAuthorization,
+            result: result.map { lumiResult in
+                ToolCallResult(
+                    content: lumiResult.content,
+                    // 匹配阶段不携带图片：没有任何 `canRender` 会读它们。
+                    images: [],
                     isError: lumiResult.isError,
                     duration: lumiResult.duration,
                     awaitingUserResponse: lumiResult.awaitingUserResponse,

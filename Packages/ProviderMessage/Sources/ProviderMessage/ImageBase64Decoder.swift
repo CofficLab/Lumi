@@ -103,14 +103,22 @@ public final class ImageBase64Decoder: @unchecked Sendable {
 
     // MARK: - 公开方法
 
-    /// 每次**尝试**解码图片时递增的计数器（仅供测试观察）。
+    /// 每次**进入解码路径**时递增的计数器（仅供测试观察）。
     ///
     /// 生产路径不会使用它；它让测试无需注入回调即可观察「图片字节在
-    /// 什么时刻、哪个线程上被处理」。
+    /// 什么时刻、哪个线程上被处理」。缓存命中也会计入——因为那一刻图片
+    /// 字节同样被处理过。
     ///
     /// 计数器是**实例级**而非全局：全局可变状态会被并行运行的用例互相
     /// 干扰，导致断言随机失败。测试用独立实例即可完全隔离。
     public let decodeCounter = DecodeCounter()
+
+    /// 只统计**真正解码**（缓存未命中）的计数器（仅供测试观察）。
+    ///
+    /// 与 `decodeCounter` 的区别：后者统计「图片字节被处理的次数」，
+    /// 这里统计「Base64 解码实际发生了几次」。要断言「命中缓存后不再
+    /// 重复解码」时用这个。
+    public let actualDecodeCounter = DecodeCounter()
 
     /// 解码次数计数器。
     public final class DecodeCounter: @unchecked Sendable {
@@ -177,6 +185,7 @@ public final class ImageBase64Decoder: @unchecked Sendable {
         }
 
         guard let data = Data(base64Encoded: base64) else { return nil }
+        actualDecodeCounter.record()
         store(fingerprint: fingerprint, base64: base64, data: data)
         return data
     }
