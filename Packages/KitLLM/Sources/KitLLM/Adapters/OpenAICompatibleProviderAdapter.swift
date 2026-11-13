@@ -574,17 +574,16 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             // 三者并存时协议上并非歧义：字段键名互相独立，累加器也分别写入
             // reasoningContent / content / toolCalls，追加不会互相覆盖。
             if let toolCalls = delta["tool_calls"] as? [[String: Any]],
-               !toolCalls.isEmpty,
-               let toolChunk = parseToolCallDelta(
-                   toolCalls,
-                   stopReason: stopReason,
-                   inputTokens: inputTokens,
-                   outputTokens: outputTokens,
-                   cachedInputTokens: cachedInputTokens,
-                   cacheWriteInputTokens: cacheWriteInputTokens,
-                   cacheTotalInputTokens: inputTokens
-               ) {
-                chunks.append(toolChunk)
+               !toolCalls.isEmpty {
+                chunks.append(contentsOf: parseToolCallDelta(
+                    toolCalls,
+                    stopReason: stopReason,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens
+                ))
             }
 
             // 纯 stop_reason 结束信号
@@ -724,17 +723,22 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         cachedInputTokens: Int?,
         cacheWriteInputTokens: Int?,
         cacheTotalInputTokens: Int?
-    ) -> StreamChunk? {
-        var parsedToolCalls: [ToolCall] = []
-        var partialJson: String?
-        var toolCallIndex: Int?
+    ) -> [StreamChunk] {
+        // OpenAI 流式 `tool_calls[].index` 标识并行调用各自的槽位。同一 delta
+        // 可能携带多个 index，必须按 index 分组、每个 index 产出一个独立 chunk，
+        // 累积器才能把 arguments 精确累积到对应调用。此前整个数组共用一个
+        // toolCallIndex（循环结束只保留最后一个），所有调用被写进同一槽：
+        // ID/name 取第一个、arguments 拼接成非法 JSON、其余调用丢失（#162）。
+        //
+        // 不带 index 的网关沿用旧行为：归入 nil-index 组，由累积器的 nextIndex
+        // 逐调用、跨 delta 递增分配槽位；不能在这里给它们硬塞 index，否则每个
+        // delta 的首个调用都会塌缩到 index 0 而被错误合并。
+        var explicitCalls: [Int: [ToolCall]] = [:]
+        var explicitPartial: [Int: String] = [:]
+        var implicitCalls: [ToolCall] = []
+        var implicitPartial: String?
 
         for toolCall in toolCalls {
-            // OpenAI 流式 `tool_calls[].index`：用于把多个分片的 arguments 精确累积。
-            if let index = toolCall["index"] as? Int {
-                toolCallIndex = index
-            }
-
             guard let function = toolCall["function"] as? [String: Any] else {
                 continue
             }
@@ -750,60 +754,82 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             // delta 2: {"index":0,"function":{"name":"lookup","arguments":"{}"}}
             // ```
             //
-            // 此前只在 `id` 与 `name` **同时**到达时才产出 ToolCall，否则只
-            // 保留 arguments 作为 partialJson——已收到的 ID 与后到的 name
-            // 都被丢弃，累积器最终造出 `ToolCall(id: "", name: "")`，一次
-            // 合法的工具调用变成无名调用，无法分发。
-            //
-            // 因此只要有任何身份字段就产出调用，缺失的留空由累积器合并
+            // 只要有任何身份字段就产出调用，缺失的留空由累积器合并
             // （`upsertToolCall` 逐字段取非空值）。
-            if id != nil || name != nil || arguments != nil {
-                parsedToolCalls.append(
-                    ToolCall(
-                        id: id ?? "",
-                        name: name ?? "",
-                        // 占位参数用空串而不是 "{}"：累积器把 "{}" 当作
-                        // 「尚未收到真实参数」的标记，真实分片会被正确拼接。
-                        arguments: arguments ?? ""
-                    )
+            let call: ToolCall? = (id != nil || name != nil || arguments != nil)
+                ? ToolCall(
+                    id: id ?? "",
+                    name: name ?? "",
+                    // 占位参数用空串而不是 "{}"：累积器把 "{}" 当作
+                    // 「尚未收到真实参数」的标记，真实分片会被正确拼接。
+                    arguments: arguments ?? ""
+                )
+                : nil
+
+            if let index = toolCall["index"] as? Int {
+                if let call {
+                    explicitCalls[index, default: []].append(call)
+                }
+                if let arguments {
+                    explicitPartial[index] = arguments
+                }
+            } else {
+                if let call {
+                    implicitCalls.append(call)
+                }
+                if let arguments {
+                    implicitPartial = arguments
+                }
+            }
+        }
+
+        func makeChunk(index: Int?, calls: [ToolCall], partial: String?) -> StreamChunk? {
+            if !calls.isEmpty {
+                return StreamChunk(
+                    toolCalls: calls,
+                    partialJson: partial,
+                    toolCallIndex: index,
+                    eventType: .contentBlockStart,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: cacheTotalInputTokens,
+                    stopReason: stopReason
                 )
             }
+            if let partial {
+                return StreamChunk(
+                    partialJson: partial,
+                    toolCallIndex: index,
+                    eventType: .inputJsonDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: cacheTotalInputTokens,
+                    stopReason: stopReason
+                )
+            }
+            return nil
+        }
 
-            if let arguments {
-                partialJson = arguments
+        var chunks: [StreamChunk] = []
+        // 按 index 升序产出，保证最终调用顺序与协议槽位一致。
+        let explicitIndices = Set(explicitCalls.keys).union(explicitPartial.keys).sorted()
+        for index in explicitIndices {
+            if let chunk = makeChunk(
+                index: index,
+                calls: explicitCalls[index] ?? [],
+                partial: explicitPartial[index]
+            ) {
+                chunks.append(chunk)
             }
         }
-
-        if !parsedToolCalls.isEmpty {
-            return StreamChunk(
-                toolCalls: parsedToolCalls,
-                partialJson: partialJson,
-                toolCallIndex: toolCallIndex,
-                eventType: .contentBlockStart,
-                inputTokens: inputTokens,
-                outputTokens: outputTokens,
-                cachedInputTokens: cachedInputTokens,
-                cacheWriteInputTokens: cacheWriteInputTokens,
-                cacheTotalInputTokens: cacheTotalInputTokens,
-                stopReason: stopReason
-            )
+        if let chunk = makeChunk(index: nil, calls: implicitCalls, partial: implicitPartial) {
+            chunks.append(chunk)
         }
-
-        if let partialJson {
-            return StreamChunk(
-                partialJson: partialJson,
-                toolCallIndex: toolCallIndex,
-                eventType: .inputJsonDelta,
-                inputTokens: inputTokens,
-                outputTokens: outputTokens,
-                cachedInputTokens: cachedInputTokens,
-                cacheWriteInputTokens: cacheWriteInputTokens,
-                cacheTotalInputTokens: cacheTotalInputTokens,
-                stopReason: stopReason
-            )
-        }
-
-        return nil
+        return chunks
     }
 
     private func resolveToolCallID(toolCall: [String: Any], function: [String: Any]) -> String? {

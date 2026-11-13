@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 217 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 220 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 217
+测试文件: 10 个，用例总数: 220
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -41,6 +41,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 217 条用�
 - **AnthropicAdapter**（47 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（44 条）：由 `messageCreation`、`requestCreation`、`providerInfo` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **OpenAICompatibleStreamParsing**（9 条）：由 `reasoningAndToolCallsCoexist`、`contentAndToolCallsCoexist`、`usageSurvivesToolCallFrame` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenAIStreamParallelToolCall**（3 条）：由 `parallelToolCallsInOneDeltaAreAccumulatedSeparately`、`parallelToolCallArgumentsStreamByIndexAcrossDeltas`、`gatewayWithoutIndexStillAssignsDistinctSlotsAcrossDeltas` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderErrorAndContract**（45 条）：由 `parsesOpenAIErrorBody`、`parsesAnthropicErrorBody`、`fallsBackToGenericJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RetryAfterAndBackoff**（21 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorAPIService**（9 条）：由 `retriesOnServerError`、`givesUpAfterMaxAttempts`、`doesNotRetryOnClientError` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -268,27 +269,30 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 217 条用�
 | 215 | Anthropic 整段 JSON 回退 | 仅含 redacted_thinking 的整段 JSON 仍产生 chunk，不被当成空响应丢弃 | 响应只有 redacted_thinking 块 | 解析整段 JSON | 产出带 opaque data 的 done chunk | P0 | ✅ 已覆盖 | `redactedOnlyResponseStillProducesChunk` |
 | 216 | Anthropic 非流式解析 | 非流式 parseResponse 同样返回 redactedThinking | 直接调用 parseResponse | 解析含 redacted_thinking 的响应 | 返回的 `redactedThinking` 等于原文块 | P1 | ✅ 已覆盖 | `parseResponseReturnsRedactedThinking` |
 | 217 | Anthropic 整段 JSON 回退 | 无 redacted_thinking 时字段为空，不引入额外块 | 响应只含普通文本 | 解析并累积 | `redactedThinkingBlocks` 与最终 `redactedThinking` 均为 nil | P2 | ✅ 已覆盖 | `noRedactedBlocksWhenAbsent` |
+| 218 | OpenAI 流式并行工具调用 | 回归 #162：同一 delta 内多个 index 的并行调用累积成各自独立调用 | 单个 delta 含 index0 call_A 与 index1 call_B | 解析并经累积器 finish | 产出 2 个调用，ID/name/arguments 各自正确不拼接 | P0 | ✅ 已覆盖 | `parallelToolCallsInOneDeltaAreAccumulatedSeparately` |
+| 219 | OpenAI 流式并行工具调用 | 回归 #162：并行调用的 arguments 分片跨 delta 按 index 各自拼接 | 3 个 delta 按 index 拆分 name 与 arguments 分片 | 解析并经累积器 finish | index0/index1 各自拼出合法 JSON，互不串扰 | P0 | ✅ 已覆盖 | `parallelToolCallArgumentsStreamByIndexAcrossDeltas` |
+| 220 | OpenAI 流式并行工具调用 | 不带 index 的网关跨 delta 仍逐个分配独立槽位 | 2 个 delta 均无 index 字段 | 解析并经累积器 finish | 产出 2 个独立调用，不塌缩到同一槽 | P1 | ✅ 已覆盖 | `gatewayWithoutIndexStillAssignsDistinctSlotsAcrossDeltas` |
 
-> 说明：全部 **217 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **220 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 48 / 48
-- P1: 已覆盖 154 / 154
+- P0: 已覆盖 50 / 50
+- P1: 已覆盖 155 / 155
 - P2: 已覆盖 15 / 15
-- **合计: 217 / 217**（仅表示清单场景，非源码覆盖率）
+- **合计: 220 / 220**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
-- **P1**: 其余功能性用例（154 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（50 条）
+- **P1**: 其余功能性用例（155 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 217 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 220 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
