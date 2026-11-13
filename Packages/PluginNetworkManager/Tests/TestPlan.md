@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 104
+测试文件: 17 个，用例总数: 108
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -53,6 +53,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **综合**（25 条）：由 `brotliSSEDecompressionHandlesHighCompressionRatio`、`publicIPRefreshUsesCache`、`publicIPRefreshCanBeForced` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTTPExchangeStorePaginationOverflow**（3 条）：由 `overflowMatchesSurviveWhenScanEndsBelowWindow`、`overflowMatchesSurviveWhenScanFillsWindow`、`overflowMatchesSurviveWithDomainFilter` 锁定 `loadListPage` 一次扫描产出多于 limit 的匹配时，游标只前进到本页实际返回的最后一条匹配，溢出匹配必须能在后续页取回、不得永久丢弃（**回归 #215**）；改动 HTTP 日志分页游标逻辑时优先跑对应测试文件。
+- **NetworkUsageSnapshot**（4 条）：由 `samplingTickPublishesExactlyOneAtomicSnapshot`、`usageRecordingWritesOneHistoryPointPerSnapshot`、`observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` 等用例锁定（**回归 #216**）：每个 1Hz 采样 tick 只发布一个原子快照，历史边界每个快照只写一个点，订阅时重放的当前值不得再记录；改动 `NetworkService` 采样发布或 `NetworkMetricsObserver` 接线时优先跑 `NetworkUsageSnapshotTests.swift`（串行套件，共享进程级单例）。
 
 ## 测试用例清单
 
@@ -162,27 +163,31 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 102 | HTTPExchangeStorePaginationOverflow | 扫描不足一窗时溢出匹配仍须可翻页取回，不得永久丢弃（#215） | limit=3（窗口 12），仅 4 条匹配 | drain 所有页 | 首页 hasMore=true，4 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanEndsBelowWindow` |
 | 103 | HTTPExchangeStorePaginationOverflow | 满窗扫描溢出时游标不得越过未返回的匹配（#215） | limit=2（窗口 8），9 条匹配 | drain 所有页 | 9 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanFillsWindow` |
 | 104 | HTTPExchangeStorePaginationOverflow | 带域名过滤的溢出翻页须取回全部匹配且不混入他域（#215） | limit=3（窗口 12），12 行中 5 行匹配目标域名 | 按域名 drain 所有页 | 5 条匹配全部取回，无他域记录 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWithDomainFilter` |
+| 105 | NetworkUsageSnapshot | 每个采样 tick 必须只发布一个原子快照（**回归 #216**） | 启动监控并订阅 `$usageSnapshot` | 连续驱动 3 个采样 tick 并等待完成 | 恰好 3 个快照，末个与四个 legacy 属性一致 | P0 | ✅ 已覆盖 | `samplingTickPublishesExactlyOneAtomicSnapshot` |
+| 106 | NetworkUsageSnapshot | 历史录制边界每个快照必须只写一个点（**回归 #216**） | 受控发布器 + 录制/UI 回调 | 连发 3 个快照 | 3 次记录与 3 次 UI 更新，数值逐一对应 | P0 | ✅ 已覆盖 | `usageRecordingWritesOneHistoryPointPerSnapshot` |
+| 107 | NetworkUsageSnapshot | 快照四字段在录制与 UI 更新中原子到达（**回归 #216**） | 受控发布器 | 发送单个各字段不同的快照 | 录制与 UI 各收到一次该完整四元组，无字段混用 | P1 | ✅ 已覆盖 | `usageRecordingKeepsSnapshotFieldsAtomic` |
+| 108 | NetworkUsageSnapshot | observer 接线只记录新快照，订阅重放值不得再记一点（**回归 #216**） | 同步构造真实 observer（不让出主 actor） | 直接给 service 赋新快照 | 历史恰好新增 1 点，UI 状态同步更新 | P0 | ✅ 已覆盖 | `observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` |
 
-> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **108 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 41 / 41
-- P1: 已覆盖 57 / 57
+- P0: 已覆盖 44 / 44
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 6 / 6
-- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
+- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（41 条）
-- **P1**: 其余功能性用例（57 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（44 条）
+- **P1**: 其余功能性用例（58 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 108 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

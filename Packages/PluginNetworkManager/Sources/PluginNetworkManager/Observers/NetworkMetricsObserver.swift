@@ -11,22 +11,25 @@ final class NetworkMetricsObserver {
     init(viewModels: NetworkPluginViewModels) {
         self.viewModels = viewModels
         NetworkService.shared.startMonitoring()
-        NetworkService.shared.$downloadSpeed
-            .combineLatest(
-                NetworkService.shared.$uploadSpeed,
-                NetworkService.shared.$totalDownload,
-                NetworkService.shared.$totalUpload
-            )
-            .sink { [weak self] down, up, totalDown, totalUp in
+        // 订阅每 tick 一次的原子快照：combineLatest 四个独立属性会让每个
+        // 采样发射 4 次，历史每秒被写入 4 个点（#216）。
+        // dropFirst() 跳过 @Published 订阅时重放的当前值，避免启动瞬间
+        // 把上一次运行遗留的陈旧快照再记一个历史点。
+        Self.observeUsageSnapshots(
+            NetworkService.shared.$usageSnapshot.dropFirst().eraseToAnyPublisher(),
+            record: { down, up in
                 NetworkHistoryService.shared.recordDataPoint(down: down, up: up)
+            },
+            apply: { [weak self] snapshot in
                 self?.viewModels.network.applyNetworkUsage(
-                    downloadSpeed: down,
-                    uploadSpeed: up,
-                    totalDownload: totalDown,
-                    totalUpload: totalUp
+                    downloadSpeed: snapshot.downloadSpeed,
+                    uploadSpeed: snapshot.uploadSpeed,
+                    totalDownload: snapshot.totalDownload,
+                    totalUpload: snapshot.totalUpload
                 )
             }
-            .store(in: &cancellables)
+        )
+        .store(in: &cancellables)
 
         // 注意：**不要**在这里调用 `ProcessMonitorService.shared.startMonitoring()`。
         //
@@ -64,6 +67,19 @@ final class NetworkMetricsObserver {
             Task { @MainActor in
                 NetworkHistoryService.shared.saveHistory()
             }
+        }
+    }
+
+    /// 把「每个快照记录一个历史点并刷新一次 UI」的接线独立出来，
+    /// 便于用受控发布器验证 1:1 关系，而不必构造带定时器/网络请求的完整 observer。
+    static func observeUsageSnapshots(
+        _ snapshots: AnyPublisher<NetworkUsageSnapshot, Never>,
+        record: @escaping (Double, Double) -> Void,
+        apply: @escaping (NetworkUsageSnapshot) -> Void
+    ) -> AnyCancellable {
+        snapshots.sink { snapshot in
+            record(snapshot.downloadSpeed, snapshot.uploadSpeed)
+            apply(snapshot)
         }
     }
 

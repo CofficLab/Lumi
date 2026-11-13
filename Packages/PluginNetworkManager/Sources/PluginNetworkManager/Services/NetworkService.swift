@@ -6,6 +6,21 @@ import Darwin
 import Combine
 import KitShell
 
+/// 一次网络采样的完整快照（#216）。
+public struct NetworkUsageSnapshot: Sendable, Equatable {
+    public let downloadSpeed: Double
+    public let uploadSpeed: Double
+    public let totalDownload: UInt64
+    public let totalUpload: UInt64
+
+    public init(downloadSpeed: Double, uploadSpeed: Double, totalDownload: UInt64, totalUpload: UInt64) {
+        self.downloadSpeed = downloadSpeed
+        self.uploadSpeed = uploadSpeed
+        self.totalDownload = totalDownload
+        self.totalUpload = totalUpload
+    }
+}
+
 @MainActor
 public class NetworkService: SuperLog, ObservableObject {
     public nonisolated static let emoji = "📡"
@@ -30,6 +45,18 @@ public class NetworkService: SuperLog, ObservableObject {
     @Published var uploadSpeed: Double = 0
     @Published var totalDownload: UInt64 = 0
     @Published var totalUpload: UInt64 = 0
+
+    /// 每个采样 tick 只发布一次的原子快照。
+    ///
+    /// 四个独立 @Published 属性逐个赋值会让 combineLatest 每个 tick 发射 4 次，
+    /// 历史记录因此每秒写入 4 个点，3600 上限实际只覆盖约 15 分钟，且四元组
+    /// 可能混入上一 tick 的字段（#216）。订阅方应改用本快照。
+    @Published var usageSnapshot = NetworkUsageSnapshot(
+        downloadSpeed: 0,
+        uploadSpeed: 0,
+        totalDownload: 0,
+        totalUpload: 0
+    )
     
     // Monitoring state
     private var monitoringTimer: Timer?
@@ -63,6 +90,9 @@ public class NetworkService: SuperLog, ObservableObject {
     public func configureHTTPExchangeStore(_ store: HTTPExchangeStore?) {
         exchangeStore = store
     }
+
+    /// 是否有一次采样仍在进行（测试用于等待 tick 完成）。
+    var isSampling: Bool { samplingTask != nil }
 
     /// 获取当前配置的 HTTPExchangeStore 实例
     public var currentExchangeStore: HTTPExchangeStore? {
@@ -107,7 +137,7 @@ public class NetworkService: SuperLog, ObservableObject {
     }
     
     /// Internal update loop
-    private func updateNetworkUsage() {
+    func updateNetworkUsage() {
         guard samplingTask == nil else { return }
 
         let currentTime = Date().timeIntervalSince1970
@@ -144,6 +174,12 @@ public class NetworkService: SuperLog, ObservableObject {
                 self.uploadSpeed = uploadSpeed
                 self.totalDownload = currentIn
                 self.totalUpload = currentOut
+                self.usageSnapshot = NetworkUsageSnapshot(
+                    downloadSpeed: downloadSpeed,
+                    uploadSpeed: uploadSpeed,
+                    totalDownload: currentIn,
+                    totalUpload: currentOut
+                )
 
                 // 节流心跳：确认 1Hz 网络采样链路在持续运行。
                 self.tickCount += 1
