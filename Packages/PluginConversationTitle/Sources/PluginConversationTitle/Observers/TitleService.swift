@@ -383,15 +383,39 @@ final class TitleService: SuperLog {
             return ""
         }
 
-        let stripped = firstLine
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "\"'`“”‘’「」『』《》[]()"))
+        let stripped = strippingPairedWrappers(firstLine.trimmingCharacters(in: .whitespacesAndNewlines))
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard stripped.count > 40 else { return stripped }
         let end = stripped.index(stripped.startIndex, offsetBy: 40)
         return String(stripped[..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 标题外层成对包裹符号：仅当首尾恰好构成一对匹配的开/闭符号时才剥离。
+    private nonisolated static let titleWrapperPairs: [(open: Character, close: Character)] = [
+        ("\"", "\""), ("'", "'"), ("`", "`"),
+        ("“", "”"), ("‘", "’"),
+        ("「", "」"), ("『", "』"), ("《", "》"),
+        ("[", "]"), ("(", ")"),
+    ]
+
+    /// 只剥离「包裹整个标题」的成对符号，逐层向内。
+    ///
+    /// 旧实现用 `trimmingCharacters` 把 `[]()` 等当作可从两端独立删除的字符集，
+    /// 标题末尾正常的右括号（如 `Fix array bounds (off-by-one)`）会被单独删掉，
+    /// 留下不配对的左括号、语义受损（#798）。这里只在首字符与尾字符恰好构成一对
+    /// 开/闭符号时才同时删除两端，标题内部的括号一律保留。
+    private nonisolated static func strippingPairedWrappers(_ title: String) -> String {
+        var result = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        while result.count >= 2 {
+            guard let first = result.first, let last = result.last,
+                  titleWrapperPairs.contains(where: { $0.open == first && $0.close == last }) else {
+                break
+            }
+            result = String(result.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return result
     }
 }
 

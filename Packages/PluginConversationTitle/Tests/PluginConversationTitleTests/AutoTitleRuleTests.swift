@@ -143,6 +143,37 @@ struct AutoTitleRuleTests {
         #expect(AutoConversationTitleService.normalizeTitle("「标题」") == "标题")
     }
 
+    /// 回归 #798：标题内部正常的括号是内容的一部分，末尾的右括号不得被单独删掉。
+    /// 旧实现用 `trimmingCharacters` 把 `[]()` 当作可独立删除的字符集，
+    /// `Fix array bounds (off-by-one)` 会被削成 `Fix array bounds (off-by-one`。
+    @Test("normalizeTitle：保留标题内部的圆括号（回归 #798）")
+    func normalizePreservesInternalParenthetical() {
+        #expect(AutoConversationTitleService.normalizeTitle("Fix array bounds (off-by-one)") == "Fix array bounds (off-by-one)")
+        #expect(AutoConversationTitleService.normalizeTitle("修复数组越界 (off-by-one) 错误") == "修复数组越界 (off-by-one) 错误")
+    }
+
+    /// 回归 #798：方括号同理，标题内部的 `[0]` 是内容，不能被逐字符 trimming 删掉。
+    @Test("normalizeTitle：保留标题内部的方括号（回归 #798）")
+    func normalizePreservesInternalSquareBrackets() {
+        #expect(AutoConversationTitleService.normalizeTitle("Handle array[0] edge case") == "Handle array[0] edge case")
+        #expect(AutoConversationTitleService.normalizeTitle("Handle edge case [0]") == "Handle edge case [0]")
+        #expect(AutoConversationTitleService.normalizeTitle("数组 [0] 越界排查") == "数组 [0] 越界排查")
+    }
+
+    /// 只有「包裹整个标题」的成对括号才剥离：首尾恰好是一对开/闭符号时同时删两端。
+    @Test("normalizeTitle：剥离包裹整个标题的成对括号")
+    func normalizeStripsPairedOuterBrackets() {
+        #expect(AutoConversationTitleService.normalizeTitle("(标题)") == "标题")
+        #expect(AutoConversationTitleService.normalizeTitle("[标题]") == "标题")
+    }
+
+    /// 多层成对包裹应逐层向内剥离，而不是只剥一层或逐字符乱删。
+    @Test("normalizeTitle：逐层剥离嵌套的成对包裹")
+    func normalizeStripsNestedPairedWrappers() {
+        #expect(AutoConversationTitleService.normalizeTitle("“「标题」”") == "标题")
+        #expect(AutoConversationTitleService.normalizeTitle("《[标题]》") == "标题")
+    }
+
     /// 折叠中间的多余空白后再裁剪，保证标题内部没有换行残留。
     @Test("normalizeTitle：折叠内部空白")
     func normalizeCollapsesWhitespace() {
