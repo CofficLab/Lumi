@@ -487,8 +487,8 @@ public actor GoalStateManager: SuperLog {
             return .completed
         }
         
-        // 全部失败
-        if failed == total {
+        // 全部终态且有失败即判 failed：部分失败不能停留在 inProgress/pending，否则永久占用活跃 Goal 槽（#188）。
+        if completed + failed + skipped == total && failed > 0 {
             return .failed
         }
         

@@ -356,4 +356,57 @@ struct GoalStateManagerTests {
 
         #expect(vm.hasActiveWork == true)
     }
+
+    /// 回归 #188：部分任务失败、其余完成时，全部任务已终态，
+    /// Goal 必须推导为 failed，而不是因 completed > 0 停留在 in_progress 永久阻塞会话。
+    @Test("Mixed completed and failed tasks derive a terminal failed goal")
+    func testPartialFailureDerivesFailedGoal() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        let created = try await manager.createGoal(
+            conversationId: "partial-failure",
+            title: "Partial failure goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [
+                (title: "Will complete", description: nil, executionContext: nil, parallelGroup: nil),
+                (title: "Will fail", description: nil, executionContext: nil, parallelGroup: nil)
+            ]
+        )
+
+        _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
+        let updated = try await manager.updateGoalTaskStatus(id: created.tasks[1].id, status: .failed, result: nil)
+
+        // 两个任务都已终态（completed + failed），Goal 不应再是 in_progress。
+        #expect(updated.goal.status == .failed)
+        #expect(updated.goal.isTerminal == true)
+    }
+
+    /// 回归 #188：failed + skipped 且无可运行任务时同样必须进入终态 failed，
+    /// 旧实现因 completed == 0 落到 pending，也会永久占用活跃 Goal 槽。
+    @Test("Mixed failed and skipped tasks derive a terminal failed goal")
+    func testFailedAndSkippedDerivesFailedGoal() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        let created = try await manager.createGoal(
+            conversationId: "failed-skipped",
+            title: "Failed and skipped goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [
+                (title: "Will fail", description: nil, executionContext: nil, parallelGroup: nil),
+                (title: "Will skip", description: nil, executionContext: nil, parallelGroup: nil)
+            ]
+        )
+
+        _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .failed, result: nil)
+        let updated = try await manager.updateGoalTaskStatus(id: created.tasks[1].id, status: .skipped, result: nil)
+
+        #expect(updated.goal.status == .failed)
+        #expect(updated.goal.isTerminal == true)
+    }
 }
