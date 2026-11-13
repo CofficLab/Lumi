@@ -95,7 +95,7 @@ public enum RAGFilePathSearcher {
             .filter { filePath in
                 let fileURL = URL(fileURLWithPath: filePath)
                 guard filePath.hasPrefix(projectRoot == "/" ? "/" : projectRoot + "/"),
-                      !RAGFileScanner.shouldSkipPath(filePath),
+                      !RAGFileScanner.shouldSkipPath(filePath, projectRoot: projectRoot),
                       RAGFileScanner.allowedExtensions.contains(fileURL.pathExtension.lowercased()),
                       let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
                       values.isRegularFile == true else {
@@ -121,7 +121,7 @@ public enum RAGFilePathSearcher {
             let filePath = fileURL.standardizedFileURL.path
             let projectPrefix = projectRoot == "/" ? "/" : projectRoot + "/"
             guard filePath.hasPrefix(projectPrefix),
-                  !RAGFileScanner.shouldSkipPath(filePath),
+                  !RAGFileScanner.shouldSkipPath(filePath, projectRoot: projectRoot),
                   RAGFileScanner.allowedExtensions.contains(fileURL.pathExtension.lowercased()),
                   let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey]),
                   values.isRegularFile == true else {

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 224 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 229 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 35 个，用例总数: 224
+测试文件: 36 个，用例总数: 229
 
 核心组件（源码目录）:
 - PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
@@ -47,6 +47,7 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 - **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
 - **RAGLexicalIgnore**（2 条）：由 `ripgrepArgumentsDisableIgnoreRules`、`lexicalSearchFindsSourceInGitignoredDirectory` 锁定。索引扫描和路径搜索都不读取 `.gitignore`，词法搜索的 ripgrep 参数必须带 `--no-ignore`，否则被忽略目录中的源码在有其他匹配时会被静默漏掉（**回归 #1113**）。
+- **RAGAncestorExclusion**（5 条）：由 `scannerFindsSourcesWhenProjectLivesUnderBuildAncestor`、`skipDecisionIgnoresAncestorsOutsideProjectRoot` 等用例锁定。排除目录（build/temp/DerivedData 等）只作用于项目根「内部」：`shouldSkipPath` 必须先相对 projectRoot 化再逐段匹配，扫描、词法 ripgrep 过滤与路径搜索都传入同一项目根，否则位于同名祖先目录下的项目整体不可搜索（**回归 #194**）。
 - **RAGRipgrepLocator**（3 条）：由 `bundledRipgrepResolvesAndRuns`、`bundledCandidatePrecedesSystemPaths`、`bundledRipgrepIsUniversal` 锁定。ripgrep 随包内置（`Resources/rg`，universal），解析优先于系统 PATH，不依赖用户机器安装 rg；应用内签名副本由构建脚本放入 `Contents/MacOS`，资源 bundle 内未签名副本不得优先。
 - **RAGSQLiteCandidateDedup**（3 条）：由 `mergeKeepsChunksThatShareContentPrefix`、`partialMatchDoesNotEvictFullMatch`、`fallbackOverlapIsDeduplicated` 锁定。词法与回退候选合并必须按数据库 chunk id 去重；不能用「路径 + 内容前 80 字符」，否则同前缀的不同 chunk 会互相覆盖，完整命中的旧 chunk 会在评分前被较新的部分匹配挤掉（**回归 #1115**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
@@ -281,8 +282,13 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 | 222 | RAGCodeSearchToolContract | 并发 search_code 结果互不污染（#1312） | echo 桩 provider 按查询返回结果 | 并发执行 4 个查询 | 每份输出只含自己的 echo 标记，不含其他查询的标记 | P1 | ✅ 已覆盖 | `concurrentSearchesKeepResultsIndependent` |
 | 223 | RAGProcessRunnerNonBlocking | 并发 ripgrep 不会占满协作线程池 | 200 文件大项目、2×核数个并发 grep | grep 期间以主 actor 心跳为探针 | 心跳全程持续增长，协作池未被占满 | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotStarveCooperativePool` |
 | 224 | RAGProcessRunnerNonBlocking | 并发 grep 不会互相阻塞 | 150 文件大项目 | 并发执行 3 个 grep | 三个都命中且总耗时 < 2s（非串行） | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotBlockEachOther` |
+| 225 | RAGAncestorExclusion | 位于 build 祖先目录下的项目仍可被扫描索引（**回归 #194**） | `<tmp>/build/Demo` 含 Sources/App.swift 与项目内 build/Junk.swift | 调用 `discoverFiles` | 仅返回 App.swift；祖先 build 不触发排除，项目内 build 仍被跳过 | P0 | ✅ 已覆盖 | `scannerFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 226 | RAGAncestorExclusion | build 祖先目录下词法搜索必须命中（**回归 #194**） | 同上，App.swift 含唯一符号 | 调用 `RAGLexicalFileSearcher.search` | 结果包含 Sources/App.swift | P0 | ✅ 已覆盖 | `lexicalSearchFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 227 | RAGAncestorExclusion | build 祖先目录下路径搜索必须命中（**回归 #194**） | 同上 | 以 "Sources/App.swift" 调用 `RAGFilePathSearcher.search` | 结果包含 Sources/App.swift | P1 | ✅ 已覆盖 | `pathSearchFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 228 | RAGAncestorExclusion | 排除判定不得误杀项目根之外的祖先目录（**回归 #194**） | 祖先分别为 build/temp/DerivedData-* 的根 | 带 projectRoot 调用 `shouldSkipPath` | 项目内源码不被跳过（含尾斜杠根）；项目内 build/node_modules/DerivedData 仍跳过 | P0 | ✅ 已覆盖 | `skipDecisionIgnoresAncestorsOutsideProjectRoot` |
+| 229 | RAGAncestorExclusion | ripgrep 结果过滤必须相对项目根（**回归 #194**） | build 祖先下的绝对路径 | 调用 `acceptsResultPath` | 源码被接受；项目内 build 与非允许扩展名被拒绝 | P1 | ✅ 已覆盖 | `lexicalResultFilterUsesProjectRelativeExclusions` |
 
-> 说明：全部 **224 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **229 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
@@ -292,21 +298,21 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 51 / 51
-- P1: 已覆盖 159 / 159
+- P0: 已覆盖 54 / 54
+- P1: 已覆盖 161 / 161
 - P2: 已覆盖 14 / 14
-- **合计: 224 / 224**（仅表示清单场景，非源码覆盖率）
+- **合计: 229 / 229**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（51 条）
-- **P1**: 其余功能性用例（159 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
+- **P1**: 其余功能性用例（161 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 224 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 229 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

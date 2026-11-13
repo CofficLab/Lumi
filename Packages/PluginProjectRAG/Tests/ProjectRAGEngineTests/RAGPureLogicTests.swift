@@ -290,26 +290,26 @@ import Foundation
 @Suite struct RAGFileScannerTests {
 
     @Test func shouldSkipKnownBuildAndVcsDirs() {
-        #expect(RAGFileScanner.shouldSkipPath("/project/.git/config"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/node_modules/pkg"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/build/output.o"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/.build/foo.swift"))
-        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/main.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/.git/config", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/node_modules/pkg", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/build/output.o", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/.build/foo.swift", projectRoot: "/project"))
+        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/main.swift", projectRoot: "/project"))
     }
 
     @Test func shouldSkipTempAndSourcePackages() {
         // 这两个目录在大项目里常含数万个无关文件，必须被跳过，否则 search_code 会卡死。
-        #expect(RAGFileScanner.shouldSkipPath("/project/temp/generated.swift"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/SourcePackages/checkouts/Foo.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/temp/generated.swift", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/SourcePackages/checkouts/Foo.swift", projectRoot: "/project"))
     }
 
     @Test func shouldSkipDerivedDataVariantsByPrefix() {
         // Xcode 按 scheme 生成 DerivedData-Lumi-* 变体目录，无法精确匹配，靠前缀跳过。
-        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-Multilang/Build/x.swift"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-PluginDescriptionLocalization/Build/y.swift"))
-        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData/Build/z.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-Multilang/Build/x.swift", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-PluginDescriptionLocalization/Build/y.swift", projectRoot: "/project"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData/Build/z.swift", projectRoot: "/project"))
         // 不要误伤恰好包含该前缀的普通源码文件名
-        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/DerivedDataHelper.swift"))
+        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/DerivedDataHelper.swift", projectRoot: "/project"))
     }
 
     @Test func grepExcludeDirPatternsCoverExactNamesAndPrefixGlobs() {

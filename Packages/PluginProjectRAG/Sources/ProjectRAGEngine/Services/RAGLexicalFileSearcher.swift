@@ -108,9 +108,7 @@ public enum RAGLexicalFileSearcher {
                   let line = (data["lines"] as? [String: Any])?["text"] as? String else {
                 continue
             }
-            let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
-            guard RAGFileScanner.allowedExtensions.contains(fileExtension),
-                  !RAGFileScanner.shouldSkipPath(path) else {
+            guard acceptsResultPath(path, projectRoot: projectPath) else {
                 continue
             }
 
@@ -152,6 +150,14 @@ public enum RAGLexicalFileSearcher {
                     lineRange: RAGLineRange(startLine: startLine, endLine: endLine)
                 )
             }
+    }
+
+    /// ripgrep 输出的是绝对路径；扩展名与排除目录的判断必须相对项目根进行，
+    /// 否则位于 `build`/`temp` 等祖先目录下的项目会被整体过滤掉（#194）。
+    static func acceptsResultPath(_ path: String, projectRoot: String) -> Bool {
+        let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
+        return RAGFileScanner.allowedExtensions.contains(fileExtension)
+            && !RAGFileScanner.shouldSkipPath(path, projectRoot: projectRoot)
     }
 
     /// ripgrep 参数。
