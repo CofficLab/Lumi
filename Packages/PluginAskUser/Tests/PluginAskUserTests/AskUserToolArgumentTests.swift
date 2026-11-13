@@ -160,6 +160,41 @@ struct AskUserToolArgumentTests {
         }
     }
 
+    // MARK: - #221 choice 重复标签
+
+    @Test("choice 重复标签必须抛出可处理错误，不得挂起后崩溃 ACP")
+    func rejectsDuplicateChoiceLabels() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument(["Debug", "Debug"]),
+            ])
+        }
+    }
+
+    @Test("choice 对象形式的重复标签同样抛出")
+    func rejectsDuplicateChoiceLabelsFromObjects() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument([["label": "Debug"], ["label": "Debug", "badge": "推荐"]]),
+            ])
+        }
+    }
+
+    @Test("choice 标签互异时正常挂起")
+    func acceptsDistinctChoiceLabels() async throws {
+        let result = try await AskUserTool().executeResult(arguments: [
+            "question": ToolArgument("选哪个?"),
+            "mode": ToolArgument("choice"),
+            "options": ToolArgument(["Debug", "Release"]),
+        ])
+        #expect(result.awaitingUserResponse)
+        #expect(!result.isError)
+    }
+
     @Test("合法调用返回 awaitingUserResponse 且 interactionState 为 waiting")
     func successfulResultSuspends() async throws {
         let result = try await AskUserTool().executeResult(arguments: [

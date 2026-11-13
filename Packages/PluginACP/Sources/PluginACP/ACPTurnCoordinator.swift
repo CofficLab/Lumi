@@ -674,7 +674,7 @@ public final class ACPTurnCoordinator {
     /// 解析 AskUser choice 选项（对象 {label,description?,badge?} 或裸字符串）。
     static func choiceOptions(from raw: Any?) -> [String] {
         guard let array = raw as? [Any] else { return [] }
-        return array.compactMap { element -> String? in
+        let labels = array.compactMap { element -> String? in
             if let string = element as? String, !string.isEmpty { return string }
             if let dict = element as? [String: Any] {
                 let label = (dict["label"] as? String)
@@ -685,6 +685,10 @@ public final class ACPTurnCoordinator {
             }
             return nil
         }
+        // 去重并保持首次出现顺序：labels 同时用作 optionId 与 answersByOptionID
+        // 的键，重复标签会让 Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃（#221）。
+        var seen = Set<String>()
+        return labels.filter { seen.insert($0).inserted }
     }
 }
 

@@ -1167,6 +1167,36 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         XCTAssertEqual(ACPTurnCoordinator.choiceOptions(from: "not-an-array"), [])
     }
+
+    // MARK: - #221 重复标签去重（防止 ACP 字典构造陷阱崩溃）
+
+    func testChoiceOptionsDeduplicatesLabels() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["Debug", "Debug", "Release"]),
+            ["Debug", "Release"]
+        )
+    }
+
+    func testChoiceOptionsDedupPreservesFirstOccurrenceOrder() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["B", "A", "B", "C", "A"]),
+            ["B", "A", "C"]
+        )
+    }
+
+    func testChoiceOptionsDedupAcrossStringAndObjectForms() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["Debug", ["label": "Debug"], ["label": "Release"]]),
+            ["Debug", "Release"]
+        )
+    }
+
+    func testChoiceOptionsLabelsAreUnique() {
+        let labels = ACPTurnCoordinator.choiceOptions(from: ["Debug", "Debug", "Release", "Release", "Debug"])
+        // labels 同时用作 optionId 与 answersByOptionID 的键；重复会让
+        // Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃，故必须唯一。
+        XCTAssertEqual(labels.count, Set(labels).count)
+    }
 }
 
 /// 测试用的重试生命周期观察句柄。

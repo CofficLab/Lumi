@@ -105,13 +105,23 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
             )
         }
 
-        // mode=choice 必须带 options。
+        // mode=choice 必须带 options，且标签互异：重复标签会让 ACP 用标签构造
+        // optionId/answers 字典时触发 Dictionary(uniqueKeysWithValues:) 陷阱崩溃（#221）。
         let options = Self.resolvedOptions(arguments, mode: mode)
-        if mode == "choice", options.isEmpty {
-            throw ToolExecutionError.executionFailed(
-                toolName: name,
-                reason: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
-            )
+        if mode == "choice" {
+            if options.isEmpty {
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
+                )
+            }
+            let labels = options.map(\.label)
+            if Set(labels).count != labels.count {
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "mode=choice requires unique option labels. Duplicate labels are not allowed; make each label distinct."
+                )
+            }
         }
 
         let payload = AskUserPendingResponse(

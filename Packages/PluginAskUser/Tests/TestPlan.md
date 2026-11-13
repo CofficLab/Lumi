@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 47 条用例。
+PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 50 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 47
+测试文件: 4 个，用例总数: 50
 
 核心组件（源码目录）:
 - `Support/`
@@ -26,7 +26,7 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 47 �
 
 - **AskUserInteraction**（11 条）：由 `decodesValidSuspension`、`rejectsOtherKinds`、`rejectsMissingToolCallID` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AskUserLifecycle**（6 条）：由 `yesNoSuspendThenResume`、`choiceSuspendThenResume`、`freeTextSuspendThenResume` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **AskUserToolArgument**（19 条）：由 `validModes`、`invalidModes`、`yesNoIgnoresOptions` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AskUserToolArgument**（22 条）：由 `validModes`、`invalidModes`、`yesNoIgnoresOptions` 等用例锁定；改动该模块时优先跑对应测试文件。choice 选项标签必须互异，重复标签抛错而非挂起后崩溃 ACP（**#221**）。
 - **综合**（11 条）：由 `pendingInteractionVisibility`、`suspensionPayloadDecoding`、`yesNoMode` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -69,38 +69,41 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 47 �
 | 34 | AskUserToolArgument | 工具身份与调度语义稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolIdentity` |
 | 35 | AskUserToolArgument | displayDescription 回显问题文案，缺问题时给出通用文案 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `displayDescription` |
 | 36 | AskUserToolArgument | description 明确要求先选 mode 并警告不要滥用 yes_no | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `descriptionContract` |
-| 37 | 综合 | 问题视图始终显示在当前会话的 userInput 挂起问题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingInteractionVisibility` |
-| 38 | 综合 | 从 userInput suspension 解码问题并保留真实 tool call ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suspensionPayloadDecoding` |
-| 39 | 综合 | yes_no 模式：返回是/否选项且挂起等待回答 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `yesNoMode` |
-| 40 | 综合 | choice 模式：返回传入的选项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `choiceMode` |
-| 41 | 综合 | 选项 badge 可编码解码且兼容旧字符串格式 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `optionBadgeCoding` |
-| 42 | 综合 | AskUser Schema 声明可选 badge | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `badgeSchema` |
-| 43 | 综合 | free_text 模式：无选项，挂起等待回答 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `freeTextMode` |
-| 44 | 综合 | 缺 mode 抛出错误且不挂起 | 无 | 调用 `executeResult` 只传 question | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `missingMode` |
-| 45 | 综合 | choice 模式缺 options 抛出错误 | 无 | 调用 `executeResult(mode: choice)` 不传 options | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `choiceMissingOptions` |
-| 46 | 综合 | 插件注册 ask_user 工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersTool` |
-| 47 | 综合 | ask_user 工具经 AgentLoop 挂起后可恢复（端到端） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `endToEndSuspension` |
+| 37 | AskUserToolArgument | choice 重复标签必须抛出，不得挂起后崩溃 ACP（**#221**） | 无 | 调用 `executeResult` 传重复 label 的 options | 抛出 `ToolExecutionError`，不挂起 | P0 | ✅ 已覆盖 | `rejectsDuplicateChoiceLabels` |
+| 38 | AskUserToolArgument | choice 对象形式的重复标签同样抛出（**#221**） | 无 | 调用 `executeResult` 传重复 label 的对象选项 | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `rejectsDuplicateChoiceLabelsFromObjects` |
+| 39 | AskUserToolArgument | choice 标签互异时正常挂起（**#221**） | 无 | 调用 `executeResult` 传互异 label 的 options | 返回 awaitingUserResponse，不报错 | P1 | ✅ 已覆盖 | `acceptsDistinctChoiceLabels` |
+| 40 | 综合 | 问题视图始终显示在当前会话的 userInput 挂起问题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingInteractionVisibility` |
+| 41 | 综合 | 从 userInput suspension 解码问题并保留真实 tool call ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suspensionPayloadDecoding` |
+| 42 | 综合 | yes_no 模式：返回是/否选项且挂起等待回答 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `yesNoMode` |
+| 43 | 综合 | choice 模式：返回传入的选项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `choiceMode` |
+| 44 | 综合 | 选项 badge 可编码解码且兼容旧字符串格式 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `optionBadgeCoding` |
+| 45 | 综合 | AskUser Schema 声明可选 badge | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `badgeSchema` |
+| 46 | 综合 | free_text 模式：无选项，挂起等待回答 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `freeTextMode` |
+| 47 | 综合 | 缺 mode 抛出错误且不挂起 | 无 | 调用 `executeResult` 只传 question | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `missingMode` |
+| 48 | 综合 | choice 模式缺 options 抛出错误 | 无 | 调用 `executeResult(mode: choice)` 不传 options | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `choiceMissingOptions` |
+| 49 | 综合 | 插件注册 ask_user 工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersTool` |
+| 50 | 综合 | ask_user 工具经 AgentLoop 挂起后可恢复（端到端） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `endToEndSuspension` |
 
-> 说明：全部 **47 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 30 / 30
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 32 / 32
 - P2: 已覆盖 6 / 6
-- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
+- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（30 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（32 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 47 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
