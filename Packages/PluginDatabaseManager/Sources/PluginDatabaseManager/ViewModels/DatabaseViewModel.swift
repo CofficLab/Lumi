@@ -448,6 +448,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA")
             || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE")
+            // WITH ... SELECT（CTE）同样产生结果行，必须走 query 才能把行展示出来；
+            // 否则被当成写入送进 execute，只回一个影响行数而丢掉结果集（#276）。
+            || upper.hasPrefix("WITH")
             // DML ... RETURNING 也产生结果行，必须走 query 才能把返回行展示出来。
             || upper.contains("RETURNING")
     }

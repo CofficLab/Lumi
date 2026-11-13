@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 73
+测试文件: 4 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Agent/`
@@ -49,6 +49,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DatabaseViewModelConnectionRace**（4 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`staleSQLiteTablesDoNotOverwriteNewDatabase`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询/旧表列表覆盖当前连接状态，以及 Reload 命中旧结构缓存。
 - **SQLite RETURNING**（2 条）：由 `executeAcceptsReturningRows`、`returningStatementsUseQueryPath` 锁定；改动 DML 路由或 SQLite step 循环时优先跑对应测试文件。
+- **SQLite WITH (CTE)**（2 条）：由 `withQueryUsesReadPath`、`withQueryReturnsRowsEndToEnd` 锁定；改动 SQL 读语句前缀判定（`isReadStatement`）时优先跑对应测试文件，防止只读 CTE 被误路由到 execute 而丢掉结果行。
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
 - **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
 - **SQLStatementParser**（5 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标。
@@ -131,27 +132,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 71 | SQLStatementParser | 未闭合块注释不会越界且不产生可执行语句 | 输入含未闭合 `/*` | 调用 `split` | 只有注释的片段被过滤 | P0 | ✅ 已覆盖 | `unterminatedBlockComment` |
 | 72 | SQLStatementParser | 行注释收尾与分号切分保持原有行为 | 输入含 `;-- trailing` 与末尾行注释 | 调用 `split` 与 `stripLiteralsAndComments` | 分号前语句保留，注释被剥离 | P1 | ✅ 已覆盖 | `lineCommentAtEnd` |
 | 73 | SQLStatementParser | 末尾的单引号不会越界 | 输入以未闭合单引号结尾 | 调用 `split` 与 `stripLiteralsAndComments` | 不崩溃，字面量按原样处理 | P0 | ✅ 已覆盖 | `trailingQuote` |
+| 74 | SQLite WITH (CTE) | WITH 查询识别为读路径，注释前缀与大小写不影响判定 | — | 调用 `isReadStatement` | 只读 CTE（含行/块注释前缀、小写）返回 true；普通 INSERT 返回 false | P1 | ✅ 已覆盖 | `withQueryUsesReadPath` |
+| 75 | SQLite WITH (CTE) | WITH 查询经 query 路径返回真实结果行 | 临时 SQLite 库 | 对 `WITH x AS (SELECT 1 AS n) SELECT n FROM x;` 调用 `isReadStatement` 与 `query` | 判定为读；列为 `["n"]`，行为 `[[1]]` | P1 | ✅ 已覆盖 | `withQueryReturnsRowsEndToEnd` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 37 / 37
-- P1: 已覆盖 35 / 35
+- P1: 已覆盖 37 / 37
 - P2: 已覆盖 1 / 1
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
-- **P1**: 其余功能性用例（35 条）
+- **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
