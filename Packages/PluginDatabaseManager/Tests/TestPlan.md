@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 97
+测试文件: 7 个，用例总数: 99
 
 核心组件（源码目录）:
 - `Agent/`
@@ -48,7 +48,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **PostgreSQL 对象列举默认 schema**（3 条）：由 `loadObjectsUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadRoutinesUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadObjectsBindsExplicitSchemaAsLiteral` 锁定（**回归 #275**）：未指定 schema 时表/视图/函数列举必须调用 `current_schema()` 函数而非字符串字面量，否则侧边栏漏掉当前 schema 的全部对象；显式 schema 仍按转义字面量过滤。改动 `PostgreSQLIntrospector.loadObjects` 的 schema 过滤时优先跑对应测试文件。
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **DatabaseViewModelConnectionRace**（4 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`staleSQLiteTablesDoNotOverwriteNewDatabase`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询/旧表列表覆盖当前连接状态，以及 Reload 命中旧结构缓存。
+- **DatabaseViewModelConnectionRace**（6 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`staleSQLiteTablesDoNotOverwriteNewDatabase`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询/旧表列表覆盖当前连接状态，以及 Reload 命中旧结构缓存；并由 `historyRecordsSubmittedSQLNotCurrentEditorText`、`staleQueryDoesNotRecordHistoryUnderNewConnection` 锁定（**回归 #284**）：查询历史必须归属真正提交执行的 SQL 与连接，不得记录 await 期间被改写的编辑器文本，也不得把旧连接的晚到结果记到新连接名下。改动 `executeQuery` 的历史归属或代次校验时优先跑对应测试文件。
 - **SQLite RETURNING**（2 条）：由 `executeAcceptsReturningRows`、`returningStatementsUseQueryPath` 锁定；改动 DML 路由或 SQLite step 循环时优先跑对应测试文件。
 - **SQLite WITH (CTE)**（2 条）：由 `withQueryUsesReadPath`、`withQueryReturnsRowsEndToEnd` 锁定；改动 SQL 读语句前缀判定（`isReadStatement`）时优先跑对应测试文件，防止只读 CTE 被误路由到 execute 而丢掉结果行。
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
@@ -185,26 +185,33 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 96 | BLOB 单元格只读 | 提交 BLOB 占位文本不产生任何变更，原始二进制保留（回归 #281） | 表 t(id PK, b BLOB, name TEXT)，b=X'01' | 对 b 列暂存字符串 `<BLOB 1 bytes>` | 无变更、无 UPDATE 语句，显示值仍为原始二进制 | P0 | ✅ 已覆盖 | `blobPlaceholderCommitStagesNoChange` |
 | 97 | BLOB 单元格只读 | 同一行的非 BLOB 列仍可正常编辑，只读限制按单元格生效 | 同上 | 对 name 列暂存 `Bob` | name 被暂存（1 处变更），b 列未被标记修改 | P1 | ✅ 已覆盖 | `nonBlobCellInSameRowStillStages` |
 
-> 说明：全部 **97 条场景**已在本包 `swift test` 中实跑通过。
+### 查询历史归属（回归 #284）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 98 | 查询历史归属 | 历史必须记录真正提交的 SQL，而非 await 期间被改写的编辑器文本（回归 #284） | 连接 A 执行挂起的慢查询 | 挂起 A 查询 → 改写编辑器为 SELECT 1（不切连接）→ 放行 A 查询 | 历史含真正提交的慢查询语句，不含被改写后的 SELECT 1 | P0 | ✅ 已覆盖 | `historyRecordsSubmittedSQLNotCurrentEditorText` |
+| 99 | 查询历史归属 | 旧连接查询晚到时不得把历史记到新连接名下（回归 #284） | 连接 A 执行挂起的慢查询，期间切到 B | 挂起 A 查询 → 连接 B 并改写编辑器为 SELECT 1 → 放行 A 查询 | selectedConfig 仍为 B；历史不含记到 B 名下的条目，也不含从未在 B 执行的 SELECT 1 | P0 | ✅ 已覆盖 | `staleQueryDoesNotRecordHistoryUnderNewConnection` |
+
+> 说明：全部 **99 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 48 / 48
+- P0: 已覆盖 50 / 50
 - P1: 已覆盖 48 / 48
 - P2: 已覆盖 1 / 1
-- **合计: 97 / 97**（仅表示清单场景，非源码覆盖率）
+- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（50 条）
 - **P1**: 其余功能性用例（48 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 97 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
