@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiPluginLogos.git", from: "1.0.0"),
         .package(path: "../PluginSettingGeneral"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginSettingView.git", from: "1.0.4"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginThemeManager.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginThemePack.git", from: "1.2.2"),
         .package(path: "../PluginToolManager"),

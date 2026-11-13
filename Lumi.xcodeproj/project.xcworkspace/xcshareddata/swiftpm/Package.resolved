@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginStorage.git",
       "state" : {
-        "revision" : "e52232ff8d6b95fa799a4ddffefb18c1df3e2d24",
-        "version" : "1.2.1"
+        "revision" : "dc857098d1b7d44536100b0b579b34c057e0dcbe",
+        "version" : "1.2.2"
       }
     },
     {

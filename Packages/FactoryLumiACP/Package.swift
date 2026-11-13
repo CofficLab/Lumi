@@ -33,7 +33,7 @@ let package = Package(
         .package(path: "../ProviderWebServer"),
         .package(path: "../ProviderACP"),
         .package(path: "../PluginACP"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginCommand.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginToast.git", from: "1.2.4"),
         .package(path: "../PluginLLMManager"),

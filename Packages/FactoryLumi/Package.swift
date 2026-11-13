@@ -149,7 +149,7 @@ let package = Package(
         .package(name: "PluginGitChatToolbar", path: "../PluginGitChatToolbar"),
         .package(name: "PluginGoalTask", path: "../PluginGoalTask"),
         .package(name: "PluginNetto", path: "../PluginNetto"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginStorage.git", from: "1.2.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginToast.git", from: "1.2.3"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginCommand.git", from: "1.0.1"),
         .package(path: "../PluginXcodeBuild"),
