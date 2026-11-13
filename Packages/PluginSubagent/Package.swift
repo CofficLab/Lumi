@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../PluginConversationManager"),
     ],
     targets: [
@@ -23,6 +24,11 @@ let package = Package(
             name: "PluginSubagent",
             dependencies: [
                 "ProviderConversation",
+                "ProviderMessage",
+                "ProviderAgentLoop",
+                "KitAgentTool",
+                "ProviderToolManager",
+                .product(name: "KernelCore", package: "LumiKernel"),
             ],
             path: "Sources/PluginSubagent"
         ),

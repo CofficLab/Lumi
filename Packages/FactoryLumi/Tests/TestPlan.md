@@ -5,7 +5,7 @@
 FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核、全部 Provider 默认实现、 100+ 插件与视图组装集中在一个包中完成接线，是 Lumi 主应用启动的唯一入口。 ## 职责 FactoryLumi 不包含业务逻辑，只负责**把正确的事情在正确的时机做对**： | 职责 | 实现 | 说明 | | --- | --- | --- | | 内核创建 | `KernelFactory` | 创建 `KernelCoreContainer`，装配 Provider，启动插件 | | Provider 工厂 | `DefaultProviderFactory` | 产出 30+ 个 Provider 默认实现并按依赖顺序注册 | | Plugin 工厂 | `DefaultPluginFactory` | 产出 100+ 个插件，统一校验、排序、原子启动 | | View 工厂 | `DefaultViewFactory` | 用内核 Provider 组装主视图与设置视图 | | 菜单集成 | `AppCommands` | 把 `CommandProviding` 贡献映射到 macOS 系统菜单 | | 主题桥接 | `PaletteChromeTheme` | 把新版 `LumiThemePalette` 适配回 LumiUI 旧版 chrome 主题 | ## 三大工厂协议 ```swift /// 产出全部插件。宿主可实现该协议覆盖插件列表。 protocol PluginFactory {
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 80
+测试文件: 16 个，用例总数: 83
 
 核心组件（源码目录）:
 - `Contracts/`
@@ -37,6 +37,7 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 - **ChatGPTMessageListEndToEnd**（4 条）：V5 ChatGPT 消息列表的槽位接管、落库消息链路与呈现风格。
 - **FactoryLumiMenuBarPopupOrder**（1 条）：防休眠弹窗在菜单栏弹出菜单中的排序。
 - **MessageRendererDirectoryConformance**（3 条）：渲染器目录位置、扫描发现与文件名约定审计。
+- **SubagentEndToEnd**（3 条）：run_subagent 同步委托的结论回流、截断上限与失败语义。
 - **FactoryLumi**（2 条）：由 `defaultFactoryIncludesHydrationReminder`、`defaultFactoryIncludesLLMProviderToolPlugin` 锁定。
 - **PluginFinder / PluginFinderEndToEnd / PluginFinderToggle**（5 条）：卡片的装配、端到端渲染与启停撤回。
 - **PluginHTMLCanvas / PluginHTMLCanvasEndToEnd**（5 条）：HTML 画布工具与渲染器的装配、端到端渲染与停用。
@@ -127,27 +128,30 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 | 78 | MessageRendererDirectoryConformance | 渲染器实现必须放在 Renderers/ 目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `renderersLiveInRenderersDirectory` |
 | 79 | MessageRendererDirectoryConformance | 扫描能发现已知的渲染器文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scannerFindsKnownRenderers` |
 | 80 | MessageRendererDirectoryConformance | 渲染器文件名与主类型名一致 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `rendererFileNameMatchesTypeName` |
+| 81 | SubagentEndToEnd | 同步委托只返回子代理结论与用量摘要，子会话对列表隐藏 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `syncDelegationReturnsConclusionOnly` |
+| 82 | SubagentEndToEnd | 超长结论被截断，工具结果不会撑爆父上下文 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `longConclusionIsCapped` |
+| 83 | SubagentEndToEnd | 子回合失败时工具抛出执行错误而不是成功字符串 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `childFailureBecomesToolError` |
 
-> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 50 / 50
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 26 / 26
-- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
+- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（50 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（52 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

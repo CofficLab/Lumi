@@ -53,6 +53,7 @@ import PluginAppStorePromoDesigner
 import PluginPrototypeDesigner
 import PluginAskUser
 import PluginFinder
+import PluginSubagent
 import PluginHTMLCanvas
 import PluginDiskSpeedTest
 import PluginCaffeinate
@@ -299,6 +300,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationExportPlugin(),
             AskUserPlugin(),
             FinderPlugin(),
+            SubagentPlugin(),
             HTMLCanvasPlugin(),
             DiskSpeedTestPlugin(),
             OpenInFinderPlugin(),
