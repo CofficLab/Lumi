@@ -265,11 +265,13 @@ public final class TableChangeManager: ObservableObject {
 
         return pendingInserts.map { insert in
             if insert.columnValues.isEmpty {
-                // 空行：让数据库填充默认值
+                // 空行：让数据库填充默认值。
+                // SQLite 与 PostgreSQL 都接受 DEFAULT VALUES；MySQL 不支持该语法，
+                // 须用空列清单 () VALUES ()，否则 PostgreSQL 会语法报错并回滚保存（#280）。
                 switch type {
-                case .sqlite:
+                case .sqlite, .postgresql:
                     return "INSERT INTO \(tableExpr) DEFAULT VALUES;"
-                case .mysql, .postgresql:
+                case .mysql:
                     return "INSERT INTO \(tableExpr) () VALUES ();"
                 case .redis:
                     return ""

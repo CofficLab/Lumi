@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 79
+测试文件: 5 个，用例总数: 83
 
 核心组件（源码目录）:
 - `Agent/`
@@ -141,26 +141,35 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 78 | Redis key quoting | 含空格/引号/反斜杠的键经 quote 后必须还原为单个参数，不得被拆分（回归 #282） | — | 对 foo bar/空键/制表符/换行/双引号/单引号/反斜杠/混合键调用 `quote` 再 `tokenize` | `tokenize(quote(key)) == [key]`，且 `tokenize("GET " + quote(key)) == ["GET", key]` | P0 | ✅ 已覆盖 | `quotedKeyRoundTripsAsSingleArgument` |
 | 79 | Redis key quoting | 侧边栏打开含空格的键时 GET 必须只携带一个完整键参数，不得被空格拆开（回归 #282） | 假 Redis 驱动/连接记录下发命令 | 连接 Redis 后调用 `openRedisKey("foo bar")`，对捕获命令复刻 `compose` | 解析结果为 `["GET", "foo bar"]`，而非 `["GET","foo","bar"]` | P0 | ✅ 已覆盖 | `openRedisKeySendsSingleExactKeyArgument` |
 
-> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
+### 空行插入语句的方言生成（回归 #280）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 80 | 空行插入 | PostgreSQL 空行插入必须生成 DEFAULT VALUES，不得套用 MySQL 的 () VALUES ()（回归 #280） | 带主键的表 t | `addInsert()` 后 `generatedInsertStatements(for: .postgresql)` | 等于 `INSERT INTO "t" DEFAULT VALUES;` | P0 | ✅ 已覆盖 | `postgresEmptyInsertUsesDefaultValues` |
+| 81 | 空行插入 | MySQL 空行插入仍生成空列清单 () VALUES () | 带主键的表 t | `addInsert()` 后 `generatedInsertStatements(for: .mysql)` | 等于 ``INSERT INTO `t` () VALUES ();`` | P1 | ✅ 已覆盖 | `mysqlEmptyInsertUsesEmptyColumnList` |
+| 82 | 空行插入 | SQLite 空行插入生成 DEFAULT VALUES | 带主键的表 t | `addInsert()` 后 `generatedInsertStatements(for: .sqlite)` | 等于 `INSERT INTO "t" DEFAULT VALUES;` | P1 | ✅ 已覆盖 | `sqliteEmptyInsertUsesDefaultValues` |
+| 83 | 空行插入 | PostgreSQL 带 schema 的空行插入仍用 DEFAULT VALUES 且限定名正确 | schema=public 的表 t | `addInsert()` 后 `generatedInsertStatements(for: .postgresql)` | 等于 `INSERT INTO "public"."t" DEFAULT VALUES;` | P1 | ✅ 已覆盖 | `postgresEmptyInsertWithSchemaUsesDefaultValues` |
+
+> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 39 / 39
-- P1: 已覆盖 39 / 39
+- P0: 已覆盖 40 / 40
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 1 / 1
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（39 条）
-- **P1**: 其余功能性用例（39 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（40 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
