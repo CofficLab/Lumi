@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 218 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 224 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 34 个，用例总数: 218
+测试文件: 35 个，用例总数: 224
 
 核心组件（源码目录）:
 - PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
@@ -50,6 +50,8 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 - **RAGRipgrepLocator**（3 条）：由 `bundledRipgrepResolvesAndRuns`、`bundledCandidatePrecedesSystemPaths`、`bundledRipgrepIsUniversal` 锁定。ripgrep 随包内置（`Resources/rg`，universal），解析优先于系统 PATH，不依赖用户机器安装 rg；应用内签名副本由构建脚本放入 `Contents/MacOS`，资源 bundle 内未签名副本不得优先。
 - **RAGSQLiteCandidateDedup**（3 条）：由 `mergeKeepsChunksThatShareContentPrefix`、`partialMatchDoesNotEvictFullMatch`、`fallbackOverlapIsDeduplicated` 锁定。词法与回退候选合并必须按数据库 chunk id 去重；不能用「路径 + 内容前 80 字符」，否则同前缀的不同 chunk 会互相覆盖，完整命中的旧 chunk 会在评分前被较新的部分匹配挤掉（**回归 #1115**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
+- **工具调度能力**（4 条）：由 grep/search_code 各自的 `declaresParallelReadOnlyCapability` 与 `concurrentGrepsKeepResultsIndependent`、`concurrentSearchesKeepResultsIndependent` 锁定。grep 与 search_code 声明 `parallelReadOnly`（#1312）：每次 grep 是独立 ripgrep 进程，索引访问经 RAGService actor 内部串行，工具层无共享可变状态；并发调用不得互相污染结果。
+- **RAGProcessRunnerNonBlocking**（2 条）：由 `concurrentGrepsDoNotStarveCooperativePool`、`concurrentGrepsDoNotBlockEachOther` 锁定。ripgrep 调用必须离开 Swift Concurrency 协作线程池（在 GCD 线程上等待进程退出），否则并发 grep 会占满线程池、MainActor 停止调度、进程整体冻结；并发 grep 之间也不得串行化。
 
 ## 测试用例清单
 
@@ -273,8 +275,14 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 | 216 | ProjectRAGSettings | 暂停开关驱动服务并回读真实状态 | 未暂停的 RAGService | 切换暂停开/关 | service 与 ViewModel 状态一致 | P1 | ✅ 已覆盖 | `pauseToggleDrivesService` |
 | 217 | ProjectRAGSettings | load 反映外部设置的暂停状态 | 外部先暂停 service | 调用 `load` | ViewModel 显示已暂停 | P1 | ✅ 已覆盖 | `loadReflectsServiceState` |
 | 218 | ProjectRAGSettings | shutdown 必须撤回设置入口 | 内核注册 DefaultSettingViewProviding | onBoot 后 onShutdown | 入口先注册后移除 | P0 | ✅ 已覆盖 | `settingsEntryLifecycle` |
+| 219 | RAGGrepTool | grep 声明并行只读能力（#1312） | — | 读取 `executionCapability` | 为 `.parallelReadOnly` | P1 | ✅ 已覆盖 | `declaresParallelReadOnlyCapability` |
+| 220 | RAGGrepTool | 并发 grep 结果互不污染（#1312） | fixture A/B 各含不同标记行 | TaskGroup 并发执行 4 个 grep | 每份输出只含自己的标记，4 份结果各自独立 | P1 | ✅ 已覆盖 | `concurrentGrepsKeepResultsIndependent` |
+| 221 | RAGCodeSearchToolContract | search_code 声明并行只读能力（#1312） | — | 读取 `executionCapability` | 为 `.parallelReadOnly` | P1 | ✅ 已覆盖 | `declaresParallelReadOnlyCapability` |
+| 222 | RAGCodeSearchToolContract | 并发 search_code 结果互不污染（#1312） | echo 桩 provider 按查询返回结果 | 并发执行 4 个查询 | 每份输出只含自己的 echo 标记，不含其他查询的标记 | P1 | ✅ 已覆盖 | `concurrentSearchesKeepResultsIndependent` |
+| 223 | RAGProcessRunnerNonBlocking | 并发 ripgrep 不会占满协作线程池 | 200 文件大项目、2×核数个并发 grep | grep 期间以主 actor 心跳为探针 | 心跳全程持续增长，协作池未被占满 | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotStarveCooperativePool` |
+| 224 | RAGProcessRunnerNonBlocking | 并发 grep 不会互相阻塞 | 150 文件大项目 | 并发执行 3 个 grep | 三个都命中且总耗时 < 2s（非串行） | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotBlockEachOther` |
 
-> 说明：全部 **218 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **224 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
@@ -284,21 +292,21 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 49 / 49
-- P1: 已覆盖 155 / 155
+- P0: 已覆盖 51 / 51
+- P1: 已覆盖 159 / 159
 - P2: 已覆盖 14 / 14
-- **合计: 218 / 218**（仅表示清单场景，非源码覆盖率）
+- **合计: 224 / 224**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（49 条）
-- **P1**: 其余功能性用例（155 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（51 条）
+- **P1**: 其余功能性用例（159 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 218 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 224 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
