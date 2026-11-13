@@ -14,6 +14,9 @@ public struct WebSearchTool: SuperAgentTool {
 
     public let name = "web_search"
 
+    // 无共享可变状态，网络请求与 HTML 解析均为每次调用独立，可并行。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
     public init(
         searchClient: (@Sendable (String) async throws -> [WebSearchResult])? = nil
     ) {
