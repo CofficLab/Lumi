@@ -9,7 +9,7 @@ struct ToolJobOutputPopover: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "terminal")
-                Text("工具输出")
+                Text(pluginLocalization.string("Tool Output"))
                     .font(.appCaptionEmphasized)
                 Spacer()
                 Text(job.toolCall.name)

@@ -49,7 +49,7 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
             Self.logger.error(
                 "\(Self.t)授权渲染器已命中但无法构造授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
             )
-            return AnyView(Text("无法解析工具审批请求"))
+            return AnyView(Text(pluginLocalization.string("Unable to parse tool approval request")))
         }
 
         return AnyView(

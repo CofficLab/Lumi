@@ -49,7 +49,7 @@ struct DefaultMessageView: View {
                     .textSelection(.enabled)
             }
 
-            Text("此消息没有正文，点按头部右侧信息图标可查看原始字段")
+            Text(pluginLocalization.string("This message has no body. Tap the info icon on the right of the header to view raw fields."))
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
         }

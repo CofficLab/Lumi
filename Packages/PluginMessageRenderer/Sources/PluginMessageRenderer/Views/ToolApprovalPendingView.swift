@@ -61,7 +61,7 @@ struct ToolApprovalPendingView: View {
                 }
 
                 if responded {
-                    Text("已提交：等待继续执行…")
+                    Text(pluginLocalization.string("Submitted: waiting to continue…"))
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 }

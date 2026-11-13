@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginMessageRenderer",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginMessageRenderer", targets: ["PluginMessageRenderer"]),

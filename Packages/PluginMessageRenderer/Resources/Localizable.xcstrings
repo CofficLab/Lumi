@@ -69,6 +69,41 @@
         }
       }
     },
+    "Click to view Goal auto-continuation details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to view Goal auto-continuation details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击查看 Goal 自动续跑详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊查看 Goal 自動續跑詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊查看 Goal 自動續跑詳情"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊查看 Goal 自動續跑詳情"
+          }
+        }
+      }
+    },
     "Copy": {
       "localizations": {
         "en": {
@@ -99,6 +134,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "复制"
+          }
+        }
+      }
+    },
+    "Elapsed: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elapsed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗时%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗時%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗時%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗時%@"
           }
         }
       }
@@ -440,6 +510,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "新供應商"
+          }
+        }
+      }
+    },
+    "No new progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new progress"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无新进度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無新進度"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無新進度"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無新進度"
           }
         }
       }
@@ -818,6 +923,41 @@
         }
       }
     },
+    "Submitted: waiting to continue…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submitted: waiting to continue…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待继续执行…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        }
+      }
+    },
     "Switched to %@": {
       "localizations": {
         "en": {
@@ -916,6 +1056,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "點按檢視重試詳情"
+          }
+        }
+      }
+    },
+    "This message has no body. Tap the info icon on the right of the header to view raw fields.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This message has no body. Tap the info icon on the right of the header to view raw fields."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此消息没有正文，点按头部右侧信息图标可查看原始字段"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此消息沒有正文，點按頭部右側信息圖標可查看原始字段"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此消息沒有正文，點按頭部右側信息圖標可查看原始字段"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此消息沒有正文，點按頭部右側信息圖標可查看原始字段"
           }
         }
       }
@@ -1022,6 +1197,41 @@
         }
       }
     },
+    "Tool Output": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool Output"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具输出"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具輸出"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具輸出"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具輸出"
+          }
+        }
+      }
+    },
     "Tool Result": {
       "localizations": {
         "en": {
@@ -1056,6 +1266,41 @@
         }
       }
     },
+    "Unable to parse tool approval request": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to parse tool approval request"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法解析工具审批请求"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析工具審批請求"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析工具審批請求"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析工具審批請求"
+          }
+        }
+      }
+    },
     "Unknown model": {
       "localizations": {
         "en": {
@@ -1086,6 +1331,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "未知模型"
+          }
+        }
+      }
+    },
+    "View Output": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Output"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看输出"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看輸出"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看輸出"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看輸出"
           }
         }
       }
@@ -1788,7 +2068,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "消息详情"
+            "value": "Message Details"
           }
         },
         "zh-Hans": {
@@ -1927,7 +2207,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用参数"
+            "value": "Call Arguments"
           }
         },
         "zh-Hans": {
@@ -1961,7 +2241,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用结果"
+            "value": "Call Result"
           }
         },
         "zh-Hans": {

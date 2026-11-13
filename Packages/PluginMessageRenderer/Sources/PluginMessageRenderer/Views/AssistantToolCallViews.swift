@@ -486,7 +486,7 @@ struct ToolCallRowView: View {
     @ViewBuilder
     private func liveJobDetails(_ projection: ToolJobActivityProjection) -> some View {
         HStack(spacing: 8) {
-            Text("耗时\(MessageViewHelpers.formatDuration(projection.duration))")
+            Text(String(format: pluginLocalization.string("Elapsed: %@"), MessageViewHelpers.formatDuration(projection.duration)))
                 .font(.appMicro)
                 .foregroundColor(theme.textSecondary)
 
@@ -498,7 +498,7 @@ struct ToolCallRowView: View {
             }
 
             if projection.isStale {
-                Text("暂无新进度")
+                Text(pluginLocalization.string("No new progress"))
                     .font(.appMicro)
                     .foregroundColor(theme.warning)
             }
@@ -514,7 +514,7 @@ struct ToolCallRowView: View {
                 ) {
                     isJobOutputPresented.toggle()
                 }
-                .help("查看输出")
+                .help(pluginLocalization.string("View Output"))
                 .popover(isPresented: $isJobOutputPresented, arrowEdge: .bottom) {
                     if let job = jobActivity.job {
                         ToolJobOutputPopover(job: job)
