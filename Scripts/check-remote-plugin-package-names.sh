@@ -35,6 +35,7 @@ EXPECTED_PACKAGE_PAIRS=(
   "LumiPluginActivityBar:LumiPluginActivityBar"
   "LumiPluginBookletMaker:LumiPluginBookletMaker"
   "LumiPluginCommand:LumiPluginCommand"
+  "LumiPluginDevice:LumiPluginDevice"
   "LumiPluginIdleTime:LumiPluginIdleTime"
   "LumiPluginHydrationReminder:LumiPluginHydrationReminder"
   "LumiPluginLogos:LumiPluginLogos"

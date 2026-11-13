@@ -79,6 +79,7 @@ import PluginConversationResume
 import PluginConversationTitle
 import PluginConversationState
 import PluginDevice
+import PluginDeviceChat
 import PluginDiskManager
 import PluginNetworkManager
 import PluginDocxRead
@@ -244,7 +245,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 项目文件树（由旧版 Plugins/ProjectFileTreePlugin 迁移而来）。
             ProjectFileTreePlugin(),
             ProjectFilesPlugin(),
-            DevicePlugin(),
+            DevicePlugin(chat: DeviceStatusChatContribution()),
             SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
