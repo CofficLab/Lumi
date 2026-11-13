@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 42 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 49 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 42
+测试文件: 15 个，用例总数: 49
 
 核心组件（源码目录）:
 - `Models/`
@@ -41,7 +41,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **ProjectFileTreePlugin**（2 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **FileTreeDataSource**（3 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed`、`reloadDirectoryKeepsFollowingSiblings` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）；精准刷新目录的替换范围只能覆盖该目录及其子树，不得删除其后的兄弟节点（**回归 #182**）。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
-- **FileTreeNSViewBridge**（2 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。
+- **FileTreeNSViewBridge**（9 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload`、`rootOnlyChangeTriggersFullRefresh`、`rootChangeWithTrailingSlashStillTriggersFullRefresh`、`rootAndSubdirectoryChangeTriggersSingleFullRefresh`、`subdirectoryOnlyChangeStaysTargeted`、`repeatedTargetedRefreshTokenIsDeduplicated`、`emptyChangedPathsFallsBackToFullRefresh`、`rootLevelExternalAdditionAppearsAfterRootRefresh` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。根目录不是 items 节点，变化集合命中根路径时必须走 `fullRefresh()` 重建根级子节点，不得跳过；根路径比较前须与 coordinator 下发路径做同样的标准化；仅子目录变化保持精准 reload（**回归 #183**）。
 - **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
 - **SelectionState**（2 条）：由 `shiftClickSelectsEveryVisibleItemInRange`、`visibleOrderUpdateDropsCollapsedItems` 锁定。Shift 范围选择依赖 `updateVisibleOrder` 建立的显示顺序，重建时必须丢弃已折叠/不可见行（**回归 #1101**）。
 - **FileTreeCollectionViewController**（1 条）：由 `controllerTracksVisibleOrderForShiftSelection` 锁定。每次树快照变化都必须把可见文件行按顺序写入 `SelectionState`，否则 Shift 点击只能退化为单选，右键“Send to Conversation”会漏发中间文件（**回归 #1101**）。
@@ -100,27 +100,34 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 40 | FileTreeCollectionViewController | 多选删除会移除全部目标的选择（**回归 #1109**） | 已选中 a.txt、b.txt | `performDelete` 处理全部目标 | 删除器收到两项，选择清空，成功提示 | P0 | ✅ 已覆盖 | `performDeleteTrashesEveryTarget` |
 | 41 | FileTreeCollectionViewController | 部分失败时保留失败项的选择并给出警告 | 删除器只成功 a.txt、失败 b.txt | `performDelete` 处理全部目标 | 选择只剩 b.txt，提示为 warning 且包含 b.txt | P1 | ✅ 已覆盖 | `performDeleteKeepsFailedTargetSelected` |
 | 42 | FileTreeDataSource | 精准刷新目录不得删除其后的兄弟节点（**回归 #182**） | 根下含已展开目录 A、目录 B 与文件 tail.txt | A 内新增文件后调用 `reloadDirectory(A)` | A 的新文件出现，B、B 的子节点与 tail.txt 均保留 | P0 | ✅ 已覆盖 | `reloadDirectoryKeepsFollowingSiblings` |
+| 43 | FileTreeNSViewBridge | 根目录变化必须触发全量重建，不得被跳过（**回归 #183**） | 变化集合仅含标准化根路径 | 派发精准刷新令牌 1 | 收到一次 `fullRefresh`，无逐目录 reload | P0 | ✅ 已覆盖 | `rootOnlyChangeTriggersFullRefresh` |
+| 44 | FileTreeNSViewBridge | 根路径带尾斜杠时根目录变化仍触发全量重建 | 项目路径带尾斜杠，变化集合为标准化根路径 | 派发精准刷新令牌 1 | 标准化比较命中根目录，收到一次 `fullRefresh` | P1 | ✅ 已覆盖 | `rootChangeWithTrailingSlashStillTriggersFullRefresh` |
+| 45 | FileTreeNSViewBridge | 根目录与子目录同时变化时只做一次全量重建 | 变化集合含根路径与子目录 | 派发精准刷新令牌 1 | 仅一次 `fullRefresh`，不叠加逐目录 reload | P1 | ✅ 已覆盖 | `rootAndSubdirectoryChangeTriggersSingleFullRefresh` |
+| 46 | FileTreeNSViewBridge | 仅子目录变化时保持精准 reload | 变化集合仅含子目录 | 派发精准刷新令牌 1 | 无 `fullRefresh`，仅对该子目录 `reloadDirectory` | P1 | ✅ 已覆盖 | `subdirectoryOnlyChangeStaysTargeted` |
+| 47 | FileTreeNSViewBridge | 相同精准刷新令牌不会重复派发 | 已处理令牌 1 | 再次派发令牌 1 | 只产生一次刷新动作 | P2 | ✅ 已覆盖 | `repeatedTargetedRefreshTokenIsDeduplicated` |
+| 48 | FileTreeNSViewBridge | 空变化集合兜底全量刷新 | 变化集合为空 | 派发精准刷新令牌 1 | 收到一次 `fullRefresh` | P2 | ✅ 已覆盖 | `emptyChangedPathsFallsBackToFullRefresh` |
+| 49 | FileTreeNSViewBridge | 根目录外部新增文件经根刷新后必须出现在树中（**回归 #183**） | 数据源已加载根级 a.txt，外部新增 b.txt | 以标准化根路径派发精准刷新 | 重建提交后 items 同时包含 a.txt 与 b.txt | P0 | ✅ 已覆盖 | `rootLevelExternalAdditionAppearsAfterRootRefresh` |
 
-> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 13 / 13
-- P2: 已覆盖 7 / 7
-- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 16 / 16
+- P2: 已覆盖 9 / 9
+- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（13 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（16 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

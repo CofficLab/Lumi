@@ -9,6 +9,13 @@ protocol FileTreeGitStatusUpdating: AnyObject {
     func updateGitStatus(_ snapshot: GitStatusSnapshot)
 }
 
+/// 接收精准刷新指令的视图边界，测试可注入记录型替身。
+@MainActor
+protocol FileTreeRefreshing: AnyObject {
+    func fullRefresh()
+    func reloadDirectory(at url: URL)
+}
+
 /// NSViewRepresentable 桥接层
 ///
 /// 将 FileTreeCollectionViewController 包装为 SwiftUI 视图。
@@ -90,24 +97,14 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         context.coordinator.applyGitStatus(gitStatusSnapshot, token: gitStatusToken, to: viewController)
 
         // 精准刷新：watcher 检测到外部文件系统变化时，RefreshCoordinator 递增
-        // targetedRefreshToken 并下发 changedDirectoryPaths。此处据此驱动 reloadDirectory，
-        // 避免整树重载。用 lastTargetedRefreshToken 去重，防止 updateNSView 因其它属性
-        // 变化（如 Git 快照更新）重入时造成多余刷新。
-        if context.coordinator.lastTargetedRefreshToken != targetedRefreshToken {
-            context.coordinator.lastTargetedRefreshToken = targetedRefreshToken
-            if changedDirectoryPaths.isEmpty {
-                // 无具体目标（兜底）：全量刷新
-                viewController.fullRefresh()
-            } else {
-                // 精准刷新：逐个 reload 变化的目录
-                for path in changedDirectoryPaths {
-                    // 跳过项目根目录：根节点始终由 setProjectRoot / fullRefresh 维护，
-                    // reloadDirectory 依赖节点已存在于 items 中，对根目录单独 reload 不适用。
-                    if path == projectRootPath { continue }
-                    viewController.reloadDirectory(at: URL(fileURLWithPath: path))
-                }
-            }
-        }
+        // targetedRefreshToken 并下发 changedDirectoryPaths。用 lastTargetedRefreshToken
+        // 去重，防止 updateNSView 因其它属性变化（如 Git 快照更新）重入时造成多余刷新。
+        context.coordinator.applyTargetedRefresh(
+            token: targetedRefreshToken,
+            changedPaths: changedDirectoryPaths,
+            projectRootPath: projectRootPath,
+            to: viewController
+        )
     }
 
     func makeCoordinator() -> Coordinator {
@@ -132,6 +129,40 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
             guard token != lastGitStatusToken else { return }
             lastGitStatusToken = token
             viewController.updateGitStatus(snapshot)
+        }
+
+        /// 消费一次精准刷新：按变化目录集合决定全量重建还是逐目录 reload。
+        ///
+        /// 根目录不是 items 中的节点，`reloadDirectory(at: root)` 会静默 no-op；
+        /// 根目录命中时必须走 `fullRefresh()` 重建根级子节点，否则外部在根目录
+        /// 增删的文件永远不出现（回归 #183）。coordinator 下发的路径已标准化，
+        /// 比较前对根路径做同样的标准化（尾斜杠、`~` 等差异）。
+        @MainActor
+        func applyTargetedRefresh(
+            token: Int,
+            changedPaths: Set<String>,
+            projectRootPath: String,
+            to viewController: any FileTreeRefreshing
+        ) {
+            guard token != lastTargetedRefreshToken else { return }
+            lastTargetedRefreshToken = token
+
+            if changedPaths.isEmpty {
+                // 无具体目标（兜底）：全量刷新
+                viewController.fullRefresh()
+                return
+            }
+
+            let normalizedRoot = PathFormatter.normalizedFilePath(URL(fileURLWithPath: projectRootPath))
+            if changedPaths.contains(normalizedRoot) {
+                // fullRefresh 保留展开状态，且重建提交前旧列表仍在，不会闪烁。
+                viewController.fullRefresh()
+                return
+            }
+
+            for path in changedPaths {
+                viewController.reloadDirectory(at: URL(fileURLWithPath: path))
+            }
         }
     }
 }
