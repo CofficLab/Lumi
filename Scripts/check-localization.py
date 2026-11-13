@@ -30,14 +30,13 @@ CJK = re.compile(r"[\u4e00-\u9fff]")
 SKIP_DIRS = {"build", "SourcePackages", "temp", ".build", "Tests", "Vendor", "DerivedData"}
 SCAN_ROOTS = [
     "Packages", "LumiApp", "LumiACPApp", "AppIconDesignerApp",
-    "CADDesignerApp", "DatabaseManagerApp", "NettoExtension",
+    "CADDesignerApp", "NettoExtension",
 ]
 APP_PLISTS = [
     "LumiApp/Lumi-Info.plist",
     "LumiACPApp/LumiACP-Info.plist",
     "AppIconDesignerApp/AppIconDesigner-Info.plist",
     "CADDesignerApp/CADDesigner-Info.plist",
-    "DatabaseManagerApp/DatabaseManager-Info.plist",
     "Packages/PluginRClick/FinderExtension/Info.plist",
     "NettoExtension/Info.plist",
 ]

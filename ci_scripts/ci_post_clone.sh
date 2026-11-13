@@ -31,7 +31,6 @@ SET_VERSION_SCRIPT=""
 case "${CI_TAG:-}" in
     appicondesigner-v*) SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-appicondesigner-version.sh" ;;
     caddesigner-v*)     SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-caddesigner-version.sh" ;;
-    databasemanager-v*) SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-databasemanager-version.sh" ;;
     *) echo "    CI_TAG='${CI_TAG:-<未设置>}' 非已知 app tag 前缀，跳过版本注入。" ;;
 esac
 

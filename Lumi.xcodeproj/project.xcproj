@@ -114,20 +114,6 @@
       ],
     }, {
       "kind": "folder",
-      "path": "DatabaseManagerApp",
-      "target-membership": [
-        "DatabaseManager",
-      ],
-      "membership-exceptions": [
-        {
-          "target": "DatabaseManager",
-          "exclusions": [
-            "DatabaseManager-Info.plist",
-          ],
-        },
-      ],
-    }, {
-      "kind": "folder",
       "path": "Packages/PluginRClick/FinderExtension",
       "target-membership": [
         "LumiFinder",
@@ -146,7 +132,6 @@
     { "path": "<PRODUCTS>/LumiACP.app", "id": "AC0000000000000000000002", "type": "wrapper.application", "index": false },
     { "path": "<PRODUCTS>/AppIconDesigner.app", "id": "AI0000000000000000000002", "type": "wrapper.application", "index": false },
     { "path": "<PRODUCTS>/CADDesigner.app", "id": "CD0000000000000000000002", "type": "wrapper.application", "index": false },
-    { "path": "<PRODUCTS>/DatabaseManager.app", "id": "DB0000000000000000000002", "type": "wrapper.application", "index": false },
     { "path": "<PRODUCTS>/LumiFinder.appex", "id": "LF000000000000000001", "type": "wrapper.app-extension", "index": false, "target-membership": [ { "build-phase": "Lumi/copy/Embed PlugIns", "header-preservation": "remove-on-copy" } ] },
     { "path": "<PRODUCTS>/LumiUITests.xctest", "id": "UT0000000000000000000002", "type": "wrapper.cfbundle", "index": false },
     { "kind": "group", "name": "Frameworks" },
@@ -154,7 +139,6 @@
     { "path": "LumiApp/Config/Project-Release.xcconfig", "index": true },
     { "path": "AppIconDesignerApp/AppIconDesigner.xcconfig", "index": true },
     { "path": "CADDesignerApp/CADDesigner.xcconfig", "index": true },
-    { "path": "DatabaseManagerApp/DatabaseManager.xcconfig", "index": true },
     { "path": "LumiApp/Config/Lumi-Debug.xcconfig", "index": true },
     { "path": "LumiApp/Config/Lumi-Release.xcconfig", "index": true },
     { "path": "Packages/PluginRClick/FinderExtension/LumiFinder-Debug.xcconfig", "index": true },
@@ -458,27 +442,6 @@
         {
           "package": "FactoryCADDesigner",
           "product-name": "FactoryCADDesigner",
-          "build-phase": { "build-phase": "frameworks" },
-        },
-      ],
-    }, {
-      "name": "DatabaseManager",
-      "id": "DB0000000000000000000009",
-      "product": "DatabaseManager.app",
-      "product-type": "application",
-      "specialized-configurations": [
-        { "name": "Debug", "file": "DatabaseManager.xcconfig" },
-        { "name": "Release", "file": "DatabaseManager.xcconfig" },
-      ],
-      "build-phases": [
-        "compile-sources",
-        "frameworks",
-        "resources",
-      ],
-      "package-product-members": [
-        {
-          "package": "FactoryDatabaseManager",
-          "product-name": "FactoryDatabaseManager",
           "build-phase": { "build-phase": "frameworks" },
         },
       ],

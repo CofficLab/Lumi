@@ -174,7 +174,7 @@ base64 AuthKey_XXXX.p8 > api.txt
 
 ## 五、独立 app 的发版（Tag → Xcode Cloud）
 
-Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIconDesigner、CADDesigner、DatabaseManager）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。BookletMaker 已移除独立 app，只保留 Lumi 内插件，不再拥有独立发布 tag。
+Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIconDesigner、CADDesigner）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。BookletMaker 已移除独立 app，只保留 Lumi 内插件，不再拥有独立发布 tag。DatabaseManager 已剥离为独立仓库 [Lode](https://github.com/CofficLab/Lode)，不再在本仓库构建或发版。
 
 ### Tag 与 scope 约定
 
@@ -182,7 +182,6 @@ Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIco
 |-----|---------|--------------------------|-------------|----------|
 | AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `AppIconDesignerApp/AppIconDesigner.xcconfig` |
 | CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `CADDesignerApp/CADDesigner.xcconfig` |
-| DatabaseManager | `databasemanager-v*` | `databasemanager` \| `databasemanagerapp` | `set-databasemanager-version.sh` | `DatabaseManagerApp/DatabaseManager.xcconfig` |
 
 ### 流程
 
@@ -199,7 +198,6 @@ Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIco
 ```
 feat(appicondesigner): 支持导出 1024 图标
 fix(caddesigner): 修复导出崩溃
-feat(databasemanager): 新增 Redis 连接
 ```
 
 下一次推 `main` 时对应 workflow 会自动打 tag（`feat` → minor 递增；`fix`/`chore` → patch；`!` → major）。首次从 `*-v1.0.0` 起步。

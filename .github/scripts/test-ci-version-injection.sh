@@ -15,8 +15,7 @@ mkdir -p \
   "${TEST_ROOT}/repository/ci_scripts" \
   "${TEST_ROOT}/repository/.github/scripts" \
   "${TEST_ROOT}/repository/AppIconDesignerApp" \
-  "${TEST_ROOT}/repository/CADDesignerApp" \
-  "${TEST_ROOT}/repository/DatabaseManagerApp"
+  "${TEST_ROOT}/repository/CADDesignerApp"
 
 cp "${REPOSITORY_ROOT}/ci_scripts/ci_post_clone.sh" \
   "${TEST_ROOT}/repository/ci_scripts/"
@@ -28,9 +27,6 @@ cp \
 cp \
   "${REPOSITORY_ROOT}/CADDesignerApp/CADDesigner.xcconfig" \
   "${TEST_ROOT}/repository/CADDesignerApp/CADDesigner.xcconfig"
-cp \
-  "${REPOSITORY_ROOT}/DatabaseManagerApp/DatabaseManager.xcconfig" \
-  "${TEST_ROOT}/repository/DatabaseManagerApp/DatabaseManager.xcconfig"
 run_post_clone() {
   (
     cd "${TEST_ROOT}/repository/ci_scripts"
@@ -51,14 +47,11 @@ assert_setting() {
 
 run_post_clone appicondesigner-v2.3.4 29
 run_post_clone caddesigner-v3.4.5 30
-run_post_clone databasemanager-v4.5.6 31
 
 assert_setting "${TEST_ROOT}/repository/AppIconDesignerApp/AppIconDesigner.xcconfig" MARKETING_VERSION 2.3.4
 assert_setting "${TEST_ROOT}/repository/AppIconDesignerApp/AppIconDesigner.xcconfig" CURRENT_PROJECT_VERSION 29
 assert_setting "${TEST_ROOT}/repository/CADDesignerApp/CADDesigner.xcconfig" MARKETING_VERSION 3.4.5
 assert_setting "${TEST_ROOT}/repository/CADDesignerApp/CADDesigner.xcconfig" CURRENT_PROJECT_VERSION 30
-assert_setting "${TEST_ROOT}/repository/DatabaseManagerApp/DatabaseManager.xcconfig" MARKETING_VERSION 4.5.6
-assert_setting "${TEST_ROOT}/repository/DatabaseManagerApp/DatabaseManager.xcconfig" CURRENT_PROJECT_VERSION 31
 
 APP_ICON_CHECKSUM_BEFORE="$(shasum -a 256 "${TEST_ROOT}/repository/AppIconDesignerApp/AppIconDesigner.xcconfig")"
 (
