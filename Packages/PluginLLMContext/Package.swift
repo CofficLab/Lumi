@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginLLMContext",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginLLMContext", targets: ["PluginLLMContext"]),
