@@ -19,13 +19,16 @@ enum ContextPopoverImageExporter {
     ///
     /// 用户取消保存时不视为错误；渲染或写入失败则记录日志。
     /// 导出是附加功能，不应以弹窗打断用户正在查看的上下文数据。
-    static func export(content: some View, suggestedFileName: String) {
+    ///
+    /// 渲染（`ImageRenderer`）与保存面板必须留在主线程，
+    /// PNG 编码与写盘则交给后台执行，避免大图导出时卡住主线程。
+    static func export(content: some View, suggestedFileName: String) async {
         guard let image = render(content: content) else {
             LLMContextPlugin.logger.error("\(LLMContextPlugin.t)上下文弹窗导出失败：视图渲染为空")
             return
         }
         guard let url = chooseDestination(suggestedFileName: suggestedFileName) else { return }
-        write(image, to: url)
+        await write(image, to: url)
     }
 
     /// 把视图渲染为位图。
@@ -48,19 +51,24 @@ enum ContextPopoverImageExporter {
     }
 
     /// 把位图写成 PNG 文件。
-    static func write(_ image: CGImage, to url: URL) {
-        let bitmap = NSBitmapImageRep(cgImage: image)
-        guard let data = bitmap.representation(using: .png, properties: [:]) else {
-            LLMContextPlugin.logger.error("\(LLMContextPlugin.t)上下文弹窗导出失败：无法编码 PNG")
-            return
-        }
-        do {
-            try data.write(to: url)
-        } catch {
-            LLMContextPlugin.logger.error(
-                "\(LLMContextPlugin.t)上下文弹窗导出失败：写入出错 \(error.localizedDescription, privacy: .public)"
-            )
-        }
+    ///
+    /// PNG 编码与写盘都不需要主线程，而导出图的高度随压缩历史线性增长
+    /// （可达数百万像素），因此整体放到后台任务执行，避免卡住界面。
+    static func write(_ image: CGImage, to url: URL) async {
+        await Task.detached(priority: .userInitiated) {
+            let bitmap = NSBitmapImageRep(cgImage: image)
+            guard let data = bitmap.representation(using: .png, properties: [:]) else {
+                LLMContextPlugin.logger.error("\(LLMContextPlugin.t)上下文弹窗导出失败：无法编码 PNG")
+                return
+            }
+            do {
+                try data.write(to: url)
+            } catch {
+                LLMContextPlugin.logger.error(
+                    "\(LLMContextPlugin.t)上下文弹窗导出失败：写入出错 \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }.value
     }
 }
 #endif

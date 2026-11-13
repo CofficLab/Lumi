@@ -136,7 +136,7 @@ struct ContextPopoverExportTests {
     }
 
     @Test("导出内容可以写成 PNG 文件", .timeLimit(.minutes(1)))
-    func exportProducesWritablePNG() throws {
+    func exportProducesWritablePNG() async throws {
         let popover = ContextPopover(
             usage: usage(),
             history: history(),
@@ -152,7 +152,7 @@ struct ContextPopoverExportTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let url = directory.appendingPathComponent("export.png")
-        ContextPopoverImageExporter.write(image, to: url)
+        await ContextPopoverImageExporter.write(image, to: url)
 
         let data = try #require(FileManager.default.contents(atPath: url.path))
         #expect(data.count > 0, "写出的 PNG 是空文件")

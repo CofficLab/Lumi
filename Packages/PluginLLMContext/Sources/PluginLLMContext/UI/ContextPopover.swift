@@ -79,11 +79,13 @@ struct ContextPopover: View {
     @MainActor
     private func exportAsImage() {
         isExporting = true
-        defer { isExporting = false }
-        ContextPopoverImageExporter.export(
-            content: exportContent,
-            suggestedFileName: "llm-context.png"
-        )
+        Task { @MainActor in
+            await ContextPopoverImageExporter.export(
+                content: exportContent,
+                suggestedFileName: "llm-context.png"
+            )
+            isExporting = false
+        }
     }
     #endif
 
