@@ -36,6 +36,9 @@ struct AttachmentPreviewView: View {
                         ForEach(viewModel.imageAttachments) { attachment in
                             AttachmentThumbnail(
                                 attachment: attachment,
+                                // 位图在 ViewModel 的解码缓存里取，输入框每次按键
+                                // 触发的预览重跑不再重复 Base64 解码（见 issue #1298）。
+                                image: viewModel.attachmentImageDecoder.image(for: attachment),
                                 onRemove: {
                                     viewModel.removeImageAttachment(id: attachment.id)
                                 }
@@ -168,6 +171,8 @@ private struct FileAttachmentChip: View {
 
 private struct AttachmentThumbnail: View {
     let attachment: UserImageAttachment
+    /// 已解码的位图。由 `AttachmentImageDecoder` 缓存，body 重跑时直接复用。
+    let image: NSImage?
     let onRemove: () -> Void
 
     var body: some View {
@@ -193,7 +198,7 @@ private struct AttachmentThumbnail: View {
 
     @ViewBuilder
     private var thumbnail: some View {
-        if let image = decodedImage {
+        if let image {
             Image(nsImage: image)
                 .resizable()
                 .scaledToFill()
@@ -210,10 +215,4 @@ private struct AttachmentThumbnail: View {
         }
     }
 
-    private var decodedImage: NSImage? {
-        guard let data = Data(base64Encoded: attachment.base64Data) else {
-            return nil
-        }
-        return NSImage(data: data)
-    }
 }

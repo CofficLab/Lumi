@@ -38,6 +38,13 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
     private var isWaitingForAttachmentReads = false
 
+    /// 待发送图片附件的位图解码缓存。
+    ///
+    /// 预览挂在输入框上方，输入框每次按键都会让本 ViewModel 发出失效广播，
+    /// 预览 body 因此重跑。若在 body 里现算 Base64 解码，每张待发图片都要在
+    /// 主线程重复做一次全量解码（见 issue #1298）。
+    let attachmentImageDecoder = AttachmentImageDecoder()
+
     /// 文本写入后的旁路回调，供派生的发送按钮同步状态。
     ///
     /// 发送按钮由独立的 `SendActionBarViewModel` 驱动，它只经
@@ -81,6 +88,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         if images != attachmentSnapshot.imageAttachments {
             attachmentSnapshot.imageAttachments = images
             imageAttachments = images
+            // 只保留仍挂起的附件，释放已移除附件占用的位图（见 issue #1298）。
+            attachmentImageDecoder.retainOnly(ids: Set(images.map(\.id)))
         }
         let files = capability.pendingFileAttachments
         if files != attachmentSnapshot.fileAttachments {
@@ -463,6 +472,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     func removeImageAttachment(id: UUID) {
         capability.removeImageAttachment(id: id)
+        // 附件已离开挂起池，位图缓存一并释放（见 issue #1298）。
+        attachmentImageDecoder.remove(id: id)
     }
 
     func removeFileAttachment(id: UUID) {
