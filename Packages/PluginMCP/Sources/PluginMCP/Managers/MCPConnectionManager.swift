@@ -184,6 +184,12 @@ public final class MCPConnectionManager: ObservableObject {
         }
     }
 
+    /// 测试钩子：注入可观察会话，用于验证 `onShutdown` 的异步清理确实执行。
+    /// 生产路径只经 `connect(serverID:)` 建立会话，不会调用此方法。
+    func attachSessionForTesting(_ session: any MCPServerServing, serverID: String) {
+        sessions[serverID] = session
+    }
+
     // MARK: - Errors
 
     private static func describe(_ error: Error) -> String {
