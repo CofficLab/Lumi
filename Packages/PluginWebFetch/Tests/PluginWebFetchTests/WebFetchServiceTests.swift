@@ -67,6 +67,28 @@ struct WebFetchServiceTests {
         #expect(!result.contains("[Guide](https://example.com/guide.html)"))
     }
 
+    @Test("caches the full document so each prompt filters independently (#191)")
+    func cachesFullDocumentForIndependentPrompts() async throws {
+        let html = Data("<p>Install the package.</p><p>Pricing starts at $10.</p>".utf8)
+        let requests = RequestCounter()
+        let fetcher = StubFetcher(
+            data: html,
+            headers: ["Content-Type": "text/html; charset=utf-8"],
+            counter: requests
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: WebFetchCache())
+
+        let first = try await service.fetch(urlString: "https://example.com/page", prompt: "install")
+        let second = try await service.fetch(urlString: "https://example.com/page", prompt: "pricing")
+        let third = try await service.fetch(urlString: "https://example.com/page")
+
+        #expect(first.contains("Install the package."))
+        #expect(second.contains("Pricing starts at $10."))
+        #expect(third.contains("Install the package."))
+        #expect(third.contains("Pricing starts at $10."))
+        #expect(await requests.count() == 1)
+    }
+
     @Test("does not cache HTTP errors")
     func retriesFailedHTTPResponses() async {
         let requests = RequestCounter()

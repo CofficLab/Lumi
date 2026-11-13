@@ -117,8 +117,7 @@ public struct WebFetchService: Sendable {
         contentType: String,
         url: URL,
         statusCode: Int,
-        duration: Double,
-        prompt: String? = nil
+        duration: Double
     ) throws -> String {
         let mimeType = contentType
             .split(separator: ";")
@@ -128,7 +127,7 @@ public struct WebFetchService: Sendable {
 
         switch mimeType {
         case "text/html", "application/xhtml+xml":
-            return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
+            return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration)
         case "application/json":
             return processJSON(data: data, statusCode: statusCode, duration: duration)
         case "text/plain", "text/markdown":
@@ -140,7 +139,7 @@ public struct WebFetchService: Sendable {
         default:
             if let text = String(data: data, encoding: .utf8) {
                 if text.contains("<html") || text.contains("<body") {
-                    return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
+                    return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration)
                 }
                 return try processPlainText(data: data, statusCode: statusCode, duration: duration)
             }
@@ -271,13 +270,14 @@ public struct WebFetchService: Sendable {
         let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "text/plain"
         // URLSession 自动跟随重定向后，相对链接必须以最终响应 URL 为基准解析，
         // 否则子目录/版本文档里的相对地址会被解析到错误位置（#192）。
+        // 缓存全量渲染结果而非 prompt 过滤后的子集：否则后续不同 prompt 或无
+        // prompt 的请求只能在首次过滤剩下的内容里再过滤，永久丢失其余正文（#191）。
         let result = try processContent(
             data: data,
             contentType: contentType,
             url: httpResponse.url ?? url,
             statusCode: httpResponse.statusCode,
-            duration: duration,
-            prompt: prompt
+            duration: duration
         )
 
         cache?.set(
@@ -293,7 +293,7 @@ public struct WebFetchService: Sendable {
             now: now()
         )
 
-        return result
+        return promptExtractedContent(result, prompt: prompt)
     }
 
     private func redirectPromptLine(_ prompt: String?) -> String {
@@ -311,27 +311,18 @@ public struct WebFetchService: Sendable {
         return encoded
     }
 
-    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double, prompt: String?) throws -> String {
+    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double) throws -> String {
         guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
             throw WebFetchError.undecodableHTML
         }
 
         let markdown = HTMLToMarkdownConverter.convert(html, baseURL: url)
-        var result = fetchHeader(
+        return fetchHeader(
             url: url,
             statusCode: statusCode,
             duration: duration,
             size: data.count
-        )
-
-        if let prompt, !prompt.isEmpty {
-            result += "### Extracted Content (Prompt: \(prompt))\n\n"
-            result += extractWithPrompt(markdown: markdown, prompt: prompt)
-        } else {
-            result += "### Content (Markdown)\n\n\(markdown)"
-        }
-
-        return result
+        ) + "### Content (Markdown)\n\n\(markdown)"
     }
 
     private func processJSON(data: Data, statusCode: Int, duration: Double) -> String {
@@ -425,7 +416,7 @@ Note: This is an image file. The file has been saved to the path above.
     }
 
     private func processCachedContent(_ cached: CachedContent, prompt: String?) -> String {
-        var result = """
+        let header = """
 ## Web Fetch Result (Cached)
 
 **Status**: \(cached.statusCode)
@@ -435,15 +426,15 @@ Note: This is an image file. The file has been saved to the path above.
 ---
 
 """
+        return header + promptExtractedContent(cached.content, prompt: prompt)
+    }
 
-        if let prompt, !prompt.isEmpty {
-            result += "### Extracted Content (Prompt: \(prompt))\n\n"
-            result += extractWithPrompt(markdown: cached.content, prompt: prompt)
-        } else {
-            result += cached.content
-        }
-
-        return result
+    /// 在完整渲染结果上按 prompt 提取段落；无 prompt 时原样返回。
+    /// 缓存命中与首次抓取共用此展示层，保证每个 prompt 都作用于全量正文（#191）。
+    private func promptExtractedContent(_ content: String, prompt: String?) -> String {
+        guard let prompt, !prompt.isEmpty else { return content }
+        return "### Extracted Content (Prompt: \(prompt))\n\n"
+            + extractWithPrompt(markdown: content, prompt: prompt)
     }
 
     private func fetchHeader(
