@@ -256,15 +256,20 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
     private func apiErrorMessage(from data: Data, statusCode: Int) -> String {
         if let errorResponse = try? JSONDecoder().decode(AppStoreConnectErrorResponse.self, from: data),
-           let first = errorResponse.errors.first {
-            var parts = [first.title, first.detail].compactMap { $0 }
-            // 409 STATE_ERROR 类错误：把关联资源的明细（如缺失的审核联系人字段、
-            // 不可提交的构建类型）一并透出，便于直接定位修复项。
-            if let associated = first.meta?.associatedErrors {
-                for (_, errors) in associated {
-                    for error in errors {
-                        if let detail = error.detail, !parts.contains(detail) {
-                            parts.append(detail)
+           !errorResponse.errors.isEmpty {
+            var parts: [String] = []
+            // App Store Connect 一次可能返回多个顶层错误，逐个透出 title/detail，
+            // 否则除首个外的失败原因会被静默丢弃（#322）。
+            for error in errorResponse.errors {
+                parts.append(contentsOf: [error.title, error.detail].compactMap { $0 })
+                // 409 STATE_ERROR 类错误：把关联资源的明细（如缺失的审核联系人字段、
+                // 不可提交的构建类型）一并透出，便于直接定位修复项。
+                if let associated = error.meta?.associatedErrors {
+                    for (_, errors) in associated {
+                        for associatedError in errors {
+                            if let detail = associatedError.detail, !parts.contains(detail) {
+                                parts.append(detail)
+                            }
                         }
                     }
                 }
