@@ -367,4 +367,29 @@ struct ProjectOverviewConversationScopeTests {
             )
         }
     }
+
+    /// 回归 #492：path 的首尾空白是合法文件名字符，裁剪后会读取错误目录。
+    /// 同时创建 `spaced` 与 `spaced `（带尾空格）两个目录并放入不同清单，
+    /// 裁剪的实现会报告无空格目录（Node），保留原字节才报告 Rust 目录。
+    @Test("显式 path 的首尾空白是合法字符，裁剪后会读取错误目录（#492）")
+    func explicitPathPreservesLeadingTrailingWhitespace() async throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("overview-ws-\(UUID().uuidString)", isDirectory: true)
+        let plain = base.appendingPathComponent("spaced", isDirectory: true)
+        let spaced = base.appendingPathComponent("spaced ", isDirectory: true)
+        try FileManager.default.createDirectory(at: plain, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try "{}".write(to: plain.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+        try "[package]\nname = \"x\"\nversion = \"0.1.0\""
+            .write(to: spaced.appendingPathComponent("Cargo.toml"), atomically: true, encoding: .utf8)
+        let tool = ProjectOverviewV2Tool(project: nil)
+
+        let result = try await tool.executeResult(
+            context: makeContext(projectPath: nil),
+            arguments: ["path": ToolArgument(spaced.path)]
+        )
+
+        #expect(path(in: result.content) == spaced.standardizedFileURL.path)
+    }
 }
