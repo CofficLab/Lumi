@@ -651,6 +651,9 @@ public final class BrowserSessionManager: ObservableObject {
             return a == 0 || a == 10 || a == 127 || (a == 169 && b == 254)
                 || (a == 172 && (16...31).contains(b)) || (a == 192 && b == 168)
         }
+        // 只有 IPv6 字面量才含 ":"；fc/fd 开头的普通 DNS 名（如 fdic.gov）
+        // 不得仅凭前缀被判为 fc00::/7 内网（#831）。
+        guard host.contains(":") else { return false }
         return host.hasPrefix("fc") || host.hasPrefix("fd") || host.hasPrefix("fe80:")
     }
 }
