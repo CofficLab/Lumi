@@ -149,9 +149,11 @@ public final class TableChangeManager: ObservableObject {
         guard let key = rowKey(rowValues: rowValues, columns: columns) else { return }
         // 已删除的行不允许再改单元格
         guard !deletedRowKeys.contains(key) else { return }
+        let original = value(of: column, in: rowValues, columns: columns)
+        // BLOB 在 v1 只读：拒绝暂存，避免把占位文本当成字符串覆盖原始二进制（#281）。
+        if case .data = original { return }
         recordUndo()
 
-        let original = value(of: column, in: rowValues, columns: columns)
         if newValue == original {
             if var row = updatesByRow[key] {
                 row.columnUpdates.removeValue(forKey: column)
