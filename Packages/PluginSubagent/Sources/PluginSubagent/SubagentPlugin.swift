@@ -55,6 +55,9 @@ public final class SubagentPlugin: SuperPlugin {
     /// 后台任务 ID → 子会话：显式停止时据此级联取消子回合。
     private var backgroundChildConversations: [String: UUID] = [:]
 
+    /// 从持久化数据派生的子代理树（#1328）；工具在需要时按调用会话查询。
+    private var subagentRegistry: SubagentRegistry?
+
     private weak var agentLoop: (any AgentLoopProviding)?
 
     public init() {}
@@ -108,6 +111,14 @@ public final class SubagentPlugin: SuperPlugin {
             }
         }
 
+        let subagentRegistry = SubagentRegistry(
+            conversations: conversations,
+            messages: messages,
+            toolManager: toolManager,
+            agentLoop: agentLoop
+        )
+        self.subagentRegistry = subagentRegistry
+
         toolManager.add(
             RunSubagentTool(
                 conversations: conversations,
@@ -121,6 +132,7 @@ public final class SubagentPlugin: SuperPlugin {
             ),
             pluginID: id
         )
+        toolManager.add(ListSubagentsTool(registry: subagentRegistry), pluginID: id)
 
         registerToolbarItem(kernel: kernel, conversations: conversations, toolManager: toolManager)
         registerCardRenderer(kernel: kernel, toolManager: toolManager)
@@ -198,6 +210,7 @@ public final class SubagentPlugin: SuperPlugin {
         backgroundObserverID = nil
         backgroundRegistry = nil
         backgroundChildConversations.removeAll()
+        subagentRegistry = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")
         activityViewModel?.cancel()
@@ -206,5 +219,7 @@ public final class SubagentPlugin: SuperPlugin {
             .unregister(id: SubagentTimeline.rendererID)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .remove(id: RunSubagentTool.toolName)
+        kernel.resolveProvider((any ToolManagerProviding).self)?
+            .remove(id: ListSubagentsTool.toolName)
     }
 }

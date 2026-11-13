@@ -28,8 +28,19 @@ public struct SubagentNode: Identifiable, Equatable, Sendable {
     /// AgentLoop 当前是否在该子会话里跑回合。
     public let isRunning: Bool
     public let createdAt: Date
+    /// Job 真正开始执行的时间；未开始时为 nil。
+    public let startedAt: Date?
+    /// Job 进入终态的时间；尚未结束时为 nil。
+    public let completedAt: Date?
 
     public var id: UUID { childConversationID }
+
+    /// 已执行时长：结束时停在终态时间，仍在执行则以 `now` 计。
+    public func elapsed(now: Date = Date()) -> TimeInterval {
+        let start = startedAt ?? createdAt
+        let end = isActive ? now : (completedAt ?? now)
+        return max(0, end.timeIntervalSince(start))
+    }
 
     /// 只有带名字的委托能被寻址；旧卡片只用于展示。
     public var isAddressable: Bool { name != nil }
@@ -49,12 +60,23 @@ public struct SubagentNode: Identifiable, Equatable, Sendable {
 public struct SubagentTreeSnapshot: Equatable, Sendable {
     public let rootConversationID: UUID
     public let callerConversationID: UUID
+    /// 根会话当前是否在跑回合。
+    public let isLeadRunning: Bool
     /// 根会话的直接子代理，按创建时间排序。
     public let members: [SubagentNode]
 
     /// 带名字、可寻址的成员。
     public var addressableMembers: [SubagentNode] {
         members.filter(\.isAddressable)
+    }
+
+    /// 调用方自己的树内名字；根会话即 `lead`。
+    public var callerName: String {
+        if callerConversationID == rootConversationID {
+            return SubagentRegistry.leadName
+        }
+        return members.first { $0.childConversationID == callerConversationID }?.name
+            ?? "(unnamed)"
     }
 }
 
@@ -139,7 +161,9 @@ public final class SubagentRegistry {
                     parentJobID: payload.jobID,
                     jobStatus: job?.status,
                     isRunning: agentLoop.isRunning(for: payload.childConversationID),
-                    createdAt: job?.createdAt ?? child.createdAt
+                    createdAt: job?.createdAt ?? child.createdAt,
+                    startedAt: job?.startedAt,
+                    completedAt: job?.completedAt
                 )
             )
         }
@@ -154,6 +178,7 @@ public final class SubagentRegistry {
         return SubagentTreeSnapshot(
             rootConversationID: rootID,
             callerConversationID: conversationID,
+            isLeadRunning: agentLoop.isRunning(for: rootID),
             members: members
         )
     }
