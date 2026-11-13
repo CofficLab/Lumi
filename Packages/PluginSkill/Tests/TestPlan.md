@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 56 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 60 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 57
+测试文件: 7 个，用例总数: 60
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -44,6 +44,8 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 56 条
 - **综合**（12 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUD 与扫描器一致性**（6 条）：由 `readFallsBackToValidLegacySkill`、`oversizedMetadataIsRejected` 等用例锁定；改动 Skill 读写的有效性判定或大小约束时优先跑对应测试文件。
+- **DeleteSkillTool 回执路径**（2 条）：由 `legacyDeleteReceiptReportsDeletedDirectory`、`lumiDeleteReceiptReportsLumiDirectory` 锁定；delete_skill 回执的 `directory_path` 必须是本次实际删除的目录（#643），改动删除服务返回值或回执组装时优先跑对应测试文件。
+- **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
 
 ## 测试用例清单
 
@@ -108,27 +110,30 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 56 条
 | 55 | SkillSettingsLayout | 技能页面不增加垂直留白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skillPageAddsNoVerticalSlack` |
 | 56 | CreateSkillTool | 未传 project_path 时写入会话绑定项目 | 会话绑定项目 A，UI 当前为 B | 调用 `executeResult(context:arguments:)` | 技能目录创建在 A，B 无新目录 | P1 | ✅ 已覆盖 | `writesIntoConversationProject` |
 | 57 | CreateSkillTool | 显式 project_path 优先于会话绑定项目 | 会话绑定 A，显式传 B | 调用 `executeResult(context:arguments:)` | 技能目录创建在 B，A 无新目录 | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
+| 58 | SkillInjectionConversationScope | 注入会话绑定项目的技能，而不是全局当前项目 | 会话绑定项目 A，全局当前项目为 B | 执行 `SkillInjectionHook.apply(to:)` | 注入 A 的技能，不含 B 的技能 | P0 | ✅ 已覆盖 | `injectsConversationProjectSkills` |
+| 59 | DeleteSkillTool 回执路径 | 删除历史目录技能时，回执 directory_path 必须是实际删除的 .agent 路径 | 技能仅存在于 `.agent/skills/<name>` | 执行 `delete_skill` 并解析回执 JSON | `directory_path` 等于被删除的 `.agent` 目录，该目录已不存在（**回归** #643） | P0 | ✅ 已覆盖 | `legacyDeleteReceiptReportsDeletedDirectory` |
+| 60 | DeleteSkillTool 回执路径 | 删除 .lumi 技能时，回执 directory_path 保持 .lumi 路径 | 技能位于 `.lumi/skills/<name>` | 执行 `delete_skill` 并解析回执 JSON | `directory_path` 等于被删除的 `.lumi` 目录，该目录已不存在 | P1 | ✅ 已覆盖 | `lumiDeleteReceiptReportsLumiDirectory` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 40 / 40
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 41 / 41
 - P2: 已覆盖 6 / 6
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（40 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（41 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

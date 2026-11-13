@@ -48,16 +48,16 @@ public struct DeleteSkillTool: SuperAgentTool {
             throw SkillCreationError.invalidName("name is required")
         }
 
-        try await SkillCreationService.shared.deleteSkill(projectPath: projectPath, name: name)
+        // 回执必须报告本次实际删除的目录：历史目录 `.agent/skills` 中的技能
+        // 删除后若硬编码 `.lumi` 写入路径，会返回一个从未存在过的路径（#643）。
+        let deletedDirectory = try await SkillCreationService.shared.deleteSkill(projectPath: projectPath, name: name)
         await SkillService.shared.invalidateCache(projectPath: projectPath)
 
         let result: [String: Any] = [
             "success": true,
             "message": "Skill deleted successfully",
             "name": name,
-            "directory_path": ProjectConfigDirectory
-                .writeURL(projectPath: projectPath, component: "skills")
-                .appendingPathComponent(name).path,
+            "directory_path": deletedDirectory.path,
         ]
         let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted])
         return String(data: data, encoding: .utf8) ?? "{\"success\":false}"
