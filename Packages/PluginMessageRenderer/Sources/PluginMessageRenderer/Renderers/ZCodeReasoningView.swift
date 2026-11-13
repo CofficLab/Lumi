@@ -51,12 +51,37 @@ enum ZCodeReasoningStyle {
     /// streaming 收起时显示的最后非空行摘要。
     ///
     /// - Returns: 摘要文本；全空白时返回 nil。
+    ///
+    /// - Important: 反向扫描找最后一个非空行，而不是
+    ///   `components(separatedBy: .newlines)` 全量分割后再逐行 trim。
+    ///   后者会把整段 reasoning 切成行数组并为每一行分配 trim 后的字符串，
+    ///   而这个摘要只需要最后一行 —— 折叠态是默认态，且每次 body 求值都会
+    ///   重算（见 issue #1273）。
+    ///
+    ///   语义与全量分割完全一致：同样按 `CharacterSet.newlines` 切分
+    ///   （不把 CRLF 当成一个分隔符），同样按 `trimmingCharacters(in: .whitespaces)`
+    ///   去掉首尾空白，同样取最后一个非空行。
     static func summary(text: String) -> String? {
-        let lines = text
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return lines.last
+        var lineEnd = text.endIndex
+        var cursor = text.endIndex
+
+        while cursor > text.startIndex {
+            let previous = text.index(before: cursor)
+            guard text[previous].isNewline else {
+                cursor = previous
+                continue
+            }
+            // 分隔符之后到 lineEnd 之间是当前行。
+            let lineStart = text.index(after: previous)
+            let line = text[lineStart..<lineEnd].trimmingCharacters(in: .whitespaces)
+            if !line.isEmpty { return line }
+            lineEnd = previous
+            cursor = previous
+        }
+
+        // 最前面的一段。
+        let line = text[text.startIndex..<lineEnd].trimmingCharacters(in: .whitespaces)
+        return line.isEmpty ? nil : line
     }
 
     // MARK: - 时长
@@ -198,11 +223,12 @@ struct ZCodeReasoningView: View {
     }
 
     /// 收起时显示摘要；展开时显示固定文案。
+    ///
+    /// - Note: `ZCodeReasoningStyle.summary(text:)` 是**反向扫描**，
+    ///   代价为末行长度而非整段长度，因此这里无需再缓存
+    ///   （见 issue #1273）。
     private var summaryText: String {
-        if collapseState.isExpanded {
-            return ZCodeReasoningStyle.summary(text: text) ?? ""
-        }
-        return ZCodeReasoningStyle.summary(text: text) ?? ""
+        ZCodeReasoningStyle.summary(text: text) ?? ""
     }
 
     // MARK: - 展开内容
