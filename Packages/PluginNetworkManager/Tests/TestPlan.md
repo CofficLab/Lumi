@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 98
+测试文件: 15 个，用例总数: 101
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -47,6 +47,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **DownloadFileToolSchemeCase**（2 条）：由 `uppercaseSchemeDownloadsLikeLowercase`、`nonHTTPSchemesAreStillRejected` 锁定 scheme 校验必须大小写不敏感（Foundation 保留 scheme 原样），大写/混合大小写 HTTP/HTTPS 不得被误拒，非 HTTP(S) 协议仍拒绝（**回归 #825**）；改动 `network_download_file` 协议校验时优先跑对应测试文件。
+- **ProcessMonitorUTF8ChunkBoundary**（3 条）：由 `multibyteNameSplitAcrossChunksSurvives`、`completeASCIIRowInFailedChunkIsNotLost`、`invalidBytesDoNotDiscardValidRows` 锁定 nettop 输出跨 chunk 的多字节 UTF-8 字符必须合并解码，未完成的尾部字节留到下一 chunk，真正非法序列用替换字符兜底，正常进程行绝不丢失（**回归 #824**）；改动 `ProcessMonitorService.processOutput` 解码或缓冲逻辑时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
@@ -154,27 +155,30 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 96 | NetworkProviderRedirectURL | 重定向后 request 返回最终响应 URL，供相对链接解析（**回归 #192**） | 注入 `/start` 302 → `/docs/index.html` 200 的 URLProtocol 桩 | 调用 `NetworkProvider.request` | 状态码 200，`response.url` 为 `/docs/index.html` 而非原始请求 URL | P1 | ✅ 已覆盖 | `requestReturnsFinalURLAfterRedirect` |
 | 97 | DownloadFileToolSchemeCase | 大写/混合大小写的 HTTP/HTTPS scheme 必须走正常下载（**回归 #825**） | 注入返回 200 + 正文的下载桩与临时 exchange store | 分别以 `HTTPS://`、`HTTP://`、`HtTpS://` 调用 `network_download_file` | 三种地址均下载成功、文件落盘且记录 1 条 exchange，不得在请求前被拒绝 | P0 | ✅ 已覆盖 | `uppercaseSchemeDownloadsLikeLowercase` |
 | 98 | DownloadFileToolSchemeCase | 非 HTTP(S) 协议无论大小写仍被拒绝 | 注入会记录失败的下载桩 | 以 `ftp://`、`FTP://`、`file://` 调用 `network_download_file` | 全部抛出工具错误，不发起下载、不记录 exchange | P1 | ✅ 已覆盖 | `nonHTTPSchemesAreStillRejected` |
+| 99 | ProcessMonitorUTF8ChunkBoundary | 进程名跨 chunk 边界时整行不得丢失（**回归 #824**） | 中文进程名「微信」，第二帧在「微」的首字节后切成两个 chunk | 依次 `processOutput` 两个 chunk + flush | 进程行完整发布，名称为「微信」，速率 1024/2048 | P0 | ✅ 已覆盖 | `multibyteNameSplitAcrossChunksSurvives` |
+| 100 | ProcessMonitorUTF8ChunkBoundary | 解码失败的 chunk 中已完整的 ASCII 行不得被连带丢弃（**回归 #824**） | chunk1 = 完整 Lumi 行 + 「中」首字节，chunk2 = 剩余字节 + 完整行 | 依次 `processOutput` 两个 chunk + flush | Lumi 与「中」两条进程行均发布，速率各自正确 | P0 | ✅ 已覆盖 | `completeASCIIRowInFailedChunkIsNotLost` |
+| 101 | ProcessMonitorUTF8ChunkBoundary | 真正非法的字节不得吞掉同一 chunk 里的有效进程行（**回归 #824**） | chunk 以非法字节 0xFF 开头，后接完整 Lumi 行 | `processOutput` + flush | 有效进程行仍发布，速率 1024/2048 | P0 | ✅ 已覆盖 | `invalidBytesDoNotDiscardValidRows` |
 
-> 说明：全部 **98 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 35 / 35
+- P0: 已覆盖 38 / 38
 - P1: 已覆盖 57 / 57
 - P2: 已覆盖 6 / 6
-- **合计: 98 / 98**（仅表示清单场景，非源码覆盖率）
+- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（38 条）
 - **P1**: 其余功能性用例（57 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 98 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
