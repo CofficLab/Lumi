@@ -64,6 +64,7 @@ import PluginConversationBehavior
 import PluginConversationExport
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
+import PluginConversationElapsedTime
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList
@@ -292,6 +293,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
             ConversationTokenUsagePlugin(),
+            ConversationElapsedTimePlugin(),
             ConversationTitlePlugin(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
