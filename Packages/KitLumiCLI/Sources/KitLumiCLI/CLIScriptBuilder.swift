@@ -33,7 +33,7 @@ public enum CLIScriptBuilder {
         urlScheme: String = defaultURLScheme,
         appPath: String? = nil
     ) -> String {
-        let embeddedAppPath = appPath ?? ""
+        let embeddedAppPath = shellSingleQuoted(appPath ?? "")
         return """
         #!/bin/sh
         #
@@ -62,7 +62,7 @@ public enum CLIScriptBuilder {
                 return 1
             fi
             for candidate in \\
-                "\(embeddedAppPath)" \\
+                \(embeddedAppPath) \\
                 "/Applications/Lumi.app" \\
                 "$HOME/Applications/Lumi.app"
             do
@@ -139,5 +139,14 @@ public enum CLIScriptBuilder {
         exit 0
 
         """
+    }
+
+    /// 把任意字符串编码为 POSIX shell 单引号字面量。
+    ///
+    /// 单引号内除 `'` 外所有字符都按字面处理（`$`、反引号、`"`、`\` 都不展开），
+    /// 唯一的例外 `'` 用 `'\''` 拼接。安装路径里的合法特殊字符因此不会被 shell
+    /// 展开或改写（#142）。
+    static func shellSingleQuoted(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }
