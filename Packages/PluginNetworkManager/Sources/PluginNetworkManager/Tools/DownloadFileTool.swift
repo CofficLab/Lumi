@@ -74,7 +74,10 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "无效的 URL")
         }
 
-        guard url.scheme == "http" || url.scheme == "https" else {
+        // scheme 按 RFC 3986 大小写不敏感，而 Foundation 保留输入原样，
+        // 直接比较小写字面量会误拒合法的 HTTPS:// 地址（#825）。
+        let scheme = url.scheme?.lowercased()
+        guard scheme == "http" || scheme == "https" else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "仅支持 HTTP/HTTPS 协议")
         }
 
