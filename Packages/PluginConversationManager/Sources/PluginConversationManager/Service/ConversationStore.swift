@@ -136,7 +136,7 @@ public actor ConversationStore: SuperLog {
 
     /// Create a new conversation with specific ID
     @discardableResult
-    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), verbosity: ResponseVerbosity? = nil, providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil) throws -> ConversationModel {
+    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), verbosity: ResponseVerbosity? = nil, providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil, language: ConversationLanguage? = nil) throws -> ConversationModel {
         let modelID = providerID.flatMap { provider in
             modelName.flatMap { LLMModelID(providerID: provider, modelID: $0)?.rawValue }
         }
@@ -150,7 +150,8 @@ public actor ConversationStore: SuperLog {
             projectPath: projectPath,
             parentConversationID: parentConversationID,
             reasoningEffort: reasoningEffort,
-            automationLevel: automationLevel
+            automationLevel: automationLevel,
+            language: language
         )
     }
 
@@ -165,7 +166,8 @@ public actor ConversationStore: SuperLog {
         projectPath: String? = nil,
         parentConversationID: UUID? = nil,
         reasoningEffort: ReasoningEffort? = nil,
-        automationLevel: AutomationLevel? = nil
+        automationLevel: AutomationLevel? = nil,
+        language: ConversationLanguage? = nil
     ) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
@@ -177,6 +179,7 @@ public actor ConversationStore: SuperLog {
             updatedAt: now,
             verbosityRaw: verbosity?.rawValue,
             reasoningEffortRaw: reasoningEffort?.rawValue,
+            languageRaw: language?.rawValue,
             automationLevelRaw: automationLevel?.rawValue,
             modelID: modelID,
             projectPath: projectPath,
@@ -810,7 +813,8 @@ public actor ConversationStore: SuperLog {
         verbosity: ResponseVerbosity? = nil,
         reasoningEffort: ReasoningEffort? = nil,
         setReasoningEffortToNil: Bool = false,
-        automationLevel: AutomationLevel? = nil
+        automationLevel: AutomationLevel? = nil,
+        language: ConversationLanguage? = nil
     ) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString
@@ -834,6 +838,9 @@ public actor ConversationStore: SuperLog {
         }
         if let automationLevel {
             model.automationLevelRaw = automationLevel.rawValue
+        }
+        if let language {
+            model.languageRaw = language.rawValue
         }
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新对话偏好")

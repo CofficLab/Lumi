@@ -434,4 +434,64 @@ struct ConversationManagerPreferenceTests {
         #expect(manager.automationLevel(for: nil) == .build)
         #expect(manager.automationLevel(for: UUID()) == .build)
     }
+
+    /// 回归 #169：创建时的有效语言必须落库，否则重启后回退全局语言。
+    @Test func createdConversationPersistsEffectiveLanguage() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationLanguageCreateTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        manager.setGlobalLanguage(.english)
+
+        let id = try await manager.createConversationAndWait(
+            title: "创建语言持久化",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+
+        #expect(await store.fetchConversation(id: id)?.language == .english)
+    }
+
+    /// 回归 #169：setLanguage 必须写 languageRaw，重启后会话保留自己的语言，
+    /// 而不是回退到全局值。
+    @Test func setLanguagePersistsAcrossRestart() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationLanguageSetTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        manager.setGlobalLanguage(.chinese)
+
+        let id = try await manager.createConversationAndWait(
+            title: "语言修改持久化",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+        manager.setLanguage(.english, for: id)
+
+        // setLanguage 异步写盘，等数据库确认后再模拟重启。
+        var persisted: ConversationLanguage?
+        for _ in 0..<100 {
+            persisted = await store.fetchConversation(id: id)?.language
+            if persisted == .english { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(persisted == .english)
+
+        let restarted = ConversationManager(store: store, dataDirectory: directory)
+        restarted.loadConversations()
+        for _ in 0..<100 where restarted.isLoadingConversations {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(!restarted.isLoadingConversations)
+        // 全局值在 state.json 里仍是 Chinese；会话级语言必须来自库里的
+        // languageRaw，而不是回退全局值。
+        #expect(restarted.language(for: id) == .english)
+    }
 }

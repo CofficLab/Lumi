@@ -270,7 +270,8 @@ extension ConversationManager {
             projectPath: draft.projectPath,
             parentConversationID: draft.parentConversationID,
             reasoningEffort: draft.reasoningEffort,
-            automationLevel: draft.automationLevel
+            automationLevel: draft.automationLevel,
+            language: draft.language
         )
         eventBus?.publishAsLegacy(
             ConversationDidCreateEvent(conversationID: draft.id),

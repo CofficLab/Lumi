@@ -253,6 +253,12 @@ extension ConversationManager {
         }
         notifyConversationObservers(.languageChanged(conversationID))
 
+        // 与 verbosity/reasoningEffort/automationLevel 一致：会话级语言必须落盘，
+        // 只改内存会让重启后 languageRaw 仍为 nil，回退全局语言（issue #169）。
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, language: language)
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
         }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 85 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 93 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 85
+测试文件: 12 个，用例总数: 93
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,12 +44,13 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationLegacyMigration**（6 条）：由 `readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot`、`readerReportsMissingAndInvalidLegacyDatabases`、`locatorPrefersProductionAndUsesDebugFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerCRUD**（3 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`createAndWaitPersistsBeforeReturningAndCachesRoot`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerObserverTransfer**（1 条）：由 `transferredObserversStayAliveAndCancelWithTheirOriginalHandles` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationManagerPreference**（13 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel`、`evictedConversationKeepsItsAutomationLevel`、`evictedConversationKeepsItsReasoningEffort`、`evictedConversationUsesReasoningSetWhileMissing`、`clearedReasoningOnEvictedConversationStaysOff`、`unknownConversationHasNoReasoningEffort`、`unknownConversationStillDefaultsToBuild` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationManagerPreference**（17 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel`、`evictedConversationKeepsItsAutomationLevel`、`evictedConversationKeepsItsReasoningEffort`、`evictedConversationUsesReasoningSetWhileMissing`、`clearedReasoningOnEvictedConversationStaysOff`、`unknownConversationHasNoReasoningEffort`、`unknownConversationStillDefaultsToBuild`、`createdConversationPersistsEffectiveLanguage`、`setLanguagePersistsAcrossRestart`、`globalAutomationLevelPersistsAcrossRestartWithoutSelectedConversation`、`globalChatGPTVerbosityPersistsAcrossRestartWithoutSelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。创建时的有效语言与 `setLanguage` 都必须写入 `languageRaw`，重启后会话保留自己的语言而不是回退全局值（**回归 #169**）。
+- **ConversationLanguagePersistence**（3 条）：由 `createPersistsLanguage`、`createWithoutLanguageLeavesNil`、`updateLanguagePersists` 锁定。存储层创建与偏好更新入口必须把语言写入 `languageRaw`；未显式设置时保持 nil，读取侧回退全局语言（**回归 #169**）。
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **分页会话的可操作性**（9 条）：由 `deletesUncachedConversation`、`renamesUncachedConversation`、`selectingPagedConversationBackfillsTitle` 等用例锁定；分页返回的真实会话必须能执行与首屏会话相同的删除、改名、偏好与选择操作。
-- **ConversationStore**（13 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationStore**（14 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity`、`updateChatGPTVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
 
@@ -142,27 +143,35 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 83 | ConversationManagerPreference | 会话在缓存外设置推理强度也作用于后续请求（**回归 #892**） | 后台会话已被挤出缓存 | `setReasoningEffort(.max, for:)` 后读取 | 返回 `.max` | P1 | ✅ 已覆盖 | `evictedConversationUsesReasoningSetWhileMissing` |
 | 84 | ConversationManagerPreference | 缓存外清除推理强度后不残留淘汰前的旧档位（**回归 #892** 护栏） | 后台会话 High 且已被挤出缓存 | `clearReasoningEffort(for:)` 后读取 | 返回 nil | P1 | ✅ 已覆盖 | `clearedReasoningOnEvictedConversationStaysOff` |
 | 85 | ConversationManagerPreference | 未知会话仍没有显式推理强度（**回归 #892** 护栏） | 缓存中已有 High 会话 | 对 nil 与随机 UUID 读取 | 均返回 nil，不被其他会话污染 | P2 | ✅ 已覆盖 | `unknownConversationHasNoReasoningEffort` |
+| 86 | ConversationLanguagePersistence | 创建时传入的语言必须被持久化（**回归 #169**） | 临时数据库 | 以 `language: .english` 创建会话后查库 | `languageRaw` 与读回语言均为 English | P0 | ✅ 已覆盖 | `createPersistsLanguage` |
+| 87 | ConversationLanguagePersistence | 创建时未传语言则保持为空，读取时回退全局 | 临时数据库 | 不传 language 创建会话后查库 | 读回语言为 nil | P2 | ✅ 已覆盖 | `createWithoutLanguageLeavesNil` |
+| 88 | ConversationLanguagePersistence | 偏好更新入口可以持久化语言（**回归 #169**） | 会话已按 Chinese 创建 | `updateConversationPreferences(language: .english)` | 返回 true，读回语言为 English | P1 | ✅ 已覆盖 | `updateLanguagePersists` |
+| 89 | ConversationManagerPreference | 创建时的有效语言必须落库（**回归 #169**） | 全局语言 English，带持久化层的 Manager | `createConversationAndWait` 后立即查库 | 库中语言为 English | P0 | ✅ 已覆盖 | `createdConversationPersistsEffectiveLanguage` |
+| 90 | ConversationManagerPreference | setLanguage 后重启会话保留自己的语言（**回归 #169**） | 全局 Chinese，会话改为 English | 等写盘确认后新建 Manager 并 `loadConversations()` | 重启后 `language(for:)` 为 English，不回退全局值 | P1 | ✅ 已覆盖 | `setLanguagePersistsAcrossRestart` |
+| 91 | ConversationManagerPreference | New Chat 默认自动化级别跨重启保留（**回归 #1144**） | 未选中任何会话 | `setGlobalAutomationLevel(.chat)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalAutomationLevel` 仍为 Chat | P1 | ✅ 已覆盖 | `globalAutomationLevelPersistsAcrossRestartWithoutSelectedConversation` |
+| 92 | ConversationManagerPreference | New Chat 默认 ChatGPT 详细度跨重启保留 | 未选中任何会话 | `setGlobalVerbosity(.chatGPT)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalVerbosity` 仍为 chatGPT | P1 | ✅ 已覆盖 | `globalChatGPTVerbosityPersistsAcrossRestartWithoutSelectedConversation` |
+| 93 | ConversationStore | ChatGPT V5 详细程度可持久化 | 临时数据库 | 创建后 `updateConversationPreferences(verbosity: .chatGPT)` | 更新成功且读回为 chatGPT | P1 | ✅ 已覆盖 | `updateChatGPTVerbosity` |
 
-> 说明：全部 **85 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 68 / 68
-- P2: 已覆盖 7 / 7
-- **合计: 85 / 85**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 73 / 73
+- P2: 已覆盖 8 / 8
+- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（68 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（73 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 93 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
