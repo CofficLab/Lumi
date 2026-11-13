@@ -165,10 +165,25 @@ public actor MemoryFileStorage {
         fileName.removingPercentEncoding ?? fileName
     }
 
+    /// 将 project 路径一一映射为目录名：允许字符原样保留，其余按 UTF-8 百分号编码。
+    ///
+    /// 旧实现把非法字符统一替换为 `-` 再裁剪首尾 `-`，`/tmp/a b` 与 `/tmp/a-b`
+    /// 都会变成 `/tmp/a-b`，两个项目共用同一记忆目录，互相覆盖、召回与删除（#197）。
+    /// 百分号编码是可逆映射（`%` 自身编码为 `%25`），不同路径不会撞到同一目录；
+    /// 保留 `/` 使常见路径（如 `/tmp/proj`）编码后不变，无需迁移既有数据。
     private func sanitizeProjectPath(_ string: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./"))
-        return string.components(separatedBy: allowed.inverted).joined(separator: "-")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        var result = ""
+        for scalar in string.unicodeScalars {
+            if allowed.contains(scalar) {
+                result.unicodeScalars.append(scalar)
+            } else {
+                for byte in String(scalar).utf8 {
+                    result += String(format: "%%%02X", byte)
+                }
+            }
+        }
+        return result
     }
 
     private func parse(_ raw: String, filePath: String, id: String) -> MemoryItem? {
