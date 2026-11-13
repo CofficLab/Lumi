@@ -15,6 +15,7 @@ private final class StubTool: SuperAgentTool, @unchecked Sendable {
     let name: String
     let resultText: String
     var resultImages: [ImageAttachment] = []
+    var schemaOverride: [String: Any]?
     private(set) var receivedArguments: [String: ToolArgument] = [:]
 
     init(name: String, resultText: String) {
@@ -27,7 +28,7 @@ private final class StubTool: SuperAgentTool, @unchecked Sendable {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        schemaOverride ?? [
             "type": "object",
             "properties": ["value": ["type": "string"]],
             "required": ["value"],
@@ -184,6 +185,69 @@ struct JSONValueTests {
         let restored = value.anyValue as? [String: Any]
         #expect(restored?["a"] as? Double == 1)
         #expect(restored?["b"] as? String == "x")
+    }
+
+    @Test("JSON 解析出的 0/1 保持数字，不被误判为布尔（#1151）")
+    func jsonZeroAndOneStayNumbers() throws {
+        let json = """
+        {
+          "type": "object",
+          "properties": {
+            "count": {"type": "integer", "minimum": 1, "default": 0}
+          },
+          "examples": [0, 1, 2],
+          "enabled": true,
+          "disabled": false
+        }
+        """
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+
+        // JSONSerialization 的数字叶子是 NSNumber，0/1 也能桥接成 Bool；
+        // 只有真正的布尔才应转成 .bool。原生 Swift 字面量复现不了该缺陷。
+        #expect(JSONValue(schema: schema) == .object([
+            "type": .string("object"),
+            "properties": .object([
+                "count": .object([
+                    "type": .string("integer"),
+                    "minimum": .number(1),
+                    "default": .number(0),
+                ]),
+            ]),
+            "examples": .array([.number(0), .number(1), .number(2)]),
+            "enabled": .bool(true),
+            "disabled": .bool(false),
+        ]))
+    }
+
+    @Test("编码输出保留数字 0/1 与真布尔（#1151）")
+    func encodedOutputKeepsNumbersAndBooleans() throws {
+        let json = #"{"minimum": 1, "default": 0, "flag": true}"#
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+        let data = try JSONEncoder().encode(JSONValue(schema: schema))
+        let restored = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+
+        let defaultValue = try #require(restored["default"])
+        #expect(CFGetTypeID(defaultValue as AnyObject) != CFBooleanGetTypeID())
+        #expect(defaultValue as? Double == 0)
+        let minimumValue = try #require(restored["minimum"])
+        #expect(CFGetTypeID(minimumValue as AnyObject) != CFBooleanGetTypeID())
+        #expect(minimumValue as? Double == 1)
+        let flag = try #require(restored["flag"])
+        #expect(CFGetTypeID(flag as AnyObject) == CFBooleanGetTypeID())
+    }
+
+    @Test("原生 Swift 0/1 与 Bool 的转换保持不变")
+    func nativeZeroAndOneUnchanged() {
+        #expect(JSONValue(from: 0) == .number(0))
+        #expect(JSONValue(from: 1) == .number(1))
+        #expect(JSONValue(from: false) == .bool(false))
+        #expect(JSONValue(from: true) == .bool(true))
     }
 }
 
@@ -452,6 +516,39 @@ struct WebToolRoutesTests {
         #expect(decoded.data.count == 1)
         #expect(decoded.data.first?.name == "read_file")
         #expect(decoded.data.first?.pluginID == "com.test.fs")
+    }
+
+    @Test("工具详情路由保留 schema 中的数字 0/1（#1151）")
+    func detailRoutePreservesNumericSchemaValues() async throws {
+        let manager = StubToolManager()
+        let tool = StubTool(name: "set_level", resultText: "ok")
+        // 用 JSONSerialization 解析构造 schema：数字叶子是 NSNumber，
+        // 与 MCP 工具 schema 经 JSON 传递后的真实形态一致。
+        let schemaJSON = """
+        {"type": "object", "properties": {"level": {"type": "integer", "minimum": 0, "default": 1}}}
+        """
+        tool.schemaOverride = try #require(
+            JSONSerialization.jsonObject(with: Data(schemaJSON.utf8)) as? [String: Any]
+        )
+        manager.add(tool, pluginID: "com.test.misc")
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let detailRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name" })
+
+        let response = try await detailRoute.handler(
+            WebRouteRequest(
+                method: .get,
+                path: "/api/v1/tools/set_level",
+                pathParameters: ["name": "set_level"]
+            )
+        )
+        #expect(response.statusCode == 200)
+
+        let raw = try #require(String(data: response.body, encoding: .utf8))
+        #expect(raw.contains("\"minimum\":0"))
+        #expect(raw.contains("\"default\":1"))
+        #expect(!raw.contains("\"minimum\":false"))
+        #expect(!raw.contains("\"default\":true"))
     }
 
     @Test("查看未知工具抛出 notFound，由服务端映射为 404")

@@ -57,14 +57,9 @@ public enum JSONValue: Codable, Sendable, Equatable {
     /// - Parameter value: 任意值。非 JSON 类型一律降级为 `null`。
     public init(from value: Any) {
         switch value {
-        case let value as Bool:
-            self = .bool(value)
-        case let value as Int:
-            self = .number(Double(value))
-        case let value as Double:
-            self = .number(value)
         case let value as NSNumber:
-            // `NSNumber` 同时匹配 Bool 与数字，需显式区分。
+            // NSNumber(0)/(1) 也能桥接成 Bool；必须先检查原始对象的 CFTypeID，
+            // 否则 JSON 数字 0/1 会被 `as Bool` 误判为布尔（#1151）。
             if CFGetTypeID(value) == CFBooleanGetTypeID() {
                 self = .bool(value.boolValue)
             } else {
