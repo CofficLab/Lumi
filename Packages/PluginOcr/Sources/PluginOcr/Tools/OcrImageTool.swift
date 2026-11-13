@@ -53,16 +53,18 @@ public struct OcrImageTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let rawPath = (arguments["path"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            !rawPath.isEmpty else {
+        // trim 只用于判空：macOS 文件名可以合法地以空格/换行结尾，
+        // 存在性检查与 OCR 读取必须使用调用方给出的原始路径，
+        // 否则会误报不存在、或静默识别 trim 后的同名文件（#827）。
+        guard let originalPath = arguments["path"]?.value as? String,
+              !originalPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Missing required 'path' argument. Provide an absolute path to a local image."
             )
         }
 
-        let url = URL(fileURLWithPath: (rawPath as NSString).expandingTildeInPath).standardizedFileURL
+        let url = URL(fileURLWithPath: (originalPath as NSString).expandingTildeInPath).standardizedFileURL
         let path = url.path
 
         guard FileManager.default.fileExists(atPath: path) else {
