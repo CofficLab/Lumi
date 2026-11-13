@@ -214,3 +214,52 @@ struct SQLiteReturningTests {
         ))
     }
 }
+
+@Suite("SQLite WITH (CTE)")
+struct SQLiteWithQueryTests {
+    @Test("WITH 查询识别为读路径，注释前缀与大小写不影响判定")
+    @MainActor
+    func withQueryUsesReadPath() {
+        // issue #276 的复现语句：只读 CTE 必须走 query。
+        #expect(DatabaseViewModel.isReadStatement(
+            "WITH x AS (SELECT 1 AS n) SELECT n FROM x;",
+            type: .sqlite
+        ))
+        // 注释前缀不能被误判成写入。
+        #expect(DatabaseViewModel.isReadStatement(
+            "-- leading comment\nWITH x AS (SELECT 1 AS n) SELECT n FROM x",
+            type: .sqlite
+        ))
+        #expect(DatabaseViewModel.isReadStatement(
+            "/* block */ with x as (select 1 as n) select n from x",
+            type: .sqlite
+        ))
+        // 普通写入（无 RETURNING）仍走 execute，不被 WITH 改动误伤。
+        #expect(!DatabaseViewModel.isReadStatement(
+            "INSERT INTO t(name) VALUES('first')",
+            type: .sqlite
+        ))
+    }
+
+    @Test("WITH 查询经 query 路径返回真实结果行")
+    @MainActor
+    func withQueryReturnsRowsEndToEnd() async throws {
+        let path = NSTemporaryDirectory() + "/lumi-with-\(UUID().uuidString).sqlite"
+        defer { try? FileManager.default.removeItem(atPath: path) }
+
+        let connection = try await SQLiteDriver().connect(config: DatabaseConfig(
+            name: "With",
+            type: .sqlite,
+            database: path
+        ))
+
+        let sql = "WITH x AS (SELECT 1 AS n) SELECT n FROM x;"
+        // 生产 executeQuery 依据 isReadStatement 选择 query；这里锁定该判定为读。
+        #expect(DatabaseViewModel.isReadStatement(sql, type: .sqlite))
+
+        let result = try await connection.query(sql, params: nil)
+        #expect(result.columns == ["n"])
+        #expect(result.rows == [[.integer(1)]])
+        await connection.close()
+    }
+}
