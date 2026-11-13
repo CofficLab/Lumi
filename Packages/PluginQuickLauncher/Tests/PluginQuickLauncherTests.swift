@@ -202,7 +202,7 @@ struct QuickLauncherTests {
         }
 
         model.query = "find754"
-        #expect(model.results.map(\.id) == ["app:reg754.app", "command:Group754/run754"])
+        #expect(model.results.map(\.id) == ["app:/Applications/Find754App.app", "command:Group754/run754"])
 
         // 用户在文件结果到达前选中命令。
         model.selectedIndex = 1
@@ -382,5 +382,53 @@ struct QuickLauncherTests {
             #expect(model.execute(at: index) == true)
         }
         #expect(executed)
+    }
+
+    // MARK: - 回归 #300：同 Bundle ID 的多份副本必须有唯一结果身份
+
+    @Test func sameBundleIDAppsGetDistinctResultIDs() {
+        let first = LauncherResult(app: LauncherAppItem(
+            id: "com.example.foo", name: "Foo",
+            path: "/Applications/Foo.app", bundleIdentifier: "com.example.foo"
+        ))
+        let second = LauncherResult(app: LauncherAppItem(
+            id: "com.example.foo", name: "Foo",
+            path: "/Users/test/Applications/Foo.app", bundleIdentifier: "com.example.foo"
+        ))
+
+        // 同一 Bundle ID、不同路径：结果身份必须唯一，不得碰撞。
+        #expect(first.id != second.id, "同 Bundle ID 的不同副本必须有不同结果 ID")
+        #expect(first.id == "app:/Applications/Foo.app")
+        #expect(second.id == "app:/Users/test/Applications/Foo.app")
+        // 各自仍指向自己的路径。
+        #expect(first.app?.path == "/Applications/Foo.app")
+        #expect(second.app?.path == "/Users/test/Applications/Foo.app")
+    }
+
+    @Test func clickingSecondCopyResolvesToItsOwnPath() throws {
+        let appSearch = AppSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            appSearch.setAppsForTesting([])
+            model.reset()
+        }
+
+        appSearch.setAppsForTesting([
+            LauncherAppItem(id: "com.example.bar", name: "Bar",
+                path: "/Applications/Bar.app", bundleIdentifier: "com.example.bar"),
+            LauncherAppItem(id: "com.example.bar", name: "Bar",
+                path: "/Users/test/Applications/Bar.app", bundleIdentifier: "com.example.bar"),
+        ])
+        model.query = "bar"
+
+        let appResults = model.results.filter { $0.kind == .app }
+        #expect(appResults.count == 2)
+        #expect(Set(appResults.map(\.id)).count == 2, "两份副本的结果 ID 必须唯一")
+
+        // 复刻 LauncherView.flattenedIndex：按结果 ID 反查下标。修复前两份
+        // 副本共享 ID，反查永远落到第一份，点击第二份会启动错误路径。
+        let secondCopy = try #require(appResults.first { $0.app?.path == "/Users/test/Applications/Bar.app" })
+        let resolvedIndex = try #require(model.results.firstIndex(where: { $0.id == secondCopy.id }))
+        #expect(model.results[resolvedIndex].app?.path == "/Users/test/Applications/Bar.app", "按 ID 反查必须落到第二份副本自身")
     }
 }

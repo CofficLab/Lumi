@@ -92,7 +92,10 @@ public struct LauncherResult: Identifiable, Hashable, Sendable {
     public let aiQuery: String?
 
     init(app: LauncherAppItem) {
-        self.id = "app:\(app.id)"
+        // 同一 Bundle ID 的应用可能存在于多个路径（/Applications 与
+        // ~/Applications）。结果身份必须按唯一路径区分，否则 SwiftUI 行身份
+        // 碰撞、点击经 firstIndex(where: id) 永远落到第一份，启动错误副本（#300）。
+        self.id = "app:\(app.path)"
         self.kind = .app
         self.title = app.name
         self.subtitle = (app.path as NSString).deletingLastPathComponent
