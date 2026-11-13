@@ -171,8 +171,10 @@ public final class AppSearchService: ObservableObject, SuperLog {
 
     /// 按查询词检索应用，最多返回 limit 条。
     ///
-    /// 归一化键预先算好并缓存，匹配时拿到足够结果即停止，
-    /// 避免每次按键都对全部应用做字符串分配与模糊扫描。
+    /// 归一化键已在索引中预先算好并缓存，检索本身不再做字符串分配（#1218）。
+    /// 必须扫描全部条目、按「前缀 > 包含 > 模糊」分类并在同类内按名称长度稳定排序后，
+    /// 再截断到 limit：若边扫边在达到 limit 时停止，会按字母扫描序提前截断，
+    /// 把排在后面但优先级更高的精确/前缀命中整个丢掉（#301）。
     func searchItems(matching query: String, limit: Int) -> [AppSearchEntry] {
         guard !query.isEmpty, limit > 0 else { return [] }
         let lowered = query.lowercased()
@@ -180,29 +182,34 @@ public final class AppSearchService: ObservableObject, SuperLog {
         var prefixHits: [AppSearchEntry] = []
         var containsHits: [AppSearchEntry] = []
         var fuzzyHits: [AppSearchEntry] = []
-        var found = 0
 
         for entry in searchIndex {
             let normalized = entry.normalizedName
             if normalized.hasPrefix(lowered) {
                 prefixHits.append(entry)
-                found += 1
             } else if normalized.contains(lowered) {
                 containsHits.append(entry)
-                found += 1
             } else if Self.fuzzyMatch(lowered, in: normalized) {
                 fuzzyHits.append(entry)
-                found += 1
             }
-            // 结果条数已够，不再继续扫描剩余应用。
-            if found >= limit { break }
         }
 
-        // 前缀命中排前；同类按名称长度排，短名优先。
-        let ordered = (prefixHits + containsHits + fuzzyHits).sorted {
-            $0.item.name.count < $1.item.name.count
-        }
+        // 前缀命中排前；同类按名称长度排，短名优先，等长时保持注册顺序。
+        let ordered = byLengthStable(prefixHits) + byLengthStable(containsHits) + byLengthStable(fuzzyHits)
         return Array(ordered.prefix(limit))
+    }
+
+    /// 同类命中按名称长度升序排序；等长时按注册顺序保持稳定。
+    ///
+    /// Swift `sorted` 不保证稳定，必须用注册下标做次级键，
+    /// 否则同优先级等长名会被打乱，且短名包含命中可能越级排到前缀命中之前。
+    private func byLengthStable(_ hits: [AppSearchEntry]) -> [AppSearchEntry] {
+        hits.enumerated().sorted { lhs, rhs in
+            if lhs.element.item.name.count != rhs.element.item.name.count {
+                return lhs.element.item.name.count < rhs.element.item.name.count
+            }
+            return lhs.offset < rhs.offset
+        }.map(\.element)
     }
 
     /// 重建应用检索索引（应用列表变化时调用）。
