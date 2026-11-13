@@ -14,7 +14,7 @@
 
 | 状态 | 数量 | 说明 |
 |---|---|---|
-| ✅ 本轮已修复并提交 | 21 | 每条有对应提交与守卫测试 |
+| ✅ 本轮已修复并提交 | 22 | 每条有对应提交与守卫测试 |
 | ✔️ 此前已修复（本次核实并关闭 issue） | 4 | 代码已正确，issue 状态滞后 |
 | 📦 属外置仓库（PluginDevice） | 4 | 本仓库无法修复，已在 issue 留言指明方案 |
 | ⬜ 待处理 | — | 见下方各分类 |
@@ -35,6 +35,7 @@
 | [#1269](https://github.com/CofficLab/Lumi/issues/1269) | `bb74ddd2a` | 修复：图片 Base64 编码缓存 + 工具参数解析缓存 + 请求体构建移出主线程 |
 | [#1272](https://github.com/CofficLab/Lumi/issues/1272) | `d2c21ba4d` | 修复：定向查询窗口存在性 |
 | [#1273](https://github.com/CofficLab/Lumi/issues/1273) | `867dc2b2b` | 修复：摘要反向扫描 |
+| [#1270](https://github.com/CofficLab/Lumi/issues/1270) | `3072fd2a9` | 修复：响应只解析一次（usage 随响应带出）+ 解析移出主线程 |
 | [#1274](https://github.com/CofficLab/Lumi/issues/1274) | `13867fa0e` | 修复：匹配阶段用无图轻量桥接 + 渲染阶段复用解码缓存 |
 | [#1275](https://github.com/CofficLab/Lumi/issues/1275) | `6197d97ee` | 修复：MCP schema 注册时解析一次 + 复用规范化文本免重复序列化 |
 | [#1279](https://github.com/CofficLab/Lumi/issues/1279) | `669aeb38d` | 修复：查找匹配防抖 + 正则缓存 |
@@ -107,7 +108,7 @@
 - ✅ 已修复 `6197d97ee` · OPEN **#1275** [MCP tool schemas are re-decoded from JSON and re-serialized on the main actor on every LLM request](https://github.com/CofficLab/Lumi/issues/1275)
 - ✅ 已修复 `13867fa0e` · OPEN **#1274** [Tool-call renderer dispatch Base64-decodes every result image on the main actor, then discards it](https://github.com/CofficLab/Lumi/issues/1274)
 - ⬜ 待处理 · OPEN **#1271** [Git repository watcher hashes the whole index and refs on the main actor](https://github.com/CofficLab/Lumi/issues/1271)
-- ⬜ 待处理 · OPEN **#1270** [Non-streaming LLM responses are fully parsed three times on the main actor](https://github.com/CofficLab/Lumi/issues/1270)
+- ✅ 已修复 `3072fd2a9` · OPEN **#1270** [Non-streaming LLM responses are fully parsed three times on the main actor](https://github.com/CofficLab/Lumi/issues/1270)
 - ✅ 已修复 `bb74ddd2a` · OPEN **#1269** [Every streaming LLM request re-encodes all history images on the main actor](https://github.com/CofficLab/Lumi/issues/1269)
 - ✅ 已修复 `2f2c4e8f1` · OPEN **#1268** [Every LLM request Base64-decodes all prepared-history images on the main actor](https://github.com/CofficLab/Lumi/issues/1268)
 - ⬜ 待处理 · OPEN **#1266** [Screenshot dragging invalidates every full-screen overlay on every mouse update](https://github.com/CofficLab/Lumi/issues/1266)
