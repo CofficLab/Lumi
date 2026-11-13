@@ -7,31 +7,206 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export"
+            "value": "Export Conversation"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出"
+            "value": "导出对话"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出"
+            "value": "匯出對話"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出"
+            "value": "匯出對話"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出"
+            "value": "匯出對話"
+          }
+        }
+      }
+    },
+    "Choose how this conversation should be exported.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how this conversation should be exported."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择导出用途，生成适合对应场景的内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇匯出用途，產生適合對應場景的內容。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇匯出用途，產生適合對應場景的內容。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇匯出用途，產生適合對應場景的內容。"
+          }
+        }
+      }
+    },
+    "Development & Debugging": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Development & Debugging"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发调试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發除錯"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發除錯"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發除錯"
+          }
+        }
+      }
+    },
+    "Keeps tool calls, reasoning, IDs, and paths for troubleshooting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps tool calls, reasoning, IDs, and paths for troubleshooting."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留工具调用、推理过程、ID 与路径等技术细节，便于排查问题。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留工具呼叫、推理過程、ID 與路徑等技術細節，便於排查問題。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留工具呼叫、推理過程、ID 與路徑等技術細節，便於排查問題。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留工具呼叫、推理過程、ID 與路徑等技術細節，便於排查問題。"
+          }
+        }
+      }
+    },
+    "Share Conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Conversation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享对话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享對話"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享對話"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享對話"
+          }
+        }
+      }
+    },
+    "A clean transcript without tool calls, reasoning, or technical metadata.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A clean transcript without tool calls, reasoning, or technical metadata."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成干净整洁的对话记录，自动隐藏工具调用、推理过程与技术元数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產生乾淨整潔的對話記錄，自動隱藏工具呼叫、推理過程與技術中繼資料。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產生乾淨整潔的對話記錄，自動隱藏工具呼叫、推理過程與技術中繼資料。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產生乾淨整潔的對話記錄，自動隱藏工具呼叫、推理過程與技術中繼資料。"
           }
         }
       }

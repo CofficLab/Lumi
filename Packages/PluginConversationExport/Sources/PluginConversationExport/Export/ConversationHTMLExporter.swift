@@ -18,14 +18,27 @@ struct PreparedConversationExport: Sendable, Equatable {
 }
 
 enum ConversationHTMLExporter {
-    static func export(_ snapshot: ConversationExportSnapshot) -> PreparedConversationExport {
+    static func export(
+        _ snapshot: ConversationExportSnapshot,
+        mode: ConversationExportMode = .debug
+    ) -> PreparedConversationExport {
         let orderedMessages = snapshot.messages.sorted {
             if $0.createdAt == $1.createdAt { return $0.id.uuidString < $1.id.uuidString }
             return $0.createdAt < $1.createdAt
         }
-        let renderedMessages = orderedMessages.map(renderMessage).joined(separator: "\n")
+        let renderedMessages: String
+        let exportedMessageCount: Int
+        switch mode {
+        case .debug:
+            exportedMessageCount = orderedMessages.count
+            renderedMessages = orderedMessages.map(renderDetailedMessage).joined(separator: "\n")
+        case .share:
+            let shareableMessages = orderedMessages.compactMap(renderSharedMessage)
+            exportedMessageCount = shareableMessages.count
+            renderedMessages = shareableMessages.joined(separator: "\n")
+        }
         let title = escape(snapshot.title)
-        let metadata = renderMetadata(snapshot)
+        let metadata = renderMetadata(snapshot, messageCount: exportedMessageCount, mode: mode)
         let html = """
         <!doctype html>
         <html lang="zh-CN">
@@ -80,15 +93,23 @@ enum ConversationHTMLExporter {
         """
         return PreparedConversationExport(
             data: Data(html.utf8),
-            suggestedFilename: suggestedFilename(title: snapshot.title, date: snapshot.exportedAt)
+            suggestedFilename: suggestedFilename(
+                title: snapshot.title,
+                date: snapshot.exportedAt,
+                mode: mode
+            )
         )
     }
 
-    private static func renderMetadata(_ snapshot: ConversationExportSnapshot) -> String {
-        var values = [
-            "<span>\(snapshot.messages.count) messages</span>",
-            "<span>ID: \(escape(snapshot.conversationID.uuidString))</span>",
-        ]
+    private static func renderMetadata(
+        _ snapshot: ConversationExportSnapshot,
+        messageCount: Int,
+        mode: ConversationExportMode
+    ) -> String {
+        var values = ["<span>\(messageCount) messages</span>"]
+        guard mode == .debug else { return values.joined() }
+
+        values.append("<span>ID: \(escape(snapshot.conversationID.uuidString))</span>")
         if let createdAt = snapshot.createdAt {
             values.append("<span>Created: \(escape(timestamp(createdAt)))</span>")
         }
@@ -104,7 +125,7 @@ enum ConversationHTMLExporter {
         return values.joined()
     }
 
-    private static func renderMessage(_ message: Message) -> String {
+    private static func renderDetailedMessage(_ message: Message) -> String {
         let role = message.role.rawValue
         let roleClass = message.isError ? "error" : role
         let content = nonempty(message.content).map(escape)
@@ -122,6 +143,27 @@ enum ConversationHTMLExporter {
           \(attachments)
           \(reasoning)
           \(toolCalls)
+        </article>
+        """
+    }
+
+    /// 分享模式只保留用户与助手的可见内容；没有可展示内容的消息（例如
+    /// 只有工具调用的助手轮次）整条跳过，避免出现空卡片。
+    private static func renderSharedMessage(_ message: Message) -> String? {
+        guard !message.isError, message.role == .user || message.role == .assistant else {
+            return nil
+        }
+        let content = nonempty(message.content).map(escape)
+        let attachments = renderUserAttachments(message.metadata)
+        guard content != nil || !attachments.isEmpty else { return nil }
+
+        let role = message.role.rawValue
+        let contentBlock = content.map { "<div class=\"content\">\($0)</div>" } ?? ""
+        return """
+        <article class="message \(role)" data-role="\(role)">
+          <div class="message-head"><span class="role">\(escape(role))</span></div>
+          \(contentBlock)
+          \(attachments)
         </article>
         """
     }
@@ -228,12 +270,17 @@ enum ConversationHTMLExporter {
         ISO8601DateFormatter().string(from: date)
     }
 
-    private static func suggestedFilename(title: String, date: Date) -> String {
+    private static func suggestedFilename(
+        title: String,
+        date: Date,
+        mode: ConversationExportMode
+    ) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         dateFormatter.dateFormat = "yyyyMMdd-HHmmss"
-        return "\(safeFilenameComponent(title))-\(dateFormatter.string(from: date)).html"
+        let suffix = mode == .share ? "-share" : ""
+        return "\(safeFilenameComponent(title))\(suffix)-\(dateFormatter.string(from: date)).html"
     }
 
     private static func safeFilenameComponent(_ title: String) -> String {

@@ -36,7 +36,7 @@ final class ConversationExportViewModel: ObservableObject {
         selectedConversationID != nil && !isPreparing
     }
 
-    func beginExport() {
+    func beginExport(mode: ConversationExportMode) {
         guard preparationTask == nil, let conversationID = selectedConversationID else { return }
         isPreparing = true
         let cachedSummary = conversations.conversations.first { $0.id == conversationID }
@@ -61,9 +61,9 @@ final class ConversationExportViewModel: ObservableObject {
                 exportedAt: Date()
             )
             let prepared = await Task.detached(priority: .userInitiated) {
-                ConversationHTMLExporter.export(snapshot)
+                ConversationHTMLExporter.export(snapshot, mode: mode)
             }.value
-            guard !Task.isCancelled else {
+            guard !Task.isCancelled, self.selectedConversationID == conversationID else {
                 finishPreparation()
                 return
             }

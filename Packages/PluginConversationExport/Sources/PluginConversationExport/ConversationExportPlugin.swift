@@ -19,7 +19,7 @@ public final class ConversationExportPlugin: SuperPlugin, SuperLog {
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.conversation-export",
         name: "Conversation Export",
-        description: "Export the current conversation as a self-contained HTML file.",
+        description: "Export the current conversation as a self-contained HTML file, with debugging and sharing presets.",
         category: .chat,
         stage: .stable,
         policy: .enabledByDefault
