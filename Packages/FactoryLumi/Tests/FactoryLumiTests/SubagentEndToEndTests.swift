@@ -203,12 +203,18 @@ struct SubagentEndToEndTests {
         #expect(childSchemas.isEmpty == false)
         #expect(childSchemas.contains(where: { $0.name == "run_subagent" }) == false)
 
-        // 子表里的每个工具都必须是只读并发能力，副作用/交互工具一律不进子回合。
+        // 子表里的每个工具都必须是只读并发能力，副作用/交互工具一律不进
+        // 子回合；唯一例外是显式放行的代理通信工具（#1328）。
         let registered = toolManager.allTools()
         for schema in childSchemas {
             let tool = try #require(registered.first(where: { $0.name == schema.name }))
-            #expect(tool.executionCapability == .parallelReadOnly)
+            if tool.name == SubagentToolPolicy.messagingToolName {
+                #expect(tool.executionCapability == .serialSideEffect)
+            } else {
+                #expect(tool.executionCapability == .parallelReadOnly)
+            }
         }
+        #expect(childSchemas.contains(where: { $0.name == SubagentToolPolicy.messagingToolName }))
     }
 
     @Test("取消父 Job 必须级联停止子回合")
@@ -721,6 +727,106 @@ struct SubagentEndToEndTests {
         #expect(notifications.first?.content.contains(conclusion) == true)
     }
 
+    // MARK: - 代理间通信（#1328 Task 6）
+
+    @Test("兄弟消息在目标下一回合可见，父回合只收委托结论")
+    func siblingMessageIsVisibleAtNextTurn() async throws {
+        let stub = ScriptedLLMManager()
+        let explorerTask = "Explore whether auth.swift is still used."
+        let editorTask = "Edit the auth module safely."
+        let body = "Function still used in billing.swift; do not delete it."
+        let wakeReply = "Editor saw the sibling message."
+
+        let sendArguments = try JSONSerialization.data(withJSONObject: [
+            "to": "editor",
+            "message": body,
+            "mode": "followup",
+        ])
+        stub.scriptQueues[explorerTask] = [
+            .toolCalls([LLMToolCall(
+                id: "call-send",
+                name: "send_subagent_message",
+                arguments: String(decoding: sendArguments, as: UTF8.self)
+            )]),
+            .text("Explorer conclusion: keep the function."),
+        ]
+        // 让 explorer 在 editor 仍在跑时发出消息，覆盖 followup 的忙时排队。
+        stub.delays[explorerTask] = 0.6
+        stub.scripts[editorTask] = .text("Editor initial conclusion.")
+        stub.delays[editorTask] = 1.4
+        stub.fragmentScripts = [(body, .text(wakeReply))]
+
+        let kernel = try makeKernel(stub: stub)
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let turnID = UUID()
+        async let explorer = runSubagent(
+            toolManager: toolManager, task: explorerTask, description: "Explorer",
+            conversationID: parentID, turnID: turnID, extraArguments: ["name": "explorer"]
+        )
+        async let editor = runSubagent(
+            toolManager: toolManager, task: editorTask, description: "Editor",
+            conversationID: parentID, turnID: turnID, extraArguments: ["name": "editor"]
+        )
+        let results = try await [explorer, editor]
+
+        #expect(results.allSatisfy { !$0.isError })
+        #expect(results[0].content.contains("Explorer conclusion"))
+        #expect(results[1].content.contains("Editor initial conclusion"))
+        // 唤醒回合的产出不是委托结论，不得混进父回合的工具结果。
+        #expect(results.allSatisfy { !$0.content.contains(wakeReply) })
+
+        // 目标确实在后续回合读到了这条消息，且带来源说明。
+        let wakeDeadline = Date().addingTimeInterval(10)
+        var wakeRequest: LLMRequest?
+        while Date() < wakeDeadline {
+            if let request = stub.requests.first(where: {
+                $0.messages.last(where: { $0.role == .user })?.content.contains(body) == true
+            }) {
+                wakeRequest = request
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let wakeInput = try #require(
+            wakeRequest?.messages.last(where: { $0.role == .user })
+        )
+        #expect(wakeInput.content.contains("another agent, not from your user"))
+        #expect(wakeInput.content.contains(body))
+
+        // 结构化来源 metadata 落在目标会话；父上下文不含唤醒回合产出。
+        let cards = messages.messages(for: parentID)
+            .compactMap { SubagentTimeline.decodePayload(from: $0.metadata) }
+        let explorerChild = try #require(
+            cards.first(where: { $0.name == "explorer" })?.childConversationID
+        )
+        let editorChild = try #require(
+            cards.first(where: { $0.name == "editor" })?.childConversationID
+        )
+        let agentMessage = try #require(messages.messages(for: editorChild).first {
+            $0.metadata[SubagentMessageProvenance.senderNameKey] == "explorer"
+        })
+        #expect(agentMessage.content.contains(body))
+        #expect(
+            agentMessage.metadata[SubagentMessageProvenance.senderConversationIDKey]
+                == explorerChild.uuidString
+        )
+        #expect(messages.messages(for: parentID).allSatisfy { !$0.content.contains(wakeReply) })
+
+        // 子会话工具表显式包含通信工具，仍不含委托工具。
+        let explorerRequest = try #require(stub.requests.first(where: {
+            $0.messages.last(where: { $0.role == .user })?.content == explorerTask
+        }))
+        let childTools = try #require(explorerRequest.tools)
+        #expect(childTools.contains(where: { $0.name == SubagentToolPolicy.messagingToolName }))
+        #expect(childTools.contains(where: { $0.name == SubagentToolPolicy.delegationToolName }) == false)
+    }
+
     // MARK: - UI 卡片（#1313 Task 6）
 
     @Test("同步委托在父会话插入时间线卡片，载荷指向真实子会话且不进 LLM 上下文")
@@ -1013,6 +1119,9 @@ private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unc
     /// 按任务文本排队的多段脚本（FIFO）：驱动「工具调用 → 工具结果 → 收尾」
     /// 的多轮父回合；队列耗尽后回落到 scripts。
     var scriptQueues: [String: [Script]] = [:]
+    /// 片段匹配脚本：请求文本包含片段即命中。用于代理间消息这类运行时
+    /// 才拼接出完整文本（含发送方 UUID）的场景。
+    var fragmentScripts: [(fragment: String, script: Script)] = []
     /// 按任务文本注入响应延迟，用于并发重叠与取消路径的测试。
     var delays: [String: TimeInterval] = [:]
     /// 每个任务请求的执行区间；被取消的请求只有 start 没有 end。
@@ -1067,8 +1176,12 @@ private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unc
         if var queue = scriptQueues[task], !queue.isEmpty {
             script = queue.removeFirst()
             scriptQueues[task] = queue
+        } else if let exact = scripts[task] {
+            script = exact
+        } else if let match = fragmentScripts.first(where: { task.contains($0.fragment) }) {
+            script = match.script
         } else {
-            script = scripts[task] ?? .text("ok")
+            script = .text("ok")
         }
         intervals[task] = (start: intervals[task]?.start ?? Date(), end: Date())
         switch script {
