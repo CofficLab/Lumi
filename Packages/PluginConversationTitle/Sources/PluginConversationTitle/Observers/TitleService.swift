@@ -340,8 +340,28 @@ final class TitleService: SuperLog {
 
     private nonisolated static let placeholderTitleMaxLength = 40
 
+    /// 取前缀时预留的空白预算。
+    ///
+    /// 折叠空白会**缩短**文本，所以要取足够长的前缀，
+    /// 才能保证折叠后仍然有 `placeholderTitleMaxLength` 个字符。
+    /// 这里的倍数足够宽松：即使前缀里全是空白（每个空白折叠成一个空格），
+    /// 结果也只会被压缩一个数量级，不会改变最终结果。
+    private nonisolated static let placeholderTitlePrefixFactor = 8
+
     nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
-        let collapsed = strippingInjectedReminders(text)
+        let stripped = strippingInjectedReminders(text)
+
+        // - Important: 先取有界前缀，再折叠空白。
+        //   原先对**全量**文本跑一次 ICU 正则（`\s+` → 空格），代价是 O(全文长度)，
+        //   而结果只需要 40 个字符（见 issue #1287）。
+        //
+        //   前缀长度给足空白预算，因此折叠后的结果与「全量折叠再截断」一致。
+        let prefixLimit = placeholderTitleMaxLength * placeholderTitlePrefixFactor
+        let prefix = stripped.count > prefixLimit
+            ? String(stripped.prefix(prefixLimit))
+            : stripped
+
+        let collapsed = prefix
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard collapsed.count > placeholderTitleMaxLength else { return collapsed }
