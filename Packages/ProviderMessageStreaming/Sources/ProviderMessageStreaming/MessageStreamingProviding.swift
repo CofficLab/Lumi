@@ -61,11 +61,19 @@ public final class DefaultMessageStreamingProviding: MessageStreamingProviding {
     public func streamingMessage(for conversationID: UUID) -> Message? { rows[conversationID] }
     public func stage(for conversationID: UUID) -> MessageStreamingStage { stages[conversationID] ?? .idle }
     public func start(conversationID: UUID) { rows[conversationID] = Message(conversationID: conversationID, role: .assistant, content: ""); stages[conversationID] = .sending; notify(.updated(conversationID)) }
-    public func appendContent(_ content: String, conversationID: UUID) { guard var row = rows[conversationID] else { return }; row.content += content; rows[conversationID] = row; stages[conversationID] = .generating; notify(.updated(conversationID)) }
+    public func appendContent(_ content: String, conversationID: UUID) {
+        guard rows[conversationID] != nil else { return }
+        // 必须原地追加：拷出结构体会让 content 失去唯一引用，逐 chunk 整段 COW 复制（O(n²)）。
+        rows[conversationID]?.content += content
+        stages[conversationID] = .generating
+        notify(.updated(conversationID))
+    }
     public func appendThinking(_ content: String, conversationID: UUID) {
-        guard var row = rows[conversationID] else { return }
-        row.reasoningContent = (row.reasoningContent ?? "") + content
-        rows[conversationID] = row
+        guard rows[conversationID] != nil else { return }
+        if rows[conversationID]?.reasoningContent == nil {
+            rows[conversationID]?.reasoningContent = ""
+        }
+        rows[conversationID]?.reasoningContent?.append(content)
         stages[conversationID] = .thinking
         notify(.updated(conversationID))
     }
