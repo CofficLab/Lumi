@@ -5,7 +5,7 @@
 KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生成脚本、写入磁盘与查询安装状态。
 
 平台: macOS 14+
-测试文件: 6 个，用例总数: 46
+测试文件: 7 个，用例总数: 52
 
 ## 公开 API
 
@@ -26,6 +26,7 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 - **CLIPathResolver**（6 条）：由 `parsesPathEntries`、`parsesEmptyPath`、`resolvedPathContainsSystemDirectories` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIScriptBuilder**（10 条）：由 `scriptStartsWithShebang`、`defaultCommandNameIsLumi`、`usesExistingOpenProjectProtocol` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIScriptBuilderShellEscaping**（8 条）：由 `dollarSignPathResolvesVerbatim`、`backtickPathResolvesVerbatim`、`combinedSpecialCharsPathResolvesVerbatim` 等用例锁定；真实执行 /bin/sh，断言含 `$`、反引号、双引号、反斜杠、单引号、空格、非 ASCII 的安装路径原样解析（#142）。
+- **CLIScriptBuilderURLEncoding**（6 条）：由 `newlineInPathIsPreserved`、`crlfInPathIsPreserved`、`multibyteWithNewlineRoundTrips` 等用例锁定；真实执行 /bin/sh 运行脚本的 `urlencode`，断言换行/回车逐字节编码为 %0A/%0D 并可被 App 还原（#143）。
 
 ## 测试用例清单
 
@@ -77,27 +78,33 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 | 44 | CLIScriptBuilderShellEscaping | 含空格的安装路径原样解析 | 创建名为 `Space name.app` 的真实目录 | 生成脚本，抽出 `find_lumi_app` 用 /bin/sh 执行（移除 LUMI_APP） | 原样返回含空格的路径 | P1 | ✅ 已覆盖 | `spacePathResolvesVerbatim` |
 | 45 | CLIScriptBuilderShellEscaping | 含非 ASCII 字符的安装路径原样解析 | 创建名为 `中文应用.app` 的真实目录 | 生成脚本，抽出 `find_lumi_app` 用 /bin/sh 执行（移除 LUMI_APP） | 原样返回含中文的路径 | P1 | ✅ 已覆盖 | `nonASCIIPathResolvesVerbatim` |
 | 46 | CLIScriptBuilderShellEscaping | 含全部特殊字符的安装路径必须原样解析，不得被 shell 改写 | 创建名为 ``Mix $v `lumi_nx` "q" \w 's' 中文.app`` 的真实目录 | 生成脚本，抽出 `find_lumi_app` 用 /bin/sh 执行（移除 LUMI_APP） | 原样返回，所有特殊字符均不被展开/改写 | P0 | ✅ 已覆盖 | `combinedSpecialCharsPathResolvesVerbatim` |
+| 47 | CLIScriptBuilderURLEncoding | 含换行的目录名必须编码为 %0A，不得被 chomp 丢弃 | 路径 `/tmp/a\nb`（含真实换行） | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码为 `%2Ftmp%2Fa%0Ab`，换行保留为 %0A | P0 | ✅ 已覆盖 | `newlineInPathIsPreserved` |
+| 48 | CLIScriptBuilderURLEncoding | 含回车的目录名必须编码为 %0D | 路径 `/tmp/a\rb`（含真实回车） | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码为 `%2Ftmp%2Fa%0Db` | P0 | ✅ 已覆盖 | `carriageReturnInPathIsPreserved` |
+| 49 | CLIScriptBuilderURLEncoding | 含 CRLF 的目录名必须编码为 %0D%0A，不得只保留回车 | 路径 `/tmp/a\r\nb`（含 CRLF） | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码为 `%2Ftmp%2Fa%0D%0Ab` | P0 | ✅ 已覆盖 | `crlfInPathIsPreserved` |
+| 50 | CLIScriptBuilderURLEncoding | 含换行的路径经脚本编码后可被 App 原样还原 | 路径 `/tmp/a\nb` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 脚本编码后经 `URLComponents` 还原 == 原路径 | P1 | ✅ 已覆盖 | `newlinePathRoundTripsThroughApp` |
+| 51 | CLIScriptBuilderURLEncoding | 多字节字符与换行混合的路径编码后可被 App 原样还原 | 路径 `/tmp/中文\n目录` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码含 %0A，且 App 还原 == 原路径 | P1 | ✅ 已覆盖 | `multibyteWithNewlineRoundTrips` |
+| 52 | CLIScriptBuilderURLEncoding | 不含特殊字符的多字节路径编码保持不变（无回归） | 路径 `/tmp/中文目录` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码为 `%2Ftmp%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95` | P1 | ✅ 已覆盖 | `plainMultibytePathIsUnchanged` |
 
-> 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 40 / 40
 - P2: 已覆盖 2 / 2
-- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（40 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 46 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

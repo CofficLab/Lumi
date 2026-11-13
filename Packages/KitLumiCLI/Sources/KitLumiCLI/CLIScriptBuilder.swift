@@ -116,10 +116,12 @@ public enum CLIScriptBuilder {
         ABS_TARGET="$(cd "$TARGET" 2>/dev/null && pwd -P || printf '%s' "$TARGET")"
 
         # --- 编码为 URL -----------------------------------------------------------
-        # 手工百分号编码，保证路径中的空格、#、&、中文等字符都能安全通过
+        # 手工百分号编码，保证路径中的空格、#、&、中文、换行等字符都能安全通过
         # query 传递。不依赖 URI::Escape 等非核心 perl 模块。
+        # 用 -0777 slurp 整串、不 chomp：目录名里的换行/回车必须逐字节编码为
+        # %0A/%0D，逐行读取 + chomp 会把它们丢弃从而指向另一个路径（#143）。
         urlencode() {
-            printf '%s' "$1" | /usr/bin/perl -ne 'chomp; s/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge; print'
+            printf '%s' "$1" | /usr/bin/perl -0777 -ne 's/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge; print'
         }
 
         ENCODED_PATH="$(urlencode "$ABS_TARGET")"
