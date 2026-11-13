@@ -234,11 +234,18 @@ public actor MCPServerSession: MCPServerServing {
         let mappedArguments = arguments.isEmpty
             ? nil
             : arguments.mapValues { $0.mcpValue() }
-        let (content, isError) = try await client.callTool(
+        // 便利重载只回 (content, isError)，会丢掉 structuredContent；改用完整结果
+        // 重载读取该字段，避免仅返回结构化内容的成功结果被落成空文本（#180）。
+        let context: RequestContext<CallTool.Result> = try await client.callTool(
             name: name,
             arguments: mappedArguments
         )
-        return MCPContentCodec.encode(content, isError: isError ?? false)
+        let result = try await context.value
+        return MCPContentCodec.encode(
+            result.content,
+            structuredContent: result.structuredContent,
+            isError: result.isError ?? false
+        )
     }
 
     // MARK: - Private
