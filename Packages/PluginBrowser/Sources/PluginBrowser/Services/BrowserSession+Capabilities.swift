@@ -50,15 +50,21 @@ extension BrowserSession {
         // 导航等待需要以「发起前后的 URL 是否变化」为判据。
         let urlBeforeNavigation = urlString
 
-        while Date() < deadline {
-            if try await isWaitConditionSatisfied(condition, value: value, urlBeforeNavigation: urlBeforeNavigation) {
-                return BrowserWaitResult(
-                    condition: condition,
-                    timedOut: false,
-                    detail: waitDetail(for: condition, value: value)
-                )
-            }
-            try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+        let loop = BrowserWaitLoop(pollInterval: pollInterval, deadline: deadline)
+        let satisfied = try await loop.run {
+            try await self.isWaitConditionSatisfied(
+                condition,
+                value: value,
+                urlBeforeNavigation: urlBeforeNavigation
+            )
+        }
+
+        if satisfied {
+            return BrowserWaitResult(
+                condition: condition,
+                timedOut: false,
+                detail: waitDetail(for: condition, value: value)
+            )
         }
 
         return BrowserWaitResult(
