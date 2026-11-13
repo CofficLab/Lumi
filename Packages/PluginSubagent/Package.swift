@@ -18,7 +18,6 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../PluginConversationManager"),
-        .package(path: "../PluginToolManager"),
     ],
     targets: [
         .target(
@@ -29,7 +28,6 @@ let package = Package(
                 "ProviderAgentLoop",
                 "KitAgentTool",
                 "ProviderToolManager",
-                "PluginToolManager",
                 .product(name: "KernelCore", package: "LumiKernel"),
             ],
             path: "Sources/PluginSubagent"
