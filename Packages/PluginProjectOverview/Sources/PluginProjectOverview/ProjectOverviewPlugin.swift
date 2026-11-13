@@ -72,8 +72,9 @@ public struct ProjectOverviewV2Tool: SuperAgentTool, @unchecked Sendable {
         arguments: [String: ToolArgument],
         conversationProjectPath: String?
     ) async throws -> String {
-        let explicitPath = (arguments["path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let path = explicitPath?.isEmpty == false ? explicitPath : nil
+        // 首尾空白是合法文件名字符，只用裁剪结果判断是否为空，实际路径保留原字节（#492）。
+        let rawPath = arguments["path"]?.value as? String
+        let path = rawPath?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rawPath : nil
         let currentPath = await MainActor.run { project?.currentProject?.path }
         // 优先显式参数，其次工具调用所属会话绑定的项目，最后才是 UI 当前项目。
         let rootPath = path ?? conversationProjectPath ?? currentPath ?? FileManager.default.currentDirectoryPath

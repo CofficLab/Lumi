@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 38 条用例。
+PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 38
+测试文件: 8 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -47,6 +47,7 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 3
 - **AgentRulesViewModel**（2 条）：由 `removingLastProjectClearsLoadedRules`、`removingLastProjectClearsErrorMessage` 锁定；项目列表变化后，若已无选中项目必须立即清空 `rules` 与 `errorMessage`，不能保留已移除项目的状态。
 - **AgentRuleInjectionConversationScope**（1 条）：由 `injectsConversationProjectRules` 锁定；注入钩子必须按请求所属会话绑定项目取规则，不得读全局当前项目，否则切换会话后会把别的 projects 的规则注入旧会话（与工具侧 #619 同根）。
 - **AgentRuleCreateFileSize**（3 条）：由 `createRuleFileSizeIsUTF8ByteCount`、`createRuleFileSizeCountsEmojiBytes`、`createRuleFileSizeMatchesDiskForASCII` 锁定。`createRule` 返回的 `fileSize` 必须是 UTF-8 字节数而非字符数，且与列表路径读到的落盘大小一致（**回归 #779**）；改动 `createRule` 返回值构造时优先跑对应测试文件。
+- **AgentRuleCreatePathTraversal**（5 条）：由 `createRuleRejectsParentDirectoryTraversal`、`createRuleRejectsAbsolutePath`、`createRuleRejectsEmbeddedParentComponent`、`createRuleRejectsSymlinkEscape`、`createRuleStillCreatesValidNameInsideRules` 锁定。`createRule` 必须把写入目标限制在 `.lumi/rules` 根目录内：绝对路径、`..` 成分与经符号链接目录的逃逸都要抛 `pathTraversal`，正常文件名仍落在根目录内（**回归 #347**）；改动 `createRule` 文件名拼接或 `safeRuleFileURL` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -90,27 +91,32 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 3
 | 36 | AgentRuleCreateFileSize | 非 ASCII 规则的 fileSize 必须是 UTF-8 字节数且与列表一致（**回归 #779**） | 临时项目，标题「规则」、正文「内容」 | `createRule` 后读落盘字节数并调用 `listRules` | 内容为 8 字符/16 字节，创建与列表的 fileSize 均为 16 | P0 | ✅ 已覆盖 | `createRuleFileSizeIsUTF8ByteCount` |
 | 37 | AgentRuleCreateFileSize | emoji 等多字节字符同样按字节计量 | 临时项目，正文含 🎉 | `createRule` 后读落盘字节数 | fileSize 等于落盘字节数且大于字符数 | P1 | ✅ 已覆盖 | `createRuleFileSizeCountsEmojiBytes` |
 | 38 | AgentRuleCreateFileSize | 纯 ASCII 规则的 fileSize 与落盘字节数一致 | 临时项目，纯 ASCII 标题与正文 | `createRule` 后读落盘字节数 | fileSize 等于落盘字节数 | P1 | ✅ 已覆盖 | `createRuleFileSizeMatchesDiskForASCII` |
+| 39 | AgentRuleCreatePathTraversal | 父目录相对路径被拒绝且不越界落盘（**回归 #347**） | 临时项目 | `createRule(filename: "../../escaped")` | 抛 `pathTraversal`，项目根无 escaped.md | P0 | ✅ 已覆盖 | `createRuleRejectsParentDirectoryTraversal` |
+| 40 | AgentRuleCreatePathTraversal | 绝对路径文件名必须被拒绝（**回归 #347**） | 临时项目 | `createRule(filename: 绝对路径)` | 抛 `pathTraversal` | P0 | ✅ 已覆盖 | `createRuleRejectsAbsolutePath` |
+| 41 | AgentRuleCreatePathTraversal | 文件名内部嵌入的 .. 成分必须被拒绝（**回归 #347**） | 临时项目 | `createRule(filename: "sub/../../escaped")` | 抛 `pathTraversal` | P0 | ✅ 已覆盖 | `createRuleRejectsEmbeddedParentComponent` |
+| 42 | AgentRuleCreatePathTraversal | 经符号链接目录的逃逸必须被拒绝（**回归 #347**） | 规则目录内有指向外层的符号链接 | `createRule(filename: "escape/pwned")` | 抛 `pathTraversal`，外层无 pwned.md | P0 | ✅ 已覆盖 | `createRuleRejectsSymlinkEscape` |
+| 43 | AgentRuleCreatePathTraversal | 正常 kebab-case 文件名仍创建在规则根目录内 | 临时项目 | `createRule(filename: "my-rule")` | 文件落在 `.lumi/rules/my-rule.md` | P1 | ✅ 已覆盖 | `createRuleStillCreatesValidNameInsideRules` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 25 / 25
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 1 / 1
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

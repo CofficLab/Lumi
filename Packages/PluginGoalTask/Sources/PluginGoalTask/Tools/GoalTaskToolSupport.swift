@@ -91,7 +91,12 @@ enum GoalTaskToolSupport {
         if let conversationId { scoped = await manager.fetchGoals(conversationId: conversationId) }
 
         if let raw, !raw.isEmpty {
-            if await manager.fetchGoal(id: raw) != nil { return .success(raw) }
+            // 带会话上下文时精确 ID 必须属于本会话，禁止跨会话解析（#189）；无上下文旧入口保持全局查找。
+            if conversationId != nil {
+                if scoped.contains(where: { $0.id == raw }) { return .success(raw) }
+            } else if await manager.fetchGoal(id: raw) != nil {
+                return .success(raw)
+            }
             let normalized = normalize(raw)
             let byTitle = scoped.filter { normalize($0.title) == normalized }
             if byTitle.count == 1, let goal = byTitle.first { return .success(goal.id) }

@@ -53,9 +53,11 @@ public enum CLIInstaller {
         )
         for target in candidates {
             let scriptURL = target.scriptURL(for: commandName)
-            if fileManager.isExecutableFile(atPath: scriptURL.path) {
-                return scriptURL
-            }
+            guard fileManager.isExecutableFile(atPath: scriptURL.path) else { continue }
+            // 只认 Lumi 自己安装的脚本：同名的第三方程序不得被当成已安装，
+            // 否则状态查询会误报、卸载会误删（#134）。
+            guard isLumiOwnedScript(at: scriptURL) else { continue }
+            return scriptURL
         }
         return nil
     }
@@ -163,6 +165,13 @@ public enum CLIInstaller {
         }
 
         let scriptURL = resolvedTarget.scriptURL(for: commandName)
+        // 目标已存在同名文件且非 Lumi 安装时拒绝覆盖，避免破坏用户已有的程序；
+        // 由用户自行移除冲突文件或改用其它目录（#134）。
+        if fileManager.fileExists(atPath: scriptURL.path), !isLumiOwnedScript(at: scriptURL) {
+            return .failed(
+                reason: "A file not installed by Lumi already exists at \(scriptURL.path). Remove it first or choose a different directory."
+            )
+        }
         let contents = CLIScriptBuilder.scriptContents(
             commandName: commandName,
             urlScheme: urlScheme,
@@ -215,6 +224,15 @@ public enum CLIInstaller {
     }
 
     // MARK: - Private Helpers
+
+    /// 读取脚本内容并判断是否由 Lumi 安装。
+    ///
+    /// 读不到内容时保守地视为「非 Lumi」，从而既不覆盖也不删除（#134）。
+    private static func isLumiOwnedScript(at url: URL) -> Bool {
+        guard let data = try? Data(contentsOf: url),
+              let contents = String(data: data, encoding: .utf8) else { return false }
+        return CLIScriptBuilder.isLumiOwnedScriptContents(contents)
+    }
 
     /// 当前运行中的 App 路径。
     ///

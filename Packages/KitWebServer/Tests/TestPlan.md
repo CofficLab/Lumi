@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 44 条用例。
+KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 48 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 44
+测试文件: 5 个，用例总数: 48
 
 ## 公开 API
 
@@ -26,6 +26,7 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 44 条
 - **RouteInfo**（1 条）：由 `testUnregisteredRoutesBecomeUnreachable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LumiWebServerPipelineTests**（8 条）：由 `testAuthRejectsBeforeRouteMatching`、`testAuthErrorBodyIsUnified`、`testCrossOriginWriteRejectedBeforeRoute` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Body**（14 条）：由 `testAnonymousAccessAllowed`、`testResponseCarriesRequestID` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **StartGate**（4 条）：由 `testEarlySuccessIsDeliveredWhenArmed`、`testEarlyFailureIsDeliveredWhenArmed`、`testOnlyFirstTerminalStateIsDelivered`、`testSuccessAfterArmIsDelivered` 锁定（**回归 #201**）：启动终态（绑定成功/失败）可能早于 `arm` 到达，`StartGate` 必须缓存早到的终态并在 `arm` 时立即投递，且只投递首个终态，否则 `start()` 永久挂起。改动 `StartGate` 的 arm/succeed/fail 时优先跑对应测试文件。
 
 ### 跨源写保护契约
 
@@ -80,26 +81,35 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 44 条
 | 43 | LumiWebServerPipelineTests | testCORSAllowlistedOriginWriteIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCORSAllowlistedOriginWriteIsAllowed` |
 | 44 | LumiWebServerPipelineTests | testCrossOriginReadIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCrossOriginReadIsAllowed` |
 
-> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
+### StartGate 早到终态投递（回归 #201）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 45 | StartGate | 早于 arm 到达的成功终态必须在 arm 时立即投递，不得挂起（回归 #201） | runTask 先于 arm 发出 succeed | succeed(port) 后再 arm | arm 立即返回该端口，start 不挂起 | P0 | ✅ 已覆盖 | `testEarlySuccessIsDeliveredWhenArmed` |
+| 46 | StartGate | 早于 arm 到达的失败终态必须在 arm 时立即抛出（回归 #201） | runTask 先于 arm 发出 fail | fail(error) 后再 arm | arm 立即抛出该错误，而非超时挂起 | P0 | ✅ 已覆盖 | `testEarlyFailureIsDeliveredWhenArmed` |
+| 47 | StartGate | 只投递首个终态，后续终态被忽略（回归 #201） | 先后发出 succeed 与 fail | succeed 后 fail 再 arm | 仅投递首个成功端口，第二个终态被忽略 | P0 | ✅ 已覆盖 | `testOnlyFirstTerminalStateIsDelivered` |
+| 48 | StartGate | arm 之后到达的成功终态正常投递 | arm 先安装 continuation | arm 后 succeed(port) | 等待者收到该端口 | P1 | ✅ 已覆盖 | `testSuccessAfterArmIsDelivered` |
+
+> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 38 / 38
 - P2: 已覆盖 3 / 3
-- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
+- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

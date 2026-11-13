@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 163 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 168 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 163
+测试文件: 15 个，用例总数: 168
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -39,7 +39,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（27 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（28 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
@@ -236,27 +236,32 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 161 | 工具参数安全 | read_file 文件系统失败必须抛出，不得包成 isError=false 的成功结果（**回归 #503**） | 目标文件不存在 | 调用 `ReadFileTool().executeResult(arguments:)` | 抛出 ToolExecutionError，不返回成功 ToolCallResult | P0 | ✅ 已覆盖 | `readFileThrowsWhenFileDoesNotExist` |
 | 162 | 完成通知 | 子代理任务的完成通知直接给出结论并要求转述 | — | 构造 `isSubagentTask=true` 的通知消息 | 含 "Subagent conclusion:"、完整结论与 "Relay the conclusion"，不含 read_file / Last output 轮询提示 | P1 | ✅ 已覆盖 | `subagentNotificationCarriesConclusionWithoutPollingHint` |
 | 163 | 完成通知 | 后台子代理的完成通知带完整结论而不是 2000 字截断 | 进程内子代理任务写入 8000 字结论 | finishInProcess 后投递完成事件 | 通知含完整 8000 字结论与 "Subagent conclusion:" | P0 | ✅ 已覆盖 | `subagentNotificationTailIsNotTruncated` |
+| 164 | 工具参数安全 | read_file 大文件显式分块读取不被总大小否决（**#393**） | >10 MiB 文本文件 | offset=1 limit=1 调用 execute | 返回首行内容，不报 too large | P0 | ✅ 已覆盖 | `readFileAllowsChunkedReadOfLargeFile` |
+| 165 | 工具参数安全 | read_file 大文件未指定范围的整文件读取仍受 10 MiB 限制（**#393**） | >10 MiB 文本文件 | 不带 offset/limit 调用 execute | 抛出 ToolExecutionError（总大小保护未被移除） | P0 | ✅ 已覆盖 | `readFileLargeFileWholeReadStillRejected` |
+| 166 | 工具参数安全 | read_file 大文件分块输出仍受 250 行上限（**#393**） | >10 MiB 文本文件 | offset=1 limit=250 调用 execute | 含第 250 行、不含第 251 行、含续读提示 | P0 | ✅ 已覆盖 | `readFileLargeFileChunkRespectsLineLimit` |
+| 167 | 工具参数安全 | read_file 大文件中段分块读取正确（**#393**） | >10 MiB 文本文件 | offset=100000 limit=2 调用 execute | 含第 100000/100001 行、不含第 100002 行 | P1 | ✅ 已覆盖 | `readFileLargeFileMiddleChunk` |
+| 168 | 综合 | run_command 的 workspace 回退路径首尾空白是合法字符，裁剪后会在错误目录执行（**回归 #499**） | 同时创建 `lumi` 与 `lumi `（带尾空格）两目录，各放不同 marker.txt | 注入返回 `lumi ` 的 workspaceRootProvider，执行 `cat marker.txt` | 读到带尾空格目录的 MARKER_SPACED_DIR，不读无空格目录的 MARKER_PLAIN_DIR | P1 | ✅ 已覆盖 | `shellToolWorkspaceFallbackPreservesPathWhitespace` |
 
-> 说明：全部 **163 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **168 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 49 / 49
-- P1: 已覆盖 104 / 104
+- P0: 已覆盖 52 / 52
+- P1: 已覆盖 106 / 106
 - P2: 已覆盖 10 / 10
-- **合计: 163 / 163**（仅表示清单场景，非源码覆盖率）
+- **合计: 168 / 168**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（49 条）
-- **P1**: 其余功能性用例（104 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
+- **P1**: 其余功能性用例（106 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 163 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 168 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -180,7 +180,8 @@ private actor CountingDriver: DatabaseDriver {
 }
 
 @MainActor
-@Suite struct DatabaseViewModelConnectionRaceTests {
+// 历史用例共享 QueryHistoryStore.shared 单例，串行避免 clearHistory 互相清空。
+@Suite(.serialized) struct DatabaseViewModelConnectionRaceTests {
     private func makeSUT() async -> (
         viewModel: DatabaseViewModel,
         driver: ControlledDriver,
@@ -304,5 +305,52 @@ private actor CountingDriver: DatabaseDriver {
 
         let afterReload = await connection.issuedQueryCount()
         #expect(afterReload > afterConnect)
+    }
+
+    @Test("历史必须记录真正提交的 SQL，而非 await 期间被改写的编辑器文本（回归 #284）")
+    func historyRecordsSubmittedSQLNotCurrentEditorText() async {
+        let (viewModel, _, connectionA) = await makeSUT()
+        let configA = config(database: "db-a")
+        await viewModel.connect(config: configA)
+        await viewModel.clearHistory()
+
+        let submitted = "SELECT * FROM \(slowQueryToken)"
+        viewModel.queryText = submitted
+        let slowQuery = Task { await viewModel.executeQuery() }
+        await connectionA.waitUntilSlowQueryStarts()
+
+        // 查询挂起期间改写编辑器，但不切换连接（代次不变）。
+        viewModel.queryText = "SELECT 1"
+
+        await connectionA.releaseSlowQuery()
+        await slowQuery.value
+
+        #expect(viewModel.history.contains { $0.sql == submitted })
+        #expect(!viewModel.history.contains { $0.sql == "SELECT 1" })
+    }
+
+    @Test("旧连接查询晚到时不得把历史记到新连接名下（回归 #284）")
+    func staleQueryDoesNotRecordHistoryUnderNewConnection() async {
+        let (viewModel, _, connectionA) = await makeSUT()
+        let configA = config(database: "db-a")
+        let configB = config(database: "db-b")
+        await viewModel.connect(config: configA)
+        await viewModel.clearHistory()
+
+        viewModel.queryText = "SELECT * FROM \(slowQueryToken)"
+        let slowQuery = Task { await viewModel.executeQuery() }
+        await connectionA.waitUntilSlowQueryStarts()
+
+        // 查询仍挂在 A 上时切到 B，并改写编辑器。
+        await viewModel.connect(config: configB)
+        viewModel.queryText = "SELECT 1"
+
+        await connectionA.releaseSlowQuery()
+        await slowQuery.value
+
+        #expect(viewModel.selectedConfig?.id == configB.id)
+        // A 的晚到结果属于旧连接：历史不得记到 B 名下，也不得记录从未在 B 执行的 "SELECT 1"。
+        #expect(!viewModel.history.contains { $0.configName == configB.name })
+        #expect(!viewModel.history.contains { $0.sql == "SELECT 1" })
     }
 }

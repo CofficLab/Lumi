@@ -171,18 +171,7 @@ public actor ClipboardStorage: SuperLog {
         // “Unlimited” 时不清理；否则按用户设置的上限裁剪。
         guard configuredLimit != ClipboardSettings.unlimitedHistorySize else { return }
         let limit = max(1, min(configuredLimit, ClipboardHistoryManager.maxFetchLimit))
-        let allItems = await historyManager.getAll(limit: limit + 100)
-        let nonPinnedItems = allItems.filter { !$0.isPinned }
-
-        if nonPinnedItems.count > limit {
-            let itemsToDelete = nonPinnedItems.suffix(from: limit).map { $0.id }
-            await historyManager.delete(ids: Array(itemsToDelete))
-
-            if Self.verbose {
-                if ClipboardManagerPluginSupport.verbose {
-                    ClipboardManagerPluginSupport.logger.info("\(Self.t)🧹 清理了 \(itemsToDelete.count) 项超出限制的历史")
-                }
-            }
-        }
+        // 只统计非固定项：固定项不得挤占计数窗口，否则较旧的非固定历史会永远逃过裁剪（见 #245）。
+        await historyManager.trimNonPinnedHistory(keeping: limit)
     }
 }

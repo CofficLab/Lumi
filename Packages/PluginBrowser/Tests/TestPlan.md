@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 57
+测试文件: 13 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Models/`
@@ -120,16 +120,20 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 55 | Browser 本地地址分类 | fc/fd 开头的公网域名不得被判为内网（**回归 #831**） | — | 对 `fdic.gov`/`fc.com` 等调用 `isLocalHost` 与 `requiresLocalAccessApproval` | 均返回 false，不触发本地网络审批 | P0 | ✅ 已覆盖 | `publicDomainsStartingWithFcOrFdAreNotLocal` |
 | 56 | Browser 本地地址分类 | 真正的 IPv6 ULA 与链路本地地址仍判为内网 | — | 对 `fc00::1`/`fd12::1`/`fe80::1` 等调用分类器 | 均返回 true | P1 | ✅ 已覆盖 | `ipv6ULAAndLinkLocalAreLocal` |
 | 57 | Browser 本地地址分类 | 既有本地与公网分类保持不变 | — | 对 localhost/::1/*.local/IPv4 私网与公网域名调用分类器 | 本地/私网为 true，公网为 false | P1 | ✅ 已覆盖 | `existingLocalAndPublicClassificationsArePreserved` |
+| 58 | Browser 脚本重复执行 | 快照脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 快照脚本 | 均无 SyntaxError，返回空树 total=0 | P0 | ✅ 已覆盖 | `snapshotScriptRunsRepeatedly` |
+| 59 | Browser 脚本重复执行 | 交互脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 滚动脚本 | 均无 SyntaxError，ok=true | P0 | ✅ 已覆盖 | `interactionScriptRunsRepeatedly` |
+| 60 | Browser 脚本重复执行 | 先快照后交互不重复声明全局 | 同一 JS 全局环境 | 先快照再交互 | 两者均成功，无 __OPTS 重复声明 | P0 | ✅ 已覆盖 | `snapshotThenInteractionSharePage` |
+| 61 | Browser 脚本重复执行 | find 脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript find 脚本 | 均无 SyntaxError，total=0 | P1 | ✅ 已覆盖 | `findScriptRunsRepeatedly` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 41 / 41
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 13 / 13
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -142,14 +146,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（41 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

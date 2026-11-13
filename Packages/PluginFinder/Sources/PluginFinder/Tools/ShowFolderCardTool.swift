@@ -107,6 +107,16 @@ public struct ShowFolderCardTool: SuperAgentTool, @unchecked Sendable {
             )
         }
 
+        // 卡片按钮的语义是「打开文件夹」：目标必须真实存在且是目录。
+        // 校验前置到插入卡片之前，避免先报成功、再产出一张点不开的废卡（#478）。
+        let isExistingDirectory = await MainActor.run { FinderOpener.validatedURL(for: path) != nil }
+        guard isExistingDirectory else {
+            return ToolCallResult(
+                content: "Path is not an existing directory: \(path). Provide the absolute path of a folder that exists.",
+                isError: true
+            )
+        }
+
         let payload = FinderCardPayload(
             title: Self.string(from: arguments, key: "title") ?? "",
             description: Self.string(from: arguments, key: "description") ?? "",

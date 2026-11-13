@@ -149,4 +149,36 @@ struct MCPServerRegistryTests {
         #expect(registry.servers.contains { $0.command == "xcrun" }, "Xcode 应被 seed")
         #expect(registry.servers.contains { $0.command == "docker" }, "GitHub 应被 seed")
     }
+
+    @Test("删除的内置模板重启后不再被自动 seed（回归 #295）")
+    func deletedBuiltInTemplateStaysDeletedAcrossRestart() throws {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+
+        let first = MCPServerRegistry(directory: dir, contributor: contributor)
+        let xcode = try #require(first.servers.first { $0.command == "xcrun" && $0.arguments == ["mcpbridge"] })
+        first.removeServer(id: xcode.id)
+        #expect(first.server(id: xcode.id) == nil)
+
+        // 模拟重启：同一数据目录 + 同一贡献者重新构建注册表。
+        let second = MCPServerRegistry(directory: dir, contributor: contributor)
+        #expect(!second.servers.contains { $0.command == "xcrun" && $0.arguments == ["mcpbridge"] })
+    }
+
+    @Test("删除一个内置模板不影响其他内置模板的 seed")
+    func deletingOneTemplateDoesNotBlockOthers() throws {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        contributor.contribute(MCPServerTemplate.github)
+
+        let first = MCPServerRegistry(directory: dir, contributor: contributor)
+        let xcode = try #require(first.servers.first { $0.command == "xcrun" })
+        first.removeServer(id: xcode.id)
+
+        let second = MCPServerRegistry(directory: dir, contributor: contributor)
+        #expect(!second.servers.contains { $0.command == "xcrun" })
+        #expect(second.servers.contains { $0.command == "docker" })
+    }
 }

@@ -173,6 +173,68 @@ import Testing
 }
 
 @MainActor
+@Test func failedImageWritePreservesExistingClipboard() {
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("original clipboard", forType: .string)
+
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.image.rawValue,
+        content: "/tmp/missing-clipboard-image-\(UUID().uuidString).png",
+        searchKeywords: "missing"
+    )
+
+    let didWrite = ClipboardManagerViewModel.write(item, to: pasteboard)
+
+    // 加载失败不得清空用户原有剪贴板内容（#243）。
+    #expect(!didWrite)
+    #expect(pasteboard.string(forType: .string) == "original clipboard")
+}
+
+@MainActor
+@Test func corruptImageWritePreservesExistingClipboard() throws {
+    let corruptURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-corrupt-\(UUID().uuidString).png")
+    try Data("not a real png".utf8).write(to: corruptURL)
+    defer { try? FileManager.default.removeItem(at: corruptURL) }
+
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("original clipboard", forType: .string)
+
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.image.rawValue,
+        content: corruptURL.path,
+        searchKeywords: "corrupt"
+    )
+
+    let didWrite = ClipboardManagerViewModel.write(item, to: pasteboard)
+
+    // 损坏图片同样不得清空原有剪贴板内容（#243）。
+    #expect(!didWrite)
+    #expect(pasteboard.string(forType: .string) == "original clipboard")
+}
+
+@MainActor
+@Test func successfulWriteReplacesExistingClipboard() {
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("original clipboard", forType: .string)
+
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.text.rawValue,
+        content: "fresh content",
+        searchKeywords: "fresh"
+    )
+
+    let didWrite = ClipboardManagerViewModel.write(item, to: pasteboard)
+
+    // 成功回写仍须清空并替换原有内容，修复不得把 clearContents 一并去掉。
+    #expect(didWrite)
+    #expect(pasteboard.string(forType: .string) == "fresh content")
+}
+
+@MainActor
 @Test func monitorPrefersFileURLsOverStringRepresentations() async throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-file-\(UUID().uuidString).txt")

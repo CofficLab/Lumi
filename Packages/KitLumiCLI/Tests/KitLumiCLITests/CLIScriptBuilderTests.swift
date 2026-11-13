@@ -90,4 +90,22 @@ struct CLIScriptBuilderTests {
 
         #expect(process.terminationStatus == 0, "生成的脚本存在 shell 语法错误")
     }
+
+    @Test("生成的脚本带有归属标记")
+    func scriptCarriesOwnershipMarker() {
+        let script = CLIScriptBuilder.scriptContents()
+        #expect(script.contains(CLIScriptBuilder.ownershipMarker))
+    }
+
+    @Test("归属判定接受新标记与旧版签名")
+    func ownershipDetectionAcceptsLumiScripts() {
+        #expect(CLIScriptBuilder.isLumiOwnedScriptContents("#!/bin/sh\n\(CLIScriptBuilder.ownershipMarker)\n"))
+        #expect(CLIScriptBuilder.isLumiOwnedScriptContents("#!/bin/sh\n# 由 Lumi.app 的「设置 → 通用 → 命令行工具」自动安装。\n"))
+    }
+
+    @Test("归属判定不得把无关脚本认作 Lumi 安装")
+    func ownershipDetectionRejectsUnrelatedScript() {
+        #expect(!CLIScriptBuilder.isLumiOwnedScriptContents("#!/bin/sh\necho unrelated\n"))
+        #expect(!CLIScriptBuilder.isLumiOwnedScriptContents(""))
+    }
 }

@@ -319,8 +319,9 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
         if let contextualProjectPath = await context?.conversationProjectPath() {
             workspaceRoot = contextualProjectPath
         } else {
-            workspaceRoot = await workspaceRootProvider()?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            // 首尾空白是合法文件名字符，只用裁剪结果判断是否为空，实际路径保留原字节（#499）。
+            let rawRoot = await workspaceRootProvider()
+            workspaceRoot = rawRoot?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rawRoot : nil
         }
 
         let registry = await backgroundTaskRegistryProvider()

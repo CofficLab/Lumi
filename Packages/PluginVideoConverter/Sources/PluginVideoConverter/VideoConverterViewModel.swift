@@ -71,13 +71,11 @@ final class VideoConverterViewModel: ObservableObject {
 
         Task {
             do {
-                let outputPath = file.url.deletingPathExtension()
-                    .appendingPathExtension(outputFormat.rawValue)
-                    .path
+                let outputURL = Self.makeOutputURL(for: file.url, format: outputFormat)
 
                 try await converter.convert(
                     input: file.url,
-                    output: URL(fileURLWithPath: outputPath),
+                    output: outputURL,
                     format: outputFormat,
                     onProgress: { [weak self] percent in
                         Task { @MainActor in
@@ -99,6 +97,26 @@ final class VideoConverterViewModel: ObservableObject {
 
             isConverting = false
         }
+    }
+
+    // MARK: - Output Path
+
+    /// Builds the conversion output URL, guaranteeing it never points at the
+    /// input file. A same-format conversion (e.g. MP4 → MP4) would otherwise
+    /// reproduce the input path, and FFmpeg refuses to read and write the same
+    /// file, so the default operation path could not complete (#378).
+    ///
+    /// 比较忽略大小写：macOS 默认卷大小写不敏感，`movie.MP4` 与 `movie.mp4`
+    /// 指向同一文件；即便在大小写敏感卷上误判，也只是多加一个后缀，绝不会写回输入。
+    nonisolated static func makeOutputURL(for input: URL, format: VideoFormat) -> URL {
+        let base = input.deletingPathExtension().appendingPathExtension(format.rawValue)
+        if base.path.caseInsensitiveCompare(input.path) != .orderedSame {
+            return base
+        }
+        let stem = input.deletingPathExtension().lastPathComponent
+        return input.deletingLastPathComponent()
+            .appendingPathComponent(stem + "-converted")
+            .appendingPathExtension(format.rawValue)
     }
 
     func cancelConversion() {

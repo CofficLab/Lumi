@@ -334,4 +334,44 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[0] == .paragraph(text: "Example:"))
         #expect(blocks[1] == .codeBlock(language: nil, code: "| A | B |\n| --- | --- |\n| 1 | 2 |\n"))
     }
+
+    @Test
+    func preservesNestedFenceExampleTableVerbatim() {
+        let input = """
+            ````text
+            ```markdown
+            | A | B |
+            | --- | ---: |
+            ```
+            ````
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+
+        #expect(result == input)
+
+        let blocks = MarkdownParser.parse(result)
+        #expect(blocks.count == 1)
+        if case let .codeBlock(_, code) = blocks[0] {
+            #expect(code.contains("| --- | ---: |"))
+        } else {
+            Issue.record("Expected a single code block, got \(blocks)")
+        }
+    }
+
+    @Test
+    func preservesNestedTildeFenceExampleTableVerbatim() {
+        let input = """
+            ~~~~text
+            ~~~markdown
+            | A | B |
+            | --- | ---: |
+            ~~~
+            ~~~~
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+
+        #expect(result == input)
+    }
 }

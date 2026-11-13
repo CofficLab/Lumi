@@ -163,6 +163,59 @@ struct PluginProjectOverviewTests {
         #expect(!result.contains("Not a Git repository."))
     }
 
+    /// 回归 #368：仓库可被发现（rev-parse 成功）但 git status 读取失败时，
+    /// runGit 返回 nil，旧逻辑 `(statusPorcelain ?? "").isEmpty` 把失败当成空输出，
+    /// 误报 "Status: Clean"。读取失败必须与「成功且输出为空」区分。
+    @Test("GitSection does not report Clean when git status fails")
+    func gitStatusFailureIsNotReportedAsClean() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_git_status_fail_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["init", "-q", root.path]
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        // 写坏索引：rev-parse --is-inside-work-tree 仍成功，但 status --porcelain 退出 128。
+        try Data("GARBAGE".utf8).write(to: root.appendingPathComponent(".git/index"))
+
+        let result = await GitSection.render(at: root)
+
+        #expect(result.contains("Repository: Yes"))
+        #expect(!result.contains("Status: Clean"), "git status 失败不得误报 Clean（#368）")
+        #expect(result.contains("Unable to read Git status"))
+    }
+
+    /// 回归 #368：git status 成功且输出为空（真正干净）时仍须报 Clean，
+    /// 防止区分「读取失败」与「干净」后误伤正常干净仓库。
+    @Test("GitSection still reports Clean for a genuinely clean repo")
+    func cleanRepoStillReportsClean() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_git_clean_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["init", "-q", root.path]
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        let result = await GitSection.render(at: root)
+
+        #expect(result.contains("Repository: Yes"))
+        #expect(result.contains("Status: Clean"))
+    }
+
     /// 回归 #979：2,000 字节读取块恰好结束在完整 UTF-8 字符边界时，`text.count`
     /// 与 `preview.count` 都是 500，旧逻辑因此漏掉省略标记。
     @Test("README preview marks content beyond the byte cap")
@@ -180,6 +233,42 @@ struct PluginProjectOverviewTests {
 
         #expect(preview.hasSuffix("\n..."))
         #expect(preview.filter { $0 == "😀" }.count == 500)
+    }
+
+    /// 回归 #369：2,000 字节读取块切在一个 2 字节字符（é）中间时，
+    /// `String(data:encoding:.utf8)` 整体返回 nil，旧逻辑 continue 导致预览凭空消失。
+    /// 必须保留截断点前的合法 UTF-8 前缀并附省略标记。
+    @Test("README preview survives a 2-byte char split at the byte cap")
+    func readmePreviewSurvivesUTF8BoundaryTruncation() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_readme_utf8_split2_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 1999 个 ASCII 'a' + 'é'(2 字节) = 2001 字节；第 2000 字节是 'é' 的首字节。
+        let readme = String(repeating: "a", count: 1999) + "é"
+        try readme.write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+
+        let preview = ReadmePreviewSection.render(at: root)
+
+        #expect(preview == String(repeating: "a", count: 500) + "\n...", "预览不得因 UTF-8 截断而消失（#369）")
+    }
+
+    /// 回归 #369：读取块切在一个 4 字节字符（😀）中间（读到前 3 字节）时同样不得丢失预览。
+    @Test("README preview survives a 4-byte char split at the byte cap")
+    func readmePreviewSurvivesFourByteCharSplit() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_readme_utf8_split4_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 1997 个 ASCII 'a' + '😀'(4 字节) = 2001 字节；读取块含 '😀' 的前 3 字节。
+        let readme = String(repeating: "a", count: 1997) + "😀"
+        try readme.write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+
+        let preview = ReadmePreviewSection.render(at: root)
+
+        #expect(preview == String(repeating: "a", count: 500) + "\n...", "预览不得因 UTF-8 截断而消失（#369）")
     }
 
     @Test("localization catalog is packaged")
@@ -277,5 +366,30 @@ struct ProjectOverviewConversationScopeTests {
                 arguments: ["path": ToolArgument(missing.path)]
             )
         }
+    }
+
+    /// 回归 #492：path 的首尾空白是合法文件名字符，裁剪后会读取错误目录。
+    /// 同时创建 `spaced` 与 `spaced `（带尾空格）两个目录并放入不同清单，
+    /// 裁剪的实现会报告无空格目录（Node），保留原字节才报告 Rust 目录。
+    @Test("显式 path 的首尾空白是合法字符，裁剪后会读取错误目录（#492）")
+    func explicitPathPreservesLeadingTrailingWhitespace() async throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("overview-ws-\(UUID().uuidString)", isDirectory: true)
+        let plain = base.appendingPathComponent("spaced", isDirectory: true)
+        let spaced = base.appendingPathComponent("spaced ", isDirectory: true)
+        try FileManager.default.createDirectory(at: plain, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try "{}".write(to: plain.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+        try "[package]\nname = \"x\"\nversion = \"0.1.0\""
+            .write(to: spaced.appendingPathComponent("Cargo.toml"), atomically: true, encoding: .utf8)
+        let tool = ProjectOverviewV2Tool(project: nil)
+
+        let result = try await tool.executeResult(
+            context: makeContext(projectPath: nil),
+            arguments: ["path": ToolArgument(spaced.path)]
+        )
+
+        #expect(path(in: result.content) == spaced.standardizedFileURL.path)
     }
 }

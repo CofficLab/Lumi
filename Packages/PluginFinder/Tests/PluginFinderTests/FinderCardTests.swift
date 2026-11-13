@@ -28,6 +28,12 @@ struct FinderCardTests {
         let bridge = FinderMessageBridge()
         bridge.configure(messages: manager)
 
+        // 卡片只接受真实存在的目录（#478）：用临时目录而非虚构路径。
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-card-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
         let conversationID = UUID()
         let tool = ShowFolderCardTool(bridge: bridge)
         let result = try await tool.executeResult(
@@ -37,7 +43,7 @@ struct FinderCardTests {
                 turnID: UUID()
             ),
             arguments: [
-                "path": ToolArgument("/tmp/demo"),
+                "path": ToolArgument(directory.path),
                 "title": ToolArgument("Demo Folder"),
                 "description": ToolArgument("Sample assets"),
             ]
@@ -51,7 +57,7 @@ struct FinderCardTests {
         #expect(message.renderKind == MessageTimelineEvent.finderRenderKind)
 
         let payload = try #require(FinderTimeline.decodePayload(from: message.metadata))
-        #expect(payload.path == "/tmp/demo")
+        #expect(payload.path == directory.path)
         #expect(payload.title == "Demo Folder")
         #expect(payload.description == "Sample assets")
     }
@@ -61,8 +67,13 @@ struct FinderCardTests {
         let bridge = FinderMessageBridge()
         bridge.configure(messages: manager)
 
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-nocontext-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
         let tool = ShowFolderCardTool(bridge: bridge)
-        let result = try await tool.executeResult(arguments: ["path": ToolArgument("/tmp/demo")])
+        let result = try await tool.executeResult(arguments: ["path": ToolArgument(directory.path)])
 
         #expect(!result.isError)
         #expect(manager.inserted.isEmpty)
@@ -75,6 +86,51 @@ struct FinderCardTests {
 
         let tool = ShowFolderCardTool(bridge: bridge)
         let result = try await tool.executeResult(arguments: ["path": ToolArgument("   ")])
+
+        #expect(result.isError)
+        #expect(manager.inserted.isEmpty)
+    }
+
+    @Test func toolRejectsNonExistentPath() async throws {
+        let manager = RecordingMessageManager()
+        let bridge = FinderMessageBridge()
+        bridge.configure(messages: manager)
+
+        let tool = ShowFolderCardTool(bridge: bridge)
+        let result = try await tool.executeResult(
+            context: ToolExecutionContext(
+                jobID: "job-missing",
+                conversationID: UUID(),
+                turnID: UUID()
+            ),
+            arguments: ["path": ToolArgument("/definitely/not/here/xyz-\(UUID().uuidString)")]
+        )
+
+        // 不存在的路径必须报错，且不得插入一张点不开的废卡（#478）。
+        #expect(result.isError)
+        #expect(manager.inserted.isEmpty)
+    }
+
+    @Test func toolRejectsFileInsteadOfDirectory() async throws {
+        let manager = RecordingMessageManager()
+        let bridge = FinderMessageBridge()
+        bridge.configure(messages: manager)
+
+        // 普通文件不是目录：卡片按钮语义是「打开文件夹」，必须拒绝（#478）。
+        let file = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-card-file-\(UUID().uuidString).txt")
+        try Data("x".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+
+        let tool = ShowFolderCardTool(bridge: bridge)
+        let result = try await tool.executeResult(
+            context: ToolExecutionContext(
+                jobID: "job-file",
+                conversationID: UUID(),
+                turnID: UUID()
+            ),
+            arguments: ["path": ToolArgument(file.path)]
+        )
 
         #expect(result.isError)
         #expect(manager.inserted.isEmpty)

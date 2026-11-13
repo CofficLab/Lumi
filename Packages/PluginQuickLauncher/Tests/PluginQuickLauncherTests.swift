@@ -281,6 +281,51 @@ struct QuickLauncherTests {
         #expect(hits.count == 2)
     }
 
+    // MARK: - 回归 #301：优先级排序必须先于 limit 截断
+
+    @Test func appSearchSortsByPriorityBeforeApplyingLimit() {
+        let service = AppSearchService.shared
+        defer { service.setAppsForTesting([]) }
+
+        // 六个「X Safari N」按字母序排在精确命中 "Safari" 之前。
+        // 修复前边扫边在 found>=limit 时停止，扫到第六个就 break，
+        // "Safari" 根本没进候选集，被整个丢掉。
+        let prefixes = ["A", "B", "C", "D", "E", "F"]
+        var apps = prefixes.enumerated().map { offset, letter in
+            LauncherAppItem(
+                id: "safari\(offset + 1)",
+                name: "\(letter) Safari \(offset + 1)",
+                path: "/Applications/Safari\(offset + 1).app",
+                bundleIdentifier: "safari\(offset + 1)"
+            )
+        }
+        apps.append(
+            LauncherAppItem(id: "safari", name: "Safari", path: "/Applications/Safari.app", bundleIdentifier: "safari")
+        )
+        service.setAppsForTesting(apps)
+
+        let hits = service.searchItems(matching: "safari", limit: 6)
+        #expect(hits.count == 6)
+        #expect(hits.first?.item.name == "Safari", "精确/前缀命中必须先于 limit 截断排到最前（#301）")
+        #expect(hits.contains { $0.item.name == "Safari" }, "Safari 不得被字母序提前截断丢掉（#301）")
+    }
+
+    @Test func appSearchPrefixOutranksShorterContainsHit() {
+        let service = AppSearchService.shared
+        defer { service.setAppsForTesting([]) }
+
+        // "XSaf" 是包含命中且更短，"Safari" 是前缀命中但更长。
+        // 修复前最终只按名称长度排序（且非稳定），短的包含命中会越级排到前缀命中之前。
+        service.setAppsForTesting([
+            LauncherAppItem(id: "xsaf", name: "XSaf", path: "/Applications/XSaf.app", bundleIdentifier: "xsaf"),
+            LauncherAppItem(id: "safari", name: "Safari", path: "/Applications/Safari.app", bundleIdentifier: "safari"),
+        ])
+
+        let hits = service.searchItems(matching: "saf", limit: 10)
+        #expect(hits.count == 2)
+        #expect(hits.first?.item.name == "Safari", "前缀命中必须排在更短的包含命中之前（#301）")
+    }
+
     @Test func launcherModelCapsAppAndCommandResults() {
         let appSearch = AppSearchService.shared
         let model = LauncherSearchModel.shared

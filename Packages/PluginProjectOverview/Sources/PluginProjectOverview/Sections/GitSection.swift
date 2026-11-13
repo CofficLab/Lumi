@@ -21,12 +21,17 @@ public enum GitSection {
         let branch = await runGit(args: ["branch", "--show-current"], in: root)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let remote = await runGit(args: ["remote", "get-url", "origin"], in: root)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let statusPorcelain = await runGit(args: ["status", "--porcelain"], in: root)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let isClean = (statusPorcelain ?? "").isEmpty
 
         var lines: [String] = ["Repository: Yes"]
         if let b = branch, !b.isEmpty { lines.append("Branch: \(b)") }
         if let r = remote, !r.isEmpty { lines.append("Remote: \(r)") }
-        lines.append("Status: \(isClean ? "Clean" : "Uncommitted changes")")
+        // runGit 失败返回 nil（非零退出/超时/抛错），不得与「成功且输出为空」混同：
+        // 只有 git status 真正成功且 stdout 为空时才报 Clean，否则报读取失败（#368）。
+        if let statusPorcelain {
+            lines.append("Status: \(statusPorcelain.isEmpty ? "Clean" : "Uncommitted changes")")
+        } else {
+            lines.append("Status: Unable to read Git status.")
+        }
         return lines.joined(separator: "\n")
     }
 

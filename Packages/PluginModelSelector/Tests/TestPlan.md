@@ -5,7 +5,7 @@
 PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorPlugin` （KernelLumi / LumiPlugin 架构）完美复刻而来。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 41
+测试文件: 9 个，用例总数: 42
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -35,7 +35,7 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 
 - **ModelListViewRender**（3 条）：由 `visibleModelsFollowSnapshot`、`remoteModelsCarryMetadata`、`fallsBackToStaticCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TimelineMessage**（6 条）：由 `insertsTimelineMessageOnSwitch`、`timelineMessageDoesNotLeakIntoLLMContext`、`sameModelProducesNoTimelineMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（12 条）：由 `classifiesViaMetadata`、`classifiesViaHeuristics`、`missingMetadataFallsBackToLanguage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（13 条）：由 `classifiesViaMetadata`、`classifiesViaHeuristics`、`missingMetadataFallsBackToLanguage`、`languageCategoryExcludesVisionModels` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **独立搜索状态**（3 条）：由 `providerSearchDoesNotFilterModels`、`modelSearchDoesNotFilterProviders`、`clearingOneSearchKeepsTheOther` 锁定——左右两栏各自持有搜索词，任一栏的输入不得过滤另一栏（**#1030**）。
 - **本地化**（4 条）：中转站分组标题必须经 `ProviderListLocalization` 解析（`Relay` 词条，**#906**）；模型切换摘要必须经注入的解析器取词，`Switched to %@` / `Switched from %@ to %@` / `Unknown model` 需覆盖 5 种语言（**#905**）。
 
@@ -84,27 +84,28 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 | 39 | 本地化 | 中转站分组标题词条在 5 种语言下都有译文（回归 #906） | — | 读取编译后 `.lproj/Localizable.strings` | 每种语言译文符合预期 | P1 | ✅ 已覆盖 | `relaySectionTitleHasTranslationsInCompiledBundle` |
 | 40 | 本地化 | 摘要文案经过注入的本地化解析（回归 #905） | — | 用 `[key]` 标记解析器调用 `summaryText` | 前缀与未知模型兜底均带标记 | P1 | ✅ 已覆盖 | `summaryTextUsesInjectedLocalization` |
 | 41 | 本地化 | 模型切换摘要词条在所有规范语言下都有译文（回归 #905） | — | 读取编译后 `.lproj/Localizable.strings` | 3 个词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `summaryTextHasTranslationsInCompiledBundle` |
+| 42 | 综合 | 语言模型分类排除视觉模型（**#415**） | 模型 `supportsVision = true` | 调用 `ModelCategory.language.includes` | 返回 false，仅落入 Vision；纯语言/缺失元数据仍归 Language | P1 | ✅ 已覆盖 | `languageCategoryExcludesVisionModels` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 36 / 36
+- P1: 已覆盖 37 / 37
 - P2: 已覆盖 0 / 0
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（36 条）
+- **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 - 本地化用例依赖 SwiftBuild 编译出的 `.xcstrings`，需确认 `en` 与四种中文变体 `.lproj` 均已产出
 
 ## 测试执行

@@ -261,6 +261,9 @@ extension EditorState {
         Task {
             do {
                 guard let newContent = try await externalFileController.loadExternalText(from: url) else { return }
+                // await 期间可能已切到别的文件：写回前复核当前标签仍是发起重读的文件，
+                // 否则丢弃旧文件的结果，避免 A 的内容覆盖 B 并被随后保存写坏（#206）。
+                guard self.currentFileURL == url else { return }
 
                 switch self.externalFileWorkflowController.reloadDecision(
                     newContent: newContent,

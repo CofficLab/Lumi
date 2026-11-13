@@ -383,6 +383,40 @@ public actor ClipboardHistoryManager: SuperLog {
         return saved
     }
 
+    /// 裁剪超出上限的非固定项，固定项不参与计数也不被删除。
+    ///
+    /// 直接按 `isPinned == false` 谓词倒序排序后跳过最新的 `limit` 条，只取并删除其余超额项。
+    /// 不再用「最新 N 条窗口」间接统计：固定项会挤占窗口，使较旧的非固定项永远逃过裁剪（见 #245）。
+    /// - Returns: 实际删除的非固定项数量；无超额项或保存失败时返回 0。
+    @discardableResult
+    public func trimNonPinnedHistory(keeping limit: Int) async -> Int {
+        await cleanupIfDue()
+        let context = ModelContext(container)
+
+        var descriptor = FetchDescriptor<ClipboardHistoryItem>(
+            predicate: #Predicate<ClipboardHistoryItem> { $0.isPinned == false },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchOffset = max(0, limit)
+        descriptor.fetchLimit = Self.maxFetchLimit
+
+        guard let excess = try? context.fetch(descriptor), !excess.isEmpty else { return 0 }
+
+        for item in excess {
+            context.delete(item)
+        }
+
+        let saved = save(context, operation: "裁剪超出上限的剪贴板历史")
+        guard saved else { return 0 }
+
+        if Self.verbose {
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🧹 裁剪了 \(excess.count) 项超出上限的非固定历史")
+            }
+        }
+        return excess.count
+    }
+
     /// 清理过期数据
     public func cleanup() async {
         let now = Date()

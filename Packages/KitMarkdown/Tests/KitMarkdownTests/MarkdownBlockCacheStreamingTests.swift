@@ -103,6 +103,60 @@ struct MarkdownBlockCacheStreamingTests {
         }
     }
 
+    @Test("代码块内的空行不得作为稳定边界（增量与整体解析结构等价，#340）")
+    func streamingAppendKeepsCodeBlockWithInternalBlankLineIntact() {
+        let cache = MarkdownBlockCache()
+        // 复现 #340：代码块内部含空行，闭合围栏之后再追加普通段落。
+        // 旧实现把代码块中途的空行当稳定边界，追加后代码块被拦腰拆断。
+        let full = """
+        ```swift
+        let a = 1
+
+        let b = 2
+        ```
+
+        After
+        """
+
+        var end = 1
+        while end <= full.count {
+            let markdown = String(full.prefix(end))
+            let merged = cache.blocks(for: markdown)
+            let expected = MarkdownParser.parse(markdown)
+            #expect(
+                merged == expected,
+                "end=\(end) 处增量块结构与整体解析不一致：\n增量=\(merged)\n整体=\(expected)"
+            )
+            end += 1
+        }
+    }
+
+    @Test("波浪号围栏内的空行同样不得作为稳定边界（#340）")
+    func streamingAppendKeepsTildeFenceWithInternalBlankLineIntact() {
+        let cache = MarkdownBlockCache()
+        let full = """
+        ~~~text
+        first
+
+        second
+        ~~~
+
+        Tail
+        """
+
+        var end = 1
+        while end <= full.count {
+            let markdown = String(full.prefix(end))
+            let merged = cache.blocks(for: markdown)
+            let expected = MarkdownParser.parse(markdown)
+            #expect(
+                merged == expected,
+                "end=\(end) 处增量块结构与整体解析不一致：\n增量=\(merged)\n整体=\(expected)"
+            )
+            end += 1
+        }
+    }
+
     // MARK: - Helpers
 
     /// 比较两组块的"文本内容拼接"是否一致(忽略块切分方式的细微差异)。

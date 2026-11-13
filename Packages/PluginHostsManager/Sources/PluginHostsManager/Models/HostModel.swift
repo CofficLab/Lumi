@@ -75,8 +75,8 @@ public class HostsParser {
             if let entry = parseEntryLine(trimmed, isEnabled: true) {
                 entries.append(HostEntry(type: entry))
             } else {
-                // Fallback, maybe garbage or comment without #?
-                entries.append(HostEntry(type: .comment("# " + trimmed)))
+                // Preserve verbatim: prepending "# " would silently disable an active line on save.
+                entries.append(HostEntry(type: .comment(trimmed)))
             }
         }
         
@@ -132,7 +132,9 @@ public class HostsParser {
             return false
         }
 
-        let labels = domain.split(separator: ".", omittingEmptySubsequences: false)
+        // A single trailing root dot marks a legal absolute domain (FQDN); strip it before label validation.
+        let withoutRootDot = domain.hasSuffix(".") ? String(domain.dropLast()) : domain
+        let labels = withoutRootDot.split(separator: ".", omittingEmptySubsequences: false)
         guard !labels.isEmpty else { return false }
 
         for label in labels {

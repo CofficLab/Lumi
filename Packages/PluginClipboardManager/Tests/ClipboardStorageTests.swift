@@ -113,6 +113,48 @@ struct ClipboardStorageTests {
         #expect(items.count == 3)
     }
 
+    @Test("固定项不得挤占非固定项的计数窗口（回归 #245）")
+    func pinnedRecordsDoNotDefeatUnpinnedLimit() async throws {
+        let root = try makeTemporaryDirectory("clipm-pinned-window")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let manager = ClipboardHistoryManager(databaseDirectory: root)
+        let storage = ClipboardStorage(historyManager: manager, historyLimitProvider: { 2 })
+
+        let now = Date()
+        // 100 条较新的固定项 + 2 条较旧的非固定项，直接落库。
+        // 上限为 2 时最新窗口为 2 + 100 = 102，恰好被 100 条固定项填满，
+        // 旧实现只在窗口内统计非固定项，较旧的非固定项因此永远逃过裁剪。
+        var seeded: [ClipboardHistoryItem] = []
+        for i in 0..<100 {
+            seeded.append(ClipboardHistoryItem(
+                timestamp: now.addingTimeInterval(-Double(i)),
+                type: ClipboardItemType.text.rawValue,
+                content: "pinned-\(i)",
+                isPinned: true,
+                searchKeywords: "pinned-\(i)"
+            ))
+        }
+        for i in 0..<2 {
+            seeded.append(ClipboardHistoryItem(
+                timestamp: now.addingTimeInterval(-1000 - Double(i)),
+                type: ClipboardItemType.text.rawValue,
+                content: "old-unpinned-\(i)",
+                searchKeywords: "old-unpinned-\(i)"
+            ))
+        }
+        #expect(await manager.addBatch(seeded))
+
+        // 再复制一条新的非固定内容，触发按上限裁剪。
+        await storage.add(item: ClipboardItem(type: .text, content: "new-unpinned"))
+
+        let unpinned = await storage.getItems().filter { !$0.isPinned }
+        // 只保留最新 2 条非固定项，最旧的一条被裁剪。
+        #expect(unpinned.count == 2)
+        #expect(Set(unpinned.map(\.content)) == ["new-unpinned", "old-unpinned-0"])
+        // 100 条固定项必须全部保留。
+        #expect(await storage.getPinned().count == 100)
+    }
+
     @Test("富文本负载随条目持久化并可读回")
     func preservesRichTextPayloads() async throws {
         let (storage, root) = try makeStorage()

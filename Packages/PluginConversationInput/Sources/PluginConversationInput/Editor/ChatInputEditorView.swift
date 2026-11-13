@@ -776,17 +776,21 @@ extension ChatInputEditorView {
 
         @MainActor
         func handlePaste(_ pasteboard: NSPasteboard, in textView: EditorTextView) -> Bool {
-            guard let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .newlines),
-                  !text.isEmpty else {
+            guard let raw = pasteboard.string(forType: .string) else {
+                return false
+            }
+            // 折叠只改展示：原文原样存入 originalText，首尾换行可能是消息内部边界，trim 后发送端无法还原（#336）。
+            let trimmed = raw.trimmingCharacters(in: .newlines)
+            guard !trimmed.isEmpty else {
                 return false
             }
 
-            guard text.count >= ChatInputEditorView.collapsedPasteThreshold else {
+            guard trimmed.count >= ChatInputEditorView.collapsedPasteThreshold else {
                 return false
             }
 
             let attachment = PastePreviewAttachment(
-                originalText: text,
+                originalText: raw,
                 font: textView.font,
                 palette: parent.chipPalette
             )

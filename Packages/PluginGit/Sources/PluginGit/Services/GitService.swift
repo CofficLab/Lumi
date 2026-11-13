@@ -476,6 +476,10 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
 
         let commitHash: String = try await performOnGitQueue(repoPath: repoPath) {
             if amend {
+                // amend 只读取当前 index，不会自动暂存工作区改动；必须先按 files 暂存，
+                // 否则指定的修改会留在工作区却不进入 amended 提交，工具却报告成功（#358）。
+                // 空列表与新建提交一致：暂存全部变更。
+                try LibGit2.addFiles(resolvedFiles, at: repoPath, verbose: Self.verbose)
                 return try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
             }
             // addAndCommit with empty files correctly stages ALL changes then commits.

@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 7 个，用例总数: 33
+测试文件: 8 个，用例总数: 36
 
 核心组件（源码目录）:
 - `Managers/`
@@ -34,8 +34,9 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPLocalization**（3 条）：由 `zhHansResolves`、`connectionStateKeys`、`miscKeys` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPermissionPolicy**（6 条）：由 `xcodeExactTable`、`unknownDefault`、`overrideWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPluginBoot**（2 条）：由 `bootResolvesPluginDataDirectory`、`refusesWithoutStorageProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPPluginShutdown**（1 条）：由 `shutdownDisconnectsSessions` 用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPServerRegistry**（7 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPServerRegistry**（9 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPToolAdapter**（10 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -75,27 +76,30 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 31 | MCPToolAdapter | 适配器提供规范化 schema 文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `providesNormalizedSchemaText` |
 | 32 | MCPToolAdapter | 适配器实现 NormalizedSchemaProviding 协议 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conformsToNormalizedSchemaProviding` |
 | 33 | MCPToolAdapter | 规范化文本与直接序列化结果一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizedTextMatchesDirectSerialization` |
+| 34 | MCPPluginShutdown | 关闭时异步清理强引用 manager，确实断开会话（回归 #141） | 已注入可观察会话 | 调用 onShutdown 并等待清理 | disconnect 恰好被调用一次 | P0 | ✅ 已覆盖 | `shutdownDisconnectsSessions` |
+| 35 | MCPServerRegistry | 删除的内置模板重启后不再被自动 seed（回归 #295） | 贡献 Xcode 模板后删除它 | 同目录同贡献者重建注册表 | 重启后 Xcode 不再出现 | P1 | ✅ 已覆盖 | `deletedBuiltInTemplateStaysDeletedAcrossRestart` |
+| 36 | MCPServerRegistry | 删除一个内置模板不影响其他内置模板的 seed | 贡献 Xcode 与 GitHub 后删除 Xcode | 同目录同贡献者重建注册表 | Xcode 不再出现，GitHub 仍在 | P1 | ✅ 已覆盖 | `deletingOneTemplateDoesNotBlockOthers` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 24 / 24
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 4 / 4
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

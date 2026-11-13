@@ -21,6 +21,20 @@ public enum CLIScriptBuilder {
     /// 显式指定 App 路径的环境变量名。
     public static let appPathEnvironmentKey = "LUMI_APP"
 
+    /// 写入脚本头部的归属标记。
+    ///
+    /// 安装器据此把 Lumi 安装的脚本与用户已有的同名第三方程序区分开：
+    /// 覆盖或删除前必须确认归属，避免破坏用户自己的 `lumi`（#134）。
+    public static let ownershipMarker = "# lumi-cli-owner: Lumi.app"
+
+    /// 引入 `ownershipMarker` 之前的旧版脚本归属签名，用于兼容已安装的脚本。
+    static let legacyOwnershipSignature = "由 Lumi.app 的「设置 → 通用 → 命令行工具」自动安装。"
+
+    /// 判断脚本内容是否由 Lumi 安装（含旧版脚本兼容）。
+    public static func isLumiOwnedScriptContents(_ contents: String) -> Bool {
+        contents.contains(ownershipMarker) || contents.contains(legacyOwnershipSignature)
+    }
+
     /// 生成脚本内容。
     ///
     /// - Parameters:
@@ -36,6 +50,7 @@ public enum CLIScriptBuilder {
         let embeddedAppPath = shellSingleQuoted(appPath ?? "")
         return """
         #!/bin/sh
+        \(ownershipMarker)
         #
         # \(commandName) — 在 Lumi 中打开当前目录（或指定目录）。
         #

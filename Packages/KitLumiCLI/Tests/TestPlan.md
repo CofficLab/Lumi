@@ -5,7 +5,7 @@
 KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生成脚本、写入磁盘与查询安装状态。
 
 平台: macOS 14+
-测试文件: 8 个，用例总数: 60
+测试文件: 8 个，用例总数: 68
 
 ## 公开 API
 
@@ -22,9 +22,9 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 
 - **CLIEncodingConsistency**（4 条）：由 `scriptEncodingIsReversibleByApp`、`appEncodingIsReversibleByApp`、`scriptEncodingIsAcceptedByURLComponents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIInstallTargetResolver**（9 条）：由 `prefersWritablePathDirectory`、`excludesNonWritablePathDirectory`、`excludesMissingPathDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **CLIInstaller**（9 条）：由 `installCreatesExecutableScript`、`installReportsNotOnPath`、`installFailsForNonWritableTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CLIInstaller**（14 条）：由 `installCreatesExecutableScript`、`installReportsNotOnPath`、`installFailsForNonWritableTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIPathResolver**（6 条）：由 `parsesPathEntries`、`parsesEmptyPath`、`resolvedPathContainsSystemDirectories` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **CLIScriptBuilder**（10 条）：由 `scriptStartsWithShebang`、`defaultCommandNameIsLumi`、`usesExistingOpenProjectProtocol` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CLIScriptBuilder**（13 条）：由 `scriptStartsWithShebang`、`defaultCommandNameIsLumi`、`usesExistingOpenProjectProtocol` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIScriptBuilderShellEscaping**（8 条）：由 `dollarSignPathResolvesVerbatim`、`backtickPathResolvesVerbatim`、`combinedSpecialCharsPathResolvesVerbatim` 等用例锁定；真实执行 /bin/sh，断言含 `$`、反引号、双引号、反斜杠、单引号、空格、非 ASCII 的安装路径原样解析（#142）。
 - **CLIScriptBuilderURLEncoding**（6 条）：由 `newlineInPathIsPreserved`、`crlfInPathIsPreserved`、`multibyteWithNewlineRoundTrips` 等用例锁定；真实执行 /bin/sh 运行脚本的 `urlencode`，断言换行/回车逐字节编码为 %0A/%0D 并可被 App 还原（#143）。
 - **CLIPathResolverShellOutput**（8 条）：由 `relativeDotPrefixKeepsAbsoluteEntries`、`emptyEntryPrefixKeepsAbsoluteEntries`、`rcNoiseBeforePathIsSkipped` 等用例锁定；直接驱动 `absolutePathEntries(fromShellOutput:)`，断言相对/空条目前缀的 PATH 行仍保留其后绝对目录、rc 噪声被跳过（#144）。
@@ -93,27 +93,35 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 | 58 | CLIPathResolverShellOutput | 全相对 PATH 行不产生绝对条目 | shell 输出 `.:./bin:foo` | 调用 `absolutePathEntries(fromShellOutput:)` | 返回空列表（无绝对条目） | P1 | ✅ 已覆盖 | `allRelativePathYieldsEmpty` |
 | 59 | CLIPathResolverShellOutput | PATH 后的尾随噪声行被跳过 | 输出 `/usr/bin:/bin` 后跟尾随噪声行 | 调用 `absolutePathEntries(fromShellOutput:)` | 返回 `/usr/bin`、`/bin`，尾随噪声被跳过 | P1 | ✅ 已覆盖 | `trailingNoiseAfterPathIsSkipped` |
 | 60 | CLIPathResolverShellOutput | 空输出得到空列表 | 空字符串输出 | 调用 `absolutePathEntries(fromShellOutput:)` | 返回空列表 | P2 | ✅ 已覆盖 | `emptyOutputYieldsEmpty` |
+| 61 | CLIInstaller | 安装遇到同名第三方程序时拒绝覆盖，原内容不得丢失（**回归 #134**） | 临时目录下已有可执行 `lumi`，内容为第三方脚本 | 以该目录为 target 调用 `install` | 返回 `.failed`，脚本内容仍为原文且可执行 | P0 | ✅ 已覆盖 | `installPreservesUnrelatedExecutable` |
+| 62 | CLIInstaller | 卸载不得删除同名第三方程序（**回归 #134**） | 临时目录下已有可执行 `lumi`（第三方内容） | 调用 `uninstall(pathEntries:)` | 返回 true，第三方文件仍存在且内容不变 | P0 | ✅ 已覆盖 | `uninstallPreservesUnrelatedExecutable` |
+| 63 | CLIInstaller | 状态查询不把同名第三方程序当作已安装（**回归 #134**） | 临时目录下已有可执行 `lumi`（第三方内容） | 调用 `status(pathEntries:)` | `isInstalled` 为 false，`installedPath` 为 nil | P1 | ✅ 已覆盖 | `statusDoesNotReportUnrelatedExecutableAsInstalled` |
+| 64 | CLIInstaller | 重复安装可更新已有的 Lumi 脚本（升级路径不被破坏） | 已安装 Lumi 脚本的目录 | 用新的 appPath 再次调用 `install` | 返回 `.installed`，脚本含新 appPath 且可执行 | P1 | ✅ 已覆盖 | `installUpdatesExistingLumiScript` |
+| 65 | CLIInstaller | 旧版 Lumi 脚本仍被识别为已安装并可卸载（向后兼容） | 临时目录下写入只含旧版中文签名的可执行 `lumi` | 调用 `status` 与 `uninstall` | `isInstalled` 为 true，卸载后文件被删除 | P1 | ✅ 已覆盖 | `legacyLumiScriptIsStillRecognized` |
+| 66 | CLIScriptBuilder | 生成的脚本带有归属标记 | — | 调用 `scriptContents()` | 内容包含 `ownershipMarker` | P1 | ✅ 已覆盖 | `scriptCarriesOwnershipMarker` |
+| 67 | CLIScriptBuilder | 归属判定接受新标记与旧版签名 | — | 调用 `isLumiOwnedScriptContents` | 含新标记或旧版签名的内容均返回 true | P1 | ✅ 已覆盖 | `ownershipDetectionAcceptsLumiScripts` |
+| 68 | CLIScriptBuilder | 归属判定不得把无关脚本认作 Lumi 安装 | — | 调用 `isLumiOwnedScriptContents` | 无关脚本与空字符串均返回 false | P0 | ✅ 已覆盖 | `ownershipDetectionRejectsUnrelatedScript` |
 
-> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 44 / 44
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 49 / 49
 - P2: 已覆盖 3 / 3
-- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
+- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（44 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（49 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

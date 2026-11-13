@@ -142,6 +142,13 @@ enum RemoteWebURLResolver {
               !host.isEmpty else {
             return nil
         }
+        // remote 内嵌的 `user:password@` 不得进入浏览器链接或工具结果（#298）。
+        if url.user != nil || url.password != nil {
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+            components.user = nil
+            components.password = nil
+            return components.url
+        }
         return url
     }
 }

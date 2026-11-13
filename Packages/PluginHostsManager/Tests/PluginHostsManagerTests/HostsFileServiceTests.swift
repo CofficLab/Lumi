@@ -37,4 +37,42 @@ struct HostsFileServiceTests {
             #expect((error as NSError).code == NSFileReadNoSuchFileError)
         }
     }
+
+    @Test("removes the temporary hosts file when the privileged install fails or is cancelled (#256)")
+    func removesTemporaryFileWhenInstallFails() async throws {
+        let service = HostsFileService(hostsPath: "/etc/hosts")
+        let content = "127.0.0.1 app.test\n"
+        var capturedPath: String?
+        struct InstallCancelled: Error {}
+
+        do {
+            try await service.withTemporaryHostsFile(content: content) { tempURL in
+                capturedPath = tempURL.path
+                // The temporary copy must exist while the install runs.
+                #expect(FileManager.default.fileExists(atPath: tempURL.path))
+                #expect(try String(contentsOf: tempURL, encoding: .utf8) == content)
+                throw InstallCancelled()
+            }
+            Issue.record("Expected the install error to propagate")
+        } catch is InstallCancelled {
+            // expected: the install error must surface to the caller
+        }
+
+        let path = try #require(capturedPath)
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
+
+    @Test("removes the temporary hosts file after a successful install (#256)")
+    func removesTemporaryFileAfterSuccessfulInstall() async throws {
+        let service = HostsFileService(hostsPath: "/etc/hosts")
+        var capturedPath: String?
+
+        try await service.withTemporaryHostsFile(content: "127.0.0.1 app.test\n") { tempURL in
+            capturedPath = tempURL.path
+            #expect(FileManager.default.fileExists(atPath: tempURL.path))
+        }
+
+        let path = try #require(capturedPath)
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
 }

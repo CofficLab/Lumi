@@ -36,10 +36,10 @@ public struct TerminalMainView: View {
         viewModel.sessions.enumerated().map { (offset: $0.offset, session: $0.element) }
     }
 
-    private var currentProjectPathForTerminal: String? {
+    var currentProjectPathForTerminal: String? {
         let path = projectPath ?? projectProvider?.currentProjectPath ?? ""
-        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        // 首尾空白是合法文件名字符，只用裁剪结果判断是否为空，实际路径保留原字节（#498）。
+        return path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : path
     }
 
     public var body: some View {

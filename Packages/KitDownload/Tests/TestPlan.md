@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 91
+测试文件: 12 个，用例总数: 92
 
 ## 公开 API
 
@@ -30,6 +30,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 - **DownloadCoverage**（7 条）：由 `convenienceDownload`、`resumeWithoutPartialFile`、`isCompleteMissingFile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadError**（2 条）：由 `errorDescriptionsNotEmpty`、`errorEquality` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadManager**（18 条）：由 `downloadSuccess`、`downloadFailure`、`getTaskState` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadRestartIdentity**（1 条）：由 `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` 锁定取消后以同 id 重启时，旧任务的晚到终态写回与收尾清理必须按代次作废，不得把新任务改成 `.cancelled` 或注销其 `activeTasks`/`progressHandlers`（**回归 #157**）；改动下载取消/重启或状态写回时优先跑对应测试文件。
 - **DownloadProgress**（8 条）：由 `defaultProgress`、`fractionCompletedCalculation`、`zeroTotalBytes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadTask**（5 条）：由 `taskCreation`、`incompleteURL`、`customId` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **FileValidator**（10 条）：由 `validateExistingFile`、`validateNonExistentFile`、`validateEmptyFileWithoutExpectationSucceeds`、`validateZeroByteFileWithExpectedZero` 等用例锁定大小匹配必须先于空文件判断，合法零字节文件（含 `expectedSize == 0` 与 nil）不得被误判为 emptyFile 失败（**回归 #159**）；改动该模块时优先跑对应测试文件。
@@ -132,27 +133,28 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 89 | ResumeHandler | 源文件缺失时不得删除已存在的最终文件（**回归 #160**） | 最终文件已存在且内容有效，未完成源文件不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，最终文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `finalizeDownloadKeepsExistingFileWhenSourceMissing` |
 | 90 | ResumeHandler | 源文件缺失且无最终文件时抛错且不创建任何文件 | 源文件与最终文件均不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，不创建最终文件，目录为空 | P1 | ✅ 已覆盖 | `finalizeDownloadMissingSourceThrowsWithoutCreatingDestination` |
 | 91 | ResumeHandler | 原子替换覆盖后只保留最终文件，不残留源或临时文件 | 最终文件与源文件均存在且内容不同 | 调用 `finalizeDownload(from:to:)` | 最终文件为新内容，源文件被消费，目录仅剩最终文件 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwriteLeavesNoResidualFiles` |
+| 92 | DownloadRestartIdentity | 取消后以同 id 重启，旧任务的晚到收尾不得取消或注销新任务（**回归 #157**） | 门控 HTTPClient 挂起 A/B 下载，精确控制取消收尾晚于重启 | 启动 A→取消→同 id 启动 B→放行 A 的取消收尾 | B 状态不被改成 `.cancelled` 且仍在下载，同 id 第三个下载仍被去重拒绝 | P0 | ✅ 已覆盖 | `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` |
 
-> 说明：全部 **91 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
+- P0: 已覆盖 13 / 13
 - P1: 已覆盖 72 / 72
 - P2: 已覆盖 7 / 7
-- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
+- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
 - **P1**: 其余功能性用例（72 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 91 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

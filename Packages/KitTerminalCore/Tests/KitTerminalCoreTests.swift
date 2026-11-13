@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import KitTerminalCore
@@ -94,5 +95,78 @@ struct KitTerminalCoreTests {
 
         // 清理
         session.terminate()
+    }
+
+    /// 回归 #174：工作目录不存在时不得静默继承 Lumi 当前目录启动 shell，
+    /// 会话必须保持未连接且不创建进程。
+    @MainActor
+    @Test("无效工作目录不得启动 shell 且保持未连接（回归 #174）")
+    func invalidWorkingDirectoryDoesNotStartShell() {
+        let missing = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("lumi-missing-\(UUID().uuidString)").path
+        let session = TerminalSession(workingDirectory: missing, themeIdProvider: { "xcode-dark" })
+        session.terminalView.frame = NSRect(x: 0, y: 0, width: 80, height: 24)
+
+        session.startIfNeeded()
+
+        #expect(session.isConnected == false)
+        #expect(session.terminalView.process.running == false)
+        #expect(session.terminalView.process.shellPid == 0)
+        #expect(session.startupError != nil)
+        session.terminate()
+    }
+
+    /// 回归 #174：不存在的工作目录必须被校验拒绝。
+    @Test("不存在的工作目录被拒绝（回归 #174）")
+    func workingDirectoryValidatorRejectsMissingPath() {
+        let missing = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("lumi-missing-\(UUID().uuidString)").path
+        #expect(throws: TerminalWorkingDirectory.Error.self) {
+            try TerminalWorkingDirectory.validate(missing)
+        }
+    }
+
+    /// 回归 #174：普通文件不是目录，必须被校验拒绝。
+    @Test("普通文件不是目录被拒绝（回归 #174）")
+    func workingDirectoryValidatorRejectsRegularFile() throws {
+        let file = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("lumi-file-\(UUID().uuidString)")
+        try Data("x".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+
+        #expect(throws: TerminalWorkingDirectory.Error.self) {
+            try TerminalWorkingDirectory.validate(file.path)
+        }
+    }
+
+    /// 回归 #174：无搜索权限的目录不可进入，必须被校验拒绝。
+    @Test("无搜索权限的目录被拒绝（回归 #174）", .enabled(if: geteuid() != 0))
+    func workingDirectoryValidatorRejectsInaccessibleDirectory() throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("lumi-noperm-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: dir.path)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
+            try? FileManager.default.removeItem(at: dir)
+        }
+
+        #expect(throws: TerminalWorkingDirectory.Error.self) {
+            try TerminalWorkingDirectory.validate(dir.path)
+        }
+    }
+
+    /// 回归 #174：nil/空串继承当前目录，有效目录通过校验。
+    @Test("nil/空串/有效目录均通过校验（回归 #174）")
+    func workingDirectoryValidatorAcceptsValidInput() throws {
+        try TerminalWorkingDirectory.validate(nil)
+        try TerminalWorkingDirectory.validate("")
+
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("lumi-valid-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        try TerminalWorkingDirectory.validate(dir.path)
     }
 }

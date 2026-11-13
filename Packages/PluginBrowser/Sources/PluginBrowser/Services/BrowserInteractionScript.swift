@@ -25,7 +25,8 @@ enum BrowserInteractionScript {
               let json = String(data: data, encoding: .utf8) else {
             return "({ ok: false, message: 'invalid request' })"
         }
-        return "const __OPTS = \(json);\n" + body
+        // 配置注入 IIFE 内部，避免在页面全局重复声明 const 导致二次执行抛 SyntaxError。
+        return body.replacingOccurrences(of: "__OPTS", with: json)
     }
 
     private static let body = #"""

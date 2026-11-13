@@ -5,7 +5,7 @@
 RClickPlugin Customize Finder right-click menu actions The Finder Sync extension source lives in `FinderExtension/` as part of this plugin. It remains a separate Xcode app-extension target because macOS Finder Sync requires an `.appex`; Xcode embeds the resulting `LumiFinder.appex` inside `Lumi.app/Contents/PlugIns/`.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 17
+测试文件: 1 个，用例总数: 18
 
 核心组件（源码目录）:
 - `Models/`
@@ -37,7 +37,7 @@ RClickPlugin Customize Finder right-click menu actions The Finder Sync extension
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（17 条）：由 `packageLoads`、`activatingPluginHidesChatAndContentHeaderAndScopesRail`、`pluginUsesInjectedStorageDirectoryBeforeCreatingItsManager` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（18 条）：由 `packageLoads`、`activatingPluginHidesChatAndContentHeaderAndScopesRail`、`pluginUsesInjectedStorageDirectoryBeforeCreatingItsManager` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -60,27 +60,28 @@ RClickPlugin Customize Finder right-click menu actions The Finder Sync extension
 | 15 | 综合 | openInLumiActionRoundTripsThroughJSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openInLumiActionRoundTripsThroughJSON` |
 | 16 | 综合 | openInLumiActionIsEnabledByDefault | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `openInLumiActionIsEnabledByDefault` |
 | 17 | 综合 | openInLumiActionSurvivesConfigNormalization | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openInLumiActionSurvivesConfigNormalization` |
+| 18 | 综合 | configObserverDoesNotLoopOnItsOwnWriteBack | 注入临时共享配置 URL，外部写入一次并钉定修改时间 | 连续两次 `checkForChanges()`，期间文件不再变动 | 首次恰好装载一次；第二次不再装载（loadCount 不增），杜绝每秒重载→保存死循环 | P1 | ✅ 已覆盖 | `configObserverDoesNotLoopOnItsOwnWriteBack` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 6 / 6
-- P1: 已覆盖 10 / 10
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 1 / 1
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（10 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

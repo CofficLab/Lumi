@@ -97,6 +97,41 @@ struct SkillPluginTests {
         await service.invalidateCache(projectPath: "/tmp/proj")
     }
 
+    /// 回归 #196：缓存只能存「与底座无关的项目扫描结果」，每次调用再合并当前 baseSkills。
+    /// 设置页以空底座先写缓存，TTL 内 LLM 注入带完整底座调用时必须重新合并，
+    /// 否则内置 / 插件技能会从系统提示词里消失。
+    @Test("空底座缓存不污染 LLM 注入（回归 #196）")
+    func testEmptyBaseCacheDoesNotPolluteInjection() async {
+        let project = [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
+        let service = SkillService(scanner: MockScanner(skills: project), builtinProvider: EmptyBuiltin())
+        let base = [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
+
+        // 设置页先以空底座调用，写入缓存。
+        let settings = await service.listSkills(projectPath: "/tmp/proj", baseSkills: [])
+        #expect(settings.map(\.name) == ["architect"])
+
+        // TTL 内 LLM 注入带完整底座调用，必须合并底座而不是命中空底座缓存。
+        let injected = await service.listSkills(projectPath: "/tmp/proj", baseSkills: base)
+        #expect(Set(injected.map(\.name)) == ["architect", "swiftui-standards"])
+    }
+
+    /// 回归 #196：反方向同样不能污染。LLM 注入先写合并缓存后，
+    /// 设置页以空底座调用时只能返回项目技能，不得把内置 / 插件技能误列为项目技能。
+    @Test("合并缓存不污染设置页项目列表（回归 #196）")
+    func testMergedCacheDoesNotPolluteSettings() async {
+        let project = [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
+        let service = SkillService(scanner: MockScanner(skills: project), builtinProvider: EmptyBuiltin())
+        let base = [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
+
+        // LLM 注入先带完整底座调用，写入缓存。
+        let injected = await service.listSkills(projectPath: "/tmp/proj", baseSkills: base)
+        #expect(Set(injected.map(\.name)) == ["architect", "swiftui-standards"])
+
+        // TTL 内设置页以空底座调用，必须只返回项目技能而不是命中合并缓存。
+        let settings = await service.listSkills(projectPath: "/tmp/proj", baseSkills: [])
+        #expect(settings.map(\.name) == ["architect"])
+    }
+
     @Test("插件 onBoot 注册设置入口与工具栏且不抛错")
     func pluginLifecycle() async throws {
         let kernel = KernelCoreContainer()

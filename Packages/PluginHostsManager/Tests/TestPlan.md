@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 18 条用例。
+PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 23 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 18
+测试文件: 5 个，用例总数: 23
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,10 +29,10 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **HostsFileService**（2 条）：由 `readsAndBacksUpHostsFile`、`reportsMissingHostsFile` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HostsFileService**（4 条）：由 `readsAndBacksUpHostsFile`、`reportsMissingHostsFile`、`removesTemporaryFileWhenInstallFails`、`removesTemporaryFileAfterSuccessfulInstall` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsManagerFileFlow**（2 条）：由 `loadsAndSavesThroughInjectedFileOperations`、`reportsFileOperationFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsManagerViewModel**（4 条）：由 `filtersByGroupAndSearch`、`rejectsInvalidEntry`、`mutatesEntriesAndPersists`、`reloadReconcilesSelectedGroup` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **HostsParser**（6 条）：由 `parsesActiveEntries`、`parsesCommentsAndGroups`、`preservesBlankLines` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HostsParser**（9 条）：由 `parsesActiveEntries`、`parsesCommentsAndGroups`、`preservesBlankLines`、`parsesAbsoluteDomainAsActiveEntry`、`acceptsAbsoluteDomainWithTrailingRootDot`、`preservesUnrecognizedActiveLineVerbatim` 等用例锁定合法绝对域名（末尾根点）必须解析为启用条目、ASCII 语法外的活动行必须逐字保留且不得在保存时被注释禁用（**回归 #255**）；改动该模块时优先跑对应测试文件。
 - **综合**（3 条）：由 `pluginMetadataIsStable`、`localizationCatalogIsPackaged`、`activatingPluginHidesChatSectionAndDeactivatingRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -57,27 +57,32 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 | 16 | 综合 | activatingPluginHidesChatSectionAndDeactivatingRestoresIt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` |
 | 17 | 综合 | ungroupedEntryStaysBeforeFirstGroup | — | 执行该用例 | 空分组条目保存后位于首个 group header 之前，且不进入该组筛选 | P0 | ✅ 已覆盖 | `ungroupedEntryStaysBeforeFirstGroup` |
 | 18 | HostsManagerViewModel | 刷新后清理已不存在的分组筛选，保留仍存在的选择 | 注入可切换内容的 hosts 文件 | 选中 Old 后重载为仅含 New 的配置，再选中保留分组重载 | 旧分组消失时 `selectedGroup` 归 nil 且新条目可见；分组仍在时保留选择 | P0 | ✅ 已覆盖 | `reloadReconcilesSelectedGroup` |
+| 19 | HostsFileService | 特权安装失败或取消授权时删除临时 hosts 副本（**回归 #256**） | 注入 install 闭包抛错模拟取消 | 调用 `withTemporaryHostsFile`，闭包内确认副本存在后抛错 | 错误透传给调用方，且临时文件不再存在 | P0 | ✅ 已覆盖 | `removesTemporaryFileWhenInstallFails` |
+| 20 | HostsFileService | 特权安装成功后同样删除临时 hosts 副本（**回归 #256**） | 注入正常返回的 install 闭包 | 调用 `withTemporaryHostsFile`，闭包内确认副本存在 | 返回后临时文件不再存在 | P1 | ✅ 已覆盖 | `removesTemporaryFileAfterSuccessfulInstall` |
+| 21 | HostsParser | parses a legal absolute domain (trailing root dot) as an active entry, not a comment（**回归 #255**） | hosts 含 `127.0.0.1 example.com.` | 解析后再序列化 | 仍为启用的 `.entry`，序列化原文不变，不被写成注释 | P0 | ✅ 已覆盖 | `parsesAbsoluteDomainAsActiveEntry` |
+| 22 | HostsParser | accepts a single trailing root dot but rejects double dots and root-only（**回归 #255**） | — | 调用 `isValidDomain` | `example.com.`/`localhost.` 通过；`example.com..`/`.` 拒绝 | P1 | ✅ 已覆盖 | `acceptsAbsoluteDomainWithTrailingRootDot` |
+| 23 | HostsParser | keeps an unrecognized active line verbatim and enabled across save (must not comment it out)（**回归 #255**） | hosts 含 ASCII 语法外的合法别名（如 IDN `例子.com`） | 解析→序列化→再解析 | 原文逐字保留、不加 `# ` 前缀、保持启用，往返稳定 | P0 | ✅ 已覆盖 | `preservesUnrecognizedActiveLineVerbatim` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 12 / 12
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 2 / 2
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

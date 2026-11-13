@@ -17,30 +17,56 @@ public enum LumiWebServerError: Error {
 // MARK: - Start Gate
 
 /// 启动单次信号:在「绑定成功」(带回环端口)或「启动失败」之间恰好唤醒一次等待者。
-private final class StartGate: @unchecked Sendable {
+/// 终态可能早于 arm 到达(runTask 先于 withCheckedThrowingContinuation 启动),
+/// 此时缓存结果并在 arm 时立即投递,避免 start 永久挂起(#201)。
+final class StartGate: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Int, any Error>?
+    private var earlyResult: Result<Int, any Error>?
+    private var finished = false
 
     func arm(_ continuation: CheckedContinuation<Int, any Error>) {
         lock.lock()
-        self.continuation = continuation
-        lock.unlock()
+        if let earlyResult {
+            self.earlyResult = nil
+            lock.unlock()
+            Self.resume(continuation, with: earlyResult)
+        } else {
+            self.continuation = continuation
+            lock.unlock()
+        }
     }
 
     func succeed(withPort port: Int) {
-        resume { $0.resume(returning: port) }
+        signal(.success(port))
     }
 
     func fail(_ error: any Error) {
-        resume { $0.resume(throwing: error) }
+        signal(.failure(error))
     }
 
-    private func resume(_ body: (CheckedContinuation<Int, any Error>) -> Void) {
+    private func signal(_ result: Result<Int, any Error>) {
         lock.lock()
-        let continuation = self.continuation
-        self.continuation = nil
-        lock.unlock()
-        if let continuation { body(continuation) }
+        guard !finished else { lock.unlock(); return }
+        finished = true
+        if let continuation {
+            self.continuation = nil
+            lock.unlock()
+            Self.resume(continuation, with: result)
+        } else {
+            earlyResult = result
+            lock.unlock()
+        }
+    }
+
+    private static func resume(
+        _ continuation: CheckedContinuation<Int, any Error>,
+        with result: Result<Int, any Error>
+    ) {
+        switch result {
+        case .success(let port): continuation.resume(returning: port)
+        case .failure(let error): continuation.resume(throwing: error)
+        }
     }
 }
 
