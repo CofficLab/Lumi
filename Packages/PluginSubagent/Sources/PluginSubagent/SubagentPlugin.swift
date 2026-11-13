@@ -58,6 +58,9 @@ public final class SubagentPlugin: SuperPlugin {
     /// 从持久化数据派生的子代理树（#1328）；工具在需要时按调用会话查询。
     private var subagentRegistry: SubagentRegistry?
 
+    /// 代理消息收件箱：控制 queue/followup 的唤醒时机（#1328）。
+    private var inboxCoordinator: SubagentInboxCoordinator?
+
     private weak var agentLoop: (any AgentLoopProviding)?
 
     public init() {}
@@ -119,6 +122,9 @@ public final class SubagentPlugin: SuperPlugin {
         )
         self.subagentRegistry = subagentRegistry
 
+        let inboxCoordinator = SubagentInboxCoordinator(messages: messages, agentLoop: agentLoop)
+        self.inboxCoordinator = inboxCoordinator
+
         toolManager.add(
             RunSubagentTool(
                 conversations: conversations,
@@ -133,8 +139,18 @@ public final class SubagentPlugin: SuperPlugin {
             pluginID: id
         )
         toolManager.add(ListSubagentsTool(registry: subagentRegistry), pluginID: id)
+        toolManager.add(
+            SendSubagentMessageTool(registry: subagentRegistry, inbox: inboxCoordinator),
+            pluginID: id
+        )
 
-        registerToolbarItem(kernel: kernel, conversations: conversations, toolManager: toolManager)
+        registerToolbarItem(
+            kernel: kernel,
+            conversations: conversations,
+            messages: messages,
+            inbox: inboxCoordinator,
+            toolManager: toolManager
+        )
         registerCardRenderer(kernel: kernel, toolManager: toolManager)
     }
 
@@ -154,6 +170,8 @@ public final class SubagentPlugin: SuperPlugin {
     private func registerToolbarItem(
         kernel: KernelCoreContainer,
         conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        inbox: SubagentInboxCoordinator,
         toolManager: any ToolManagerProviding
     ) {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
@@ -163,7 +181,11 @@ public final class SubagentPlugin: SuperPlugin {
 
         let viewModel = SubagentActivityViewModel(
             conversations: conversations,
-            toolManager: toolManager
+            toolManager: toolManager,
+            messages: messages,
+            pendingMessageCountProvider: { [weak inbox] childID in
+                inbox?.pendingMessageCount(for: childID) ?? 0
+            }
         )
         activityViewModel = viewModel
 
@@ -210,6 +232,8 @@ public final class SubagentPlugin: SuperPlugin {
         backgroundObserverID = nil
         backgroundRegistry = nil
         backgroundChildConversations.removeAll()
+        inboxCoordinator?.cancel()
+        inboxCoordinator = nil
         subagentRegistry = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")
@@ -221,5 +245,7 @@ public final class SubagentPlugin: SuperPlugin {
             .remove(id: RunSubagentTool.toolName)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .remove(id: ListSubagentsTool.toolName)
+        kernel.resolveProvider((any ToolManagerProviding).self)?
+            .remove(id: SendSubagentMessageTool.toolName)
     }
 }

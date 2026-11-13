@@ -53,6 +53,18 @@ struct SubagentToolPolicyTests {
         #expect(filtered.map(\.name) == ["grep", "web_fetch"])
     }
 
+    @Test("子会话工具表显式放行代理通信工具（#1328）")
+    func childToolsAllowMessagingTool() {
+        // 通信工具带副作用，但子代理必须能联系 lead 与兄弟；
+        // 放行只按名字精确匹配，不放宽其它副作用工具。
+        let tools: [any SuperAgentTool] = [
+            CapabilityTool(name: SubagentToolPolicy.messagingToolName, capability: .serialSideEffect),
+            CapabilityTool(name: "shell", capability: .serialSideEffect),
+        ]
+        let filtered = SubagentToolPolicy.childTools(from: tools)
+        #expect(filtered.map(\.name) == [SubagentToolPolicy.messagingToolName])
+    }
+
     @Test("空工具表过滤后仍为空")
     func childToolsOfEmptyRegistryIsEmpty() {
         #expect(SubagentToolPolicy.childTools(from: []).isEmpty)

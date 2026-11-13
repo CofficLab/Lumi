@@ -117,6 +117,7 @@ final class SubagentAgentLoopSpy: AgentLoopProviding {
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         runTurnCalls.append(conversationID)
         runningConversationIDs.insert(conversationID)
+        emit(.started(conversationID: conversationID, turnID: UUID()))
         defer { runningConversationIDs.remove(conversationID) }
         if let runTurnHandler {
             return await runTurnHandler(conversationID)
