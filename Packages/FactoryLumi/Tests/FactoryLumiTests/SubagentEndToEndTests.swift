@@ -437,6 +437,9 @@ struct SubagentEndToEndTests {
 
         #expect(result.isError == false)
         #expect(result.content.contains("Background task ID:"))
+        // 文案一致性：后台派发不得再催模型去读输出文件，而应结束回合等通知。
+        #expect(result.content.contains("end your turn"))
+        #expect(!result.content.contains("check interim output"))
         // 立即返回的证据：返回那一刻子回合的 LLM 请求还没结束。
         #expect(stub.intervals[task]?.end == nil)
 
@@ -492,6 +495,9 @@ struct SubagentEndToEndTests {
         let notification = try #require(notifications.first)
         #expect(notification.role == .user)
         #expect(notification.content.contains(conclusion))
+        // 子代理任务的通知直接给出结论并要求转述，不再让模型去翻输出文件。
+        #expect(notification.content.contains("Subagent conclusion:"))
+        #expect(!notification.content.contains("read_file"))
 
         // 唤醒回合真的起了：LLM 收到以通知为最后一条用户消息的请求。
         let wakeDeadline = Date().addingTimeInterval(10)

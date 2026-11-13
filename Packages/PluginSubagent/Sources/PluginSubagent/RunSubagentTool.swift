@@ -85,7 +85,8 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
 
         For long-running tasks, set run_in_background to true: the call returns immediately with a \
         background task ID, and you are notified with the conclusion when the subagent finishes. \
-        Keep working on other things meanwhile; do not poll or re-dispatch the same task.
+        Keep working on other things meanwhile; if waiting is all that remains, end your turn — \
+        do not poll or re-dispatch the same task; the completion notification starts a new turn.
         """
     }
 
@@ -254,7 +255,7 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             Background task ID: \(record.id)
             Output file: \(record.outputPath)
             The subagent keeps running; you will be notified when it completes.
-            To check interim output, use read_file on the output file path.
+            Do not poll or read the output file while it runs. If waiting is all that remains, end your turn; the completion notification starts a new turn. Relay the conclusion to the user when it arrives.
             """
         )
     }

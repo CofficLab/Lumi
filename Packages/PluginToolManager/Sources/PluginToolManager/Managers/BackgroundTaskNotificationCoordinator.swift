@@ -35,13 +35,16 @@ enum BackgroundTaskNotification {
     ///   - exitCode: 进程退出码。
     ///   - outputPath: 输出文件路径（模型用 `read_file` 读取）。
     ///   - tailExcerpt: 输出文件末尾的摘录。
+    ///   - isSubagentTask: 后台子代理任务。结论本体就在摘录里，文案改成
+    ///     转述而非催模型去读文件。
     static func message(
         conversationID: UUID,
         taskID: String,
         status: BackgroundTaskStatus,
         exitCode: Int32?,
         outputPath: String,
-        tailExcerpt: String
+        tailExcerpt: String,
+        isSubagentTask: Bool
     ) -> Message {
         let statusText = statusText(for: status)
         var content = """
@@ -51,10 +54,22 @@ enum BackgroundTaskNotification {
         if let exitCode {
             content += "\nExit code: \(exitCode)"
         }
-        if !tailExcerpt.isEmpty {
-            content += "\n\nLast output:\n\(tailExcerpt)"
+        if isSubagentTask {
+            if !tailExcerpt.isEmpty {
+                content += "\n\nSubagent conclusion:\n\(tailExcerpt)"
+            }
+            content += """
+
+
+            Relay the conclusion above to the user; it has not been shown to them. \
+            Do not read or poll the output file, and do not re-dispatch the same task.
+            """
+        } else {
+            if !tailExcerpt.isEmpty {
+                content += "\n\nLast output:\n\(tailExcerpt)"
+            }
+            content += "\n\nUse read_file on the output file path to see the full output."
         }
-        content += "\n\nUse read_file on the output file path to see the full output."
 
         return Message(
             conversationID: conversationID,
@@ -107,6 +122,17 @@ final class BackgroundTaskNotificationCoordinator: SuperLog {
 
     /// 通知里附带的输出摘录长度上限。
     private static let tailExcerptLimit = 2_000
+
+    /// 后台子代理任务的摘录上限：结论硬上限 8_000 字符加用量摘要，
+    /// 一次读完才不必再让模型去翻输出文件。
+    private static let subagentTailExcerptLimit = 12_000
+
+    /// 登记表里后台子代理任务的命令前缀。
+    private static let subagentCommandPrefix = "\(SubagentToolPolicy.delegationToolName):"
+
+    private static func isSubagentTask(_ record: BackgroundTaskRecord) -> Bool {
+        record.command.hasPrefix(subagentCommandPrefix)
+    }
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private let messages: any MessageManaging
@@ -184,14 +210,17 @@ final class BackgroundTaskNotificationCoordinator: SuperLog {
     ///
     /// 摘录要从登记表里读（actor 隔离），因此必须是异步的。
     private func deliverWithTail(_ record: BackgroundTaskRecord, agentLoop: any AgentLoopProviding) async {
-        let tail = await registry?.outputTail(for: record.id, limit: Self.tailExcerptLimit) ?? ""
+        let isSubagentTask = Self.isSubagentTask(record)
+        let tailLimit = isSubagentTask ? Self.subagentTailExcerptLimit : Self.tailExcerptLimit
+        let tail = await registry?.outputTail(for: record.id, limit: tailLimit) ?? ""
         let message = BackgroundTaskNotification.message(
             conversationID: record.conversationID,
             taskID: record.id,
             status: record.status,
             exitCode: record.exitCode,
             outputPath: record.outputPath,
-            tailExcerpt: tail
+            tailExcerpt: tail,
+            isSubagentTask: isSubagentTask
         )
         messages.insertMessage(message, to: record.conversationID)
 

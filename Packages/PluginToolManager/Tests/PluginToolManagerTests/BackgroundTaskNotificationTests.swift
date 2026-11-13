@@ -211,13 +211,68 @@ struct BackgroundTaskNotificationTests {
             status: .failed,
             exitCode: 3,
             outputPath: "/tmp/task-9.log",
-            tailExcerpt: "boom"
+            tailExcerpt: "boom",
+            isSubagentTask: false
         )
         #expect(message.content.contains("task-9"))
         #expect(message.content.contains("failed"))
         #expect(message.content.contains("Exit code: 3"))
         #expect(message.content.contains("boom"))
         #expect(message.content.contains("read_file"))
+    }
+
+    @Test("子代理任务的完成通知直接给出结论并要求转述")
+    func subagentNotificationCarriesConclusionWithoutPollingHint() {
+        let conclusion = String(repeating: "结论", count: 3_000)
+        let message = BackgroundTaskNotification.message(
+            conversationID: UUID(),
+            taskID: "task-sub",
+            status: .completed,
+            exitCode: 0,
+            outputPath: "/tmp/task-sub.log",
+            tailExcerpt: conclusion,
+            isSubagentTask: true
+        )
+        #expect(message.content.contains("Subagent conclusion:"))
+        #expect(message.content.contains(conclusion))
+        #expect(message.content.contains("Relay the conclusion"))
+        #expect(!message.content.contains("read_file"))
+        #expect(!message.content.contains("Last output:"))
+    }
+
+    @Test("后台子代理的完成通知带完整结论而不是 2000 字截断")
+    func subagentNotificationTailIsNotTruncated() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiSubagentNotification-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let conversationID = UUID()
+        let agentLoop = NotificationTestAgentLoop()
+        let messages = NotificationTestMessages()
+        let registry = BackgroundTaskRegistry(rootDirectory: directory)
+        let coordinator = BackgroundTaskNotificationCoordinator(
+            agentLoop: agentLoop,
+            messages: messages,
+            registry: registry
+        )
+        let conclusion = String(repeating: "x", count: 8_000)
+        let taskID = await registry.allocateTaskID()
+        _ = await registry.adoptInProcess(
+            taskID: taskID,
+            conversationID: conversationID,
+            command: "run_subagent: research"
+        )
+        await registry.appendOutput(taskID: taskID, text: conclusion)
+        await registry.finishInProcess(taskID: taskID, exitCode: 0)
+        let record = try #require(await registry.task(for: taskID))
+
+        coordinator.handle(record)
+        await settle()
+
+        let content = try #require(messages.insertedMessages.first?.content)
+        #expect(content.contains(conclusion))
+        #expect(content.contains("Subagent conclusion:"))
     }
 }
 

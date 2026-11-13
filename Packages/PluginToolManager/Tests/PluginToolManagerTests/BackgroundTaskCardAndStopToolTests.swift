@@ -113,7 +113,8 @@ struct BackgroundTaskCardAndStopToolTests {
             status: .completed,
             exitCode: 0,
             outputPath: "/tmp/task-1.log",
-            tailExcerpt: ""
+            tailExcerpt: "",
+            isSubagentTask: false
         )
         #expect(BackgroundTaskCardRenderer.isBackgroundNotification(message))
     }
@@ -132,7 +133,8 @@ struct BackgroundTaskCardAndStopToolTests {
             status: .failed,
             exitCode: 7,
             outputPath: "/tmp/task-42.log",
-            tailExcerpt: ""
+            tailExcerpt: "",
+            isSubagentTask: false
         )
         let payload = try #require(
             BackgroundTaskCardRenderer.decodePayload(from: message.metadata)
