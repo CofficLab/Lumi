@@ -558,7 +558,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     
     /// 打开指定 Redis 键（设置查询并执行 GET）
     public func openRedisKey(_ key: String) async {
-        queryText = "GET \(key)"
+        // 键可能含空格/引号/反斜杠，必须引用后再拼进命令，
+        // 否则 tokenize 会把它拆成多个参数，GET 报参数个数错误（#282）。
+        queryText = "GET \(RedisCommandParser.quote(key))"
         await executeQuery()
     }
 

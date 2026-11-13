@@ -301,3 +301,97 @@ struct RedisReadCommandRoutingTests {
         }
     }
 }
+
+/// 记录下发命令的假 Redis 连接：只捕获 sql，不做真实网络往返。
+private actor RecordingRedisConnection: DatabaseConnection {
+    private var commands: [String] = []
+
+    func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
+        commands.append(sql)
+        return QueryResult(columns: ["Key", "Value"], rows: [], rowsAffected: 0)
+    }
+
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
+        commands.append(sql)
+        return 0
+    }
+
+    func beginTransaction() async throws -> any DatabaseTransaction {
+        RecordingRedisTransaction()
+    }
+
+    func close() async {}
+    func isAlive() async -> Bool { true }
+    func isClosed() -> Bool { false }
+
+    func reset() { commands.removeAll() }
+    func lastCommand() -> String? { commands.last }
+}
+
+private struct RecordingRedisTransaction: DatabaseTransaction {
+    func commit() async throws {}
+    func rollback() async throws {}
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int { 0 }
+}
+
+private actor RecordingRedisDriver: DatabaseDriver {
+    nonisolated let type: DatabaseType
+    private let connection: RecordingRedisConnection
+
+    init(connection: RecordingRedisConnection) {
+        self.type = .redis
+        self.connection = connection
+    }
+
+    func connect(config: DatabaseConfig) async throws -> any DatabaseConnection {
+        connection
+    }
+}
+
+@MainActor
+@Suite("Redis key quoting")
+struct RedisKeyQuotingTests {
+    @Test("含空格/引号/反斜杠的键经 quote 后 tokenize 仍还原为单个参数（#282）")
+    func quotedKeyRoundTripsAsSingleArgument() throws {
+        let keys = [
+            "foo bar",            // issue #282 的复现键
+            "plain",
+            "",                   // 空键
+            "a\tb",               // 制表符
+            "a\nb",               // 换行
+            "has\"quote",         // 双引号
+            "has'single",         // 单引号
+            "back\\slash",        // 反斜杠
+            "mix \" \\ ' end ",   // 混合 + 尾随空格
+            "trailing\\",         // 尾随反斜杠
+        ]
+        for key in keys {
+            let quoted = RedisCommandParser.quote(key)
+            #expect(try RedisCommandParser.tokenize(quoted) == [key],
+                    "键 \(key.debugDescription) 引用后必须还原为单个参数")
+            #expect(try RedisCommandParser.tokenize("GET \(quoted)") == ["GET", key],
+                    "GET \(key.debugDescription) 必须解析成命令 + 单个完整键")
+        }
+    }
+
+    @Test("侧边栏打开含空格的键时，下发的 GET 只携带一个完整键参数（#282）")
+    func openRedisKeySendsSingleExactKeyArgument() async throws {
+        let manager = DatabaseManagerCore()
+        // 先 bootstrap 标记该 manager 已注册，再用假驱动覆盖 .redis，
+        // 否则 connect 内的 registerBuiltinsIfNeeded 会用真实 RedisDriver 覆盖假驱动。
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        let connection = RecordingRedisConnection()
+        await manager.register(driver: RecordingRedisDriver(connection: connection))
+        let viewModel = DatabaseViewModel(loadSavedConfigs: false, manager: manager)
+        await viewModel.connect(config: DatabaseConfig(name: "redis", type: .redis, database: "0"))
+
+        await connection.reset()
+        await viewModel.openRedisKey("foo bar")
+
+        let sent = try #require(await connection.lastCommand(), "openRedisKey 必须向连接下发命令")
+        // 真实 RedisConnection.query 用 compose 解析命令；这里复刻该解析，
+        // 断言含空格的键没有被拆成多个参数（修复前会得到 ["GET","foo","bar"]）。
+        let args = try RedisCommandArguments.compose(command: sent, params: nil)
+        #expect(args == ["GET", "foo bar"], "GET 必须只携带一个完整键 foo bar，实际 \(args)")
+    }
+}
