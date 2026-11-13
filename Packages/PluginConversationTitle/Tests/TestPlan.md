@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 60 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 68 条用例。
 
 平台: iOS 17+
-测试文件: 9 个，用例总数: 60
+测试文件: 9 个，用例总数: 68
 
 核心组件（源码目录）:
 - `Observers/`
@@ -28,7 +28,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AutoTitleRule**（19 条）：由 `appliesWhenNoTitle`、`protectsCustomTitle`、`skipsWhenSameAsCurrent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AutoTitleRule**（23 条）：由 `appliesWhenNoTitle`、`protectsCustomTitle`、`skipsWhenSameAsCurrent` 等用例锁定；改动该模块时优先跑对应测试文件。`normalizeTitle` 只剥离包裹整个标题的成对符号，标题内部正常的圆括号/方括号（如 `Fix array bounds (off-by-one)`）必须原样保留，不得逐字符 trimming 删掉末尾右括号（**回归 #798**）。
 - **ConversationScopedTitleUpdate**（3 条）：由 `writesToCallingConversationInsteadOfSelection`、`doesNotLeakIntoOtherConversation`、`legacyPathStillUsesSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HeaderTitleObserver**（7 条）：由 `viewModelSkipsDuplicateTitle`、`viewModelStartsEmpty`、`syncsInitialTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（4 条）：由 `normalizeTitle`、`placeholderTitle`、`updateToolUpdatesTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -36,6 +36,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **TitleServiceFallback**（4 条）：由 `fallsBackWhenLLMThrows`、`fallsBackWhenLLMReturnsEmptyTitle`、`fallbackDoesNotOverwriteCustomTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleUpdateTool**（8 条）：由 `updatesSelectedTitle`、`trimsWhitespace`、`reportsMissingProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TitleUtilityRouting**（4 条）：由 `titleRoutesToUtilityModel`、`titleWithoutDeclarationUsesMainModel`、`titleUsageRecordedToLedger` 等用例锁定。声明轻量模型时标题路由到轻量模型、未声明时沿用主模型；用量按 `.title` 用途记入账本并带服务模型，供应商未报用量时记估算值且不为零（**#1158**）。改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -101,27 +102,35 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 58 | TitleUpdateTool | 非法 title 参数抛 ToolExecutionError | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsInvalidArguments` |
 | 59 | TitleUpdateTool | 工具描述与输入 schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `metadata` |
 | 60 | TitleUpdateTool | displayDescription 回退与正常展示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `displayDescription` |
+| 61 | AutoTitleRule | normalizeTitle：保留标题内部的圆括号（回归 #798） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `normalizePreservesInternalParenthetical` |
+| 62 | AutoTitleRule | normalizeTitle：保留标题内部的方括号（回归 #798） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `normalizePreservesInternalSquareBrackets` |
+| 63 | AutoTitleRule | normalizeTitle：剥离包裹整个标题的成对括号 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `normalizeStripsPairedOuterBrackets` |
+| 64 | AutoTitleRule | normalizeTitle：逐层剥离嵌套的成对包裹 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `normalizeStripsNestedPairedWrappers` |
+| 65 | TitleUtilityRouting | 声明轻量模型时标题路由到轻量模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleRoutesToUtilityModel` |
+| 66 | TitleUtilityRouting | 未声明轻量模型时标题沿用主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleWithoutDeclarationUsesMainModel` |
+| 67 | TitleUtilityRouting | 标题用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleUsageRecordedToLedger` |
+| 68 | TitleUtilityRouting | 供应商未报用量时标题用量记估算值且不为零 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleUsageEstimatedWhenUnreported` |
 
-> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 14 / 14
-- P2: 已覆盖 35 / 35
-- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 18 / 18
+- P2: 已覆盖 37 / 37
+- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（14 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（35 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（18 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（37 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
