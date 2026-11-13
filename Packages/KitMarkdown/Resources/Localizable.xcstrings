@@ -6,6 +6,12 @@
     },
     "•" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -34,6 +40,12 @@
     },
     "Expand diagram" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand diagram"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
