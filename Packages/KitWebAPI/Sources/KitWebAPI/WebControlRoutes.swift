@@ -61,11 +61,14 @@ public enum WebControlRoutes {
     ///
     /// - Parameters:
     ///   - context: 依赖集合。
+    ///   - routeCounts: 每个插件已注册路由数的提供者（按插件 id 分组计数）。
+    ///     每次请求时求值，保证路由增删后接口返回实时数量；缺省返回空表（计 0）。
     ///   - serviceInfo: 服务运行信息提供者（端口、鉴权状态、路由数等）。
     ///   - prefix: 路径前缀，默认 `/api/v1`。
     /// - Returns: 可直接注册的路由列表。
     public static func makeRoutes(
         context: WebControlContext,
+        routeCounts: @escaping @MainActor @Sendable () -> [String: Int] = { [:] },
         serviceInfo: @escaping @MainActor @Sendable () -> WebStatusResponse.Service,
         prefix: String = "/api/v1"
     ) -> [WebRoute] {
@@ -86,7 +89,7 @@ public enum WebControlRoutes {
                 )
             }
             .get("\(prefix)/plugins", description: "列出全部已注册插件及其启用状态") { _ in
-                try .api(pluginSummaries(context: context))
+                try .api(pluginSummaries(context: context, routeCounts: routeCounts()))
             }
             .post("\(prefix)/plugins/:id/enable", description: "启用指定插件") { request in
                 let id = try request.requirePathParameter("id")
@@ -216,7 +219,10 @@ public enum WebControlRoutes {
 
     /// 列出插件摘要。
     @MainActor
-    private static func pluginSummaries(context: WebControlContext) -> [WebPluginSummary] {
+    private static func pluginSummaries(
+        context: WebControlContext,
+        routeCounts: [String: Int]
+    ) -> [WebPluginSummary] {
         guard let manager = context.pluginManager else { return [] }
         return manager.allPlugins.map { plugin in
             WebPluginSummary(
@@ -227,7 +233,7 @@ public enum WebControlRoutes {
                 stage: plugin.metadata.stage.rawValue,
                 enabled: manager.isEnabled(id: plugin.id),
                 configurable: plugin.metadata.policy.isConfigurable,
-                routeCount: 0
+                routeCount: routeCounts[plugin.id] ?? 0
             )
         }
     }

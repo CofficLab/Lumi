@@ -223,7 +223,13 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
             pluginManager: kernel.resolveProvider((any PluginManaging).self)
         )
 
-        let routes = WebControlRoutes.makeRoutes(context: context) { [weak server] in
+        let routes = WebControlRoutes.makeRoutes(
+            context: context,
+            routeCounts: { [weak server] in
+                guard let server else { return [:] }
+                return Self.routeCountsByPlugin(server: server)
+            }
+        ) { [weak server] in
             guard let server else {
                 return WebStatusResponse.Service(
                     version: WebAPIVersion.current.rawValue,
@@ -245,6 +251,14 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         }
 
         return routes
+    }
+
+    /// 按插件 id 统计服务器当前已注册的路由数。
+    ///
+    /// 供控制面 `/api/v1/plugins` 实时返回每个插件贡献的路由数量（#1150）。
+    static func routeCountsByPlugin(server: LumiWebServer) -> [String: Int] {
+        Dictionary(grouping: server.registeredRouteSummaries(), by: \.pluginID)
+            .mapValues(\.count)
     }
 
     /// 构造 Agent Tool 桥接路由。
