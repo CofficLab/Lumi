@@ -4,7 +4,8 @@ import Foundation
 public enum ReadmePreviewSection {
     private static let maxChars = 500
     private static let maxBytes = maxChars * 4
-    private static let candidates = ["README.md", "README.markdown", "README"]
+    /// README 候选文件（按优先级）。KeyFilesSection 共用此列表，避免两处检测漂移（#479）。
+    static let candidates = ["README.md", "README.markdown", "README"]
 
     /// 读取并预览 README 文件
     public static func render(at root: URL) -> String {
