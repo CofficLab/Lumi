@@ -317,11 +317,12 @@ public final class IconDocumentStore: ObservableObject {
             if selectedScope == scope, selectedDocumentId == replacement.id {
                 recordUndo(previous)
             }
-            persist(replacement, scope: scope)
-            // 标题变化会改变文件名，清掉旧文件，避免重载后出现重复文档。
+            // 标题变化会改变文件名：先清掉该 ID 的旧文件再写新文件。delete 按 ID
+            // 清除全部派生文件，若放在 persist 之后会连新文件一起删掉（#292）。
             if IconDocumentFileStore.fileName(for: replacement) != IconDocumentFileStore.fileName(for: previous) {
                 IconDocumentFileStore.delete(previous, storagePath: storagePath(for: scope))
             }
+            persist(replacement, scope: scope)
         } else if let requestedTarget {
             throw IconDocumentStoreError.documentNotFound(requestedTarget)
         } else {
