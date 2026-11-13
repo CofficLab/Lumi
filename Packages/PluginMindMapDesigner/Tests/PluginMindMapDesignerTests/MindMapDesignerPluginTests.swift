@@ -420,4 +420,31 @@ struct MindMapMarkdownCodecRobustnessTests {
         }
         #expect(parentTexts(tabbed) == parentTexts(spaced))
     }
+
+    @Test("Markdown 往返不丢失与标题不同的根节点文本（回归 #291）")
+    func roundTripPreservesDistinctRootText() throws {
+        let root = MindMapNode(parentId: nil, text: "Central Problem")
+        let child = MindMapNode(parentId: root.id, text: "Branch A")
+        let map = MindMap(title: "Project", nodes: [root, child])
+
+        let encoded = MindMapMarkdownCodec.encode(map)
+        let restored = MindMapMarkdownCodec.decode(markdown: encoded, title: nil)
+
+        #expect(restored.title == "Project")
+        let restoredRoot = try #require(restored.root)
+        #expect(restoredRoot.text == "Central Problem")
+        #expect(restored.children(of: restoredRoot.id).contains { $0.text == "Branch A" })
+    }
+
+    @Test("仅含根节点时往返仍保留独立根文本")
+    func roundTripPreservesDistinctRootTextWithoutChildren() throws {
+        let root = MindMapNode(parentId: nil, text: "Central Problem")
+        let map = MindMap(title: "Project", nodes: [root])
+
+        let restored = MindMapMarkdownCodec.decode(markdown: MindMapMarkdownCodec.encode(map), title: nil)
+
+        #expect(restored.title == "Project")
+        #expect(restored.root?.text == "Central Problem")
+        #expect(restored.nodes.count == 1)
+    }
 }

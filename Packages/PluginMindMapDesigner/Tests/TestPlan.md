@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 33 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 33
+测试文件: 4 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,7 +38,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MindMapDesignerPlugin**（11 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MindMapMarkdownCodec 健壮性**（9 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
+- **MindMapMarkdownCodec 健壮性**（11 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
 - **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
@@ -80,27 +80,29 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 31 | MindMapMarkdownCodec 健壮性 | Tab 与两空格缩进产生相同结构 | — | 分别解码同一大纲的 Tab 版与两空格版 | 两版节点父子关系完全一致 | P1 | ✅ 已覆盖 | `tabAndSpaceIndentationProduceSameShape` |
 | 32 | MindMapDesignerPlugin | `save_mind_map` 重建缺失的 backing JSON（**回归 #1080**） | 地图已在内存，JSON 文件被删除 | 调用 `save_mind_map(mapId:)` | 返回成功且磁盘重新出现该地图，内存列表仍包含它 | P0 | ✅ 已覆盖 | `saveMindMapRecreatesMissingBackingFile` |
 | 33 | MindMapDesignerPlugin | `save_mind_map` 写入失败必须抛错（**回归 #1080**） | 地图已创建，存储目录路径被普通文件占据 | 调用 `save_mind_map(mapId:)` | 抛出错误，不返回保存成功 | P0 | ✅ 已覆盖 | `saveMindMapReportsWriteFailure` |
+| 34 | MindMapMarkdownCodec 健壮性 | Markdown 往返不丢失与标题不同的根节点文本（**回归 #291**） | 标题 `Project`、根文本 `Central Problem`、含一个子节点 | 编码后再解码 | 标题仍为 `Project`，根节点文本仍为 `Central Problem`，子节点保留 | P0 | ✅ 已覆盖 | `roundTripPreservesDistinctRootText` |
+| 35 | MindMapMarkdownCodec 健壮性 | 仅含根节点时往返仍保留独立根文本 | 标题 `Project`、根文本 `Central Problem`、无子节点 | 编码后再解码 | 标题为 `Project`，根文本为 `Central Problem`，仅一个节点 | P1 | ✅ 已覆盖 | `roundTripPreservesDistinctRootTextWithoutChildren` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 0 / 0
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
