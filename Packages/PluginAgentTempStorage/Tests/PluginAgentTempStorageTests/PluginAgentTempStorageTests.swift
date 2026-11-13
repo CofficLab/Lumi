@@ -147,6 +147,48 @@ struct PluginAgentTempStorageTests {
     }
 
     @Test
+    func purgeRemovesExpiredNestedFiles() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let nestedPath = try await service.write(filename: "exports/data.json", content: "old payload")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: nestedPath
+        )
+
+        try await service.purgeExpiredFiles()
+
+        // 写入支持嵌套路径，清理也必须递归：过期嵌套文件不能被 read/list 当作有效内容。
+        await #expect(throws: TempFileStorageError.fileNotFound("exports/data.json")) {
+            _ = try await service.read(filename: "exports/data.json")
+        }
+        #expect(try await service.listFiles().map(\.name).isEmpty)
+    }
+
+    @Test
+    func purgeKeepsFreshNestedFilesWhileRemovingExpiredOnes() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let oldNested = try await service.write(filename: "logs/old.log", content: "old")
+        _ = try await service.write(filename: "logs/fresh.log", content: "fresh")
+        _ = try await service.write(filename: "fresh.md", content: "fresh root")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: oldNested
+        )
+
+        try await service.purgeExpiredFiles()
+
+        let remaining = try await service.listFiles().map(\.name).sorted()
+        #expect(remaining == ["fresh.md", "logs/fresh.log"])
+        #expect(try await service.read(filename: "logs/fresh.log") == "fresh")
+    }
+
+    @Test
     func unreadableSettingsAbortPurgeAndSurfaceError() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

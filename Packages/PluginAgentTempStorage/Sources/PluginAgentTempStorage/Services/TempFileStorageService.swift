@@ -76,16 +76,18 @@ actor TempFileStorageService {
             return
         }
 
-        guard let entries = try? fileManager.contentsOfDirectory(
+        // 写入支持嵌套相对路径，清理必须与 listFiles 一样递归枚举，
+        // 否则子目录里的过期文件永远不会被删除（#200）。
+        guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else {
             return
         }
 
         var failures: [(name: String, reason: String)] = []
-        for entry in entries {
+        for case let entry as URL in enumerator {
             let values = try? entry.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
             if values?.isDirectory == true {
                 continue
