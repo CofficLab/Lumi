@@ -5,7 +5,7 @@
 KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 338
+测试文件: 19 个，用例总数: 348
 
 ## 公开 API
 
@@ -33,8 +33,9 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 - **EditorCommandCategoryLocalization**（1 条）：由 `loadsSimplifiedChineseCategoryTitles` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorDocumentSymbol**（24 条）：由 `initializationWithRequestDocumentSymbols`、`refreshSetsIsLoadingAndUpdatesSymbols`、`clearResetsState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorKernelCoverageAdditional**（37 条）：由 `findMatchingBracketAtOpenAndClosePositions`、`findMatchingBracketRejectsInvalidCursor`、`shouldAutoCloseRespectsStringAndCommentContexts` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorKernel**（127 条）：由 `textInputControllerBuildsBracketAndIndentPlans`、`bracketAndIndentPoliciesHandleLanguageAndOutdentRules`、`inputCommandControllerBuildsLineEditAndCursorPlans` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorKernel**（133 条）：由 `textInputControllerBuildsBracketAndIndentPlans`、`bracketAndIndentPoliciesHandleLanguageAndOutdentRules`、`inputCommandControllerBuildsLineEditAndCursorPlans` 等用例锁定；改动该模块时优先跑对应测试文件。`transpose` 须按完整字素簇交换，不得拆散代理对/组合序列而引入 U+FFFD（#337，由 `transposeSwapsWholeEmojiWithoutSplittingSurrogatePair` 等锁定）。
 - **EditorTextDiffEngine**（10 条）：由 `identicalTextsProduceEmptyDiff`、`emptyToContentIsPureAddition`、`contentToEmptyIsPureRemoval` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorTextMetrics**（4 条）：由 `newlineCountMatchesFilterSemantics`、`totalLineCountMatchesFilterPlusOne`、`emptyContentIsOneLine` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorLSPActionPolicy**（5 条）：由 `languageIDMapping`、`statusMessageKeyMapping`、`referenceResultSorting` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorNavigationController**（3 条）：由 `resolveReferenceRequest`、`cursorPositionsForDiagnostic`、`resolvedDefinitionTargetHighlightLine` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorOpenItemCommandController**（7 条）：由 `resolveWorkspaceSymbolCommand`、`resolveWorkspaceSymbolCommandWithUnescapedFileURL`、`resolveProblemCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -395,22 +396,32 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 | 336 | EditorSaveStateController | 文件缺失时进入 fileNotFound 错误状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `appliesMissingFileFailure` |
 | 337 | EditorSaveWorkflowPolicy | 保存状态枚举暴露图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `saveStateIcons` |
 | 338 | EditorSaveWorkflowPolicy | 策略只按未保存标记与保存中状态判断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `policyDecisions` |
+| 339 | EditorKernel | 光标在 emoji 与字符间交换时不得拆散代理对，写回不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsWholeEmojiWithoutSplittingSurrogatePair` |
+| 340 | EditorKernel | 光标后为 emoji 时按完整字符交换，不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsEmojiThatFollowsTheCursor` |
+| 341 | EditorKernel | 组合标记字素簇必须整体交换，不得拆成半个字符（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsCombiningMarkGraphemeAsOneUnit` |
+| 342 | EditorKernel | 旗帜 emoji 字素簇必须整体交换，不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsFlagEmojiGraphemeAsOneUnit` |
+| 343 | EditorKernel | 非零偏移处 ASCII 交换的替换区间与光标位置保持正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transposeKeepsASCIISelectionMathAtNonZeroOffset` |
+| 344 | EditorKernel | 光标紧邻换行符时 transpose 返回 nil，不跨行交换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transposeReturnsNilAtLineEndingBoundary` |
+| 345 | EditorTextMetrics | 换行统计与 filter 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `newlineCountMatchesFilterSemantics` |
+| 346 | EditorTextMetrics | 总行数与 filter + 1 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountMatchesFilterPlusOne` |
+| 347 | EditorTextMetrics | 空正文算一行 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyContentIsOneLine` |
+| 348 | EditorTextMetrics | CRLF 组合不单独计数，与既有 filter 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `carriageReturnFollowedByNewlineIsNotCounted` |
 
-> 说明：全部 **338 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **348 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
-- P1: 已覆盖 249 / 249
-- P2: 已覆盖 61 / 61
-- **合计: 338 / 338**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 32 / 32
+- P1: 已覆盖 254 / 254
+- P2: 已覆盖 62 / 62
+- **合计: 348 / 348**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
-- **P1**: 其余功能性用例（249 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（61 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
+- **P1**: 其余功能性用例（254 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（62 条）
 
 ## 跨平台说明
 

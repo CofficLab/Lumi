@@ -192,19 +192,31 @@ public enum LineEditingController: Sendable {
               selection.location < nsText.length else { return nil }
 
         let location = selection.location
-        let before = nsText.substring(with: NSRange(location: location - 1, length: 1))
-        let after = nsText.substring(with: NSRange(location: location, length: 1))
 
-        if !isLineEndingCharacter(before) && !isLineEndingCharacter(after) {
-            let swapped = after + before
-            return LineEditResult(
-                replacementRange: NSRange(location: location - 1, length: 2),
-                replacementText: swapped,
-                selectedRanges: [NSRange(location: location + 1, length: 0)]
-            )
+        // 按完整字符（字素簇）交换，而不是单个 UTF-16 码元：光标落在代理对
+        // 或组合序列中间时，逐码元交换会把 emoji 拆成两半，写回后变成 U+FFFD
+        // 乱码（#337）。先按 Character 切出每个字素簇及其 UTF-16 区间。
+        var characters: [(text: String, range: NSRange)] = []
+        var offset = 0
+        for character in text {
+            let length = (String(character) as NSString).length
+            characters.append((String(character), NSRange(location: offset, length: length)))
+            offset += length
         }
 
-        return nil
+        guard let afterIndex = characters.firstIndex(where: { $0.range.location >= location }),
+              afterIndex > 0 else { return nil }
+        let before = characters[afterIndex - 1]
+        let after = characters[afterIndex]
+
+        guard !isLineEndingCharacter(before.text), !isLineEndingCharacter(after.text) else { return nil }
+
+        let swapped = after.text + before.text
+        return LineEditResult(
+            replacementRange: NSRange(location: before.range.location, length: before.range.length + after.range.length),
+            replacementText: swapped,
+            selectedRanges: [NSRange(location: before.range.location + (swapped as NSString).length, length: 0)]
+        )
     }
 
     public static func toggleLineComment(
