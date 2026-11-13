@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 41 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 42 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 41
+测试文件: 14 个，用例总数: 42
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,7 +39,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ProjectFileTreePlugin**（2 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **FileTreeDataSource**（2 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）。
+- **FileTreeDataSource**（3 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed`、`reloadDirectoryKeepsFollowingSiblings` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）；精准刷新目录的替换范围只能覆盖该目录及其子树，不得删除其后的兄弟节点（**回归 #182**）。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（2 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。
 - **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
@@ -99,27 +99,28 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 39 | FileTreeCollectionViewController | 多选时 Move to Trash 菜单携带全部选中项（**回归 #1109**） | 已 Cmd 选中 a.txt、b.txt | 构建 a.txt 的右键菜单 | 删除项 `representedObject` 为两项数组 | P0 | ✅ 已覆盖 | `deleteMenuCarriesEverySelectedTarget` |
 | 40 | FileTreeCollectionViewController | 多选删除会移除全部目标的选择（**回归 #1109**） | 已选中 a.txt、b.txt | `performDelete` 处理全部目标 | 删除器收到两项，选择清空，成功提示 | P0 | ✅ 已覆盖 | `performDeleteTrashesEveryTarget` |
 | 41 | FileTreeCollectionViewController | 部分失败时保留失败项的选择并给出警告 | 删除器只成功 a.txt、失败 b.txt | `performDelete` 处理全部目标 | 选择只剩 b.txt，提示为 warning 且包含 b.txt | P1 | ✅ 已覆盖 | `performDeleteKeepsFailedTargetSelected` |
+| 42 | FileTreeDataSource | 精准刷新目录不得删除其后的兄弟节点（**回归 #182**） | 根下含已展开目录 A、目录 B 与文件 tail.txt | A 内新增文件后调用 `reloadDirectory(A)` | A 的新文件出现，B、B 的子节点与 tail.txt 均保留 | P0 | ✅ 已覆盖 | `reloadDirectoryKeepsFollowingSiblings` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
+- P0: 已覆盖 22 / 22
 - P1: 已覆盖 13 / 13
 - P2: 已覆盖 7 / 7
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
 - **P1**: 其余功能性用例（13 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

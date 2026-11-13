@@ -390,12 +390,14 @@ final class FileTreeDataSource: SuperLog {
         }), case .file(let fileItem) = items[index] else { return }
 
         var endIndex = index + 1
-        while endIndex < items.count {
+        scan: while endIndex < items.count {
             switch items[endIndex] {
             case .file(let f) where f.depth > fileItem.depth:
                 endIndex += 1
             default:
-                endIndex = items.count
+                // 遇到第一个同级（或更浅）节点即停止：替换范围只覆盖目标目录
+                // 及其子树，不能延伸到列表末尾而删掉后续兄弟节点（#182）。
+                break scan
             }
         }
 
