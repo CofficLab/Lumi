@@ -22,8 +22,12 @@ import ProviderToolManager
 public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = SubagentToolPolicy.delegationToolName
 
-    /// 回流到父上下文的结论字符上限；超出部分截断，避免撑爆父上下文。
+    /// 回流到父上下文的结论字符硬上限；超出部分截断，避免撑爆父上下文。
+    /// 模型可经 `max_characters` 向下收紧，但不得突破该上限。
     public static let conclusionCharacterLimit = 8_000
+
+    /// `max_characters` 的下限：再小也要保住一段可读结论。
+    public static let conclusionCharacterFloor = 500
 
     public let name = Self.toolName
 
@@ -48,7 +52,21 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        "Delegate a self-contained task to a subagent running in an isolated hidden conversation. Returns only the subagent's final conclusion plus a usage summary; the subagent's transcript never enters this conversation. The task prompt must be self-contained because the subagent cannot see this conversation's history."
+        """
+        Delegate a self-contained task to a subagent running in an isolated hidden conversation. \
+        Returns only the subagent's final conclusion plus a usage summary; the subagent's transcript \
+        never enters this conversation.
+
+        When to delegate: independent work that can run in parallel (dispatch several run_subagent \
+        calls in one message), or reading across many files / broad research where only the \
+        conclusion matters. When NOT to delegate: single-fact lookups or one-file reads — search \
+        directly instead; and never duplicate work already delegated.
+
+        The task prompt must be self-contained: the subagent cannot see this conversation's history, \
+        so include all needed context (paths, constraints, expected output). Ask for conclusions, \
+        not file dumps. The subagent only has read-only tools and cannot edit files or run \
+        side-effecting commands.
+        """
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -62,6 +80,12 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
                 "description": [
                     "type": "string",
                     "description": "A short 3-5 word label for the delegation, shown in the timeline.",
+                ],
+                "max_characters": [
+                    "type": "integer",
+                    "minimum": Self.conclusionCharacterFloor,
+                    "maximum": Self.conclusionCharacterLimit,
+                    "description": "Maximum characters of the returned conclusion; defaults to 8000. Values outside 500-8000 are clamped.",
                 ],
             ],
             "required": ["task"],
@@ -106,6 +130,13 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             )
         }
         let label = Self.string(from: arguments, key: "description") ?? "Subagent task"
+        // JSON 数字统一桥接为 Double，直接 Int(...) 越界会陷阱崩溃；
+        // toolInt 安全转换并钳制到 schema 声明的区间，非法值回退默认。
+        let conclusionLimit = arguments.toolInt(
+            "max_characters",
+            clampedTo: Self.conclusionCharacterFloor...Self.conclusionCharacterLimit,
+            default: Self.conclusionCharacterLimit
+        )
 
         // 防递归兜底：子会话工具表虽已过滤掉本工具，执行入口仍须拒绝
         // 来自子会话的调用，杜绝任何路径下的嵌套委托。
@@ -190,7 +221,8 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
             content: Self.formatConclusion(
                 conclusion,
                 toolUseCount: toolUseCount,
-                duration: duration
+                duration: duration,
+                characterLimit: conclusionLimit
             )
         )
     }
@@ -199,11 +231,12 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
     private static func formatConclusion(
         _ text: String,
         toolUseCount: Int,
-        duration: TimeInterval
+        duration: TimeInterval,
+        characterLimit: Int
     ) -> String {
         var body = text
-        if body.count > conclusionCharacterLimit {
-            body = String(body.prefix(conclusionCharacterLimit)) + "\n[truncated]"
+        if body.count > characterLimit {
+            body = String(body.prefix(characterLimit)) + "\n[truncated]"
         }
         let seconds = String(format: "%.1f", duration)
         return body + "\n\n[subagent] tool calls: \(toolUseCount) · duration: \(seconds)s"

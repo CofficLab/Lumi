@@ -299,6 +299,113 @@ struct SubagentEndToEndTests {
         #expect(result.content.contains("recursion"))
     }
 
+    @Test("工具描述包含委托时机、结论导向与不重复委托指导")
+    func descriptionTeachesWhenToDelegate() throws {
+        let stub = ScriptedLLMManager()
+        let kernel = try makeKernel(stub: stub)
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let tool = try #require(toolManager.tool(named: "run_subagent"))
+
+        // 指导文案是 prompt 级契约：模型靠它决定何时委托、何时直接做。
+        // 锁定关键语义词，防止后续改写把指导改丢。
+        let description = tool.description(for: .english).lowercased()
+        #expect(description.contains("parallel"))
+        #expect(description.contains("directly"))
+        #expect(description.contains("duplicate"))
+        #expect(description.contains("self-contained"))
+        #expect(description.contains("conclusion"))
+    }
+
+    @Test("自定义结论上限生效，超出部分截断")
+    func customConclusionCapIsRespected() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "Produce a long report with a custom cap."
+        stub.scripts[task] = .text(String(repeating: "B", count: 30_000))
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Custom cap",
+            conversationID: parentID,
+            extraArguments: ["max_characters": 1_000]
+        )
+        #expect(result.isError == false)
+        #expect(result.content.count <= 1_200)
+        #expect(result.content.contains("[truncated]"))
+    }
+
+    @Test("越界结论上限不得突破硬上限，也不得低于下限")
+    func outOfRangeConclusionCapIsClamped() async throws {
+        let stub = ScriptedLLMManager()
+        let highTask = "Report with an oversized cap request."
+        let lowTask = "Report with an undersized cap request."
+        stub.scripts[highTask] = .text(String(repeating: "C", count: 30_000))
+        stub.scripts[lowTask] = .text(String(repeating: "D", count: 30_000))
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        // 远超硬上限的请求被钳制回 8000，不能撑爆父上下文。
+        let high = try await runSubagent(
+            toolManager: toolManager,
+            task: highTask,
+            description: "Oversized cap",
+            conversationID: parentID,
+            extraArguments: ["max_characters": 999_999]
+        )
+        #expect(high.isError == false)
+        #expect(high.content.count <= 8_200)
+        #expect(high.content.contains("[truncated]"))
+
+        // 低于下限的请求被钳制到 500，而不是产出空结论或崩溃。
+        let low = try await runSubagent(
+            toolManager: toolManager,
+            task: lowTask,
+            description: "Undersized cap",
+            conversationID: parentID,
+            extraArguments: ["max_characters": 1]
+        )
+        #expect(low.isError == false)
+        #expect(low.content.count <= 700)
+        #expect(low.content.contains("[truncated]"))
+    }
+
+    @Test("非法结论上限参数回退默认值而不是崩溃")
+    func invalidConclusionCapFallsBackToDefault() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "Report with an invalid cap argument."
+        stub.scripts[task] = .text(String(repeating: "E", count: 30_000))
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Invalid cap",
+            conversationID: parentID,
+            extraArguments: ["max_characters": "not-a-number"]
+        )
+        #expect(result.isError == false)
+        #expect(result.content.count <= 8_200)
+        #expect(result.content.contains("[truncated]"))
+    }
+
     // MARK: - Helpers
 
     /// 执行一次 run_subagent 调用并等待工具结果。
@@ -312,12 +419,13 @@ struct SubagentEndToEndTests {
         description: String,
         conversationID: UUID,
         turnID: UUID = UUID(),
+        extraArguments: [String: Any] = [:],
         timeout: TimeInterval = 30
     ) async throws -> ToolCallResult {
         let callID = UUID().uuidString
-        let arguments = try JSONSerialization.data(
-            withJSONObject: ["task": task, "description": description]
-        )
+        var payload: [String: Any] = ["task": task, "description": description]
+        for (key, value) in extraArguments { payload[key] = value }
+        let arguments = try JSONSerialization.data(withJSONObject: payload)
         let call = KitAgentTool.ToolCall(
             id: callID,
             name: "run_subagent",
