@@ -1,11 +1,10 @@
 import ProviderToolManager
 import SwiftUI
 
-/// ChatToolbar 上的子代理运行指示器：胶囊按钮 + 弹层。
+/// ChatToolbar 上的子代理运行指示器：胶囊按钮 + 弹层（#1313 / #1328）。
 ///
-/// 视觉风格对齐 `GitChatToolbarButton`：图标 + 计数徽标，accentColor 高亮。
-/// 仅当当前会话存在未终态的 `run_subagent` Job 时占位，无活动时渲染
-/// EmptyView，不占用工具栏空间。
+/// 视觉风格对齐 `GitChatToolbarButton`：图标 + 计数徽标。颜色表达注意力：
+/// 失败红色、等待用户橙色、运行中 accent；不额外加文字。
 struct SubagentActivityToolbarButton: View {
     @ObservedObject var viewModel: SubagentActivityViewModel
     @State private var isPopoverPresented = false
@@ -21,7 +20,7 @@ struct SubagentActivityToolbarButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             SubagentActivityPopoverView(viewModel: viewModel)
         }
-        .onChange(of: viewModel.selectedConversationID) { newValue in
+        .onChange(of: viewModel.selectedConversationID) { _, newValue in
             // 会话切换：关闭弹层避免显示旧会话的子代理状态。
             if newValue == nil {
                 isPopoverPresented = false
@@ -31,29 +30,41 @@ struct SubagentActivityToolbarButton: View {
 
     // MARK: - Label
 
+    private var statusColor: Color {
+        switch viewModel.status {
+        case .failure:
+            return .red
+        case .waiting:
+            return .orange
+        case .running, .idle:
+            return .accentColor
+        }
+    }
+
     private var label: some View {
         HStack(spacing: 3) {
             Image(systemName: "person.2.fill")
                 .font(.system(size: 10, weight: .medium))
 
-            Text("\(viewModel.activeCount)")
+            Text("\(viewModel.capsuleCount)")
                 .font(.system(size: 10, weight: .medium))
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
-        .foregroundColor(Color.accentColor)
+        .foregroundColor(statusColor)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .background(
-            Color.accentColor.opacity(0.22),
+            statusColor.opacity(0.22),
             in: RoundedRectangle(cornerRadius: 5, style: .continuous)
         )
     }
 }
 
-/// ChatToolbar 弹层：当前会话的子代理委托列表。
+/// ChatToolbar 弹层：当前会话的子代理活动列表。
 ///
-/// 运行中的委托在前（状态 + 实时耗时），最近结束的紧随其后供回看。
+/// 排序是注意力优先：需要用户处理（等待/失败）→ 运行中 → 已结束。
+/// 每行展示名字、当前工具、工具数、耗时与待读取的代理消息数。
 struct SubagentActivityPopoverView: View {
     @ObservedObject var viewModel: SubagentActivityViewModel
 
@@ -67,26 +78,37 @@ struct SubagentActivityPopoverView: View {
                     Text(pluginLocalization.string("Subagents"))
                         .font(.headline)
                     Spacer()
-                    Text("\(viewModel.activeCount)")
+                    Text("\(viewModel.capsuleCount)")
                         .foregroundStyle(.secondary)
                         .font(.subheadline.monospacedDigit())
                 }
 
-                if viewModel.jobs.isEmpty {
+                if viewModel.items.isEmpty {
                     emptyState
                 } else {
-                    if !viewModel.activeSubagents.isEmpty {
-                        section(title: pluginLocalization.string("Running")) {
-                            ForEach(viewModel.activeSubagents) { job in
-                                SubagentActivityRow(job: job, viewModel: viewModel)
+                    if !viewModel.attentionItems.isEmpty {
+                        section(
+                            title: pluginLocalization.string("Needs attention"),
+                            tint: .orange
+                        ) {
+                            ForEach(viewModel.attentionItems) { item in
+                                SubagentActivityRow(item: item, viewModel: viewModel)
                             }
                         }
                     }
 
-                    if !viewModel.finishedSubagents.isEmpty {
+                    if !viewModel.runningItems.isEmpty {
+                        section(title: pluginLocalization.string("Running")) {
+                            ForEach(viewModel.runningItems) { item in
+                                SubagentActivityRow(item: item, viewModel: viewModel)
+                            }
+                        }
+                    }
+
+                    if !viewModel.finishedItems.isEmpty {
                         section(title: pluginLocalization.string("Finished"), secondary: true) {
-                            ForEach(viewModel.finishedSubagents) { job in
-                                SubagentActivityRow(job: job, viewModel: viewModel)
+                            ForEach(viewModel.finishedItems) { item in
+                                SubagentActivityRow(item: item, viewModel: viewModel)
                             }
                         }
                     }
@@ -109,12 +131,13 @@ struct SubagentActivityPopoverView: View {
     private func section<Content: View>(
         title: String,
         secondary: Bool = false,
+        tint: Color? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(secondary ? Color.secondary : Color.accentColor)
+                .foregroundStyle(tint ?? (secondary ? Color.secondary : Color.accentColor))
                 .textCase(.uppercase)
             VStack(spacing: 1) {
                 content()
@@ -124,7 +147,7 @@ struct SubagentActivityPopoverView: View {
 }
 
 private struct SubagentActivityRow: View {
-    let job: ToolJob
+    let item: SubagentActivityItem
     @ObservedObject var viewModel: SubagentActivityViewModel
 
     var body: some View {
@@ -132,19 +155,39 @@ private struct SubagentActivityRow: View {
             statusIcon
                 .frame(width: 16)
             VStack(alignment: .leading, spacing: 3) {
-                Text(viewModel.label(for: job))
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(2)
+                HStack(spacing: 6) {
+                    Text(viewModel.name(for: item))
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                    if item.pendingMessageCount > 0 {
+                        pendingBadge
+                    }
+                }
+
                 HStack(spacing: 5) {
-                    Text(viewModel.statusTitle(for: job))
-                    if let duration = viewModel.elapsedDuration(for: job) {
+                    Text(statusTitle)
+                    if let tool = item.currentToolName, !tool.isEmpty {
+                        Text("·")
+                        Text(tool)
+                            .lineLimit(1)
+                    }
+                    if let duration = viewModel.elapsedDuration(for: item.job) {
                         Text("·")
                         Text(viewModel.formatDuration(duration))
                     }
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                if let progress = job.latestProgress?.message, !progress.isEmpty, !job.status.isTerminal {
+
+                if !detailText.isEmpty {
+                    Text(detailText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let progress = item.job.latestProgress?.message,
+                   !progress.isEmpty,
+                   !item.job.status.isTerminal {
                     Text(progress)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -157,9 +200,46 @@ private struct SubagentActivityRow: View {
         .contentShape(Rectangle())
     }
 
+    private var statusTitle: String {
+        viewModel.statusTitle(for: item.job)
+    }
+
+    private var pendingBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "envelope.fill")
+                .font(.system(size: 8, weight: .semibold))
+            Text("\(item.pendingMessageCount)")
+                .font(.system(size: 9, weight: .semibold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(Color.accentColor, in: Capsule())
+        .help(pluginLocalization.string("%lld messages"))
+    }
+
+    /// 已完成的工具数与待读取消息数；两者都为零时不占行。
+    private var detailText: String {
+        var parts: [String] = []
+        if item.completedToolCount > 0 {
+            parts.append(String(
+                format: pluginLocalization.string("%lld tool calls"),
+                item.completedToolCount
+            ))
+        }
+        if item.pendingMessageCount > 0 {
+            parts.append(String(
+                format: pluginLocalization.string("%lld messages"),
+                item.pendingMessageCount
+            ))
+        }
+        return parts.joined(separator: " · ")
+    }
+
     @ViewBuilder
     private var statusIcon: some View {
-        if job.status == .running || job.status == .queued {
+        if item.job.status == .running || item.job.status == .queued {
             ProgressView()
                 .controlSize(.mini)
         } else {
@@ -170,8 +250,8 @@ private struct SubagentActivityRow: View {
     }
 
     private var iconName: String {
-        if viewModel.isFailed(job) { return "exclamationmark.triangle.fill" }
-        switch job.status {
+        if viewModel.isFailed(item.job) { return "exclamationmark.triangle.fill" }
+        switch item.job.status {
         case .waitingForUser: return "hand.raised.fill"
         case .completed: return "checkmark.circle.fill"
         case .cancelled, .cancelling: return "xmark.circle.fill"
@@ -180,8 +260,8 @@ private struct SubagentActivityRow: View {
     }
 
     private var iconColor: Color {
-        if viewModel.isFailed(job) { return .red }
-        switch job.status {
+        if viewModel.isFailed(item.job) { return .red }
+        switch item.job.status {
         case .waitingForUser: return .orange
         case .completed: return .green
         case .cancelled, .cancelling: return .secondary
