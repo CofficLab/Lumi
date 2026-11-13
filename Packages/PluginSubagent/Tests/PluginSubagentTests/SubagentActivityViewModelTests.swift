@@ -2,6 +2,7 @@ import Foundation
 import KitAgentTool
 import KitLLM
 import ProviderConversation
+import ProviderMessage
 import ProviderToolManager
 import Testing
 @testable import PluginSubagent
@@ -237,17 +238,290 @@ struct SubagentActivityViewModelTests {
         viewModel.cancel()
     }
 
+    // MARK: - 活动层（#1328 Task 7）
+
+    @Test("活动行带出名字、当前工具与已完成工具数")
+    func itemsExposeIdentityAndChildActivity() async throws {
+        let conversationID = UUID()
+        let childID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let messages = DefaultMessageManager()
+        let viewModel = makeViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            messages: messages
+        )
+
+        let parentJob = makeJob(id: "sub-1", conversationID: conversationID, status: .running)
+        toolManager.jobsByConversation[conversationID] = [parentJob]
+        let finishedTool = makeJob(
+            id: "child-read",
+            conversationID: childID,
+            status: .completed,
+            toolName: "read_file",
+            createdAt: Date(timeIntervalSince1970: 10)
+        )
+        let runningTool = makeJob(
+            id: "child-grep",
+            conversationID: childID,
+            status: .running,
+            toolName: "grep",
+            createdAt: Date(timeIntervalSince1970: 20)
+        )
+        toolManager.jobsByConversation[childID] = [finishedTool, runningTool]
+        insertCard(
+            messages: messages,
+            conversationID: conversationID,
+            jobID: parentJob.id,
+            childConversationID: childID,
+            name: "explorer"
+        )
+
+        viewModel.refresh()
+        try await subagentWaitUntil { viewModel.items.first?.childConversationID == childID }
+
+        let item = try #require(viewModel.items.first)
+        #expect(item.name == "explorer")
+        #expect(item.completedToolCount == 1)
+        #expect(item.currentToolName == "grep", "当前工具应取子会话里最新的未终态 Job")
+        viewModel.cancel()
+    }
+
+    @Test("待读取消息数来自注入的收件箱")
+    func pendingMessageCountComesFromInjectedProvider() async throws {
+        let conversationID = UUID()
+        let childID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let messages = DefaultMessageManager()
+        let viewModel = makeViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            messages: messages,
+            pendingMessageCountProvider: { id in id == childID ? 2 : 0 }
+        )
+
+        let parentJob = makeJob(id: "sub-1", conversationID: conversationID, status: .running)
+        toolManager.jobsByConversation[conversationID] = [parentJob]
+        insertCard(
+            messages: messages,
+            conversationID: conversationID,
+            jobID: parentJob.id,
+            childConversationID: childID,
+            name: "editor"
+        )
+
+        viewModel.refresh()
+        try await subagentWaitUntil { viewModel.items.first?.childConversationID == childID }
+
+        #expect(viewModel.items.first?.pendingMessageCount == 2)
+        viewModel.cancel()
+    }
+
+    @Test("注意力优先：等待用户在前，失败其次，运行中与已结束各归其组")
+    func attentionGroupingOrdersWaitingThenFailed() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = makeViewModel(conversations: conversations, toolManager: toolManager)
+
+        let waiting = makeJob(
+            id: "waiting",
+            conversationID: conversationID,
+            status: .waitingForUser,
+            createdAt: Date(timeIntervalSince1970: 40)
+        )
+        var failed = makeJob(
+            id: "failed",
+            conversationID: conversationID,
+            status: .running,
+            createdAt: Date(timeIntervalSince1970: 30)
+        )
+        failed.status = .failed
+        let running = makeJob(
+            id: "running",
+            conversationID: conversationID,
+            status: .running,
+            createdAt: Date(timeIntervalSince1970: 20)
+        )
+        var finished = makeJob(
+            id: "finished",
+            conversationID: conversationID,
+            status: .running,
+            createdAt: Date(timeIntervalSince1970: 10)
+        )
+        finished.status = .completed
+        finished.completedAt = Date(timeIntervalSince1970: 15)
+        toolManager.jobsByConversation[conversationID] = [waiting, failed, running, finished]
+
+        viewModel.refresh()
+
+        #expect(viewModel.attentionItems.map(\.id) == ["waiting", "failed"])
+        #expect(viewModel.runningItems.map(\.id) == ["running"])
+        #expect(viewModel.finishedItems.map(\.id) == ["finished"])
+        #expect(viewModel.status == .failure, "任何失败都必须把胶囊标红，压过等待态")
+        #expect(
+            viewModel.capsuleCount == 3,
+            "胶囊计数必须包含已失败的注意力项，否则红色徽标会显示 0"
+        )
+        viewModel.cancel()
+    }
+
+    @Test("胶囊状态按失败、等待、运行、空闲降级")
+    func capsuleStatusFollowsPriority() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = makeViewModel(conversations: conversations, toolManager: toolManager)
+        #expect(viewModel.status == .idle)
+
+        toolManager.jobsByConversation[conversationID] = [
+            makeJob(id: "running", conversationID: conversationID, status: .running),
+        ]
+        viewModel.refresh()
+        #expect(viewModel.status == .running)
+
+        toolManager.jobsByConversation[conversationID] = [
+            makeJob(id: "waiting", conversationID: conversationID, status: .waitingForUser),
+            makeJob(id: "running", conversationID: conversationID, status: .running),
+        ]
+        viewModel.refresh()
+        #expect(viewModel.status == .waiting)
+
+        toolManager.jobsByConversation[conversationID] = [
+            makeJob(id: "done", conversationID: conversationID, status: .completed),
+        ]
+        viewModel.refresh()
+        #expect(viewModel.status == .idle)
+        viewModel.cancel()
+    }
+
+    @Test("卡片晚到也能补上身份；没有名字的旧委托显示 unnamed")
+    func lateCardEnrichesIdentity() async throws {
+        let conversationID = UUID()
+        let childID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let messages = DefaultMessageManager()
+        let viewModel = makeViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            messages: messages
+        )
+
+        let job = makeJob(id: "sub-1", conversationID: conversationID, status: .running)
+        toolManager.emit(.started(job))
+        #expect(viewModel.items.count == 1)
+        #expect(viewModel.items.first?.name == nil)
+
+        insertCard(
+            messages: messages,
+            conversationID: conversationID,
+            jobID: job.id,
+            childConversationID: childID,
+            name: nil
+        )
+
+        try await subagentWaitUntil { viewModel.items.first?.childConversationID == childID }
+        let item = try #require(viewModel.items.first)
+        #expect(item.name == nil)
+        #expect(viewModel.name(for: item) == "(unnamed)")
+        viewModel.cancel()
+    }
+
+    @Test("子会话的工具事件刷新活动行但不进入父会话徽标")
+    func childToolEventsRefreshItemsOnly() async throws {
+        let conversationID = UUID()
+        let childID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let messages = DefaultMessageManager()
+        let viewModel = makeViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            messages: messages
+        )
+
+        let parentJob = makeJob(id: "sub-1", conversationID: conversationID, status: .running)
+        toolManager.emit(.started(parentJob))
+        insertCard(
+            messages: messages,
+            conversationID: conversationID,
+            jobID: parentJob.id,
+            childConversationID: childID,
+            name: "explorer"
+        )
+        try await subagentWaitUntil { viewModel.items.first?.childConversationID == childID }
+        #expect(viewModel.activeCount == 1)
+
+        let childTool = makeJob(
+            id: "child-read",
+            conversationID: childID,
+            status: .running,
+            toolName: "read_file"
+        )
+        toolManager.jobsByConversation[childID] = [childTool]
+        toolManager.emit(.started(childTool))
+        #expect(viewModel.items.first?.currentToolName == "read_file")
+        #expect(viewModel.activeCount == 1, "子会话工具不得计入父会话徽标")
+
+        var doneTool = childTool
+        doneTool.status = .completed
+        toolManager.jobsByConversation[childID] = [doneTool]
+        toolManager.emit(.completed(
+            jobID: doneTool.id,
+            result: ToolCallResult(content: "ok"),
+            snapshot: doneTool
+        ))
+        #expect(viewModel.items.first?.currentToolName == nil)
+        #expect(viewModel.items.first?.completedToolCount == 1)
+        #expect(viewModel.activeCount == 1)
+        viewModel.cancel()
+    }
+
     // MARK: - Helpers
+
+    private func insertCard(
+        messages: DefaultMessageManager,
+        conversationID: UUID,
+        jobID: String,
+        childConversationID: UUID,
+        label: String = "Explore",
+        name: String?
+    ) {
+        let payload = SubagentTimeline.Payload(
+            label: label,
+            parentConversationID: conversationID,
+            childConversationID: childConversationID,
+            jobID: jobID,
+            name: name
+        )
+        messages.insertMessage(
+            SubagentTimeline.message(conversationID: conversationID, turnID: nil, payload: payload),
+            to: conversationID
+        )
+    }
 
     private func makeViewModel(
         conversations: StubConversationManager,
         toolManager: StubToolManager,
-        dateProvider: @escaping () -> Date = Date.init
+        messages: DefaultMessageManager? = nil,
+        dateProvider: @escaping () -> Date = Date.init,
+        pendingMessageCountProvider: @escaping (UUID) -> Int = { _ in 0 }
     ) -> SubagentActivityViewModel {
         let viewModel = SubagentActivityViewModel(
             conversations: conversations,
             toolManager: toolManager,
-            dateProvider: dateProvider
+            messages: messages,
+            dateProvider: dateProvider,
+            pendingMessageCountProvider: pendingMessageCountProvider
         )
         return viewModel
     }
@@ -259,6 +533,7 @@ struct SubagentActivityViewModelTests {
         toolName: String = RunSubagentTool.toolName,
         arguments: String = "{}",
         result: ToolCallResult? = nil,
+        createdAt: Date = Date(),
         startedAt: Date? = nil
     ) -> ToolJob {
         ToolJob(
@@ -272,6 +547,7 @@ struct SubagentActivityViewModelTests {
                 result: result
             ),
             status: status,
+            createdAt: createdAt,
             startedAt: startedAt
         )
     }
