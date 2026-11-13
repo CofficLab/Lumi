@@ -230,6 +230,42 @@ final class WorkspaceFileKitTests: XCTestCase {
         }
     }
 
+    func testEditSingleLineMatchInCRLFFileInheritsCRLFForMultilineReplacement() throws {
+        // issue #345：单行 old_string 不含换行，替换的换行风格必须继承整个 CRLF 文件，
+        // 否则多行 new_string 的 LF 会原样写入，造成同一文件混合换行。
+        let path = temporaryDirectory.appendingPathComponent("crlf-single.txt").path
+        try "first\r\nold\r\nlast\r\n".write(toFile: path, atomically: true, encoding: .utf8)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "old",
+            newString: "new1\nnew2"
+        )
+
+        let updated = try String(contentsOfFile: path, encoding: .utf8)
+        XCTAssertEqual(updated, "first\r\nnew1\r\nnew2\r\nlast\r\n")
+        // 不得残留裸 LF：每个 \n 都必须属于某个 \r\n。
+        XCTAssertEqual(updated.components(separatedBy: "\r\n").count - 1,
+                       updated.components(separatedBy: "\n").count - 1)
+    }
+
+    func testEditSingleLineMatchInLFFileNormalizesCRLFReplacementToLF() throws {
+        // 同一根因的对称情形：LF 文件里单行匹配，多行 new_string 即便带 CRLF
+        // 也必须归一为文件的 LF 风格，不能把 CRLF 混进来。
+        let path = temporaryDirectory.appendingPathComponent("lf-single.txt").path
+        try "first\nold\nlast\n".write(toFile: path, atomically: true, encoding: .utf8)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "old",
+            newString: "new1\r\nnew2"
+        )
+
+        let updated = try String(contentsOfFile: path, encoding: .utf8)
+        XCTAssertEqual(updated, "first\nnew1\nnew2\nlast\n")
+        XCTAssertFalse(updated.contains("\r"))
+    }
+
     func testEditSwiftFunctionSignatureDoesNotDuplicateAdjacentCode() throws {
         let path = temporaryDirectory.appendingPathComponent("ConversationStore.swift").path
         let original = """

@@ -173,7 +173,7 @@ public struct WorkspaceFileEditor: Sendable {
         }
 
         // 先按文件既有换行风格适配，再按文件既有引号风格适配，保持文件风格一致。
-        var replacement = adaptReplacementLineEndings(newString, toMatch: match.matched)
+        var replacement = adaptReplacementLineEndings(newString, inFile: originalContent)
         replacement = preserveQuoteStyle(replacement, matching: match.matched)
 
         let updatedContent: String
@@ -290,8 +290,11 @@ public struct WorkspaceFileEditor: Sendable {
         return candidates
     }
 
-    private func adaptReplacementLineEndings(_ replacement: String, toMatch matched: String) -> String {
-        guard let lineEnding = preferredLineEnding(in: matched) else { return replacement }
+    /// 替换文本的换行风格必须继承整个原文件，而不是匹配到的小片段：
+    /// 单行 `old_string` 不含换行，只看片段会返回 nil，多行 `new_string` 的 LF
+    /// 就会原样写进 CRLF 文件，造成同一文件混合换行（#345）。
+    private func adaptReplacementLineEndings(_ replacement: String, inFile content: String) -> String {
+        guard let lineEnding = preferredLineEnding(in: content) else { return replacement }
         return normalizeLineEndings(replacement, to: lineEnding)
     }
 
