@@ -61,6 +61,10 @@ public actor DownloadManager {
     private var taskStates: [String: DownloadTaskState] = [:]
     /// 进度回调
     private var progressHandlers: [String: @Sendable (DownloadProgress) -> Void] = [:]
+    /// 每个 id 当前所属的下载代次。取消后立即以同 id 重启时，旧任务的晚到
+    /// 状态写回与收尾清理据此被作废，不得改写或注销新任务（#157）。
+    private var taskGenerations: [String: Int] = [:]
+    private var generationCounter: Int = 0
 
     // MARK: - Initialization
 
@@ -119,10 +123,16 @@ public actor DownloadManager {
             progressHandlers[task.id] = handler
         }
 
+        // 为本次调用分配代次，作为「同 id 任务实例」的身份。await 期间若被取消并以
+        // 同 id 重启，新调用会覆盖该代次，旧调用据此作废自己的晚到写回与清理。
+        generationCounter &+= 1
+        let generation = generationCounter
+        taskGenerations[task.id] = generation
+
         // 创建下载任务
         let downloadTask = Task { [weak self] in
             guard let self else { return }
-            await self.performDownload(task)
+            await self.performDownload(task, generation: generation)
         }
 
         activeTasks[task.id] = downloadTask
@@ -130,10 +140,17 @@ public actor DownloadManager {
         // 等待任务完成
         await downloadTask.value
 
+        // 本次调用已被同 id 的新任务取代：不得读取或清理新任务的状态与注册，
+        // 否则会把新任务误标为 cancelled 并注销其 activeTasks/progressHandlers。
+        guard taskGenerations[task.id] == generation else {
+            throw DownloadError.cancelled
+        }
+
         // 检查结果
         let finalState = taskStates[task.id] ?? .pending
         activeTasks.removeValue(forKey: task.id)
         progressHandlers.removeValue(forKey: task.id)
+        taskGenerations.removeValue(forKey: task.id)
 
         switch finalState {
         case .completed:
@@ -198,18 +215,18 @@ public actor DownloadManager {
 
     // MARK: - Private Methods
 
-    private func performDownload(_ task: DownloadTask) async {
+    private func performDownload(_ task: DownloadTask, generation: Int) async {
         do {
             // 检查是否已取消
             try Task.checkCancellation()
 
             // 更新状态为下载中
-            updateState(task.id, .downloading(progress: DownloadProgress()))
+            updateState(task.id, generation: generation, .downloading(progress: DownloadProgress()))
 
             // 检查文件是否已完整下载
             if let expectedSize = task.expectedSize,
                fileValidator.isComplete(fileAt: task.destination, expectedSize: expectedSize) {
-                updateState(task.id, .completed)
+                updateState(task.id, generation: generation, .completed)
                 return
             }
 
@@ -261,7 +278,7 @@ public actor DownloadManager {
                     // 跳过覆盖（见下方实现），避免滞后的进度回调把 .cancelled 改回
                     // .downloading，从而让取消后重新下载同 id 被误判为「已在进行中」。
                     Task { [weak self] in
-                        await self?.updateStateAndNotify(taskId, progress)
+                        await self?.updateStateAndNotify(taskId, generation: generation, progress)
                     }
                 },
                 onCancelled: { _ in
@@ -293,17 +310,18 @@ public actor DownloadManager {
             }
 
             // 更新状态为完成
-            updateState(task.id, .completed)
+            updateState(task.id, generation: generation, .completed)
 
         } catch {
             // 用户取消可能以 Swift CancellationError 或 URLError.cancelled(-999) 的形式
             // 从 URLSession 冒出来，两者都必须保持为 .cancelled，不能被改写成未知失败。
+            // 写回前校验代次：取消后以同 id 重启的新任务不得被旧任务的晚到终态覆盖（#157）。
             if Self.isCancellation(error) {
-                updateState(task.id, .cancelled)
+                updateState(task.id, generation: generation, .cancelled)
             } else if let downloadError = error as? DownloadError {
-                updateState(task.id, .failed(downloadError))
+                updateState(task.id, generation: generation, .failed(downloadError))
             } else {
-                updateState(task.id, .failed(.unknown(error.localizedDescription)))
+                updateState(task.id, generation: generation, .failed(.unknown(error.localizedDescription)))
             }
         }
     }
@@ -316,11 +334,15 @@ public actor DownloadManager {
         return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
-    private func updateState(_ taskId: String, _ state: DownloadTaskState) {
+    private func updateState(_ taskId: String, generation: Int, _ state: DownloadTaskState) {
+        // 仅当本次调用仍是该 id 的当前代次时才写回，作废旧任务的晚到终态。
+        guard taskGenerations[taskId] == generation else { return }
         taskStates[taskId] = state
     }
 
-    private func updateStateAndNotify(_ taskId: String, _ progress: DownloadProgress) {
+    private func updateStateAndNotify(_ taskId: String, generation: Int, _ progress: DownloadProgress) {
+        // 旧任务（已被同 id 新任务取代）的滞后进度不得写入新任务的状态。
+        guard taskGenerations[taskId] == generation else { return }
         // 若任务已被取消/失败/完成（终态），不再被滞后的进度回调覆盖回 .downloading。
         // 这是取消（暂停）后能重新下载同一文件的关键：否则残留的 .downloading 状态会让
         // 下一次 download() 的前置检查误抛「任务已在进行中」。
