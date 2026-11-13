@@ -263,3 +263,41 @@ struct SQLiteWithQueryTests {
         await connection.close()
     }
 }
+
+@Suite("Redis read-command routing")
+struct RedisReadCommandRoutingTests {
+    @Test("Redis 只读命令识别为读路径（含 KEYS/TYPE，大小写不敏感）")
+    @MainActor
+    func redisReadCommandsUseQueryPath() {
+        // issue #277 的复现命令：KEYS / TYPE 必须走 query 才能展示真实 RESP 值。
+        let readCommands = [
+            "KEYS *", "TYPE mykey", "EXISTS mykey", "TTL mykey",
+            "HGETALL h", "MGET a b", "ZRANGEBYSCORE z 0 10", "INFO",
+            "keys *", "type mykey", "  GET mykey  ",
+            // 既有读命令不能被改坏。
+            "GET mykey", "SCAN 0", "HGET h f", "LRANGE l 0 -1",
+            "SMEMBERS s", "ZRANGE z 0 -1",
+        ]
+        for command in readCommands {
+            #expect(DatabaseViewModel.isReadStatement(command, type: .redis),
+                    "\(command) 应识别为读路径")
+        }
+    }
+
+    @Test("Redis 写入命令仍走 execute，前缀相近的写命令不被误判为读")
+    @MainActor
+    func redisWriteCommandsUseExecutePath() {
+        let writeCommands = [
+            "SET k v", "DEL k", "HSET h f v", "LPUSH l v", "SADD s v", "ZADD z 1 v",
+            "EXPIRE k 10", "FLUSHDB",
+            // 与读命令共享前缀、但本质是写入：精确匹配后不得再被当成读。
+            "GETSET k v", "GETDEL k", "ZRANGESTORE dst z 0 -1",
+            // 多词命令的写子命令统一交给 execute。
+            "CONFIG SET maxmemory 100mb",
+        ]
+        for command in writeCommands {
+            #expect(!DatabaseViewModel.isReadStatement(command, type: .redis),
+                    "\(command) 应识别为写入路径")
+        }
+    }
+}

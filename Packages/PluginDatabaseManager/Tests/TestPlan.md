@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 75
+测试文件: 4 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Agent/`
@@ -52,6 +52,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **SQLite WITH (CTE)**（2 条）：由 `withQueryUsesReadPath`、`withQueryReturnsRowsEndToEnd` 锁定；改动 SQL 读语句前缀判定（`isReadStatement`）时优先跑对应测试文件，防止只读 CTE 被误路由到 execute 而丢掉结果行。
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
 - **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
+- **Redis read-command routing**（2 条）：由 `redisReadCommandsUseQueryPath`、`redisWriteCommandsUseExecutePath` 锁定；改动 Redis 读命令判定（`isReadStatement` 的 redis 分支）时优先跑对应测试文件，防止 KEYS/TYPE 等只读命令被误路由到 execute 而丢掉 RESP 内容，以及 GETSET/ZRANGESTORE 等写命令被前缀误判为读。
 - **SQLStatementParser**（5 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标。
 
 ## 测试用例清单
@@ -134,27 +135,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 73 | SQLStatementParser | 末尾的单引号不会越界 | 输入以未闭合单引号结尾 | 调用 `split` 与 `stripLiteralsAndComments` | 不崩溃，字面量按原样处理 | P0 | ✅ 已覆盖 | `trailingQuote` |
 | 74 | SQLite WITH (CTE) | WITH 查询识别为读路径，注释前缀与大小写不影响判定 | — | 调用 `isReadStatement` | 只读 CTE（含行/块注释前缀、小写）返回 true；普通 INSERT 返回 false | P1 | ✅ 已覆盖 | `withQueryUsesReadPath` |
 | 75 | SQLite WITH (CTE) | WITH 查询经 query 路径返回真实结果行 | 临时 SQLite 库 | 对 `WITH x AS (SELECT 1 AS n) SELECT n FROM x;` 调用 `isReadStatement` 与 `query` | 判定为读；列为 `["n"]`，行为 `[[1]]` | P1 | ✅ 已覆盖 | `withQueryReturnsRowsEndToEnd` |
+| 76 | Redis read-command routing | Redis 只读命令识别为读路径（含 KEYS/TYPE，大小写不敏感） | — | 对 KEYS/TYPE/EXISTS/TTL/HGETALL/MGET/INFO 及既有 GET/SCAN 等调用 `isReadStatement` | 均返回 true（含小写与首尾空格） | P1 | ✅ 已覆盖 | `redisReadCommandsUseQueryPath` |
+| 77 | Redis read-command routing | Redis 写入命令仍走 execute，前缀相近的写命令不被误判为读 | — | 对 SET/DEL/HSET 及 GETSET/GETDEL/ZRANGESTORE/CONFIG SET 调用 `isReadStatement` | 均返回 false | P1 | ✅ 已覆盖 | `redisWriteCommandsUseExecutePath` |
 
-> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 37 / 37
-- P1: 已覆盖 37 / 37
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 1 / 1
-- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
-- **P1**: 其余功能性用例（37 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 77 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
