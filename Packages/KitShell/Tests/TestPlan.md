@@ -17,6 +17,7 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 - `BackgroundShellHandle` - 交接给后台的存活进程句柄（pid / 进程组 / `terminate()` /
   `waitForExit()`）
 - `ProcessPipeCleanup` - 管道 fd 显式回收
+- `StreamingUTF8Decoder` - 流式文本增量 UTF-8 解码（内部 helper）
 - `KitShellLocalization` - 本地化字符串
 
 ## 公开 API
@@ -90,6 +91,11 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
   **不得**终止进程（ID 57），因为进程已归后台所有。
 - **交接后输出继续流**（ID 53）：交接不关闭管道读端，进程后续输出仍送达
   流式回调；`BackgroundShellHandle.waitForExit()` 能读到真实退出码（ID 52）。
+- **流式文本必须增量解码 UTF-8**（ID 60-69）：多字节字符可能被拆到两个 `Data` chunk。
+  逐 chunk 用 `String(data:encoding:.utf8)` 会对不完整的半段返回 nil，从而在实时回调里
+  **静默丢字**（聚合结果却正常，难排查）。`StreamingUTF8Decoder` 保留不完整的尾部字节、
+  与下一 chunk 拼接，只输出完整标量；非法字节替换为 U+FFFD 以免卡死；EOF 时 `flush()`
+  处理残留。字节回调与聚合缓冲不受影响。
 
 ## 测试用例清单
 
@@ -154,8 +160,18 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 | 57 | 后台交接 | 交接之后取消前台任务不会终止后台进程 | 已完成交接 | 取消前台任务 | 后台进程仍在运行 | P0 | ✅ 已覆盖 | `testCancellationAfterHandoffKeepsProcessAlive` |
 | 58 | 后台交接 | 显式后台模式在进程启动后立即交接 | `handsOffImmediately = true` | 执行长命令 | 返回 `.backgrounded`，句柄 pid 仍存活 | P0 | ✅ 已覆盖 | `testImmediateHandoffReturnsHandleRightAway` |
 | 59 | 后台交接 | 显式后台模式不设前台预算：命令再久也立刻返回 | `handsOffImmediately = true` | 执行 `sleep 30` | 远早于命令结束就返回 | P0 | ✅ 已覆盖 | `testImmediateHandoffDoesNotWaitForBudget` |
+| 60 | 流式 UTF-8 | 流式回调不得丢弃跨 chunk 拆分的多字节字符（emoji） | 子进程分两次写 😀 的 UTF-8 字节（中间 sleep） | executeStreaming 收集 onOutput 文本 | 实时文本与聚合 stdout 都含 😀 | P0 | ✅ 已覆盖 | `streamingPreservesMultibyteCharSplitAcrossChunks` |
+| 61 | 流式 UTF-8 | 流式 stderr 回调不得丢弃跨 chunk 拆分的多字节字符 | 子进程分两次向 stderr 写 😀 字节 | executeStreaming 收集 onError 文本 | 实时 stderr 与聚合 stderr 都含 😀 | P0 | ✅ 已覆盖 | `streamingPreservesSplitMultibyteOnStderr` |
+| 62 | 流式 UTF-8 | 流式回调不得丢弃跨 chunk 拆分的三字节字符（中文） | 子进程分两次写「中」的 UTF-8 字节 | executeStreaming 收集 onOutput 文本 | 实时文本与聚合 stdout 都含「中」 | P0 | ✅ 已覆盖 | `streamingPreservesSplitChineseCharacter` |
+| 63 | UTF-8 解码 | 解码器必须拼接跨 chunk 的四字节序列 | 先喂 F0，再喂 9F 98 80 | decode 两次 | 第一次 nil，第二次解出 😀 | P0 | ✅ 已覆盖 | `decoderJoinsFourByteSequenceSplitAcrossChunks` |
+| 64 | UTF-8 解码 | 解码器必须拼接跨 chunk 的三字节序列 | 先喂 E4，再喂 B8 AD | decode 两次 | 第一次 nil，第二次解出「中」 | P0 | ✅ 已覆盖 | `decoderJoinsThreeByteSequenceSplitAcrossChunks` |
+| 65 | UTF-8 解码 | 解码器立即输出 ASCII | 喂入纯 ASCII | decode | 立即返回原文本 | P1 | ✅ 已覆盖 | `decoderEmitsAsciiImmediately` |
+| 66 | UTF-8 解码 | 解码器在 EOF 把不完整的尾部替换为 U+FFFD | 喂入不完整 lead 字节后 flush | decode + flush | flush 返回 U+FFFD，残留被消费 | P1 | ✅ 已覆盖 | `decoderFlushReplacesIncompleteTailAtEOF` |
+| 67 | UTF-8 解码 | 解码器遇到非法字节不得卡死，后续合法输入仍能解出 | 喂入非法字节 FF 与合法 A | decode 后再喂合法串 | 非法字节替换为 U+FFFD，后续正常解出 | P0 | ✅ 已覆盖 | `decoderDoesNotStallOnInvalidBytes` |
+| 68 | UTF-8 解码 | 解码器逐字节喂入多字符仍拼出完整文本 | 把「😀ok」逐字节 decode | 循环 decode + flush | 拼接结果 == 😀ok | P1 | ✅ 已覆盖 | `decoderHandlesManyChunksAndMultipleCharacters` |
+| 69 | UTF-8 解码 | 解码器保留拆分字符前的 ASCII 前缀，只缓冲不完整尾部 | 喂 a+F0，再喂 9F 98 80+b | decode 两次 | 第一次「a」，第二次「😀b」 | P1 | ✅ 已覆盖 | `decoderPreservesAsciiAroundSplitCharacter` |
 
-> 说明：全部 **59 条场景**（6 个 suite + 53 个自由函数用例）已在 macOS 上实跑通过。
+> 说明：全部 **69 条场景**（7 个 suite）已在 macOS 上实跑通过。
 >
 > 本套件的价值集中在**故障复现而非功能断言**，三条易错约定已在用例里显式锁定：
 > - **管道 fd 泄漏的真实形态是「同 pool 内同步反复创建」**（ID 46）：不显式关闭时，
@@ -175,17 +191,18 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 
 ## 覆盖率统计
 
-- P0: 已覆盖 31 / 31
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 37 / 37
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 9 / 9
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 69 / 69**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 输出与退出码正确性、环境 PATH 保留、异常与非法可执行、超时语义（含
-  `throwsOnError` 交互）、进程树终止、输出上限与截断边界、fd 泄漏根因与端到端验证
+  `throwsOnError` 交互）、进程树终止、输出上限与截断边界、fd 泄漏根因与端到端验证、
+  流式 UTF-8 跨 chunk 不丢字
 - **P1**: 管道/多级管道、shell 选择、工作目录与相对路径、自定义环境、流式回调、
-  取消时序、`findCommand`
+  取消时序、`findCommand`、UTF-8 解码器边界
 - **P2**: 空追加边界、`duration` 记录、shell 别名、五个错误描述的文案
 
 ## 跨平台说明

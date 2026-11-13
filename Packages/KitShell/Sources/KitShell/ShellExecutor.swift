@@ -209,6 +209,8 @@ public enum ShellExecutor {
         let startedAt = Date()
         let stdoutBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
         let stderrBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+        let stdoutDecoder = StreamingUTF8Decoder()
+        let stderrDecoder = StreamingUTF8Decoder()
 
         let result = try await runProcess(
             executable: executable,
@@ -217,18 +219,26 @@ public enum ShellExecutor {
             stdoutHandler: { data in
                 onOutputData(data)
                 stdoutBuffer.append(data)
-                if let text = String(data: data, encoding: .utf8) {
+                if let text = stdoutDecoder.decode(data) {
                     onOutput(text)
                 }
             },
             stderrHandler: { data in
                 onErrorData(data)
                 stderrBuffer.append(data)
-                if let text = String(data: data, encoding: .utf8) {
+                if let text = stderrDecoder.decode(data) {
                     onError(text)
                 }
             }
         )
+        // EOF: the process exited and both pipes were drained. Flush any
+        // incomplete trailing bytes so the live text matches the aggregate.
+        if let text = stdoutDecoder.flush() {
+            onOutput(text)
+        }
+        if let text = stderrDecoder.flush() {
+            onError(text)
+        }
         let command = commandDescription(executable: executable, arguments: arguments)
         if result.timedOut {
             throw ShellError.timeout(command: command, seconds: options.timeout ?? 0)
@@ -318,6 +328,8 @@ public enum ShellExecutor {
         let startedAt = Date()
         let stdoutBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
         let stderrBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+        let stdoutDecoder = StreamingUTF8Decoder()
+        let stderrDecoder = StreamingUTF8Decoder()
 
         let result = try await runProcess(
             executable: executable,
@@ -326,14 +338,14 @@ public enum ShellExecutor {
             stdoutHandler: { data in
                 onOutputData(data)
                 stdoutBuffer.append(data)
-                if let text = String(data: data, encoding: .utf8) {
+                if let text = stdoutDecoder.decode(data) {
                     onOutput(text)
                 }
             },
             stderrHandler: { data in
                 onErrorData(data)
                 stderrBuffer.append(data)
-                if let text = String(data: data, encoding: .utf8) {
+                if let text = stderrDecoder.decode(data) {
                     onError(text)
                 }
             },
@@ -344,6 +356,15 @@ public enum ShellExecutor {
         // and now belongs to the caller.
         if let handle = result.backgroundHandle {
             return .backgrounded(handle)
+        }
+
+        // Completed path: the process exited and pipes were drained. Flush
+        // residue. The backgrounded path keeps streaming, so it is not flushed.
+        if let text = stdoutDecoder.flush() {
+            onOutput(text)
+        }
+        if let text = stderrDecoder.flush() {
+            onError(text)
         }
 
         let command = commandDescription(executable: executable, arguments: arguments)
