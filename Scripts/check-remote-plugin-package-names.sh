@@ -37,6 +37,7 @@ EXPECTED_PACKAGE_PAIRS=(
   "LumiPluginCommand:LumiPluginCommand"
   "LumiPluginIdleTime:LumiPluginIdleTime"
   "LumiPluginHydrationReminder:LumiPluginHydrationReminder"
+  "LumiPluginLogos:LumiPluginLogos"
   "LumiPluginPluginManager:LumiPluginPluginManager"
   "LumiPluginSettingView:LumiPluginSettingView"
   "LumiPluginStorage:LumiPluginStorage"
