@@ -5,7 +5,7 @@
 BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a developer tool view for inspecting installed packages, checking updates, searching packages, and running install, uninstall, or upgrade actions through BrewKit.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 7
+测试文件: 2 个，用例总数: 19
 
 核心组件（源码目录）:
 - `Models/`
@@ -31,7 +31,8 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（7 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`decodesHomebrewFormulaAndCaskInstalledValues` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（19 条）：由 `pluginMetadataIsStable`、`decodesHomebrewFormulaAndCaskInstalledValues`、`decodesCaskInstalledStringIntoVersion` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Cask 安装版本**（#212）：Homebrew cask 的 `installed` 是版本字符串（formula 是数组），解码须归一化为 `[InstalledVersion]`，不得丢弃；`listInstalled`/`getOutdated`/`getInfo` 不得用最新 `version` 冒充安装版本，且须保留 `outdated` 标记。
 
 ## 测试用例清单
 
@@ -44,27 +45,39 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 | 5 | 综合 | activatingPluginHidesChatSectionAndDeactivatingRestoresIt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` |
 | 6 | 综合 | clearingSearchIgnoresInFlightResults | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearingSearchIgnoresInFlightResults` |
 | 7 | 综合 | editingSearchTextAfterSubmitStopsLoadingWhenStaleResultReturns | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `editingSearchTextAfterSubmitStopsLoadingWhenStaleResultReturns` |
+| 8 | 综合 | BrewError 各 case 携带命令详情文案 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `brewErrorDescriptionsCarryCommandDetail` |
+| 9 | 综合 | 安装失败时向用户展示命令错误详情 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installFailureShowsCommandDetailToUser` |
+| 10 | 综合 | 安装成功后同步搜索结果的安装状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installSuccessReconcilesSearchResults` |
+| 11 | 综合 | 卸载成功后同步搜索结果的安装状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `uninstallSuccessReconcilesSearchResults` |
+| 12 | 综合 | cask 的字符串 installed 必须解码为安装版本，不得丢失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `decodesCaskInstalledStringIntoVersion` |
+| 13 | 综合 | cask 的 installed 为 null 时解码为未安装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesCaskInstalledNullAsNotInstalled` |
+| 14 | 综合 | formula 的数组 installed 解码保持不变（无回归） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesFormulaInstalledArrayUnchanged` |
+| 15 | 综合 | getInfo(cask) 必须保留真实安装版本与 outdated 状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `getInfoCaskPreservesInstalledVersionAndOutdated` |
+| 16 | 综合 | getInfo(cask) 未安装时安装版本为 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getInfoCaskNotInstalledShowsNil` |
+| 17 | 综合 | listInstalled 的 cask 不得把最新版本当作安装版本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listInstalledCaskUsesRealInstalledVersionNotLatest` |
+| 18 | 综合 | getOutdated 的 cask 保留真实安装版本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getOutdatedCaskPreservesInstalledVersion` |
+| 19 | 综合 | getInfo(formula) 保留 outdated 标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getInfoFormulaPreservesOutdatedFlag` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 2 / 2
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

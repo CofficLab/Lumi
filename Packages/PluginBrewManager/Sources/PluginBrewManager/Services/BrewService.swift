@@ -113,8 +113,8 @@ public actor BrewService {
                 desc: c.desc,
                 homepage: c.homepage,
                 version: version,
-                installedVersion: version,
-                outdated: false,
+                installedVersion: c.installed?.first?.version,
+                outdated: c.outdated ?? false,
                 isCask: true
             ))
         }
@@ -149,7 +149,7 @@ public actor BrewService {
                 desc: c.desc,
                 homepage: c.homepage,
                 version: c.version ?? "unknown",
-                installedVersion: nil,
+                installedVersion: c.installed?.first?.version,
                 outdated: true,
                 isCask: true
             ))
@@ -193,8 +193,8 @@ public actor BrewService {
                     desc: c.desc,
                     homepage: c.homepage,
                     version: c.version ?? "unknown",
-                    installedVersion: nil,
-                    outdated: false,
+                    installedVersion: c.installed?.first?.version,
+                    outdated: c.outdated ?? false,
                     isCask: true
                 ))
             }
@@ -206,7 +206,7 @@ public actor BrewService {
                     homepage: f.homepage,
                     version: f.versions?.stable ?? "unknown",
                     installedVersion: f.installed?.first?.version,
-                    outdated: false,
+                    outdated: f.outdated ?? false,
                     isCask: false
                 ))
             }
