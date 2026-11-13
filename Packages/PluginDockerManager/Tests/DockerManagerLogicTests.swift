@@ -216,12 +216,13 @@ struct DockerModelTests {
     @Test("历史记录的 Size 为数字时转成可读字符串")
     func decodesHistoryWithNumericSize() throws {
         let json = """
-        {"Created":1700000000,"CreatedBy":"RUN apt-get","Size":1048576,"Comment":"c"}
+        {"CreatedAt":"2026-01-01 00:00:00 +0000 UTC","CreatedSince":"2 months ago","CreatedBy":"RUN apt-get","Size":1048576,"Comment":"c"}
         """
 
         let decoded = try JSONDecoder().decode(DockerImageHistory.self, from: Data(json.utf8))
 
-        #expect(decoded.Created == 1_700_000_000)
+        #expect(decoded.CreatedAt == "2026-01-01 00:00:00 +0000 UTC")
+        #expect(decoded.CreatedSince == "2 months ago")
         #expect(decoded.CreatedBy == "RUN apt-get")
         #expect(decoded.Size.isEmpty == false)
         #expect(decoded.Comment == "c")
@@ -230,7 +231,7 @@ struct DockerModelTests {
     @Test("历史记录的 Size 为字符串时原样保留")
     func decodesHistoryWithStringSize() throws {
         let json = """
-        {"Created":1,"CreatedBy":"RUN","Size":"1 MB","Comment":"c"}
+        {"CreatedAt":"2026-01-01","CreatedSince":"1 day ago","CreatedBy":"RUN","Size":"1 MB","Comment":"c"}
         """
 
         let decoded = try JSONDecoder().decode(DockerImageHistory.self, from: Data(json.utf8))
