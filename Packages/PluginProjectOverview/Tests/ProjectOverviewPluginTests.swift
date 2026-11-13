@@ -163,6 +163,59 @@ struct PluginProjectOverviewTests {
         #expect(!result.contains("Not a Git repository."))
     }
 
+    /// 回归 #368：仓库可被发现（rev-parse 成功）但 git status 读取失败时，
+    /// runGit 返回 nil，旧逻辑 `(statusPorcelain ?? "").isEmpty` 把失败当成空输出，
+    /// 误报 "Status: Clean"。读取失败必须与「成功且输出为空」区分。
+    @Test("GitSection does not report Clean when git status fails")
+    func gitStatusFailureIsNotReportedAsClean() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_git_status_fail_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["init", "-q", root.path]
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        // 写坏索引：rev-parse --is-inside-work-tree 仍成功，但 status --porcelain 退出 128。
+        try Data("GARBAGE".utf8).write(to: root.appendingPathComponent(".git/index"))
+
+        let result = await GitSection.render(at: root)
+
+        #expect(result.contains("Repository: Yes"))
+        #expect(!result.contains("Status: Clean"), "git status 失败不得误报 Clean（#368）")
+        #expect(result.contains("Unable to read Git status"))
+    }
+
+    /// 回归 #368：git status 成功且输出为空（真正干净）时仍须报 Clean，
+    /// 防止区分「读取失败」与「干净」后误伤正常干净仓库。
+    @Test("GitSection still reports Clean for a genuinely clean repo")
+    func cleanRepoStillReportsClean() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_git_clean_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["init", "-q", root.path]
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        let result = await GitSection.render(at: root)
+
+        #expect(result.contains("Repository: Yes"))
+        #expect(result.contains("Status: Clean"))
+    }
+
     /// 回归 #979：2,000 字节读取块恰好结束在完整 UTF-8 字符边界时，`text.count`
     /// 与 `preview.count` 都是 500，旧逻辑因此漏掉省略标记。
     @Test("README preview marks content beyond the byte cap")

@@ -5,7 +5,7 @@
 PluginProjectOverview 项目概览插件。 提供 Agent 工具，返回项目类型、顶层结构、Git 信息、清单文件、README 预览和关键文件。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 16
+测试文件: 2 个，用例总数: 20
 
 核心组件（源码目录）:
 - `Sections/`
@@ -29,6 +29,8 @@ PluginProjectOverview 项目概览插件。 提供 Agent 工具，返回项目�
 
 - **ProjectOverviewPlugin**（13 条）：由 `pluginMetadata`、`pluginRegistersTool`、`promptSuggestionRequiresProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectOverviewConversationScope**（3 条）：由 `usesConversationProject`、`explicitPathWins`、`missingPathThrows` 锁定；工具必须按调用所属会话的项目读取，显式 path 优先；路径不存在必须抛出。
+- **Git 调用不阻塞**（2 条）：由 `nonGitDirectoryReturnsPromptly`、`gitCallDoesNotBlockCooperatives` 锁定（**回归 #1288**）：`GitSection` 的 git 调用全部走 async/await 且带超时上界，不用信号量阻塞协作线程；协作线程池占满时仍须在有限时间内返回。改动 `GitSection.runGit`/`render` 的调度或超时时优先跑对应用例。
+- **Git 状态读取**（2 条）：由 `gitStatusFailureIsNotReportedAsClean`、`cleanRepoStillReportsClean` 锁定（**回归 #368**）：`GitSection.render` 必须区分 `git status` 读取失败（runGit 返回 nil）与成功且输出为空——只有后者才报 `Status: Clean`，失败报 `Status: Unable to read Git status.`；正常干净仓库仍报 Clean。改动 `GitSection` 状态判定逻辑时优先跑对应用例。
 
 ## 测试用例清单
 
@@ -50,27 +52,31 @@ PluginProjectOverview 项目概览插件。 提供 Agent 工具，返回项目�
 | 14 | ProjectOverviewPlugin | 仓库子目录也能被发现所属工作树（**回归 #978**） | 临时目录 `git init`，传入其 `Sources/` 子目录（子目录内无 `.git`），并放一个未跟踪文件 | 调用 `GitSection.render(at:)` | 返回 `Repository: Yes` 与 `Status: Uncommitted changes`，不再返回 `Not a Git repository.` | P1 | ✅ 已覆盖 | `gitSectionDetectsEnclosingWorktree` |
 | 15 | ProjectOverviewPlugin | README 超过 2,000 字节上限时附加省略标记（**回归 #979**） | README 为 501 个 `😀`（4 字节/字符），2,000 字节读取块恰好落在完整字符边界 | 调用 `ReadmePreviewSection.render(at:)` | 预览为 500 个字符且以 `\n...` 结尾，不再把被截断内容表现为完整预览 | P1 | ✅ 已覆盖 | `readmePreviewMarksContentBeyondByteCap` |
 | 16 | ProjectOverviewPlugin | KeyFilesSection 与 README 预览共用候选集，识别 README.markdown（**回归 #479**） | 项目仅含 `README.markdown`（有效文本） | 调用 `KeyFilesSection.render` 与 `ReadmePreviewSection.render` | 关键文件显示 `README: README.markdown`（非 None），预览返回同一文件内容 | P1 | ✅ 已覆盖 | `keyFilesDetectsReadmeMarkdown` |
+| 17 | Git 调用不阻塞 | 非 Git 目录快速返回提示且耗时有界（**回归 #1288**） | 临时非 Git 目录 | 调用 `GitSection.render(at:)` 并计时 | 返回 `Not a Git repository.`，耗时 < 15s | P1 | ✅ 已覆盖 | `nonGitDirectoryReturnsPromptly` |
+| 18 | Git 调用不阻塞 | 协作线程池占满时 git 调用仍有界返回，不占用协作线程（**回归 #1288**） | 16 个 detached 任务占满协作池 | 调用 `GitSection.render(at:)` 并计时 | 返回 `Not a Git repository.`，耗时 < 15s | P1 | ✅ 已覆盖 | `gitCallDoesNotBlockCooperatives` |
+| 19 | Git 状态读取 | git status 读取失败时不得误报 Clean，必须区分失败与空输出（**回归 #368**） | 临时仓库 `git init` 后写坏 `.git/index`（rev-parse 成功、status 退出 128） | 调用 `GitSection.render(at:)` | 含 `Repository: Yes`，不含 `Status: Clean`，含 `Unable to read Git status` | P0 | ✅ 已覆盖 | `gitStatusFailureIsNotReportedAsClean` |
+| 20 | Git 状态读取 | git status 成功且输出为空时仍报 Clean（**回归 #368**） | 临时仓库 `git init`，无改动 | 调用 `GitSection.render(at:)` | 含 `Repository: Yes` 与 `Status: Clean` | P1 | ✅ 已覆盖 | `cleanRepoStillReportsClean` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 1 / 1
+- P1: 已覆盖 18 / 18
 - P2: 已覆盖 1 / 1
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
