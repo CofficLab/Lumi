@@ -5,7 +5,7 @@
 FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核、全部 Provider 默认实现、 100+ 插件与视图组装集中在一个包中完成接线，是 Lumi 主应用启动的唯一入口。 ## 职责 FactoryLumi 不包含业务逻辑，只负责**把正确的事情在正确的时机做对**： | 职责 | 实现 | 说明 | | --- | --- | --- | | 内核创建 | `KernelFactory` | 创建 `KernelCoreContainer`，装配 Provider，启动插件 | | Provider 工厂 | `DefaultProviderFactory` | 产出 30+ 个 Provider 默认实现并按依赖顺序注册 | | Plugin 工厂 | `DefaultPluginFactory` | 产出 100+ 个插件，统一校验、排序、原子启动 | | View 工厂 | `DefaultViewFactory` | 用内核 Provider 组装主视图与设置视图 | | 菜单集成 | `AppCommands` | 把 `CommandProviding` 贡献映射到 macOS 系统菜单 | | 主题桥接 | `PaletteChromeTheme` | 把新版 `LumiThemePalette` 适配回 LumiUI 旧版 chrome 主题 | ## 三大工厂协议 ```swift /// 产出全部插件。宿主可实现该协议覆盖插件列表。 protocol PluginFactory {
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 65
+测试文件: 15 个，用例总数: 80
 
 核心组件（源码目录）:
 - `Contracts/`
@@ -33,7 +33,10 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 - **综合**（37 条）：由 `defaultFactoryIncludesEditorPluginStack`、`defaultFactoryIncludesMailPlugin`、`selectedPluginFactoryFiltersTheCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **IdleTimeProvider**（1 条）：由 `makeIdleTimeProviderReturnsFullService` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **KernelFactoryInfrastructure**（4 条）：由 `startsAsyncPlugins`、`migratesPluginDataBeforeBoot`、`migrationFailureDoesNotBlockStartup` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListSlotArbitration**（2 条）：由 `persistedConversationDoesNotRenderEmptyState`、`emptyStateDoesNotClaimSlotWhileEvaluationPending` 等用例锁定。
+- **MessageListSlotArbitration**（9 条）：由 `persistedConversationDoesNotRenderEmptyState`、`emptyStateDoesNotClaimSlotWhileEvaluationPending`、`onlyOneMessageListItemIsActiveAcrossV1ToV6` 等用例锁定。
+- **ChatGPTMessageListEndToEnd**（4 条）：V5 ChatGPT 消息列表的槽位接管、落库消息链路与呈现风格。
+- **FactoryLumiMenuBarPopupOrder**（1 条）：防休眠弹窗在菜单栏弹出菜单中的排序。
+- **MessageRendererDirectoryConformance**（3 条）：渲染器目录位置、扫描发现与文件名约定审计。
 - **FactoryLumi**（2 条）：由 `defaultFactoryIncludesHydrationReminder`、`defaultFactoryIncludesLLMProviderToolPlugin` 锁定。
 - **PluginFinder / PluginFinderEndToEnd / PluginFinderToggle**（5 条）：卡片的装配、端到端渲染与启停撤回。
 - **PluginHTMLCanvas / PluginHTMLCanvasEndToEnd**（5 条）：HTML 画布工具与渲染器的装配、端到端渲染与停用。
@@ -109,27 +112,42 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 | 63 | SettingsLayoutConformance | 设置入口详情页统一使用原生 GroupBox 卡片体系 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settingsPagesUseNativeGroupBoxCards` |
 | 64 | SettingsLayoutConformance | 仓库里每个注册到设置窗口的入口都被审计表覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyRegisteredEntryIsAudited` |
 | 65 | KernelFactoryInfrastructure | 插件数据迁移失败不阻断内核启动 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `migrationFailureDoesNotBlockStartup` |
+| 66 | MessageListSlotArbitration | V1–V6 往返时 active 的 message-list item 至多一个 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `onlyOneMessageListItemIsActiveAcrossV1ToV6` |
+| 67 | MessageListSlotArbitration | 选择 ZCode V4 时槽位属于 V4 插件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `zcodeVerbosityActivatesZCodePlugin` |
+| 68 | MessageListSlotArbitration | V4 shutdown 后移除 ChatSection item | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `zcodeShutdownRemovesChatSectionItem` |
+| 69 | MessageListSlotArbitration | 选择 ChatGPT V5 时槽位属于 V5 插件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTVerbosityActivatesChatGPTPlugin` |
+| 70 | MessageListSlotArbitration | V5 shutdown 后移除 ChatSection item | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTShutdownRemovesChatSectionItem` |
+| 71 | MessageListSlotArbitration | 选择无消息头 V6 时槽位属于 V6 插件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `standardNoHeaderVerbosityActivatesV6Plugin` |
+| 72 | MessageListSlotArbitration | V6 shutdown 后移除 ChatSection item | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `standardNoHeaderShutdownRemovesChatSectionItem` |
+| 73 | ChatGPTMessageListEndToEnd | V5 槽位在 chatGPT 详细度下接管消息列表 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTSlotTakesOverWhenVerbosityIsChatGPT` |
+| 74 | ChatGPTMessageListEndToEnd | V5 的消息链路把落库消息交给渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTFeedsPersistedMessagesToRenderer` |
+| 75 | ChatGPTMessageListEndToEnd | V5 渲染器对用户消息与助手消息分别给出 ChatGPT 呈现 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTRendersUserAndAssistantWithChatGPTStyle` |
+| 76 | ChatGPTMessageListEndToEnd | V5 详细度之外不接管槽位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatGPTDoesNotTakeOverOtherVerbosities` |
+| 77 | FactoryLumiMenuBarPopupOrder | 防休眠弹窗排在弹出菜单最前 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `caffeinatePopupComesFirst` |
+| 78 | MessageRendererDirectoryConformance | 渲染器实现必须放在 Renderers/ 目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `renderersLiveInRenderersDirectory` |
+| 79 | MessageRendererDirectoryConformance | 扫描能发现已知的渲染器文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scannerFindsKnownRenderers` |
+| 80 | MessageRendererDirectoryConformance | 渲染器文件名与主类型名一致 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `rendererFileNameMatchesTypeName` |
 
-> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 38 / 38
-- P2: 已覆盖 25 / 25
-- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 50 / 50
+- P2: 已覆盖 26 / 26
+- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（38 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（50 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
