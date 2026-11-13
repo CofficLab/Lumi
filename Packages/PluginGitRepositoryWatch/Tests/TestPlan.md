@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 32 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 32
+测试文件: 3 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Providers/`
@@ -29,10 +29,12 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 - **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
 - **Git仓库监听Provider**（9 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
 - **HEAD符号引用**（5 条）：由 `snapshotDistinguishesBranchesAtSameCommit`、`broadcastsHeadChangedOnBranchSwitchAtSameCommit`、`readHeadRefReturnsSymbolicTarget` 等用例锁定。
+- **LinkedWorktree**（8 条）：由 `headResolvesFromCommonDir`、`commitInCommonDirChangesHead`、`refsFingerprintTracksCommonRefs` 等用例锁定。
 - **订阅令牌生命周期**：Provider 弱引用持有订阅令牌，释放令牌即注销（下次广播清理失效注册）；面板销毁后不得残留回调（#921）。
 - **仓库根向上发现**：项目路径位于仓库子目录时，解析器须与 git 一致向上查找最近的 `.git`；遇到存在但格式非法的 `.git` 立即报错，不越过该仓库边界（#913）。
 - **进程内工作区写入**：工作区 FSEventStream 不得设置 `IgnoreSelf`；内置编辑器保存、Agent 工具写文件都在同一进程内，过滤自身事件会让已打开的 Changes 停在旧状态（#911）。
 - **HEAD 符号引用**：快照须保留 HEAD 的符号引用（`headRef`），不能只比解析后的 commit hash；同 commit 切换分支时 hash/index/refs 均不变，唯有符号引用变化，须据此广播 `.headChanged` 刷新工具栏（#213）。
+- **Linked worktree common dir**：linked worktree 的分支 ref / packed-refs / 共享 refs（含 stash）都在 common dir；解析器须读取 `commondir`（相对或绝对）并据此解析 HEAD hash 与 refs/stash 指纹，普通仓库无 commondir 时 common dir 即自身。否则 worktree 内 HEAD 恒为 nil，提交/切换分支无法触发 headChanged/refsChanged（#156）。
 
 ## 测试用例清单
 
@@ -70,27 +72,35 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 | 30 | HEAD符号引用 | 符号 HEAD 返回 ref 目标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readHeadRefReturnsSymbolicTarget` |
 | 31 | HEAD符号引用 | detached HEAD 返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readHeadRefIsNilForDetachedHead` |
 | 32 | HEAD符号引用 | HEAD 缺失时符号引用为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `readHeadRefIsNilWhenHeadMissing` |
+| 33 | LinkedWorktree | linked worktree 的 HEAD 从 common dir 解析分支 hash（回归 #156） | worktree-private 含 HEAD+commondir，分支 ref 在 common dir | 读取 private dir 快照 | head 为 common dir 的分支 hash，非 nil | P0 | ✅ 已覆盖 | `headResolvesFromCommonDir` |
+| 34 | LinkedWorktree | linked worktree 提交后 HEAD hash 变化（回归 #156） | 同上 | common dir 分支 ref 前进后重读快照 | head 变化且快照不相等 | P0 | ✅ 已覆盖 | `commitInCommonDirChangesHead` |
+| 35 | LinkedWorktree | linked worktree 的 refs 指纹跟踪 common dir（回归 #156） | 同上 | common dir 新增分支后重读快照 | refs 指纹非 nil 且变化 | P0 | ✅ 已覆盖 | `refsFingerprintTracksCommonRefs` |
+| 36 | LinkedWorktree | linked worktree 的 stash 从 common dir 读取（回归 #156） | refs/stash 在 common dir | 读取 private dir 快照 | stash 非 nil | P1 | ✅ 已覆盖 | `stashResolvesFromCommonDir` |
+| 37 | LinkedWorktree | linked worktree 提交触发 headChanged（回归 #156） | 真实 worktree 布局，Provider 已启动监听 | common dir 分支前进 + private index 改写 | 防抖后收到 `.headChanged` | P0 | ✅ 已覆盖 | `commitBroadcastsHeadChanged` |
+| 38 | LinkedWorktree | 普通仓库没有 commondir，common dir 即自身 | 无 commondir 文件 | 调用 commonDirectory | 返回自身 | P1 | ✅ 已覆盖 | `normalRepoCommonDirIsSelf` |
+| 39 | LinkedWorktree | 相对 commondir 相对 private dir 解析 | commondir 为 ../.. | 调用 commonDirectory | 解析到 common dir | P1 | ✅ 已覆盖 | `relativeCommonDirResolves` |
+| 40 | LinkedWorktree | 绝对 commondir 原样解析 | commondir 为绝对路径 | 调用 commonDirectory | 解析到该绝对路径 | P2 | ✅ 已覆盖 | `absoluteCommonDirResolves` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 5 / 5
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 28 / 28
+- P2: 已覆盖 6 / 6
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（28 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
