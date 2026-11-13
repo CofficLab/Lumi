@@ -5,6 +5,7 @@ import LumiUI
 public struct LauncherView: View {
     @ObservedObject private var searchModel: LauncherSearchModel
     @ObservedObject private var appSearch: AppSearchService
+    @ObservedObject private var hotkeyManager: GlobalHotkeyManager
     private let fileSearch: FileSearchService
 
     @FocusState private var isInputFocused: Bool
@@ -12,11 +13,13 @@ public struct LauncherView: View {
     init(
         searchModel: LauncherSearchModel,
         appSearch: AppSearchService,
-        fileSearch: FileSearchService
+        fileSearch: FileSearchService,
+        hotkeyManager: GlobalHotkeyManager
     ) {
         self.searchModel = searchModel
         self.appSearch = appSearch
         self.fileSearch = fileSearch
+        self.hotkeyManager = hotkeyManager
     }
 
     public var body: some View {
@@ -75,6 +78,12 @@ public struct LauncherView: View {
         !searchModel.results.isEmpty && fileSearch.isSearching
     }
 
+    /// 顶部热键提示：读取当前生效的组合，设置页改键后随 @Published 实时刷新，
+    /// 不再硬编码 ⌥Space（#302）。
+    var hotkeyHint: String {
+        hotkeyManager.currentCombo.displayString
+    }
+
     // MARK: - Search Header
 
     private var searchHeader: some View {
@@ -105,7 +114,7 @@ public struct LauncherView: View {
                 }
             )
 
-            Text(verbatim: "⌥Space")
+            Text(verbatim: hotkeyHint)
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 6)

@@ -476,4 +476,48 @@ struct QuickLauncherTests {
         #expect(hit.name == "Terminal")
         #expect(hit.bundleIdentifier == "com.apple.Terminal")
     }
+
+    // MARK: - 回归 #302：热键提示必须反映当前配置，不得硬编码 ⌥Space
+
+    /// 用独立的 UserDefaults suite 构造热键管理器，避免污染标准 defaults / 真实热键。
+    private func makeHotkeyManager() -> (GlobalHotkeyManager, UserDefaults, String) {
+        let suite = "lumi-302-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return (GlobalHotkeyManager(defaults: defaults), defaults, suite)
+    }
+
+    private func makeLauncherView(hotkeyManager: GlobalHotkeyManager) -> LauncherView {
+        LauncherView(
+            searchModel: LauncherSearchModel.shared,
+            appSearch: AppSearchService.shared,
+            fileSearch: FileSearchService.shared,
+            hotkeyManager: hotkeyManager
+        )
+    }
+
+    @Test func hotkeyHintReflectsConfiguredCombo() {
+        let (manager, defaults, suite) = makeHotkeyManager()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let view = makeLauncherView(hotkeyManager: manager)
+
+        // 默认组合提示为 ⌥Space。
+        #expect(view.hotkeyHint == "⌥Space")
+
+        // 改成 ⌃Space 后，提示必须随之变化，而非停留在硬编码 ⌥Space。
+        manager.updateCombo(HotkeyCombo(keyCode: UInt32(kVK_Space), modifiers: UInt32(controlKey)))
+        #expect(view.hotkeyHint == "⌃Space", "热键提示必须反映用户配置的组合（#302）")
+    }
+
+    @Test func hotkeyHintTracksComboAcrossChanges() {
+        let (manager, defaults, suite) = makeHotkeyManager()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let view = makeLauncherView(hotkeyManager: manager)
+
+        manager.updateCombo(HotkeyCombo(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey | shiftKey)))
+        #expect(view.hotkeyHint == "⇧⌘Space")
+
+        // 恢复默认后提示回到 ⌥Space，证明提示始终跟随当前生效组合。
+        manager.resetToDefault()
+        #expect(view.hotkeyHint == "⌥Space")
+    }
 }
