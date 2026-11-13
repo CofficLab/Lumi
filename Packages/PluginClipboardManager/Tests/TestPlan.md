@@ -5,7 +5,7 @@
 ClipboardManagerPlugin Manage clipboard history and snippets
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 80
+测试文件: 5 个，用例总数: 82
 
 核心组件（源码目录）:
 - `Models/`
@@ -41,6 +41,7 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 - **剪贴板搜索**（7 条）：由 `filterMatchesSearchKeywords`、`debouncedSearchProducesCorrectResults`、`clearingSearchRestoresAllItems` 等用例锁定（见 #1192）：过滤按关键词匹配、空词返回全部、关键词小写且有长度上界、防抖后台扫描最终结果正确、清空搜索词立即恢复全部。改动 `ClipboardManagerViewModel.filter`/`scheduleFilter` 或 `ClipboardItem.searchKeywords` 时优先跑对应测试文件。
 - **剪贴板监控生命周期**（4 条）：由 `stoppingMonitoringInvalidatesInFlightWork`、`repeatedStopsAdvanceGeneration`、`processingStartedAfterStopUsesNewGeneration`、`pollIntervalIsShortened` 锁定（见 #775、#423）：停止监控推进代次使在途处理失效、停止后开始的处理以新代次为准、轮询间隔缩短到 100ms。改动 `ClipboardLifecycleGeneration` 或监控轮询时优先跑对应测试文件。
 - **剪贴板回写保护**（3 条）：由 `failedImageWritePreservesExistingClipboard`、`corruptImageWritePreservesExistingClipboard`、`successfulWriteReplacesExistingClipboard` 锁定（**回归 #243**）：图片缺失/损坏导致回写失败时不得清空用户原有剪贴板内容，成功回写仍须清空并替换。改动 `ClipboardManagerViewModel.write` 的清空/加载顺序时优先跑对应测试文件。
+- **剪贴板上限裁剪**（2 条）：由 `pinnedRecordsDoNotDefeatUnpinnedLimit`、`trimsNonPinnedBeyondLimitKeepingPinned` 锁定（**回归 #245**）：按上限裁剪时只统计非固定项，固定项不得挤占计数窗口，超额非固定项被删除而固定项全部保留。改动 `ClipboardStorage.cleanupIfNeeded` 或 `ClipboardHistoryManager.trimNonPinnedHistory` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -132,26 +133,33 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 | 79 | 剪贴板回写保护 | 损坏图片回写失败时不得清空原有剪贴板内容（回归 #243） | 唯一命名剪贴板预置文本 | 对指向非图片字节的 .png 条目调用 `write(item, to:)` | 返回 false，且原有文本仍在剪贴板 | P0 | ✅ 已覆盖 | `corruptImageWritePreservesExistingClipboard` |
 | 80 | 剪贴板回写保护 | 成功回写时仍清空并替换原有剪贴板内容 | 唯一命名剪贴板预置文本 | 对文本条目调用 `write(item, to:)` | 返回 true，剪贴板内容被替换为新文本 | P1 | ✅ 已覆盖 | `successfulWriteReplacesExistingClipboard` |
 
-> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
+### 剪贴板上限裁剪（回归 #245）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 81 | ClipboardStorage | 固定项不得挤占非固定项的计数窗口（回归 #245） | 上限设为 2，预置 100 条较新固定项 + 2 条较旧非固定项 | 再写入 1 条新非固定项触发裁剪 | 只保留最新 2 条非固定项，100 条固定项全部保留 | P0 | ✅ 已覆盖 | `pinnedRecordsDoNotDefeatUnpinnedLimit` |
+| 82 | ClipboardHistoryManager | trimNonPinnedHistory 只裁剪超额非固定项，固定项不参与计数也不被删除 | 5 条非固定项 + 3 条固定项 | 调用 `trimNonPinnedHistory(keeping: 2)` | 删除 3 条超额非固定项并返回 3，保留最新 2 条非固定项与全部固定项；再次调用返回 0 | P1 | ✅ 已覆盖 | `trimsNonPinnedBeyondLimitKeepingPinned` |
+
+> 说明：全部 **82 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 58 / 58
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 12 / 12
-- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
+- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（58 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 82 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
