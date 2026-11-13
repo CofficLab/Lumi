@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 18 条用例。
+PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 21 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 18
+测试文件: 4 个，用例总数: 21
 
 核心组件（源码目录）:
 - `Models/`
@@ -36,6 +36,7 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 18 条
 - **DeleteMemoryTool（不存在目标）**（3 条）：由 `deletingMissingMemoryThrows`、`secondDeleteOfSameIDThrows`、`storageDeleteMissingThrowsNotFound` 锁定。删除不存在的记忆必须抛出工具错误，不得返回 `Memory Deleted` 成功文案；存储层对缺失文件抛 `MemoryError.notFound`，重复删除同一 ID 第二次必须失败（**回归 #809**）。改动 `delete_memory` 或 `MemoryFileStorage.delete` 时优先跑对应测试文件。
 - **MemoryID 路径穿越防护**（6 条）：由 `fileNameEncodesPathSeparators`、`saveTraversalIDGlobalStaysWithinRoot`、`backslashAndAbsoluteIDStayWithinRoot` 等用例锁定。`fileName(forID:)` 的允许字符集为 `alphanumerics ∪ {-_.}`，`/`、`\` 等一律百分号编码为单一路径分量；含 `../`、反斜杠、绝对路径或纯点号的 id 经 save/load/delete 后，文件标准化路径必须仍落在 Memory 根目录内，不得逃出（**回归 #198**）。改动 `fileName(forID:)`、`allowedIDCharacters` 或存储路径拼接时优先跑对应测试文件。
 - **Project 路径碰撞防护**（2 条）：由 `distinctProjectPathsDoNotCollide`、`projectPathPercentLiteralDoesNotCollide` 锁定。`sanitizeProjectPath` 必须把 project 路径一一映射为目录名（允许字符 `alphanumerics ∪ {-_./}` 原样保留，其余按 UTF-8 百分号编码，`%` 自身编码为 `%25`）；`/tmp/a b` 与 `/tmp/a-b`、以及字面量 `/tmp/a%20b` 不得共用同一记忆目录，保存/召回/列出/删除互不影响（**回归 #197**）。改动 `sanitizeProjectPath` 或 `projectsDirectory(for:)` 时优先跑对应测试文件。
+- **Frontmatter 解析**（3 条）：由 `descriptionWithDashesRoundTrips`、`contentWithHorizontalRuleRoundTrips`、`recallToolRestoresDescriptionWithDashes` 锁定。`MemoryFileStorage.parse` 只能把整行恰为 `---` 的行当作 frontmatter 结构分隔符；description 等字段值内部出现的 `---`（如 `alpha---beta`）不得被当作分隔符，否则描述被截断、正文混入 created/updated 行而无法还原（**回归 #528**）。改动 `parse` 或 frontmatter 序列化时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -59,27 +60,30 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 18 条
 | 16 | ID 穿越防护 | load/delete 穿越 id 仅命中根目录内文件，不触及外部（**回归 #198**） | 已保存穿越 id | load 后 delete 同一 id | 召回内容一致，删除仅移除根目录内文件 | P1 | ✅ 已覆盖 | `loadAndDeleteTraversalIDStayContained` |
 | 17 | Project 路径碰撞 | 不同 project 路径编码后不碰撞：保存、召回、删除互不影响（**回归 #197**） | 空存储 | 以 `/tmp/a b` 与 `/tmp/a-b` 各保存 id `architecture` 后召回/列出/删除 | 两条记录目录不同，删除 `/tmp/a b` 不影响 `/tmp/a-b` | P0 | ✅ 已覆盖 | `distinctProjectPathsDoNotCollide` |
 | 18 | Project 路径碰撞 | project 路径中的字面量百分号不与编码结果碰撞（**回归 #197**） | 空存储 | 以 `/tmp/a b` 与字面量 `/tmp/a%20b` 各保存 id `architecture` 后召回 | 两条记录目录不同，内容各自独立 | P0 | ✅ 已覆盖 | `projectPathPercentLiteralDoesNotCollide` |
+| 19 | Frontmatter 解析 | description 含 --- 时保存读取必须完整还原（**回归 #528**） | 空存储 | save(description: `alpha---beta`, content: `BODY`) 后 load | description 与 content 完整还原，不被截断或混入字段行 | P0 | ✅ 已覆盖 | `descriptionWithDashesRoundTrips` |
+| 20 | Frontmatter 解析 | 正文包含整行 --- 时保存读取保持一致 | 空存储 | save(content: `before\n---\nafter`) 后 load | 正文中的整行 --- 不被当作 frontmatter 结束符，内容原样还原 | P1 | ✅ 已覆盖 | `contentWithHorizontalRuleRoundTrips` |
+| 21 | Frontmatter 解析 | save_memory→recall_memory 往返不得截断含 --- 的描述（**回归 #528**） | 空存储 | save_memory(description: `alpha---beta`) 后 recall_memory | 输出含完整描述与正文，不泄漏 created/updated 字段行 | P0 | ✅ 已覆盖 | `recallToolRestoresDescriptionWithDashes` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 8 / 8
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 9 / 9
 - P2: 已覆盖 0 / 0
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（9 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
