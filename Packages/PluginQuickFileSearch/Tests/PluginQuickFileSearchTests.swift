@@ -296,9 +296,42 @@ private final class RecordingProjectObserverHandle: ProjectProvidingObserverHand
 }
 
 @Test func shouldSkipPathMatchesDirectoryComponentAtPathEnd() {
-    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/build")))
-    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/node_modules")))
-    #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/building/App.swift")))
+    let root = URL(fileURLWithPath: "/tmp/project")
+    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/build"), root: root))
+    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/node_modules"), root: root))
+    #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/building/App.swift"), root: root))
+}
+
+@Test func shouldSkipPathIgnoresAncestorDirectoryNames() {
+    // 项目恰好位于名为 build 的祖先目录下：祖先段不得触发跳过（#375）。
+    let root = URL(fileURLWithPath: "/Users/alice/build/Demo")
+    #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/Users/alice/build/Demo/Sources/App.swift"), root: root))
+    // 项目内部真正的 build 目录仍然跳过。
+    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/Users/alice/build/Demo/build/Generated.swift"), root: root))
+    // 其它忽略名祖先（vendor）同样不得误杀项目源码。
+    let vendorRoot = URL(fileURLWithPath: "/Users/alice/vendor/Demo")
+    #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/Users/alice/vendor/Demo/Sources/App.swift"), root: vendorRoot))
+}
+
+@Test func scanProjectFilesFindsFilesUnderIgnoredAncestorDirectory() throws {
+    let base = FileManager.default.temporaryDirectory
+        .appendingPathComponent("QuickFileSearchAncestorTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: base) }
+
+    // 项目根位于名为 build 的祖先目录之下（#375）。
+    let projectURL = base.appendingPathComponent("build/Demo", isDirectory: true)
+    let sourcesURL = projectURL.appendingPathComponent("Sources", isDirectory: true)
+    let innerBuildURL = projectURL.appendingPathComponent("build", isDirectory: true)
+    try FileManager.default.createDirectory(at: sourcesURL, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: innerBuildURL, withIntermediateDirectories: true)
+    try "source".write(to: sourcesURL.appendingPathComponent("App.swift"), atomically: true, encoding: .utf8)
+    try "generated".write(to: innerBuildURL.appendingPathComponent("Generated.swift"), atomically: true, encoding: .utf8)
+
+    let results = FileSearchHelpers.scanProjectFiles(at: projectURL.path)
+    let relativePaths = Set(results.map(\.relativePath))
+
+    #expect(relativePaths.contains("Sources/App.swift"))
+    #expect(!relativePaths.contains("build/Generated.swift"))
 }
 
 @Test func staleSearchResultsDoNotApplyToChangedQuery() {
