@@ -113,6 +113,8 @@ extension EditorState {
             replaceText: documentController.replaceText,
             transactionController: transactionController
         )
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
         totalLines = replacePayload.commitPayload.totalLines
         lspClient.replaceDocument(
@@ -191,6 +193,8 @@ extension EditorState {
         }
 
         let result = documentController.replaceText(viewText)
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
         totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
         if viewportVisibleLineRange.isEmpty {
@@ -342,6 +346,8 @@ extension EditorState {
             replaceText: documentController.replaceText,
             transactionController: transactionController
         )
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
         totalLines = replacePayload.commitPayload.totalLines
 
