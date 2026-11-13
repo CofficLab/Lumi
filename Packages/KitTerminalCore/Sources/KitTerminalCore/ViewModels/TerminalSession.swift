@@ -14,6 +14,8 @@ public final class TerminalSession: ObservableObject, Identifiable {
     public let id = UUID()
     @Published public var title: String = "Terminal"
     @Published public var isConnected: Bool = false
+    /// 启动失败原因（如工作目录无效）；非 nil 时会话保持未连接，由容器视图展示（#174）。
+    @Published public private(set) var startupError: String?
 
     /// 自定义终端视图（零尺寸保护 + 无障碍）
     public let terminalView: LumiTerminalView
@@ -93,6 +95,15 @@ public final class TerminalSession: ObservableObject, Identifiable {
 
     /// 启动 shell 进程
     private func startShell() {
+        // 先校验工作目录：SwiftTerm 会忽略 chdir 失败，无效目录会让 shell 静默落在
+        // Lumi 当前目录并误报已连接。校验失败时保持未连接并暴露原因，不创建进程（#174）。
+        do {
+            try TerminalWorkingDirectory.validate(initialWorkingDirectory)
+        } catch {
+            startupError = error.localizedDescription
+            return
+        }
+
         let shell = ShellIntegration.autoDetectShell()
         let shellPath = shell.defaultPath
 
