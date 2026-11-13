@@ -71,6 +71,7 @@ public struct MemoryItem: Codable, Identifiable, Sendable {
 public enum MemoryError: Error, LocalizedError, Equatable {
     case invalidID(String)
     case storageUnavailable(String)
+    case notFound(String)
 
     public var errorDescription: String? {
         switch self {
@@ -78,6 +79,8 @@ public enum MemoryError: Error, LocalizedError, Equatable {
             "Invalid memory id: \(detail)"
         case .storageUnavailable(let detail):
             "Memory storage unavailable: \(detail)"
+        case .notFound(let id):
+            "Memory not found: \(id)"
         }
     }
 }

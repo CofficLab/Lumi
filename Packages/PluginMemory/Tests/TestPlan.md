@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 7 条用例。
+PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 10 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 7
+测试文件: 2 个，用例总数: 10
 
 核心组件（源码目录）:
 - `Models/`
@@ -33,6 +33,7 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 7 条�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（7 条）：由 `saveAndLoad`、`saveUpdatesPreservesCreatedAt`、`listAndDelete` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DeleteMemoryTool（不存在目标）**（3 条）：由 `deletingMissingMemoryThrows`、`secondDeleteOfSameIDThrows`、`storageDeleteMissingThrowsNotFound` 锁定。删除不存在的记忆必须抛出工具错误，不得返回 `Memory Deleted` 成功文案；存储层对缺失文件抛 `MemoryError.notFound`，重复删除同一 ID 第二次必须失败（**回归 #809**）。改动 `delete_memory` 或 `MemoryFileStorage.delete` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -45,27 +46,30 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 7 条�
 | 5 | 综合 | RecallMemoryTool 未找到返回提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `recallToolNotFound` |
 | 6 | 综合 | 插件注册 4 个记忆工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersTools` |
 | 7 | 综合 | 不同 ID 编码后不碰撞：保存、召回、删除互不影响 | 空存储 | 依次保存 `a b`、`a@b`、`a%20b` 后召回/列出/删除 | 三条记录各自独立，删除 `a b` 不影响其余 | P0 | ✅ 已覆盖 | `distinctIDsDoNotCollide` |
+| 8 | DeleteMemoryTool | 删除不存在的记忆必须抛出错误而非报成功（**回归 #809**） | 空存储，ID `definitely-missing` 不存在 | 调用 `delete_memory(id, scope=global)` | 抛出 `ToolExecutionError`，不返回成功文案 | P0 | ✅ 已覆盖 | `deletingMissingMemoryThrows` |
+| 9 | DeleteMemoryTool | 重复删除同一 ID：首次成功，第二次必须报错（**回归 #809**） | 已保存 ID `once` | 连续两次调用 `delete_memory` | 首次成功且文件被删，第二次抛出 `ToolExecutionError` | P0 | ✅ 已覆盖 | `secondDeleteOfSameIDThrows` |
+| 10 | DeleteMemoryTool | 存储层删除不存在的记忆抛出 notFound | 空存储 | 调用 `storage.delete(id: "ghost")` | 抛出 `MemoryError.notFound("ghost")` | P1 | ✅ 已覆盖 | `storageDeleteMissingThrowsNotFound` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 6 / 6
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 7 / 7
 - P2: 已覆盖 0 / 0
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（7 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

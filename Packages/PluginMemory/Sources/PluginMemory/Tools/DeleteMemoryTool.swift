@@ -43,7 +43,12 @@ public struct DeleteMemoryTool: SuperAgentTool, @unchecked Sendable {
         }
         let scope = MemoryToolSupport.scope(arguments)
         let projectPath = await MainActor.run { projectCapability.currentProjectPath }
-        try await storage.delete(id: id, scope: scope, projectPath: scope == .project ? projectPath : nil)
+        do {
+            try await storage.delete(id: id, scope: scope, projectPath: scope == .project ? projectPath : nil)
+        } catch MemoryError.notFound {
+            // 不存在的目标不能报成功，否则模型会基于错误的持久化状态继续操作（#809）。
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Memory not found: \(id)")
+        }
         return "## Memory Deleted ✅\n\n**ID**: `\(id)`"
     }
 }

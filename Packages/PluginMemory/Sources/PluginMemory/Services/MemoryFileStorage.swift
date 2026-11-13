@@ -114,9 +114,11 @@ public actor MemoryFileStorage {
         let fileName = Self.fileName(forID: id)
         let directory = directory(for: .project, scope: scope, projectPath: projectPath)
         let fileURL = directory.appendingPathComponent("\(fileName).md")
-        if fileManager.fileExists(atPath: fileURL.path) {
-            try fileManager.removeItem(at: fileURL)
+        // 目标不存在时必须报错，否则 delete_memory 会对无效 ID 报成功（#809）。
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            throw MemoryError.notFound(id)
         }
+        try fileManager.removeItem(at: fileURL)
     }
 
     // MARK: - Private
