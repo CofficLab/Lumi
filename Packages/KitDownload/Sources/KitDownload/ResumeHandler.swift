@@ -77,15 +77,19 @@ public actor ResumeHandler {
     ///   - finalURL: 最终文件的路径
     public func finalizeDownload(from incompleteURL: URL, to finalURL: URL) throws {
         let fileManager = FileManager.default
-        
-        // 如果最终文件已存在，先删除
-        if fileManager.fileExists(atPath: finalURL.path) {
-            try fileManager.removeItem(at: finalURL)
+
+        // 先校验源文件：源缺失时直接抛错，绝不触碰已存在的最终文件（issue #160）。
+        guard fileManager.fileExists(atPath: incompleteURL.path) else {
+            throw CocoaError(.fileNoSuchFile, userInfo: [NSFilePathErrorKey: incompleteURL.path])
         }
-        
-        // 移动文件
-        try fileManager.moveItem(at: incompleteURL, to: finalURL)
-        
+
+        if fileManager.fileExists(atPath: finalURL.path) {
+            // 原子替换：替换失败时保留原有最终文件，避免「先删后移」在移动失败时毁掉旧结果（issue #160）。
+            _ = try fileManager.replaceItemAt(finalURL, withItemAt: incompleteURL)
+        } else {
+            try fileManager.moveItem(at: incompleteURL, to: finalURL)
+        }
+
         // 清理断点续传数据
         removeResumeData(for: finalURL)
     }

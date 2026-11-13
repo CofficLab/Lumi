@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 88
+测试文件: 11 个，用例总数: 91
 
 ## 公开 API
 
@@ -35,7 +35,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 - **FileValidator**（10 条）：由 `validateExistingFile`、`validateNonExistentFile`、`validateEmptyFileWithoutExpectationSucceeds`、`validateZeroByteFileWithExpectedZero` 等用例锁定大小匹配必须先于空文件判断，合法零字节文件（含 `expectedSize == 0` 与 nil）不得被误判为 emptyFile 失败（**回归 #159**）；改动该模块时优先跑对应测试文件。
 - **ZeroByteDownload**（2 条）：由 `zeroByteDownloadWithNilExpectedSizeCompletes`、`zeroByteDownloadWithZeroExpectedSizeCompletes` 锁定服务器成功返回零字节文件时下载任务必须进入 `.completed`，覆盖 DownloadManager → FileValidator 完整链路（**回归 #159**）；改动下载完成校验时优先跑对应测试文件。
 - **RateLimiter**（10 条）：由 `unlimitedRateLimiterReturnsImmediately`、`staticUnlimitedInstance`、`rateLimiterEnforcesSpeedLimit` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ResumeHandler**（9 条）：由 `saveAndGetResumeData`、`removeResumeData`、`appendDataCreatesMissingDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeHandler**（12 条）：由 `saveAndGetResumeData`、`removeResumeData`、`appendDataCreatesMissingDirectory`、`finalizeDownloadKeepsExistingFileWhenSourceMissing` 等用例锁定 `finalizeDownload` 必须先校验源文件、再用原子替换覆盖，源缺失或替换失败时不得删除已存在的最终文件（**回归 #160**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -129,27 +129,30 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 86 | FileValidator | 期望大小为零但文件非空时抛出大小不匹配 | 非空文件，expectedSize 为 0 | 调用 `validate` | 抛出 `DownloadError.sizeMismatch` | P1 | ✅ 已覆盖 | `validateNonEmptyFileWithExpectedZeroThrows` |
 | 87 | ZeroByteDownload | expectedSize 为 nil 的零字节下载必须进入完成态，不得误判失败（**回归 #159**） | MockHTTPClient 返回 200 + 空 body，expectedSize 为 nil | 调用 `DownloadManager.download` | 返回目标路径（.completed），磁盘文件 0 字节 | P0 | ✅ 已覆盖 | `zeroByteDownloadWithNilExpectedSizeCompletes` |
 | 88 | ZeroByteDownload | expectedSize 为 0 的零字节下载必须进入完成态，不得误判失败（**回归 #159**） | MockHTTPClient 返回 200 + 空 body，expectedSize 为 0 | 调用 `DownloadManager.download` | 返回目标路径（.completed） | P0 | ✅ 已覆盖 | `zeroByteDownloadWithZeroExpectedSizeCompletes` |
+| 89 | ResumeHandler | 源文件缺失时不得删除已存在的最终文件（**回归 #160**） | 最终文件已存在且内容有效，未完成源文件不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，最终文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `finalizeDownloadKeepsExistingFileWhenSourceMissing` |
+| 90 | ResumeHandler | 源文件缺失且无最终文件时抛错且不创建任何文件 | 源文件与最终文件均不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，不创建最终文件，目录为空 | P1 | ✅ 已覆盖 | `finalizeDownloadMissingSourceThrowsWithoutCreatingDestination` |
+| 91 | ResumeHandler | 原子替换覆盖后只保留最终文件，不残留源或临时文件 | 最终文件与源文件均存在且内容不同 | 调用 `finalizeDownload(from:to:)` | 最终文件为新内容，源文件被消费，目录仅剩最终文件 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwriteLeavesNoResidualFiles` |
 
-> 说明：全部 **88 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **91 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 70 / 70
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 72 / 72
 - P2: 已覆盖 7 / 7
-- **合计: 88 / 88**（仅表示清单场景，非源码覆盖率）
+- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（70 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（72 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 88 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 91 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

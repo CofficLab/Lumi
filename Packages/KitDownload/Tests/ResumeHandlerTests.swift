@@ -140,4 +140,60 @@ struct ResumeHandlerTests {
             #expect(content == "New content")
         }
     }
+
+    @Test("源文件缺失时不得删除已存在的最终文件（回归 #160）")
+    func finalizeDownloadKeepsExistingFileWhenSourceMissing() async throws {
+        try await withTempDir { tempDir in
+            let handler = ResumeHandler()
+            let incompleteURL = tempDir.appendingPathComponent("file.txt.incomplete")
+            let finalURL = tempDir.appendingPathComponent("file.txt")
+
+            // 只有旧的最终文件，源（未完成文件）不存在：移动必然失败
+            try "Old content".write(to: finalURL, atomically: true, encoding: .utf8)
+
+            await #expect(throws: (any Error).self) {
+                try await handler.finalizeDownload(from: incompleteURL, to: finalURL)
+            }
+
+            // 失败后旧结果必须原样保留，且目录中不残留任何临时文件
+            #expect(FileManager.default.fileExists(atPath: finalURL.path))
+            #expect(try String(contentsOf: finalURL, encoding: .utf8) == "Old content")
+            #expect(try FileManager.default.contentsOfDirectory(atPath: tempDir.path) == ["file.txt"])
+        }
+    }
+
+    @Test("源文件缺失且无最终文件时抛错且不创建任何文件")
+    func finalizeDownloadMissingSourceThrowsWithoutCreatingDestination() async throws {
+        try await withTempDir { tempDir in
+            let handler = ResumeHandler()
+            let incompleteURL = tempDir.appendingPathComponent("file.txt.incomplete")
+            let finalURL = tempDir.appendingPathComponent("file.txt")
+
+            await #expect(throws: (any Error).self) {
+                try await handler.finalizeDownload(from: incompleteURL, to: finalURL)
+            }
+
+            #expect(!FileManager.default.fileExists(atPath: finalURL.path))
+            let entries = try FileManager.default.contentsOfDirectory(atPath: tempDir.path)
+            #expect(entries.isEmpty)
+        }
+    }
+
+    @Test("原子替换覆盖后只保留最终文件，不残留源或临时文件")
+    func finalizeDownloadOverwriteLeavesNoResidualFiles() async throws {
+        try await withTempDir { tempDir in
+            let handler = ResumeHandler()
+            let incompleteURL = tempDir.appendingPathComponent("file.txt.incomplete")
+            let finalURL = tempDir.appendingPathComponent("file.txt")
+
+            try "Old content".write(to: finalURL, atomically: true, encoding: .utf8)
+            try "New content".write(to: incompleteURL, atomically: true, encoding: .utf8)
+
+            try await handler.finalizeDownload(from: incompleteURL, to: finalURL)
+
+            #expect(try String(contentsOf: finalURL, encoding: .utf8) == "New content")
+            #expect(!FileManager.default.fileExists(atPath: incompleteURL.path))
+            #expect(try FileManager.default.contentsOfDirectory(atPath: tempDir.path) == ["file.txt"])
+        }
+    }
 }
