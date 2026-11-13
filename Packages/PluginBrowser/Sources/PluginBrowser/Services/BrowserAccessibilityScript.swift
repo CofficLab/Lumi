@@ -16,7 +16,7 @@ enum BrowserAccessibilityScript {
     ///
     /// - Parameters:
     ///   - operation: `snapshot` 或 `find`。
-    ///   - options: 追加到脚本顶部的 JSON 配置。
+    ///   - options: 注入脚本函数作用域的 JSON 配置。
     static func script(operation: String, options: [String: Any] = [:]) -> String {
         var config = options
         config["op"] = operation
@@ -24,7 +24,8 @@ enum BrowserAccessibilityScript {
               let json = String(data: data, encoding: .utf8) else {
             return "({})"
         }
-        return "const __OPTS = \(json);\n" + body
+        // 配置注入 IIFE 内部，避免在页面全局重复声明 const 导致二次执行抛 SyntaxError。
+        return body.replacingOccurrences(of: "__OPTS", with: json)
     }
 
     private static let body = #"""
