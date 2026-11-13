@@ -292,6 +292,12 @@ public enum BracketMatcher {
         return nil
     }
 
+    /// 向前扫描配对括号。
+    ///
+    /// - Note: 必须**递增推进** `String.UTF16View` 的索引，而不是每一步
+    ///   `index(startIndex, offsetBy:)` 重算。`UTF16View` 是非随机访问集合，
+    ///   `offsetBy:` 的代价与距离成正比，从 `startIndex` 反复重算会让整段
+    ///   扫描退化成 O(document²)（见 issue #1317）。
     private static func findCloseBracket(
         in text: String,
         from startIndex: Int,
@@ -299,12 +305,15 @@ public enum BracketMatcher {
         closeChar: Character
     ) -> Int? {
         let utf16View = text.utf16
+        let totalCount = utf16View.count
+        guard startIndex >= 0, startIndex < totalCount else { return nil }
+
         var depth = 1
         var index = startIndex
+        var cursor = utf16View.index(utf16View.startIndex, offsetBy: startIndex)
 
-        while index < utf16View.count {
-            let charIndex = utf16View.index(utf16View.startIndex, offsetBy: index)
-            if let scalar = Unicode.Scalar(utf16View[charIndex]) {
+        while index < totalCount {
+            if let scalar = Unicode.Scalar(utf16View[cursor]) {
                 let char = Character(scalar)
                 if char == openChar {
                     depth += 1
@@ -316,6 +325,9 @@ public enum BracketMatcher {
                 }
             }
             index += 1
+            if index < totalCount {
+                cursor = utf16View.index(after: cursor)
+            }
         }
 
         return nil
@@ -341,12 +353,15 @@ public enum BracketMatcher {
         closeChar: Character
     ) -> Int? {
         let utf16View = text.utf16
+        let totalCount = utf16View.count
+        guard startIndex >= 0, startIndex < totalCount else { return nil }
+
         var depth = 1
         var index = startIndex
+        var cursor = utf16View.index(utf16View.startIndex, offsetBy: startIndex)
 
         while index >= 0 {
-            let charIndex = utf16View.index(utf16View.startIndex, offsetBy: index)
-            if let scalar = Unicode.Scalar(utf16View[charIndex]) {
+            if let scalar = Unicode.Scalar(utf16View[cursor]) {
                 let char = Character(scalar)
                 if char == closeChar {
                     depth += 1
@@ -358,6 +373,9 @@ public enum BracketMatcher {
                 }
             }
             index -= 1
+            if index >= 0 {
+                cursor = utf16View.index(before: cursor)
+            }
         }
 
         return nil
