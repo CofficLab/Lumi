@@ -47,6 +47,20 @@ def platform_of(pkg_dir):
     found = re.findall(r'\.(macOS|iOS|tvOS|watchOS)\s*:\s*"([\d.]+)"', text)
     if found:
         return ", ".join(f"{name} {ver}+" for name, ver in found)
+    # 混合形式：platforms: [.macOS("14.0"), .iOS(.v17)]
+    # 同一平台可能用「带点版本号字符串」（.macOS("14.0")）也可能用「.v14」。
+    # 必须先于下面的「纯简写」分支判定：否则 [.macOS("14.0"), .iOS(.v17)]
+    # 会只匹配到 .iOS(.v17)，把 macOS 整个漏掉。
+    mixed = re.findall(
+        r'\.(macOS|iOS|tvOS|watchOS)\s*\(\s*(?:\.v(\d+)|"([\d.]+)")\s*\)',
+        text,
+    )
+    if mixed:
+        parts = []
+        for name, major, dotted in mixed:
+            version = (major or dotted).split(".")[0]
+            parts.append(f"{name} {version}+")
+        return ", ".join(parts)
     # 简写形式：platforms: [.macOS(.v14), .iOS(.v17)]
     short = re.findall(r'\.(macOS|iOS|tvOS|watchOS)\s*\(\s*\.v(\d+)\s*\)', text)
     if short:

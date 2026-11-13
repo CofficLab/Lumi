@@ -19,6 +19,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         self.configuration = configuration
     }
 
+    /// 工具调用参数的解析缓存。
+    ///
+    /// 进程内共享：一次会话的多个 LLM step 反复回传同一批历史工具调用，
+    /// 每次都重新解析 JSON 是纯粹的浪费（Issue #1269）。
+    private static let argumentsParser = ToolCallArgumentsParser()
+
     // MARK: - 请求构建
 
     /// 构建 HTTP 请求
@@ -76,7 +82,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     private func validateToolCallArguments(in messages: [LLMMessage]) throws {
         for message in messages {
             for toolCall in message.toolCalls ?? [] {
-                try toolCall.validateArguments()
+                // 走缓存：校验与「拼 tool_use 块」共用同一份解析结果，
+                // 同一批历史参数不再被解析两次（Issue #1269）。
+                try Self.argumentsParser.validate(toolCall)
             }
         }
     }
@@ -579,13 +587,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             }
 
             for tc in toolCalls {
-                let inputObject: [String: Any]
-                if let data = tc.arguments.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    inputObject = json
-                } else {
-                    inputObject = [:]
-                }
+                // 复用缓存里的解析结果：此前同一批历史参数在「校验」和
+                // 「拼 tool_use 块」时各解析一次（Issue #1269）。
+                let inputObject = Self.argumentsParser.parse(id: tc.id, arguments: tc.arguments).object ?? [:]
                 // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝
                 content.append(["type": "tool_use", "id": tc.id, "name": LLMToolNameSanitizer.sanitize(tc.name), "input": inputObject])
             }

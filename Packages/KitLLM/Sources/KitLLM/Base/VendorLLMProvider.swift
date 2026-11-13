@@ -121,22 +121,18 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let adapter = OpenAICompatibleProviderAdapter(configuration: configuration)
         let (tools, reverseMap) = toolSchemas(from: request.tools)
         let model = request.model ?? providerInfo.defaultModel
-        var body = try adapter.buildRequestBody(
+        // 请求体构建与 JSON 序列化都在后台线程完成：这一步要遍历全部历史
+        // 消息、编码历史图片，放在主线程上会卡住 UI（Issue #1269）。
+        let bodyData = try await RequestBodyBuilder.openAIBody(
             messages: request.messages,
             model: model,
             tools: tools,
-            systemPrompt: ""
-        )
-        OpenAICompatibleGenerationOptionsApplier.apply(
             config: makeConfig(model: model, request: request),
-            model: model,
-            additionalReasoningEfforts: configuration.additionalReasoningEfforts,
-            to: &body
+            configuration: configuration
         )
-        nonisolated(unsafe) let finalBody = body
         let data = try await apiService.sendChatRequest(
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
-            body: finalBody
+            bodyData: bodyData
         )
         let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
         let tokenCounts = tokenCounts(from: data, anthropic: false)
@@ -169,22 +165,17 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let adapter = AnthropicCompatibleProviderAdapter(configuration: configuration)
         let (tools, reverseMap) = toolSchemas(from: request.tools)
         let model = request.model ?? providerInfo.defaultModel
-        var body = try adapter.buildRequestBody(
+        // 请求体构建与 JSON 序列化都在后台线程完成（Issue #1269）。
+        let bodyData = try await RequestBodyBuilder.anthropicBody(
             messages: request.messages,
             model: model,
             tools: tools,
-            systemPrompt: ""
-        )
-        AnthropicCompatibleGenerationOptionsApplier.apply(
             config: makeConfig(model: model, request: request),
-            model: model,
-            defaultMaxTokens: configuration.defaultMaxTokens,
-            to: &body
+            configuration: configuration
         )
-        nonisolated(unsafe) let finalBody = body
         let data = try await apiService.sendChatRequest(
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
-            body: finalBody
+            bodyData: bodyData
         )
         let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
         let tokenCounts = tokenCounts(from: data, anthropic: true)
@@ -266,18 +257,20 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let adapter = OpenAICompatibleProviderAdapter(configuration: configuration)
         let (tools, reverseMap) = toolSchemas(from: request.tools)
         let model = request.model ?? providerInfo.defaultModel
-        nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
+        // 请求体构建与 JSON 序列化都在后台线程完成：这一步要遍历全部历史
+        // 消息、编码历史图片，放在主线程上会卡住 UI（Issue #1269）。
+        let bodyData = try await RequestBodyBuilder.openAIStreamingBody(
             messages: request.messages,
             model: model,
             tools: tools,
-            systemPrompt: "",
-            config: makeConfig(model: model, request: request)
+            config: makeConfig(model: model, request: request),
+            configuration: configuration
         )
 
         let accumulator = StreamingAccumulator()
         try await apiService.sendStreamingChatRequest(
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
-            body: body
+            bodyData: bodyData
         ) { data in
             do {
                 var parsed = try adapter.parseStreamChunks(data: data)
@@ -316,18 +309,19 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let adapter = AnthropicCompatibleProviderAdapter(configuration: configuration)
         let (tools, reverseMap) = toolSchemas(from: request.tools)
         let model = request.model ?? providerInfo.defaultModel
-        nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
+        // 请求体构建与 JSON 序列化都在后台线程完成（Issue #1269）。
+        let bodyData = try await RequestBodyBuilder.anthropicStreamingBody(
             messages: request.messages,
             model: model,
             tools: tools,
-            systemPrompt: "",
-            config: makeConfig(model: model, request: request)
+            config: makeConfig(model: model, request: request),
+            configuration: configuration
         )
 
         let accumulator = StreamingAccumulator()
         try await apiService.sendStreamingChatRequest(
             request: adapter.buildRequest(url: try endpointURL(configuration.baseURL), apiKey: try resolveAPIKey()),
-            body: body
+            bodyData: bodyData
         ) { data in
             do {
                 var chunk = try adapter.parseStreamChunk(data: data)

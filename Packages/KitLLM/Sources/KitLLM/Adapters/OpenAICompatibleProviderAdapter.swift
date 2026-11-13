@@ -8,6 +8,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         self.configuration = configuration
     }
 
+    /// 工具调用参数的解析缓存。
+    ///
+    /// 进程内共享：一次会话的多个 LLM step 反复回传同一批历史工具调用，
+    /// 每次都重新解析 JSON 是纯粹的浪费（Issue #1269）。
+    private static let argumentsParser = ToolCallArgumentsParser()
+
     public func buildRequest(url: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -57,7 +63,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     private func validateToolCallArguments(in messages: [LLMMessage]) throws {
         for message in messages {
             for toolCall in message.toolCalls ?? [] {
-                try toolCall.validateArguments()
+                // 走缓存：一次会话的多个 LLM step 反复回传同一批历史工具
+                // 调用，每次都重新解析 JSON 是纯粹的浪费（Issue #1269）。
+                try Self.argumentsParser.validate(toolCall)
             }
         }
     }
