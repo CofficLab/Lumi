@@ -483,6 +483,42 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "\"goodbye world\"")
     }
 
+    func testEditDoesNotConvertCodeStringDelimitersWhenMatchMixesQuoteStyles() throws {
+        // 回归 #344：注释用弯引号、代码字符串定界符用直引号时，
+        // 替换不得把代码里的直引号定界符转成弯引号，否则 Python 源码立即失效。
+        let path = temporaryDirectory.appendingPathComponent("mixed_quotes.py").path
+        let original = "# \u{201C}greeting\u{201D}\nmessage = \"hello\""
+        try original.write(toFile: path, atomically: true, encoding: .utf8)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: original,
+            newString: "# \u{201C}greeting\u{201D}\nmessage = \"goodbye\""
+        )
+        // 仅 hello → goodbye，代码定界符保持直引号，注释弯引号不变。
+        XCTAssertEqual(
+            try String(contentsOfFile: path, encoding: .utf8),
+            "# \u{201C}greeting\u{201D}\nmessage = \"goodbye\""
+        )
+    }
+
+    func testEditDoesNotConvertCodeCharDelimitersWhenMatchMixesSingleQuoteStyles() throws {
+        // 回归 #344：单引号同理——注释用弯撇号、代码字符定界符用直撇号时不得转换。
+        let path = temporaryDirectory.appendingPathComponent("mixed_single_quotes.py").path
+        let original = "# \u{2018}greeting\u{2019}\nmessage = 'hello'"
+        try original.write(toFile: path, atomically: true, encoding: .utf8)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: original,
+            newString: "# \u{2018}greeting\u{2019}\nmessage = 'goodbye'"
+        )
+        XCTAssertEqual(
+            try String(contentsOfFile: path, encoding: .utf8),
+            "# \u{2018}greeting\u{2019}\nmessage = 'goodbye'"
+        )
+    }
+
     // MARK: - diff 质量
 
     func testEditDiffShowsRemovedAndAddedLines() throws {

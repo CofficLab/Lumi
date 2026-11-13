@@ -237,27 +237,24 @@ public struct WorkspaceFileEditor: Sendable {
             .replacingOccurrences(of: "\u{201D}", with: "\"")
     }
 
-    /// 将替换文本中的引号转换为文件既有风格（弯引号），保持文件风格一致。
+    /// 将替换文本中的直引号还原为文件既有的弯引号风格，但仅在匹配片段「统一」使用弯引号时进行。
     ///
-    /// 匹配阶段做了「弯引号 → 直引号」的标准化以便定位，但写入时若文件原本用弯引号，
-    /// 替换文本里的直引号也应转回弯引号，否则会把 `"it's"` 这类风格破坏掉。
-    /// 仅当匹配到的原文确实使用弯引号时才做反向转换，避免误伤直引号文件。
+    /// 匹配阶段做了「弯引号 → 直引号」的标准化以便定位；写回时若匹配到的原文整段都用弯引号，
+    /// 替换文本里的直引号应转回弯引号，避免破坏 `"it's"` 这类 prose 风格。
+    /// 但若匹配片段同时含直引号与弯引号（例如注释用弯引号、代码字符串定界符用直引号），
+    /// 就无法安全区分 prose 与代码上下文，此时必须原样保留替换文本里的直引号，
+    /// 否则会把代码字符串定界符也转成弯引号，使源码立即失效（#344）。
     private func preserveQuoteStyle(_ replacement: String, matching matched: String) -> String {
-        let hasLeftSingle = matched.contains("\u{2018}")
-        let hasRightSingle = matched.contains("\u{2019}")
-        let hasLeftDouble = matched.contains("\u{201C}")
-        let hasRightDouble = matched.contains("\u{201D}")
-        guard hasLeftSingle || hasRightSingle || hasLeftDouble || hasRightDouble else {
-            return replacement
-        }
+        let matchedHasCurlySingle = matched.contains("\u{2018}") || matched.contains("\u{2019}")
+        let matchedHasCurlyDouble = matched.contains("\u{201C}") || matched.contains("\u{201D}")
+        let matchedHasStraightSingle = matched.contains("'")
+        let matchedHasStraightDouble = matched.contains("\"")
 
         var result = replacement
-        // 单引号：开撇号用于起始（如 'word），闭撇号多用于缩写（如 don't）。
-        // 这里用简单的成对替换：首个 ' → 开撇号，后续交替，保证缩写（don't）也得到弯撇号。
-        if hasRightSingle {
+        if matchedHasCurlySingle && !matchedHasStraightSingle {
             result = replaceStraightQuotes(result, straight: "'", open: "\u{2018}", close: "\u{2019}")
         }
-        if hasLeftDouble || hasRightDouble {
+        if matchedHasCurlyDouble && !matchedHasStraightDouble {
             result = replaceStraightQuotes(result, straight: "\"", open: "\u{201C}", close: "\u{201D}")
         }
         return result

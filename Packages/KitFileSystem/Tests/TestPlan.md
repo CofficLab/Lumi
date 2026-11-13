@@ -5,7 +5,7 @@
 KitFileSystem KitFileSystem 是 Lumi 项目中负责文件系统相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 131
+测试文件: 5 个，用例总数: 133
 
 核心组件（源码目录）:
 - `Tree/`
@@ -35,7 +35,7 @@ KitFileSystem KitFileSystem 是 Lumi 项目中负责文件系统相关能力的 
 - **FileTreeStore**（27 条）：由 `setAndGetString`、`setAndGetArray`、`setNilRemovesKey` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **FileTreeWatcher**（17 条）：由 `watchCountInitiallyZero`、`startWatchingIncreasesCount`、`stopWatchingDecreasesCount` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **KitFileSystemCoverage**（6 条）：由 `editNotFoundInExistingFile`、`editNoopThrows`、`editEmptyOldStringOnNonEmptyFile` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **WorkspaceFileKit**（46 条）：由 `testWriteAndReadTextFile`、`testWriteDirectoryReportsDirectoryInsteadOfSystemError`、`testWriteWhenParentIsFileReportsParentPathClearly` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `testEditSingleLineMatchInCRLFFileInheritsCRLFForMultilineReplacement`、`testEditSingleLineMatchInLFFileNormalizesCRLFReplacementToLF`（**回归 #345**）锁定：替换文本的换行风格必须继承整个原文件而非匹配片段，单行匹配的多行替换不得写入混合换行。
+- **WorkspaceFileKit**（48 条）：由 `testWriteAndReadTextFile`、`testWriteDirectoryReportsDirectoryInsteadOfSystemError`、`testWriteWhenParentIsFileReportsParentPathClearly` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `testEditSingleLineMatchInCRLFFileInheritsCRLFForMultilineReplacement`、`testEditSingleLineMatchInLFFileNormalizesCRLFReplacementToLF`（**回归 #345**）锁定：替换文本的换行风格必须继承整个原文件而非匹配片段，单行匹配的多行替换不得写入混合换行。`testEditDoesNotConvertCodeStringDelimitersWhenMatchMixesQuoteStyles`、`testEditDoesNotConvertCodeCharDelimitersWhenMatchMixesSingleQuoteStyles`（**回归 #344**）锁定：匹配片段混合直/弯引号时，替换文本里的代码定界符必须原样保留，不得转成弯引号。
 
 ## 测试用例清单
 
@@ -172,27 +172,29 @@ KitFileSystem KitFileSystem 是 Lumi 项目中负责文件系统相关能力的 
 | 129 | WorkspaceFileKit | testPathResolverKeepsInvalidPercentSequenceVerbatim | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testPathResolverKeepsInvalidPercentSequenceVerbatim` |
 | 130 | WorkspaceFileKit | 单行匹配的多行替换必须继承整个文件的 CRLF 风格，不得写入混合换行（回归 #345） | CRLF 文件 first\r\nold\r\nlast\r\n | 调用 `edit(oldString:"old", newString:"new1\nnew2")` | 结果为 first\r\nnew1\r\nnew2\r\nlast\r\n，无裸 LF | P0 | ✅ 已覆盖 | `testEditSingleLineMatchInCRLFFileInheritsCRLFForMultilineReplacement` |
 | 131 | WorkspaceFileKit | LF 文件单行匹配时多行替换的 CRLF 必须归一为文件 LF 风格（回归 #345） | LF 文件 first\nold\nlast\n | 调用 `edit(oldString:"old", newString:"new1\r\nnew2")` | 结果为 first\nnew1\nnew2\nlast\n，不含 \r | P0 | ✅ 已覆盖 | `testEditSingleLineMatchInLFFileNormalizesCRLFReplacementToLF` |
+| 132 | WorkspaceFileKit | 注释弯引号+代码直引号混合时替换不得转弯代码字符串定界符（回归 #344） | 文件含注释弯引号与代码直引号定界符 | 调用 edit 替换代码字符串内容 | 代码定界符仍为直引号，注释弯引号不变，源码不失效 | P0 | ✅ 已覆盖 | `testEditDoesNotConvertCodeStringDelimitersWhenMatchMixesQuoteStyles` |
+| 133 | WorkspaceFileKit | 注释弯撇号+代码直撇号混合时替换不得转弯代码字符定界符（回归 #344） | 文件含注释弯撇号与代码直撇号定界符 | 调用 edit 替换代码字符串内容 | 代码定界符仍为直撇号，注释弯撇号不变，源码不失效 | P0 | ✅ 已覆盖 | `testEditDoesNotConvertCodeCharDelimitersWhenMatchMixesSingleQuoteStyles` |
 
-> 说明：全部 **131 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **133 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
+- P0: 已覆盖 21 / 21
 - P1: 已覆盖 91 / 91
 - P2: 已覆盖 21 / 21
-- **合计: 131 / 131**（仅表示清单场景，非源码覆盖率）
+- **合计: 133 / 133**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
 - **P1**: 其余功能性用例（91 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（21 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 131 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 133 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
