@@ -100,6 +100,20 @@ struct MCPServerSessionTests {
         return MCPPreparedTransport(transport: clientTransport)
     }
 
+    /// 构造按游标分页返回工具列表的 mock 服务器（#181）。
+    /// `pages` 接收请求游标（首页为 nil），返回该页的工具与下一游标。
+    private func makeListToolsMockServer(
+        _ pages: @escaping @Sendable (String?) -> ListTools.Result
+    ) async throws -> MCPPreparedTransport {
+        let (clientTransport, serverTransport) = await InMemoryTransport.createConnectedPair()
+        let server = Server(name: "ListToolsMock", version: "1.0.0")
+        try await server.withMethodHandler(ListTools.self) { parameters in
+            pages(parameters.cursor)
+        }
+        try await server.start(transport: serverTransport)
+        return MCPPreparedTransport(transport: clientTransport)
+    }
+
     @Test("连接后列出工具并调用")
     func listAndCallTool() async throws {
         let prepared = try await makeMockServer()
@@ -193,4 +207,74 @@ struct MCPServerSessionTests {
 
         await session.disconnect()
     }
+
+    @Test("listTools 跟随 nextCursor 逐页聚合（**#181**）")
+    func listToolsFollowsPagination() async throws {
+        let prepared = try await makeListToolsMockServer { cursor in
+            if cursor == "page-2" {
+                return ListTools.Result(tools: [mcpTestTool("second")], nextCursor: nil)
+            }
+            return ListTools.Result(tools: [mcpTestTool("first")], nextCursor: "page-2")
+        }
+        let session = makeSession(prepared: prepared)
+
+        try await session.connect()
+        let tools = try await session.listTools()
+        #expect(tools.map(\.name) == ["first", "second"])
+
+        await session.disconnect()
+    }
+
+    @Test("listTools 首页即空游标时终止（**#181**）")
+    func listToolsStopsOnEmptyCursor() async throws {
+        let prepared = try await makeListToolsMockServer { _ in
+            ListTools.Result(tools: [mcpTestTool("only")], nextCursor: nil)
+        }
+        let session = makeSession(prepared: prepared)
+
+        try await session.connect()
+        let tools = try await session.listTools()
+        #expect(tools.map(\.name) == ["only"])
+
+        await session.disconnect()
+    }
+
+    @Test("listTools 跨页重名工具去重保留首次出现（**#181**）")
+    func listToolsDeduplicatesAcrossPages() async throws {
+        let prepared = try await makeListToolsMockServer { cursor in
+            if cursor == "page-2" {
+                return ListTools.Result(tools: [mcpTestTool("dup"), mcpTestTool("second")], nextCursor: nil)
+            }
+            return ListTools.Result(tools: [mcpTestTool("first"), mcpTestTool("dup")], nextCursor: "page-2")
+        }
+        let session = makeSession(prepared: prepared)
+
+        try await session.connect()
+        let tools = try await session.listTools()
+        #expect(tools.map(\.name) == ["first", "dup", "second"])
+
+        await session.disconnect()
+    }
+
+    @Test("listTools 游标重复时终止而非无限翻页（**#181**）")
+    func listToolsStopsOnRepeatedCursor() async throws {
+        let prepared = try await makeListToolsMockServer { cursor in
+            if cursor == "loop" {
+                return ListTools.Result(tools: [mcpTestTool("b")], nextCursor: "loop")
+            }
+            return ListTools.Result(tools: [mcpTestTool("a")], nextCursor: "loop")
+        }
+        let session = makeSession(prepared: prepared)
+
+        try await session.connect()
+        let tools = try await session.listTools()
+        #expect(tools.map(\.name) == ["a", "b"])
+
+        await session.disconnect()
+    }
+}
+
+/// 构造仅含名字的最小 MCP 工具（分页测试用）。
+private func mcpTestTool(_ name: String) -> Tool {
+    Tool(name: name, description: name, inputSchema: .object([:]))
 }

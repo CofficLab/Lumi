@@ -5,7 +5,7 @@
 KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提供与 UI/插件无关的 MCP 客户端能力：服务器配置模型、传输层（stdio / Streamable HTTP）、 会话生命周期（initialize / listTools / callTool）、工具描述与调用结果模型。 - 底层使用官方 `modelcontextprotocol/swift-sdk`（精确锁版 `0.12.1`，官方分级 Tier 3）， 通过 `MCPServerServing` 薄抽象隔离，替换实现不影响上层调用方。 - 不依赖任何其他 Lumi 包；只被 `PluginMCP`（或宿主）依赖。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 21
+测试文件: 3 个，用例总数: 25
 
 ## 公开 API
 
@@ -25,7 +25,7 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 
 - **MCPContentCodec**（7 条）：由 `textAndImage`、`resourceLink`、`errorFlag`、`structuredContentOnly`、`contentAndStructuredContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation`、`jsonZeroAndOneStayNumbers`、`mcpArgumentsPreserveJSONZeroAndOne`、`nativeSwiftBoolAndNumbersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPServerSession**（6 条）：由 `listAndCallTool`、`errorResult`、`notConnected`、`structuredContentOnlyResult`、`contentAndStructuredContentResult` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPServerSession**（10 条）：由 `listAndCallTool`、`errorResult`、`notConnected`、`structuredContentOnlyResult`、`contentAndStructuredContentResult`、`listToolsFollowsPagination`、`listToolsDeduplicatesAcrossPages` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -52,27 +52,31 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 | 19 | MCPContentCodec | structuredContent 为 nil 时文本编码不变（**#180**） | structuredContent 为 nil | encode 仅传入文本 content | text 仍为 hi，不受新参数影响 | P1 | ✅ 已覆盖 | `structuredContentNilPreservesText` |
 | 20 | MCPServerSession | 仅返回 structuredContent 的成功结果序列化为 JSON 文本（**#180**） | InMemory mock 服务器仅返回 structuredContent | connect 后 callTool structuredOnly | text 为 {"answer":42}，isError false，images 空 | P0 | ✅ 已覆盖 | `structuredContentOnlyResult` |
 | 21 | MCPServerSession | content 与 structuredContent 同时返回时两者都保留（**#180**） | InMemory mock 服务器返回文本与 structuredContent | connect 后 callTool structuredWithText | text 为 hello 换行 {"answer":42}，isError false | P0 | ✅ 已覆盖 | `contentAndStructuredContentResult` |
+| 22 | MCPServerSession | listTools 跟随 nextCursor 逐页聚合（**#181**） | InMemory mock 服务器分两页返回工具 | connect 后 listTools | 聚合两页工具 [first, second] | P0 | ✅ 已覆盖 | `listToolsFollowsPagination` |
+| 23 | MCPServerSession | listTools 首页即空游标时终止（**#181**） | 首页 nextCursor 为 nil | connect 后 listTools | 仅返回首页工具 [only]，不再请求 | P1 | ✅ 已覆盖 | `listToolsStopsOnEmptyCursor` |
+| 24 | MCPServerSession | listTools 跨页重名工具去重保留首次出现（**#181**） | 两页含重名工具 dup | connect 后 listTools | 去重后 [first, dup, second]，dup 仅一次 | P1 | ✅ 已覆盖 | `listToolsDeduplicatesAcrossPages` |
+| 25 | MCPServerSession | listTools 游标重复时终止而非无限翻页（**#181**） | 服务器回吐重复游标 loop | connect 后 listTools | 取尽可区分页后终止 [a, b]，不无限循环 | P0 | ✅ 已覆盖 | `listToolsStopsOnRepeatedCursor` |
 
-> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
