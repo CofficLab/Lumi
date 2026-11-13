@@ -3,6 +3,12 @@
   "strings": {
     "$": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "$"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
