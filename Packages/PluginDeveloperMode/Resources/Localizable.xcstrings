@@ -21,6 +21,18 @@
             "state" : "translated",
             "value" : "開發者模式"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式"
+          }
         }
       }
     },
@@ -55,6 +67,18 @@
             "state" : "translated",
             "value" : "開發者模式已開啟"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已開啟"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已開啟"
+          }
         }
       }
     },
@@ -74,6 +98,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已關閉"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已關閉"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "開發者模式已關閉"
