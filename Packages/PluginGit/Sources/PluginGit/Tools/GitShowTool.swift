@@ -4,6 +4,8 @@ import KitAgentTool
 /// 查看指定 commit 的详情：信息、作者、日期、统计和变更文件。
 public struct GitShowV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_show"
+    // libgit2 访问由 GitService 按仓库串行化（协作池外执行），可并行调度。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let project: (any GitProjectCapability)?
     public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "View detailed information of a specific commit, including author, date, changed files and stats." }

@@ -5,6 +5,8 @@ import ProviderGit
 /// 查看 Git 仓库状态：分支、远程、变更文件分类。
 public struct GitStatusV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_status"
+    // libgit2 访问由 GitService 按仓库串行化（协作池外执行），可并行调度。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let project: (any GitProjectCapability)?
     public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data." }

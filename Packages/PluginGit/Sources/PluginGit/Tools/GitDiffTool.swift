@@ -4,6 +4,8 @@ import KitAgentTool
 /// 查看 Git 代码变更：工作区或暂存区的 diff 与统计。
 public struct GitDiffV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_diff"
+    // libgit2 访问由 GitService 按仓库串行化（协作池外执行），可并行调度。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let project: (any GitProjectCapability)?
     public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "View code changes in a Git repository. Supports working tree changes and staged changes." }
