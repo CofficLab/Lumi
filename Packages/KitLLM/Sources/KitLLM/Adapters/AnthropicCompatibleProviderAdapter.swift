@@ -181,7 +181,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         cacheWriteInputTokens: Int?,
         cacheTotalInputTokens: Int?,
         responseID: String?,
-        stopReason: String?
+        stopReason: String?,
+        redactedThinking: [LLMRedactedThinkingBlock]
     ) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
@@ -191,10 +192,15 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
+        var redactedThinking: [LLMRedactedThinkingBlock] = []
 
         for item in response.content {
             if item.type == "text", let text = item.text {
                 textContent += text
+            } else if item.type == "redacted_thinking", let data = item.data, !data.isEmpty {
+                // 不透明密文整块保留：整段 JSON 回退必须与 SSE 一样带上它，
+                // 否则下一轮请求无法回传原始 redacted_thinking 块（#1167）。
+                redactedThinking.append(LLMRedactedThinkingBlock(data: data))
             } else if item.type == "tool_use",
                       let id = item.id,
                       let name = item.name,
@@ -232,7 +238,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 cacheWriteInputTokens: cacheWriteInputTokens
             ),
             response.id,
-            response.stopReason
+            response.stopReason,
+            redactedThinking
         )
     }
 
@@ -256,7 +263,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
            !trimmed.contains("event:"),
            !trimmed.contains("data:") {
             let parsed = try parseResponse(data: data)
-            if !parsed.content.isEmpty || parsed.toolCalls != nil {
+            if !parsed.content.isEmpty || parsed.toolCalls != nil || !parsed.redactedThinking.isEmpty {
                 // 必须带上响应元数据：网关从 SSE 换成整段 JSON 时，最终
                 // 响应的 token 用量、缓存用量、响应 ID、停止原因不应改变。
                 return StreamChunk(
@@ -271,7 +278,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                     cacheWriteInputTokens: parsed.cacheWriteInputTokens,
                     cacheTotalInputTokens: parsed.cacheTotalInputTokens,
                     responseID: parsed.responseID,
-                    stopReason: parsed.stopReason
+                    stopReason: parsed.stopReason,
+                    // 整段 JSON 一次到达多个 opaque 块，用数组承载，
+                    // 与 SSE 逐块下发的最终结果保持一致（#1167）。
+                    redactedThinkingBlocks: parsed.redactedThinking.isEmpty
+                        ? nil
+                        : parsed.redactedThinking.map(\.data)
                 )
             }
         }

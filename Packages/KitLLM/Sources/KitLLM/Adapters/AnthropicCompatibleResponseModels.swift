@@ -46,6 +46,8 @@ struct AnthropicCompatibleResponse: Decodable {
         let id: String?
         let name: String?
         let input: [String: AnthropicCompatibleAnyValue]?
+        /// `redacted_thinking` 块的不透明密文，必须原样回传（#1167）。
+        let data: String?
     }
 }
 

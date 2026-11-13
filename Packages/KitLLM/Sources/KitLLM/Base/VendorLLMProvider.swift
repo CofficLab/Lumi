@@ -192,6 +192,9 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             content: parsed.content,
             model: model,
             toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            // 不透明 redacted_thinking 块：非流式与 SSE 必须同样保留，
+            // 否则下一轮请求无法回传原始块（#1167）。
+            redactedThinking: parsed.redactedThinking.isEmpty ? nil : parsed.redactedThinking,
             inputTokenCount: tokenCounts.input,
             outputTokenCount: tokenCounts.output,
             cachedInputTokenCount: tokenCounts.cachedInput,
@@ -546,6 +549,12 @@ final class StreamingAccumulator: @unchecked Sendable {
         // redacted thinking 是不透明块，整块到达，不做增量拼接。
         if let data = chunk.redactedThinkingData, !data.isEmpty {
             redactedThinking.append(LLMRedactedThinkingBlock(data: data))
+        }
+        // 整段 JSON 回退会在单个 chunk 里携带多块（#1167），逐块收集。
+        if let blocks = chunk.redactedThinkingBlocks {
+            for data in blocks where !data.isEmpty {
+                redactedThinking.append(LLMRedactedThinkingBlock(data: data))
+            }
         }
 
         // 思考增量
