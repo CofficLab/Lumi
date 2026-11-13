@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 160 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 163 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 160
+测试文件: 14 个，用例总数: 163
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -53,7 +53,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **以 sleep 开头的命令豁免自动后台**：`sleep 5` 的语义就是「等一会儿」，转后台会让模型拿到的不是结果而是一个迟到的通知。显式 `run_in_background=true` 仍然尊重。
   - **后台结果文本必须含三要素**：后台 ID、输出路径、`read_file` 提示。缺一模型就无法继续跟进这个后台任务。
   - **失败必须抛出**：没有登记表时后台化抛 `ToolExecutionError`，不能返回一句「已在后台运行」——那会让模型以为进程还活着。
-- **完成通知**（9 条）：由 `idleConversationGetsUserMessage`、`turnFinishedDrainsQueuedNotification`、`duplicateCompletionEventsDeliverOnlyOnce` 等用例锁定；改动 `BackgroundTaskNotificationCoordinator` 时优先跑 `BackgroundTaskNotificationTests`。四条易错约定：
+- **完成通知**（11 条）：由 `idleConversationGetsUserMessage`、`turnFinishedDrainsQueuedNotification`、`duplicateCompletionEventsDeliverOnlyOnce` 等用例锁定；改动 `BackgroundTaskNotificationCoordinator` 时优先跑 `BackgroundTaskNotificationTests`。四条易错约定：
   - **通知写成 `role == .user` 的消息**：Lumi 没有「只给模型看」的标志位，只有反向的 timeline-event 机制。user 消息会触发 `MessageObserver` 起回合，从而唤醒模型。
   - **忙时必须入队而不是直接插入**：回合正在跑时插入消息不会起新回合（`MessageObserver` 因 `isRunning` 直接返回），通知就丢了。忙时入队，由 `turnFinished` 钩子排空。
   - **排空必须延后到回合真正空闲**：`turnFinished` 触发时上一个 `runTurn` 还在退栈，直接起会被判定为并发回合而失败。
@@ -233,27 +233,30 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 158 | WorkspacePathResolver | write_file 相对路径写入项目内而非父目录（**#140**） | 临时容器，项目根不预创建 | 注入根 provider 后 write_file("note.txt") | project/note.txt 存在且内容正确，父目录无该文件 | P0 | ✅ 已覆盖 | `writeFileToolWritesRelativePathInsideWorkspace` |
 | 159 | WorkspacePathResolver | read_file 相对路径不得读取父目录同名诱饵（**#140**） | 项目根不存在，父目录 note.txt=outside | 注入根 provider 后 read_file("note.txt") | 不返回 outside（指向项目内不存在文件而抛错） | P0 | ✅ 已覆盖 | `readFileToolDoesNotReadParentFileForRelativePath` |
 | 160 | WorkspacePathResolver | edit_file 相对路径不得修改父目录同名诱饵（**#140**） | 项目根不存在，父目录 note.txt=outside | 注入根 provider 后 edit_file old→new | 父目录诱饵原样未动 | P0 | ✅ 已覆盖 | `editFileToolDoesNotModifyParentFileForRelativePath` |
+| 161 | 工具参数安全 | read_file 文件系统失败必须抛出，不得包成 isError=false 的成功结果（**回归 #503**） | 目标文件不存在 | 调用 `ReadFileTool().executeResult(arguments:)` | 抛出 ToolExecutionError，不返回成功 ToolCallResult | P0 | ✅ 已覆盖 | `readFileThrowsWhenFileDoesNotExist` |
+| 162 | 完成通知 | 子代理任务的完成通知直接给出结论并要求转述 | — | 构造 `isSubagentTask=true` 的通知消息 | 含 "Subagent conclusion:"、完整结论与 "Relay the conclusion"，不含 read_file / Last output 轮询提示 | P1 | ✅ 已覆盖 | `subagentNotificationCarriesConclusionWithoutPollingHint` |
+| 163 | 完成通知 | 后台子代理的完成通知带完整结论而不是 2000 字截断 | 进程内子代理任务写入 8000 字结论 | finishInProcess 后投递完成事件 | 通知含完整 8000 字结论与 "Subagent conclusion:" | P0 | ✅ 已覆盖 | `subagentNotificationTailIsNotTruncated` |
 
-> 说明：全部 **160 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **163 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 47 / 47
-- P1: 已覆盖 103 / 103
+- P0: 已覆盖 49 / 49
+- P1: 已覆盖 104 / 104
 - P2: 已覆盖 10 / 10
-- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
+- **合计: 163 / 163**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（47 条）
-- **P1**: 其余功能性用例（103 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（49 条）
+- **P1**: 其余功能性用例（104 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 160 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 163 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
