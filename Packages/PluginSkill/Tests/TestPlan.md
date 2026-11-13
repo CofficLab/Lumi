@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 60 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 62 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 60
+测试文件: 7 个，用例总数: 62
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -41,7 +41,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 60 条
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CreateSkillTool**（13 条）：由 `createsScannableSkill`、`keepsExistingH1WithoutDuplicatingTitle`、`makeSkillMarkdownEdgeCases`、`normalizesName`、`rejectsDuplicateSkill`、`writesIntoConversationProject` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（12 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（14 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；SkillService 缓存只存与底座无关的项目扫描结果，baseSkills 每次调用重新合并，设置页与 LLM 注入不得互相污染（**回归** #196），改动该模块时优先跑对应测试文件。
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUD 与扫描器一致性**（6 条）：由 `readFallsBackToValidLegacySkill`、`oversizedMetadataIsRejected` 等用例锁定；改动 Skill 读写的有效性判定或大小约束时优先跑对应测试文件。
 - **DeleteSkillTool 回执路径**（2 条）：由 `legacyDeleteReceiptReportsDeletedDirectory`、`lumiDeleteReceiptReportsLumiDirectory` 锁定；delete_skill 回执的 `directory_path` 必须是本次实际删除的目录（#643），改动删除服务返回值或回执组装时优先跑对应测试文件。
@@ -113,27 +113,29 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 60 条
 | 58 | SkillInjectionConversationScope | 注入会话绑定项目的技能，而不是全局当前项目 | 会话绑定项目 A，全局当前项目为 B | 执行 `SkillInjectionHook.apply(to:)` | 注入 A 的技能，不含 B 的技能 | P0 | ✅ 已覆盖 | `injectsConversationProjectSkills` |
 | 59 | DeleteSkillTool 回执路径 | 删除历史目录技能时，回执 directory_path 必须是实际删除的 .agent 路径 | 技能仅存在于 `.agent/skills/<name>` | 执行 `delete_skill` 并解析回执 JSON | `directory_path` 等于被删除的 `.agent` 目录，该目录已不存在（**回归** #643） | P0 | ✅ 已覆盖 | `legacyDeleteReceiptReportsDeletedDirectory` |
 | 60 | DeleteSkillTool 回执路径 | 删除 .lumi 技能时，回执 directory_path 保持 .lumi 路径 | 技能位于 `.lumi/skills/<name>` | 执行 `delete_skill` 并解析回执 JSON | `directory_path` 等于被删除的 `.lumi` 目录，该目录已不存在 | P1 | ✅ 已覆盖 | `lumiDeleteReceiptReportsLumiDirectory` |
+| 61 | 综合 | 空底座缓存不得污染 LLM 注入，内置/插件技能不丢失 | 设置页先以空底座写缓存 | TTL 内 LLM 带完整底座调用 `listSkills` | 返回项目+底座合并结果，内置技能不丢失（**回归** #196） | P0 | ✅ 已覆盖 | `testEmptyBaseCacheDoesNotPolluteInjection` |
+| 62 | 综合 | 合并缓存不得污染设置页项目列表 | LLM 先以完整底座写缓存 | TTL 内设置页以空底座调用 `listSkills` | 只返回项目技能，不误列内置/插件技能（**回归** #196） | P0 | ✅ 已覆盖 | `testMergedCacheDoesNotPolluteSettings` |
 
-> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 15 / 15
 - P1: 已覆盖 41 / 41
 - P2: 已覆盖 6 / 6
-- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
 - **P1**: 其余功能性用例（41 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

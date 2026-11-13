@@ -176,15 +176,17 @@ public actor SkillService {
         let projectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectPath.isEmpty else { return baseSkills }
 
+        // 缓存只存与底座无关的项目扫描结果，baseSkills 每次重新合并，避免设置页与 LLM 注入互相污染（#196）。
+        let project: [SkillMetadata]
         if let cached = cachedSkills[projectPath],
            Date().timeIntervalSince(cached.timestamp) < cacheTTL {
-            return cached.skills
+            project = cached.skills
+        } else {
+            project = scanner.scanSkills(projectPath: projectPath)
+            evictIfNeeded()
+            cachedSkills[projectPath] = (skills: project, timestamp: Date())
         }
-        let project = scanner.scanSkills(projectPath: projectPath)
-        let skills = SkillMergePolicy.merge(builtin: baseSkills, project: project)
-        evictIfNeeded()
-        cachedSkills[projectPath] = (skills: skills, timestamp: Date())
-        return skills
+        return SkillMergePolicy.merge(builtin: baseSkills, project: project)
     }
 
     /// 仅返回内置技能（随包目录）。
