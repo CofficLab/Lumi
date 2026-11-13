@@ -41,7 +41,6 @@ struct RootWelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
-        .debugViewBadge("Welcome")
     }
 
     private var backgroundView: some View {

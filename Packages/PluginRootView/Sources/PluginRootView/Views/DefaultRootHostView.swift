@@ -14,7 +14,6 @@ struct DefaultRootHostView: View {
         VStack(spacing: 0) {
             if let toolbarView = provider.toolbarView {
                 toolbarView
-                    .debugViewBadge("Toolbar", alignment: .bottomLeading)
                 // 与旧版 AppLayoutView 一致：工具栏下方使用主题分隔线。
                 AppDivider()
             }
@@ -22,8 +21,6 @@ struct DefaultRootHostView: View {
             HStack(spacing: 0) {
                 if let activityBarView = provider.activityBarView {
                     activityBarView
-                        // ActivityBar 仅 48pt 宽，横向 badge 会被裁切，故竖排展示。
-                        .debugViewBadge("Activity Bar", alignment: .bottomLeading, rotationDegrees: 90)
                 }
 
                 WorkbenchSplitView(provider: provider)

@@ -71,14 +71,12 @@ struct RootMainContentView: View {
                         idealHeight: contentFooterHeight.idealHeight,
                         maxHeight: contentFooterHeight.maxHeight
                     )
-                    .debugViewBadge("Content Footer")
                     .zIndex(1)
             }
             #else
             VStack(spacing: 0) {
                 contentWithHeader
                 contentFooterView
-                    .debugViewBadge("Content Footer")
             }
             #endif
         } else if contentHeaderView != nil && !isContentHeaderViewHidden {
@@ -93,11 +91,9 @@ struct RootMainContentView: View {
         VStack(spacing: 0) {
             if let contentHeaderView, !isContentHeaderViewHidden {
                 contentHeaderView
-                    .debugViewBadge("Content Header", alignment: .topLeading)
                     .zIndex(1)
             }
             mainContent
-                .debugViewBadge("Main Content")
                 // AppKit-backed editors can draw floating subviews (for example,
                 // the line-number gutter) outside their SwiftUI layout bounds.
                 // Keep those subviews below the fixed content header while scrolling.
@@ -122,7 +118,6 @@ struct RootMainContentView: View {
                 // 不渲染内容区，trailing pane 独占全部空间。
                 if trailingPane.isVisible {
                     trailingPane.content
-                        .debugViewBadge("Trailing Pane")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else if trailingPane.isVisible {
@@ -138,7 +133,6 @@ struct RootMainContentView: View {
                                 onResize: trailingPane.saveWidth
                             )
                         trailingPane.content
-                            .debugViewBadge("Trailing Pane")
                             .frame(
                                 minWidth: trailingPane.minWidth,
                                 idealWidth: trailingPane.idealWidth,
@@ -151,7 +145,6 @@ struct RootMainContentView: View {
                         contentWithHeaderAndFooter
                         Divider()
                         trailingPane.content
-                            .debugViewBadge("Trailing Pane")
                             .frame(minWidth: trailingPane.minWidth, idealWidth: trailingPane.idealWidth, maxWidth: trailingPane.maxWidth)
                     }
                     #endif

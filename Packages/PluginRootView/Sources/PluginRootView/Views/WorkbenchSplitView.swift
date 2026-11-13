@@ -22,7 +22,6 @@ struct WorkbenchSplitView: View {
                             idealWidth: provider.railWidth.idealWidth,
                             maxWidth: provider.railWidth.maxWidth
                         )
-                        .debugViewBadge("Rail", alignment: .bottomTrailing)
                         .appSplitDivider(
                             .trailing,
                             initialPosition: provider.railWidth.idealWidth,
@@ -50,7 +49,6 @@ struct WorkbenchSplitView: View {
                 #else
                 HStack(spacing: 0) {
                     provider.railView!
-                        .debugViewBadge("Rail", alignment: .bottomTrailing)
                     Divider()
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())
                 }

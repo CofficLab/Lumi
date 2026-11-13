@@ -13,6 +13,5 @@ struct ContentPlaceholderView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .debugViewBadge("Content Placeholder")
     }
 }
