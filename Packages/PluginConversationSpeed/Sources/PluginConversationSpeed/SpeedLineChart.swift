@@ -9,22 +9,11 @@ struct SpeedLineChart: View {
         Canvas { context, size in
             guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
 
-            let values = samples.map(\.tokensPerSecond)
-            let minValue = values.min() ?? 0
-            let maxValue = values.max() ?? 0
-            let range = max(maxValue - minValue, 1)
             let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
-            let plotWidth = max(size.width - inset.leading - inset.trailing, 1)
-            let plotHeight = max(size.height - inset.top - inset.bottom, 1)
-
-            let points = samples.enumerated().map { offset, sample in
-                let xRatio = samples.count == 1 ? 0.5 : Double(offset) / Double(samples.count - 1)
-                let yRatio = (sample.tokensPerSecond - minValue) / range
-                return CGPoint(
-                    x: inset.leading + plotWidth * xRatio,
-                    y: inset.top + plotHeight * (1 - yRatio)
-                )
-            }
+            let geometry = SpeedChartGeometry(samples: samples, size: size, inset: inset)
+            let plotWidth = geometry.plotWidth
+            let plotHeight = geometry.plotHeight
+            let points = geometry.points
 
             // Grid lines
             var grid = Path()
@@ -35,8 +24,11 @@ struct SpeedLineChart: View {
             }
             context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
 
+            // 曲线：填充与描边共用同一条路径，避免重复构建。
+            let curvePath = smoothedPath(points: points)
+
             // Fill area under curve
-            var fill = smoothedPath(points: points)
+            var fill = curvePath
             fill.addLine(to: CGPoint(x: points.last?.x ?? inset.leading, y: inset.top + plotHeight))
             fill.addLine(to: CGPoint(x: points.first?.x ?? inset.leading, y: inset.top + plotHeight))
             fill.closeSubpath()
@@ -47,7 +39,7 @@ struct SpeedLineChart: View {
             ))
 
             // Line
-            context.stroke(smoothedPath(points: points), with: .color(.orange), lineWidth: 2.4)
+            context.stroke(curvePath, with: .color(.orange), lineWidth: 2.4)
 
             // Last point dot
             if let last = points.last {
@@ -55,38 +47,30 @@ struct SpeedLineChart: View {
                 context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.orange.opacity(0.32)), lineWidth: 2)
             }
 
-            // Hover indicator line
-            if let hoveredIndex,
-               points.indices.contains(hoveredIndex) {
-                let point = points[hoveredIndex]
-                context.stroke(
-                    Path { path in
-                        path.move(to: CGPoint(x: point.x, y: inset.top))
-                        path.addLine(to: CGPoint(x: point.x, y: inset.top + plotHeight))
-                    },
-                    with: .color(.orange.opacity(0.45)),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 4])
-                )
-            }
+            // - Important: hover 指示线**不在** Canvas 里画。
+            //   `hoveredIndex` 变化会让整个 Canvas 重绘，从而把全量点集映射
+            //   与平滑路径重建都重跑一遍；鼠标每移动一次就是一次全量重算
+            //   （见 issue #1224）。
         }
         .overlay {
             GeometryReader { proxy in
                 let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
-                let plotWidth = max(proxy.size.width - inset.leading - inset.trailing, 1)
-                let values = samples.map(\.tokensPerSecond)
-                let minValue = values.min() ?? 0
-                let maxValue = values.max() ?? 0
-                let range = max(maxValue - minValue, 1)
-                let plotHeight = max(proxy.size.height - inset.top - inset.bottom, 1)
+                let geometry = SpeedChartGeometry(samples: samples, size: proxy.size, inset: inset)
+                let plotWidth = geometry.plotWidth
+                // - Important: 只算 hoveredIndex 那一个点，不重建全量点集。
+                //   鼠标每移动一次都会重跑 overlay 的 body（见 issue #1224）。
+                let hoveredPoint: CGPoint? = {
+                    guard let hoveredIndex, samples.indices.contains(hoveredIndex) else { return nil }
+                    return geometry.point(at: hoveredIndex, value: samples[hoveredIndex].tokensPerSecond)
+                }()
 
                 ZStack {
                     if let hoveredIndex,
-                       samples.indices.contains(hoveredIndex) {
+                       samples.indices.contains(hoveredIndex),
+                       let hoveredPoint {
                         let sample = samples[hoveredIndex]
-                        let xRatio = samples.count == 1 ? 0.5 : Double(hoveredIndex) / Double(samples.count - 1)
-                        let x = inset.leading + plotWidth * xRatio
-                        let yRatio = (sample.tokensPerSecond - minValue) / range
-                        let y = inset.top + plotHeight * (1 - yRatio)
+                        let x = hoveredPoint.x
+                        let y = hoveredPoint.y
 
                         Circle()
                             .fill(.orange)
