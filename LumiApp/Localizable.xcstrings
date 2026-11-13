@@ -176,6 +176,9 @@
         }
       }
     },
+    "Lumi" : {
+
+    },
     "Lumi needs at least %@ of free disk space to run. Only %@ remains. Low disk space can cause plugin startup or data write failures; free up space soon." : {
       "extractionState" : "manual",
       "localizations" : {
