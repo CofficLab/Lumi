@@ -15,6 +15,12 @@
             "value" : "30天：%@"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30天：%@"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -41,6 +47,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暂无 token 用量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無 token 用量"
           }
         },
         "zh-HK" : {
@@ -71,6 +83,12 @@
             "value" : "Token 趋势"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 趨勢"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -97,6 +115,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Token 用量趋势图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 用量趨勢圖"
           }
         },
         "zh-HK" : {
