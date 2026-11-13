@@ -5,7 +5,7 @@
 KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生成脚本、写入磁盘与查询安装状态。
 
 平台: macOS 14+
-测试文件: 7 个，用例总数: 52
+测试文件: 8 个，用例总数: 60
 
 ## 公开 API
 
@@ -27,6 +27,7 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 - **CLIScriptBuilder**（10 条）：由 `scriptStartsWithShebang`、`defaultCommandNameIsLumi`、`usesExistingOpenProjectProtocol` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIScriptBuilderShellEscaping**（8 条）：由 `dollarSignPathResolvesVerbatim`、`backtickPathResolvesVerbatim`、`combinedSpecialCharsPathResolvesVerbatim` 等用例锁定；真实执行 /bin/sh，断言含 `$`、反引号、双引号、反斜杠、单引号、空格、非 ASCII 的安装路径原样解析（#142）。
 - **CLIScriptBuilderURLEncoding**（6 条）：由 `newlineInPathIsPreserved`、`crlfInPathIsPreserved`、`multibyteWithNewlineRoundTrips` 等用例锁定；真实执行 /bin/sh 运行脚本的 `urlencode`，断言换行/回车逐字节编码为 %0A/%0D 并可被 App 还原（#143）。
+- **CLIPathResolverShellOutput**（8 条）：由 `relativeDotPrefixKeepsAbsoluteEntries`、`emptyEntryPrefixKeepsAbsoluteEntries`、`rcNoiseBeforePathIsSkipped` 等用例锁定；直接驱动 `absolutePathEntries(fromShellOutput:)`，断言相对/空条目前缀的 PATH 行仍保留其后绝对目录、rc 噪声被跳过（#144）。
 
 ## 测试用例清单
 
@@ -84,27 +85,35 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 | 50 | CLIScriptBuilderURLEncoding | 含换行的路径经脚本编码后可被 App 原样还原 | 路径 `/tmp/a\nb` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 脚本编码后经 `URLComponents` 还原 == 原路径 | P1 | ✅ 已覆盖 | `newlinePathRoundTripsThroughApp` |
 | 51 | CLIScriptBuilderURLEncoding | 多字节字符与换行混合的路径编码后可被 App 原样还原 | 路径 `/tmp/中文\n目录` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码含 %0A，且 App 还原 == 原路径 | P1 | ✅ 已覆盖 | `multibyteWithNewlineRoundTrips` |
 | 52 | CLIScriptBuilderURLEncoding | 不含特殊字符的多字节路径编码保持不变（无回归） | 路径 `/tmp/中文目录` | 生成脚本，抽出 `urlencode` 用 /bin/sh 执行（路径作为 argv 传入） | 编码为 `%2Ftmp%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95` | P1 | ✅ 已覆盖 | `plainMultibytePathIsUnchanged` |
+| 53 | CLIPathResolverShellOutput | 以 . 开头的 PATH 行必须保留其后的绝对目录 | shell 输出 `.:/custom/bin:/usr/bin` | 调用 `absolutePathEntries(fromShellOutput:)` | 保留 `/custom/bin`、`/usr/bin`，相对条目 `.` 被忽略 | P0 | ✅ 已覆盖 | `relativeDotPrefixKeepsAbsoluteEntries` |
+| 54 | CLIPathResolverShellOutput | 以相对目录开头的 PATH 行必须保留其后的绝对目录 | shell 输出 `bin:/custom/bin:/usr/bin` | 调用 `absolutePathEntries(fromShellOutput:)` | 保留 `/custom/bin`、`/usr/bin`，相对条目 `bin` 被忽略 | P0 | ✅ 已覆盖 | `relativeDirectoryPrefixKeepsAbsoluteEntries` |
+| 55 | CLIPathResolverShellOutput | 以空条目开头的 PATH 行必须保留其后的绝对目录 | shell 输出 `:/custom/bin:/usr/bin` | 调用 `absolutePathEntries(fromShellOutput:)` | 保留 `/custom/bin`、`/usr/bin`，空条目被去掉 | P0 | ✅ 已覆盖 | `emptyEntryPrefixKeepsAbsoluteEntries` |
+| 56 | CLIPathResolverShellOutput | PATH 前的 rc 噪声行被跳过，仍解析出绝对目录 | 输出含 rc 噪声行后跟 `.:/custom/bin:/usr/bin` | 调用 `absolutePathEntries(fromShellOutput:)` | 保留 `/custom/bin`、`/usr/bin`，rc 噪声行不被当作 PATH | P1 | ✅ 已覆盖 | `rcNoiseBeforePathIsSkipped` |
+| 57 | CLIPathResolverShellOutput | 全绝对 PATH 行解析保持不变（无回归） | shell 输出 `/usr/bin:/bin` | 调用 `absolutePathEntries(fromShellOutput:)` | 返回 `/usr/bin`、`/bin`，顺序不变 | P1 | ✅ 已覆盖 | `absoluteOnlyPathUnchanged` |
+| 58 | CLIPathResolverShellOutput | 全相对 PATH 行不产生绝对条目 | shell 输出 `.:./bin:foo` | 调用 `absolutePathEntries(fromShellOutput:)` | 返回空列表（无绝对条目） | P1 | ✅ 已覆盖 | `allRelativePathYieldsEmpty` |
+| 59 | CLIPathResolverShellOutput | PATH 后的尾随噪声行被跳过 | 输出 `/usr/bin:/bin` 后跟尾随噪声行 | 调用 `absolutePathEntries(fromShellOutput:)` | 返回 `/usr/bin`、`/bin`，尾随噪声被跳过 | P1 | ✅ 已覆盖 | `trailingNoiseAfterPathIsSkipped` |
+| 60 | CLIPathResolverShellOutput | 空输出得到空列表 | 空字符串输出 | 调用 `absolutePathEntries(fromShellOutput:)` | 返回空列表 | P2 | ✅ 已覆盖 | `emptyOutputYieldsEmpty` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 40 / 40
-- P2: 已覆盖 2 / 2
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 44 / 44
+- P2: 已覆盖 3 / 3
+- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（40 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（44 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

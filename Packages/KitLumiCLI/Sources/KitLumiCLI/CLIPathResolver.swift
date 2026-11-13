@@ -98,13 +98,7 @@ public enum CLIPathResolver {
             timeout: timeout
         ) else { return [] }
 
-        // 用户的 rc 文件可能往 stdout 打印无关内容；`PATH` 一定以 "/" 开头，
-        // 因此取**最后一个**以 "/" 开头的行作为 `PATH`。
-        let line = output
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .last { $0.hasPrefix("/") }
-        guard let line else { return [] }
-        return parsePathEntries(String(line))
+        return absolutePathEntries(fromShellOutput: output)
     }
 
     /// 拆分 `PATH` 字符串为条目列表。
@@ -112,6 +106,21 @@ public enum CLIPathResolver {
         path
             .split(separator: ":", omittingEmptySubsequences: true)
             .map(String.init)
+    }
+
+    /// 从 shell 输出中解析出 `PATH` 的绝对路径条目。
+    ///
+    /// `printenv PATH` 的值位于输出末尾（rc 噪声在它之前）。`PATH` 可能以相对
+    /// 条目（`.`、`foo`）或空条目开头，因此**不能假设整行以 "/" 开头**；从最后
+    /// 一行往前找首个含绝对条目的行，拆分后只保留绝对路径（#144）。相对条目
+    /// 依赖当前目录、对「安装位置」无意义，按设计忽略。
+    internal static func absolutePathEntries(fromShellOutput output: String) -> [String] {
+        let lines = output.split(separator: "\n", omittingEmptySubsequences: true)
+        for line in lines.reversed() {
+            let absolute = parsePathEntries(String(line)).filter { $0.hasPrefix("/") }
+            if !absolute.isEmpty { return absolute }
+        }
+        return []
     }
 
     /// 执行命令并捕获 stdout，超时后强制结束。
