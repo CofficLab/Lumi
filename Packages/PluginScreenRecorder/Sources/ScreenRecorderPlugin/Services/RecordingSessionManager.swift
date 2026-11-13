@@ -242,7 +242,12 @@ public final class RecordingSessionManager {
                     try? await Task.sleep(for: .milliseconds(1000))
                     if Task.isCancelled { break }
                     guard let self, self.hasActiveSession else { break }
-                    let stillPresent = RecordableWindowProvider.availableWindows().contains { $0.id == window.id }
+                    // 定向查询目标窗口是否还在，并在后台线程执行：
+                    // 全量枚举窗口列表 + 逐个构造 NSRunningApplication 是纯冗余开销
+                    // （见 issue #1272）。
+                    let stillPresent = await Task.detached(priority: .utility) {
+                        RecordableWindowProvider.windowExists(id: window.id)
+                    }.value
                     if !stillPresent {
                         _ = try? await self.stop()
                         return
