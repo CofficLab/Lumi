@@ -82,6 +82,13 @@ struct SubagentIdentityTests {
         }
     }
 
+    @Test("lead 是根代理保留名，不能分配给子代理")
+    func resolveThrowsForReservedName() {
+        #expect(throws: SubagentIdentityError.reservedName("lead")) {
+            _ = try SubagentIdentity.resolve(requested: "lead", existing: [])
+        }
+    }
+
     @Test("提供同名子代理时抛出 duplicateName")
     func resolveThrowsForDuplicateName() {
         #expect(throws: SubagentIdentityError.duplicateName("explorer")) {

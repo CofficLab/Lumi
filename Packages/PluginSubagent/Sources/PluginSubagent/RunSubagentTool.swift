@@ -412,6 +412,8 @@ public struct RunSubagentTool: SuperAgentTool, @unchecked Sendable {
                 reason = "Invalid subagent name \"\(name)\": use 3-32 lowercase letters, digits, or hyphens, starting with a letter."
             case .duplicateName(let name):
                 reason = "A subagent named \"\(name)\" already exists in this conversation."
+            case .reservedName(let name):
+                reason = "\"\(name)\" is reserved for the root agent."
             }
             throw ToolExecutionError.executionFailed(toolName: Self.toolName, reason: reason)
         }

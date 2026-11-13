@@ -4,6 +4,7 @@ import Foundation
 public enum SubagentIdentityError: Error, Equatable {
     case invalidName(String)
     case duplicateName(String)
+    case reservedName(String)
 }
 
 /// 子代理的稳定名字（#1328 Task 1）。
@@ -17,6 +18,9 @@ public enum SubagentIdentity {
 
     /// 与 `isValidName` 一致的 JSON Schema 正则，供工具声明使用。
     public static let pattern = "^[a-z][a-z0-9-]{2,31}$"
+
+    /// 根代理的寻址名，不能被子代理占用。
+    public static let reservedNames: Set<String> = ["lead"]
 
     public static func isValidName(_ name: String) -> Bool {
         guard (minLength...maxLength).contains(name.count),
@@ -46,6 +50,9 @@ public enum SubagentIdentity {
         }
         guard isValidName(requested) else {
             throw SubagentIdentityError.invalidName(requested)
+        }
+        guard !reservedNames.contains(requested) else {
+            throw SubagentIdentityError.reservedName(requested)
         }
         guard !existing.contains(requested) else {
             throw SubagentIdentityError.duplicateName(requested)
