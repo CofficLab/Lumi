@@ -52,6 +52,9 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 - **原生 Markdown 已能正确解析时不得改动**：加粗、行内代码、链接三类优先用
   `swift-markdown` 原生结果，仅在中文紧邻等场景才走回退解析
   （`preservesNative*WhenItAlreadyWorks`）。回退路径是补丁，不是主路径。
+- **代码 span 内的字面 `**` 不是未解析定界符**：判定原生结果是否回退时，只看
+  非代码 run 里是否残留 `**`；代码内容里的 `**` 必须保留为代码，不得触发不识别
+  代码 span 的回退（`preservesBoldWhenCodeSpanContainsLiteralDoubleAsterisk`）。
 - **CJK 紧邻场景需回退**：`中文**加粗**` 中 `swift-markdown` 不识别，
   故自建回退（`parsesStrongTextAfterChineseWithoutWhitespace`），
   且标点起始的定界段也需覆盖。
@@ -206,8 +209,10 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 | 132 | 表格 | 嵌套波浪号围栏内的示例表格不被规整 | 四波浪号外层含三波浪号示例 | 规整 | 整段原样保留 | P1 | ✅ 已覆盖 | `preservesNestedTildeFenceExampleTableVerbatim` |
 | 133 | 流式 | 代码块内空行不作稳定边界 | 含内部空行的代码块 + 追加段落，逐前缀经真实缓存 | 每步比较块结构 | 增量与整体解析完全相等，代码块不被拆断 | P0 | ✅ 已覆盖 | `streamingAppendKeepsCodeBlockWithInternalBlankLineIntact` |
 | 134 | 流式 | 波浪号围栏内空行不作稳定边界 | 含内部空行的波浪号围栏 + 追加段落 | 每步比较块结构 | 增量与整体解析完全相等 | P1 | ✅ 已覆盖 | `streamingAppendKeepsTildeFenceWithInternalBlankLineIntact` |
+| 135 | 行内 | 代码 span 内字面 ** 不触发回退 | 代码 span 含字面 ** + 后续加粗 | 解析 | 代码内容保留，后续加粗正常渲染 | P0 | ✅ 已覆盖 | `preservesBoldWhenCodeSpanContainsLiteralDoubleAsterisk` |
+| 136 | 行内 | 代码 span 后多段加粗均正常 | 代码 span 含 ** + 两段加粗 | 解析 | 两段加粗都识别，代码内容保留 | P1 | ✅ 已覆盖 | `preservesMultipleBoldSegmentsAfterCodeSpanWithDoubleAsterisk` |
 
-> 说明：全部 **134 条场景**已在 macOS 上实跑通过。
+> 说明：全部 **136 条场景**已在 macOS 上实跑通过。
 >
 > 本包的价值集中在**回归锁定**，几条易错约定已在用例里显式锁定：
 > - **表格规整的误判面比正确面更危险**（ID 39/41/42/46/53/54）：shell 管道
@@ -252,10 +257,10 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 
 ## 覆盖率统计
 
-- P0: 已覆盖 51 / 51
-- P1: 已覆盖 81 / 81
+- P0: 已覆盖 52 / 52
+- P1: 已覆盖 82 / 82
 - P2: 已覆盖 2 / 2
-- **合计: 134 / 134**（仅表示清单场景，非源码覆盖率）
+- **合计: 136 / 136**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -264,18 +269,18 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
   嵌套围栏长度、非法分隔行回退）、代码块不被截断与不塌陷、聊天滚动高度一致性、
   尺寸缓存命中与失效、CJK 加粗与未闭合定界、原生解析不被改动、流式等价、
   语法着色必须生效且随内容更新、块缓存解析不持锁与稳定前缀线性成本、
-  围栏内空行不作稳定边界
+  围栏内空行不作稳定边界、代码 span 内字面 ** 不触发回退
 - **P1**: 其余解析形态（标题层级、列表、表格对齐、Mermaid 识别）、
   尺寸缓存分桶与共享 store、异步布局稳定性、引用块切分与空白、行内回退分支、
   高亮 provider 的语言归一化与降级、聊天与编辑器高亮资源一致性、复制按钮内容、
-  嵌套波浪号围栏示例保留、波浪号围栏内空行不作稳定边界
+  嵌套波浪号围栏示例保留、波浪号围栏内空行不作稳定边界、代码 span 后多段加粗保留
 - **P2**: `thematicBreak` 相等性、共享 store 容量淘汰
 
 ## 跨平台说明
 
 - Package 声明 macOS 14+ / iOS 17+
 - `KitMarkdownCoreTests`（ID 1–56、131–132）为**跨平台**：纯 Foundation 解析逻辑
-- `KitMarkdownTests`（ID 57–134）依赖 SwiftUI/AppKit 布局度量
+- `KitMarkdownTests`（ID 57–136）依赖 SwiftUI/AppKit 布局度量
   （`NSHostingView` / `HorizontalScrollView` / `NSScrollView`），
   涉及真实测量高度的断言（ID 59–66、77–83、97–108）为 **macOS 专属**
 - 所有布局度量类用例依赖宿主窗口环境，`KitMarkdownTesting` 提供统一支撑；

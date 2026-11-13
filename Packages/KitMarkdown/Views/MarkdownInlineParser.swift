@@ -65,10 +65,20 @@ public enum MarkdownInlineParser {
         if !containsEmphasisDelimiter(originalText) {
             return true
         }
-        if String(attributed.characters).contains("**") {
+        if containsUnparsedEmphasisDelimiter(attributed) {
             return false
         }
         return containsInlinePresentationIntent(attributed)
+    }
+
+    // 代码 span 内的 ** 是字面内容，不是未解析的加粗定界符，不应触发回退。
+    private static func containsUnparsedEmphasisDelimiter(_ attributed: AttributedString) -> Bool {
+        attributed.runs.contains { run in
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                return false
+            }
+            return String(attributed.characters[run.range]).contains("**")
+        }
     }
 
     private static func containsInlinePresentationIntent(_ attributed: AttributedString) -> Bool {

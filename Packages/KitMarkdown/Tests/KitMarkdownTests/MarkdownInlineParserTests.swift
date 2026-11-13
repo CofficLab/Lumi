@@ -107,6 +107,31 @@ struct MarkdownInlineParserTests {
         #expect(!attributed.runs.contains { $0.inlinePresentationIntent != nil })
     }
 
+    // MARK: - Code Span With Literal Bold Delimiter
+
+    @Test
+    func preservesBoldWhenCodeSpanContainsLiteralDoubleAsterisk() {
+        let attributed = MarkdownInlineParser.parse("Use `**` and **bold**.")
+
+        #expect(String(attributed.characters) == "Use ** and bold.")
+        #expect(containsStrongRun(in: attributed, text: "bold"))
+        #expect(attributed.runs.contains { run in
+            run.inlinePresentationIntent == .code && String(attributed.characters[run.range]) == "**"
+        })
+    }
+
+    @Test
+    func preservesMultipleBoldSegmentsAfterCodeSpanWithDoubleAsterisk() {
+        let attributed = MarkdownInlineParser.parse("Literal `**` then **first** and **second**.")
+
+        #expect(String(attributed.characters) == "Literal ** then first and second.")
+        #expect(containsStrongRun(in: attributed, text: "first"))
+        #expect(containsStrongRun(in: attributed, text: "second"))
+        #expect(attributed.runs.contains { run in
+            run.inlinePresentationIntent == .code && String(attributed.characters[run.range]) == "**"
+        })
+    }
+
     // MARK: - Helpers
 
     private func containsStrongRun(in attributed: AttributedString, text: String) -> Bool {
