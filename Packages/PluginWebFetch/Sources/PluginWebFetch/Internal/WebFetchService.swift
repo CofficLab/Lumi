@@ -124,14 +124,15 @@ public struct WebFetchService: Sendable {
             .first?
             .trimmingCharacters(in: .whitespaces)
             .lowercased() ?? "text/plain"
+        let declaredEncoding = Self.declaredEncoding(forContentType: contentType)
 
         switch mimeType {
         case "text/html", "application/xhtml+xml":
-            return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration)
+            return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, encoding: declaredEncoding)
         case "application/json":
             return processJSON(data: data, statusCode: statusCode, duration: duration)
         case "text/plain", "text/markdown":
-            return try processPlainText(data: data, statusCode: statusCode, duration: duration)
+            return try processPlainText(data: data, statusCode: statusCode, duration: duration, encoding: declaredEncoding)
         case "application/pdf":
             return processBinary(data: data, contentType: mimeType, url: url, statusCode: statusCode, duration: duration)
         case "image/jpeg", "image/png", "image/gif", "image/webp":
@@ -139,9 +140,9 @@ public struct WebFetchService: Sendable {
         default:
             if let text = String(data: data, encoding: .utf8) {
                 if text.contains("<html") || text.contains("<body") {
-                    return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration)
+                    return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, encoding: declaredEncoding)
                 }
-                return try processPlainText(data: data, statusCode: statusCode, duration: duration)
+                return try processPlainText(data: data, statusCode: statusCode, duration: duration, encoding: declaredEncoding)
             }
             return processBinary(data: data, contentType: mimeType, url: url, statusCode: statusCode, duration: duration)
         }
@@ -311,8 +312,8 @@ public struct WebFetchService: Sendable {
         return encoded
     }
 
-    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double) throws -> String {
-        guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
+    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double, encoding: String.Encoding?) throws -> String {
+        guard let html = Self.decodeText(data, declaredEncoding: encoding) else {
             throw WebFetchError.undecodableHTML
         }
 
@@ -346,8 +347,8 @@ public struct WebFetchService: Sendable {
         return result
     }
 
-    private func processPlainText(data: Data, statusCode: Int, duration: Double) throws -> String {
-        guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
+    private func processPlainText(data: Data, statusCode: Int, duration: Double, encoding: String.Encoding?) throws -> String {
+        guard let text = Self.decodeText(data, declaredEncoding: encoding) else {
             throw WebFetchError.undecodableText
         }
 
@@ -357,6 +358,42 @@ public struct WebFetchService: Sendable {
             size: data.count,
             contentType: "Plain Text"
         ) + text + "\n"
+    }
+
+    /// 按服务器声明的 charset 解码文本：先试 UTF-8，再试声明的编码，最后 ASCII。
+    /// 只试 UTF-8/ASCII 会把合法声明 GBK/GB18030 等的正文判为不可解码（#360）。
+    /// UTF-8 优先可避免误标 charset 时把真正的 UTF-8 正文按别的编码解出乱码。
+    private static func decodeText(_ data: Data, declaredEncoding: String.Encoding?) -> String? {
+        var candidates: [String.Encoding] = [.utf8]
+        if let declaredEncoding, declaredEncoding != .utf8 {
+            candidates.append(declaredEncoding)
+        }
+        candidates.append(.ascii)
+        for encoding in candidates {
+            if let text = String(data: data, encoding: encoding) {
+                return text
+            }
+        }
+        return nil
+    }
+
+    /// 从 Content-Type 解析 charset 参数并映射为 Foundation 编码；无法识别时返回 nil。
+    private static func declaredEncoding(forContentType contentType: String) -> String.Encoding? {
+        guard let charset = charsetParameter(in: contentType) else { return nil }
+        let cfEncoding = CFStringConvertIANACharSetNameToEncoding(charset as CFString)
+        guard cfEncoding != kCFStringEncodingInvalidId else { return nil }
+        return String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(cfEncoding))
+    }
+
+    private static func charsetParameter(in contentType: String) -> String? {
+        for part in contentType.split(separator: ";").dropFirst() {
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            guard trimmed.lowercased().hasPrefix("charset=") else { continue }
+            let value = trimmed.dropFirst("charset=".count).trimmingCharacters(in: .whitespaces)
+            let unquoted = value.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            return unquoted.isEmpty ? nil : unquoted
+        }
+        return nil
     }
 
     private func processBinary(data: Data, contentType: String, url: URL, statusCode: Int, duration: Double) -> String {
