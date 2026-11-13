@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginOcr 的实现包，包含 6 个主要类型；当前测试覆盖 11 条用例。
+PluginOcr 的实现包，包含 6 个主要类型；当前测试覆盖 13 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 11
+测试文件: 3 个，用例总数: 13
 
 核心组件（源码目录）:
 - `Services/`
@@ -29,6 +29,7 @@ PluginOcr 的实现包，包含 6 个主要类型；当前测试覆盖 11 条用
 
 - **OcrImageTool**（8 条）：由 `infoId`、`inputSchemaRequiresPath`、`resolveLanguages`、`toolThrowsForInvalidInputs`、`engineFailurePropagates` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **OcrImageTool 路径保真**（3 条）：由 `trailingSpaceFilenameIsRecognized`、`originalPathWinsOverTrimmedSibling`、`whitespaceOnlyPathStillRejected` 锁定 path 的 trim 只用于判空，存在性检查与 OCR 读取必须使用原始路径，合法尾随空格文件名不得被误报或读错（**回归 #827**）；改动 `ocr_image` 参数解析时优先跑对应测试文件。
+- **OcrImageTool 动态 UTType**（2 条）：由 `dynamicExtensionJPEGIsRecognized`、`knownNonImageExtensionStillRejected` 锁定 UTType 闸门只拒绝「已声明且明确非图片」的类型，动态类型（未知扩展名，如 `.jif` 实为 JPEG）必须放行给按内容解码的 OcrEngine，不得在解码前误拒（**回归 #828**）；改动 `ocr_image` 扩展名校验时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -45,27 +46,29 @@ PluginOcr 的实现包，包含 6 个主要类型；当前测试覆盖 11 条用
 | 9 | OcrImageTool 路径保真 | 尾随空格的合法文件名必须被正常识别，不得误报不存在（**回归 #827**） | 渲染文字 PNG 保存为 `valid.png `（尾随空格） | 以原始路径调用 `ocr_image` | 识别出图中文字，不抛 File not found | P0 | ✅ 已覆盖 | `trailingSpaceFilenameIsRecognized` |
 | 10 | OcrImageTool 路径保真 | 同名文件共存时必须读取调用方指定的原始路径，不得读错文件（**回归 #827**） | `valid.png `（SPACED）与 `valid.png`（PLAIN）同时存在 | 以尾随空格路径调用 `ocr_image` | 识别结果为 SPACED，不含 PLAIN | P0 | ✅ 已覆盖 | `originalPathWinsOverTrimmedSibling` |
 | 11 | OcrImageTool 路径保真 | 纯空白路径仍按缺参拒绝 | — | 以 `"   "` 调用 `ocr_image` | 抛出 `ToolExecutionError` | P2 | ✅ 已覆盖 | `whitespaceOnlyPathStillRejected` |
+| 12 | OcrImageTool 动态 UTType | 动态 UTType 扩展名（.jif）的合法 JPEG 必须被正常识别，不得误拒（**回归 #828**） | 渲染文字 JPEG 保存为 `valid.jif`（动态 UTType） | 以该路径调用 `ocr_image`（language=en） | 识别出图中文字 JIFOK，不抛 Not an image file | P0 | ✅ 已覆盖 | `dynamicExtensionJPEGIsRecognized` |
+| 13 | OcrImageTool 动态 UTType | 已声明的非图片扩展名仍被拒绝 | 纯文本 `note.txt` | 以该路径调用 `ocr_image` | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `knownNonImageExtensionStillRejected` |
 
-> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 7 / 7
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 8 / 8
 - P2: 已覆盖 2 / 2
-- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
+- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（8 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -78,8 +78,13 @@ public struct OcrImageTool: SuperAgentTool {
                 reason: "Path is a directory, not a file: \(path)"
             )
         }
-        // 仅在能解析出 UTType 且明确不是图片时拒绝；未知扩展名放行交由 Vision 尝试。
-        if let type = UTType(filenameExtension: url.pathExtension), !type.conforms(to: .image) {
+        // 仅在能解析出「已声明」的 UTType 且明确不是图片时拒绝。
+        // 未知扩展名会被 macOS 解析成动态类型（isDynamic），它不 conform
+        // `.image` 但内容完全可能是合法图片（如 `.jif` 实为 JPEG），必须放行
+        // 交由按内容解码的 OcrEngine 判定，不得在闸门处误拒（#828）。
+        if let type = UTType(filenameExtension: url.pathExtension),
+           !type.isDynamic,
+           !type.conforms(to: .image) {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Not an image file: \(url.lastPathComponent)"
