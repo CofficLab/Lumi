@@ -127,8 +127,19 @@ public actor RegistryService {
                 guard let pip = await availablePipCommand() else {
                     return "Not Installed"
                 }
-                let output = Self.configValue(try await execute("\(pip) config get global.index-url"))
-                return output.isEmpty ? "Default (PyPI)" : output
+                do {
+                    let output = Self.configValue(try await execute("\(pip) config get global.index-url"))
+                    return output.isEmpty ? "Default (PyPI)" : output
+                } catch let error as RegistryServiceError {
+                    // 键未设置时 pip 以退出码 1 + "No such key" 报告，这是默认
+                    // PyPI 源的正常状态，不是查询失败；只有真正的命令错误才
+                    // 透传给外层 catch 显示 Default/Unknown（#848）。
+                    if case .commandFailed(_, _, let failureOutput) = error,
+                       Self.pipIndexURLIsUnset(failureOutput) {
+                        return "Default (PyPI)"
+                    }
+                    throw error
+                }
             case .go:
                 return Self.configValue(try await execute("go env GOPROXY"))
             }
@@ -169,6 +180,13 @@ public actor RegistryService {
             .split(whereSeparator: \.isNewline)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .last { !$0.isEmpty } ?? ""
+    }
+
+    /// `pip config get global.index-url` 在键未设置时以退出码 1、stderr
+    /// "ERROR: No such key - global.index-url" 报告。这表示使用默认 PyPI 源，
+    /// 而非真正的命令失败；只有真正的查询错误才应显示 Default/Unknown（#848）。
+    nonisolated static func pipIndexURLIsUnset(_ failureOutput: String) -> Bool {
+        failureOutput.contains("No such key")
     }
 
     /// 按可用性选择 Pip 入口；全都不存在时才返回 nil（真正的未安装）。

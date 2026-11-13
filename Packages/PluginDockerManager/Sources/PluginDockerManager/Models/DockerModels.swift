@@ -23,7 +23,10 @@ public enum DockerError: Error, LocalizedError, Sendable {
 
 /// Represents a Docker image with metadata from `docker images`
 public struct DockerImage: Identifiable, Codable, Hashable, Sendable {
-    public var id: String { imageID }
+    // docker images 每个 repository/tag 输出一行，多标签共享同一 imageID。
+    // 列表身份必须按引用唯一，否则 SwiftUI List 的行 diffing/选中会错乱（#251）。
+    // repository/tag 均不含 "|"，组合后既唯一又稳定。
+    public var id: String { "\(imageID)|\(repository)|\(tag)" }
 
     public let imageID: String
     public let repository: String

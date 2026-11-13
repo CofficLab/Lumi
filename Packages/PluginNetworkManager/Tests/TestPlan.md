@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 110
+测试文件: 19 个，用例总数: 114
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -55,6 +55,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **HTTPExchangeStorePaginationOverflow**（3 条）：由 `overflowMatchesSurviveWhenScanEndsBelowWindow`、`overflowMatchesSurviveWhenScanFillsWindow`、`overflowMatchesSurviveWithDomainFilter` 锁定 `loadListPage` 一次扫描产出多于 limit 的匹配时，游标只前进到本页实际返回的最后一条匹配，溢出匹配必须能在后续页取回、不得永久丢弃（**回归 #215**）；改动 HTTP 日志分页游标逻辑时优先跑对应测试文件。
 - **NetworkUsageSnapshot**（4 条）：由 `samplingTickPublishesExactlyOneAtomicSnapshot`、`usageRecordingWritesOneHistoryPointPerSnapshot`、`observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` 等用例锁定（**回归 #216**）：每个 1Hz 采样 tick 只发布一个原子快照，历史边界每个快照只写一个点，订阅时重放的当前值不得再记录；改动 `NetworkService` 采样发布或 `NetworkMetricsObserver` 接线时优先跑 `NetworkUsageSnapshotTests.swift`（串行套件，共享进程级单例）。
 - **HTTPFailedRequestClassification**（2 条）：由 `networkFilterExcludesRecordsThatReceivedAnHTTPStatus`、`summaryAndDetailsDoNotDoubleCountHTTPStatusErrors` 锁定（**回归 #821**）：`get_http_failed_requests` 的 network 类别只保留「未取得 HTTP 状态码」的传输失败（`errorDescription != nil && responseStatusCode == nil`）；已收到 4xx/5xx 响应、同时带 errorDescription 的记录只归入 http_4xx/http_5xx，过滤、汇总与明细都不得把同一条请求重复计为 network。改动该工具的分类谓词时优先跑对应测试文件（串行套件，共享进程级单例）。
+- **HTTPExchangeDetailBody**（4 条）：由 `detailIncludesResponseBodyWhenRequested`、`detailOmitsBodiesWhenNotRequested`、`detailResponseBodyHonorsSameLengthLimitAsRequest`、`detailSkipsNonUTF8ResponseBodyLikeRequest` 锁定（**回归 #311**）：`get_http_exchange_detail` 的 `include_body=true` 必须同时输出请求与响应正文，响应正文沿用与请求相同的规则（UTF-8 解码、截断到 1000 字符、非 UTF-8 跳过），未请求时两者都不输出。改动该工具的正文装配时优先跑对应测试文件（串行套件，共享进程级单例）。
 
 ## 测试用例清单
 
@@ -170,27 +171,31 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 108 | NetworkUsageSnapshot | observer 接线只记录新快照，订阅重放值不得再记一点（**回归 #216**） | 同步构造真实 observer（不让出主 actor） | 直接给 service 赋新快照 | 历史恰好新增 1 点，UI 状态同步更新 | P0 | ✅ 已覆盖 | `observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` |
 | 109 | HTTPFailedRequestClassification | network 过滤排除已收到 HTTP 状态码的记录（**回归 #821**） | 临时 store：1 条无状态码传输失败 + 404 + 500（均带 errorDescription） | 以 `error_types=["network"]` 调用 `get_http_failed_requests` | 仅返回传输失败那一条，404/500 不出现，Summary=1、Network Errors=1 | P0 | ✅ 已覆盖 | `networkFilterExcludesRecordsThatReceivedAnHTTPStatus` |
 | 110 | HTTPFailedRequestClassification | 汇总与明细不把 HTTP 状态错误重复计为 network（**回归 #821**） | 同上 3 条记录 | 不带 `error_types` 调用 `get_http_failed_requests` | Summary=3、Network/4xx/5xx 各 1，404 在明细中只出现一次 | P0 | ✅ 已覆盖 | `summaryAndDetailsDoNotDoubleCountHTTPStatusErrors` |
+| 111 | HTTPExchangeDetailBody | include_body=true 必须输出响应正文，不得丢失（**回归 #311**） | 临时 store：一条带请求/响应正文的 200 记录 | 按 id + include_body=true 调用 detail 工具 | 请求与响应正文均出现，响应正文落在 Response 段之后 | P0 | ✅ 已覆盖 | `detailIncludesResponseBodyWhenRequested` |
+| 112 | HTTPExchangeDetailBody | 未请求正文时不输出请求/响应正文（**回归 #311**） | 同上记录 | 分别以 include_body=false 与缺省调用 detail 工具 | 两种情况都不含请求/响应正文 | P1 | ✅ 已覆盖 | `detailOmitsBodiesWhenNotRequested` |
+| 113 | HTTPExchangeDetailBody | 响应正文与请求一样截断到 1000 字符（**回归 #311**） | 响应正文超过 1000 字符，首尾各带标记 | 按 id + include_body=true 调用 detail 工具 | 保留开头标记，超出 1000 的尾部标记不出现 | P0 | ✅ 已覆盖 | `detailResponseBodyHonorsSameLengthLimitAsRequest` |
+| 114 | HTTPExchangeDetailBody | 非 UTF-8 响应正文与请求一样被跳过（**回归 #311**） | 请求/响应正文均为非法 UTF-8 字节 | 按 id + include_body=true 调用 detail 工具 | 输出含 Response 段但无任何正文代码块围栏 | P1 | ✅ 已覆盖 | `detailSkipsNonUTF8ResponseBodyLikeRequest` |
 
-> 说明：全部 **110 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 46 / 46
-- P1: 已覆盖 58 / 58
+- P0: 已覆盖 48 / 48
+- P1: 已覆盖 60 / 60
 - P2: 已覆盖 6 / 6
-- **合计: 110 / 110**（仅表示清单场景，非源码覆盖率）
+- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（46 条）
-- **P1**: 其余功能性用例（58 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
+- **P1**: 其余功能性用例（60 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 110 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 114 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

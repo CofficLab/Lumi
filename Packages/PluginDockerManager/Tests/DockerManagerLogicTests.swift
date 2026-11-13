@@ -161,6 +161,36 @@ struct DockerModelTests {
         #expect(named.name == "ubuntu:22.04")
     }
 
+    @Test("同一镜像多标签的列表标识必须唯一且稳定，不得碰撞")
+    func multipleTagsOfSameImageHaveUniqueStableIDs() {
+        let latest = DockerImage(
+            imageID: "sha256:abc", repository: "ubuntu", tag: "latest",
+            createdAt: "", createdSince: "", size: "1 MB", virtualSize: "1 MB", digest: ""
+        )
+        let stableTag = DockerImage(
+            imageID: "sha256:abc", repository: "ubuntu", tag: "22.04",
+            createdAt: "", createdSince: "", size: "1 MB", virtualSize: "1 MB", digest: ""
+        )
+        let otherRepo = DockerImage(
+            imageID: "sha256:abc", repository: "myubuntu", tag: "latest",
+            createdAt: "", createdSince: "", size: "1 MB", virtualSize: "1 MB", digest: ""
+        )
+
+        // 同一 imageID 的不同 repository/tag 在 List 中必须是不同身份（#251）。
+        #expect(latest.id != stableTag.id)
+        #expect(latest.id != otherRepo.id)
+        #expect(stableTag.id != otherRepo.id)
+        // id 不再等同于裸 imageID，否则多标签必然碰撞。
+        #expect(latest.id != latest.imageID)
+
+        // 同一引用（imageID+repository+tag）的身份稳定，与其它元数据无关。
+        let latestCopy = DockerImage(
+            imageID: "sha256:abc", repository: "ubuntu", tag: "latest",
+            createdAt: "different", createdSince: "different", size: "9 MB", virtualSize: "9 MB", digest: "x"
+        )
+        #expect(latest.id == latestCopy.id)
+    }
+
     @Test("短 ID 去掉 sha256 前缀并截断到 12 位")
     func shortIDTruncates() {
         let image = DockerImage(
@@ -195,7 +225,7 @@ struct DockerModelTests {
         let decoded = try JSONDecoder().decode(DockerImage.self, from: data)
 
         #expect(decoded == image)
-        #expect(decoded.id == image.imageID)
+        #expect(decoded.imageID == image.imageID)
     }
 
     @Test("缺少 Digest 字段时解码得到空串")
