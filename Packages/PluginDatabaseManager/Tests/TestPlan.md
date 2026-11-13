@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 77
+测试文件: 4 个，用例总数: 79
 
 核心组件（源码目录）:
 - `Agent/`
@@ -53,6 +53,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
 - **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
 - **Redis read-command routing**（2 条）：由 `redisReadCommandsUseQueryPath`、`redisWriteCommandsUseExecutePath` 锁定；改动 Redis 读命令判定（`isReadStatement` 的 redis 分支）时优先跑对应测试文件，防止 KEYS/TYPE 等只读命令被误路由到 execute 而丢掉 RESP 内容，以及 GETSET/ZRANGESTORE 等写命令被前缀误判为读。
+- **Redis key quoting**（2 条）：由 `quotedKeyRoundTripsAsSingleArgument`、`openRedisKeySendsSingleExactKeyArgument` 锁定（**回归 #282**）：含空格/引号/反斜杠的 Redis 键经 `RedisCommandParser.quote` 引用后，`tokenize` 必须还原为单个参数；`openRedisKey` 组合的 GET 经 `compose` 解析必须只携带一个完整键，不得被空格拆成多个参数而触发 wrong-argument-count。改动 `quote`/`tokenize` 或 `openRedisKey` 命令拼接时优先跑对应用例。
 - **SQLStatementParser**（5 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标。
 
 ## 测试用例清单
@@ -137,27 +138,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 75 | SQLite WITH (CTE) | WITH 查询经 query 路径返回真实结果行 | 临时 SQLite 库 | 对 `WITH x AS (SELECT 1 AS n) SELECT n FROM x;` 调用 `isReadStatement` 与 `query` | 判定为读；列为 `["n"]`，行为 `[[1]]` | P1 | ✅ 已覆盖 | `withQueryReturnsRowsEndToEnd` |
 | 76 | Redis read-command routing | Redis 只读命令识别为读路径（含 KEYS/TYPE，大小写不敏感） | — | 对 KEYS/TYPE/EXISTS/TTL/HGETALL/MGET/INFO 及既有 GET/SCAN 等调用 `isReadStatement` | 均返回 true（含小写与首尾空格） | P1 | ✅ 已覆盖 | `redisReadCommandsUseQueryPath` |
 | 77 | Redis read-command routing | Redis 写入命令仍走 execute，前缀相近的写命令不被误判为读 | — | 对 SET/DEL/HSET 及 GETSET/GETDEL/ZRANGESTORE/CONFIG SET 调用 `isReadStatement` | 均返回 false | P1 | ✅ 已覆盖 | `redisWriteCommandsUseExecutePath` |
+| 78 | Redis key quoting | 含空格/引号/反斜杠的键经 quote 后必须还原为单个参数，不得被拆分（回归 #282） | — | 对 foo bar/空键/制表符/换行/双引号/单引号/反斜杠/混合键调用 `quote` 再 `tokenize` | `tokenize(quote(key)) == [key]`，且 `tokenize("GET " + quote(key)) == ["GET", key]` | P0 | ✅ 已覆盖 | `quotedKeyRoundTripsAsSingleArgument` |
+| 79 | Redis key quoting | 侧边栏打开含空格的键时 GET 必须只携带一个完整键参数，不得被空格拆开（回归 #282） | 假 Redis 驱动/连接记录下发命令 | 连接 Redis 后调用 `openRedisKey("foo bar")`，对捕获命令复刻 `compose` | 解析结果为 `["GET", "foo bar"]`，而非 `["GET","foo","bar"]` | P0 | ✅ 已覆盖 | `openRedisKeySendsSingleExactKeyArgument` |
 
-> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
+- P0: 已覆盖 39 / 39
 - P1: 已覆盖 39 / 39
 - P2: 已覆盖 1 / 1
-- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
+- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（39 条）
 - **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 77 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

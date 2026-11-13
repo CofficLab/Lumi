@@ -228,6 +228,23 @@ enum RedisCommandParser {
 
         return tokens
     }
+
+    /// 把单个参数包装成 ``tokenize(_:)`` 能原样还原的引用形式（#282）。
+    ///
+    /// tokenize 在双引号内仍把反斜杠视为转义符，因此参数里的 `\` 与 `"` 必须转义；
+    /// 空格、单引号、换行等在双引号内按字面保留。含空格的 Redis 键经
+    /// `GET` + 本函数组合后只会被解析成一个参数，不再被空格拆成多个而触发
+    /// wrong-argument-count 错误。
+    static func quote(_ argument: String) -> String {
+        var escaped = ""
+        for character in argument {
+            if character == "\\" || character == "\"" {
+                escaped.append("\\")
+            }
+            escaped.append(character)
+        }
+        return "\"" + escaped + "\""
+    }
 }
 
 enum RedisCommandArguments {
