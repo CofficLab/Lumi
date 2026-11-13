@@ -91,4 +91,46 @@ struct ProviderEndpointPolicyTests {
         #expect(!ProviderEndpointPolicy.isLoopback(host: "10.0.0.1"))
         #expect(!ProviderEndpointPolicy.isLoopback(host: "api.example.com"))
     }
+
+    @Test("IPv4-mapped IPv6 私网地址不得绕过限制")
+    func rejectsIPv4MappedIPv6PrivateEndpoints() {
+        let embeddedPrivateIPs = [
+            "192.168.1.1",
+            "169.254.169.254",
+            "10.1.2.3",
+            "172.16.0.1",
+            "100.64.0.1",
+        ]
+        for ip in embeddedPrivateIPs {
+            let host = "::ffff:\(ip)"
+            #expect(ProviderEndpointPolicy.isPrivateNetwork(host: host))
+            #expect(throws: ProviderEndpointPolicyError.privateNetworkAddress(host)) {
+                try ProviderEndpointPolicy.validate(baseURL: "https://[\(host)]/v1")
+            }
+        }
+    }
+
+    @Test("IPv4-mapped IPv6 十六进制写法同样被拒绝")
+    func rejectsIPv4MappedIPv6InHexForm() {
+        // ::ffff:c0a8:101 等价于 ::ffff:192.168.1.1
+        #expect(ProviderEndpointPolicy.isPrivateNetwork(host: "::ffff:c0a8:101"))
+        #expect(throws: ProviderEndpointPolicyError.privateNetworkAddress("::ffff:c0a8:101")) {
+            try ProviderEndpointPolicy.validate(baseURL: "https://[::ffff:c0a8:101]/v1")
+        }
+    }
+
+    @Test("IPv4-mapped 回环地址按本机处理")
+    func treatsIPv4MappedLoopbackAsLoopback() {
+        #expect(ProviderEndpointPolicy.isLoopback(host: "::ffff:127.0.0.1"))
+        #expect(throws: Never.self) {
+            try ProviderEndpointPolicy.validate(baseURL: "http://[::ffff:127.0.0.1]:1234/v1")
+        }
+    }
+
+    @Test("IPv4-mapped 公网地址不被误拦")
+    func allowsIPv4MappedPublicEndpoint() throws {
+        #expect(!ProviderEndpointPolicy.isPrivateNetwork(host: "::ffff:8.8.8.8"))
+        let url = try ProviderEndpointPolicy.validate(baseURL: "https://[::ffff:8.8.8.8]/v1")
+        #expect(url.host == "::ffff:8.8.8.8")
+    }
 }

@@ -64,6 +64,9 @@ enum ProviderEndpointPolicy {
         if let octets = ipv4Octets(host: normalized), octets[0] == 127 {
             return true
         }
+        if let octets = mappedIPv4Octets(host: normalized), octets[0] == 127 {
+            return true
+        }
         return false
     }
 
@@ -74,18 +77,12 @@ enum ProviderEndpointPolicy {
             return true
         }
         if let octets = ipv4Octets(host: normalized) {
-            // 10/8
-            if octets[0] == 10 { return true }
-            // 172.16/12
-            if octets[0] == 172, (16...31).contains(octets[1]) { return true }
-            // 192.168/16
-            if octets[0] == 192, octets[1] == 168 { return true }
-            // 169.254/16 链路本地
-            if octets[0] == 169, octets[1] == 254 { return true }
-            // 0/8 与 100.64/10（CGNAT）同样属于内部保留段
-            if octets[0] == 0 { return true }
-            if octets[0] == 100, (64...127).contains(octets[1]) { return true }
-            return false
+            return isPrivateIPv4(octets)
+        }
+        // IPv4-mapped IPv6（::ffff:a.b.c.d / ::ffff:HHHH:HHHH）须还原内嵌 IPv4，
+        // 套用同一套私网/链路本地/保留段判定，否则换个写法即可绕过限制（#333）。
+        if let octets = mappedIPv4Octets(host: normalized) {
+            return isPrivateIPv4(octets)
         }
         // IPv6：唯一本地地址 fc00::/7 与链路本地 fe80::/10
         if normalized.contains(":") {
@@ -98,6 +95,22 @@ enum ProviderEndpointPolicy {
         return false
     }
 
+    /// IPv4 八位组是否落在私网 / 链路本地 / 内部保留段。
+    private static func isPrivateIPv4(_ octets: [Int]) -> Bool {
+        // 10/8
+        if octets[0] == 10 { return true }
+        // 172.16/12
+        if octets[0] == 172, (16...31).contains(octets[1]) { return true }
+        // 192.168/16
+        if octets[0] == 192, octets[1] == 168 { return true }
+        // 169.254/16 链路本地
+        if octets[0] == 169, octets[1] == 254 { return true }
+        // 0/8 与 100.64/10（CGNAT）同样属于内部保留段
+        if octets[0] == 0 { return true }
+        if octets[0] == 100, (64...127).contains(octets[1]) { return true }
+        return false
+    }
+
     /// 解析 IPv4 字面量为四段八进制数值；不是 IPv4 字面量时返回 `nil`。
     private static func ipv4Octets(host: String) -> [Int]? {
         let parts = host.split(separator: ".", omittingEmptySubsequences: false)
@@ -106,6 +119,33 @@ enum ProviderEndpointPolicy {
         for part in parts {
             guard let value = Int(part), (0...255).contains(value), !part.isEmpty else { return nil }
             octets.append(value)
+        }
+        return octets
+    }
+
+    /// 还原 IPv4-mapped IPv6 地址内嵌的 IPv4 八位组；非该形态时返回 `nil`。
+    ///
+    /// 兼容点分（`::ffff:192.168.1.1`）与十六进制（`::ffff:c0a8:101`）两种写法，
+    /// 并容忍 URL 主机可能携带的方括号。
+    private static func mappedIPv4Octets(host: String) -> [Int]? {
+        var address = host
+        if address.hasPrefix("[") && address.hasSuffix("]") {
+            address = String(address.dropFirst().dropLast())
+        }
+        let prefix = "::ffff:"
+        guard address.hasPrefix(prefix) else { return nil }
+        let embedded = String(address.dropFirst(prefix.count))
+        if let octets = ipv4Octets(host: embedded) {
+            return octets
+        }
+        let groups = embedded.split(separator: ":", omittingEmptySubsequences: false)
+        guard groups.count == 2 else { return nil }
+        var octets: [Int] = []
+        for group in groups {
+            guard !group.isEmpty, group.count <= 4,
+                  let value = Int(group, radix: 16), (0...0xFFFF).contains(value) else { return nil }
+            octets.append((value >> 8) & 0xFF)
+            octets.append(value & 0xFF)
         }
         return octets
     }
