@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 80
+测试文件: 18 个，用例总数: 87
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -45,7 +45,7 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitChangeType**（12 条）：由 `mapsSingleLetterCodes`、`mapsFullWords`、`isCaseInsensitive` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitCommitToolPath**（8 条）：由 `absolutePathShouldBeConvertedToRelative`、`relativePathShouldRemainUnchanged`、`emptyFilesListShouldReturnEmpty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitIgnoreService**（3 条）：由 `roundTripWriteAndRead`、`parsingRecognizesCommentAndNegationAndDirectory`、`templatesReturnNonEmptyContent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GitServiceReadingContract**（6 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitServiceReadingContract**（7 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **子目录读取**：`GitServiceReadingContract` 要求传入仓库子目录时 status / log 与仓库根行为一致——判定（`isGitRepository`）与读取（`openRepository`）必须同为向上搜索语义（#912）。
 - **GitServiceRemoteURL**（4 条）：由 `readsOriginRemoteURLVerbatim`、`readsNamedRemoteURL`、`returnsNilForUnknownRemote` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitService**（5 条）：由 `getStatusThrowsForNonGitDirectory`、`getStatusThrowsForNonexistentPath`、`getDiffThrowsForNonGitDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -55,7 +55,8 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitBranchDetachedHead**（1 条）：由 `detachedHeadIsNotReportedAsBranch` 锁定；detached HEAD 时 `currentBranch` 必须为 `nil`，提交哈希改由 `detachedHeadCommitHash` 提供。
 - **GitBranchReadFailure**（1 条）：由 `unreadableCurrentBranchThrowsInsteadOfReturningNil` 锁定；`currentBranch` 的 `nil` 只能是 detached HEAD，HEAD 指向缺失引用等读取失败必须抛出（#915）。
 - **GitShowShortHash**（2 条）：由 `shortHashResolvesDetailAndChangedFiles`、`unknownShortHashStillThrows` 锁定；`git_show` 必须接受 `git_log` 输出的 7 位短哈希，详情与变更文件两条路径都用解析后的完整 OID。
-- **综合**（11 条）：由 `sourceControlPluginRegistersEditorContract`、`v2PluginRegistersAllLegacyGitToolNames`、`gitLogToolNormalizesCount` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitUnpushedState**（5 条）：由 `noUpstreamIsNotReportedAsPushed`、`pushedBranchIsUpToDate`、`aheadOfUpstreamReportsHashes` 等用例锁定；`git_unpushed` 必须区分 `noUpstream` / `upToDate` / `hasUnpushed` / `unavailable`——没有上游就没有可比较的远程基准，不得误报「全部已推送」。
+- **综合**（14 条）：由 `sourceControlPluginRegistersEditorContract`、`v2PluginRegistersAllLegacyGitToolNames`、`gitLogToolNormalizesCount` 等用例锁定；改动该模块时优先跑对应测试文件。读工具经注册链路（`ConversationScopedGitTool` 包装）声明 `parallelReadOnly`，写工具保持串行副作用（#1312）。
 
 ## 测试用例清单
 
@@ -141,27 +142,34 @@ GitPlugin Git integration plugin for Lumi editor.
 | 78 | 综合 | git_log / git_commit / git_diff / git_show 的失败分支抛出 `ToolExecutionError` | 非 Git 仓库目录 | 缺 message、缺 hash、对非仓库路径取日志/差异/详情 | 全部抛出 `ToolExecutionError`，不再返回字符串 | P1 | ✅ 已覆盖 | `gitToolsThrowForMissingOrInvalidArguments` |
 | 79 | GitBranchReadFailure | 当前分支读取失败抛出而不是伪装成 detached HEAD（回归 #915） | 临时仓库有一次提交，`.git/HEAD` 指向不存在的 `refs/heads/missing-branch` | 调用 `currentBranch`，同时确认分支列表仍可读 | `currentBranch` 抛出 `LibGit2Error`，不再返回 `nil` | P0 | ✅ 已覆盖 | `unreadableCurrentBranchThrowsInsteadOfReturningNil` |
 | 80 | GitServiceReadingContract | 项目路径是仓库子目录时仍能读取 status 与 log（回归 #912） | 临时仓库有一次提交，工作区有修改，项目路径取仓库下的 `Sources` 子目录 | 先 `isRepository`，再 `getStatus` 与 `getLog` | 判定为仓库，status 列出 `tracked.txt`，log 返回 1 条提交 | P1 | ✅ 已覆盖 | `readsStatusAndLogFromRepositorySubdirectory` |
+| 81 | GitServiceReadingContract | 仅暂存的新增与删除保留 A/D 类型 | 临时仓库有一次提交，新文件已暂存、已有文件已暂存删除 | 调用 `getStatus` 并检查 `workingChanges` | `brand-new.txt` 为 added 且 staged，`gone.txt` 为 deleted 且 staged | P1 | ✅ 已覆盖 | `stagedAddAndDeleteKeepTheirStates` |
+| 82 | GitUnpushedState | 没有上游分支时返回 noUpstream，而不是 upToDate | 临时仓库有一次提交，未配置上游 | 调用 `getUnpushedCommitsState` | 状态为 `noUpstream`，不误报「全部已推送」 | P0 | ✅ 已覆盖 | `noUpstreamIsNotReportedAsPushed` |
+| 83 | GitUnpushedState | 已推送且没有领先提交时返回 upToDate | 临时仓库已推送到 bare 远程并配置上游 | 调用 `getUnpushedCommitsState` | 状态为 `upToDate` | P1 | ✅ 已覆盖 | `pushedBranchIsUpToDate` |
+| 84 | GitUnpushedState | 有上游且本地领先时返回未推送哈希 | 推送后再新增一个本地提交 | 调用 `getUnpushedCommitsState` | `hasUnpushed` 且恰含 1 个哈希 | P1 | ✅ 已覆盖 | `aheadOfUpstreamReportsHashes` |
+| 85 | GitUnpushedState | 路径不是 Git 仓库时返回 unavailable | 路径为普通目录 | 调用 `getUnpushedCommitsState` | 状态为 `unavailable` | P1 | ✅ 已覆盖 | `nonRepositoryIsUnavailable` |
+| 86 | GitUnpushedState | 工具输出在无上游时给出明确提示 | 临时仓库未配置上游 | 执行 `GitUnpushedV2Tool` | 输出含「没有配置 upstream」，不含「所有 commit 都已推送」 | P1 | ✅ 已覆盖 | `toolExplainsMissingUpstream` |
+| 87 | 综合 | 读工具经注册链路声明并行只读，写工具保持串行（#1312） | kernel 注册 ToolManager | `GitSourceControlPlugin.onBoot` 后按名查询工具 | git_status/git_diff/git_log/git_show/git_unpushed 为 `parallelReadOnly`；git_commit/git_branch 保持 `serialSideEffect` | P1 | ✅ 已覆盖 | `gitReadToolsDeclareParallelReadOnlyWhileWritesStaySerial` |
 
-> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **87 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 61 / 61
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 67 / 67
 - P2: 已覆盖 9 / 9
-- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
+- **合计: 87 / 87**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（61 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（67 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 87 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
