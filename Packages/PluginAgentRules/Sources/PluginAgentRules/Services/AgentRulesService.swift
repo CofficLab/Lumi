@@ -264,7 +264,11 @@ public actor AgentRulesService {
             filename: finalFilename,
             title: resolvedTitle,
             description: description,
-            fileSize: Int64(finalContent.count),
+            // fileSize 定义为字节数，必须与列表路径读到的落盘大小一致；
+            // 字符数在非 ASCII 内容下会偏小（#779）。
+            // fileSize 定义为字节数，必须与列表路径读到的落盘大小一致；
+            // 字符数在非 ASCII 内容下会偏小（#779）。
+            fileSize: Int64(finalContent.utf8.count),
             createdAt: now,
             modifiedAt: now,
             filePath: fileURL.path(),
