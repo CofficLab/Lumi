@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 86
+测试文件: 6 个，用例总数: 89
 
 核心组件（源码目录）:
 - `Agent/`
@@ -159,26 +159,34 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 85 | 对象列举默认 schema | 未指定 schema 时函数/存储过程列举必须调用 current_schema() 函数（回归 #275） | 假 PG 连接记录 SQL | `loadObjects(of: .function, schema: nil)` | SQL 含 `n.nspname = current_schema()`，不含 `n.nspname = 'current_schema()'` | P0 | ✅ 已覆盖 | `loadRoutinesUsesCurrentSchemaFunctionWhenSchemaUnspecified` |
 | 86 | 对象列举默认 schema | 显式指定 schema 时仍按转义后的字符串字面量过滤 | 假 PG 连接记录 SQL | `loadObjects(of: .table, schema: "public")` | SQL 含 `table_schema = 'public'`，不含 `current_schema()` | P1 | ✅ 已覆盖 | `loadObjectsBindsExplicitSchemaAsLiteral` |
 
-> 说明：全部 **86 条场景**已在本包 `swift test` 中实跑通过。
+### 只读 PRAGMA 校验（回归 #272）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 87 | 只读 PRAGMA | 赋值形态的可写 PRAGMA 被拒绝，不得持久修改数据库（回归 #272） | — | 对 `PRAGMA user_version=123`/`journal_mode=WAL`/`foreign_keys=ON`/`writable_schema=ON`/`cache_size=2000`/`journal_mode='WAL'` 调用 `readonlySQL` | 均抛出 `DatabaseAgentToolError` | P0 | ✅ 已覆盖 | `readonlySQLRejectsWritablePragmaAssignment` |
+| 88 | 只读 PRAGMA | 括号赋值形态的可写 PRAGMA 被拒绝（回归 #272） | — | 对 `PRAGMA cache_size(2000)`/`journal_mode(WAL)` 调用 `readonlySQL` | 均抛出 `DatabaseAgentToolError` | P0 | ✅ 已覆盖 | `readonlySQLRejectsWritablePragmaParenForm` |
+| 89 | 只读 PRAGMA | 只读 PRAGMA 查询仍放行（裸读取与内省 pragma） | — | 对 `PRAGMA user_version`/`journal_mode`/`table_info(users)`/`index_list(users)`/`foreign_key_list(users)`/`integrity_check` 调用 `readonlySQL` | 均不抛错 | P1 | ✅ 已覆盖 | `readonlySQLAcceptsReadOnlyPragmaQueries` |
+
+> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 42 / 42
-- P1: 已覆盖 43 / 43
+- P0: 已覆盖 44 / 44
+- P1: 已覆盖 44 / 44
 - P2: 已覆盖 1 / 1
-- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
+- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（42 条）
-- **P1**: 其余功能性用例（43 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（44 条）
+- **P1**: 其余功能性用例（44 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

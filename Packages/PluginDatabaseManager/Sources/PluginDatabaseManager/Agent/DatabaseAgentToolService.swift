@@ -243,6 +243,13 @@ public actor DatabaseAgentToolService {
             throw DatabaseAgentToolError.unsafeSQL("write or administrative keyword detected")
         }
 
+        // SQLite PRAGMA 既能读也能写：`PRAGMA name = value` 与 `PRAGMA name(value)`
+        // 会持久修改数据库状态/配置，只读工具必须拦下（#272）。
+        if type == .sqlite, first == "PRAGMA",
+           !Self.isReadOnlyPragma(skeletonWithoutTrailingSemicolon) {
+            throw DatabaseAgentToolError.unsafeSQL("writable PRAGMA is not allowed in read-only mode")
+        }
+
         // 返回给执行层的是原始 SQL：字面量与注释必须原样保留。
         let statement = trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed
 
@@ -250,6 +257,38 @@ public actor DatabaseAgentToolService {
             return statement
         }
         return "\(statement) LIMIT \(limit)"
+    }
+
+    /// 带括号参数也仅读取结构、不改状态的只读内省 PRAGMA。
+    private static let readOnlyIntrospectionPragmas: Set<String> = [
+        "table_info", "table_xinfo", "table_list",
+        "index_list", "index_info", "index_xinfo",
+        "foreign_key_list", "foreign_key_check",
+        "integrity_check", "quick_check",
+    ]
+
+    /// 判定 SQLite PRAGMA 是否只读（入参为已剥离字面量/注释的代码骨架）。
+    ///
+    /// 写入形态有两种：`PRAGMA name = value`（含 `=`）与 `PRAGMA name(value)`
+    /// （如 `cache_size(2000)`、`journal_mode(WAL)`）。括号形态与只读内省 pragma
+    /// （`table_info(t)` 等）共用语法，故仅放行 ``readOnlyIntrospectionPragmas``
+    /// 中明确只读的内省 pragma；其余括号写法一律视为写入。裸 `PRAGMA name`
+    /// 是读取当前值，放行。
+    private static func isReadOnlyPragma(_ skeleton: String) -> Bool {
+        let body = skeleton.trimmingCharacters(in: .whitespacesAndNewlines)
+            .dropFirst("PRAGMA".count)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // 赋值形态一律视为写入。
+        if body.contains("=") { return false }
+        if let paren = body.firstIndex(of: "(") {
+            let name = String(body[body.startIndex..<paren])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+            return readOnlyIntrospectionPragmas.contains(name)
+        }
+        // 裸 PRAGMA name：读取当前值（name 非空即放行）。
+        let name = body.split(whereSeparator: { $0.isWhitespace }).first.map(String.init) ?? ""
+        return !name.isEmpty
     }
 
     /// PostgreSQL schema 过滤条件。
