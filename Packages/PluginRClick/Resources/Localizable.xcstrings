@@ -469,6 +469,24 @@
             "state" : "translated",
             "value" : "无法保存模板。请确认 Lumi 有写入配置的权限后重试。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法保存模板。請確認 Lumi 有寫入配置的權限後重試。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法保存模板。請確認 Lumi 有寫入配置的權限後重試。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法保存模板。請確認 Lumi 有寫入配置的權限後重試。"
+          }
         }
       }
     },
@@ -2388,6 +2406,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消隐藏文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隱藏文件"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隱藏文件"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隱藏文件"
           }
         }
       }
