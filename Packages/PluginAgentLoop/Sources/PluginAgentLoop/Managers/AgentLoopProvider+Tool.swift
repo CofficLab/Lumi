@@ -764,10 +764,8 @@ extension AgentLoopManager {
         if let recoveryHint = runtimes[conversationID]?.llmRecoveryHint {
             // 生命周期钩子可以重写待发送消息，因此恢复提示必须在钩子之后注入。
             // 它仍然只是本次请求的临时 system message，不写入会话历史。
-            preparedMessages.insert(
-                LLMMessage(role: .system, content: recoveryHint),
-                at: 0
-            )
+            // 插在最新 user 之前而非 0，避免每轮变化的提示破坏稳定历史的前缀缓存。
+            preparedMessages = insertingRecoveryHint(recoveryHint, into: preparedMessages)
         }
 
         if Self.verbose && Self.printMessages {

@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 120
+测试文件: 13 个，用例总数: 123
 
 核心组件（源码目录）:
 - `Managers/`
@@ -49,6 +49,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **消息与 LLM 消息互转的边界分支**（7 条）：由 `llmMessagesSkipsToolCallsWithoutResult`、`messageFromLLMMessageFallsBackToSystemForUnknownRole`、`llmMessageDropsInvalidBase64ImageAttachments` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **AgentLoop 注入预算**（2 条）：由 `budgetSubtractsPreparedHistory`、`budgetNeverGoesNegative` 锁定；Hook 注入内容的预算必须扣除已准备的历史，且不得为负。
 - **AgentLoop 上下文校准**（1 条）：由 `calibrationUsesCacheTotalInput` 锁定；校准必须优先使用 `cacheTotalInputTokenCount`，缺失时才回退 `inputTokenCount`。
+- **恢复提示注入位置（保前缀缓存）**（3 条）：由 `recoveryHintAnchorsBeforeLatestUser`、`recoveryHintAnchorsOnLatestUserWithTrailingSystem`、`recoveryHintAppendsWhenNoUser` 锁定；恢复提示必须插在最新 user 之前而非 0，保住稳定历史前缀缓存；改动 `insertingRecoveryHint` 时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 
 ## 测试用例清单
 
@@ -174,27 +175,30 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 118 | Tool 调用身份归一化的边界分支 | 回归 #1166：ID 被替换时归一化仍保留 redactedThinking | 工具 ID 与已占用集合冲突 | 调用 `normalize` | 工具 ID 换新，`redactedThinking` 原样保留 | P0 | ✅ 已覆盖 | `normalizePreservesRedactedThinkingWhenIDReplaced` |
 | 119 | Tool 调用身份归一化的边界分支 | 回归 #1166：归一化保留 images，不丢图 | 响应含工具调用与生成图片 | 调用 `normalize` | `images` 原样保留 | P1 | ✅ 已覆盖 | `normalizePreservesImages` |
 | 120 | Tool 调用身份归一化的边界分支 | 回归 #1166：归一化保留全部非身份字段 | 富字段响应，ID 无冲突 | 调用 `normalize` 并与原响应比较 | 结果与原响应完全相等 | P0 | ✅ 已覆盖 | `normalizeKeepsEveryNonIdentityField` |
+| 121 | 恢复提示注入位置（保前缀缓存） | 恢复提示插在最新 user 之前，稳定历史前缀逐字节不变 | 多轮历史含两条 user | 调用 `insertingRecoveryHint` | 提示落在最新 user 之前，前缀逐字节不变 | P1 | ✅ 已覆盖 | `recoveryHintAnchorsBeforeLatestUser` |
+| 122 | 恢复提示注入位置（保前缀缓存） | 有尾随 system 消息时仍锚定最新 user | 历史末尾有一条 system | 调用 `insertingRecoveryHint` | 提示插在最新 user 之前，尾随 system 保持最后 | P1 | ✅ 已覆盖 | `recoveryHintAnchorsOnLatestUserWithTrailingSystem` |
+| 123 | 恢复提示注入位置（保前缀缓存） | 没有 user 消息时回退到末尾 | 历史无 user | 调用 `insertingRecoveryHint` | 提示追加到末尾，已有消息不变 | P2 | ✅ 已覆盖 | `recoveryHintAppendsWhenNoUser` |
 
-> 说明：全部 **120 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **123 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 30 / 30
-- P1: 已覆盖 78 / 78
-- P2: 已覆盖 12 / 12
-- **合计: 120 / 120**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 80 / 80
+- P2: 已覆盖 13 / 13
+- **合计: 123 / 123**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
-- **P1**: 其余功能性用例（78 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
+- **P1**: 其余功能性用例（80 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 120 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 123 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

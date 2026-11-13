@@ -107,6 +107,18 @@ func llmMessages(
     return result
 }
 
+/// 把本次请求的临时恢复提示插在最新 user 消息之前，保住前缀缓存。
+///
+/// 恢复提示每轮可能不同（仅重试时出现），插 0 会让其后整段稳定历史的
+/// 前缀缓存失效。锚定最新 user 之前与 Goal/RAG 注入约定一致；没有 user
+/// 消息时回退到末尾。提示只是临时 system message，不写入会话历史。
+func insertingRecoveryHint(_ hint: String, into messages: [LLMMessage]) -> [LLMMessage] {
+    var result = messages
+    let anchor = result.lastIndex(where: { $0.role == .user }) ?? result.endIndex
+    result.insert(LLMMessage(role: .system, content: hint), at: anchor)
+    return result
+}
+
 /// 将生命周期钩子返回的 LLM 消息恢复为 AgentLoop 的消息模型。
 /// 工具调用声明必须保留，否则后续的 tool_result 没有对应的 assistant tool_use。
 func messageFromLLMMessage(_ message: LLMMessage, conversationID: UUID) -> Message {

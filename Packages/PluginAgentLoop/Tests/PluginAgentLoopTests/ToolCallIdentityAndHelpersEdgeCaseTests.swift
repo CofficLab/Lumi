@@ -499,3 +499,56 @@ private struct PlainScrubbingTool: SuperAgentTool {
 
     func displayDescription(for arguments: [String: ToolArgument]) -> String { "Plain demo" }
 }
+
+@Suite("恢复提示注入位置（保前缀缓存）")
+struct RecoveryHintInsertionTests {
+    @Test("恢复提示插在最新 user 之前，稳定历史前缀逐字节不变")
+    func recoveryHintAnchorsBeforeLatestUser() {
+        let history = [
+            LLMMessage(role: .system, content: "base system"),
+            LLMMessage(role: .user, content: "earlier"),
+            LLMMessage(role: .assistant, content: "answer"),
+            LLMMessage(role: .user, content: "latest"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(Array(result[0..<3]) == Array(history[0..<3]))
+        #expect(result[3].role == .system)
+        #expect(result[3].content == "retry hint")
+        #expect(result[4] == history[3])
+    }
+
+    @Test("有尾随 system 消息时仍锚定最新 user")
+    func recoveryHintAnchorsOnLatestUserWithTrailingSystem() {
+        let history = [
+            LLMMessage(role: .user, content: "earlier"),
+            LLMMessage(role: .user, content: "latest"),
+            LLMMessage(role: .system, content: "trailing"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(result[1].role == .system)
+        #expect(result[1].content == "retry hint")
+        #expect(result[2] == history[1])
+        #expect(result[3] == history[2])
+    }
+
+    @Test("没有 user 消息时回退到末尾")
+    func recoveryHintAppendsWhenNoUser() {
+        let history = [
+            LLMMessage(role: .system, content: "base"),
+            LLMMessage(role: .assistant, content: "answer"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(Array(result[0..<2]) == Array(history[0..<2]))
+        #expect(result[2].role == .system)
+        #expect(result[2].content == "retry hint")
+    }
+}
