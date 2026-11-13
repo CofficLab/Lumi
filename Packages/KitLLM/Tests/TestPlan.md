@@ -30,8 +30,8 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 319 条用�
 - `LLMToolNameSanitizer`
 - `LLMToolSchemaProviding`
 - `MessageImage`
+- `NormalizedSchemaProviding`
 - `OpenAICompatibleProviderAdapter`
-- `OpenAICompatibleProviderConfiguration`
 
 ## 关键行为契约（实现约定，非协议要求）
 

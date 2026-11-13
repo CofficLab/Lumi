@@ -5,11 +5,12 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 140
+测试文件: 20 个，用例总数: 150
 
 核心组件（源码目录）:
 - `Managers/`
 - `Observers/`
+- `Support/`
 
 ## 公开 API
 
@@ -24,6 +25,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - `MessageObserver`
 - `ToolJobObserver`
 - `ToolManagerObserver`
+- `ToolSchemaBuilder`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -48,6 +50,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **ToolCallIdentityCompaction**（2 条）：由 `compressedTurnToolCallIDIsStillNormalized`、`otherTurnToolCallIDIsNotReserved` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobCancellation**（5 条）：由 `resumingSuspendedTurnReportsRunning`、`invalidResumeRequestKeepsSuspendedTurnObservable`、`lateLLMResponseAfterCancellationIsIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobLoop**（6 条）：由 `toolJobsTransitionThroughWaitingPhase`、`cancellingWaitingToolJobsIgnoresLateCompletion`、`unknownToolJobEventIsIgnoredByReducer` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolSchemaBuilding**（10 条）：由 `toolWithNormalizedTextCarriesIt`、`toolWithoutNormalizedTextLeavesItNil`、`normalizedTextMatchesDirectSerialization` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -193,27 +196,37 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 138 | ToolJobLoop | 审批挂起期间其他 Job 完成时保留挂起点并消费结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `completedSiblingJobDuringApprovalRemovesOnlyItsPendingCall` |
 | 139 | ToolJobLoop | Job 完成事件会回写 assistant 工具调用并恢复下一轮 LLM | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `completedToolJobResumesAgentLoop` |
 | 140 | ToolJobLoop | 取消 Agent 回合时会先取消对应的 Tool Job | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancellingAgentTurnCancelsAssociatedJobs` |
+| 141 | ToolSchemaBuilding | 提供规范化文本的工具会带上它 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolWithNormalizedTextCarriesIt` |
+| 142 | ToolSchemaBuilding | 未提供规范化文本的工具不带它 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolWithoutNormalizedTextLeavesItNil` |
+| 143 | ToolSchemaBuilding | 规范化文本与直接序列化结果一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizedTextMatchesDirectSerialization` |
+| 144 | ToolSchemaBuilding | 工具的 schema 参数与直接解析一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `parametersMatchDirectParsing` |
+| 145 | ToolSchemaBuilding | 带规范化文本时 token 估算结果与不带时完全相同 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenEstimateIsIdenticalWithAndWithoutNormalizedText` |
+| 146 | ToolSchemaBuilding | 规范化文本与序列化路径的字节数一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizedAndSerializedByteCountsMatch` |
+| 147 | ToolSchemaBuilding | 多个工具的估算结果等于各自估算之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenEstimateIsSumOfIndividualEstimates` |
+| 148 | ToolSchemaBuilding | 畸形 schema 降级为文本估算而不崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `malformedSchemaFallsBackToTextEstimation` |
+| 149 | ToolSchemaBuilding | schema 数组的组装不在主线程上执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `schemaBuildingRunsOffMainThread` |
+| 150 | ToolSchemaBuilding | 离主线程组装的 schema 与逐个组装完全一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offMainActorSchemasMatchSequentialBuild` |
 
-> 说明：全部 **140 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 113 / 113
+- P0: 已覆盖 23 / 23
+- P1: 已覆盖 122 / 122
 - P2: 已覆盖 5 / 5
-- **合计: 140 / 140**（仅表示清单场景，非源码覆盖率）
+- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（113 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P1**: 其余功能性用例（122 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 140 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 150 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

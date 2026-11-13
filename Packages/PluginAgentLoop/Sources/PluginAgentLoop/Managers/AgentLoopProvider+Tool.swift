@@ -695,14 +695,11 @@ extension AgentLoopManager {
             let firstFive = tools.prefix(5).map(\.name)
             Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
         }
-        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
-            LLMFunctionSchema(
-                name: tool.name,
-                description: tool.description(for: language),
-                parameters: tool.inputSchema(for: language)
-            )
-        }
-        let toolSchemaTokens = estimateToolSchemaTokens(schemas)
+        // 工具 schema 的构建在后台线程完成：这一步要遍历全部工具、取出
+        // 各自的 input schema。MCP 工具的 schema 在注册时就已解析好（零成本），
+        // 但仍要组装成 schema 数组——约 130 个工具时在主线程上组装会卡顿。
+        let schemas = await ToolSchemaBuilder.buildSchemas(tools, language: language)
+        let toolSchemaTokens = ToolSchemaBuilder.estimateTokens(schemas)
         let contextRequest = LLMContextPreparationRequest(
             conversationID: conversationID,
             modelID: modelRoute?.modelID,
@@ -999,6 +996,14 @@ extension AgentLoopManager {
         max(inputTokenLimit - LLMContextTokenEstimator.estimate(messages: preparedHistory), 0)
     }
 
+    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
+    ///
+    /// 转发到 `ToolSchemaBuilder`——那才是真正实现它的地方；这里保留
+    /// 转发是为了不破坏既有调用点。
+    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+        ToolSchemaBuilder.estimateTokens(schemas)
+    }
+
     /// 上下文校准使用的实际输入 token 数。
     ///
     /// 缓存型端点（如 Anthropic 兼容协议）的 `inputTokenCount` 可能只表示
@@ -1006,38 +1011,6 @@ extension AgentLoopManager {
     /// 缺省时才退回 `inputTokenCount`。
     func reportedInputTokenCount(for response: LLMResponse) -> Int? {
         response.cacheTotalInputTokenCount ?? response.inputTokenCount
-    }
-
-    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
-    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
-        schemas.reduce(0) { total, schema in
-            let parameters = Self.jsonText(for: schema.parameters)
-            return total
-                + LLMContextTokenEstimator.estimate(text: schema.name)
-                + LLMContextTokenEstimator.estimate(text: schema.description)
-                + LLMContextTokenEstimator.estimate(text: parameters)
-                + 16
-        }
-    }
-
-    /// 把工具参数序列化为键序稳定的 JSON 文本，供 token 估算使用。
-    ///
-    /// - Important: 必须先用 `isValidJSONObject` 预检，不能只靠 `try?`。
-    ///   `JSONSerialization.data(withJSONObject:)` 遇到非 JSON 类型（闭包、
-    ///   `Date`、`Data`、`NaN` 等）时抛的是 ObjC `NSException` 而非 Swift
-    ///   `Error`，`try?` 捕获不到，会直接 abort 整个进程（signal 6）。
-    ///   因此畸形工具 schema 必须先降级为文本估算，而不是让回合崩溃。
-    private static func jsonText(for parameters: [String: Any]) -> String {
-        guard JSONSerialization.isValidJSONObject(parameters),
-              let data = try? JSONSerialization.data(
-                withJSONObject: parameters,
-                options: [.sortedKeys]
-              ),
-              let text = String(data: data, encoding: .utf8)
-        else {
-            return String(describing: parameters)
-        }
-        return text
     }
 
     func isContextLimitError(_ error: Error) -> Bool {

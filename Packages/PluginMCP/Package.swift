@@ -15,6 +15,10 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
         .package(path: "../KitMCP"),
+        // 工具 schema 的规范化文本契约（`NormalizedSchemaProviding`）：
+        // MCP 工具在注册时就解析好了 schema，把它交给 AgentLoop 的 token
+        // 估算即可省掉每个请求的「解析→再序列化」往返（Issue #1275）。
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderMCP"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
@@ -33,6 +37,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "KitMCP", package: "KitMCP"),
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderMCP", package: "ProviderMCP"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),

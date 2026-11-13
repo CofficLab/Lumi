@@ -4,8 +4,8 @@
 
 KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提供与 UI/插件无关的 MCP 客户端能力：服务器配置模型、传输层（stdio / Streamable HTTP）、 会话生命周期（initialize / listTools / callTool）、工具描述与调用结果模型。 - 底层使用官方 `modelcontextprotocol/swift-sdk`（精确锁版 `0.12.1`，官方分级 Tier 3）， 通过 `MCPServerServing` 薄抽象隔离，替换实现不影响上层调用方。 - 不依赖任何其他 Lumi 包；只被 `PluginMCP`（或宿主）依赖。
 
-平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 25
+平台: macOS 13+, iOS 17+
+测试文件: 4 个，用例总数: 36
 
 ## 公开 API
 
@@ -18,14 +18,16 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 - `MCPClientError`
 - `MCPPreparedTransport`
 - `MCPToolDescriptor`
+- `MCPToolSchema`
 
 ## 关键行为契约（实现约定，非协议要求）
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **MCPContentCodec**（7 条）：由 `textAndImage`、`resourceLink`、`errorFlag`、`structuredContentOnly`、`contentAndStructuredContent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation`、`jsonZeroAndOneStayNumbers`、`mcpArgumentsPreserveJSONZeroAndOne`、`nativeSwiftBoolAndNumbersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPServerSession**（10 条）：由 `listAndCallTool`、`errorResult`、`notConnected`、`structuredContentOnlyResult`、`contentAndStructuredContentResult`、`listToolsFollowsPagination`、`listToolsDeduplicatesAcrossPages` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPContentCodec**（7 条）：由 `textAndImage`、`resourceLink`、`errorFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPServerSession**（10 条）：由 `listAndCallTool`、`errorResult`、`notConnected` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPToolSchema**（11 条）：由 `parametersMatchDirectParsing`、`normalizedJSONMatchesDirectSerialization`、`invalidJSONYieldsNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -34,49 +36,60 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 | 1 | MCPContentCodec | 文本与图片混合编码 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textAndImage` |
 | 2 | MCPContentCodec | resourceLink 以文本标记呈现 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resourceLink` |
 | 3 | MCPContentCodec | isError 透传 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorFlag` |
-| 4 | MCPJSONValue | MCP Value 往返转换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `valueRoundTrip` |
-| 5 | MCPJSONValue | foundationValue 产生 JSON 兼容对象 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `foundationValue` |
-| 6 | MCPJSONValue | fromFoundation 含不支持的值时整体返回 nil（不静默丢参数） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fromFoundation` |
-| 7 | MCPJSONValue | jsonString 输出规范 JSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jsonString` |
-| 8 | MCPJSONValue | MCPValueCoding 把上层参数字典转为 MCP Value | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `mcpArguments` |
-| 9 | MCPServerSession | 连接后列出工具并调用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listAndCallTool` |
-| 10 | MCPServerSession | 服务器报错时 isError 透传 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorResult` |
-| 11 | MCPServerSession | 未连接时调用抛 notConnected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `notConnected` |
-| 12 | MCPServerSession | 重复连接是幂等的 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `connectIdempotent` |
-| 13 | MCPJSONValue | JSON 数字 0/1 不得被误判为布尔（**#1154**） | JSONSerialization 解析出的 NSNumber 数字叶子 | fromFoundation 转换含 0/1/2/true/false 与嵌套的对象 | 0/1/2 为 .int，true/false 为 .bool，嵌套数组与对象同样保真 | P0 | ✅ 已覆盖 | `jsonZeroAndOneStayNumbers` |
-| 14 | MCPJSONValue | MCP 调用参数中的 JSON 0/1 以数字送达（**#1154**） | JSONSerialization 解析出的参数字典 | MCPValueCoding.mcpArguments | count/mode 为 Value.int(0) 与 .int(1) | P1 | ✅ 已覆盖 | `mcpArgumentsPreserveJSONZeroAndOne` |
-| 15 | MCPJSONValue | 原生 Swift 布尔与数字的桥接行为不变（**#1154**） | 原生 Bool/Int 字面量 | fromFoundation 与 jsonString | 布尔仍为布尔、数字仍为数字，输出 {"count":0} | P1 | ✅ 已覆盖 | `nativeSwiftBoolAndNumbersUnchanged` |
-| 16 | MCPContentCodec | 仅 structuredContent 序列化为 JSON 文本（**#180**） | 无常规 content、仅 structuredContent | encode 传入 structuredContent 对象 | text 为 {"answer":42}，images 空，isError 透传 | P0 | ✅ 已覆盖 | `structuredContentOnly` |
-| 17 | MCPContentCodec | content 与 structuredContent 同时保留（**#180**） | content 文本与 structuredContent 并存 | encode 同时传入两者 | text 为 hello 换行 {"answer":42} | P0 | ✅ 已覆盖 | `contentAndStructuredContent` |
-| 18 | MCPContentCodec | 嵌套 structuredContent 仍是合法 JSON 且内容保真（**#180**） | 含数组与嵌套对象的 structuredContent | encode 后用 JSONSerialization 解析 text | 解析成功，items 为 [1,2]，meta.ok 为 true | P1 | ✅ 已覆盖 | `nestedStructuredContentIsValidJSON` |
-| 19 | MCPContentCodec | structuredContent 为 nil 时文本编码不变（**#180**） | structuredContent 为 nil | encode 仅传入文本 content | text 仍为 hi，不受新参数影响 | P1 | ✅ 已覆盖 | `structuredContentNilPreservesText` |
-| 20 | MCPServerSession | 仅返回 structuredContent 的成功结果序列化为 JSON 文本（**#180**） | InMemory mock 服务器仅返回 structuredContent | connect 后 callTool structuredOnly | text 为 {"answer":42}，isError false，images 空 | P0 | ✅ 已覆盖 | `structuredContentOnlyResult` |
-| 21 | MCPServerSession | content 与 structuredContent 同时返回时两者都保留（**#180**） | InMemory mock 服务器返回文本与 structuredContent | connect 后 callTool structuredWithText | text 为 hello 换行 {"answer":42}，isError false | P0 | ✅ 已覆盖 | `contentAndStructuredContentResult` |
-| 22 | MCPServerSession | listTools 跟随 nextCursor 逐页聚合（**#181**） | InMemory mock 服务器分两页返回工具 | connect 后 listTools | 聚合两页工具 [first, second] | P0 | ✅ 已覆盖 | `listToolsFollowsPagination` |
-| 23 | MCPServerSession | listTools 首页即空游标时终止（**#181**） | 首页 nextCursor 为 nil | connect 后 listTools | 仅返回首页工具 [only]，不再请求 | P1 | ✅ 已覆盖 | `listToolsStopsOnEmptyCursor` |
-| 24 | MCPServerSession | listTools 跨页重名工具去重保留首次出现（**#181**） | 两页含重名工具 dup | connect 后 listTools | 去重后 [first, dup, second]，dup 仅一次 | P1 | ✅ 已覆盖 | `listToolsDeduplicatesAcrossPages` |
-| 25 | MCPServerSession | listTools 游标重复时终止而非无限翻页（**#181**） | 服务器回吐重复游标 loop | connect 后 listTools | 取尽可区分页后终止 [a, b]，不无限循环 | P0 | ✅ 已覆盖 | `listToolsStopsOnRepeatedCursor` |
+| 4 | MCPContentCodec | 仅 structuredContent 序列化为 JSON 文本（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `structuredContentOnly` |
+| 5 | MCPContentCodec | content 与 structuredContent 同时保留（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contentAndStructuredContent` |
+| 6 | MCPContentCodec | 嵌套 structuredContent 仍是合法 JSON 且内容保真（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedStructuredContentIsValidJSON` |
+| 7 | MCPContentCodec | structuredContent 为 nil 时文本编码不变（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `structuredContentNilPreservesText` |
+| 8 | MCPJSONValue | MCP Value 往返转换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `valueRoundTrip` |
+| 9 | MCPJSONValue | foundationValue 产生 JSON 兼容对象 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `foundationValue` |
+| 10 | MCPJSONValue | fromFoundation 含不支持的值时整体返回 nil（不静默丢参数） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fromFoundation` |
+| 11 | MCPJSONValue | jsonString 输出规范 JSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jsonString` |
+| 12 | MCPJSONValue | MCPValueCoding 把上层参数字典转为 MCP Value | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `mcpArguments` |
+| 13 | MCPJSONValue | JSON 数字 0/1 不得被误判为布尔（回归 #1154） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `jsonZeroAndOneStayNumbers` |
+| 14 | MCPJSONValue | MCP 调用参数中的 JSON 0/1 以数字送达（回归 #1154） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `mcpArgumentsPreserveJSONZeroAndOne` |
+| 15 | MCPJSONValue | 原生 Swift 布尔与数字的桥接行为不变（回归 #1154） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nativeSwiftBoolAndNumbersUnchanged` |
+| 16 | MCPServerSession | 连接后列出工具并调用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listAndCallTool` |
+| 17 | MCPServerSession | 服务器报错时 isError 透传 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorResult` |
+| 18 | MCPServerSession | 未连接时调用抛 notConnected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `notConnected` |
+| 19 | MCPServerSession | 重复连接是幂等的 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `connectIdempotent` |
+| 20 | MCPServerSession | 仅返回 structuredContent 的成功结果序列化为 JSON 文本（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `structuredContentOnlyResult` |
+| 21 | MCPServerSession | content 与 structuredContent 同时返回时两者都保留（**#180**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contentAndStructuredContentResult` |
+| 22 | MCPServerSession | listTools 跟随 nextCursor 逐页聚合（**#181**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listToolsFollowsPagination` |
+| 23 | MCPServerSession | listTools 首页即空游标时终止（**#181**） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `listToolsStopsOnEmptyCursor` |
+| 24 | MCPServerSession | listTools 跨页重名工具去重保留首次出现（**#181**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listToolsDeduplicatesAcrossPages` |
+| 25 | MCPServerSession | listTools 游标重复时终止而非无限翻页（**#181**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listToolsStopsOnRepeatedCursor` |
+| 26 | MCPToolSchema | 解析结果与 JSONSerialization 直接解析一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `parametersMatchDirectParsing` |
+| 27 | MCPToolSchema | 规范化文本与直接序列化一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizedJSONMatchesDirectSerialization` |
+| 28 | MCPToolSchema | 非法 JSON 时参数与规范化文本均为 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidJSONYieldsNil` |
+| 29 | MCPToolSchema | 解析失败时回退到空 schema | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidJSONFallsBackToEmptyParameters` |
+| 30 | MCPToolSchema | 空 schema 解析为合法对象 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyJSONObjectParses` |
+| 31 | MCPToolSchema | 规范化字节数等于规范化文本长度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `byteCountMatchesNormalizedText` |
+| 32 | MCPToolSchema | 描述符的 inputSchemaDictionary 返回预解析结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `descriptorReturnsPreparsedSchema` |
+| 33 | MCPToolSchema | 描述符的相等性只看原始字段 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `descriptorEqualityIgnoresDerivedSchema` |
+| 34 | MCPToolSchema | 描述符的相等性能区分不同 schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `descriptorEqualityDistinguishesSchemas` |
+| 35 | MCPToolSchema | 重复访问描述符的 schema 不会改变内容 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessIsStable` |
+| 36 | MCPToolSchema | 重复读取 schema 的耗时显著低于首次解析 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessIsCheaperThanParsing` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 17 / 17
-- P2: 已覆盖 0 / 0
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 27 / 27
+- P2: 已覆盖 2 / 2
+- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（17 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（27 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
-- Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- Package 声明: macOS 13+, iOS 17+
+- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import KitLLM
 import KitMCP
 
 /// 把 MCP 服务器暴露的一个工具桥接为 Lumi 的 `SuperAgentTool`。
@@ -8,7 +9,7 @@ import KitMCP
 ///   点号命名经 `LLMToolNameSanitizer` 转义后对 LLM 可见，反查映射还原后按原名调度。
 /// - 风险：委托 `MCPPermissionPolicy`（含用户单工具覆盖）。
 /// - 执行：`session.callTool` → `ToolCallResult`（文本 / 图片）。
-public struct MCPToolAdapter: SuperAgentTool {
+public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
     /// 命名空间后的注册名：`{serverID}.{toolName}`。
     public let name: String
     /// 所属服务器 id（命名空间前缀）。
@@ -50,7 +51,15 @@ public struct MCPToolAdapter: SuperAgentTool {
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        descriptor.inputSchemaDictionary() ?? ["type": "object", "properties": [:]]
+        descriptor.schema.resolvedParameters
+    }
+
+    /// `inputSchema` 的规范化 JSON 文本（键序稳定）。
+    ///
+    /// 调用方（AgentLoop 的 token 估算）据此直接取字节数，不必把刚解析好的
+    /// schema 再序列化回去——那一步的成本与解析本身相当（Issue #1275）。
+    public var normalizedInputSchemaJSON: String? {
+        descriptor.schema.normalizedJSON
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {

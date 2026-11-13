@@ -104,11 +104,26 @@ public struct LLMFunctionSchema: @unchecked Sendable, Equatable {
     public let name: String
     public let description: String
     public let parameters: [String: Any]
+    /// `parameters` 的规范化 JSON 文本（键序稳定）。
+    ///
+    /// 仅供**估算**使用：调用方若已经持有规范化文本（ MCP 工具在注册时
+    /// 就算好了），带上它可以省掉一次「序列化回去」的往返——那一步的成本
+    /// 与解析本身相当（Issue #1275）。
+    ///
+    /// 为 `nil` 时调用方应回退到自行序列化；两种路径产出的字节数一致，
+    /// 因此估算结果不受影响。
+    public let normalizedParametersJSON: String?
 
-    public init(name: String, description: String, parameters: [String: Any]) {
+    public init(
+        name: String,
+        description: String,
+        parameters: [String: Any],
+        normalizedParametersJSON: String? = nil
+    ) {
         self.name = name
         self.description = description
         self.parameters = parameters
+        self.normalizedParametersJSON = normalizedParametersJSON
     }
 
     public static func == (lhs: LLMFunctionSchema, rhs: LLMFunctionSchema) -> Bool {
