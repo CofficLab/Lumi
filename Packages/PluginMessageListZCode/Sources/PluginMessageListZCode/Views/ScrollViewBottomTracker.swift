@@ -243,6 +243,15 @@ final class TrackerView: NSView {
     ///   永远发现不了它，内容底沿落到视口底之下，底部被输入框遮住。
     private var documentObservation: NSObjectProtocol?
     private weak var observedScrollView: NSScrollView?
+    /// 全窗口扫描发现到的滚动视图缓存。
+    ///
+    /// - Important: 全窗口扫描是 O(window views) 的。只在「向上遍历父视图链」
+    ///   与 `enclosingScrollView` 都失败时才需要走它，而那条路径在 tracker
+    ///   挂稳之后**不应该**再被反复触发（issue #1301）。缓存让同一 window
+    ///   内的重复发现退化为一次。
+    private weak var cachedDiscoveredScrollView: NSScrollView?
+    /// 缓存所属的 window；换 window 即失效。
+    private weak var cachedDiscoveryWindow: NSWindow?
     /// 文档视图尺寸变化的通知对象。SwiftUI `List` 复用同一个 document
     /// view，但换会话重建 `List` 时可能换新，需要重新挂观察者。
     private weak var observedDocumentView: NSView?
@@ -322,6 +331,16 @@ final class TrackerView: NSView {
     }
 
     private func attachIfNeeded() {
+        // 身份守卫**前置**：已经绑定到本 window 内仍然有效的滚动视图时直接返回。
+        //
+        // - Important: 守卫必须在发现**之前**。否则每次 layout 失效都会先跑一遍
+        //   `findOwningScrollView()`，而它的兜底路径要递归遍历整个 window 的
+        //   NSView 层级 —— 长会话下窗口里有成千上万个已物化的消息行视图，
+        //   这个 O(window views) 的代价会在每次布局时重付一遍（issue #1301）。
+        if let observed = observedScrollView, observed.window === window {
+            return
+        }
+
         // Tracker 必须绑定到自己的消息 List。禁止从 window.contentView
         // 全局扫描，否则同一个窗口里的 Rail NSScrollView 可能被误选中。
         guard let scrollView = findOwningScrollView() else {
@@ -355,16 +374,29 @@ final class TrackerView: NSView {
 
         // 兜底：从 window 层级里找**最窄的、且包含本 tracker 横向范围**的滚动视图。
         guard let window else { return nil }
+
+        // 同一个 window 内已经扫过一次就直接复用结果，避免重复全窗口扫描。
+        // 缓存失效的条件：换了 window，或扫描结果已脱离 window。
+        if let cached = cachedDiscoveredScrollView,
+           cachedDiscoveryWindow === window,
+           cached.window === window {
+            return cached
+        }
+
         var candidates: [NSScrollView] = []
         func collect(_ view: NSView) {
             if let scrollView = view as? NSScrollView { candidates.append(scrollView) }
             for sub in view.subviews { collect(sub) }
         }
+        discoveryScanCountForTesting += 1
         collect(window.contentView ?? NSView())
         // 消息列表是窗口里最宽的滚动视图（会话列表只有 240）。
-        return candidates
+        let discovered = candidates
             .filter { $0.frame.width >= 400 }
             .max { $0.frame.width < $1.frame.width }
+        cachedDiscoveredScrollView = discovered
+        cachedDiscoveryWindow = window
+        return discovered
     }
 
     /// 绑定滚动视图并挂上观察者。
@@ -562,6 +594,25 @@ final class TrackerView: NSView {
     internal func attachForTesting(to scrollView: NSScrollView) {
         attach(to: scrollView)
     }
+
+    /// 供单测触发一次「重新绑定」检查（等价于生产路径的 `layout()`）。
+    ///
+    /// - Important: 生产路径的 `layout()` 每次都调 `attachIfNeeded()`，
+    ///   而 `attachIfNeeded()` 在身份守卫失效时会重跑滚动视图发现 ——
+    ///   那个兜底路径要递归扫描整个 window（issue #1301）。
+    ///   本缝让单测能直接观察「重复 layout 是否还在做发现」。
+    internal func attachIfNeededForTesting() {
+        attachIfNeeded()
+    }
+
+    /// 供单测读取「滚动视图发现次数」。
+    ///
+    /// - Note: 只统计**兜底的全窗口扫描** —— 也就是 O(window views) 的那条路。
+    ///   向上遍历父视图链与 `enclosingScrollView` 都是廉价的，不计入。
+    internal private(set) var discoveryScanCountForTesting = 0
+
+    /// 供单测读取「当前已绑定的滚动视图」。
+    internal var observedScrollViewForTesting: NSScrollView? { observedScrollView }
 
     /// 供单测解绑，用于验证解绑后不再重新钉底。
     internal func detachForTesting() {
