@@ -34,21 +34,32 @@ struct AgentTurnSummaryBuilder {
             .max(by: recordOrdering)?
             .id
 
+        // 瞬时 status 的筛选条件与具体 record 无关（只依赖会话），
+        // 原先在每个 record 的循环里都对全量消息流做一次线性扫描 ——
+        // N 个 record 就是 N 次全量扫描，整体 O(N²)（见 issue #1267）。
+        // 这里按会话提前分好组，每个 record 只取自己会话的那一组。
+        var transientStatusesByConversation: [UUID: [Message]] = [:]
+        for candidate in chronological
+        where candidate.role == .status && candidate.turnID == nil {
+            transientStatusesByConversation[candidate.conversationID, default: []].append(candidate)
+        }
+
+        // `.user` 消息索引：每个 record 用二分查找，避免 O(N²)。
+        let userMessages = userMessageIndex(from: chronological)
+
         return records
             .sorted(by: recordOrdering)
             .map { record -> AgentTurnSummaryItem in
                 let turnMessages = (messagesByTurn[record.id] ?? [])
                     .map(\.1)
                     .sorted(by: messageOrdering)
-                let user = userMessage(before: chronological, startedAt: record.startedAt)
+                let user = userMessage(from: userMessages, startedAt: record.startedAt)
                 let message = summaryMessage(for: record, messages: turnMessages)
                     ?? placeholderMessage(for: record)
-                let transientStatuses = chronological.filter { candidate in
-                    candidate.role == .status
-                        && candidate.turnID == nil
-                        && candidate.conversationID == record.conversationID
-                        && record.id == latestActiveTurnID
-                }
+                // 只有最新活跃 turn 才挂瞬时 status。
+                let transientStatuses = record.id == latestActiveTurnID
+                    ? (transientStatusesByConversation[record.conversationID] ?? [])
+                    : []
                 let processMessages = (turnMessages + transientStatuses)
                     .filter {
                         $0.id != message.id
@@ -69,17 +80,36 @@ struct AgentTurnSummaryBuilder {
 
     // MARK: - User message matching
 
-    /// 取 `startedAt` 之前（含同时刻）最近的一条 `.user` 消息。
+    /// `.user` 消息的时间索引：按时间升序排列，供二分查找。
+    ///
+    /// 原先每个 record 都从全量消息尾部反向线性扫描找最近的用户消息，
+    /// N 个 record 就是 N 次扫描，整体 O(N²)（见 issue #1267）。
+    /// 这里只把 `.user` 消息抽出来建一次索引，各 record 用二分查找。
+    private func userMessageIndex(from messages: [Message]) -> [Message] {
+        messages.filter { $0.role == .user }
+    }
+
+    /// 二分查找 `startedAt` 之前（含同时刻）最近的一条 `.user` 消息。
+    ///
+    /// - Note: `userMessages` 需按 `createdAt` 升序。
     private func userMessage(
-        before messages: [Message],
+        from userMessages: [Message],
         startedAt: Date
     ) -> Message? {
-        for message in messages.reversed() where message.role == .user {
-            if message.createdAt <= startedAt {
-                return message
+        guard !userMessages.isEmpty else { return nil }
+
+        // 找到第一个 `createdAt > startedAt` 的位置，其前一条就是答案。
+        var low = 0
+        var high = userMessages.count
+        while low < high {
+            let mid = (low + high) / 2
+            if userMessages[mid].createdAt <= startedAt {
+                low = mid + 1
+            } else {
+                high = mid
             }
         }
-        return nil
+        return low > 0 ? userMessages[low - 1] : nil
     }
 
     // MARK: - Summary message selection
