@@ -51,7 +51,7 @@ struct ItemView: View {
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("删除", systemImage: "trash")
+                Label(pluginLocalization.string("Delete"), systemImage: "trash")
             }
         }
         // Important: 必须合并子元素并显式给出可访问性名称与标识。

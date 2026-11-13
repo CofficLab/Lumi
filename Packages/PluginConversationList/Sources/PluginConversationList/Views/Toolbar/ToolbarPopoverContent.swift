@@ -57,7 +57,7 @@ struct ToolbarPopoverContent: View {
             // 单一分段无需展示 Picker（与 rail 标签条「>1 个 tab 才显示」一致）。
             if viewModel.showsCurrentProjectScope {
                 Picker("", selection: pickerSelectionBinding) {
-                    Text("所有项目")
+                    Text(pluginLocalization.string("All projects"))
                         .tag(ConversationListToolbarViewModel.Scope.allProjects)
                     Text(viewModel.currentProjectTabTitle)
                         .tag(ConversationListToolbarViewModel.Scope.currentProject)
