@@ -460,15 +460,17 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
         if files.isEmpty {
             resolvedFiles = files
         } else {
-            resolvedFiles = files.map { filePath -> String in
-                let resolved = Self.resolvePath(filePath)
-                // 如果路径以仓库根目录开头，转换为相对路径
-                if resolved.hasPrefix(repoPath) {
-                    let relative = String(resolved.dropFirst(repoPath.count))
-                    // 移除开头的 /
-                    return relative.hasPrefix("/") ? String(relative.dropFirst()) : relative
+            resolvedFiles = try files.map { filePath -> String in
+                let expanded = (filePath as NSString).expandingTildeInPath
+                // 相对路径按 git 约定相对仓库根目录，直接透传给 LibGit2。
+                guard expanded.hasPrefix("/") else { return filePath }
+                // 绝对路径必须等于仓库根或位于 root + "/" 之下。仓库外路径必须明确拒绝，
+                // 绝不能用裸 hasPrefix 把同名前缀的外部文件（/App-old/f）改写成另一个
+                // 内部路径（-old/f）从而提交错误的文件（#176）。
+                guard let relative = Self.relativePath(expanded, fromRepositoryRoot: repoPath) else {
+                    throw GitServiceError.pathNotAllowed(path: expanded, allowedDirectories: [repoPath])
                 }
-                return filePath
+                return relative
             }
         }
 
