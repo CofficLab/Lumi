@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 39 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 44 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 39
+测试文件: 12 个，用例总数: 44
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -40,6 +40,7 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 - **确定性降级的量纲与用户请求保留**（2 条）：由 `oversizedChineseUserMessageIsTruncatedInsteadOfDropped`、`largeSystemMessageDoesNotEvictUserRequest` 锁定；裁剪必须按 token 估算，且系统消息占满预算时仍要保留最新用户消息（**回归 #1022**）。
 - **StalePrewarmSummaryRetry**（1 条）：由 `hardThresholdRetriesAfterDiscardedPrewarm` 锁定。硬阈值等待的预热摘要若因请求期间产生新消息而被丢弃，必须按最新历史重新生成一次再决定是否降级，不能把过期预热当作本轮压缩已完成（**回归 #1118**）。
 - **压缩块的并发加载**（2 条）：由 `concurrentLoadersSeeTheSameMigratedBlock`、`concurrentLoadersDoNotProduceDuplicateMigratedBlocks` 锁定。块加载状态必须区分「加载中」与「已加载」：并发调用者要等待同一个加载任务，不能各自发起一次加载 —— 否则会重复迁移、写出重复的块（**回归：并发加载重复迁移**）。
+- **确定性降级的工具配对**（3 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 锁定。降级裁剪丢弃超预算的 assistant tool-call 时，必须连同其 tool 结果一起去掉（并行调用要全部清理），否则 provider 收到孤立 tool 消息会返回 400（**回归 #205**）。
 
 ## 测试用例清单
 
@@ -86,27 +87,30 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 | 39 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试（**回归 #1118**） | 无可用摘要且已达硬阈值；预热摘要请求被挂起 | 请求挂起期间插入下一回合消息，硬阈值 `prepareContext` 等待该预热后放行 | 预热因水位过旧被丢弃后重新生成一次摘要，返回压缩上下文且不降级；摘要请求共 2 次 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
 | 40 | 压缩块的并发加载 | 并发调用时两个调用者都读到迁移后的块（**回归：并发加载重复迁移**） | 磁盘上有旧单摘要记录，块存储为空 | 两个 Task 并发调用 `compressionBlocks(for:)` | 两个调用者都读到 1 个 tier-1 块，且块存储里恰好 1 个块 | P0 | ✅ 已覆盖 | `concurrentLoadersSeeTheSameMigratedBlock` |
 | 41 | 压缩块的并发加载 | 并发调用不因重复加载而产生重复的迁移块 | 磁盘上无旧摘要 | 两个 Task 并发调用 `prepareContext(for:)` | 块存储里 tier-1 块不超过 1 个 | P1 | ✅ 已覆盖 | `concurrentLoadersDoNotProduceDuplicateMigratedBlocks` |
+| 42 | 确定性降级的工具配对 | 降级丢弃超预算 assistant 调用时不留孤立 tool 结果（**回归 #205**） | 输入上限约 1,096 token；assistant 调用参数 40,000 字符 + 小 tool 结果 + user | 调用 `prepareContext` | 走降级；tool 结果随调用一起去掉，无孤儿，估算不超上限 | P0 | ✅ 已覆盖 | `deterministicFallbackDropsOrphanedToolResult` |
+| 43 | 确定性降级的工具配对 | 降级保留装得下的 assistant 调用与配对 tool 结果 | 超大旧 user 触发降级；最近 assistant + tool + user 仍装得下 | 调用 `prepareContext` | 走降级；tool 结果与对应调用都保留且配对 | P1 | ✅ 已覆盖 | `deterministicFallbackKeepsPairedToolResultWhenAssistantFits` |
+| 44 | 确定性降级的工具配对 | 并行工具调用超预算时丢弃所有孤立 tool 结果（**回归 #205**） | assistant 含两个超大参数调用 c1/c2 + 两条小 tool 结果 + user | 调用 `prepareContext` | 走降级；c1、c2 两条孤立结果全部去掉，无孤儿 | P0 | ✅ 已覆盖 | `deterministicFallbackDropsAllParallelOrphanedToolResults` |
 
-> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 34 / 34
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 35 / 35
 - P2: 已覆盖 3 / 3
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（34 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（35 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

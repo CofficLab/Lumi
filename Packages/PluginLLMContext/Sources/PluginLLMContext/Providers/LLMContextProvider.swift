@@ -1079,11 +1079,15 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
 
         var tail: [Message] = []
-        for message in trimmed.reversed() where message.role != .system {
+        var tailSourceIndex = trimmed.count
+        for index in stride(from: trimmed.count - 1, through: 0, by: -1) {
+            let message = trimmed[index]
+            guard message.role != .system else { continue }
             let available = max(remaining - reservedForUser, 0)
             let cost = LLMContextTokenEstimator.estimate(message: message)
             if cost <= available {
                 tail.insert(message, at: 0)
+                tailSourceIndex = index
                 remaining -= cost
                 continue
             }
@@ -1092,10 +1096,31 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 let boundedCost = LLMContextTokenEstimator.estimate(message: bounded)
                 if boundedCost <= available {
                     tail.insert(bounded, at: 0)
+                    tailSourceIndex = index
                     remaining -= boundedCost
                 }
             }
             break
+        }
+
+        // 工具结果不能脱离对应的 assistant tool-call：尾部循环从新到旧按预算取用，
+        // assistant 调用超预算被丢弃时会留下孤立 tool 结果，provider 收到后返回 400（#205）。
+        // 与 compactedHistory 的配对保护一致：能补回对应调用就补回，否则去掉孤立结果。
+        // 并行调用会产生多条连续 tool 结果，必须全部清理，单删一条仍会留下孤儿。
+        if let first = tail.first, first.role == .tool, tailSourceIndex > 0 {
+            let preceding = trimmed[tailSourceIndex - 1]
+            let available = max(remaining - reservedForUser, 0)
+            let cost = LLMContextTokenEstimator.estimate(message: preceding)
+            let pairsOrphan = preceding.role == .assistant
+                && (preceding.toolCalls ?? []).contains { $0.id == first.toolCallID }
+            if pairsOrphan, cost <= available {
+                tail.insert(preceding, at: 0)
+                remaining -= cost
+            } else {
+                while let head = tail.first, head.role == .tool {
+                    tail.removeFirst()
+                }
+            }
         }
 
         // 预留的空间最终给当前请求：即使尾部循环因预算耗尽提前退出，
