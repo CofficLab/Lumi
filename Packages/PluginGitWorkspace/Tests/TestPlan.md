@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitWorkspace 的实现包，包含 3 个主要类型；当前测试覆盖 5 条用例。
+PluginGitWorkspace 的实现包，包含 3 个主要类型；当前测试覆盖 6 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 5
+测试文件: 2 个，用例总数: 6
 
 ## 公开 API
 
@@ -19,7 +19,7 @@ PluginGitWorkspace 的实现包，包含 3 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **GitWorkspaceViewModel**（3 条）：由 `loadsStatusAndRecentCommitsForCurrentProject`、`reportsGitErrorsAndClearsStateWhenProjectIsRemoved`、`aNewProjectSupersedesAnInFlightRequestAndSamePathReloadIsDeduplicated` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitWorkspaceViewModel**（4 条）：由 `loadsStatusAndRecentCommitsForCurrentProject`、`reportsGitErrorsAndClearsStateWhenProjectIsRemoved`、`aNewProjectSupersedesAnInFlightRequestAndSamePathReloadIsDeduplicated` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（2 条）：由 `gitWorkspacePluginRegistersEntry`、`gitWorkspaceActivationAndShutdownRestoreHostUI` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -31,27 +31,28 @@ PluginGitWorkspace 的实现包，包含 3 个主要类型；当前测试覆盖 
 | 3 | GitWorkspaceViewModel | aNewProjectSupersedesAnInFlightRequestAndSamePathReloadIsDeduplicated | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `aNewProjectSupersedesAnInFlightRequestAndSamePathReloadIsDeduplicated` |
 | 4 | 综合 | Git workspace plugin registers an ActivityBar entry | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitWorkspacePluginRegistersEntry` |
 | 5 | 综合 | Git workspace activation restores host UI and clears its content override | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitWorkspaceActivationAndShutdownRestoreHostUI` |
+| 6 | GitWorkspaceViewModel | 未跟踪文件纳入工作区列表并标记为 ?（**回归 #155**） | stub status 含 modified 与 untracked | reload 后检查 `workingTreeFiles` 与 `changeLabel` | `workingTreeFiles` 含未跟踪文件（去重排序），未跟踪文件标签为 `?` | P1 | ✅ 已覆盖 | `includesUntrackedFilesInWorkingTree` |
 
-> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P1: 已覆盖 6 / 6
 - P2: 已覆盖 0 / 0
-- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
+- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（5 条）
+- **P1**: 其余功能性用例（6 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 5 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 6 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
