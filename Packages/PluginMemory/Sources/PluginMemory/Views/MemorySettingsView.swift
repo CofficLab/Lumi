@@ -82,18 +82,18 @@ struct MemorySettingsView: View {
         .task {
             await reloadItems()
         }
-        .alert("确认删除", isPresented: $showDeleteConfirmation) {
-            Button("取消", role: .cancel) {
+        .alert(pluginLocalization.string("Delete Memory"), isPresented: $showDeleteConfirmation) {
+            Button(pluginLocalization.string("Cancel"), role: .cancel) {
                 itemToDelete = nil
             }
-            Button("删除", role: .destructive) {
+            Button(pluginLocalization.string("Delete"), role: .destructive) {
                 if let item = itemToDelete {
                     Task { await deleteItem(item) }
                 }
             }
         } message: {
             if let item = itemToDelete {
-                Text("确定要删除记忆「\(item.name)」吗？此操作不可撤销。")
+                Text(String(format: pluginLocalization.string("Delete memory \"%@\"? This action cannot be undone."), item.name))
             }
         }
     }
@@ -111,7 +111,7 @@ struct MemorySettingsView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("加载中...")
+                    Text(pluginLocalization.string("Loading..."))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -192,7 +192,7 @@ struct MemorySettingsView: View {
             Image(systemName: "magnifyingglass")
                 .font(.appCaption)
                 .foregroundStyle(theme.textTertiary)
-            TextField("搜索记忆...", text: $searchQuery)
+            TextField(pluginLocalization.string("Search memories..."), text: $searchQuery)
                 .textFieldStyle(.plain)
                 .font(.appCaption)
             if !searchQuery.isEmpty {
@@ -280,7 +280,7 @@ struct MemorySettingsView: View {
                                 .background(theme.error.opacity(0.1), in: Circle())
                         }
                         .buttonStyle(.plain)
-                        .help("删除记忆")
+                        .help(pluginLocalization.string("Delete Memory"))
                     }
 
                     if !memory.description.isEmpty {
