@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 88
+测试文件: 20 个，用例总数: 91
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -45,6 +45,7 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitChangeType**（12 条）：由 `mapsSingleLetterCodes`、`mapsFullWords`、`isCaseInsensitive` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitCommitToolPath**（6 条）：由 `absolutePathInsideRepoBecomesRelative`、`siblingSamePrefixIsRejected`、`externalPathIsRejected` 等用例锁定；绝对路径→相对路径转换必须用仓库边界判断（等于根或位于 root + "/" 之下），不得用裸 hasPrefix（#176）。
 - **GitCommitRealCommit**（3 条）：由 `outOfRepoSiblingPrefixPathIsRejectedAndCommitsNothing`、`absolutePathInsideRepoCommitsCorrectFile`、`relativePathInsideRepoCommits` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitCommitAmendFiles**（3 条）：由 `amendStagesSpecifiedFileIntoAmendedCommit`、`amendWithEmptyFilesStagesAllChanges`、`amendMessageOnlyKeepsCommittedContent` 锁定。`commit(amend: true)` 必须先按 `files` 暂存再 amend（空列表暂存全部变更），否则指定修改会留在工作区却不进入 amended 提交（**回归 #358**）；改动 `commit` 的 amend 分支时优先跑对应测试文件。
 - **GitIgnoreService**（3 条）：由 `roundTripWriteAndRead`、`parsingRecognizesCommentAndNegationAndDirectory`、`templatesReturnNonEmptyContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitServiceReadingContract**（7 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **子目录读取**：`GitServiceReadingContract` 要求传入仓库子目录时 status / log 与仓库根行为一致——判定（`isGitRepository`）与读取（`openRepository`）必须同为向上搜索语义（#912）。
@@ -151,27 +152,30 @@ GitPlugin Git integration plugin for Lumi editor.
 | 86 | GitUnpushedState | 路径不是 Git 仓库时返回 unavailable | 路径为普通目录 | 调用 `getUnpushedCommitsState` | 状态为 `unavailable` | P1 | ✅ 已覆盖 | `nonRepositoryIsUnavailable` |
 | 87 | GitUnpushedState | 工具输出在无上游时给出明确提示 | 临时仓库未配置上游 | 执行 `GitUnpushedV2Tool` | 输出含「没有配置 upstream」，不含「所有 commit 都已推送」 | P1 | ✅ 已覆盖 | `toolExplainsMissingUpstream` |
 | 88 | 综合 | 读工具经注册链路声明并行只读，写工具保持串行（#1312） | kernel 注册 ToolManager | `GitSourceControlPlugin.onBoot` 后按名查询工具 | git_status/git_diff/git_log/git_show/git_unpushed 为 `parallelReadOnly`；git_commit/git_branch 保持 `serialSideEffect` | P1 | ✅ 已覆盖 | `gitReadToolsDeclareParallelReadOnlyWhileWritesStaySerial` |
+| 89 | GitCommitAmendFiles | amend 必须把指定文件的未暂存修改纳入 amended 提交（**回归 #358**） | 临时仓库种子提交 a.txt=v1，工作区改为 v2 未暂存 | `commit(files: ["a.txt"], amend: true)` | HEAD 变化，amended 提交含 v2，工作区与 HEAD 一致 | P0 | ✅ 已覆盖 | `amendStagesSpecifiedFileIntoAmendedCommit` |
+| 90 | GitCommitAmendFiles | amend 空文件列表与新建提交一致：暂存全部变更 | 临时仓库种子提交 a.txt/b.txt=v1，两者均改为 v2 未暂存 | `commit(files: [], amend: true)` | 两个文件的 v2 都进入 amended 提交，无残留未提交修改 | P1 | ✅ 已覆盖 | `amendWithEmptyFilesStagesAllChanges` |
+| 91 | GitCommitAmendFiles | 无工作区改动时 amend 仅改提交信息，保留已提交内容 | 临时仓库种子提交 a.txt=v1，无改动 | `commit(files: [], amend: true, message: "new message")` | HEAD 变化、信息更新，a.txt 仍为 v1 | P1 | ✅ 已覆盖 | `amendMessageOnlyKeepsCommittedContent` |
 
-> 说明：全部 **88 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **91 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 66 / 66
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 68 / 68
 - P2: 已覆盖 8 / 8
-- **合计: 88 / 88**（仅表示清单场景，非源码覆盖率）
+- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（66 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（68 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 88 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 91 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
