@@ -236,6 +236,55 @@ public actor BackgroundTaskRegistry {
         return record
     }
 
+    // MARK: - 进程内任务（#1313 后台子代理）
+
+    /// 登记一个进程内后台任务：没有 shell 进程句柄，生命周期由调用方
+    /// 经 `finishInProcess` 显式收尾（#1313 后台子代理）。
+    ///
+    /// 输出文件立即建立：完成通知的摘录与模型的 `read_file` 都指向它。
+    /// 进程内任务没有 PID，`processIdentifier` 记 0。
+    @discardableResult
+    public func adoptInProcess(
+        taskID: String,
+        conversationID: UUID,
+        command: String
+    ) -> BackgroundTaskRecord {
+        let outputPath = outputPath(for: taskID)
+        let sink = BackgroundTaskOutputSink()
+        if let writer = try? BackgroundTaskOutputWriter(
+            fileURL: URL(fileURLWithPath: outputPath),
+            maxBytes: Self.maxOutputBytes
+        ) {
+            sink.install(writer)
+        }
+
+        let record = BackgroundTaskRecord(
+            id: taskID,
+            conversationID: conversationID,
+            command: command,
+            outputPath: outputPath,
+            processIdentifier: 0,
+            startedAt: Date()
+        )
+        records[taskID] = record
+        sinks[taskID] = sink
+        persist()
+
+        emit(.started(record))
+        return record
+    }
+
+    /// 向进程内任务的输出文件追加内容。
+    public func appendOutput(taskID: String, text: String) {
+        sinks[taskID]?.append(text)
+    }
+
+    /// 进程内任务收尾：与进程退出路径共用同一个「恰好一次」状态守卫，
+    /// 显式停止之后的迟到收尾不会发出第二次完成事件。
+    public func finishInProcess(taskID: String, exitCode: Int32) {
+        finish(taskID: taskID, exitCode: exitCode)
+    }
+
     // MARK: - 查询
 
     public func task(for taskID: String) -> BackgroundTaskRecord? {

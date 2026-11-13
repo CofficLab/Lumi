@@ -75,6 +75,9 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
             let registry = BackgroundTaskRegistry(rootDirectory: databaseRootURL)
             service.backgroundTaskRegistry = registry
             self.backgroundTaskRegistry = registry
+            // 登记表同时作为内核 Provider 暴露：兄弟插件（如 PluginSubagent
+            // 的后台子代理）经内核解析复用同一套登记/通知机制。
+            try kernel.registerProvider(BackgroundTaskRegistry.self, registry)
             if Self.verbose {
                 Self.logger.info("\(Self.t)created background task registry at \(databaseRootURL.path)")
             }

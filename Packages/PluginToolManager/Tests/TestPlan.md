@@ -5,7 +5,7 @@
 PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 146 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 146
+测试文件: 13 个，用例总数: 149
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,7 +44,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **后台任务**（9 条）：由 `taskFinishesExactlyOnceOnProcessExit`、`explicitStopTerminatesProcessAndEmitsOnce`、`deletingConversationStopsItsBackgroundTasks` 等用例锁定；改动 `BackgroundTaskRegistry` 时优先跑 `BackgroundTaskRegistryTests`。三条易错约定：
+- **后台任务**（12 条）：由 `taskFinishesExactlyOnceOnProcessExit`、`explicitStopTerminatesProcessAndEmitsOnce`、`deletingConversationStopsItsBackgroundTasks` 等用例锁定；改动 `BackgroundTaskRegistry` 时优先跑 `BackgroundTaskRegistryTests`。进程内任务（#1313 后台子代理）经 `adoptInProcess`/`appendOutput`/`finishInProcess` 复用同一套恰好一次守卫。三条易错约定：
   - **后台任务不走 ToolJob 事件通道**：ToolJob 是回合作用域的，回合取消后迟到事件必须丢弃（见 #536）。后台任务的生命周期**跨越回合**——取消当前回合时后台进程必须继续跑，因此它由独立的 actor 管理，绝不能回流到 ToolJob 事件路径。
   - **完成事件恰好一次**：状态迁移都在 actor 内完成，`finished` 只在状态首次从 `.running` 变为终态时发出。进程退出与用户显式停止并发时也只发一次。
   - **取消回合不杀、删除会话要杀**：前者是后台化的意义所在；后者是因为后台进程会继续写文件、占用 CPU，且它的完成通知已经没有收件人。
@@ -218,27 +218,30 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 144 | ToolExecutionScheduling | 取消一个并行读不影响同批其他读（#1312） | 三个并行读同时在跑 | 取消其中一个 | 被取消 Job 为 cancelled 终态，另两个正常完成，峰值并发保持 3 | P0 | ✅ 已覆盖 | `cancellingOneParallelReadDoesNotCancelSiblings` |
 | 145 | ToolExecutionScheduling | 取消屏障后排队的读：立即终态，屏障照常完成（#1312） | 读被更早的副作用屏障挡住仍在排队 | 取消该排队读 | 读立即进入 cancelled 且从未执行，屏障正常完成 | P0 | ✅ 已覆盖 | `cancellingQueuedReadBehindBarrierFinishesImmediately` |
 | 146 | ToolExecutionScheduling | 整回合取消：每个调用都拿到终态结果，不留无结果孤儿（#1312） | 读写混合批次正在运行 | 取消该回合的全部 Job | 每个 Job 都能等到非 nil 结果且状态为 cancelled | P0 | ✅ 已覆盖 | `turnCancellationSettlesEveryJobWithAResult` |
+| 147 | 后台任务 | 进程内任务完成后发出恰好一次完成事件，输出落盘可读尾部（#1313） | 登记一个进程内任务并写入结论 | finishInProcess(exitCode: 0) | 状态 completed、完成事件恰好一次、输出文件与尾部可读 | P0 | ✅ 已覆盖 | `inProcessTaskFinishesExactlyOnce` |
+| 148 | 后台任务 | 进程内任务被停止后，迟到的完成写入不再发第二次事件（#1313） | 进程内任务运行中 | stop 之后再 finishInProcess | 完成事件仍只有一次且状态保持 stopped | P0 | ✅ 已覆盖 | `inProcessStopThenLateFinishEmitsOnce` |
+| 149 | 后台任务 | 进程内任务失败以非零退出码记录（#1313） | 进程内任务写入失败文案 | finishInProcess(exitCode: 1) | 状态 failed、退出码 1、完成事件恰好一次 | P1 | ✅ 已覆盖 | `inProcessFailureRecordsNonZeroExitCode` |
 
-> 说明：全部 **146 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **149 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 41 / 41
-- P1: 已覆盖 99 / 99
+- P0: 已覆盖 43 / 43
+- P1: 已覆盖 100 / 100
 - P2: 已覆盖 6 / 6
-- **合计: 146 / 146**（仅表示清单场景，非源码覆盖率）
+- **合计: 149 / 149**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（41 条）
-- **P1**: 其余功能性用例（99 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（43 条）
+- **P1**: 其余功能性用例（100 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 146 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 149 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

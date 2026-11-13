@@ -267,6 +267,99 @@ struct BackgroundTaskRegistryTests {
         handle.terminate()
     }
 
+    // MARK: - 进程内任务（#1313 后台子代理）
+
+    @Test("进程内任务完成后发出恰好一次完成事件，输出落盘可读尾部")
+    func inProcessTaskFinishesExactlyOnce() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let registry = BackgroundTaskRegistry(rootDirectory: directory)
+        let events = EventRecorder()
+        let taskID = await registry.allocateTaskID()
+        _ = await registry.addObserver { event in
+            events.record(event)
+        }
+
+        let record = await registry.adoptInProcess(
+            taskID: taskID,
+            conversationID: UUID(),
+            command: "run_subagent: Answer lookup"
+        )
+        #expect(record.status == .running)
+
+        await registry.appendOutput(taskID: taskID, text: "The answer is 42.")
+        await registry.finishInProcess(taskID: taskID, exitCode: 0)
+
+        let finished = events.finishedRecords()
+        #expect(finished.count == 1)
+        #expect(finished.first?.status == .completed)
+        #expect(finished.first?.exitCode == 0)
+
+        let final = await registry.task(for: taskID)
+        #expect(final?.status == .completed)
+
+        let outputPath = await registry.outputPath(for: taskID)
+        let contents = (try? String(contentsOf: URL(fileURLWithPath: outputPath), encoding: .utf8)) ?? ""
+        #expect(contents.contains("The answer is 42."))
+        let tail = await registry.outputTail(for: taskID, limit: 2_000)
+        #expect(tail.contains("The answer is 42."))
+    }
+
+    @Test("进程内任务被停止后，迟到的完成写入不再发第二次事件")
+    func inProcessStopThenLateFinishEmitsOnce() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let registry = BackgroundTaskRegistry(rootDirectory: directory)
+        let events = EventRecorder()
+        let taskID = await registry.allocateTaskID()
+        _ = await registry.adoptInProcess(
+            taskID: taskID,
+            conversationID: UUID(),
+            command: "run_subagent: Long task"
+        )
+        _ = await registry.addObserver { event in
+            events.record(event)
+        }
+
+        #expect(await registry.stop(taskID: taskID) == true)
+        // 停止与「子回合跑完后的收尾」并发：状态守卫必须挡住第二次事件。
+        await registry.finishInProcess(taskID: taskID, exitCode: 0)
+
+        let finished = events.finishedRecords()
+        #expect(finished.count == 1)
+        #expect(finished.first?.status == .stopped)
+        let record = await registry.task(for: taskID)
+        #expect(record?.status == .stopped)
+    }
+
+    @Test("进程内任务失败以非零退出码记录")
+    func inProcessFailureRecordsNonZeroExitCode() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let registry = BackgroundTaskRegistry(rootDirectory: directory)
+        let events = EventRecorder()
+        let taskID = await registry.allocateTaskID()
+        _ = await registry.adoptInProcess(
+            taskID: taskID,
+            conversationID: UUID(),
+            command: "run_subagent: Failing task"
+        )
+        _ = await registry.addObserver { event in
+            events.record(event)
+        }
+
+        await registry.appendOutput(taskID: taskID, text: "Subagent task failed: model exploded")
+        await registry.finishInProcess(taskID: taskID, exitCode: 1)
+
+        let finished = events.finishedRecords()
+        #expect(finished.count == 1)
+        #expect(finished.first?.status == .failed)
+        #expect(finished.first?.exitCode == 1)
+    }
+
     // MARK: - 输出路径
 
     @Test("输出路径位于 background-tasks 目录且以任务 ID 命名")

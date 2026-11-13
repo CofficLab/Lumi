@@ -481,6 +481,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "PluginToolManager", package: "PluginToolManager"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         )

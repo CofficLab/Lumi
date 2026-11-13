@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitLLM
+import PluginToolManager
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLLMManager
@@ -406,7 +407,350 @@ struct SubagentEndToEndTests {
         #expect(result.content.contains("[truncated]"))
     }
 
+    // MARK: - 后台模式（#1313 Task 5，复用 #1307 登记表/通知）
+
+    @Test("后台委托立即返回任务 ID，子回合继续在后台跑")
+    func backgroundDelegationReturnsImmediatelyWithTaskID() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "A background delegated task."
+        let conclusion = "Background conclusion."
+        stub.scripts[task] = .text(conclusion)
+        stub.delays[task] = 1.0
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let registry = try #require(kernel.resolveProvider(BackgroundTaskRegistry.self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Background task",
+            conversationID: parentID,
+            extraArguments: ["run_in_background": true]
+        )
+
+        #expect(result.isError == false)
+        #expect(result.content.contains("Background task ID:"))
+        // 立即返回的证据：返回那一刻子回合的 LLM 请求还没结束。
+        #expect(stub.intervals[task]?.end == nil)
+
+        let record = try #require(await registry.tasks(forConversationID: parentID).first)
+        #expect(record.status == .running)
+        #expect(result.content.contains(record.id))
+        #expect(result.content.contains(record.outputPath))
+
+        // 子回合跑完后登记表落到终态，结论写进输出文件。
+        let deadline = Date().addingTimeInterval(10)
+        var finished: BackgroundTaskRecord?
+        while Date() < deadline {
+            if let snapshot = await registry.task(for: record.id), snapshot.status != .running {
+                finished = snapshot
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let final = try #require(finished)
+        #expect(final.status == .completed)
+        let contents = (try? String(contentsOf: URL(fileURLWithPath: final.outputPath), encoding: .utf8)) ?? ""
+        #expect(contents.contains(conclusion))
+    }
+
+    @Test("空闲父会话被完成通知唤醒，通知恰好一条且携带结论")
+    func idleParentIsWokenWithExactlyOneConclusionNotification() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "Background task for idle wake."
+        let conclusion = "The idle wake answer is 42."
+        stub.scripts[task] = .text(conclusion)
+        stub.delays[task] = 0.5
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Idle wake",
+            conversationID: parentID,
+            extraArguments: ["run_in_background": true]
+        )
+        #expect(result.isError == false)
+
+        let notifications = try await waitForNotifications(
+            messages: messages, conversationID: parentID, count: 1
+        )
+        let notification = try #require(notifications.first)
+        #expect(notification.role == .user)
+        #expect(notification.content.contains(conclusion))
+
+        // 唤醒回合真的起了：LLM 收到以通知为最后一条用户消息的请求。
+        let wakeDeadline = Date().addingTimeInterval(10)
+        var woke = false
+        while Date() < wakeDeadline {
+            if stub.requests.contains(where: {
+                $0.messages.last(where: { $0.role == .user })?.content.contains("Background task") == true
+            }) {
+                woke = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(woke)
+
+        // 恰好一次：再等一段时间也不得出现第二条通知。
+        try await Task.sleep(nanoseconds: 500_000_000)
+        #expect(notificationMessages(messages: messages, conversationID: parentID).count == 1)
+    }
+
+    @Test("父回合正忙时通知入队，回合结束后排空并唤醒")
+    func busyParentDrainsNotificationAfterTurnFinishes() async throws {
+        let stub = ScriptedLLMManager()
+        let parentPrompt = "Keep the parent busy."
+        let slowTool = SlowTestTool(duration: 1.5)
+        stub.scriptQueues[parentPrompt] = [
+            .toolCalls([LLMToolCall(id: "call-slow", name: slowTool.name, arguments: "{}")]),
+            .text("Parent work done."),
+        ]
+        let task = "Background task while parent busy."
+        let conclusion = "Busy-drain conclusion."
+        stub.scripts[task] = .text(conclusion)
+        stub.delays[task] = 0.3
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let registry = try #require(kernel.resolveProvider(BackgroundTaskRegistry.self))
+        toolManager.add(slowTool, pluginID: "com.coffic.lumi.tests.subagent-e2e")
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        // 插入用户消息触发真实父回合；慢工具把回合撑住 1.5 秒。
+        messages.insertMessage(
+            Message(conversationID: parentID, role: .user, content: parentPrompt),
+            to: parentID
+        )
+        let slowStartedDeadline = Date().addingTimeInterval(10)
+        while Date() < slowStartedDeadline, !slowTool.started {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(slowTool.started)
+
+        // 父回合正忙时派发后台子代理；子代理 0.3 秒后完成，通知应当入队。
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Busy drain",
+            conversationID: parentID,
+            extraArguments: ["run_in_background": true]
+        )
+        #expect(result.isError == false)
+        let record = try #require(await registry.tasks(forConversationID: parentID).first)
+
+        let finishDeadline = Date().addingTimeInterval(10)
+        var childFinished = false
+        while Date() < finishDeadline {
+            if let snapshot = await registry.task(for: record.id), snapshot.status != .running {
+                childFinished = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(childFinished)
+        // 子代理完成时父回合仍在跑：通知不得提前插入（忙时入队契约）。
+        #expect(notificationMessages(messages: messages, conversationID: parentID).isEmpty)
+
+        // 父回合结束后通知排空，且排在父回合最后一条助手消息之后。
+        let notifications = try await waitForNotifications(
+            messages: messages, conversationID: parentID, count: 1
+        )
+        let notification = try #require(notifications.first)
+        #expect(notification.content.contains(conclusion))
+        let parentMessages = messages.messages(for: parentID)
+        let doneIndex = try #require(parentMessages.firstIndex(where: {
+            $0.role == .assistant && $0.content.contains("Parent work done.")
+        }))
+        let notificationIndex = try #require(parentMessages.firstIndex(where: { $0.id == notification.id }))
+        #expect(notificationIndex > doneIndex)
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+        #expect(notificationMessages(messages: messages, conversationID: parentID).count == 1)
+    }
+
+    @Test("停止后台子代理任务会级联取消子回合，且只通知一次")
+    func stoppingBackgroundSubagentCancelsChildAndNotifiesOnce() async throws {
+        let stub = ScriptedLLMManager()
+        let task = "A background task that will be stopped."
+        stub.scripts[task] = .text("Should never be delivered.")
+        stub.delays[task] = 30
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let agentLoop = try #require(kernel.resolveProvider((any AgentLoopProviding).self))
+        let registry = try #require(kernel.resolveProvider(BackgroundTaskRegistry.self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        let result = try await runSubagent(
+            toolManager: toolManager,
+            task: task,
+            description: "Stopped task",
+            conversationID: parentID,
+            extraArguments: ["run_in_background": true]
+        )
+        #expect(result.isError == false)
+        let record = try #require(await registry.tasks(forConversationID: parentID).first)
+
+        // 等子回合真正开跑再停止，覆盖「运行中停止」路径。
+        let startedDeadline = Date().addingTimeInterval(10)
+        while Date() < startedDeadline {
+            if stub.requests.contains(where: {
+                $0.messages.last(where: { $0.role == .user })?.content == task
+            }) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let all = await conversations.fetchConversationPage(
+            limit: 100, beforeUpdatedAt: nil, beforeID: nil, includingChildConversations: true
+        )
+        let child = try #require(all.first(where: { $0.parentConversationID == parentID }))
+
+        #expect(await registry.stop(taskID: record.id) == true)
+
+        let stopDeadline = Date().addingTimeInterval(10)
+        while Date() < stopDeadline, agentLoop.isRunning(for: child.id) {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(agentLoop.isRunning(for: child.id) == false)
+        // 子回合的 LLM 请求被取消打断，没有产出完整响应。
+        #expect(stub.intervals[task]?.end == nil)
+        let final = try #require(await registry.task(for: record.id))
+        #expect(final.status == .stopped)
+
+        let notifications = try await waitForNotifications(
+            messages: messages, conversationID: parentID, count: 1
+        )
+        #expect(notifications.first?.content.contains("was stopped") == true)
+        try await Task.sleep(nanoseconds: 500_000_000)
+        #expect(notificationMessages(messages: messages, conversationID: parentID).count == 1)
+    }
+
+    @Test("取消父回合不得杀死后台子代理，完成后照常通知")
+    func cancellingParentTurnDoesNotKillBackgroundChild() async throws {
+        let stub = ScriptedLLMManager()
+        let parentPrompt = "Dispatch background work then keep working."
+        let task = "Background task surviving parent cancel."
+        let conclusion = "Survived conclusion."
+        stub.scripts[task] = .text(conclusion)
+        stub.delays[task] = 2.5
+        stub.delays[parentPrompt] = 1.0
+        let callArguments = try JSONSerialization.data(withJSONObject: [
+            "task": task,
+            "description": "Surviving task",
+            "run_in_background": true,
+        ] as [String: Any])
+        stub.scriptQueues[parentPrompt] = [
+            .toolCalls([LLMToolCall(
+                id: "call-bg",
+                name: "run_subagent",
+                arguments: String(decoding: callArguments, as: UTF8.self)
+            )]),
+            .text("Still working."),
+        ]
+        let kernel = try makeKernel(stub: stub)
+
+        let conversations = try #require(kernel.resolveProvider((any ConversationManaging).self))
+        let messages = try #require(kernel.resolveProvider((any MessageManaging).self))
+        let agentLoop = try #require(kernel.resolveProvider((any AgentLoopProviding).self))
+        let registry = try #require(kernel.resolveProvider(BackgroundTaskRegistry.self))
+        let parentID = try await conversations.createConversationAndWait(
+            title: "Parent", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        messages.insertMessage(
+            Message(conversationID: parentID, role: .user, content: parentPrompt),
+            to: parentID
+        )
+
+        // 等第二个请求发出（委托已派发、父回合仍忙）再取消父回合。
+        let secondRequestDeadline = Date().addingTimeInterval(15)
+        var secondRequestSeen = false
+        while Date() < secondRequestDeadline {
+            let count = stub.requests.filter {
+                $0.messages.last(where: { $0.role == .user })?.content == parentPrompt
+            }.count
+            if count >= 2 {
+                secondRequestSeen = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(secondRequestSeen)
+        agentLoop.cancelTurn(in: parentID)
+
+        // 子回合不受父回合取消影响，跑完后通知照常送达。
+        let record = try #require(await registry.tasks(forConversationID: parentID).first)
+        let finishDeadline = Date().addingTimeInterval(15)
+        var childFinished = false
+        while Date() < finishDeadline {
+            if let snapshot = await registry.task(for: record.id), snapshot.status == .completed {
+                childFinished = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(childFinished)
+        #expect(stub.intervals[task]?.end != nil)
+
+        let notifications = try await waitForNotifications(
+            messages: messages, conversationID: parentID, count: 1
+        )
+        #expect(notifications.first?.content.contains(conclusion) == true)
+    }
+
     // MARK: - Helpers
+
+    /// 后台完成通知的 metadata 标记（与 BackgroundTaskNotification 的约定一致）。
+    private static let notificationMetadataKey = "lumi.backgroundNotification"
+
+    private func notificationMessages(
+        messages: any MessageManaging,
+        conversationID: UUID
+    ) -> [Message] {
+        messages.messages(for: conversationID).filter {
+            $0.metadata[Self.notificationMetadataKey] == "1"
+        }
+    }
+
+    /// 轮询等待指定数量的完成通知出现。
+    private func waitForNotifications(
+        messages: any MessageManaging,
+        conversationID: UUID,
+        count: Int,
+        timeout: TimeInterval = 10
+    ) async throws -> [Message] {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let found = notificationMessages(messages: messages, conversationID: conversationID)
+            if found.count >= count { return found }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        throw ToolExecutionError.executionFailed(
+            toolName: "run_subagent",
+            reason: "background notification did not arrive within \(timeout)s"
+        )
+    }
 
     /// 执行一次 run_subagent 调用并等待工具结果。
     ///
@@ -478,9 +822,13 @@ private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unc
     enum Script {
         case text(String)
         case failure(String)
+        case toolCalls([LLMToolCall])
     }
 
     var scripts: [String: Script] = [:]
+    /// 按任务文本排队的多段脚本（FIFO）：驱动「工具调用 → 工具结果 → 收尾」
+    /// 的多轮父回合；队列耗尽后回落到 scripts。
+    var scriptQueues: [String: [Script]] = [:]
     /// 按任务文本注入响应延迟，用于并发重叠与取消路径的测试。
     var delays: [String: TimeInterval] = [:]
     /// 每个任务请求的执行区间；被取消的请求只有 start 没有 end。
@@ -531,13 +879,21 @@ private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unc
             // 与真实 provider 的流式请求被取消的行为一致。
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
-        let script = scripts[task] ?? .text("ok")
+        let script: Script
+        if var queue = scriptQueues[task], !queue.isEmpty {
+            script = queue.removeFirst()
+            scriptQueues[task] = queue
+        } else {
+            script = scripts[task] ?? .text("ok")
+        }
         intervals[task] = (start: intervals[task]?.start ?? Date(), end: Date())
         switch script {
         case .text(let text):
             return LLMResponse(content: text, model: request.model)
         case .failure(let reason):
             throw ScriptedLLMError(reason: reason)
+        case .toolCalls(let calls):
+            return LLMResponse(content: "", model: request.model, toolCalls: calls)
         }
     }
 }
@@ -545,6 +901,38 @@ private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unc
 private struct ScriptedLLMError: LocalizedError {
     let reason: String
     var errorDescription: String? { reason }
+}
+
+/// 把父回合撑住一段时间的测试工具：忙时排空路径需要「子代理完成时
+/// 父回合仍在跑」的窗口。
+private final class SlowTestTool: SuperAgentTool, @unchecked Sendable {
+    let name = "test_slow_tool"
+    private let duration: TimeInterval
+    private let lock = NSLock()
+    private var startedFlag = false
+
+    var started: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return startedFlag
+    }
+
+    init(duration: TimeInterval) {
+        self.duration = duration
+    }
+
+    var executionCapability: ToolExecutionCapability { .serialSideEffect }
+    func description(for language: LanguagePreference) -> String { "Test slow tool" }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object"] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        lock.lock()
+        startedFlag = true
+        lock.unlock()
+        try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+        return "slow done"
+    }
 }
 
 /// 在 PluginAgentLoop（order 8）启动前把内核的 LLMManaging 换成替身。
