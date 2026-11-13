@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginVideoConverter 的实现包，包含 12 个主要类型；当前测试覆盖 11 条用例。
+PluginVideoConverter 的实现包，包含 12 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 11
+测试文件: 3 个，用例总数: 16
 
 核心组件（源码目录）:
 - `Models/`
@@ -35,6 +35,7 @@ PluginVideoConverter 的实现包，包含 12 个主要类型；当前测试覆�
 
 - **VideoConverterLocalization**（3 条）：由 `pluginBundleIncludesLocalizedStringsCatalog`、`stringCatalogDefinesRequiredLanguages`、`stringCatalogIncludesLocalizedDisplayStrings` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VideoConverterPlugin**（8 条）：由 `onBootRegistersEntryContentViewAndDocs`、`onBootAppendsToExistingItems`、`onBootNoOpsWithoutProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **VideoConverterOutputURL**（5 条）：由 `sameFormatMP4ProducesDistinctOutput`、`outputNeverEqualsInputForAnyFormat` 等用例锁定；输出 URL 永远不得等于输入（同格式转换须加后缀），否则 FFmpeg 拒绝读写同一文件（#378）。
 
 ## 测试用例清单
 
@@ -51,27 +52,32 @@ PluginVideoConverter 的实现包，包含 12 个主要类型；当前测试覆�
 | 9 | VideoConverterPlugin | VideoConverterMainView 可渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `mainViewRenders` |
 | 10 | VideoConverterPlugin | VideoConverterAboutView 可渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `aboutViewRenders` |
 | 11 | VideoConverterPlugin | VideoConverterManualView 可渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `manualViewRenders` |
+| 12 | VideoConverterOutputURL | 同格式 MP4 转换产出独立输出文件，不写回输入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `sameFormatMP4ProducesDistinctOutput` |
+| 13 | VideoConverterOutputURL | 不同格式转换保留原文件名仅换扩展名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentFormatKeepsBaseName` |
+| 14 | VideoConverterOutputURL | 大小写不同的同格式扩展名也不写回输入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `caseInsensitiveSameExtensionAvoidsInput` |
+| 15 | VideoConverterOutputURL | 任意格式的输出都不等于输入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `outputNeverEqualsInputForAnyFormat` |
+| 16 | VideoConverterOutputURL | 输入名已含后缀时仍产出不同于输入的文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suffixedInputStillProducesDistinctOutput` |
 
-> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 13 / 13
 - P2: 已覆盖 0 / 0
-- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（13 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
