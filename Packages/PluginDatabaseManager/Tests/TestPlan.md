@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 89
+测试文件: 6 个，用例总数: 95
 
 核心组件（源码目录）:
 - `Agent/`
@@ -55,7 +55,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
 - **Redis read-command routing**（2 条）：由 `redisReadCommandsUseQueryPath`、`redisWriteCommandsUseExecutePath` 锁定；改动 Redis 读命令判定（`isReadStatement` 的 redis 分支）时优先跑对应测试文件，防止 KEYS/TYPE 等只读命令被误路由到 execute 而丢掉 RESP 内容，以及 GETSET/ZRANGESTORE 等写命令被前缀误判为读。
 - **Redis key quoting**（2 条）：由 `quotedKeyRoundTripsAsSingleArgument`、`openRedisKeySendsSingleExactKeyArgument` 锁定（**回归 #282**）：含空格/引号/反斜杠的 Redis 键经 `RedisCommandParser.quote` 引用后，`tokenize` 必须还原为单个参数；`openRedisKey` 组合的 GET 经 `compose` 解析必须只携带一个完整键，不得被空格拆成多个参数而触发 wrong-argument-count。改动 `quote`/`tokenize` 或 `openRedisKey` 命令拼接时优先跑对应用例。
-- **SQLStatementParser**（5 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标。
+- **SQLStatementParser**（11 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标；并由 `dollarQuotedFunctionBodyIsSingleStatement`、`statementsOutsideDollarQuotesStillSplit` 等锁定（**回归 #279**）：PostgreSQL 美元引用（`$$...$$`、`$tag$...$tag$`）体内的分号不得被当成语句分隔符，函数体必须作为单条语句执行，引用之外的分号仍正常切分；位置参数 `$1` 不被误判为引用起始符。改动 `split`/`stripLiteralsAndComments` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -167,26 +167,37 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 88 | 只读 PRAGMA | 括号赋值形态的可写 PRAGMA 被拒绝（回归 #272） | — | 对 `PRAGMA cache_size(2000)`/`journal_mode(WAL)` 调用 `readonlySQL` | 均抛出 `DatabaseAgentToolError` | P0 | ✅ 已覆盖 | `readonlySQLRejectsWritablePragmaParenForm` |
 | 89 | 只读 PRAGMA | 只读 PRAGMA 查询仍放行（裸读取与内省 pragma） | — | 对 `PRAGMA user_version`/`journal_mode`/`table_info(users)`/`index_list(users)`/`foreign_key_list(users)`/`integrity_check` 调用 `readonlySQL` | 均不抛错 | P1 | ✅ 已覆盖 | `readonlySQLAcceptsReadOnlyPragmaQueries` |
 
-> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
+### PostgreSQL 美元引用切分（回归 #279）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 90 | 美元引用切分 | 美元引用函数体必须作为单条语句，不得按体内分号拆分（回归 #279） | — | 对 `CREATE FUNCTION ... AS $$ BEGIN PERFORM 1; PERFORM 2; END; $$ LANGUAGE plpgsql;` 调用 `split` | 仅 1 条语句，等于去掉尾部分号的原文 | P0 | ✅ 已覆盖 | `dollarQuotedFunctionBodyIsSingleStatement` |
+| 91 | 美元引用切分 | 带标签 `$body$` 与嵌套 `$outer$/$inner$` 的引用同样保持单条语句（回归 #279） | — | 对带标签函数体与嵌套引用调用 `split` | 各返回单条完整语句，体内分号不切分 | P0 | ✅ 已覆盖 | `taggedAndNestedDollarQuotesAreSingleStatement` |
+| 92 | 美元引用切分 | 美元引用之外的分号仍正常切分，不得过度合并（回归 #279） | — | 对 `SELECT 1; SELECT $$a;b$$; SELECT 2` 调用 `split` | 返回 3 条：`SELECT 1`、`SELECT $$a;b$$`、`SELECT 2` | P0 | ✅ 已覆盖 | `statementsOutsideDollarQuotesStillSplit` |
+| 93 | 美元引用切分 | 位置参数 `$1`/`$2` 不被当成美元引用起始符（回归 #279） | — | 对 `SELECT $1; SELECT $2` 与 `SELECT $1` 调用 `split` | 分别返回 2 条与 1 条，`$1` 按普通字符处理 | P1 | ✅ 已覆盖 | `positionalParametersAreNotDollarQuotes` |
+| 94 | 美元引用切分 | 美元引用体在骨架中被剥离，写关键字不参与只读判定（回归 #279） | — | 对 `SELECT $$DROP TABLE t; DELETE$$ AS s` 调用 `stripLiteralsAndComments` | 骨架不含 `DROP`/`DELETE`，保留 `SELECT` 与 `AS s` | P1 | ✅ 已覆盖 | `dollarQuotedBodyStrippedFromSkeleton` |
+| 95 | 美元引用切分 | 美元引用体内的引号与分号不提前结束引用（回归 #279） | — | 对 `SELECT $tag$a'x'b; c$tag$ AS s; SELECT 2` 调用 `split` | 返回 2 条，第一条完整保留体内引号与分号 | P1 | ✅ 已覆盖 | `dollarQuoteIgnoresInnerQuotesAndSemicolons` |
+
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 44 / 44
-- P1: 已覆盖 44 / 44
+- P0: 已覆盖 47 / 47
+- P1: 已覆盖 47 / 47
 - P2: 已覆盖 1 / 1
-- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（44 条）
-- **P1**: 其余功能性用例（44 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（47 条）
+- **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -6,6 +6,7 @@ import Foundation
 /// - 单引号字符串字面量（含 `''` 转义）
 /// - 双引号标识符（含 `""` 转义）
 /// - 反引号标识符（MySQL，含 ` `` ` 转义）
+/// - PostgreSQL 美元引用（`$$ ... $$`、`$tag$ ... $tag$`，体内分号不是分隔符）
 /// - 行注释（`--` 到行尾）
 /// - 块注释（`/* ... */`，可嵌套）
 ///
@@ -24,6 +25,38 @@ public enum SQLStatementParser {
         return next
     }
 
+    /// 若 `index` 处是 PostgreSQL 美元引用起始符 `$tag$`，返回定界符与起始符之后的下标。
+    ///
+    /// tag 遵循未加引号标识符规则（字母/下划线开头，后接字母/数字/下划线，不含 `$`），
+    /// 可为空（即 `$$`）。`$1` 这类位置参数不是合法起始符，返回 nil 按普通字符处理。
+    private static func dollarQuoteDelimiter(in sql: String, at index: String.Index) -> (delimiter: String, contentStart: String.Index)? {
+        var cursor = sql.index(after: index)
+        var tag = ""
+        while cursor < sql.endIndex {
+            let c = sql[cursor]
+            if c == "$" {
+                return ("$" + tag + "$", sql.index(after: cursor))
+            }
+            if c.isLetter || c == "_" || (c.isNumber && !tag.isEmpty) {
+                tag.append(c)
+                cursor = sql.index(after: cursor)
+                continue
+            }
+            return nil
+        }
+        return nil
+    }
+
+    /// 若定界符 `delimiter` 恰好出现在 `index` 处，返回其后一下标；否则返回 nil。
+    private static func matchDelimiter(_ delimiter: String, in sql: String, at index: String.Index) -> String.Index? {
+        var cursor = index
+        for dc in delimiter {
+            guard cursor < sql.endIndex, sql[cursor] == dc else { return nil }
+            cursor = sql.index(after: cursor)
+        }
+        return cursor
+    }
+
     public static func split(_ sql: String) -> [String] {
         var result: [String] = []
         var current = ""
@@ -31,6 +64,7 @@ public enum SQLStatementParser {
         var inString: Character? = nil
         var inLineComment = false
         var blockCommentDepth = 0
+        var dollarQuote: String? = nil
 
         /// 去除注释后是否仍有实际内容（避免纯注释语句占位）。
         func hasExecutableContent(_ statement: String) -> Bool {
@@ -39,9 +73,19 @@ public enum SQLStatementParser {
             var inStr: Character? = nil
             var inLC = false
             var bcDepth = 0
+            var dollarQ: String? = nil
             while i < statement.endIndex {
                 let c = statement[i]
                 let n = Self.nextIndex(in: statement, after: i)
+                if let delimiter = dollarQ {
+                    if let after = Self.matchDelimiter(delimiter, in: statement, at: i) {
+                        i = after
+                        dollarQ = nil
+                    } else {
+                        i = statement.index(after: i)
+                    }
+                    continue
+                }
                 if inLC {
                     if c == "\n" { inLC = false }
                     i = statement.index(after: i); continue
@@ -61,6 +105,7 @@ public enum SQLStatementParser {
                 if c == "'" || c == "\"" || c == "`" { inStr = c; i = statement.index(after: i); continue }
                 if c == "-" && n != nil && statement[n!] == "-" { inLC = true; i = statement.index(after: i); continue }
                 if c == "/" && n != nil && statement[n!] == "*" { bcDepth = 1; i = statement.index(after: n!); continue }
+                if c == "$", let (delimiter, contentStart) = Self.dollarQuoteDelimiter(in: statement, at: i) { dollarQ = delimiter; i = contentStart; continue }
                 stripped.append(c)
                 i = statement.index(after: i)
             }
@@ -78,6 +123,19 @@ public enum SQLStatementParser {
         while index < sql.endIndex {
             let ch = sql[index]
             let next = Self.nextIndex(in: sql, after: index)
+
+            // 美元引用状态：体内一切都是字面量，直到匹配的闭合定界符
+            if let delimiter = dollarQuote {
+                if let after = Self.matchDelimiter(delimiter, in: sql, at: index) {
+                    current.append(delimiter)
+                    index = after
+                    dollarQuote = nil
+                } else {
+                    current.append(ch)
+                    index = sql.index(after: index)
+                }
+                continue
+            }
 
             // 行注释状态
             if inLineComment {
@@ -147,6 +205,14 @@ public enum SQLStatementParser {
                 continue
             }
 
+            // 进入美元引用（PostgreSQL）：`$$` 或 `$tag$`
+            if ch == "$", let (delimiter, contentStart) = Self.dollarQuoteDelimiter(in: sql, at: index) {
+                dollarQuote = delimiter
+                current.append(delimiter)
+                index = contentStart
+                continue
+            }
+
             // 语句分隔符
             if ch == ";" {
                 commitCurrentStatement()
@@ -174,6 +240,7 @@ public enum SQLStatementParser {
     /// - 单引号字符串字面量（含 `''` 转义）
     /// - 双引号标识符（含 `""` 转义）
     /// - 反引号标识符（MySQL，含 `` `` `` 转义）
+    /// - PostgreSQL 美元引用（`$$ ... $$`、`$tag$ ... $tag$`）
     /// - 行注释（`--` 到行尾）与块注释（`/* ... */`，可嵌套）
     public static func stripLiteralsAndComments(_ sql: String) -> String {
         var result = ""
@@ -181,10 +248,22 @@ public enum SQLStatementParser {
         var inString: Character? = nil
         var inLineComment = false
         var blockCommentDepth = 0
+        var dollarQuote: String? = nil
 
         while index < sql.endIndex {
             let ch = sql[index]
             let next = Self.nextIndex(in: sql, after: index)
+
+            // 美元引用状态：整段是字面量，丢弃直到匹配的闭合定界符
+            if let delimiter = dollarQuote {
+                if let after = Self.matchDelimiter(delimiter, in: sql, at: index) {
+                    index = after
+                    dollarQuote = nil
+                } else {
+                    index = sql.index(after: index)
+                }
+                continue
+            }
 
             if inLineComment {
                 if ch == "\n" {
@@ -242,6 +321,14 @@ public enum SQLStatementParser {
             if ch == "/" && next != nil && sql[next!] == "*" {
                 blockCommentDepth = 1
                 index = sql.index(after: next!)
+                continue
+            }
+
+            // 进入美元引用：整段丢弃，只留一个空格占位。
+            if ch == "$", let (delimiter, contentStart) = Self.dollarQuoteDelimiter(in: sql, at: index) {
+                dollarQuote = delimiter
+                result.append(" ")
+                index = contentStart
                 continue
             }
 
