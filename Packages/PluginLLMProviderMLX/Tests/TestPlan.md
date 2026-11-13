@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 36 条用例。
+PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 41 条用例。
 
 平台: iOS 17+
-测试文件: 10 个，用例总数: 36
+测试文件: 11 个，用例总数: 41
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -37,6 +37,7 @@ PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆�
 - **MLXDownloadProgressScan**（3 条）：由 `repeatedStateReadsScanOnce`、`explicitRefreshRescans`、`stateUsesCachedSnapshot` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXGenerateToolSchema**（3 条）：由 `toolSchemaEnablesTypedArgumentParsing`、`noToolSchemaLeavesArgumentsUntyped`、`toolSchemaRejectsUndeclaredFunctionName` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXGenerationInfo**（5 条）：由 `infoEventProvidesTokenUsage`、`infoEventProvidesStopReason`、`infoEventDoesNotDisturbContent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MLXGenerationRejection**（5 条）：由 `rejectionEventIsCaptured`、`rejectionNeverBecomesContent`、`firstRejectionIsKept` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXProviderPlugin**（6 条）：由 `registersAllLocalProviders`、`bootInjectsStorageDirectory`、`modelPathsUseInjectedDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXSendableJSONNumber**（5 条）：由 `zeroStaysNumeric`、`oneStaysNumeric`、`booleansStayBoolean` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXSendableJSON**（6 条）：由 `topLevelNullBecomesNil`、`nullInEnumStaysNil`、`nestedNullStaysNil` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -83,27 +84,32 @@ PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆�
 | 34 | MLXTokenizerLocalLoading | 本地目录缺少 tokenizer.json 时给出配置缺失错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingTokenizerFileReportsConfigurationMissing` |
 | 35 | MLXVLMFactoryLinking | MLXVLM 的 trampoline factory 在运行时可被发现 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `vlmTrampolineFactoryIsDiscoverable` |
 | 36 | MLXVLMFactoryLinking | factory 注册表非空（LLM factory 至少可用） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `factoryRegistryIsNotEmpty` |
+| 37 | MLXGenerationRejection | rejectedToolCall 事件必须被捕获而不是静默丢弃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectionEventIsCaptured` |
+| 38 | MLXGenerationRejection | 被拒绝的原始输出不得进入正文或流式回调 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectionNeverBecomesContent` |
+| 39 | MLXGenerationRejection | 多个拒绝事件保留第一个诊断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRejectionIsKept` |
+| 40 | MLXGenerationRejection | 错误描述携带原因与工具名且不泄漏原始输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `errorDescriptionCarriesSafeDiagnostics` |
+| 41 | MLXGenerationRejection | 没有拒绝事件时保持为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `noRejectionKeepsNil` |
 
-> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 29 / 29
-- P2: 已覆盖 2 / 2
-- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 30 / 30
+- P2: 已覆盖 3 / 3
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（29 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（30 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

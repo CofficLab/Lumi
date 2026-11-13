@@ -94,6 +94,11 @@ final class MLXRuntime {
             try Task.checkCancellation()
             await consumer.consume(result, onChunk: onChunk)
         }
+        // 拒绝事件不作为正文输出；静默丢弃会落入通用空响应重试（#1228）。
+        // 抛带安全诊断的错误，AgentLoopFailure 归为 unknown，不自动重试。
+        if let rejection = consumer.rejection {
+            throw MLXProviderError.rejectedToolCall(rejection)
+        }
         await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
         return consumer.response(model: modelID)
     }

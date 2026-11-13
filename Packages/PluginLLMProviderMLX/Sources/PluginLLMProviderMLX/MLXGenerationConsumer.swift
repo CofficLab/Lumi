@@ -29,6 +29,12 @@ struct MLXGenerationConsumer {
     /// 来自 `.info` 终态事件的停止原因。
     private(set) var stopReason: String?
 
+    /// 首个被拒绝的工具调用（解析或授权失败）。
+    ///
+    /// 拒绝事件不会作为正文流式输出；保留它供运行时抛出带诊断的错误，
+    /// 避免整轮输出被丢弃后落入通用空响应重试（#1228）。
+    private(set) var rejection: RejectedToolCall?
+
     /// 消费一个生成事件。
     ///
     /// - Parameters:
@@ -53,6 +59,9 @@ struct MLXGenerationConsumer {
             inputTokenCount = info.promptTokenCount
             outputTokenCount = info.generationTokenCount
             stopReason = Self.stopReasonText(info.stopReason)
+        }
+        if let rejected = generation.rejectedToolCall, rejection == nil {
+            rejection = rejected
         }
     }
 
