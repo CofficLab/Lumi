@@ -106,7 +106,8 @@ public final class LauncherWindowController: NSObject, SuperLog {
             rootView: LauncherView(
                 searchModel: searchModel,
                 appSearch: appSearch,
-                fileSearch: fileSearch
+                fileSearch: fileSearch,
+                hotkeyManager: GlobalHotkeyManager.shared
             )
         )
         hostingView.setFrameSize(NSSize(width: panelWidth, height: panelHeight))
