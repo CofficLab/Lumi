@@ -181,18 +181,22 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
     }
 
     /// 宽容解析 options：对象（label/description/badge）、裸字符串均可。
+    /// 标签 trim 后为空即丢弃：与 UI submit 的 trim 守卫一致，避免渲染出无法提交的空按钮（#328）。
     static func parseOptions(_ value: Any?) -> [AskUserOption] {
         guard let array = value as? [Any] else { return [] }
         var result: [AskUserOption] = []
         for element in array {
             if let string = element as? String {
-                if !string.isEmpty { result.append(AskUserOption(label: string)) }
+                let label = string.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !label.isEmpty { result.append(AskUserOption(label: label)) }
             } else if let dict = element as? [String: Any] {
-                let label = (dict["label"] as? String)
+                let rawLabel = (dict["label"] as? String)
                     ?? (dict["description"] as? String)
                     ?? (dict["value"] as? String)
                     ?? (dict["text"] as? String)
-                guard let label, !label.isEmpty else { continue }
+                guard let rawLabel else { continue }
+                let label = rawLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !label.isEmpty else { continue }
                 let description = dict["description"] as? String
                 let badge = dict["badge"] as? String
                 result.append(AskUserOption(label: label, description: description, badge: badge))
