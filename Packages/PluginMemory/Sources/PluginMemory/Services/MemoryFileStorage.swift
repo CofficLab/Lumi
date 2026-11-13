@@ -196,24 +196,27 @@ public actor MemoryFileStorage {
 
         let dateFormatter = ISO8601DateFormatter()
 
-        if raw.hasPrefix("---") {
-            let parts = raw.components(separatedBy: "---")
-            if parts.count >= 3 {
-                let frontmatter = parts[1]
-                content = parts.dropFirst(2).joined(separator: "---").trimmingCharacters(in: .whitespacesAndNewlines)
-                for line in frontmatter.components(separatedBy: .newlines) {
-                    let kv = line.split(separator: ":", maxSplits: 1).map(String.init)
-                    guard kv.count == 2 else { continue }
-                    let key = kv[0].trimmingCharacters(in: .whitespaces)
-                    let value = kv[1].trimmingCharacters(in: .whitespaces)
-                    switch key {
-                    case "name": name = value
-                    case "type": type = MemoryType(rawValue: value) ?? .project
-                    case "description": description = value
-                    case "created": createdAt = dateFormatter.date(from: value) ?? createdAt
-                    case "updated": updatedAt = dateFormatter.date(from: value) ?? updatedAt
-                    default: break
-                    }
+        // 仅把整行恰为 "---" 的行当作 frontmatter 结构分隔符；description 等
+        // 字段值内部出现的 "---"（如 alpha---beta）不是分隔符，否则描述被截断、
+        // 正文混入 created/updated 行而无法还原（#528）。
+        let lines = raw.components(separatedBy: .newlines)
+        let isDelimiter: (String) -> Bool = { $0.trimmingCharacters(in: .whitespaces) == "---" }
+        if let opening = lines.first, isDelimiter(opening),
+           let closingIndex = lines.indices.dropFirst().first(where: { isDelimiter(lines[$0]) }) {
+            let frontmatter = lines[1..<closingIndex]
+            content = lines[(closingIndex + 1)...].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            for line in frontmatter {
+                let kv = line.split(separator: ":", maxSplits: 1).map(String.init)
+                guard kv.count == 2 else { continue }
+                let key = kv[0].trimmingCharacters(in: .whitespaces)
+                let value = kv[1].trimmingCharacters(in: .whitespaces)
+                switch key {
+                case "name": name = value
+                case "type": type = MemoryType(rawValue: value) ?? .project
+                case "description": description = value
+                case "created": createdAt = dateFormatter.date(from: value) ?? createdAt
+                case "updated": updatedAt = dateFormatter.date(from: value) ?? updatedAt
+                default: break
                 }
             }
         }
