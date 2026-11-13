@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 208 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 224 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 24 个，用例总数: 208
+测试文件: 25 个，用例总数: 224
 
 核心组件（源码目录）:
 - `Editor/`
@@ -50,6 +50,8 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorConfigStore**（2 条）：由 `testSettingsDirectoryDoesNotDuplicateStorageDirectoryForDefaultRoot`、`testSettingsDirectoryUsesHostPersistenceRootWhenProvided` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorContributionRegistry**（7 条）：由 `installAndWithdraw`、`contextMenuContributionInstallAndWithdraw`、`replaceSwapsAtomically` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorExtensionRegistry**（2 条）：由 `testHighlightProvidersCachesResultsPerLanguage`、`testRegisterHighlightContributorViaKernelBridge` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorExternalReloadIdentity**（2 条）：由 `externalReloadDiscardedAfterTabSwitch`、`externalReloadAppliedWhenStillSameFile` 锁定外部重读续体的当前标签复核；改动该模块时优先跑对应测试文件。
+- **EditorFindMatchPerformance**（10 条）：由 `plainTextMatchesUnchanged`、`wholeWordMatchesUnchanged`、`regexMatchesUnchanged` 等用例锁定查找匹配性能修复不改变结果；改动该模块时优先跑对应测试文件。
 - **EditorFindReplaceController**（9 条）：由 `testMatchesPlainTextCaseInsensitive`、`testMatchesWholeWordSkipsSubstrings`、`testMatchesInSelectionOnlyUsesNonEmptySelections` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorJumpToDefinitionDelegate**（14 条）：由 `testSubstringIfValidReturnsTextForValidRange`、`testSubstringIfValidRejectsStaleRanges`、`testLSPFileURLAcceptsUnescapedFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorKernelPureLogic**（69 条）：由 `testEditorMinimapPolicyVisibleStateUsesUserPreference`、`testEditorMinimapPolicyLargeFileStateIsGated`、`testEditorPeekModeTitlesRemainStable` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -62,6 +64,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorNavigationHistory**（2 条）：由 `testRemoveDropsEveryEntryForClosedSession`、`testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` 锁定关闭标签后历史清理与索引维护；改动导航历史时优先跑对应测试文件。
 - **EditorStateTheme**（2 条）：由 `testThemeObserverCancellationStopsCallbacks`、`testSameThemeNotificationRefreshesThemeAfterContributorRegistration` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSyntaxThemeResolver**（2 条）：由 `testResolveUsesRegisteredContributorPalette`、`testRegisterOrReplaceThemeContributorOverridesFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorTotalLineCount**（4 条）：由 `totalLineCountAfterReplacement`、`totalLineCountAfterNativeEdit`、`totalLineCountAlwaysMatchesDocument` 锁定总行数增量维护；改动该模块时优先跑对应测试文件。
 - **EditorViewportRuntime**（14 条）：由 `testViewportRenderControllerComputesBufferedRenderRange`、`testViewportRenderControllerClampsAtDocumentBounds`、`testViewportRenderControllerDebounceDecisionTracksScrollDelta` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LSPCoordinatorJumpToDefinition**（3 条）：由 `testRequestDefinitionReturnsNilBeforeDocumentOpen`、`testRequestDefinitionForwardsURIToServiceLayer`、`testRequestDefinitionWaitsForInFlightOpenTask` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CodeEditorHostSuperPlugin**（2 条）：由 `registersEditorServices`、`removesEditorServices` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -278,27 +281,43 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 206 | EditorServiceFacade | 后退加载目标文件并应用历史项快照（**回归 #981**） | A 的历史项记录第 15 行光标，打开 B 后调用 `goBack()` | 等待 A 重新加载完成 | 活动 Session 为 A、`currentFileURL` 与正文切回 A、`cursorLine == 15` | P1 | ✅ 已覆盖 | `testGoBackLoadsTargetFileAndAppliesHistorySnapshot` |
 | 207 | EditorNavigationHistory | 关闭标签时清除该 Session 的全部历史项（**回归 #982**） | A → B → A → C 形成 `[A, B, A, C]` | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项仍为 C，后退只能到 B，历史中不再有 A | P1 | ✅ 已覆盖 | `testRemoveDropsEveryEntryForClosedSession` |
 | 208 | EditorNavigationHistory | 关闭当前历史项对应的 Session 后回退到最近有效项（**回归 #982**） | 历史 `[A, B, A, C]` 且当前索引位于第二个 A | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项落在 C，不出现已关闭的 A | P1 | ✅ 已覆盖 | `testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` |
+| 209 | EditorExternalReloadIdentity | 切到 B 后 A 的外部重读结果被丢弃（**回归 #206**） | A 已加载并启动异步外部重读 | 重读返回前切到 B，等待 A 的磁盘读取续体执行 | currentFileURL 仍为 B，正文仍为 B-original，不被 A 的内容覆盖 | P0 | ✅ 已覆盖 | `externalReloadDiscardedAfterTabSwitch` |
+| 210 | EditorExternalReloadIdentity | 仍停留在 A 时外部重读正常应用（**回归 #206**） | A 已加载，磁盘改为 A-external | 启动 A 的外部重读并等待完成 | currentFileURL 仍为 A，正文更新为 A-external | P1 | ✅ 已覆盖 | `externalReloadAppliedWhenStillSameFile` |
+| 211 | EditorFindMatchPerformance | 普通文本匹配结果不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainTextMatchesUnchanged` |
+| 212 | EditorFindMatchPerformance | 全词匹配结果不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `wholeWordMatchesUnchanged` |
+| 213 | EditorFindMatchPerformance | 正则匹配结果不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `regexMatchesUnchanged` |
+| 214 | EditorFindMatchPerformance | 大小写敏感匹配结果不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `caseSensitiveMatchesUnchanged` |
+| 215 | EditorFindMatchPerformance | 多字节字符的匹配文本正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multibyteMatchedTextIsCorrect` |
+| 216 | EditorFindMatchPerformance | 正则缓存不影响匹配结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cachedRegularExpressionProducesSameResult` |
+| 217 | EditorFindMatchPerformance | 不同选项各自缓存且结果正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentOptionsCacheSeparately` |
+| 218 | EditorFindMatchPerformance | 非法正则不崩溃且返回空结果 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidRegexYieldsNoMatches` |
+| 219 | EditorFindMatchPerformance | 防抖刷新在空闲后给出正确结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `debouncedRefreshProducesCorrectResult` |
+| 220 | EditorFindMatchPerformance | 立即刷新同步给出结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `immediateRefreshIsSynchronous` |
+| 221 | EditorTotalLineCount | 整体替换后总行数正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAfterReplacement` |
+| 222 | EditorTotalLineCount | 原生输入后总行数按编辑增量更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAfterNativeEdit` |
+| 223 | EditorTotalLineCount | 原生输入替换多行区间时总行数正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAfterMultiLineNativeEdit` |
+| 224 | EditorTotalLineCount | 总行数与正文换行数始终一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAlwaysMatchesDocument` |
 
-> 说明：全部 **208 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **224 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 173 / 173
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 187 / 187
 - P2: 已覆盖 19 / 19
-- **合计: 208 / 208**（仅表示清单场景，非源码覆盖率）
+- **合计: 224 / 224**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（173 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（187 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 208 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 224 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
