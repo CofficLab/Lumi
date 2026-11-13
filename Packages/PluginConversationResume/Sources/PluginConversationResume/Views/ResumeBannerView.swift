@@ -39,6 +39,7 @@ struct ResumeBannerView: View {
                 .padding(.horizontal, DesignTokens.Spacing.sm)
                 .padding(.vertical, DesignTokens.Spacing.xs)
                 .appSurface(style: .panel, cornerRadius: 0)
+                .padding(.bottom, DesignTokens.Spacing.sm)
             }
         }
     }
