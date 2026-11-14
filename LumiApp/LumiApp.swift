@@ -240,9 +240,13 @@ struct LumiApp: App {
     }
 
     private func consumePendingOpenPath(_ path: String, kernel: KernelCoreContainer) {
-        guard appDelegate.pendingOpenPath == path else { return }
-        appDelegate.pendingOpenPath = nil
+        // `$pendingOpenPath` 在 `willSet` 阶段派发：`.onReceive` 回调执行时
+        // 属性仍是上一个值。在这里直接比较属性会把真正的新请求误判成
+        // 「已被消费」而静默丢弃（表现为外部点一次「在 Lumi 中打开」没反应，
+        // 同一个项目再点一次才生效）。去重必须等属性更新完之后再做。
         Task { @MainActor in
+            guard appDelegate.pendingOpenPath == path else { return }
+            appDelegate.pendingOpenPath = nil
             _ = await KernelFactory.openExternalPath(path, kernel: kernel)
         }
     }

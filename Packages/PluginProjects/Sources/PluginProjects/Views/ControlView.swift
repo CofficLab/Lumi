@@ -49,6 +49,11 @@ struct ControlView: View {
             )
         }
         .buttonStyle(.plain)
+        // 暴露当前项目路径：控件显示的名字会随本地化、重名变化，路径才是稳定判据。
+        // 这里只能用 value 而不是 accessibilityIdentifier：工具栏宿主
+        // （`LumiPluginRootView`）给整个标题栏统一设置了 `root.main`，
+        // 子控件的 identifier 到不了 AX 树，UI 测试只能按 value 定位本控件。
+        .accessibilityValue(viewModel.currentProject?.path ?? "")
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             PopoverView(viewModel: viewModel, requestImporter: presentImporter)
         }
