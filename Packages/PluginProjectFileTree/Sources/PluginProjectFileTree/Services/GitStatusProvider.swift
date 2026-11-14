@@ -209,8 +209,8 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
                 return .empty
             }
 
-            // 2. 解析真实 git dir（处理 worktree）
-            let repoRootPath = resolveRepoRoot(from: projectRootPath)
+            // 2. 解析项目根相对仓库根的前缀（monorepo 子目录场景，#443）
+            let projectPrefix = resolveProjectPrefix(from: projectRootPath)
 
             // 3. 获取 staged 和 unstaged 变更文件列表
             let stagedDiffFiles: [GitDiffFile]
@@ -233,7 +233,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
         // 先处理 staged 文件
         for file in stagedDiffFiles {
-            let normalizedPath = normalizePath(file.file, relativeTo: repoRootPath)
+            guard let normalizedPath = normalizePath(file.file, projectPrefix: projectPrefix) else { continue }
             let status = Self.parseStatus(file.changeType)
             let entry = GitStatusEntry(
                 relativePath: normalizedPath,
@@ -246,7 +246,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
         // 再处理 unstaged 文件
         for file in unstagedDiffFiles {
-            let normalizedPath = normalizePath(file.file, relativeTo: repoRootPath)
+            guard let normalizedPath = normalizePath(file.file, projectPrefix: projectPrefix) else { continue }
             let status = Self.parseStatus(file.changeType)
 
             if let existing = entries[normalizedPath] {
@@ -276,7 +276,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         return GitStatusSnapshot(
             entriesByRelativePath: entries,
             directoryAggregateByRelativePath: directoryAggregate,
-            repoRootPath: repoRootPath,
+            repoRootPath: projectRootPath,
             capturedAt: Date()
         )
         }
@@ -483,43 +483,26 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         }
     }
 
-    /// 解析仓库根路径（处理 worktree 场景）
-    private func resolveRepoRoot(from projectPath: String) -> String {
-        let gitPath = projectPath + "/.git"
-
-        // 如果 .git 是文件（worktree），读取其指向的真实 git dir
-        var isDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: gitPath, isDirectory: &isDir), !isDir.boolValue {
-            if let content = try? String(contentsOfFile: gitPath, encoding: .utf8),
-               content.hasPrefix("gitdir: ") {
-                let gitdirPath = String(content.dropFirst("gitdir: ".count))
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                // gitdir 可能是相对路径或绝对路径
-                if gitdirPath.hasPrefix("/") {
-                    // 绝对路径：gitdir 指向 .git/worktrees/xxx/
-                    // 仓库根路径仍是项目路径
-                    return projectPath
-                } else {
-                    return projectPath
-                }
-            }
-        }
-
-        return projectPath
+    /// 解析项目根相对仓库根的路径前缀（`git rev-parse --show-prefix`）。
+    ///
+    /// porcelain 路径始终相对仓库根；monorepo 子目录作为项目时须剥掉该前缀，
+    /// 快照键才能与 UI 相对项目根计算的查询键一致（#443）。仓库根作为项目时前缀为空。
+    /// 由 git 自身计算前缀，天然处理 worktree 与符号链接，无需手动解析 .git。
+    private func resolveProjectPrefix(from projectPath: String) -> String {
+        let (status, output) = runGit(["rev-parse", "--show-prefix"], in: projectPath)
+        guard status == 0 else { return "" }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// 将 Git 返回的路径规范化为相对路径
+    /// 将 porcelain 的仓库根相对路径转换为项目根相对路径。
     ///
-    /// `-z` 输出的路径已是相对仓库根的原始 POSIX 路径，必须逐字保留：
-    /// 不能把合法的反斜杠替换成 `/`，也不能裁剪合法的首尾空格，
-    /// 否则快照键与真实文件 URL 对不上（#442）。
-    private func normalizePath(_ path: String, relativeTo repoRoot: String) -> String {
-        var normalized = path
-        // 移除可能的前导 "/"
-        if normalized.hasPrefix("/") {
-            normalized = String(normalized.dropFirst())
-        }
-        return normalized
+    /// `projectPrefix` 是项目根相对仓库根的前缀（如 `sub/`，仓库根项目时为空）。
+    /// 不在项目根下的文件（前缀不匹配）返回 nil，由调用方排除——它们不属于该文件树。
+    /// 路径逐字保留，不替换反斜杠、不裁剪首尾空格（#442、#443）。
+    private func normalizePath(_ path: String, projectPrefix: String) -> String? {
+        if projectPrefix.isEmpty { return path }
+        guard path.hasPrefix(projectPrefix) else { return nil }
+        return String(path.dropFirst(projectPrefix.count))
     }
 
     /// 将 Git changeType 字符串映射为 GitStatus

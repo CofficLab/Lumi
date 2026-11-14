@@ -98,6 +98,54 @@ func gitStatusPreservesSpecialCharacterFileName() throws {
     #expect(snapshot?.statusForPath(specialName) == .untracked)
 }
 
+@Test("monorepo 子目录项目的 Git 状态必须以项目根为基准，且排除项目外文件")
+func gitStatusUsesProjectRootBaseInMonorepoSubdirectory() throws {
+    let fileManager = FileManager.default
+    let repo = fileManager.temporaryDirectory
+        .appendingPathComponent("lumi-git-status-monorepo-\(UUID().uuidString)", isDirectory: true)
+    try fileManager.createDirectory(at: repo, withIntermediateDirectories: true)
+    defer { try? fileManager.removeItem(at: repo) }
+
+    try runGitForTest(["init", "-q"], in: repo)
+    try runGitForTest(["config", "user.email", "test@example.com"], in: repo)
+    try runGitForTest(["config", "user.name", "Test"], in: repo)
+
+    // monorepo：仓库根有 top.txt（项目外），子目录 sub 作为独立项目打开。
+    let sub = repo.appendingPathComponent("sub", isDirectory: true)
+    let nested = sub.appendingPathComponent("nested", isDirectory: true)
+    try fileManager.createDirectory(at: nested, withIntermediateDirectories: true)
+    try Data("top\n".utf8).write(to: repo.appendingPathComponent("top.txt"))
+    try Data("child\n".utf8).write(to: sub.appendingPathComponent("child.txt"))
+    try Data("deep\n".utf8).write(to: nested.appendingPathComponent("deep.txt"))
+    try runGitForTest(["add", "."], in: repo)
+    try runGitForTest(["commit", "-q", "-m", "init"], in: repo)
+
+    // 同时修改项目内（sub/child.txt、sub/nested/deep.txt）与项目外（top.txt）文件。
+    try Data("modified\n".utf8).write(to: repo.appendingPathComponent("top.txt"))
+    try Data("modified\n".utf8).write(to: sub.appendingPathComponent("child.txt"))
+    try Data("modified\n".utf8).write(to: nested.appendingPathComponent("deep.txt"))
+
+    let snapshot = GitStatusProvider().captureSnapshot(projectRootPath: sub.path)
+
+    #expect(snapshot != nil)
+    // repoRootPath 必须等于项目根：UI 以它为基准把文件 URL 相对化。
+    #expect(snapshot?.repoRootPath == sub.path)
+    // porcelain 返回 sub/child.txt，须剥掉 sub/ 前缀，键为项目相对的 child.txt。
+    #expect(snapshot?.statusForPath("child.txt") == .modified)
+    #expect(snapshot?.statusForPath("nested/deep.txt") == .modified)
+    // 目录聚合同样以项目根为基准：键是 nested，而非 sub/nested。
+    #expect(snapshot?.aggregateStatusForDirectory("nested") == .modified)
+    // 旧的仓库根相对键不得存在（否则 UI 永远查不到）。
+    #expect(snapshot?.statusForPath("sub/child.txt") == nil)
+    // 项目外的 top.txt 不属于该文件树，必须排除。
+    #expect(snapshot?.statusForPath("top.txt") == nil)
+
+    // 复现 UI 相对化：fileURL 去掉 repoRootPath 前缀得到查询键。
+    let childURL = sub.appendingPathComponent("child.txt")
+    let relative = childURL.path.dropFirst(sub.path.count).trimmingCharacters(in: ["/"])
+    #expect(snapshot?.statusForPath(relative) == .modified)
+}
+
 private func runGitForTest(_ arguments: [String], in directory: URL) throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")

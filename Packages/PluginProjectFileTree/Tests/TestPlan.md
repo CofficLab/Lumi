@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 60 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 60
+测试文件: 16 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,7 +38,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ProjectFileTreePlugin**（4 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput`、`gitStatusMarksChineseNamedFile`、`gitStatusPreservesSpecialCharacterFileName` 锁定；改动该模块时优先跑对应测试文件。Git 状态快照必须对中文及含反斜杠/引号的合法文件名给出正确状态，不得因 porcelain 引号转义或路径规范化而丢失（**回归 #442**）。
+- **ProjectFileTreePlugin**（5 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput`、`gitStatusMarksChineseNamedFile`、`gitStatusPreservesSpecialCharacterFileName`、`gitStatusUsesProjectRootBaseInMonorepoSubdirectory` 锁定；改动该模块时优先跑对应测试文件。Git 状态快照必须对中文及含反斜杠/引号的合法文件名给出正确状态，不得因 porcelain 引号转义或路径规范化而丢失（**回归 #442**）；monorepo 子目录作为项目时，porcelain 的仓库根相对路径必须以 `git rev-parse --show-prefix` 剥掉项目前缀，快照键与目录聚合均以项目根为基准，项目外文件须排除（**回归 #443**）。
 - **FileTreeDataSource**（3 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed`、`reloadDirectoryKeepsFollowingSiblings` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）；精准刷新目录的替换范围只能覆盖该目录及其子树，不得删除其后的兄弟节点（**回归 #182**）。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（9 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload`、`rootOnlyChangeTriggersFullRefresh`、`rootChangeWithTrailingSlashStillTriggersFullRefresh`、`rootAndSubdirectoryChangeTriggersSingleFullRefresh`、`subdirectoryOnlyChangeStaysTargeted`、`repeatedTargetedRefreshTokenIsDeduplicated`、`emptyChangedPathsFallsBackToFullRefresh`、`rootLevelExternalAdditionAppearsAfterRootRefresh` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。根目录不是 items 节点，变化集合命中根路径时必须走 `fullRefresh()` 重建根级子节点，不得跳过；根路径比较前须与 coordinator 下发路径做同样的标准化；仅子目录变化保持精准 reload（**回归 #183**）。
@@ -120,8 +120,9 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 58 | GitStatusProvider | rename 的旧路径字段被消费，不会被当成独立条目 | -z porcelain 为 `R  new.swift\0old.swift\0 M other.swift\0` | 解析 staged 与 unstaged 条目 | staged 仅 `new.swift`，unstaged 仅 `other.swift` | P1 | ✅ 已覆盖 | `renameOldPathFieldIsConsumed` |
 | 59 | ProjectFileTreePlugin | 中文命名文件的修改必须显示 modified 标记，不得因引号转义而丢失状态（**回归 #442**） | 临时 git 仓库已提交 `测试.txt` 后再修改，core.quotepath 默认 true | 调用 captureSnapshot | `statusForPath("测试.txt")` 为 `.modified` | P0 | ✅ 已覆盖 | `gitStatusMarksChineseNamedFile` |
 | 60 | ProjectFileTreePlugin | 含反斜杠与引号的合法文件名映射回原始相对路径（**回归 #442**） | 临时 git 仓库含 untracked 文件 `a\b"c.txt` | 调用 captureSnapshot | `statusForPath` 对该文件名返回 `.untracked` | P1 | ✅ 已覆盖 | `gitStatusPreservesSpecialCharacterFileName` |
+| 61 | ProjectFileTreePlugin | monorepo 子目录项目的 Git 状态必须以项目根为基准，且排除项目外文件（**回归 #443**） | 临时 monorepo 仓库根有 `top.txt`，子目录 `sub` 含 `child.txt`、`nested/deep.txt`，全部提交后再修改 | 以 `sub` 为项目根调用 captureSnapshot | `repoRootPath` 等于 `sub`；`statusForPath("child.txt")`、`statusForPath("nested/deep.txt")` 为 `.modified`，`aggregateStatusForDirectory("nested")` 为 `.modified`；旧键 `sub/child.txt` 与项目外 `top.txt` 均为 nil；UI 相对化后仍命中 `.modified` | P0 | ✅ 已覆盖 | `gitStatusUsesProjectRootBaseInMonorepoSubdirectory` |
 
-> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > ID 50–52 为此前已实跑通过、但漏登记到清单的既有终端路径用例
 > （`FileTreeTerminalTargetTests`，见 #1296），本轮一并补齐，使
@@ -152,23 +153,35 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 >   `nulSeparatedChinesePathIsPreserved` 等 6 条解析用例 RED（NUL 记录被整段误读）。
 > 四处变异各自被独立断言 discriminated，还原后 7 条解析 + 3 条集成用例全绿。
 
+> 变异验证（#443，`GitStatusProvider` monorepo 项目根基准，逐一单独施加后跑
+> `swift test --filter gitStatusUsesProjectRootBaseInMonorepoSubdirectory`，确认 RED 再还原）：
+> - M1 让 `resolveProjectPrefix` 恒返回 `""`（不查询 `--show-prefix`）→
+>   6 条断言 RED：`child.txt`/`nested/deep.txt`/`nested` 聚合查不到、旧键 `sub/child.txt` 泄漏、
+>   项目外 `top.txt` 未被排除、UI 相对化失配（前缀未解析，键仍是仓库根相对）。
+> - M2 把 `normalizePath` 的排除 guard 改成 `else { return path }`（不匹配前缀时保留原路径而非 nil）→
+>   仅 `top.txt` 排除断言 RED（1 条），其余全绿，证明项目外排除 guard 独立。
+> - M3 把 `normalizePath` 改成 `return path`（命中前缀但不剥掉）→
+>   5 条断言 RED：`child.txt`/`nested/deep.txt`/`nested` 聚合/旧键 `sub/child.txt`/UI 相对化，
+>   而 `top.txt` 排除仍绿，证明前缀剥离与项目外排除是两个独立 guard。
+> 三处变异各自被独立断言 discriminated，还原后该集成用例全绿（全包 61 条）。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 29 / 29
+- P0: 已覆盖 30 / 30
 - P1: 已覆盖 21 / 21
 - P2: 已覆盖 10 / 10
-- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（29 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
 - **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
