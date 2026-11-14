@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 56 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 60 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 56
+测试文件: 16 个，用例总数: 60
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,7 +38,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ProjectFileTreePlugin**（2 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProjectFileTreePlugin**（4 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput`、`gitStatusMarksChineseNamedFile`、`gitStatusPreservesSpecialCharacterFileName` 锁定；改动该模块时优先跑对应测试文件。Git 状态快照必须对中文及含反斜杠/引号的合法文件名给出正确状态，不得因 porcelain 引号转义或路径规范化而丢失（**回归 #442**）。
 - **FileTreeDataSource**（3 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed`、`reloadDirectoryKeepsFollowingSiblings` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）；精准刷新目录的替换范围只能覆盖该目录及其子树，不得删除其后的兄弟节点（**回归 #182**）。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（9 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload`、`rootOnlyChangeTriggersFullRefresh`、`rootChangeWithTrailingSlashStillTriggersFullRefresh`、`rootAndSubdirectoryChangeTriggersSingleFullRefresh`、`subdirectoryOnlyChangeStaysTargeted`、`repeatedTargetedRefreshTokenIsDeduplicated`、`emptyChangedPathsFallsBackToFullRefresh`、`rootLevelExternalAdditionAppearsAfterRootRefresh` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。根目录不是 items 节点，变化集合命中根路径时必须走 `fullRefresh()` 重建根级子节点，不得跳过；根路径比较前须与 coordinator 下发路径做同样的标准化；仅子目录变化保持精准 reload（**回归 #183**）。
@@ -48,7 +48,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeCollectionViewController（反选）**（2 条）：由 `commandDeselectRemovesPathFromSelection`、`deselectCallbackKeepsRowStillSelectedNatively` 锁定。Cmd 点击已选项必须实现 `didDeselectItemsAt` 并移除自定义路径，否则发送目标仍包含已取消文件；回调中仍在原生选中集合内的行不得移除（**回归 #1102**）。
 - **FileTreeNodeItem**（3 条）：由 `samePathFileAndDirectoryHaveDistinctIdentity`、`swiftPackageMetadataChangesIdentity`、`reloadedNodeIdentityFollowsFileTypeSwap` 锁定。diffable 相等性必须包含 `isDirectory` 与图标元数据，同一路径的文件被替换成同名目录（或反向替换）时必须产出不相等的新节点，否则 cell 会继续显示旧文件类型（**回归 #1104**）。
 - **FileTreeFacade（VS Code）**（5 条）：由 `nonZeroCodeStatusFallsBackToApplication`、`unlaunchableCommandFallsBackToApplication`、`successfulCodeCommandSkipsApplicationFallback`、`applicationFallbackFailureReportsFailure`、`missingCommandExitStatusIsObserved` 锁定。`/usr/bin/env code` 能启动不代表 `code` 存在，必须检查实际退出状态；非零退出或无法启动时回退到 VS Code 应用 URL，并向上报告最终失败（**回归 #1105**）。
-- **GitStatusProvider（porcelain 解析）**（3 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath` 锁定。只有 XY 为 `R`/`C` 时 `old -> new` 才是 Git 的分隔符；普通 `??`、` M` 条目里的 ` -> ` 属于文件名，必须完整保留，否则快照键失真、文件和父目录都查不到状态（**回归 #1106**）。
+- **GitStatusProvider（porcelain 解析）**（5 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath`、`nulSeparatedChinesePathIsPreserved`、`renameOldPathFieldIsConsumed` 锁定。porcelain 以 `-z` NUL 分隔输出，路径原样保留：普通 `??`、` M` 条目里的 ` -> ` 属于文件名不得截断（**回归 #1106**）；rename/copy 的旧路径是独立 NUL 字段须消费，中文等非 ASCII 路径不得丢失或转义（**回归 #442**）。
 - **GitStatusProvider（冲突状态）**（2 条）：由 `addAddAndDeleteDeleteAreConflicted`、`unmergedCodesAreRecognized` 锁定。未合并状态码包含 `DD`/`AU`/`UD`/`UA`/`DU`/`AA`/`UU`，不能只判断 `U`，否则 add/add 与 delete/delete 冲突会显示为普通新增/删除（**回归 #1107**）。
 - **FileTreeActions**（5 条）：由 `unchangedRenameIsNoOp`、`renameKeepsLeadingAndTrailingSpaces`、`emptyRenameIsNoOp`、`creationNameTrimsSpaces`、`whitespaceOnlyCreationNameIsRejected` 锁定。命名弹窗必须返回原始输入，重命名保留合法首尾空格、确认未修改的预填名称时按 no-op 处理（不得发起真实重命名）；新建文件/目录仍裁剪首尾空格并拒绝纯空白名称（**回归 #1108**）。
 - **FileTreeFacade（批量删除）**（3 条）：由 `batchTrashProcessesEveryTarget`、`batchTrashReportsPartialFailure`、`batchTrashSkipsNestedTargets` 锁定。`trashItemsReporting` 必须逐个处理顶层目标（跳过被选中目录的子路径），保留成功与失败集合，供调用方汇报部分失败（**回归 #1109**）。
@@ -85,9 +85,9 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 23 | FileTreeFacade | `code` 命令成功退出时不会触发应用回退 | 命令退出状态为 0 | 解析打开结果 | 返回成功且未调用应用回退 | P2 | ✅ 已覆盖 | `successfulCodeCommandSkipsApplicationFallback` |
 | 24 | FileTreeFacade | 应用回退仍失败时报告打开失败（**回归 #1105**） | 命令退出状态为 127，应用回退返回 false | 解析打开结果 | 最终结果为失败 | P0 | ✅ 已覆盖 | `applicationFallbackFailureReportsFailure` |
 | 25 | FileTreeFacade | 命令缺失时外部进程退出状态非零（**回归 #1105**） | 使用 `/usr/bin/env` 运行不存在的命令 | 执行并等待退出 | 退出状态非 nil 且非 0 | P0 | ✅ 已覆盖 | `missingCommandExitStatusIsObserved` |
-| 26 | GitStatusProvider | 普通文件名中的箭头不会被当作重命名（**回归 #1106**） | porcelain 含 `?? Sources/a -> b.swift` 与 ` M Sources/c -> d.swift` | 解析 unstaged 条目 | 路径完整保留，状态分别为 `?` 与 `M` | P0 | ✅ 已覆盖 | `arrowInRegularFileNameIsPreserved` |
-| 27 | GitStatusProvider | 暂存区重命名仍取箭头后的新路径 | porcelain 为 `R  old.swift -> new.swift` | 解析 staged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `stagedRenameUsesDestinationPath` |
-| 28 | GitStatusProvider | 工作区重命名同样取箭头后的新路径 | porcelain 为 ` R old.swift -> new.swift` | 解析 unstaged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `worktreeRenameUsesDestinationPath` |
+| 26 | GitStatusProvider | 普通文件名中的箭头不会被当作重命名（**回归 #1106**） | -z porcelain 含 `?? Sources/a -> b.swift\0` 与 ` M Sources/c -> d.swift\0` | 解析 unstaged 条目 | 路径完整保留，状态分别为 `?` 与 `M` | P0 | ✅ 已覆盖 | `arrowInRegularFileNameIsPreserved` |
+| 27 | GitStatusProvider | 暂存区重命名取新路径字段 | -z porcelain 为 `R  new.swift\0old.swift\0` | 解析 staged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `stagedRenameUsesDestinationPath` |
+| 28 | GitStatusProvider | 工作区重命名同样取新路径字段 | -z porcelain 为 ` R new.swift\0old.swift\0` | 解析 unstaged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `worktreeRenameUsesDestinationPath` |
 | 29 | GitStatusProvider | add/add 与 delete/delete 冲突按 conflicted 处理（**回归 #1107**） | porcelain 含 `AA`、`DD`、`UU` 三条冲突 | 解析 staged 与 unstaged 条目 | staged 三条均为 `C`，unstaged 为空，`C` 映射为 `.conflicted` | P0 | ✅ 已覆盖 | `addAddAndDeleteDeleteAreConflicted` |
 | 30 | GitStatusProvider | 全部未合并状态码都被识别，普通状态不会被误判 | — | 遍历 7 个未合并码与 7 个普通码 | 未合并码全部为真，普通码全部为假 | P1 | ✅ 已覆盖 | `unmergedCodesAreRecognized` |
 | 31 | FileTreeActions | 直接确认未修改的预填名称不会触发重命名（**回归 #1108**） | 输入与当前名称均为 ` draft ` | 解析重命名目标 | 返回 nil（no-op），不发起真实重命名 | P0 | ✅ 已覆盖 | `unchangedRenameIsNoOp` |
@@ -116,8 +116,12 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 54 | FileTreeFacade 终端转义 | 双引号必须做 AppleScript 转义（**回归 #446**） | 含双引号路径 | 调用 terminalDoScriptArgument | 参数含转义后的双引号，不破坏 AppleScript 字符串 | P0 | ✅ 已覆盖 | `doubleQuoteIsAppleScriptEscaped` |
 | 55 | FileTreeFacade 终端转义 | 反斜杠必须做 AppleScript 转义（**回归 #446**） | 含反斜杠路径 | 调用 terminalDoScriptArgument | 参数中反斜杠被加倍 | P0 | ✅ 已覆盖 | `backslashIsAppleScriptEscaped` |
 | 56 | FileTreeFacade 终端转义 | 任意合法路径经真实 shell 解析后原样还原（**回归 #446**） | 单引号/双引号/反斜杠/空格/换行/中文及组合路径 | 转义后逆 AppleScript 转义并交 /bin/sh printf | 输出与原路径逐字节一致 | P0 | ✅ 已覆盖 | `shellRecoversOriginalPath` |
+| 57 | GitStatusProvider | 中文文件名经 NUL 分隔解析后原样保留，不得丢失或转义（**回归 #442**） | -z porcelain 含 ` M 测试.txt\0` 与 `?? 新建文件夹/文档.swift\0` | 解析 unstaged 条目 | 路径为 `测试.txt`、`新建文件夹/文档.swift`，状态 `M`、`?` | P0 | ✅ 已覆盖 | `nulSeparatedChinesePathIsPreserved` |
+| 58 | GitStatusProvider | rename 的旧路径字段被消费，不会被当成独立条目 | -z porcelain 为 `R  new.swift\0old.swift\0 M other.swift\0` | 解析 staged 与 unstaged 条目 | staged 仅 `new.swift`，unstaged 仅 `other.swift` | P1 | ✅ 已覆盖 | `renameOldPathFieldIsConsumed` |
+| 59 | ProjectFileTreePlugin | 中文命名文件的修改必须显示 modified 标记，不得因引号转义而丢失状态（**回归 #442**） | 临时 git 仓库已提交 `测试.txt` 后再修改，core.quotepath 默认 true | 调用 captureSnapshot | `statusForPath("测试.txt")` 为 `.modified` | P0 | ✅ 已覆盖 | `gitStatusMarksChineseNamedFile` |
+| 60 | ProjectFileTreePlugin | 含反斜杠与引号的合法文件名映射回原始相对路径（**回归 #442**） | 临时 git 仓库含 untracked 文件 `a\b"c.txt` | 调用 captureSnapshot | `statusForPath` 对该文件名返回 `.untracked` | P1 | ✅ 已覆盖 | `gitStatusPreservesSpecialCharacterFileName` |
 
-> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > ID 50–52 为此前已实跑通过、但漏登记到清单的既有终端路径用例
 > （`FileTreeTerminalTargetTests`，见 #1296），本轮一并补齐，使
@@ -133,23 +137,38 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 >   contains 断言仍绿，但 `shellRecoversOriginalPath` 对 `/tmp/a"b` 与组合路径 RED，证明顺序不可颠倒。
 > 三处变异各自被独立断言 discriminated，还原后 4 条用例全绿。
 
+> 变异验证（#442，`GitStatusProvider` porcelain `-z` 解析，逐一单独施加后跑
+> 对应 `swift test --filter`，确认 RED 再还原）：
+> - M1 去掉 `runGitStatusPorcelain` 的 `-z`（退回 `--porcelain`）→
+>   真实仓库集成用例 `gitStatusMarksChineseNamedFile`、`gitStatusPreservesSpecialCharacterFileName` RED
+>   （默认 core.quotepath=true 下中文/特殊文件名被引号+八进制转义，快照键对不上）。
+> - M2 去掉 `porcelainRecords` 对 rename/copy 旧路径字段的消费（删 `index += 1`）→
+>   `stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath`、`renameOldPathFieldIsConsumed` RED
+>   （旧路径 `old.swift` 泄漏成独立条目）。
+> - M3 在 `normalizePath` 恢复 `\`→`/` 替换 →
+>   `gitStatusPreservesSpecialCharacterFileName` RED，`gitStatusMarksChineseNamedFile` 仍绿
+>   （含反斜杠的合法文件名被改写，中文无反斜杠不受影响），证明该 guard 独立。
+> - M4 把 `porcelainRecords` 的 NUL 分隔改成 `\n` 分隔 →
+>   `nulSeparatedChinesePathIsPreserved` 等 6 条解析用例 RED（NUL 记录被整段误读）。
+> 四处变异各自被独立断言 discriminated，还原后 7 条解析 + 3 条集成用例全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 29 / 29
+- P1: 已覆盖 21 / 21
 - P2: 已覆盖 10 / 10
-- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
+- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（29 条）
+- **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 56 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

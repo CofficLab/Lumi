@@ -291,12 +291,14 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         return output.trimmingCharacters(in: .whitespacesAndNewlines) == "true"
     }
 
-    /// 运行 `git status --porcelain --untracked-files=all` 并返回原始输出。
+    /// 运行 `git status --porcelain -z --untracked-files=all` 并返回原始输出。
     ///
+    /// `-z` 让 Git 以 NUL 分隔、原始 UTF-8 输出路径，不做 C 风格引号/八进制转义，
+    /// 中文、空格、引号、反斜杠等合法文件名才能原样还原（#442）。
     /// - Throws: 命令执行失败（非 Git 仓库 / 路径无效）。
     private func runGitStatusPorcelain(at path: String) throws -> String {
         let (status, output) = runGit(
-            ["status", "--porcelain", "--untracked-files=all"],
+            ["status", "--porcelain", "-z", "--untracked-files=all"],
             in: path
         )
         guard status == 0 else {
@@ -307,36 +309,31 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
     /// 从 porcelain 输出提取 staged（索引区）变更文件列表。
     static func stagedFiles(from porcelain: String) -> [GitDiffFile] {
-        porcelain.components(separatedBy: "\n").compactMap { line in
-            guard line.count >= 2 else { return nil }
-            let chars = Array(line)
-            let x = chars[0]
-            let y = chars[1]
+        porcelainRecords(from: porcelain).compactMap { record in
+            let x = record.x
+            let y = record.y
             // 未合并状态优先；AA/DD 不含 U，同样属于冲突（回归 #1107）。
             if isUnmerged(x: x, y: y) {
-                return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "C")
+                return GitDiffFile(file: record.path, changeType: "C")
             }
             guard x != " " && x != "?" else { return nil }
-            let changeType = String(x)
-            return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: changeType)
+            return GitDiffFile(file: record.path, changeType: String(x))
         }
     }
 
     /// 从 porcelain 输出提取 unstaged（工作区）变更文件列表（含 untracked "??"）。
     static func unstagedFiles(from porcelain: String) -> [GitDiffFile] {
-        porcelain.components(separatedBy: "\n").compactMap { line in
-            guard line.count >= 2 else { return nil }
-            let chars = Array(line)
-            let x = chars[0]
-            let y = chars[1]
+        porcelainRecords(from: porcelain).compactMap { record in
+            let x = record.x
+            let y = record.y
             // untracked：`?? path`
             if x == "?" && y == "?" {
-                return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "?")
+                return GitDiffFile(file: record.path, changeType: "?")
             }
             // 冲突已在 staged 中处理；此处跳过
             if isUnmerged(x: x, y: y) { return nil }
             guard y != " " else { return nil }
-            return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: String(y))
+            return GitDiffFile(file: record.path, changeType: String(y))
         }
     }
 
@@ -353,19 +350,30 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         }
     }
 
-    /// 提取 porcelain 行的路径字段。
+    /// 解析 `git status --porcelain -z` 的 NUL 分隔输出为 (X, Y, 路径) 记录。
     ///
-    /// 只有 XY 指示 rename/copy 时，`old -> new` 中的箭头才是 Git 的分隔符；
-    /// 普通条目（如 `?? Sources/a -> b.swift`）里的 ` -> ` 属于文件名本身，
-    /// 无条件截断会让快照键变成 `b.swift`，文件和父目录都查不到状态（回归 #1106）。
-    private static func pathComponent(of line: String, x: Character, y: Character) -> String {
-        // 跳过前两个状态字符和分隔空格。
-        let raw = line.dropFirst(3)
-        let isRenameOrCopy = x == "R" || x == "C" || y == "R" || y == "C"
-        if isRenameOrCopy, let arrowRange = raw.range(of: " -> ") {
-            return String(raw[arrowRange.upperBound...])
+    /// 每条记录形如 `XY path\0`；rename/copy 额外跟随一个 NUL 结尾的旧路径字段
+    /// `XY newpath\0oldpath\0`，取新路径并消费旧路径，避免旧路径被当成独立条目。
+    /// `-z` 不做引号/转义，路径原样保留，普通文件名里的 ` -> ` 也不会被误截（#1106、#442）。
+    static func porcelainRecords(from output: String) -> [(x: Character, y: Character, path: String)] {
+        var records: [(x: Character, y: Character, path: String)] = []
+        let tokens = output.components(separatedBy: "\0")
+        var index = 0
+        while index < tokens.count {
+            let token = tokens[index]
+            index += 1
+            // 末尾 NUL 会产生空 token；合法记录至少含 `XY ` 三个字符。
+            guard token.count >= 3 else { continue }
+            let chars = Array(token)
+            let x = chars[0]
+            let y = chars[1]
+            let path = String(token.dropFirst(3))
+            records.append((x: x, y: y, path: path))
+            if x == "R" || x == "C" || y == "R" || y == "C" {
+                index += 1
+            }
         }
-        return String(raw)
+        return records
     }
 
     /// 执行系统 git 命令，返回 (退出码, 标准输出)。
@@ -502,18 +510,15 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
     /// 将 Git 返回的路径规范化为相对路径
     ///
-    /// Git 返回的路径已经是相对于仓库根目录的 POSIX 路径，
-    /// 这里做统一处理确保格式一致（无前导 "/"，POSIX 分隔符）。
+    /// `-z` 输出的路径已是相对仓库根的原始 POSIX 路径，必须逐字保留：
+    /// 不能把合法的反斜杠替换成 `/`，也不能裁剪合法的首尾空格，
+    /// 否则快照键与真实文件 URL 对不上（#442）。
     private func normalizePath(_ path: String, relativeTo repoRoot: String) -> String {
         var normalized = path
-        // 确保使用正斜杠
-        normalized = normalized.replacingOccurrences(of: "\\", with: "/")
         // 移除可能的前导 "/"
         if normalized.hasPrefix("/") {
             normalized = String(normalized.dropFirst())
         }
-        // 移除尾部空格
-        normalized = normalized.trimmingCharacters(in: .whitespaces)
         return normalized
     }
 
