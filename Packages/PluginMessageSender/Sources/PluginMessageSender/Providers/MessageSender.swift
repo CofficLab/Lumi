@@ -32,6 +32,11 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     private var pendingTurnStarts: Set<UUID> = []
     private var pendingOutcomes: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
+    /// 每个会话最近一次 `started` 事件的回合身份（#165）。
+    ///
+    /// 终态事件是异步投递的：旧回合 A 的迟到终态可能在新回合 B 已开始后才
+    /// 到达。只有携带当前回合身份的终态才能唤醒等待者、写完成缓存、排空队列。
+    private var activeTurnIDs: [UUID: UUID] = [:]
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
     public private(set) var isSending = false {
@@ -553,7 +558,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         let conversationID: UUID
         let outcome: AgentLoopOutcome
         switch event {
-        case .completed(let id, _):
+        case .started(let id, let turn):
+            activeTurnIDs[id] = turn
+            // 新回合使上一回合缓存的终态失效，避免污染下一次等待。
+            completedOutcomes.removeValue(forKey: id)
+            return
+        case .completed(let id, let turn):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .completed
             notify(.turnCompleted(conversationID: id, outcome: outcome))
@@ -568,15 +579,17 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             conversationID = id
             outcome = .suspended(suspension.suspensionID)
             notify(.turnCompleted(conversationID: id, outcome: outcome))
-        case .cancelled(let id, _):
+        case .cancelled(let id, let turn):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .cancelled
             notify(.turnCompleted(conversationID: id, outcome: outcome))
-        case .failed(let id, _, let reason):
+        case .failed(let id, let turn, let reason):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .failed(reason)
             notify(.turnFailed(conversationID: id, reason: reason))
-        case .started, .toolCallsReceived, .llmResponseReceived:
+        case .toolCallsReceived, .llmResponseReceived:
             return
         }
 
@@ -601,6 +614,15 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
            !pendingTurnStarts.contains(conversationID) {
             drainPendingQueue(conversationID: conversationID)
         }
+    }
+
+    /// 终态事件是否属于已被新回合取代的旧回合（#165）。
+    ///
+    /// 事件未携带 turnID（旧实现或合成取消）或会话尚未记录任何 `started`
+    /// 时保持旧行为放行；只有「双方身份都已知且不一致」才判为迟到。
+    private func isStaleTerminalEvent(turnID: UUID?, for conversationID: UUID) -> Bool {
+        guard let turnID, let active = activeTurnIDs[conversationID] else { return false }
+        return turnID != active
     }
 
     private func waitForAgentLoop(in conversationID: UUID) async -> AgentLoopOutcome {
