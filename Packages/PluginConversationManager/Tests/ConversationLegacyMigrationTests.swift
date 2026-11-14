@@ -7,7 +7,7 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct ConversationLegacyMigrationTests {
-    @Test func readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot() throws {
+    @Test func readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
         let firstID = UUID()
@@ -41,12 +41,11 @@ struct ConversationLegacyMigrationTests {
         ])
 
         let reader = V4ConversationReader(v4DataRootDirectory: root)
-        defer { reader.releaseLegacySnapshot() }
-        #expect(reader.hasLegacyData())
+        #expect(await reader.hasLegacyData())
         let tempDirectory = FileManager.default.temporaryDirectory
         let copiesBefore = try snapshotDirectories(in: tempDirectory)
 
-        let summaries = try reader.fetchLegacyConversations()
+        let summaries = try await reader.fetchLegacyConversations()
         #expect(summaries.map(\.id) == [firstID, secondID])
         #expect(summaries[0].preview == "Legacy preview")
         #expect(summaries[0].providerID == "openai")
@@ -61,36 +60,36 @@ struct ConversationLegacyMigrationTests {
 
         let copiesWithSnapshot = try snapshotDirectories(in: tempDirectory)
         #expect(copiesWithSnapshot.count == copiesBefore.count + 1)
-        #expect(try reader.fetchLegacyConversations().count == 2)
+        #expect(try await reader.fetchLegacyConversations().count == 2)
         #expect(try snapshotDirectories(in: tempDirectory) == copiesWithSnapshot)
 
-        reader.releaseLegacySnapshot()
-        reader.releaseLegacySnapshot()
+        await reader.releaseLegacySnapshot()
+        await reader.releaseLegacySnapshot()
         #expect(try snapshotDirectories(in: tempDirectory) == copiesBefore)
     }
 
-    @Test func readerReportsMissingAndInvalidLegacyDatabases() throws {
+    @Test func readerReportsMissingAndInvalidLegacyDatabases() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
 
         let missingReader = V4ConversationReader(v4DataRootDirectory: root)
-        #expect(!missingReader.hasLegacyData())
-        #expect(throws: V4ConversationReaderError.self) {
-            try missingReader.fetchLegacyConversations()
+        #expect(await !missingReader.hasLegacyData())
+        await #expect(throws: V4ConversationReaderError.self) {
+            try await missingReader.fetchLegacyConversations()
         }
-        #expect(!V4ConversationReader(v4DataRootDirectory: nil).hasLegacyData())
+        #expect(await !V4ConversationReader(v4DataRootDirectory: nil).hasLegacyData())
 
         let databaseDirectory = root.appendingPathComponent("Core", isDirectory: true)
         try FileManager.default.createDirectory(at: databaseDirectory, withIntermediateDirectories: true)
         try Data("not a SwiftData database".utf8).write(to: databaseDirectory.appendingPathComponent("Lumi.db"))
         let invalidReader = V4ConversationReader(v4DataRootDirectory: root)
-        #expect(invalidReader.hasLegacyData())
+        #expect(await invalidReader.hasLegacyData())
         let temporaryDirectory = FileManager.default.temporaryDirectory
         let copiesBeforeRead = try snapshotDirectories(in: temporaryDirectory)
-        #expect(throws: V4ConversationReaderError.self) {
-            try invalidReader.fetchLegacyConversations()
+        await #expect(throws: V4ConversationReaderError.self) {
+            try await invalidReader.fetchLegacyConversations()
         }
-        invalidReader.releaseLegacySnapshot()
+        await invalidReader.releaseLegacySnapshot()
         #expect(try snapshotDirectories(in: temporaryDirectory) == copiesBeforeRead)
     }
 
