@@ -180,14 +180,15 @@ public enum FileTreeFacade {
     public static func openInTerminal(_ url: URL) {
         DispatchQueue.global(qos: .userInitiated).async {
             let targetPath = terminalTargetPath(for: url)
+            let scriptArgument = terminalDoScriptArgument(forPath: targetPath)
 
             let script = """
             tell application "Terminal"
                 activate
                 if (count of windows) > 0 then
-                    do script "cd '\(targetPath)'" in front window
+                    do script "\(scriptArgument)" in front window
                 else
-                    do script "cd '\(targetPath)'"
+                    do script "\(scriptArgument)"
                 end if
             end tell
             """
@@ -209,6 +210,17 @@ public enum FileTreeFacade {
             return url.path
         }
         return url.deletingLastPathComponent().path
+    }
+
+    /// 构造 Terminal `do script` 的 AppleScript 字符串参数（#446）。
+    /// 先做 shell 单引号转义（`'` → `'\''`），再做 AppleScript 双引号字符串
+    /// 转义（`\` → `\\`、`"` → `\"`），任意合法 POSIX 路径都能正确 cd。
+    static func terminalDoScriptArgument(forPath path: String) -> String {
+        let shellQuoted = "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        let shellCommand = "cd " + shellQuoted
+        return shellCommand
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
     }
 
     /// 在 VS Code 中打开文件或文件夹

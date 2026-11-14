@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 49 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 56 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 49
+测试文件: 16 个，用例总数: 56
 
 核心组件（源码目录）:
 - `Models/`
@@ -53,6 +53,8 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeActions**（5 条）：由 `unchangedRenameIsNoOp`、`renameKeepsLeadingAndTrailingSpaces`、`emptyRenameIsNoOp`、`creationNameTrimsSpaces`、`whitespaceOnlyCreationNameIsRejected` 锁定。命名弹窗必须返回原始输入，重命名保留合法首尾空格、确认未修改的预填名称时按 no-op 处理（不得发起真实重命名）；新建文件/目录仍裁剪首尾空格并拒绝纯空白名称（**回归 #1108**）。
 - **FileTreeFacade（批量删除）**（3 条）：由 `batchTrashProcessesEveryTarget`、`batchTrashReportsPartialFailure`、`batchTrashSkipsNestedTargets` 锁定。`trashItemsReporting` 必须逐个处理顶层目标（跳过被选中目录的子路径），保留成功与失败集合，供调用方汇报部分失败（**回归 #1109**）。
 - **FileTreeCollectionViewController（批量删除）**（3 条）：由 `deleteMenuCarriesEverySelectedTarget`、`performDeleteTrashesEveryTarget`、`performDeleteKeepsFailedTargetSelected` 锁定。Move to Trash 菜单必须携带 `actionTargets(for:)` 的全部目标，删除后按成功项移除选择并刷新各自父目录；部分失败时保留失败项的选择并给出警告，不能只删除右键项（**回归 #1109**）。
+- **FileTreeFacade（终端路径）**（3 条）：由 `directoryUsesItself`、`fileUsesItsDirectory`、`missingPathUsesParentDirectory` 锁定（既有 `FileTreeTerminalTargetTests`，本次补登记）。`terminalTargetPath` 目录取自身、文件取父目录、不存在路径按文件处理（**issue #1296**）。
+- **FileTreeFacade（终端转义）**（4 条）：由 `plainPathIsSingleQuoted`、`doubleQuoteIsAppleScriptEscaped`、`backslashIsAppleScriptEscaped`、`shellRecoversOriginalPath` 锁定。`openInTerminal` 不得把路径裸拼进 `do script "cd '…'"`：`terminalDoScriptArgument` 必须先做 shell 单引号转义（`'` → `'\''`）再做 AppleScript 双引号转义（`\` → `\\`、`"` → `\"`），顺序不可颠倒，任意合法 POSIX 路径经真实 `/bin/sh` 解析后须逐字节还原（**回归 #446**）。
 
 ## 测试用例清单
 
@@ -107,27 +109,47 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 47 | FileTreeNSViewBridge | 相同精准刷新令牌不会重复派发 | 已处理令牌 1 | 再次派发令牌 1 | 只产生一次刷新动作 | P2 | ✅ 已覆盖 | `repeatedTargetedRefreshTokenIsDeduplicated` |
 | 48 | FileTreeNSViewBridge | 空变化集合兜底全量刷新 | 变化集合为空 | 派发精准刷新令牌 1 | 收到一次 `fullRefresh` | P2 | ✅ 已覆盖 | `emptyChangedPathsFallsBackToFullRefresh` |
 | 49 | FileTreeNSViewBridge | 根目录外部新增文件经根刷新后必须出现在树中（**回归 #183**） | 数据源已加载根级 a.txt，外部新增 b.txt | 以标准化根路径派发精准刷新 | 重建提交后 items 同时包含 a.txt 与 b.txt | P0 | ✅ 已覆盖 | `rootLevelExternalAdditionAppearsAfterRootRefresh` |
+| 50 | FileTreeFacade 终端路径 | 目录取自身 | 临时目录 | 调用 terminalTargetPath | 返回该目录自身路径 | P1 | ✅ 已覆盖 | `directoryUsesItself` |
+| 51 | FileTreeFacade 终端路径 | 文件取其所在目录 | 临时目录内文件 | 调用 terminalTargetPath | 返回父目录路径 | P1 | ✅ 已覆盖 | `fileUsesItsDirectory` |
+| 52 | FileTreeFacade 终端路径 | 不存在的路径按文件处理 | 不存在的文件 URL | 调用 terminalTargetPath | 返回其父目录路径 | P2 | ✅ 已覆盖 | `missingPathUsesParentDirectory` |
+| 53 | FileTreeFacade 终端转义 | 普通路径只做单引号包裹（**回归 #446**） | 无特殊字符路径 | 调用 terminalDoScriptArgument | 返回 cd '/tmp/plain' | P1 | ✅ 已覆盖 | `plainPathIsSingleQuoted` |
+| 54 | FileTreeFacade 终端转义 | 双引号必须做 AppleScript 转义（**回归 #446**） | 含双引号路径 | 调用 terminalDoScriptArgument | 参数含转义后的双引号，不破坏 AppleScript 字符串 | P0 | ✅ 已覆盖 | `doubleQuoteIsAppleScriptEscaped` |
+| 55 | FileTreeFacade 终端转义 | 反斜杠必须做 AppleScript 转义（**回归 #446**） | 含反斜杠路径 | 调用 terminalDoScriptArgument | 参数中反斜杠被加倍 | P0 | ✅ 已覆盖 | `backslashIsAppleScriptEscaped` |
+| 56 | FileTreeFacade 终端转义 | 任意合法路径经真实 shell 解析后原样还原（**回归 #446**） | 单引号/双引号/反斜杠/空格/换行/中文及组合路径 | 转义后逆 AppleScript 转义并交 /bin/sh printf | 输出与原路径逐字节一致 | P0 | ✅ 已覆盖 | `shellRecoversOriginalPath` |
 
-> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> ID 50–52 为此前已实跑通过、但漏登记到清单的既有终端路径用例
+> （`FileTreeTerminalTargetTests`，见 #1296），本轮一并补齐，使
+> `verify-testplan.py` 的双向方法核对恢复绿色。
+
+> 变异验证（#446，`terminalDoScriptArgument`，逐一单独施加后跑
+> `swift test --filter FileTreeTerminalEscapingTests`，确认 RED 再还原）：
+> - M1 去掉 shell 单引号转义（`shellQuoted = "'" + path + "'"`）→
+>   `shellRecoversOriginalPath` 对 `/tmp/lumi-it's` 与组合路径 RED（真实 `/bin/sh` 报未闭合引号）。
+> - M2 去掉 AppleScript 转义（直接 `return shellCommand`）→
+>   `doubleQuoteIsAppleScriptEscaped`、`backslashIsAppleScriptEscaped` 及反斜杠/双引号/组合路径 round-trip RED。
+> - M3 颠倒 AppleScript 转义顺序（先 `"`→`\"` 再 `\`→`\\`）→
+>   contains 断言仍绿，但 `shellRecoversOriginalPath` 对 `/tmp/a"b` 与组合路径 RED，证明顺序不可颠倒。
+> 三处变异各自被独立断言 discriminated，还原后 4 条用例全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 24 / 24
-- P1: 已覆盖 16 / 16
-- P2: 已覆盖 9 / 9
-- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 27 / 27
+- P1: 已覆盖 19 / 19
+- P2: 已覆盖 10 / 10
+- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
-- **P1**: 其余功能性用例（16 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
+- **P1**: 其余功能性用例（19 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 56 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
