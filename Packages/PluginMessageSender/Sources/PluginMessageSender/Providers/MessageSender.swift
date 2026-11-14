@@ -37,6 +37,12 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 终态事件是异步投递的：旧回合 A 的迟到终态可能在新回合 B 已开始后才
     /// 到达。只有携带当前回合身份的终态才能唤醒等待者、写完成缓存、排空队列。
     private var activeTurnIDs: [UUID: UUID] = [:]
+    /// 每个会话最近一次已广播终态的回合身份（#164）。
+    ///
+    /// 恢复回合有两条终态来源：AgentLoop 的异步终态事件与 `resumeTurn`
+    /// 返回后的补偿逻辑。两条路径都可能通知完成并排空队列，必须按回合
+    /// 身份去重，否则两条排队消息会被连续发出，破坏串行语义。
+    private var terminalNotifiedTurns: [UUID: UUID] = [:]
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
     public private(set) var isSending = false {
@@ -484,15 +490,23 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     ) async throws -> AgentLoopOutcome {
         isSending = true
         notify(.started(conversationID: conversationID))
-        defer { isSending = false }
+        // 补偿排空可能已经拉起下一条消息的跟踪任务；收尾不能无条件复位，
+        // 否则新回合在跑而 isSending 却是 false（#164）。
+        defer { isSending = !currentTasks.isEmpty || !pendingTurnStarts.isEmpty }
         if Self.verbose {
             Self.logger.info("\(self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
         }
         do {
             let outcome = try await agentLoop.resumeTurn(in: conversationID, request: request)
-            notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            // AgentLoop 的终态事件可能先于 resumeTurn 返回到达并已广播；
+            // 同一回合的终态只通知一次（#164）。
+            let turnID = outcome.isTerminal ? agentLoop.currentTurnID(for: conversationID) : nil
+            if !markTerminalNotified(turnID: turnID, for: conversationID) {
+                notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            }
             // 恢复后的回合可能已到达终态。恢复路径没有回合跟踪任务，
-            // 队列没人排空——这里补上。
+            // 队列没人排空——这里补上。若事件路径已排空并拉起新回合，
+            // drainPendingQueue 的在途守卫会挡住第二次排空。
             if outcome.isTerminal {
                 drainPendingQueue(conversationID: conversationID)
             }
@@ -567,7 +581,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .completed
-            notify(.turnCompleted(conversationID: id, outcome: outcome))
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnCompleted(conversationID: id, outcome: outcome))
+            }
         case .suspended(let id, let turn, let suspension):
             // AgentLoop 的 finish 通知是异步投递的。若该回合已恢复，迟到的旧挂起
             // 事件不能结束发送任务或启动队列中的下一条消息。
@@ -583,12 +599,16 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .cancelled
-            notify(.turnCompleted(conversationID: id, outcome: outcome))
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnCompleted(conversationID: id, outcome: outcome))
+            }
         case .failed(let id, let turn, let reason):
             guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .failed(reason)
-            notify(.turnFailed(conversationID: id, reason: reason))
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnFailed(conversationID: id, reason: reason))
+            }
         case .toolCallsReceived, .llmResponseReceived:
             return
         }
@@ -614,6 +634,17 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
            !pendingTurnStarts.contains(conversationID) {
             drainPendingQueue(conversationID: conversationID)
         }
+    }
+
+    /// 记录并查询回合终态是否已广播（#164）。
+    ///
+    /// 返回 `true` 表示该回合的终态已由另一条路径通知过，调用方不得重复
+    /// 广播。未携带 turnID 时无法去重，保持旧行为。
+    private func markTerminalNotified(turnID: UUID?, for conversationID: UUID) -> Bool {
+        guard let turnID else { return false }
+        if terminalNotifiedTurns[conversationID] == turnID { return true }
+        terminalNotifiedTurns[conversationID] = turnID
+        return false
     }
 
     /// 终态事件是否属于已被新回合取代的旧回合（#165）。
@@ -734,6 +765,10 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         // 在途守卫：排空过程中会 `beginTurn`，其收尾又可能触发排空。
         // 不加守卫会让同一会话并发拉起两个回合。
         guard !drainingConversations.contains(conversationID) else { return }
+        // 已有回合在跑（或即将开跑）时不得抢发下一条：恢复回合的事件路径
+        // 与补偿路径可能先后触发排空，第一条消息发出后第二次必须止步（#164）。
+        guard currentTasks[conversationID] == nil,
+              !pendingTurnStarts.contains(conversationID) else { return }
         guard var queue = pendingQueues[conversationID], !queue.isEmpty else {
             pendingQueues.removeValue(forKey: conversationID)
             return
