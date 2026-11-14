@@ -100,6 +100,9 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         // 输入框里的新内容（#1172）。附件本身仍等读取结束再快照（#1023）。
         let content = capability.text
         let blocks = capability.collapsedBlocks
+        // 同时锁定按下 Send 时选中的会话：等待期间用户可能切换会话，提交必须
+        // 仍落在发起发送的那个会话，绝不能把新会话的独立草稿当成这次发送（#1173）。
+        let conversationID = capability.selectedConversationID
 
         // 附件还在异步读取：等读取结束再提交，否则这条消息会漏掉用户刚选中
         // 的附件，附件又滚进下一条无关消息（#1023）。
@@ -109,16 +112,20 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
             Task { @MainActor in
                 await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
-                performSend(content: content, blocks: blocks)
+                performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return
         }
 
-        performSend(content: content, blocks: blocks)
+        performSend(content: content, blocks: blocks, conversationID: conversationID)
     }
 
-    /// 用按下 Send 时快照的正文与折叠块执行提交。
-    private func performSend(content: String, blocks: [CollapsedContentBlock]) {
+    /// 用按下 Send 时快照的正文、折叠块与目标会话执行提交。
+    private func performSend(
+        content: String,
+        blocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) {
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
@@ -146,7 +153,7 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
-                        conversationID: nil
+                        conversationID: conversationID
                     )
                 } catch {
                     Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
@@ -186,7 +193,7 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
-                conversationID: nil
+                conversationID: conversationID
             ) else {
                 // 未形成有效提交：草稿原样保留，只刷新按钮状态。
                 refreshSendState()

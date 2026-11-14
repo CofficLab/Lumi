@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **192 条场景 / 198 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 198 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **194 条场景 / 200 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 200 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -436,12 +436,24 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 191 | 发送 | 回车路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → `setText("first edited")` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
 | 192 | 发送 | 按钮路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → 改写正文为 `"first edited"` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
 
+### 补充轮次（ID 193–194）：延迟发送会话绑定（回归 #1173）
+
+> 等待附件读取的发送未绑定发起会话。旧实现等待结束后递归 `send()` 读取
+> **当前**选中会话并以 `conversationID: nil` 提交，于是等待期间切换会话后，
+> 新会话的独立草稿会被当成这次发送提交并清空。修复在按下 Send 的瞬间一并
+> 快照 `selectedConversationID`，提交时显式传入，使发送始终落在发起会话。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 193 | 发送 | 回车路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并 `setText("B draft")` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 不被提交也不被清空 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
+| 194 | 发送 | 按钮路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并改写正文 `"B draft"` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 保留，无后台提交 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 59 / 59
+- P0: 已覆盖 61 / 61
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 192 / 192**（仅表示清单场景，非源码覆盖率）
+- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

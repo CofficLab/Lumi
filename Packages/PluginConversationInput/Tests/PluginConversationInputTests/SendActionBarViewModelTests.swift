@@ -131,7 +131,7 @@ struct SendActionBarViewModelTests {
         let commit = try #require(capability.commits.first)
         // 传原文而非预 trim 文本：折叠块区间以原文为坐标系，trim 由 sender 做。
         #expect(commit.content == "  hello world  ")
-        // 发送时显式传 nil，由发送能力解析目标会话。
+        // 传按下 Send 时锁定的会话；本用例未选中会话，故为 nil（#1173）。
         #expect(commit.conversationID == nil)
         #expect(commit.usedBackgroundPath == false)
         // 提交后输入框立即清空，错误提示一并复位。
@@ -343,6 +343,35 @@ struct SendActionBarViewModelTests {
 
         await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
         #expect(capability.text == "first edited")
+    }
+
+    @Test("等待附件读取期间切换会话，按钮发送仍落在发起会话（#1173）")
+    func deferredSendStaysBoundToOriginatingConversation() async throws {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "A draft"
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 在 A 按下 Send：快照 A + "A draft"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 等待期间切换到 B 并输入独立草稿，但不在 B 按发送。
+        capability.selectedConversationID = b
+        capability.text = "B draft"
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未提交") { !capability.commits.isEmpty }
+        // 无附件走同步提交；目标必须是发起发送的 A，正文是 A 的快照。
+        let commit = try #require(capability.commits.first)
+        #expect(commit.conversationID == a)
+        #expect(commit.content == "A draft")
+        // B 的独立草稿既不能被提交，也不能被清理。
+        #expect(capability.text == "B draft")
+        #expect(capability.backgroundCommits.isEmpty)
     }
 
     @Test("发送前清除旧的错误提示")

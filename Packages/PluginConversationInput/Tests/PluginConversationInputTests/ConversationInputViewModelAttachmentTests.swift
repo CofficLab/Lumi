@@ -385,6 +385,34 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(viewModel.text == "first edited")
     }
 
+    @Test("等待附件读取期间切换会话，回车发送仍落在发起会话（#1173）")
+    func deferredSendStaysBoundToOriginatingConversation() async {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "A draft"
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 在 A 按下 Send：快照 A + "A draft"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 等待期间切换到 B 并输入独立草稿，但不在 B 按发送。
+        capability.selectedConversationID = b
+        viewModel.setText("B draft")
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未提交") { !capability.commits.isEmpty }
+        // 提交目标必须是发起发送的 A，正文是 A 的快照，而非 B 的草稿。
+        #expect(capability.commits.first?.conversationID == a)
+        #expect(capability.commits.first?.content == "A draft")
+        // B 的独立草稿既不能被提交，也不能被清理。
+        #expect(capability.text == "B draft")
+        #expect(viewModel.text == "B draft")
+    }
+
     // MARK: - 焦点 / 高度绑定
 
     @Test("焦点与高度绑定双向同步到能力层")

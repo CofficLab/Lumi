@@ -271,6 +271,9 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         // 用户刚选中、尚在读取的附件（#1023）。
         let content = capability.text
         let blocks = capability.collapsedBlocks
+        // 同时锁定按下 Send 时选中的会话：等待期间用户可能切换会话，提交必须
+        // 仍落在发起发送的那个会话，绝不能把新会话的独立草稿当成这次发送（#1173）。
+        let conversationID = capability.selectedConversationID
 
         // 附件还在异步读取：等读取结束再提交，否则这条消息会漏掉用户刚选中
         // 的附件，附件又滚进下一条无关消息（#1023）。
@@ -280,19 +283,24 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             Task { @MainActor in
                 await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
-                performSend(content: content, blocks: blocks)
+                performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return
         }
 
-        performSend(content: content, blocks: blocks)
+        performSend(content: content, blocks: blocks, conversationID: conversationID)
     }
 
-    /// 用按下 Send 时快照的正文与折叠块执行提交。
+    /// 用按下 Send 时快照的正文、折叠块与目标会话执行提交。
     ///
-    /// 附件从能力层当前挂起池读取（等待读取结束后才调用本方法），正文与
-    /// 折叠块则沿用快照，确保提交内容与清理目标都是用户按下 Send 的那一份。
-    private func performSend(content: String, blocks: [CollapsedContentBlock]) {
+    /// 附件从能力层当前挂起池读取（等待读取结束后才调用本方法），正文、
+    /// 折叠块与目标会话则沿用快照，确保提交内容与清理目标都是用户按下
+    /// Send 的那一份，且不会被等待期间的会话切换劫持。
+    private func performSend(
+        content: String,
+        blocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) {
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
@@ -319,7 +327,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
-                        conversationID: nil
+                        conversationID: conversationID
                     )
                 } catch {
                     // 提交失败：附件已被消费，放回挂起池；正文与折叠块从未
@@ -360,7 +368,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
-                conversationID: nil
+                conversationID: conversationID
             ) else {
                 // 未形成有效提交：草稿原样保留，只清掉旧的错误提示。
                 refresh()
