@@ -316,8 +316,10 @@ public actor ClipboardHistoryManager: SuperLog {
         )
 
         if let item = try? context.fetch(descriptor).first {
+            let imagePaths = ownedImagePaths(of: [item])
             context.delete(item)
             let saved = save(context, operation: "删除剪贴板项")
+            if saved { removeImageFiles(at: imagePaths) }
 
             if saved, Self.verbose {
                 if ClipboardManagerPluginSupport.verbose {
@@ -339,10 +341,12 @@ public actor ClipboardHistoryManager: SuperLog {
         )
 
         if let items = try? context.fetch(descriptor) {
+            let imagePaths = ownedImagePaths(of: items)
             for item in items {
                 context.delete(item)
             }
             let saved = save(context, operation: "批量删除剪贴板项")
+            if saved { removeImageFiles(at: imagePaths) }
 
             if saved, Self.verbose {
                 if ClipboardManagerPluginSupport.verbose {
@@ -369,11 +373,13 @@ public actor ClipboardHistoryManager: SuperLog {
             itemsToDelete = allItems
         }
 
+        let imagePaths = ownedImagePaths(of: itemsToDelete)
         for item in itemsToDelete {
             context.delete(item)
         }
 
         let saved = save(context, operation: "清空剪贴板历史")
+        if saved { removeImageFiles(at: imagePaths) }
 
         if saved, Self.verbose {
             if ClipboardManagerPluginSupport.verbose {
@@ -402,12 +408,14 @@ public actor ClipboardHistoryManager: SuperLog {
 
         guard let excess = try? context.fetch(descriptor), !excess.isEmpty else { return 0 }
 
+        let imagePaths = ownedImagePaths(of: excess)
         for item in excess {
             context.delete(item)
         }
 
         let saved = save(context, operation: "裁剪超出上限的剪贴板历史")
         guard saved else { return 0 }
+        removeImageFiles(at: imagePaths)
 
         if Self.verbose {
             if ClipboardManagerPluginSupport.verbose {
@@ -479,11 +487,13 @@ public actor ClipboardHistoryManager: SuperLog {
 
         guard let oldItems = try? context.fetch(descriptor) else { return }
 
+        let imagePaths = ownedImagePaths(of: oldItems)
         for item in oldItems {
             context.delete(item)
         }
 
         let saved = save(context, operation: "清理过期剪贴板历史")
+        if saved { removeImageFiles(at: imagePaths) }
 
         if saved, Self.verbose && !oldItems.isEmpty {
             if ClipboardManagerPluginSupport.verbose {
@@ -501,6 +511,30 @@ public actor ClipboardHistoryManager: SuperLog {
                 ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ \(operation)失败：\(error.localizedDescription)")
             }
             return false
+        }
+    }
+
+    /// 收集条目引用的插件自有图片路径。必须在 `context.delete` 之前调用：删除后模型属性不可靠。
+    private func ownedImagePaths(of items: [ClipboardHistoryItem]) -> [String] {
+        items.compactMap { item in
+            guard item.type == ClipboardItemType.image.rawValue else { return nil }
+            let path = item.content
+            guard Self.isPluginOwnedImageFilename((path as NSString).lastPathComponent) else { return nil }
+            return path
+        }
+    }
+
+    /// 文件名是否为插件生成的图片负载 `clipboard_<UUID>.png`（见 #244）。
+    /// 只认这一唯一命名，外部路径与 file 类型条目一律不动，避免误删用户文件。
+    static func isPluginOwnedImageFilename(_ filename: String) -> Bool {
+        guard filename.hasPrefix("clipboard_"), filename.hasSuffix(".png") else { return false }
+        let uuidPart = filename.dropFirst("clipboard_".count).dropLast(".png".count)
+        return UUID(uuidString: String(uuidPart)) != nil
+    }
+
+    private func removeImageFiles(at paths: [String]) {
+        for path in paths {
+            try? FileManager.default.removeItem(atPath: path)
         }
     }
 

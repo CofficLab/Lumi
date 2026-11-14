@@ -41,15 +41,10 @@ public actor ClipboardStorage: SuperLog {
         // 富文本负载也算身份的一部分：纯文本相同但格式不同时应各留一条。
         let recentItems = await historyManager.getLatest(limit: 1)
         if let first = recentItems.first, isDuplicate(item, of: first) {
-            // 如果是固定项则保留，否则移除旧的
+            // 如果是固定项则保留，否则移除旧的。
+            // 图片旧文件由 historyManager.delete 统一清理（仅插件自有命名，见 #244）。
             if !first.isPinned {
                 await historyManager.delete(id: first.id)
-                // 图片内容相同但每次采集都会生成新路径；旧文件已无条目引用，
-                // 删除它避免同一张图片在磁盘上不断累积。
-                if first.type == ClipboardItemType.image.rawValue,
-                   first.content != item.content {
-                    try? FileManager.default.removeItem(atPath: first.content)
-                }
             }
         }
 

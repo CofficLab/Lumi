@@ -5,7 +5,7 @@
 ClipboardManagerPlugin Manage clipboard history and snippets
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 82
+测试文件: 6 个，用例总数: 89
 
 核心组件（源码目录）:
 - `Models/`
@@ -42,6 +42,7 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 - **剪贴板监控生命周期**（4 条）：由 `stoppingMonitoringInvalidatesInFlightWork`、`repeatedStopsAdvanceGeneration`、`processingStartedAfterStopUsesNewGeneration`、`pollIntervalIsShortened` 锁定（见 #775、#423）：停止监控推进代次使在途处理失效、停止后开始的处理以新代次为准、轮询间隔缩短到 100ms。改动 `ClipboardLifecycleGeneration` 或监控轮询时优先跑对应测试文件。
 - **剪贴板回写保护**（3 条）：由 `failedImageWritePreservesExistingClipboard`、`corruptImageWritePreservesExistingClipboard`、`successfulWriteReplacesExistingClipboard` 锁定（**回归 #243**）：图片缺失/损坏导致回写失败时不得清空用户原有剪贴板内容，成功回写仍须清空并替换。改动 `ClipboardManagerViewModel.write` 的清空/加载顺序时优先跑对应测试文件。
 - **剪贴板上限裁剪**（2 条）：由 `pinnedRecordsDoNotDefeatUnpinnedLimit`、`trimsNonPinnedBeyondLimitKeepingPinned` 锁定（**回归 #245**）：按上限裁剪时只统计非固定项，固定项不得挤占计数窗口，超额非固定项被删除而固定项全部保留。改动 `ClipboardStorage.cleanupIfNeeded` 或 `ClipboardHistoryManager.trimNonPinnedHistory` 时优先跑对应测试文件。
+- **剪贴板图片文件清理**（7 条）：由 `deleteRemovesPluginOwnedImageFile`、`batchDeleteRemovesPluginOwnedImageFiles`、`clearAllRemovesUnpinnedImageFilesAndKeepsPinned`、`trimRemovesPluginOwnedImageFiles`、`expiryCleanupRemovesPluginOwnedImageFiles`、`deletePreservesExternalAndNonImagePaths`、`pluginOwnedImageFilenameMatching` 锁定（**回归 #244**）：删除/批量删除/清空/裁剪/过期清理移除记录时，须一并删除插件自有命名（`clipboard_<UUID>.png`）的图片文件，避免敏感图片残留磁盘；外部路径与非图片（file 类型）条目一律不得误删。改动 `ClipboardHistoryManager` 的任一删除路径或 `ownedImagePaths`/`isPluginOwnedImageFilename` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -140,26 +141,38 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 | 81 | ClipboardStorage | 固定项不得挤占非固定项的计数窗口（回归 #245） | 上限设为 2，预置 100 条较新固定项 + 2 条较旧非固定项 | 再写入 1 条新非固定项触发裁剪 | 只保留最新 2 条非固定项，100 条固定项全部保留 | P0 | ✅ 已覆盖 | `pinnedRecordsDoNotDefeatUnpinnedLimit` |
 | 82 | ClipboardHistoryManager | trimNonPinnedHistory 只裁剪超额非固定项，固定项不参与计数也不被删除 | 5 条非固定项 + 3 条固定项 | 调用 `trimNonPinnedHistory(keeping: 2)` | 删除 3 条超额非固定项并返回 3，保留最新 2 条非固定项与全部固定项；再次调用返回 0 | P1 | ✅ 已覆盖 | `trimsNonPinnedBeyondLimitKeepingPinned` |
 
-> 说明：全部 **82 条场景**已在本包 `swift test` 中实跑通过。
+### 剪贴板图片文件清理（回归 #244）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 83 | 剪贴板图片文件清理 | delete(id:) 删除记录时一并删除插件自有图片文件（回归 #244） | 一条指向 clipboard_<UUID>.png 的图片记录 | 调用 `delete(id:)` | 返回 true，图片文件被删除，记录清空 | P0 | ✅ 已覆盖 | `deleteRemovesPluginOwnedImageFile` |
+| 84 | 剪贴板图片文件清理 | delete(ids:) 批量删除时删除各自的插件自有图片文件，保留其余（回归 #244） | 3 条图片记录，删除其中 2 条 | 调用 `delete(ids:)` | 被删 2 条的文件移除，保留项文件仍在，仅剩保留记录 | P0 | ✅ 已覆盖 | `batchDeleteRemovesPluginOwnedImageFiles` |
+| 85 | 剪贴板图片文件清理 | clearAll 删除未固定图片文件，保留固定项及其文件（回归 #244） | 1 条未固定 + 1 条固定图片记录 | 调用 `clearAll(keepPinned: true)` | 未固定项文件删除，固定项及其文件保留 | P0 | ✅ 已覆盖 | `clearAllRemovesUnpinnedImageFilesAndKeepsPinned` |
+| 86 | 剪贴板图片文件清理 | trimNonPinnedHistory 裁剪超额图片记录时删除其文件（回归 #244） | 2 条图片记录，保留最新 1 条 | 调用 `trimNonPinnedHistory(keeping: 1)` | 返回 1，较旧项文件删除，较新项文件保留 | P0 | ✅ 已覆盖 | `trimRemovesPluginOwnedImageFiles` |
+| 87 | 剪贴板图片文件清理 | 过期清理删除超期图片文件，保留新记录与固定项文件（回归 #244） | 超期未固定 + 新记录 + 超期固定图片各 1 条 | 调用 `cleanup()` | 超期未固定项文件删除，新记录与固定项文件保留 | P0 | ✅ 已覆盖 | `expiryCleanupRemovesPluginOwnedImageFiles` |
+| 88 | 剪贴板图片文件清理 | 删除图片记录不得误删外部路径或非图片条目的文件（回归 #244） | 外部命名图片 + file 类型条目指向 clipboard_<UUID>.png | 调用 `delete(ids:)` 删除两条 | 两个文件均保留，不被误删 | P0 | ✅ 已覆盖 | `deletePreservesExternalAndNonImagePaths` |
+| 89 | 剪贴板图片文件清理 | isPluginOwnedImageFilename 只认 clipboard_<UUID>.png | — | 执行该用例 | 合法命名通过；外部名/非 UUID/非 .png/空 UUID/其它扩展名一律拒绝 | P1 | ✅ 已覆盖 | `pluginOwnedImageFilenameMatching` |
+
+> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 59 / 59
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 60 / 60
 - P2: 已覆盖 12 / 12
-- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
+- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（59 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（60 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 82 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
