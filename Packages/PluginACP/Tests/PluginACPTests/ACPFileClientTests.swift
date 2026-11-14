@@ -230,4 +230,133 @@ final class ACPFileClientTests: XCTestCase {
         XCTAssertFalse(ACPFileClient.isContained(URL(fileURLWithPath: "/tmp/project-other/a"), in: root))
         XCTAssertFalse(ACPFileClient.isContained(URL(fileURLWithPath: "/etc/passwd"), in: root))
     }
+
+    // MARK: - 符号链接越权（#356）
+
+    /// 构造真实临时 workspace：project/ 与 outside/ 同级，project/link 指向 outside。
+    private func makeSymlinkWorkspace() throws -> (base: URL, project: URL, outside: URL) {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ACPFileClientSymlink-\(UUID().uuidString)")
+        let project = base.appendingPathComponent("project")
+        let outside = base.appendingPathComponent("outside")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        try "secret".write(to: outside.appendingPathComponent("secret.txt"), atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("link"),
+            withDestinationURL: outside
+        )
+        return (base, project, outside)
+    }
+
+    func testSymlinkEscapeReadRejected() async throws {
+        let ws = try makeSymlinkWorkspace()
+        defer { try? FileManager.default.removeItem(at: ws.base) }
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let sessionID = try sessions.createSession(cwd: ws.project.path)
+        let auto = AutoClient()
+        auto.results[ACPMethod.fsReadTextFile] = try JSONValue.stringify(
+            ACPReadTextFileResult(content: "leaked")
+        )
+        let client = ACPFileClient(
+            requester: auto.makeRequester(),
+            capabilities: capabilities(read: true, write: true),
+            sessions: sessions
+        )
+        do {
+            _ = try await client.readTextFile(
+                sessionID: sessionID,
+                path: ws.project.appendingPathComponent("link/secret.txt").path
+            )
+            XCTFail("指向 workspace 外的符号链接必须被拒绝")
+        } catch let error as ACPFileClientError {
+            guard case .pathOutsideWorkspace = error else {
+                return XCTFail("期望 pathOutsideWorkspace，得到 \(error)")
+            }
+        }
+        XCTAssertTrue(auto.requests.isEmpty, "越权路径不得发起 fs 请求")
+    }
+
+    func testSymlinkEscapeWriteRejected() async throws {
+        let ws = try makeSymlinkWorkspace()
+        defer { try? FileManager.default.removeItem(at: ws.base) }
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let sessionID = try sessions.createSession(cwd: ws.project.path)
+        let auto = AutoClient()
+        auto.results[ACPMethod.fsWriteTextFile] = .null
+        let client = ACPFileClient(
+            requester: auto.makeRequester(),
+            capabilities: capabilities(read: true, write: true),
+            sessions: sessions
+        )
+        do {
+            try await client.writeTextFile(
+                sessionID: sessionID,
+                path: ws.project.appendingPathComponent("link/secret.txt").path,
+                content: "x"
+            )
+            XCTFail("指向 workspace 外的符号链接写入必须被拒绝")
+        } catch let error as ACPFileClientError {
+            guard case .pathOutsideWorkspace = error else {
+                return XCTFail("期望 pathOutsideWorkspace，得到 \(error)")
+            }
+        }
+        XCTAssertTrue(auto.requests.isEmpty, "越权路径不得发起 fs 请求")
+    }
+
+    func testSymlinkInsideWorkspaceStillAllowed() async throws {
+        let ws = try makeSymlinkWorkspace()
+        defer { try? FileManager.default.removeItem(at: ws.base) }
+        // project/inner 指向 project/realdir（仍在 workspace 内），不得被误拒。
+        let realDir = ws.project.appendingPathComponent("realdir")
+        try FileManager.default.createDirectory(at: realDir, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            at: ws.project.appendingPathComponent("inner"),
+            withDestinationURL: realDir
+        )
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let sessionID = try sessions.createSession(cwd: ws.project.path)
+        let auto = AutoClient()
+        auto.results[ACPMethod.fsReadTextFile] = try JSONValue.stringify(
+            ACPReadTextFileResult(content: "hello")
+        )
+        let client = ACPFileClient(
+            requester: auto.makeRequester(),
+            capabilities: capabilities(read: true, write: true),
+            sessions: sessions
+        )
+        let content = try await client.readTextFile(
+            sessionID: sessionID,
+            path: ws.project.appendingPathComponent("inner/file.txt").path
+        )
+        XCTAssertEqual(content, "hello", "workspace 内的符号链接不得被误拒")
+        XCTAssertFalse(auto.requests.isEmpty, "合法路径应正常发起 fs 请求")
+    }
+
+    func testRootSymlinkResolvedForContainment() async throws {
+        let ws = try makeSymlinkWorkspace()
+        defer { try? FileManager.default.removeItem(at: ws.base) }
+        // 会话 cwd 经由符号链接 alias 指向 project：root 也必须解析，
+        // 否则合法文件会被误判越界。
+        try "data".write(to: ws.project.appendingPathComponent("file.txt"), atomically: true, encoding: .utf8)
+        let alias = ws.base.appendingPathComponent("alias")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: ws.project)
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let sessionID = try sessions.createSession(cwd: alias.path)
+        let auto = AutoClient()
+        auto.results[ACPMethod.fsReadTextFile] = try JSONValue.stringify(
+            ACPReadTextFileResult(content: "ok")
+        )
+        let client = ACPFileClient(
+            requester: auto.makeRequester(),
+            capabilities: capabilities(read: true, write: true),
+            sessions: sessions
+        )
+        let content = try await client.readTextFile(
+            sessionID: sessionID,
+            path: alias.appendingPathComponent("file.txt").path
+        )
+        XCTAssertEqual(content, "ok", "cwd 经符号链接到达时，解析 root 后合法文件不得被误拒")
+        XCTAssertFalse(auto.requests.isEmpty, "合法路径应正常发起 fs 请求")
+    }
 }
