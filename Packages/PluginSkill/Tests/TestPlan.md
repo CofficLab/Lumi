@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 67
+测试文件: 10 个，用例总数: 70
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -47,6 +47,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 67 条
 - **DeleteSkillTool 回执路径**（2 条）：由 `legacyDeleteReceiptReportsDeletedDirectory`、`lumiDeleteReceiptReportsLumiDirectory` 锁定；delete_skill 回执的 `directory_path` 必须是本次实际删除的目录（#643），改动删除服务返回值或回执组装时优先跑对应测试文件。
 - **DeleteSkillOrdinaryFile**（2 条）：由 `deleteOrdinaryFileIsRejected`、`deleteIncompleteDirectoryStillSucceeds` 锁定 delete_skill 只删除目录、同名普通文件必须拒绝并保留，残缺目录仍可删除（**回归 #525**）；改动 `SkillCreationService.deleteSkill` 的目标判定时优先跑对应测试文件。
 - **ReadSkillUndecodableBody**（3 条）：由 `readUndecodableBodyThrows`、`readValidBodyReturnsContent`、`readEmptyBodySucceeds` 锁定 read_skill 在正文文件存在却读不出（损坏/非 UTF-8）时必须抛 `SkillCreationError`，不得用 `?? ""` 伪装成空正文；合法正文与真正的空文件仍正常返回（**回归 #527**）；改动 `ReadSkillTool.execute` 的正文读取分支时优先跑对应测试文件。
+- **SkillSettingsRefresh**（3 条）：由 `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion`、`refreshWithoutSelectionClearsSkills` 锁定设置页显式刷新必须先使选中项目的 `SkillService` 缓存失效再重扫磁盘，30s TTL 内外部增删改立即可见；无选中项目时刷新清空且不崩溃（**回归 #642**）；改动 `SkillSettingsViewModel.refresh` 或缓存失效路径时优先跑对应测试文件。
 - **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
 
 ## 测试用例清单
@@ -122,31 +123,36 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 67 条
 | 65 | ReadSkillUndecodableBody | read_skill 正文存在但非法 UTF-8 时抛错，不伪装成空正文 | SKILL.md 落盘字节 `0xFF` | 调用 `read_skill` | 抛 SkillCreationError，不返回 `content:""`（**回归** #527） | P0 | ✅ 已覆盖 | `readUndecodableBodyThrows` |
 | 66 | ReadSkillUndecodableBody | read_skill 合法正文原样返回 | SKILL.md 为 `hello body` | 调用 `read_skill` 并解析回执 | `content` 等于 `hello body` | P1 | ✅ 已覆盖 | `readValidBodyReturnsContent` |
 | 67 | ReadSkillUndecodableBody | read_skill 真正的空 SKILL.md 仍按空正文成功返回 | SKILL.md 为 0 字节 | 调用 `read_skill` 并解析回执 | success，`content` 等于 `""` | P1 | ✅ 已覆盖 | `readEmptyBodySucceeds` |
+| 68 | SkillSettingsRefresh | 设置页刷新使缓存失效，外部新增技能立即可见 | 已选中项目并缓存 [alpha]，扫描器改为 [alpha, beta] | TTL 内调用 `refresh()` | 重扫磁盘，projectSkills 为 [alpha, beta]（**回归** #642） | P0 | ✅ 已覆盖 | `refreshRescansAfterExternalChange` |
+| 69 | SkillSettingsRefresh | 设置页刷新使缓存失效，外部删除技能立即消失 | 已缓存 [alpha, beta]，扫描器改为 [alpha] | TTL 内调用 `refresh()` | projectSkills 为 [alpha] | P1 | ✅ 已覆盖 | `refreshReflectsExternalDeletion` |
+| 70 | SkillSettingsRefresh | 无选中项目时刷新清空技能且不崩溃 | 未 updateProjects，selectedProjectPath 为 nil | 调用 `refresh()` | selectedProjectPath 仍 nil，projectSkills 为空 | P2 | ✅ 已覆盖 | `refreshWithoutSelectionClearsSkills` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #525 变异验证：M1 移除 `deleteSkill` 的 isDirectory 守卫（回到只凭 fileExists 删除）→ `deleteOrdinaryFileIsRejected` 失败（普通文件被删、未抛错，RED）；M2 把定位改用 `locateValidSkillDirectory`（要求完整技能目录）→ `deleteIncompleteDirectoryStillSucceeds` 失败（残缺目录删不掉，RED）；还原后 64 条全绿。
 >
 > 回归 #527 变异验证：M1 把正文读取还原为 `skill.loadContent() ?? ""`（读取失败伪装成空正文）→ `readUndecodableBodyThrows` 失败（非法 UTF-8 未抛错，RED）；M2 把首分支改为 `if let loaded = skill.loadContent(), !loaded.isEmpty`（真正的空正文也抛错）→ `readEmptyBodySucceeds` 失败（空 SKILL.md 误抛 invalidFile，RED）；还原后 67 条全绿。
+>
+> 回归 #642 变异验证：M1 把 `refresh()` 还原为 `Task { await reload() }`（不失效缓存）→ `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion` 失败（TTL 内命中旧缓存，外部增删不可见，RED）；M2 把失效键改为 `invalidateCache(projectPath: "")`（清错键，选中项目缓存仍在）→ 同样两条失败（RED）；还原后 70 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 44 / 44
-- P2: 已覆盖 6 / 6
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 45 / 45
+- P2: 已覆盖 7 / 7
+- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（44 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（45 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
