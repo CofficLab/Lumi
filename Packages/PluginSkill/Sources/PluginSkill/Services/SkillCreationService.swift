@@ -161,6 +161,13 @@ public actor SkillCreationService {
                 .appendingPathComponent(name).path
             )
         }
+        // 技能条目必须是目录：`locate` 只看 fileExists，同名普通文件也会命中。
+        // 普通文件不是技能，拒绝删除并原样保留；残缺目录仍允许删除（#525）。
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            throw SkillCreationError.notFound(directoryURL.path)
+        }
         try fileManager.removeItem(at: directoryURL)
         return directoryURL
     }

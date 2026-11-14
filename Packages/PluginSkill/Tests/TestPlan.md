@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 62 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 64 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 62
+测试文件: 8 个，用例总数: 64
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -45,6 +45,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 62 条
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUD 与扫描器一致性**（6 条）：由 `readFallsBackToValidLegacySkill`、`oversizedMetadataIsRejected` 等用例锁定；改动 Skill 读写的有效性判定或大小约束时优先跑对应测试文件。
 - **DeleteSkillTool 回执路径**（2 条）：由 `legacyDeleteReceiptReportsDeletedDirectory`、`lumiDeleteReceiptReportsLumiDirectory` 锁定；delete_skill 回执的 `directory_path` 必须是本次实际删除的目录（#643），改动删除服务返回值或回执组装时优先跑对应测试文件。
+- **DeleteSkillOrdinaryFile**（2 条）：由 `deleteOrdinaryFileIsRejected`、`deleteIncompleteDirectoryStillSucceeds` 锁定 delete_skill 只删除目录、同名普通文件必须拒绝并保留，残缺目录仍可删除（**回归 #525**）；改动 `SkillCreationService.deleteSkill` 的目标判定时优先跑对应测试文件。
 - **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
 
 ## 测试用例清单
@@ -115,27 +116,31 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 62 条
 | 60 | DeleteSkillTool 回执路径 | 删除 .lumi 技能时，回执 directory_path 保持 .lumi 路径 | 技能位于 `.lumi/skills/<name>` | 执行 `delete_skill` 并解析回执 JSON | `directory_path` 等于被删除的 `.lumi` 目录，该目录已不存在 | P1 | ✅ 已覆盖 | `lumiDeleteReceiptReportsLumiDirectory` |
 | 61 | 综合 | 空底座缓存不得污染 LLM 注入，内置/插件技能不丢失 | 设置页先以空底座写缓存 | TTL 内 LLM 带完整底座调用 `listSkills` | 返回项目+底座合并结果，内置技能不丢失（**回归** #196） | P0 | ✅ 已覆盖 | `testEmptyBaseCacheDoesNotPolluteInjection` |
 | 62 | 综合 | 合并缓存不得污染设置页项目列表 | LLM 先以完整底座写缓存 | TTL 内设置页以空底座调用 `listSkills` | 只返回项目技能，不误列内置/插件技能（**回归** #196） | P0 | ✅ 已覆盖 | `testMergedCacheDoesNotPolluteSettings` |
+| 63 | DeleteSkillOrdinaryFile | delete_skill 拒绝删除同名普通文件，文件原样保留 | `.lumi/skills/not-a-skill` 为普通文件 | 调用 `delete_skill` | 抛 SkillCreationError，文件与内容仍在（**回归** #525） | P0 | ✅ 已覆盖 | `deleteOrdinaryFileIsRejected` |
+| 64 | DeleteSkillOrdinaryFile | delete_skill 仍可删除残缺的技能目录 | `.lumi/skills/broken-skill` 为无 metadata 的目录 | 调用 `delete_skill` | 返回 success，残缺目录被移除 | P1 | ✅ 已覆盖 | `deleteIncompleteDirectoryStillSucceeds` |
 
-> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 回归 #525 变异验证：M1 移除 `deleteSkill` 的 isDirectory 守卫（回到只凭 fileExists 删除）→ `deleteOrdinaryFileIsRejected` 失败（普通文件被删、未抛错，RED）；M2 把定位改用 `locateValidSkillDirectory`（要求完整技能目录）→ `deleteIncompleteDirectoryStillSucceeds` 失败（残缺目录删不掉，RED）；还原后 64 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 41 / 41
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 6 / 6
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（41 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 64 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
