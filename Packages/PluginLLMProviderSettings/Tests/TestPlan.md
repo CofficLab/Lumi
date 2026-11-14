@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 54 条用例。
+PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 57
+测试文件: 10 个，用例总数: 67
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -43,6 +43,9 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 - **LLMProviderSettingsPlugin**（6 条）：由 `pluginRegistersSettingEntries`、`pluginShutdownRemovesEntries`、`pluginBootWithoutManagerIsNoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderDetailModelRefresh**（8 条）：由 `exposesRefreshEntryOnlyForRemoteProviders`、`noRefreshEntryForUnregisteredProvider`、`refreshUpdatesModels` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderDetailCustomProviderRemoval**（2 条）：由 `removalFailureSurfacesErrorAndKeepsProvider`、`removalSuccessClearsPreviousError` 锁定；改动删除自定义供应商链路时优先跑对应测试文件。
+- **ProviderDetailCustomProviderEdit**（2 条）：由 `editRefreshesDisplayedProviderInfo`、`removalClearsDisplayedProviderInfo` 锁定；自定义供应商保存/删除后详情必须重读名称/描述/站点/模型快照，不得停在初始化值（#335）。改动该模块时优先跑对应测试文件。
+- **ProviderModelDownloadFailure**（4 条）：由 `resumeFailureIsReported`、`downloadFailureIsReported`、`resumeSuccessDoesNotReportError` 等用例锁定；初次/继续下载结束后都必须检查失败状态并把错误关联到对应模型。改动该模块时优先跑对应测试文件。
+- **ProviderSettingsRemoteModelCount**（4 条）：由 `headerCountUsesDynamicPool`、`headerCountFollowsRemoteRefresh`、`headerCountMatchesDetailCount` 等用例锁定；头部模型数必须与详情共用同一动态模型池并在远程刷新后同步。改动该模块时优先跑对应测试文件。
 - **ProviderSettingsPageViewModel**（15 条）：由 `listsNewlyAddedCloudProvider`、`customProviderRevisionIncrementsOnStoreChange`、`newlyAddedProviderIsSearchable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderSettingsScopeViewModel**（4 条）：由 `defaultsToCloudScope`、`switchingScopeSwapsListAndSelection`、`scopesKeepIndependentSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **本地化资源完整性**（1 条）：由 `userFacingKeysIncludeEnglish` 锁定供应商设置页可见文案的 en 翻译；改动文案或 xcstrings 时优先跑该测试文件。
@@ -108,27 +111,37 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 55 | ProviderSettingsPageViewModel | 切换供应商后不得继承上一个供应商的 API Key 明文状态（**回归 #942**） | 供应商 P 的详情已展开明文 Key，页面按供应商缓存 ViewModel | 取得供应商 Q 的详情 ViewModel | Q 默认隐藏 Key；P 的状态保留在自己的 ViewModel | P0 | ✅ 已覆盖 | `apiKeyRevealStateIsScopedToProvider` |
 | 56 | ProviderSettingsPageViewModel | 搜索排除当前供应商时头部模型数量保持原值（**回归 #941**） | 选中含两个模型的供应商 P，输入只匹配 Q 的搜索词 | 读取选中供应商与模型数量，并刷新选中态 | 详情仍是 P、数量为 2，刷新选中态也不改写选中项 | P1 | ✅ 已覆盖 | `searchDoesNotZeroSelectedProviderModelCount` |
 | 57 | ProviderSettingsPageViewModel | 全局选中变化后详情刷新「当前」模型（**回归 #940**） | 详情已把 P 的 `m1` 标为当前，全局选中切到 Q 的 `m3` | 读取详情的选中模型与「当前」标记 | 详情不再标记 P 的 `m1`，选中快照等于全局选中 | P1 | ✅ 已覆盖 | `detailRefreshesSelectedModelAfterExternalSelection` |
+| 58 | ProviderDetailCustomProviderEdit | 编辑保存后详情页同步新的名称/描述/站点/模型（**回归 #335**） | 自定义供应商已注册并创建详情 ViewModel | 编辑名称/描述/站点/模型后 `upsert` 保存 | 详情立即反映新名称/描述/站点/模型，不停在初始化快照 | P1 | ✅ 已覆盖 | `editRefreshesDisplayedProviderInfo` |
+| 59 | ProviderDetailCustomProviderEdit | 删除自定义供应商后详情页清空名称与模型快照（**回归 #335**） | 自定义供应商已注册并创建详情 ViewModel | `remove` 删除该供应商 | 名称回退到 providerID 占位、模型池清空、不再标记为自定义 | P1 | ✅ 已覆盖 | `removalClearsDisplayedProviderInfo` |
+| 60 | ProviderModelDownloadFailure | 继续下载失败后报告错误到对应模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumeFailureIsReported` |
+| 61 | ProviderModelDownloadFailure | 初次下载失败后报告错误到对应模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `downloadFailureIsReported` |
+| 62 | ProviderModelDownloadFailure | 继续下载成功时不报告错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumeSuccessDoesNotReportError` |
+| 63 | ProviderModelDownloadFailure | 开始新操作前清除旧错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `newOperationClearsPreviousError` |
+| 64 | ProviderSettingsRemoteModelCount | 头部模型数取自动态模型池而不是静态基线 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `headerCountUsesDynamicPool` |
+| 65 | ProviderSettingsRemoteModelCount | 远程刷新新增模型后头部模型数同步更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `headerCountFollowsRemoteRefresh` |
+| 66 | ProviderSettingsRemoteModelCount | 头部模型数与详情模型数始终一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `headerCountMatchesDetailCount` |
+| 67 | ProviderSettingsRemoteModelCount | 静态供应商的模型数不受影响 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `staticProviderCountUnchanged` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 3 / 3
-- P1: 已覆盖 47 / 47
-- P2: 已覆盖 7 / 7
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 56 / 56
+- P2: 已覆盖 8 / 8
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（47 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P1**: 其余功能性用例（56 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
