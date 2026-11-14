@@ -13,10 +13,27 @@ struct ProjectTypeDetectorTests {
         #expect(!descriptor.isUnknown)
     }
 
-    @Test("an Xcode project is detected as Swift by suffix")
+    @Test("an Xcode project is detected as generic Xcode by suffix, not Swift (#496)")
     func detectsXcodeProjectBySuffix() {
         let descriptor = ProjectTypeDetector.detect(rootEntryNames: ["Lumi.xcodeproj", "LumiApp"])
-        #expect(descriptor.labels == ["Swift (Xcode / SPM)"])
+        #expect(descriptor.labels == ["Xcode"])
+        #expect(descriptor.symbolName == "hammer")
+        #expect(!descriptor.labels.contains("Swift (Xcode / SPM)"))
+    }
+
+    @Test("an Objective-C Xcode project must not be labeled Swift (#496)")
+    func objectiveCXcodeProjectIsNotSwift() {
+        let descriptor = ProjectTypeDetector.detect(rootEntryNames: ["Legacy.xcodeproj", "main.m", "AppDelegate.h"])
+        #expect(descriptor.labels == ["Xcode"])
+        #expect(descriptor.symbolName != "swift")
+        #expect(!descriptor.labels.contains("Swift (Xcode / SPM)"))
+    }
+
+    @Test("a Swift package alongside an Xcode project keeps Swift evidence (#496)")
+    func swiftPackageWithXcodeprojKeepsSwift() {
+        let descriptor = ProjectTypeDetector.detect(rootEntryNames: ["Package.swift", "Legacy.xcodeproj"])
+        #expect(descriptor.labels == ["Swift (Xcode / SPM)", "Xcode"])
+        #expect(descriptor.symbolName == "swift")
     }
 
     @Test("a Node root is detected as Node")
