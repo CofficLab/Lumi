@@ -64,17 +64,23 @@ struct ConversationStoreObserverTests {
         )
         defer { observer.cancel() }
 
+        // 计数只针对已加载（有人在看）的会话；先装载列表，让该会话进入跟踪。
+        await viewModel.loadInitialIfNeeded()
         await waitUntil { viewModel.conversations == [conversation] }
         await waitUntil { viewModel.messageCounts[conversation.id] == 1 }
+        viewModel.setSettingsVisible(true)
 
-        let inserted = Message(conversationID: conversation.id, role: .assistant, content: "new")
+        // persisted 才改变磁盘计数；计数刷新走防抖合并，需要等它落地。
+        let persisted = Message(conversationID: conversation.id, role: .assistant, content: "new")
         capability.messageCounts[conversation.id] = 2
-        capability.emitMessageChange(.inserted(inserted, conversationID: conversation.id))
+        capability.emitMessageChange(.persisted(persisted, conversationID: conversation.id))
+        await waitUntil { viewModel.messageCounts[conversation.id] == 2 }
         #expect(viewModel.messageCounts[conversation.id] == 2)
 
         observer.cancel()
         capability.messageCounts[conversation.id] = 9
-        capability.emitMessageChange(.updated(conversationID: conversation.id))
+        capability.emitMessageChange(.persisted(persisted, conversationID: conversation.id))
+        try? await Task.sleep(for: .milliseconds(250))
         #expect(viewModel.messageCounts[conversation.id] == 2, "取消订阅后不得继续写入设置页状态")
     }
 
@@ -109,10 +115,10 @@ struct ConversationStoreObserverTests {
         #expect(events == [.updated(selected.id)])
     }
 
-    private func waitUntil(_ condition: () -> Bool) async {
-        for _ in 0..<100 {
-            if condition() { return }
-            await Task.yield()
+    private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
         }
     }
 }
