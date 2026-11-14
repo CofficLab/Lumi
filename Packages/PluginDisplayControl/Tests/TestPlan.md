@@ -5,7 +5,7 @@
 DisplayControlPlugin External display DDC (Display Data Channel) control for Lumi. - Brightness, Volume, Contrast control for external monitors via DDC/CI (VCP commands over I2C) - Built-in display brightness via DisplayServices - Apple Silicon DDC service matching (Arm64DDCMatcher) - Debounced writes (150ms) to prevent DDC overload - Unsupported controls are automatically disabled Based on reference implementation from [hagimi-monitor](https://github.com/Acerola-1/hagimi-monitor).
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 35
+测试文件: 9 个，用例总数: 45
 
 核心组件（源码目录）:
 - `Models/`
@@ -42,6 +42,9 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 - **DisplayControlRuntime**（3 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（2 条）：由 `pluginInfoIsValid`、`controlKindDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrivateDisplaySymbol**（3 条）：由 `privateSymbolsDegradeGracefully`、`displayServiceSurvivesMissingSymbols`、`displayServiceHandlesUnknownDisplayID` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DDCI2CReturnValue**（3 条）：由 `i2cSymbolsReturnIOReturn`、`successValueIsZero`、`transferResultUsesIOReturn` 锁定 I2C 符号返回 `IOReturn`（成功值 0）而非 `Bool`（#864）；改动 `PrivateDisplaySymbol` 的 I2C 签名或传输判定时优先跑该文件。
+- **CoreDisplayOwnership**（3 条）：由 `symbolSignatureCarriesOwnership`、`takingTheValueReleasesTheDictionary`、`repeatedDisplayNameDoesNotAccumulateDictionaries` 锁定 CoreDisplay Create 规则字典的所有权平衡，防止每 5 秒刷新泄漏（#865）。
+- **DisplayControlSupport**（4 条）：由 `ddcServiceAloneDoesNotEnableControl`、`liveVCPReadEnablesControl`、`storedValueEnablesControlWithoutLiveRead`、`builtInOnlySupportsBrightnessWithAppleEvidence` 锁定逐控制能力判定——只有读到 VCP 值或有历史存储值才算支持，DDC 通道存在本身不是证据（#240）；改动 `DisplayService.isControlSupported` 或 refresh 支持旗标时优先跑该文件。
 
 ## 测试用例清单
 
@@ -82,27 +85,38 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 | 33 | PrivateDisplaySymbol | DisplayService 对未知 display id 安全降级 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `displayServiceHandlesUnknownDisplayID` |
 | 34 | DDCBridge | 零音量不得写入 0x8D（该值会触发 screen blank） | — | 调用 `DDCVolumeWritePlan.plan(for: 0)` | 返回 `.volumeOnly`，不触碰静音通道 | P0 | ✅ 已覆盖 | `zeroVolumeSkipsScreenBlankChannel` |
 | 35 | DDCBridge | 非零音量先解除静音再写扬声器音量 | — | 调用 `DDCVolumeWritePlan.plan(for: 1)` | 返回 `.unmute` | P1 | ✅ 已覆盖 | `nonZeroVolumeUnmutes` |
+| 36 | DDCI2CReturnValue | I2C 符号返回 IOReturn 而不是 Bool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `i2cSymbolsReturnIOReturn` |
+| 37 | DDCI2CReturnValue | kIOReturnSuccess 是 0 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `successValueIsZero` |
+| 38 | DDCI2CReturnValue | 传输结果按 IOReturn 判定，成功即成功 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transferResultUsesIOReturn` |
+| 39 | CoreDisplayOwnership | 符号签名用 Unmanaged 表达 Create 规则的所有权 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `symbolSignatureCarriesOwnership` |
+| 40 | CoreDisplayOwnership | 取字典内容后所有权被平衡，实例不会持续累积 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `takingTheValueReleasesTheDictionary` |
+| 41 | CoreDisplayOwnership | 反复读取显示器名称不累积未释放的字典 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedDisplayNameDoesNotAccumulateDictionaries` |
+| 42 | DisplayControlSupport | DDC service alone must not enable a control without per-control evidence (#240) | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `ddcServiceAloneDoesNotEnableControl` |
+| 43 | DisplayControlSupport | a successful VCP read enables the control (#240) | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `liveVCPReadEnablesControl` |
+| 44 | DisplayControlSupport | a stored historical value enables the control without a live read (#240) | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storedValueEnablesControlWithoutLiveRead` |
+| 45 | DisplayControlSupport | built-in display only supports brightness backed by Apple evidence (#240) | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `builtInOnlySupportsBrightnessWithAppleEvidence` |
 
-> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> #240 回归：`hasDDCService` 曾被并进三个支持旗标，导致仅支持 DDC 亮度的显示器把音量/对比度也判为可用。变异验证 M1（在 `isControlSupported` 外部显示分支重新加回 `|| hasDDCService`）令 `ddcServiceAloneDoesNotEnableControl` 转红；M2（移除 `|| storedValue != nil`，只认实时读取）令 `storedValueEnablesControlWithoutLiveRead` 转红；还原后 45 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 24 / 24
-- P2: 已覆盖 4 / 4
-- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 30 / 30
+- P2: 已覆盖 5 / 5
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（24 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（30 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

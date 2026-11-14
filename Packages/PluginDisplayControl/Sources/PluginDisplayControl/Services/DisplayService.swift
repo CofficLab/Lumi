@@ -75,11 +75,18 @@ final class DisplayService: ObservableObject, SuperLog {
                     storageID: storageID,
                     name: name,
                     isBuiltIn: isBuiltIn,
-                    supportsBrightness: isBuiltIn
-                        ? appleBrightness != nil
-                        : (ddcBrightness != nil || storedBrightness != nil || hasDDCService),
-                    supportsVolume: !isBuiltIn && (ddcVolume != nil || storedVolume != nil || hasDDCService),
-                    supportsContrast: !isBuiltIn && (ddcContrast != nil || storedContrast != nil || hasDDCService),
+                    supportsBrightness: Self.isControlSupported(
+                        .brightness, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                        ddcValue: ddcBrightness, storedValue: storedBrightness, hasDDCService: hasDDCService
+                    ),
+                    supportsVolume: Self.isControlSupported(
+                        .volume, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                        ddcValue: ddcVolume, storedValue: storedVolume, hasDDCService: hasDDCService
+                    ),
+                    supportsContrast: Self.isControlSupported(
+                        .contrast, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                        ddcValue: ddcContrast, storedValue: storedContrast, hasDDCService: hasDDCService
+                    ),
                     brightness: appleBrightness.map { Double($0 * 100) }
                         ?? ddcBrightness
                         ?? storedBrightness
@@ -231,6 +238,21 @@ final class DisplayService: ObservableObject, SuperLog {
     }
 
     // MARK: - Static Display Info Helpers (nonisolated safe)
+
+    /// 只有读到 VCP 值或有历史存储值才算支持；DDC 通道存在本身不是逐控制的能力证据。
+    nonisolated static func isControlSupported(
+        _ control: DisplayControlKind,
+        isBuiltIn: Bool,
+        appleBrightness: Float?,
+        ddcValue: Double?,
+        storedValue: Double?,
+        hasDDCService: Bool
+    ) -> Bool {
+        if isBuiltIn {
+            return control == .brightness && appleBrightness != nil
+        }
+        return ddcValue != nil || storedValue != nil
+    }
 
     private nonisolated static func onlineDisplayIDs() -> [CGDirectDisplayID] {
         var ids = [CGDirectDisplayID](repeating: 0, count: 16)
