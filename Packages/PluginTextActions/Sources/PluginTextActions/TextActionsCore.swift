@@ -318,9 +318,12 @@ public protocol TextSelectionMonitoring: AnyObject {
 }
 
 /// 读取当前焦点元素的选区文本。
-@MainActor
-protocol SelectedTextProviding {
-    func readSelectedText(anchor: CGPoint) -> SelectedText?
+///
+/// - Important: 读取是跨进程 AX 同步 IPC，目标应用无响应时会阻塞调用线程
+///   直到 AX messaging 超时。协议不隔离到主 actor：生产实现把读取放到
+///   后台线程并设置 messaging 超时，只有展示菜单才回到主线程（见 issue #1326）。
+protocol SelectedTextProviding: Sendable {
+    func readSelectedText(anchor: CGPoint) async -> SelectedText?
 }
 
 /// 一次成功的选区读取结果。
@@ -332,10 +335,22 @@ struct SelectedText: Sendable, Equatable {
     var selectionRect: CGRect? = nil
 }
 
-@MainActor
 struct AccessibilitySelectedTextProvider: SelectedTextProviding {
-    func readSelectedText(anchor: CGPoint) -> SelectedText? {
+    /// 单次 AX 跨进程调用的超时（秒），对齐 ComputerUse 的 AccessibilityService。
+    /// 没有它时，目标应用无响应会让调用线程阻塞到系统默认 AX 超时（见 issue #1326）。
+    private static let messagingTimeout: Float = 0.2
+
+    func readSelectedText(anchor: CGPoint) async -> SelectedText? {
+        // NSScreen 只能在主线程访问，先取主屏高度再跳后台。
+        let primaryScreenHeight = await MainActor.run { NSScreen.screens.first?.frame.height }
+        return await Task.detached(priority: .userInitiated) {
+            Self.readSelectedTextSync(anchor: anchor, primaryScreenHeight: primaryScreenHeight)
+        }.value
+    }
+
+    private static func readSelectedTextSync(anchor: CGPoint, primaryScreenHeight: CGFloat?) -> SelectedText? {
         let systemWide = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(systemWide, messagingTimeout)
         var focusedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             systemWide,
@@ -346,6 +361,7 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
         guard let focusedValue,
               CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
         let focused = focusedValue as! AXUIElement
+        AXUIElementSetMessagingTimeout(focused, messagingTimeout)
 
         // 密码框不弹菜单。多数安全输入框的 AXSelectedText 本就取不到值，
         // 这里再显式排除一层，避免未来 macOS 行为变化带来泄露风险。
@@ -363,7 +379,11 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
         ) == .success,
         let text = selectedValue as? String else { return nil }
 
-        return SelectedText(text: text, anchor: anchor, selectionRect: selectionBounds(of: focused))
+        return SelectedText(
+            text: text,
+            anchor: anchor,
+            selectionRect: selectionBounds(of: focused, primaryScreenHeight: primaryScreenHeight)
+        )
     }
 
     /// 读取选区的屏幕 bounds，并换算成 Cocoa 坐标。
@@ -371,7 +391,7 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
     /// 链路：`AXSelectedTextRange` → 作为参数传给 `AXBoundsForRange`。
     /// 任一环节失败（应用不实现、选区跨多行只取首段等）都回退 nil，
     /// 由布局层改用鼠标锚点。
-    private func selectionBounds(of element: AXUIElement) -> CGRect? {
+    private static func selectionBounds(of element: AXUIElement, primaryScreenHeight: CGFloat?) -> CGRect? {
         var rangeValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             element,
@@ -399,8 +419,8 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
         guard AXValueGetValue(boundsAX, .cgRect, &quartzRect),
               quartzRect.width > 0, quartzRect.height > 0 else { return nil }
 
-        guard let primaryHeight = NSScreen.screens.first?.frame.height else { return nil }
-        return TextActionCoordinates.quartzToCocoa(quartzRect, primaryScreenHeight: primaryHeight)
+        guard let primaryScreenHeight else { return nil }
+        return TextActionCoordinates.quartzToCocoa(quartzRect, primaryScreenHeight: primaryScreenHeight)
     }
 }
 

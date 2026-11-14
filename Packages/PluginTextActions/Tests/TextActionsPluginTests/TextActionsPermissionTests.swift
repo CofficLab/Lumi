@@ -149,7 +149,7 @@ private final class RecordingSelectedTextProvider: SelectedTextProviding {
         self.results = results
     }
 
-    func readSelectedText(anchor: CGPoint) -> SelectedText? {
+    func readSelectedText(anchor: CGPoint) async -> SelectedText? {
         guard !results.isEmpty else { return nil }
         return results.removeFirst()
     }

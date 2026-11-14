@@ -262,7 +262,11 @@ final class TextSelectionManager: TextSelectionMonitoring {
             try? await Task.sleep(for: TextSelectionReadPolicy.initialDelay)
             for attempt in 0..<TextSelectionReadPolicy.retryCount {
                 guard token == self.evaluationToken else { return }
-                if let result = self.selectedTextProvider.readSelectedText(anchor: anchor),
+                // AX 读取在后台线程执行（见 issue #1326）；await 期间用户可能
+                // 已触发新一轮评估，写回状态前必须重新比对 token。
+                let result = await self.selectedTextProvider.readSelectedText(anchor: anchor)
+                guard token == self.evaluationToken else { return }
+                if let result,
                    TextSelectionReadPolicy.shouldPresentMenu(for: result.text) {
                     if self.suppression.consumeMatch(text: result.text, keyCode: keyCode) {
                         return
