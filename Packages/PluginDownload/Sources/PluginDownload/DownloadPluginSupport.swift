@@ -25,6 +25,23 @@ public enum DownloadPluginSupport {
         return "download_\(formatter.string(from: Date()))"
     }
 
+    /// 校验 `filename` 是单一安全路径组件，返回仍落在 `directory` 内的目标 URL；非法时返回 nil。
+    ///
+    /// 拒绝空串、`.`/`..`、路径分隔符与空字节；拼接并标准化后若逃逸出目录同样拒绝。
+    /// 调用方拿到 nil 必须中止，不得触碰文件系统。
+    public nonisolated static func validatedDestination(filename: String, directory: URL) -> URL? {
+        guard !filename.isEmpty,
+              filename != ".",
+              filename != "..",
+              !filename.contains("/"),
+              !filename.contains("\\"),
+              !filename.contains("\0") else { return nil }
+        let destination = directory.appendingPathComponent(filename)
+        let directoryPath = directory.standardizedFileURL.path
+        guard destination.standardizedFileURL.path.hasPrefix(directoryPath + "/") else { return nil }
+        return destination
+    }
+
     /// 批量下载的单个条目。
     ///
     /// 保留原始字符串而不是过滤掉无效项：调用方需要看到自己请求过的每一条，

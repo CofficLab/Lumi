@@ -121,4 +121,73 @@ final class DownloadPluginTests: XCTestCase {
         XCTAssertEqual(DownloadPluginSupport.batchSummary(succeeded: 1, total: 2), "📊 部分完成（成功 1 / 共 2）")
         XCTAssertEqual(DownloadPluginSupport.batchSummary(succeeded: 0, total: 2), "📊 部分完成（成功 0 / 共 2）")
     }
+
+    // MARK: - Filename containment (回归 #470)
+
+    func testValidatedDestinationAcceptsSafeFilenames() {
+        let directory = URL(fileURLWithPath: "/tmp/lumi-downloads", isDirectory: true)
+        for name in ["file.bin", "my report.pdf", "archive.zip", "报告.pdf"] {
+            let destination = DownloadPluginSupport.validatedDestination(filename: name, directory: directory)
+            XCTAssertNotNil(destination, "应接受安全文件名: \(name)")
+            XCTAssertEqual(destination?.lastPathComponent, name)
+            XCTAssertEqual(destination?.deletingLastPathComponent().path, directory.path)
+        }
+    }
+
+    func testValidatedDestinationRejectsUnsafeFilenames() {
+        let directory = URL(fileURLWithPath: "/tmp/lumi-downloads", isDirectory: true)
+        let unsafe = ["../victim", "a/b", "..", ".", "", "/etc/passwd", "victim/", "\\evil", "a\0b"]
+        for name in unsafe {
+            XCTAssertNil(
+                DownloadPluginSupport.validatedDestination(filename: name, directory: directory),
+                "应拒绝非法文件名: \(name)"
+            )
+        }
+    }
+
+    func testDownloadFileRejectsTraversalFilenameWithoutWriting() async {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let downloads = root.appendingPathComponent("downloads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let escaped = root.appendingPathComponent("victim")
+
+        do {
+            _ = try await DownloadFileV2Tool().executeResult(arguments: [
+                "url": ToolArgument("https://example.test/file.bin"),
+                "filename": ToolArgument("../victim"),
+                "directory": ToolArgument(downloads.path),
+            ])
+            XCTFail("穿越文件名必须抛出")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+            XCTAssertTrue(error.localizedDescription.contains("非法文件名"), "应是文件名校验失败而非网络失败: \(error.localizedDescription)")
+        }
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: escaped.path), "不得在目录外写入文件")
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: downloads.path)) ?? []
+        XCTAssertTrue(contents.isEmpty, "拒绝时不得触碰文件系统")
+    }
+
+    func testDownloadFileRejectsTraversalFromURLQuery() async {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let downloads = root.appendingPathComponent("downloads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let escaped = root.appendingPathComponent("victim")
+
+        // 不传 filename，改由 URL 查询参数提供穿越名，extractFilename 会原样返回。
+        do {
+            _ = try await DownloadFileV2Tool().executeResult(arguments: [
+                "url": ToolArgument("https://example.test/?filename=../victim"),
+                "directory": ToolArgument(downloads.path),
+            ])
+            XCTFail("来自查询参数的穿越文件名必须抛出")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+            XCTAssertTrue(error.localizedDescription.contains("非法文件名"), "应是文件名校验失败而非网络失败: \(error.localizedDescription)")
+        }
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: escaped.path), "不得在目录外写入文件")
+    }
 }

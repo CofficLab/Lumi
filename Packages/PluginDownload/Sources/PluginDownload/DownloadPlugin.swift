@@ -29,8 +29,9 @@ public struct DownloadFileV2Tool: SuperAgentTool {
         guard let raw = arguments["url"]?.value as? String, let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { throw ToolExecutionError.executionFailed(toolName: name, reason: "无效的 URL") }
         let filename = (arguments["filename"]?.value as? String).flatMap { $0.isEmpty ? nil : $0 } ?? DownloadPluginSupport.extractFilename(from: url)
         let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPluginSupport.defaultDownloadDirectory()
+        guard let destination = DownloadPluginSupport.validatedDestination(filename: filename, directory: directory) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "非法文件名: \(filename)") }
         let id = UUID().uuidString
-        let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(filename), expectedSize: nil); await DownloadRuntime.tasks.remember(task)
+        let task = DownloadTask(id: id, url: url, destination: destination, expectedSize: nil); await DownloadRuntime.tasks.remember(task)
         do { let file = try await DownloadRuntime.manager.download(task); return "✅ 下载完成\n文件名: \(filename)\n任务 ID: \(id)\n路径: \(file.path)" }
         catch { throw ToolExecutionError.executionFailed(toolName: name, reason: "下载失败: \(error.localizedDescription)\n任务 ID: \(id)") }
     }
