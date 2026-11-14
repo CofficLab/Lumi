@@ -47,17 +47,16 @@ public final class NetworkProvider: NetworkProviding {
 
         do {
             (data, response) = try await session.data(for: urlRequest)
-        } catch let error as URLError {
-            exchangeStore?.finishRecord(recordID, error: error)
-            throw HTTPNetworkError(
-                url: request.url,
-                underlyingDescription: error.localizedDescription
-            )
         } catch {
             exchangeStore?.finishRecord(recordID, error: error)
+            // 必须带上 NSURLErrorDomain 的底层码：上层 LLMNetworkProviderAdapter
+            // 仅凭 underlyingCode 才能把传输错误归一化为可重试的网络错误，
+            // 否则超时/断网/连接丢失会退化为 requestFailed，重试白名单永不命中（#310）。
+            let nsError = error as NSError
             throw HTTPNetworkError(
                 url: request.url,
-                underlyingDescription: error.localizedDescription
+                underlyingDescription: error.localizedDescription,
+                underlyingCode: nsError.domain == NSURLErrorDomain ? nsError.code : nil
             )
         }
 

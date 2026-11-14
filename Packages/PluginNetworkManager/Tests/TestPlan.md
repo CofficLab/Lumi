@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 124
+测试文件: 21 个，用例总数: 126
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -45,6 +45,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkProviderResponseHeaderTimeout**（1 条）：由 `stalledResponseHeaderTimeoutSurvivesRetryClassification` 锁定兜底超时必须带 `NSURLErrorTimedOut`；改动流式响应头超时或错误归一化时优先跑对应测试文件。
 - **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
+- **NetworkProviderURLErrorCode**（2 条）：由 `requestPreservesURLErrorCode`、`nonStreamingTimeoutRetriesThroughRealRequestPath` 锁定（**回归 #310**）：非流式 `NetworkProvider.request` 捕获传输错误时必须保留 `NSURLErrorDomain` 的底层码（`underlyingCode`），与流式路径一致，否则 `LLMNetworkProviderAdapter` 无法归一化为可重试网络错误，超时/断网/连接丢失退化为 `requestFailed`、重试白名单永不命中。用 URLProtocol 桩驱动真实 `request` 路径（而非直接抛 `HTTPNetworkError` 的桩）。改动 `NetworkProvider.request` 的错误转换时优先跑对应测试文件（串行套件）。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **DownloadFileToolSchemeCase**（2 条）：由 `uppercaseSchemeDownloadsLikeLowercase`、`nonHTTPSchemesAreStillRejected` 锁定 scheme 校验必须大小写不敏感（Foundation 保留 scheme 原样），大写/混合大小写 HTTP/HTTPS 不得被误拒，非 HTTP(S) 协议仍拒绝（**回归 #825**）；改动 `network_download_file` 协议校验时优先跑对应测试文件。
 - **DownloadFileToolPathSafety**（4 条）：由 `escapingOrNestedFilenameIsRejected`、`absoluteFilenameIsRejected`、`existingFileIsNotOverwritten`、`plainFilenameStillDownloads` 锁定（**回归 #448**）：`filename` 标准化后必须仍是保存目录的直接子路径（拒绝 `/`、`..`、嵌套与绝对路径），非法文件名在发起下载前即抛出，已有文件不得被静默覆盖，普通文件名仍正常下载。改动 `network_download_file` 的目标路径拼接或写入逻辑时优先跑对应测试文件。
@@ -186,8 +187,10 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 122 | Network 图表几何量 | 空数据返回空几何量 | 空点数组 | 构造 ChartGeometry | 上下行值为空，timeFractions 为 nil | P2 | ✅ 已覆盖 | `emptyPointsProduceEmptyGeometry` |
 | 123 | Network 图表几何量 | 时间位置与静态 timeFractions 一致 | 20 个采样点 | 构造 ChartGeometry | geometry.timeFractions 与视图静态 helper 一致 | P1 | ✅ 已覆盖 | `timeFractionsMatchStaticHelper` |
 | 124 | Network 图表几何量 | 裁剪结果按范围缓存，缓冲变化后必须失效 | 应用缓冲后取 hour1 两次，再追加新点 | 调用 data(for:) | 缓存命中条数一致；缓冲更新后返回新条数 | P0 | ✅ 已覆盖 | `rangeCacheInvalidatesOnBufferChange` |
+| 125 | NetworkProvider URLError 码 | 非流式 request 必须保留 URLError 底层码（**回归 #310**） | URLProtocol 桩按路径抛 timedOut/offline/connectionLost | 调用真实 NetworkProvider.request | 抛出的 HTTPNetworkError.underlyingCode 等于对应 NSURLError 码 | P0 | ✅ 已覆盖 | `requestPreservesURLErrorCode` |
+| 126 | NetworkProvider URLError 码 | 非流式超时经真实 request 路径触发重试至上限（**回归 #310**） | 计数桩始终超时 | 经 LLMNetworkProviderAdapter+VendorAPIService 发送 | 请求计数为 3（maxAttempts），而非首次即止 | P0 | ✅ 已覆盖 | `nonStreamingTimeoutRetriesThroughRealRequestPath` |
 
-> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **126 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
@@ -199,25 +202,34 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > ID 118 失败（6 issues）；
 > （3）删除「不覆盖已有文件」守卫后，`target.bin` 被新内容覆盖，
 > ID 117 失败（3 issues）。三处变异均已还原。
+>
+> **鉴别力验证（#310）**：对 `NetworkProvider.request` 的错误转换施加三处独立变异，
+> 逐一跑 `swift test --filter NetworkProviderURLErrorCodeTests` 确认 RED 再还原——
+> （1）删除 `underlyingCode` 字段（退回仅 description）→ ID 125 三个码全部 nil、
+> ID 126 请求计数为 1（首次即止，不重试），4 issues；
+> （2）把域判断 `== NSURLErrorDomain` 改成 `== "NotNSURLErrorDomain"`（恒不命中）→
+> 底层码恒 nil，ID 125/126 同样失败，4 issues；
+> （3）域判断正确但把码值写成 `0`（`? 0 : nil`）→ ID 125 码值不符、
+> ID 126 因 0 不在可重试白名单仍只请求 1 次，4 issues。三处变异均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 52 / 52
+- P0: 已覆盖 54 / 54
 - P1: 已覆盖 64 / 64
 - P2: 已覆盖 8 / 8
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
 - **P1**: 其余功能性用例（64 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 126 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
