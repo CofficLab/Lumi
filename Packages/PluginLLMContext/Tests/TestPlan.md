@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
+PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 120 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 119
+测试文件: 14 个，用例总数: 120
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -48,6 +48,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextRecoveryTools**（18 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackToolPairing**（5 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMContextPlugin**（24 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StalePrewarmSummaryRetry**（1 条）：由 `hardThresholdRetriesAfterDiscardedPrewarm` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -63,6 +64,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **压缩覆盖边界的工具配对**：覆盖水位不得切在工具回合中间——折叠源要保留带 toolCalls 的空正文 assistant、边界原子收缩、预算截断后修剪不完整工具回合；逐字尾部开头的孤儿工具结果无论是否被预算截断都要补上声明或丢弃（**#812**，`tier1MiddleKeepsEmptyToolTurnMessages`、`compactionRepairsOrphanAtFullFitTailStart` 等）。
 - **多工具调用的原子协议组**：一个 assistant 的多个 tool-call 及其全部结果必须整组保留或整组丢弃；尾部保护只删第一条孤儿结果会留下同一 assistant 的其余结果，OpenAI 兼容服务直接 400（**#349**，`compactionDropsAllOrphanedResultsOfMultiToolCall`、`compactionKeepsWholeMultiToolGroupWhenAssistantFits`）。
 - **工具调用参数不得截成非法 JSON**：协议降级路径（compactedHistory 尾部、deterministicFallback）一律走按 token 的 `boundedMessage`，只裁剪正文、绝不裁剪 `toolCalls.arguments`；装得下就原样保留合法 JSON，装不下就整组丢弃。截断参数会让 adapter 构造请求时校验失败（**#562**，`fallbackKeepsFittingArgumentsAsValidJSON`、`fallbackDropsOversizedArgumentsAtomically`）。
+- **降级预算必须折算校准倍率**：`reportContextLimitExceeded` 学到倍率 ≥1.25 后，确定性降级要把可用预算折算回未校准量纲（`inputTokenLimit / factor`）再裁剪，否则估算落在 `limit/factor … limit` 的历史会被原样选中，紧急重试把已确认超限的请求再发一次（**#813**，`emergencyFallbackTrimsWithCalibratedBudget`）。
 
 ## 测试用例清单
 
@@ -147,67 +149,68 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 77 | ContextUsageHistory | 后台预热事件不显示为压缩标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `prewarmEventIsNotAMarker` |
 | 78 | ContextUsageHistory | 错误与状态消息不计入累计 token | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonLLMRolesExcluded` |
 | 79 | ContextUsageHistory | 采样点按时间排序，与消息插入顺序无关 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `samplesAreChronologicallyOrdered` |
-| 80 | DeterministicFallbackToolPairing | 降级裁剪丢弃超预算 assistant 调用时，不能留下孤立的 tool 结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackDropsOrphanedToolResult` |
-| 81 | DeterministicFallbackToolPairing | 降级裁剪保留装得下的 assistant 调用与配对的 tool 结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackKeepsPairedToolResultWhenAssistantFits` |
-| 82 | DeterministicFallbackToolPairing | 并行工具调用超预算时，所有孤立 tool 结果都要丢弃 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackDropsAllParallelOrphanedToolResults` |
-| 83 | DeterministicFallbackToolPairing | 降级保留装得下的工具调用时，参数必须原样保持合法 JSON（#562） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackKeepsFittingArgumentsAsValidJSON` |
-| 84 | DeterministicFallbackToolPairing | 降级装不下超大参数时整组丢弃，绝不保留被截断的非法 JSON（#562） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackDropsOversizedArgumentsAtomically` |
-| 85 | LLMContextPlugin | 时间线消息只展示给用户，不进入 LLM 历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `timelineMessagesAreExcludedFromLLMHistory` |
-| 86 | LLMContextPlugin | 短会话透传完整历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shortConversationUsesFullHistory` |
-| 87 | LLMContextPlugin | 工具栏统计复用 LLMContext 请求的估算和预算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contextWindowUsageMatchesPreparedRequest` |
-| 88 | LLMContextPlugin | 摘要生成失败时不阻塞，继续返回完整历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFailureFallsBackToFullHistory` |
-| 89 | LLMContextPlugin | 生成摘要时使用防提示注入的摘要指令 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryPromptTreatsConversationAsData` |
-| 90 | LLMContextPlugin | 后台生成摘要后返回摘要和最近消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backgroundSummaryCompactsHistory` |
-| 91 | LLMContextPlugin | 后台摘要沿用对话模型 ID，不会误路由到同名全局模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backgroundSummaryUsesConversationModelID` |
-| 92 | LLMContextPlugin | 硬阈值请求会在发送前等待摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hardBudgetWaitsForCompaction` |
-| 93 | LLMContextPlugin | 软阈值只预热，不记录实际压缩 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `softThresholdOnlyPrewarms` |
-| 94 | LLMContextPlugin | 工具 schema usage 不会放大后续消息上下文估算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolSchemaUsageDoesNotInflateMessageCalibration` |
-| 95 | LLMContextPlugin | 成功请求会逐步修正过高的历史校准倍率 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulUsageReducesInflatedCalibration` |
-| 96 | LLMContextPlugin | 超过原先消息上限后仍能滚动生成摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rollingSummaryContinuesPastLegacyMessageLimit` |
-| 97 | LLMContextPlugin | 重新创建 Provider 后复用磁盘压缩块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistedSummarySurvivesProviderRecreation` |
-| 98 | LLMContextPlugin | 旧单摘要记录迁移为 tier-1 压缩块后复用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacySummaryMigratesToCompressionBlock` |
-| 99 | LLMContextPlugin | 压缩结果落在目标水位内，不会把预算填满 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionResultStaysUnderTargetWatermark` |
-| 100 | LLMContextPlugin | 摘要仍然覆盖得住最近区间时不会重新生成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validSnapshotIsReusedWithoutNewSummary` |
-| 101 | LLMContextPlugin | 压缩上下文会裁剪超大的旧工具输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedToolOutputIsTruncatedInCompactedContext` |
-| 102 | LLMContextPlugin | 保留窗口本身就超预算时仍然产出不超过预算的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `irreducibleProtectedWindowStillProducesValidContext` |
-| 103 | LLMContextPlugin | 不可发送的错误与状态消息不进入 LLM 历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonSendableRolesAreExcludedFromLLMHistory` |
-| 104 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
-| 105 | LLMContextPlugin | 超长中文用户消息按 token 裁剪后保留，而不是整条丢弃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedChineseUserMessageIsTruncatedInsteadOfDropped` |
-| 106 | LLMContextPlugin | 系统消息占满预算时仍保留本轮用户请求 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeSystemMessageDoesNotEvictUserRequest` |
-| 107 | LLMContextPlugin | 并发调用时两个调用者都读到迁移后的块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersSeeTheSameMigratedBlock` |
-| 108 | LLMContextPlugin | 并发调用不因重复加载而产生重复的迁移块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersDoNotProduceDuplicateMigratedBlocks` |
-| 109 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
-| 110 | UtilityModelAndAuxiliaryUsage | 摘要路由到供应商声明的轻量模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryRoutesToUtilityModel` |
-| 111 | UtilityModelAndAuxiliaryUsage | 未声明轻量模型时摘要仍走主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFallsBackToMainWithoutDeclaration` |
-| 112 | UtilityModelAndAuxiliaryUsage | 摘要输入受轻量模型窗口约束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryInputBoundedByUtilityWindow` |
-| 113 | UtilityModelAndAuxiliaryUsage | 切换对话主模型不作废轻量模型摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarySurvivesMainModelSwitch` |
-| 114 | UtilityModelAndAuxiliaryUsage | 轻量模型下线后摘要路由变化并重新生成 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `summaryRouteChangeInvalidatesSnapshot` |
-| 115 | UtilityModelAndAuxiliaryUsage | 轻量模型摘要失败时回退主模型重试一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `utilityFailureFallsBackToMain` |
-| 116 | UtilityModelAndAuxiliaryUsage | 压缩用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionUsageRecordedWithServingModel` |
-| 117 | UtilityModelAndAuxiliaryUsage | 供应商未报用量时记估算值且不为零 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingUsageRecordedAsEstimatedNeverZero` |
-| 118 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
-| 119 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
+| 80 | DeterministicFallbackCalibration | 超限学习校准倍率后，紧急降级必须按折算预算真正裁剪历史（#813） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emergencyFallbackTrimsWithCalibratedBudget` |
+| 81 | DeterministicFallbackToolPairing | 降级裁剪丢弃超预算 assistant 调用时，不能留下孤立的 tool 结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackDropsOrphanedToolResult` |
+| 82 | DeterministicFallbackToolPairing | 降级裁剪保留装得下的 assistant 调用与配对的 tool 结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackKeepsPairedToolResultWhenAssistantFits` |
+| 83 | DeterministicFallbackToolPairing | 并行工具调用超预算时，所有孤立 tool 结果都要丢弃 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deterministicFallbackDropsAllParallelOrphanedToolResults` |
+| 84 | DeterministicFallbackToolPairing | 降级保留装得下的工具调用时，参数必须原样保持合法 JSON（#562） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackKeepsFittingArgumentsAsValidJSON` |
+| 85 | DeterministicFallbackToolPairing | 降级装不下超大参数时整组丢弃，绝不保留被截断的非法 JSON（#562） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackDropsOversizedArgumentsAtomically` |
+| 86 | LLMContextPlugin | 时间线消息只展示给用户，不进入 LLM 历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `timelineMessagesAreExcludedFromLLMHistory` |
+| 87 | LLMContextPlugin | 短会话透传完整历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shortConversationUsesFullHistory` |
+| 88 | LLMContextPlugin | 工具栏统计复用 LLMContext 请求的估算和预算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contextWindowUsageMatchesPreparedRequest` |
+| 89 | LLMContextPlugin | 摘要生成失败时不阻塞，继续返回完整历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFailureFallsBackToFullHistory` |
+| 90 | LLMContextPlugin | 生成摘要时使用防提示注入的摘要指令 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryPromptTreatsConversationAsData` |
+| 91 | LLMContextPlugin | 后台生成摘要后返回摘要和最近消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backgroundSummaryCompactsHistory` |
+| 92 | LLMContextPlugin | 后台摘要沿用对话模型 ID，不会误路由到同名全局模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backgroundSummaryUsesConversationModelID` |
+| 93 | LLMContextPlugin | 硬阈值请求会在发送前等待摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hardBudgetWaitsForCompaction` |
+| 94 | LLMContextPlugin | 软阈值只预热，不记录实际压缩 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `softThresholdOnlyPrewarms` |
+| 95 | LLMContextPlugin | 工具 schema usage 不会放大后续消息上下文估算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolSchemaUsageDoesNotInflateMessageCalibration` |
+| 96 | LLMContextPlugin | 成功请求会逐步修正过高的历史校准倍率 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulUsageReducesInflatedCalibration` |
+| 97 | LLMContextPlugin | 超过原先消息上限后仍能滚动生成摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rollingSummaryContinuesPastLegacyMessageLimit` |
+| 98 | LLMContextPlugin | 重新创建 Provider 后复用磁盘压缩块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistedSummarySurvivesProviderRecreation` |
+| 99 | LLMContextPlugin | 旧单摘要记录迁移为 tier-1 压缩块后复用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacySummaryMigratesToCompressionBlock` |
+| 100 | LLMContextPlugin | 压缩结果落在目标水位内，不会把预算填满 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionResultStaysUnderTargetWatermark` |
+| 101 | LLMContextPlugin | 摘要仍然覆盖得住最近区间时不会重新生成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validSnapshotIsReusedWithoutNewSummary` |
+| 102 | LLMContextPlugin | 压缩上下文会裁剪超大的旧工具输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedToolOutputIsTruncatedInCompactedContext` |
+| 103 | LLMContextPlugin | 保留窗口本身就超预算时仍然产出不超过预算的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `irreducibleProtectedWindowStillProducesValidContext` |
+| 104 | LLMContextPlugin | 不可发送的错误与状态消息不进入 LLM 历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonSendableRolesAreExcludedFromLLMHistory` |
+| 105 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
+| 106 | LLMContextPlugin | 超长中文用户消息按 token 裁剪后保留，而不是整条丢弃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedChineseUserMessageIsTruncatedInsteadOfDropped` |
+| 107 | LLMContextPlugin | 系统消息占满预算时仍保留本轮用户请求 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeSystemMessageDoesNotEvictUserRequest` |
+| 108 | LLMContextPlugin | 并发调用时两个调用者都读到迁移后的块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersSeeTheSameMigratedBlock` |
+| 109 | LLMContextPlugin | 并发调用不因重复加载而产生重复的迁移块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersDoNotProduceDuplicateMigratedBlocks` |
+| 110 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
+| 111 | UtilityModelAndAuxiliaryUsage | 摘要路由到供应商声明的轻量模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryRoutesToUtilityModel` |
+| 112 | UtilityModelAndAuxiliaryUsage | 未声明轻量模型时摘要仍走主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFallsBackToMainWithoutDeclaration` |
+| 113 | UtilityModelAndAuxiliaryUsage | 摘要输入受轻量模型窗口约束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryInputBoundedByUtilityWindow` |
+| 114 | UtilityModelAndAuxiliaryUsage | 切换对话主模型不作废轻量模型摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarySurvivesMainModelSwitch` |
+| 115 | UtilityModelAndAuxiliaryUsage | 轻量模型下线后摘要路由变化并重新生成 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `summaryRouteChangeInvalidatesSnapshot` |
+| 116 | UtilityModelAndAuxiliaryUsage | 轻量模型摘要失败时回退主模型重试一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `utilityFailureFallsBackToMain` |
+| 117 | UtilityModelAndAuxiliaryUsage | 压缩用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionUsageRecordedWithServingModel` |
+| 118 | UtilityModelAndAuxiliaryUsage | 供应商未报用量时记估算值且不为零 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingUsageRecordedAsEstimatedNeverZero` |
+| 119 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
+| 120 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
 
-> 说明：全部 **119 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **120 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
+- P0: 已覆盖 18 / 18
 - P1: 已覆盖 97 / 97
 - P2: 已覆盖 5 / 5
-- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
+- **合计: 120 / 120**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
 - **P1**: 其余功能性用例（97 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 120 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

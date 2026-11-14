@@ -327,7 +327,11 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             }
         }
 
-        let fallback = deterministicFallback(history, budget: request.budget)
+        let fallback = deterministicFallback(
+            history,
+            budget: request.budget,
+            calibrationFactor: calibrationFactors[key] ?? 1
+        )
         return result(
             messages: fallback,
             estimate: calibratedEstimate(of: fallback, key: key),
@@ -370,13 +374,21 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                         currentEstimate = compactedEstimate
                     } else {
                         currentEstimate = calibratedEstimate(
-                            of: deterministicFallback(history, budget: request.budget),
+                            of: deterministicFallback(
+                                history,
+                                budget: request.budget,
+                                calibrationFactor: calibrationFactors[key] ?? 1
+                            ),
                             key: key
                         )
                     }
                 } else {
                     currentEstimate = calibratedEstimate(
-                        of: deterministicFallback(history, budget: request.budget),
+                        of: deterministicFallback(
+                            history,
+                            budget: request.budget,
+                            calibrationFactor: calibrationFactors[key] ?? 1
+                        ),
                         key: key
                     )
                 }
@@ -1058,9 +1070,15 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func deterministicFallback(
         _ history: [Message],
-        budget: LLMContextBudget
+        budget: LLMContextBudget,
+        calibrationFactor: Double = 1
     ) -> [Message] {
-        let limit = budget.inputTokenLimit
+        // 校准倍率放大的是「同一份内容的真实 token」。降级按未校准的逐条估算
+        // 挑选，必须把可用预算折算回未校准量纲（limit / factor），否则超限后
+        // 的紧急重试仍按原始 limit 选中整段历史，把已确认超限的请求原样再发
+        // 一次（#813）。倍率只会被学到 ≥1，这里再兜底一次，绝不放大预算。
+        let factor = max(calibrationFactor, 1)
+        let limit = max(Int(Double(budget.inputTokenLimit) / factor), 1)
 
         // 降级路径同样先做工具输出瘦身，避免单条大输出吃掉整个预算。
         let trimmed = trimmingToolOutputs(history)
