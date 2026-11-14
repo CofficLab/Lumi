@@ -65,20 +65,50 @@ private struct RegistryService {
 // MARK: - DisplayDDCBridge
 
 final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
+    /// DDC 状态与 I2C 传输全部限制在这条串行队列上。
+    /// I2C 重试循环里有 `usleep`，在主线程执行会周期性冻住 UI（见 issue #1216）。
+    private let queue = DispatchQueue(label: "com.coffic.lumi.display-control.ddc", qos: .userInitiated)
+
+    // 以下状态只在 queue 上读写。
     private var servicesByDisplayID: [CGDirectDisplayID: DDCService] = [:]
     private var maxValues: [ControlKey: UInt16] = [:]
     private var controlCodes: [ControlKey: DDCVCPCode] = [:]
     private let maxDetectLimit: UInt16 = 100
 
-    func refresh(displayIDs: [CGDirectDisplayID]) {
-        servicesByDisplayID = Arm64DDCMatcher().matchedServices(for: displayIDs)
+    func refresh(displayIDs: [CGDirectDisplayID]) async {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                self.servicesByDisplayID = Arm64DDCMatcher().matchedServices(for: displayIDs)
+                continuation.resume()
+            }
+        }
     }
 
-    func hasService(for displayID: CGDirectDisplayID) -> Bool {
-        servicesByDisplayID[displayID] != nil
+    func hasService(for displayID: CGDirectDisplayID) async -> Bool {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.servicesByDisplayID[displayID] != nil)
+            }
+        }
     }
 
-    func read(_ control: DisplayControlKind, displayID: CGDirectDisplayID) -> Double? {
+    func read(_ control: DisplayControlKind, displayID: CGDirectDisplayID) async -> Double? {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.readOnQueue(control, displayID: displayID))
+            }
+        }
+    }
+
+    func write(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) async -> Bool {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.writeOnQueue(value, for: control, displayID: displayID))
+            }
+        }
+    }
+
+    private func readOnQueue(_ control: DisplayControlKind, displayID: CGDirectDisplayID) -> Double? {
         guard let service = servicesByDisplayID[displayID] else {
             return nil
         }
@@ -103,7 +133,7 @@ final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
         return nil
     }
 
-    func write(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) -> Bool {
+    private func writeOnQueue(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) -> Bool {
         guard let service = servicesByDisplayID[displayID] else {
             return false
         }

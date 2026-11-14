@@ -43,69 +43,90 @@ final class DisplayService: ObservableObject, SuperLog {
     // Debounce
     private var debounceTimers: [ControlKey: Task<Void, Never>] = [:]
 
+    /// 周期刷新防重入：上一轮还在跑（慢显示器/重试）时跳过本轮，
+    /// 避免 5 秒定时器把刷新任务越堆越多（见 issue #1216）。
+    private var isRefreshing = false
+
     private init() {}
 
     // MARK: - Refresh
 
     func refresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
         let ddc = self.ddc
         let displayServicesBridge = self.displayServicesBridge
         let store = self.store
 
         Task { @MainActor in
-            let displayIDs = Self.onlineDisplayIDs()
-            ddc.refresh(displayIDs: displayIDs)
-
-            var detected: [ControlledDisplay] = []
-            for id in displayIDs {
-                let isBuiltIn = CGDisplayIsBuiltin(id) != 0
-                let name = Self.displayName(for: id, isBuiltIn: isBuiltIn)
-                let storageID = Self.displayStorageID(for: id, name: name, isBuiltIn: isBuiltIn)
-                let appleBrightness = isBuiltIn ? displayServicesBridge.getBrightness(displayID: id) : nil
-                let hasDDCService = !isBuiltIn && ddc.hasService(for: id)
-                let ddcBrightness = isBuiltIn ? nil : ddc.read(.brightness, displayID: id)
-                let ddcVolume = isBuiltIn ? nil : ddc.read(.volume, displayID: id)
-                let ddcContrast = isBuiltIn ? nil : ddc.read(.contrast, displayID: id)
-                let storedBrightness = Self.storedValue(for: .brightness, displayStorageID: storageID, store: store)
-                let storedVolume = Self.storedValue(for: .volume, displayStorageID: storageID, store: store)
-                let storedContrast = Self.storedValue(for: .contrast, displayStorageID: storageID, store: store)
-
-                let display = ControlledDisplay(
-                    id: id,
-                    storageID: storageID,
-                    name: name,
-                    isBuiltIn: isBuiltIn,
-                    supportsBrightness: Self.isControlSupported(
-                        .brightness, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
-                        ddcValue: ddcBrightness, storedValue: storedBrightness, hasDDCService: hasDDCService
-                    ),
-                    supportsVolume: Self.isControlSupported(
-                        .volume, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
-                        ddcValue: ddcVolume, storedValue: storedVolume, hasDDCService: hasDDCService
-                    ),
-                    supportsContrast: Self.isControlSupported(
-                        .contrast, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
-                        ddcValue: ddcContrast, storedValue: storedContrast, hasDDCService: hasDDCService
-                    ),
-                    brightness: appleBrightness.map { Double($0 * 100) }
-                        ?? ddcBrightness
-                        ?? storedBrightness
-                        ?? DisplayControlKind.brightness.defaultValue,
-                    volume: ddcVolume
-                        ?? storedVolume
-                        ?? DisplayControlKind.volume.defaultValue,
-                    contrast: ddcContrast
-                        ?? storedContrast
-                        ?? DisplayControlKind.contrast.defaultValue
-                )
-                detected.append(display)
-            }
-
+            defer { self.isRefreshing = false }
+            // 检测循环（IORegistry 匹配 + DDC I2C 读取）在后台执行，
+            // 只把结果快照发布回主 actor（见 issue #1216）。
+            let detected = await Self.detectDisplays(
+                ddc: ddc,
+                displayServicesBridge: displayServicesBridge,
+                store: store
+            )
             self.displays = detected
             for display in detected {
                 self.seedFallbackValues(for: display)
             }
         }
+    }
+
+    private nonisolated static func detectDisplays(
+        ddc: DisplayDDCBridge,
+        displayServicesBridge: DisplayServicesBridge,
+        store: DisplayControlPluginLocalStore
+    ) async -> [ControlledDisplay] {
+        let displayIDs = onlineDisplayIDs()
+        await ddc.refresh(displayIDs: displayIDs)
+
+        var detected: [ControlledDisplay] = []
+        for id in displayIDs {
+            let isBuiltIn = CGDisplayIsBuiltin(id) != 0
+            let name = displayName(for: id, isBuiltIn: isBuiltIn)
+            let storageID = displayStorageID(for: id, name: name, isBuiltIn: isBuiltIn)
+            let appleBrightness = isBuiltIn ? displayServicesBridge.getBrightness(displayID: id) : nil
+            let hasDDCService = isBuiltIn ? false : await ddc.hasService(for: id)
+            let ddcBrightness = isBuiltIn ? nil : await ddc.read(.brightness, displayID: id)
+            let ddcVolume = isBuiltIn ? nil : await ddc.read(.volume, displayID: id)
+            let ddcContrast = isBuiltIn ? nil : await ddc.read(.contrast, displayID: id)
+            let storedBrightness = storedValue(for: .brightness, displayStorageID: storageID, store: store)
+            let storedVolume = storedValue(for: .volume, displayStorageID: storageID, store: store)
+            let storedContrast = storedValue(for: .contrast, displayStorageID: storageID, store: store)
+
+            let display = ControlledDisplay(
+                id: id,
+                storageID: storageID,
+                name: name,
+                isBuiltIn: isBuiltIn,
+                supportsBrightness: isControlSupported(
+                    .brightness, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                    ddcValue: ddcBrightness, storedValue: storedBrightness, hasDDCService: hasDDCService
+                ),
+                supportsVolume: isControlSupported(
+                    .volume, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                    ddcValue: ddcVolume, storedValue: storedVolume, hasDDCService: hasDDCService
+                ),
+                supportsContrast: isControlSupported(
+                    .contrast, isBuiltIn: isBuiltIn, appleBrightness: appleBrightness,
+                    ddcValue: ddcContrast, storedValue: storedContrast, hasDDCService: hasDDCService
+                ),
+                brightness: appleBrightness.map { Double($0 * 100) }
+                    ?? ddcBrightness
+                    ?? storedBrightness
+                    ?? DisplayControlKind.brightness.defaultValue,
+                volume: ddcVolume
+                    ?? storedVolume
+                    ?? DisplayControlKind.volume.defaultValue,
+                contrast: ddcContrast
+                    ?? storedContrast
+                    ?? DisplayControlKind.contrast.defaultValue
+            )
+            detected.append(display)
+        }
+        return detected
     }
 
     // MARK: - Value Access
@@ -137,6 +158,7 @@ final class DisplayService: ObservableObject, SuperLog {
             }
         }
 
+        var writes: [(value: Double, control: DisplayControlKind, displayID: CGDirectDisplayID, key: ControlKey)] = []
         for index in displays.indices {
             var display = displays[index]
             for control in [DisplayControlKind.brightness, .volume, .contrast] {
@@ -145,9 +167,15 @@ final class DisplayService: ObservableObject, SuperLog {
                 display.setValue(defaultValue, for: control)
                 fallbackValues[display.id, default: [:]][control] = defaultValue
                 let key = ControlKey(displayID: display.id, control: control)
-                performWrite(defaultValue, for: control, displayID: display.id, key: key)
+                writes.append((defaultValue, control, display.id, key))
             }
             displays[index] = display
+        }
+        // DDC 写入含 I2C 重试 sleep，必须在后台队列执行（见 issue #1216 / #1217）。
+        Task { @MainActor [weak self] in
+            for write in writes {
+                await self?.performWrite(write.value, for: write.control, displayID: write.displayID, key: write.key)
+            }
         }
     }
 
@@ -166,7 +194,7 @@ final class DisplayService: ObservableObject, SuperLog {
         debounceTimers[key] = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
             guard !Task.isCancelled else { return }
-            self.performWrite(clampedValue, for: control, displayID: displayID, key: key)
+            await self.performWrite(clampedValue, for: control, displayID: displayID, key: key)
         }
     }
 
@@ -177,7 +205,7 @@ final class DisplayService: ObservableObject, SuperLog {
         for control: DisplayControlKind,
         displayID: CGDirectDisplayID,
         key: ControlKey
-    ) {
+    ) async {
         guard let display = displays.first(where: { $0.id == displayID }) else { return }
 
         let success: Bool
@@ -189,7 +217,7 @@ final class DisplayService: ObservableObject, SuperLog {
                 success = false
             }
         } else {
-            success = ddc.write(value, for: control, displayID: display.id)
+            success = await ddc.write(value, for: control, displayID: display.id)
         }
 
         let currentPendingValue = pendingValues[key.displayID]?[key.control]
