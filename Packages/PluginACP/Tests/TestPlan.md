@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 81 条用例。
+PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 82 条用例。
 
 平台: macOS 14+
-测试文件: 5 个，用例总数: 81
+测试文件: 5 个，用例总数: 82
 
 核心组件（源码目录）:
 - `Views/`
@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 81 条�
 - **ACPFileClient**（9 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（38 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。
+- **ACPTurnCoordinator**（39 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。
 
 ## 测试用例清单
 
@@ -124,27 +124,28 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 81 条�
 | 79 | ACPTurnCoordinator | 去重后保持标签首次出现顺序（**#221**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testChoiceOptionsDedupPreservesFirstOccurrenceOrder` |
 | 80 | ACPTurnCoordinator | 字符串与对象形式的同名标签必须一并去重，避免崩溃（**#221**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testChoiceOptionsDedupAcrossStringAndObjectForms` |
 | 81 | ACPTurnCoordinator | 去重后标签互异，可安全用作字典键（**#221**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testChoiceOptionsLabelsAreUnique` |
+| 82 | ACPTurnCoordinator | 失败回合必须补发已落库工具结果，不得永久 pending（**回归 #481**） | 一个工具成功、一个工具错误、一个未出结果，随后 LLM 失败 | 触发 failed 事件收尾 | 成功者 completed、错误者 failed、未出结果者 cancelled，stopReason 为 refusal | P0 | ✅ 已覆盖 | `testFailedTurnPublishesPersistedToolResults` |
 
-> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **82 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
+- P0: 已覆盖 20 / 20
 - P1: 已覆盖 61 / 61
 - P2: 已覆盖 1 / 1
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
 - **P1**: 其余功能性用例（61 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 82 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
