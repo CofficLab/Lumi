@@ -172,9 +172,8 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
                 providerProjects.insert(projectInfo, at: 0)
                 projectCapability.synchronizeProjects(providerProjects)
             }
-            if projectCapability.currentProject == nil, let first = providerProjects.first {
-                openProject(at: first.path)
-            }
+            // select:false 契约（add_project「不切换当前项目」）：即使当前无项目，
+            // 也只入列、不自动打开，保持「无项目」选中态（#475）。
         }
 
         return project

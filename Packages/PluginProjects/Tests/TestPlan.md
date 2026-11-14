@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 24 条用例。
+PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 42 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 24
+测试文件: 10 个，用例总数: 42
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -46,6 +46,8 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 24 
 - **综合**（5 条）：由 `projectsPersistenceRoundTrip`、`openedFilesPersistenceRoundTrip`、`restoresAndPersistsOpenedFilesThroughProjectProviding` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectPathInjectionHook**（2 条）：由 `injectsConversationProject`、`skipsUnboundConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListProjectsTool**（4 条）：由 `negativeLimitReturnsParameterError`、`zeroLimitReturnsParameterError`、`nonIntegerLimitReturnsParameterError`、`limitDefaultsAndCaps` 锁定；改动 limit 解析时优先跑对应测试文件。
+- **AddProjectNoAutoSelect**（3 条）：由 `addWithoutSelectDoesNotOpenWhenNoCurrentProject`、`addWithoutSelectPreservesExistingCurrentProject`、`addWithSelectStillOpensAddedProject` 锁定 `add(select:false)` 只入列、不得自动打开项目（即使当前无项目），`select:true` 仍打开新增项目（**回归 #475**）；改动 `ProjectsViewModel.add` 时优先跑对应测试文件。
+- **ProjectStorageDetector / ProjectStorageRefresh**（15 条）：由 `internalDiskKind`、`missingDirectoryDiffersFromUnreachableVolume`、`cachedResultIsReused`、`refreshIncrementsRevision` 等用例锁定磁盘类型判定、缓存复用与刷新失效；改动存储探测时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -75,27 +77,47 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 24 
 | 22 | ProjectsSettingsOpenedFiles | preview-only 当前文件显示 Active 而非空态 | `openFileURLs` 为空、`currentFileURL` 非空 | 调用 `openedFilesSectionState` | 返回 `.content`，仅两者皆空才返回 `.empty` | P0 | ✅ 已覆盖 | `previewOnlyCurrentFileShowsActiveRow` |
 | 23 | ProjectsPlugin RAG 状态观察者 | 重复构建详情区块会注销旧观察者 | kernel 注册计数用 RAG Provider | 对同一路径连续调用两次 `makeRAGStatusSection` | 旧观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `repeatedSectionCreationReplacesObserver` |
 | 24 | ProjectsPlugin RAG 状态观察者 | 切换到另一个项目会注销不可见详情的观察者 | kernel 注册计数用 RAG Provider | 依次为两个项目构建详情区块 | 第一个项目的观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `switchingProjectCancelsInvisibleObserver` |
+| 25 | AddProjectNoAutoSelect | select:false 且当前无项目时只入列、不得自动打开项目 | 隔离 Store + 记录用能力桩，当前无项目 | 创建真实目录后 `add(select:false)` | 不触发 openProject，currentProject 保持 nil，新项目入列 | P0 | ✅ 已覆盖 | `addWithoutSelectDoesNotOpenWhenNoCurrentProject` |
+| 26 | AddProjectNoAutoSelect | select:false 保留已有当前项目，不打开新增项目 | 能力桩已有当前项目 | `add(select:false)` 新增另一目录 | 不触发 openProject，当前项目不变，列表增至 2 | P1 | ✅ 已覆盖 | `addWithoutSelectPreservesExistingCurrentProject` |
+| 27 | AddProjectNoAutoSelect | select:true 仍会打开新增项目 | 隔离 Store + 记录用能力桩 | `add(select:true)` | openProject 以新增项目路径调用一次，currentProject 指向该项目 | P1 | ✅ 已覆盖 | `addWithSelectStillOpensAddedProject` |
+| 28 | ProjectStorageDetector | 内置磁盘判定为 internalDisk | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `internalDiskKind` |
+| 29 | ProjectStorageDetector | 外置设备判定为 externalDisk | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `externalDiskKind` |
+| 30 | ProjectStorageDetector | 网络卷判定为 networkVolume | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `networkVolumeKind` |
+| 31 | ProjectStorageDetector | 目录不存在判定为 missingDirectory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingDirectoryKind` |
+| 32 | ProjectStorageDetector | 卷属性读不到判定为 unreachableVolume | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unreachableVolumeKind` |
+| 33 | ProjectStorageDetector | 目录缺失与卷不可达互不混淆 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingDirectoryDiffersFromUnreachableVolume` |
+| 34 | ProjectStorageDetector | 不可用状态使用特殊符号并被标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unavailableStatesUseDistinctSymbols` |
+| 35 | ProjectStorageDetector | 缓存命中后不再重复解析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cachedResultIsReused` |
+| 36 | ProjectStorageDetector | 失效缓存后重新解析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `invalidatedCacheIsReprobed` |
+| 37 | ProjectStorageDetector | 真实路径判定为本机磁盘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `realPathIsInternalDisk` |
+| 38 | ProjectStorageDetector | 真实不存在路径判定为目录缺失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `realMissingPathIsMissingDirectory` |
+| 39 | ProjectStorageDetector | 目录删除后刷新能感知到缺失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deletedDirectoryIsDetectedAfterRefresh` |
+| 40 | ProjectStorageRefresh | 刷新会递增存储状态修订号 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshIncrementsRevision` |
+| 41 | ProjectStorageRefresh | 刷新会清空探测缓存 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshInvalidatesDetectorCache` |
+| 42 | ProjectStorageRefresh | 仅不可用状态给出提示文案 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hintOnlyForUnavailableStates` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 回归 #475 变异验证：M1 在 `add(select:false)` 分支重新加入「`currentProject == nil` 时自动 `openProject`」→ `addWithoutSelectDoesNotOpenWhenNoCurrentProject` 失败（`openedPaths` 非空、`currentProject` 非 nil，RED）；M2 移除 `select:true` 分支的 `openProject` → `addWithSelectStillOpensAddedProject` 失败（RED）；还原后 42 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 36 / 36
 - P2: 已覆盖 0 / 0
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（17 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（36 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
