@@ -15,6 +15,11 @@ public class ClipboardManagerViewModel: ObservableObject {
     /// （见 issue #1192）。这里用任务防抖 + 后台扫描 + 只保留最新查询结果。
     private var searchTask: Task<Void, Never>?
 
+    /// 面板是否可见。隐藏时剪贴板变化不应触发任何主 actor 工作（issue #1305）。
+    private var isPanelVisible = false
+    /// 待执行的合并刷新任务：一次剪贴板变化突发只触发一次全量刷新。
+    private var refreshTask: Task<Void, Never>?
+
     /// 注入存储层。生产环境使用共享单例；单元测试注入临时数据库实例。
     public init(storage: ClipboardStorage = ClipboardStorage.shared) {
         self.storage = storage
@@ -89,9 +94,34 @@ public class ClipboardManagerViewModel: ObservableObject {
         return items.filter { $0.searchKeywords.contains(lower) }
     }
     
+    /// 设置面板可见性。
+    ///
+    /// 剪贴板变化观察者在 `onBoot` 无条件注册，而面板只在活动栏条目激活时才安装。
+    /// 隐藏时把刷新挡掉，避免每次系统级复制都在主 actor 上全量拉取 + 过滤 + 重发布
+    /// （issue #1305）。重新可见时合并刷新一次，补上隐藏期间错过的变化。
+    public func setPanelVisible(_ visible: Bool) {
+        guard isPanelVisible != visible else { return }
+        isPanelVisible = visible
+        if visible {
+            refresh()
+        } else {
+            refreshTask?.cancel()
+            refreshTask = nil
+        }
+    }
+
+    /// 请求一次刷新：仅在面板可见时执行，并对突发通知做防抖合并。
+    ///
+    /// 多文件复制会按条目逐个广播通知（N 次），原先每次都全量重拉最多 5000 条。
+    /// 这里取消上一个待执行任务，120ms 内的多次通知合并成一次 ``loadItems()``。
+    /// 显式重载（删除 / 置顶 / 清空）仍直接走 ``loadItems()``。
     public func refresh() {
-        Task {
-            await loadItems()
+        guard isPanelVisible else { return }
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
+            await self?.loadItems()
         }
     }
     
