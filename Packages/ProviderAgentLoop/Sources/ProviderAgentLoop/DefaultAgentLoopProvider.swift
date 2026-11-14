@@ -166,6 +166,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     /// 当前 assistant 工具批次中所有挂起的调用（一个批次可含多个 ask_user）。
     private var pendingSuspensions: [UUID: [String: AgentLoopSuspension]] = [:]
     private var turnIDs: [UUID: UUID] = [:]
+    /// 最近一次回合的身份，终态后仍保留（#231）。
+    ///
+    /// 失败消息上的重试按钮要求 `currentTurnID == 消息的 turnID`；
+    /// 终态即清空会让按钮永远隐藏，重试请求也无法校验回合身份。
+    private var lastTurnIDs: [UUID: UUID] = [:]
     private var cancelledConversations: Set<UUID> = []
     private var awaitingConversations: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
@@ -255,11 +260,22 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     public func currentTurnID(for conversationID: UUID) -> UUID? {
-        turnIDs[conversationID]
+        turnIDs[conversationID] ?? lastTurnIDs[conversationID]
     }
 
     public func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
         lastFailures[conversationID]
+    }
+
+    public func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome {
+        guard lastTurnIDs[conversationID] == failedTurnID,
+              states[conversationID] == .failed else {
+            throw AgentLoopError.invalidRetryRequest
+        }
+        return try await runTurn(in: conversationID)
     }
 
     public func cancelTurn(in conversationID: UUID) {
@@ -299,6 +315,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
         let turnID = UUID()
         turnIDs[conversationID] = turnID
+        lastTurnIDs[conversationID] = turnID
         terminalFinishedTurns.removeValue(forKey: conversationID)
         modelRoutes[conversationID] = resolveModelRoute(for: conversationID)
         states[conversationID] = .running

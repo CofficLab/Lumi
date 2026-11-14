@@ -16,12 +16,13 @@ import ProviderToolManager
 /// 四条终态路径都不触发 `turnFinished`，依赖终态钩子的插件（完成通知、
 /// Goal 自动续跑、ConversationResume 终态标记）在回退装配下全部失效；
 /// 失败时也不记录 `lastFailure`，常驻的自动重试插件拿不到可重试性判定，
-/// 每次失败都直接清状态，自动重试永不触发。
+/// 每次失败都直接清状态，自动重试永不触发；终态还会清空 `currentTurnID`，
+/// 失败消息上的手动重试按钮永远隐藏（#231）。
 ///
 /// 生产装配由 PluginAgentLoop 替换成 AgentLoopManager，但本实现仍是
 /// 工厂默认产出与公开 API，终态钩子必须与 turnStarted 对称，且同一回合
 /// 的终态恰好投递一次（cancelTurn 与迟到的 finishEventTurn 不得重复触发）。
-@Suite("DefaultAgentLoop 终态钩子与失败详情（#219, #230）")
+@Suite("DefaultAgentLoop 终态钩子与失败详情（#219, #230, #231）")
 @MainActor
 struct DefaultAgentLoopTerminalStateTests {
 
@@ -402,5 +403,79 @@ struct DefaultAgentLoopTerminalStateTests {
         let outcome = try await harness.loop.runTurn(in: harness.conversationID)
         #expect(outcome == .completed)
         #expect(harness.loop.lastFailure(for: harness.conversationID) == nil)
+    }
+
+    // MARK: - 失败回合身份与手动重试（#231）
+
+    @Test("失败终态保留 currentTurnID，重试按钮可定位失败回合")
+    func failedTurnRetainsCurrentTurnID() async throws {
+        struct ProbeError: Error {}
+        let harness = makeHarness(provider: ScriptedLLMProvider(error: ProbeError()))
+        var failedTurnID: UUID?
+        let observer = harness.loop.addAgentLoopObserver { event in
+            if case let .failed(_, turnID, _) = event { failedTurnID = turnID }
+        }
+
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        observer.cancel()
+        #expect(harness.loop.state(for: harness.conversationID) == .failed)
+        #expect(failedTurnID != nil)
+        #expect(harness.loop.currentTurnID(for: harness.conversationID) == failedTurnID)
+    }
+
+    @Test("retryTurn 校验失败回合身份后重启并完成")
+    func retryTurnRestartsMatchingFailedTurn() async throws {
+        let provider = ScriptedLLMProvider(error: VendorAPIError.httpStatus(statusCode: 500, summary: "boom", retryAfterSeconds: nil))
+        let harness = makeHarness(provider: provider)
+
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        guard let failedTurnID = harness.loop.currentTurnID(for: harness.conversationID) else {
+            Issue.record("失败回合缺少 turnID")
+            return
+        }
+
+        provider.error = nil
+        provider.responses = [LLMResponse(content: "retried")]
+        let outcome = try await harness.loop.retryTurn(in: harness.conversationID, after: failedTurnID)
+        #expect(outcome == .completed)
+        #expect(harness.loop.lastFailure(for: harness.conversationID) == nil)
+    }
+
+    @Test("retryTurn 拒绝过期的失败回合身份")
+    func retryTurnRejectsStaleTurnID() async throws {
+        let provider = ScriptedLLMProvider(error: VendorAPIError.httpStatus(statusCode: 500, summary: "boom", retryAfterSeconds: nil))
+        let harness = makeHarness(provider: provider)
+
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        guard let failedTurnID = harness.loop.currentTurnID(for: harness.conversationID) else {
+            Issue.record("失败回合缺少 turnID")
+            return
+        }
+
+        // 随便一个旧 turnID 不得重启当前失败回合。
+        await #expect(throws: AgentLoopError.invalidRetryRequest) {
+            _ = try await harness.loop.retryTurn(in: harness.conversationID, after: UUID())
+        }
+
+        // 新回合成功后，旧失败回合的重试请求同样必须被拒绝。
+        provider.error = nil
+        provider.responses = [LLMResponse(content: "ok")]
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        await #expect(throws: AgentLoopError.invalidRetryRequest) {
+            _ = try await harness.loop.retryTurn(in: harness.conversationID, after: failedTurnID)
+        }
+    }
+
+    @Test("非失败状态不允许 retryTurn")
+    func retryTurnRequiresFailedState() async throws {
+        let harness = makeHarness(provider: ScriptedLLMProvider(responses: [LLMResponse(content: "done")]))
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        guard let turnID = harness.loop.currentTurnID(for: harness.conversationID) else {
+            Issue.record("完成回合缺少 turnID")
+            return
+        }
+        await #expect(throws: AgentLoopError.invalidRetryRequest) {
+            _ = try await harness.loop.retryTurn(in: harness.conversationID, after: turnID)
+        }
     }
 }
