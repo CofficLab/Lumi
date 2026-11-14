@@ -10,18 +10,20 @@ import ProviderMessageStreaming
 import ProviderToolManager
 @testable import ProviderAgentLoop
 
-/// 锁定 DefaultAgentLoopProvider 的终态生命周期钩子（#219）。
+/// 锁定 DefaultAgentLoopProvider 的终态生命周期钩子（#219）与结构化失败详情（#230）。
 ///
 /// 此前该实现只触发 `turnStarted`，completed / failed / cancelled / suspended
 /// 四条终态路径都不触发 `turnFinished`，依赖终态钩子的插件（完成通知、
-/// Goal 自动续跑、ConversationResume 终态标记）在回退装配下全部失效。
+/// Goal 自动续跑、ConversationResume 终态标记）在回退装配下全部失效；
+/// 失败时也不记录 `lastFailure`，常驻的自动重试插件拿不到可重试性判定，
+/// 每次失败都直接清状态，自动重试永不触发。
 ///
 /// 生产装配由 PluginAgentLoop 替换成 AgentLoopManager，但本实现仍是
 /// 工厂默认产出与公开 API，终态钩子必须与 turnStarted 对称，且同一回合
 /// 的终态恰好投递一次（cancelTurn 与迟到的 finishEventTurn 不得重复触发）。
-@Suite("DefaultAgentLoop 终态钩子（#219）")
+@Suite("DefaultAgentLoop 终态钩子与失败详情（#219, #230）")
 @MainActor
-struct DefaultAgentLoopTurnFinishedHookTests {
+struct DefaultAgentLoopTerminalStateTests {
 
     private typealias ToolCall = KitAgentTool.ToolCall
 
@@ -339,5 +341,66 @@ struct DefaultAgentLoopTurnFinishedHookTests {
         harness.loop.cancelTurn(in: harness.conversationID)
         try await Task.sleep(nanoseconds: 100_000_000)
         #expect(finished.isEmpty)
+    }
+
+    // MARK: - 结构化失败详情（#230）
+
+    @Test("限流失败暴露结构化 lastFailure，含 Retry-After 供自动重试消费")
+    func rateLimitedFailureExposesStructuredDetails() async throws {
+        let harness = makeHarness(provider: ScriptedLLMProvider(
+            error: VendorAPIError.httpStatus(statusCode: 429, summary: "rate limited", retryAfterSeconds: 7)
+        ))
+
+        let outcome = try await harness.loop.runTurn(in: harness.conversationID)
+        guard case .failed = outcome else {
+            Issue.record("期望失败结局，实际 \(outcome)")
+            return
+        }
+        let failure = harness.loop.lastFailure(for: harness.conversationID)
+        #expect(failure?.kind == .rateLimited)
+        #expect(failure?.isRetryable == true)
+        #expect(failure?.httpStatusCode == 429)
+        #expect(failure?.retryAfterSeconds == 7)
+    }
+
+    @Test("鉴权失败同样落 lastFailure，但标记为不可自动重试")
+    func authenticationFailureIsStoredButNotRetryable() async throws {
+        let harness = makeHarness(provider: ScriptedLLMProvider(
+            error: VendorAPIError.missingAPIKey("scripted")
+        ))
+
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        let failure = harness.loop.lastFailure(for: harness.conversationID)
+        #expect(failure?.kind == .authentication)
+        #expect(failure?.isRetryable == false)
+    }
+
+    @Test("空终态响应归类为可重试的 emptyResponse 失败")
+    func emptyResponseIsRetryableFailure() async throws {
+        let harness = makeHarness(provider: ScriptedLLMProvider(responses: [LLMResponse(content: "")]))
+
+        let outcome = try await harness.loop.runTurn(in: harness.conversationID)
+        guard case .failed = outcome else {
+            Issue.record("期望失败结局，实际 \(outcome)")
+            return
+        }
+        let failure = harness.loop.lastFailure(for: harness.conversationID)
+        #expect(failure?.kind == .emptyResponse)
+        #expect(failure?.isRetryable == true)
+    }
+
+    @Test("新回合开始时清除上一回合的失败详情")
+    func newTurnClearsPreviousFailure() async throws {
+        let provider = ScriptedLLMProvider(error: VendorAPIError.httpStatus(statusCode: 500, summary: "boom", retryAfterSeconds: nil))
+        let harness = makeHarness(provider: provider)
+
+        _ = try await harness.loop.runTurn(in: harness.conversationID)
+        #expect(harness.loop.lastFailure(for: harness.conversationID) != nil)
+
+        provider.error = nil
+        provider.responses = [LLMResponse(content: "ok")]
+        let outcome = try await harness.loop.runTurn(in: harness.conversationID)
+        #expect(outcome == .completed)
+        #expect(harness.loop.lastFailure(for: harness.conversationID) == nil)
     }
 }

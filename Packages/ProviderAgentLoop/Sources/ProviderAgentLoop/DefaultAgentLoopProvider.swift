@@ -169,6 +169,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     private var cancelledConversations: Set<UUID> = []
     private var awaitingConversations: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
+    /// 最近一次终止回合的结构化失败详情（#230）。
+    ///
+    /// 自动重试插件依赖它判断可重试性与 Retry-After；只返回协议默认的
+    /// nil 会让 RetryCoordinator 在每次失败后立即清状态，自动重试永不触发。
+    private var lastFailures: [UUID: AgentLoopFailure] = [:]
     private var modelRoutes: [UUID: LLMModelRoute] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
     private var eventTasks: [UUID: Task<Void, Never>] = [:]
@@ -253,6 +258,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         turnIDs[conversationID]
     }
 
+    public func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        lastFailures[conversationID]
+    }
+
     public func cancelTurn(in conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)cancel turn conversation=\(conversationID.uuidString.prefix(8))")
@@ -286,6 +295,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
         cancelledConversations.remove(conversationID)
         failedConversations.remove(conversationID)
+        lastFailures.removeValue(forKey: conversationID)
 
         let turnID = UUID()
         turnIDs[conversationID] = turnID
@@ -477,6 +487,13 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             ))
         } catch {
             states[conversationID] = .failed
+            // finishEventTurn 会清掉 modelRoutes，先取路由再归一化失败。
+            let route = modelRoutes[conversationID]
+            lastFailures[conversationID] = AgentLoopFailure.from(
+                error: error,
+                providerID: route?.providerID,
+                modelName: route?.modelName
+            )
             finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .failed(String(describing: error)))
         }
     }
