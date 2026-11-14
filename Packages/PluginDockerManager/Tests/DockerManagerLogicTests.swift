@@ -26,6 +26,10 @@ private actor StubDockerService: DockerManagerServicing {
     var scanError: Error?
     /// 注入扫描延迟，用于构造「旧扫描晚到」场景。
     var scanDelay: Duration?
+    /// 挂起 listImages，用于构造「旧刷新晚到」场景（#252）。
+    var blockList = false
+    private var listGates: [CheckedContinuation<Void, Never>] = []
+    private(set) var listCallCount = 0
 
     private(set) var removedImages: [(id: String, force: Bool)] = []
     private(set) var pulledImages: [String] = []
@@ -35,8 +39,15 @@ private actor StubDockerService: DockerManagerServicing {
     private(set) var scannedImages: [String] = []
 
     func listImages() async throws -> [DockerImage] {
-        if let listError { throw listError }
-        return images
+        listCallCount += 1
+        // 在调用时捕获快照与错误，门闩放行后返回的是发起时的状态，便于构造旧响应晚到。
+        let snapshot = images
+        let error = listError
+        if blockList {
+            await withCheckedContinuation { listGates.append($0) }
+        }
+        if let error { throw error }
+        return snapshot
     }
 
     func removeImage(_ id: String, force: Bool) async throws {
@@ -94,6 +105,17 @@ private actor StubDockerService: DockerManagerServicing {
     func setLoadError(_ value: Error?) { loadError = value }
     func setScanError(_ value: Error?) { scanError = value }
     func setScanDelay(_ value: Duration?) { scanDelay = value }
+    func setBlockList(_ value: Bool) { blockList = value }
+    /// 放行第 index 个挂起的 listImages（按调用顺序），用于控制旧/新响应的完成次序。
+    func releaseListGate(_ index: Int) {
+        guard listGates.indices.contains(index) else { return }
+        listGates.remove(at: index).resume()
+    }
+    func releaseAllListGates() {
+        let pending = listGates
+        listGates.removeAll()
+        for gate in pending { gate.resume() }
+    }
 }
 
 // MARK: - 模型
@@ -640,6 +662,95 @@ struct DockerManagerViewModelTests {
         viewModel.reportFilePanelError("Export", error: failure)
 
         #expect(viewModel.errorMessage?.contains("disk full") == true)
+    }
+
+    @Test("删除后迟到的旧刷新不得把已删除镜像重新插回列表（#252）")
+    func staleRefreshAfterDeleteDoesNotReinsertImage() async {
+        let imageA = Self.image(id: "sha256:a", repository: "alpha")
+        let service = StubDockerService()
+        await service.setImages([imageA])
+        await service.setBlockList(true)
+        let viewModel = DockerManagerViewModel(service: service)
+
+        // R1：刷新发起并挂起，持有删除前快照 [A]。
+        let refresh = Task { await viewModel.refreshImages() }
+        await waitUntil { await service.listCallCount == 1 }
+
+        // 删除 A：本地移除并使在途刷新失效。
+        await viewModel.deleteImage(imageA)
+        #expect(viewModel.images.isEmpty)
+
+        // 放行旧刷新：它带回 [A]，但不得写回。
+        await service.releaseAllListGates()
+        await refresh.value
+
+        #expect(viewModel.images.isEmpty, "删除前的旧快照不得把已删除镜像插回")
+        #expect(viewModel.filteredImages.isEmpty)
+        #expect(viewModel.isLoading == false)
+    }
+
+    @Test("重叠刷新按最新请求写回，旧响应不得覆盖新列表（#252）")
+    func overlappingRefreshesUseLatestRequestedSnapshot() async {
+        let imageA = Self.image(id: "sha256:a", repository: "alpha")
+        let imageB = Self.image(id: "sha256:b", repository: "beta")
+        let service = StubDockerService()
+        await service.setImages([imageA])
+        await service.setBlockList(true)
+        let viewModel = DockerManagerViewModel(service: service)
+
+        // R1 先发起，持有旧快照 [A]；R2 后发起，持有新快照 [A, B]。
+        let r1 = Task { await viewModel.refreshImages() }
+        await waitUntil { await service.listCallCount == 1 }
+        await service.setImages([imageA, imageB])
+        let r2 = Task { await viewModel.refreshImages() }
+        await waitUntil { await service.listCallCount == 2 }
+
+        // 让最新请求 R2 先完成，再放行旧请求 R1。
+        await service.releaseListGate(1)
+        await r2.value
+        #expect(viewModel.images.count == 2)
+        await service.releaseListGate(0)
+        await r1.value
+
+        #expect(viewModel.images.count == 2, "旧刷新不得覆盖最新列表")
+        #expect(viewModel.images.contains { $0.imageID == "sha256:b" })
+        #expect(viewModel.isLoading == false)
+    }
+
+    @Test("旧刷新失败不得覆盖最新一次成功刷新的状态（#252）")
+    func staleRefreshFailureDoesNotClobberNewerSuccess() async {
+        let imageA = Self.image(id: "sha256:a", repository: "alpha")
+        let service = StubDockerService()
+        await service.setImages([imageA])
+        await service.setBlockList(true)
+        await service.setListError(DockerError.commandFailed("stale boom"))
+        let viewModel = DockerManagerViewModel(service: service)
+
+        // R1 先发起，将失败；R2 后发起，将成功。
+        let r1 = Task { await viewModel.refreshImages() }
+        await waitUntil { await service.listCallCount == 1 }
+        await service.setListError(nil)
+        let r2 = Task { await viewModel.refreshImages() }
+        await waitUntil { await service.listCallCount == 2 }
+
+        await service.releaseListGate(1)
+        await r2.value
+        #expect(viewModel.errorMessage == nil)
+
+        // R1 迟到失败：不得写回错误文案。
+        await service.releaseListGate(0)
+        await r1.value
+
+        #expect(viewModel.errorMessage == nil, "旧刷新的失败不得覆盖最新成功状态")
+        #expect(viewModel.images.count == 1)
+        #expect(viewModel.isLoading == false)
+    }
+
+    private func waitUntil(_ condition: @MainActor () async -> Bool) async {
+        for _ in 0..<200 {
+            if await condition() { return }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
     }
 
     private static func image(
