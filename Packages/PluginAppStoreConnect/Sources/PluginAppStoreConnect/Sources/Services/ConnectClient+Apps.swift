@@ -5,7 +5,7 @@ extension ConnectClient {
     ///
     /// 使用 Apple 的 `filter[bundleId]`；命中 0 条时返回 `nil`，
     /// 命中多条时取第一条（同一账号下 bundle ID 唯一）。
-    func findApp(bundleID: String) async throws -> AppStoreApp? {
+    func findApp(bundleID: String, forceRefresh: Bool = false) async throws -> AppStoreApp? {
         let trimmed = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
@@ -19,7 +19,8 @@ extension ConnectClient {
 
         let response: AppStoreConnectListResponseWithIncluded<AppStoreApp, BuildIconResource> = try await request(
             path: "/v1/apps",
-            queryItems: query
+            queryItems: query,
+            cachePolicy: forceRefresh ? .networkOnly : nil
         )
         let iconsByID = Dictionary(
             (response.included ?? []).map { ($0.id, $0) },
@@ -30,7 +31,7 @@ extension ConnectClient {
     }
 
     /// 按 ASC App ID 读取单个 App。
-    func readApp(id: String) async throws -> AppStoreApp {
+    func readApp(id: String, forceRefresh: Bool = false) async throws -> AppStoreApp {
         let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw AppStoreConnectClientError.resourceNotFound(
@@ -45,7 +46,8 @@ extension ConnectClient {
         ]
         let response: AppStoreConnectAppResponse = try await request(
             path: "/v1/apps/\(trimmed)",
-            queryItems: query
+            queryItems: query,
+            cachePolicy: forceRefresh ? .networkOnly : nil
         )
         let iconsByID = Dictionary(
             (response.included ?? []).map { ($0.id, $0) },

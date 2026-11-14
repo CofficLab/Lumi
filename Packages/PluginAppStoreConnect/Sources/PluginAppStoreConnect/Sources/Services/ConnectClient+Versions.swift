@@ -1,7 +1,7 @@
 import Foundation
 
 extension ConnectClient {
-    func listVersions(appID: String) async throws -> [AppStoreVersion] {
+    func listVersions(appID: String, forceRefresh: Bool = false) async throws -> [AppStoreVersion] {
         let query = [
             URLQueryItem(name: "limit", value: "100"),
             URLQueryItem(
@@ -9,11 +9,12 @@ extension ConnectClient {
                 value: "platform,versionString,appStoreState,appVersionState,createdDate,copyright,releaseType,downloadable,earliestReleaseDate"
             )
         ]
-        let policy = fetchPolicy
+        let policy: ConnectFetchPolicy = forceRefresh ? .networkOnly : fetchPolicy
         Self.logger.info("\(Self.t)listVersions appID=\(appID) fetchPolicy=\(String(describing: policy))")
         let response: AppStoreConnectListResponse<AppStoreVersion> = try await request(
             path: "/v1/apps/\(appID)/appStoreVersions",
-            queryItems: query
+            queryItems: query,
+            cachePolicy: forceRefresh ? .networkOnly : nil
         )
         Self.logger.info("\(Self.t)listVersions returned \(response.data.count) versions")
         if Self.verbose {

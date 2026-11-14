@@ -6,13 +6,14 @@ import Foundation
 @MainActor
 protocol ASCChatClientCapability: AnyObject {
     /// 按 Bundle ID 查找 App；未命中时返回 `nil`。
-    func findApp(bundleID: String) async throws -> AppStoreApp?
+    /// `forceRefresh` 为 true 时绕过缓存直接走网络。
+    func findApp(bundleID: String, forceRefresh: Bool) async throws -> AppStoreApp?
 
     /// 按 ASC App ID 读取 App。
-    func readApp(id: String) async throws -> AppStoreApp
+    func readApp(id: String, forceRefresh: Bool) async throws -> AppStoreApp
 
     /// 列出指定 App 的版本。
-    func listVersions(appID: String) async throws -> [AppStoreVersion]
+    func listVersions(appID: String, forceRefresh: Bool) async throws -> [AppStoreVersion]
 }
 
 /// 将 ``ConnectClient`` 收窄为 ``ASCChatClientCapability``。
@@ -27,19 +28,19 @@ final class ASCChatClientCapabilityAdapter: ASCChatClientCapability {
         self.clientProvider = clientProvider
     }
 
-    func findApp(bundleID: String) async throws -> AppStoreApp? {
+    func findApp(bundleID: String, forceRefresh: Bool) async throws -> AppStoreApp? {
         guard let client = clientProvider() else { throw ASCChatClientError.unavailable }
-        return try await client.findApp(bundleID: bundleID)
+        return try await client.findApp(bundleID: bundleID, forceRefresh: forceRefresh)
     }
 
-    func readApp(id: String) async throws -> AppStoreApp {
+    func readApp(id: String, forceRefresh: Bool) async throws -> AppStoreApp {
         guard let client = clientProvider() else { throw ASCChatClientError.unavailable }
-        return try await client.readApp(id: id)
+        return try await client.readApp(id: id, forceRefresh: forceRefresh)
     }
 
-    func listVersions(appID: String) async throws -> [AppStoreVersion] {
+    func listVersions(appID: String, forceRefresh: Bool) async throws -> [AppStoreVersion] {
         guard let client = clientProvider() else { throw ASCChatClientError.unavailable }
-        return try await client.listVersions(appID: appID)
+        return try await client.listVersions(appID: appID, forceRefresh: forceRefresh)
     }
 }
 
