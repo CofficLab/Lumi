@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 16 条用例。
+PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 19 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 16
+测试文件: 7 个，用例总数: 19
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -37,6 +37,7 @@ PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆
 
 - **ActivityHeatmapViewModel**（3 条）：由 `reloadsAndCachesDailyCounts`、`reportsPeakTokenDay`、`ignoresConsumptionOutsideTrendWindow` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitActivityHeatmapProjectViewModel**（2 条）：由 `scopesSnapshotsToTheSelectedProject`、`updatesRepositoryPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitActivityHeatmapProjectSection**（3 条）：由 `outOfWindowDayIsNotCounted`、`inWindowDaysAreCounted`、`gridEndIsExclusive` 等用例锁定；summary 必须与 52 周网格共用同一日期窗口，改动该模块时优先跑对应测试文件。
 - **LocalGitActivityHeatmapProviderRefresh**（3 条）：由 `refreshLoadsAndCachesRecentHistory`、`failedInitialLoadClearsLoading`、`snapshotIgnoresMalformedDatesAndStandardizesPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LocalGitActivityHeatmapProvider**（1 条）：由 `groupsCommitsByDay` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（2 条）：由 `activityPeriodHasLegacyRanges`、`activityCachePersistsHistoricalCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -62,27 +63,30 @@ PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆
 | 14 | TokenCountFormat | compacts millions with one decimal below one hundred | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactsMillions` |
 | 15 | TokenCountFormat | compacts billions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactsBillions` |
 | 16 | TokenCountFormat | promotes to a larger unit when rounding crosses a magnitude | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `promotesAcrossMagnitude` |
+| 17 | GitActivityHeatmapProjectSection | counts only the visible 52-week window, not the wider 12-month load range | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `outOfWindowDayIsNotCounted` |
+| 18 | GitActivityHeatmapProjectSection | counts every visible day inclusively from grid start through the last cell | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inWindowDaysAreCounted` |
+| 19 | GitActivityHeatmapProjectSection | excludes the day at the exclusive right edge of the grid window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gridEndIsExclusive` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

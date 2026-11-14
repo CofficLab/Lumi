@@ -135,10 +135,35 @@ struct GitActivityHeatmapProjectSection: View {
         var id: Date { date }
     }
 
-    private func makeWeeks(snapshot: ActivityHeatmapSnapshot) -> [[HeatmapCell]] {
-        let today = calendar.startOfDay(for: Date())
+    /// 网格起点：当前周（周日）往前 weekCount-1 周；summary 与网格共用此窗口。
+    nonisolated static func gridStart(calendar: Calendar, weekCount: Int, now: Date) -> Date {
+        let today = calendar.startOfDay(for: now)
         let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
-        let start = calendar.date(byAdding: .weekOfYear, value: -(weekCount - 1), to: currentWeekStart) ?? currentWeekStart
+        return calendar.date(byAdding: .weekOfYear, value: -(weekCount - 1), to: currentWeekStart) ?? currentWeekStart
+    }
+
+    /// 只统计可见网格窗口内的日期，避免把加载窗口里、网格之外的提交计入 summary。
+    nonisolated static func visibleSummary(
+        snapshot: ActivityHeatmapSnapshot,
+        calendar: Calendar,
+        weekCount: Int,
+        now: Date
+    ) -> (total: Int, activeDays: Int) {
+        let start = gridStart(calendar: calendar, weekCount: weekCount, now: now)
+        let end = calendar.date(byAdding: .day, value: weekCount * 7, to: start) ?? start
+        var total = 0
+        var activeDays = 0
+        for day in snapshot.days {
+            let date = calendar.startOfDay(for: day.date)
+            guard date >= start, date < end else { continue }
+            total += day.commitCount
+            if day.commitCount > 0 { activeDays += 1 }
+        }
+        return (total, activeDays)
+    }
+
+    private func makeWeeks(snapshot: ActivityHeatmapSnapshot) -> [[HeatmapCell]] {
+        let start = Self.gridStart(calendar: calendar, weekCount: weekCount, now: Date())
         let counts = Dictionary(uniqueKeysWithValues: snapshot.days.map {
             (calendar.startOfDay(for: $0.date), $0.commitCount)
         })
@@ -168,9 +193,8 @@ struct GitActivityHeatmapProjectSection: View {
     }
 
     private func summary(for snapshot: ActivityHeatmapSnapshot) -> String {
-        let total = snapshot.days.reduce(0) { $0 + $1.commitCount }
-        let active = snapshot.days.filter { $0.commitCount > 0 }.count
-        return String(format: L("%lld commits · %lld active days"), total, active)
+        let visible = Self.visibleSummary(snapshot: snapshot, calendar: calendar, weekCount: weekCount, now: Date())
+        return String(format: L("%lld commits · %lld active days"), visible.total, visible.activeDays)
     }
 
     private func accessibilityText(for cell: HeatmapCell) -> String {
