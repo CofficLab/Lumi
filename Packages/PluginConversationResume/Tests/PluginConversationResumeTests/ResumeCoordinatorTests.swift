@@ -468,6 +468,56 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #633：崩溃发生在「嵌套真实结果已落库、独立 tool 消息未插入」
+    /// 之间时，继续必须用真实结果重建协议消息，且不得用占位覆盖快照。
+    @Test("嵌套真实结果被重建为独立 tool 消息，快照不被占位覆盖")
+    func resumeRebuildsRealResultAndKeepsSnapshot() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        var call = MessageToolCall(id: "call_1", name: "read_file", arguments: "{}")
+        call.result = MessageToolResult(content: "done")
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            turnID: turnID,
+            toolCalls: [call]
+        )
+        messages.seed([userMessage(conversationID), assistant], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        await coordinator.resume()
+
+        let history = await messages.messages(for: conversationID)
+        let toolMessages = history.filter { $0.role == .tool }
+        #expect(toolMessages.count == 1)
+        #expect(toolMessages[0].toolCallID == "call_1")
+        #expect(toolMessages[0].content == "done", "真实结果不得被占位替换")
+        #expect(toolMessages[0].isError == false)
+
+        let nested = history.first { $0.id == assistant.id }?.toolCalls?.first?.result
+        #expect(nested?.content == "done", "已有真实结果的快照不得被占位覆盖")
+        #expect(OrphanToolCallScanner.scan(history).isEmpty)
+        #expect(loop.startTurnCount == 1)
+        coordinator.cancel()
+    }
+
     /// 回归 #636：孤儿调用之后已存在新用户消息（ACP 先插消息再排回合，
     /// 崩溃可留下该状态）时，占位必须插在 assistant 与该用户消息之间，
     /// 而不是按当前时间追加到历史末尾——否则 Anthropic 顺序非法。

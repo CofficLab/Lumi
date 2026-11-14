@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 52 条用例。
+PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 56 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 52
+测试文件: 5 个，用例总数: 56
 
 核心组件（源码目录）:
 - `Models/`
@@ -30,10 +30,10 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **孤儿 tool_call 扫描**（12 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans`、`placeholderLandsBetweenAssistantAndLaterUserMessage` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call；占位消息必须插在所属 assistant（及其已有结果）之后、后续用户消息之前，不得按当前时间追加到历史末尾（**回归 #636**）。
+- **孤儿 tool_call 扫描**（15 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans`、`placeholderLandsBetweenAssistantAndLaterUserMessage` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call；占位消息必须插在所属 assistant（及其已有结果）之后、后续用户消息之前，不得按当前时间追加到历史末尾（**回归 #636**）。协议配对只认独立 tool 消息，嵌套展示快照不算；快照里已有真实结果时必须用它重建协议消息，不得丢失或伪造（**回归 #633**）。
 - **回合记录存储**（14 条）：由 `marksRunning`、`marksFinished`、`survivesProcessRestart`、`corruptedFileFallsBackToEmpty`、`keepsOnlyLatestPerConversation` 等用例锁定——回合开始写「运行中」、结束时写终态，崩溃时最后一条停留在「运行中」，这正是区分用户主动停止与崩溃的唯一可靠依据。重启加载时磁盘上的 `.suspended` 必须按中断处理（**回归 #854**）。
 - **可继续判定**（12 条）：由 `interruptedTurnIsResumable`、`cancelledTurnIsNotResumable`、`runningTurnIsNotResumable`、`finishedReplyIsNotResumable` 等用例锁定——判定必须依赖持久化记录而不是消息形状，用户主动停止与崩溃在消息层面完全无法区分。
-- **协调器端到端**（11 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合；修复时必须同时回写 assistant 嵌套工具结果，否则 UI 永久 loading（**回归 #634**）。
+- **协调器端到端**（12 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合；修复时必须同时回写 assistant 嵌套工具结果，否则 UI 永久 loading（**回归 #634**）；快照已有真实结果时重建协议消息且不得覆盖快照（**回归 #633**）。
 - **恢复按会话隔离**（3 条）：由 `otherConversationCanResumeWhileFirstIsRunning`、`repeatedResumeOfSameConversationIsStillBlocked`、`resumingStateIsReportedPerConversation` 等用例锁定——一个会话的恢复只抑制该会话自己的重复恢复动作，别的会话不受影响（**回归 #888**）。
 
 ## 测试用例清单
@@ -45,7 +45,7 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 | 3 | 孤儿 tool_call 扫描 | 已配对的工具调用不是孤儿 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pairedToolCallIsNotOrphan` |
 | 4 | 孤儿 tool_call 扫描 | 部分配对时只报告未配对的那个 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `partiallyPairedReportsOnlyUnpaired` |
 | 5 | 孤儿 tool_call 扫描 | 跨回合的 tool result 不能配对另一个回合的 tool_call | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `crossTurnResultDoesNotPair` |
-| 6 | 孤儿 tool_call 扫描 | 展示快照里已有结果的工具调用不算孤儿 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotWithResultIsNotOrphan` |
+| 6 | 孤儿 tool_call 扫描 | 只有嵌套展示结果、缺少独立 tool 消息时仍是孤儿，真实结果不得丢失（**回归 #633**） | assistant 嵌套 result 非 nil，无独立 tool 消息 | 执行扫描 | 报告 1 个孤儿 | P0 | ✅ 已覆盖 | `snapshotOnlyResultIsStillOrphan` |
 | 7 | 孤儿 tool_call 扫描 | 占位消息补上 tool_call_id 与错误标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `placeholderMessageCarriesToolCallID` |
 | 8 | 孤儿 tool_call 扫描 | 占位正文明确说明结果未知 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `placeholderContentStatesOutcomeUnknown` |
 | 9 | 孤儿 tool_call 扫描 | 修复后重新扫描不再有孤儿 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repairRemovesOrphans` |
@@ -92,27 +92,31 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 | 50 | 孤儿 tool_call 扫描 | assistant 是最后一条消息时占位按当前时间追加 | 历史以孤儿 assistant 结尾 | 生成占位 | 占位时间戳不早于 assistant，重新扫描无孤儿 | P1 | ✅ 已覆盖 | `placeholderAppendsWhenAssistantIsLast` |
 | 51 | 协调器端到端 | 孤儿调用后已有用户消息时，继续修复的占位插在该用户消息之前（**回归 #636**） | 崩溃记录 + 历史 U1 → assistant(孤儿 call) → U2 | 点击继续 | 排序后角色序列为 user/assistant/tool/user，新回合启动 | P0 | ✅ 已覆盖 | `resumeInsertsPlaceholderBeforeLaterUserMessage` |
 | 52 | 协调器端到端 | 修复后 assistant 嵌套工具结果被回写，不再永久 loading（**回归 #634**） | 崩溃记录 + 历史含孤儿 tool_call 的 assistant | 点击继续 | assistant 嵌套 toolCall.result 非 nil，正文为占位文案且 isError 为 true | P0 | ✅ 已覆盖 | `resumeWritesNestedToolCallResult` |
+| 53 | 孤儿 tool_call 扫描 | 嵌套快照里的真实结果被重建为独立 tool 消息，不得换成占位（**回归 #633**） | 孤儿调用的嵌套 result 为成功结果 "done" | 生成修复消息 | 正文为 "done"、isError 为 false、toolCallID/turnID 保留 | P0 | ✅ 已覆盖 | `repairRebuildsRealResultFromSnapshot` |
+| 54 | 孤儿 tool_call 扫描 | 嵌套快照里的错误结果重建后保留错误标记 | 孤儿调用的嵌套 result 为错误结果 | 生成修复消息 | 正文与 isError 均保留 | P1 | ✅ 已覆盖 | `repairPreservesErrorResultFromSnapshot` |
+| 55 | 孤儿 tool_call 扫描 | 等待用户输入的嵌套快照不是真实结果，只能补占位，不得伪造回答 | 孤儿调用的嵌套 result 为 awaitingUserResponse | 生成修复消息 | 正文为占位文案且 isError 为 true | P0 | ✅ 已覆盖 | `awaitingSnapshotGetsPlaceholder` |
+| 56 | 协调器端到端 | 嵌套真实结果被重建为独立 tool 消息，快照不被占位覆盖（**回归 #633**） | 崩溃记录 + assistant 嵌套真实结果、无独立 tool 消息 | 点击继续 | 插入正文为真实结果的 tool 消息，嵌套快照保持真实结果，无孤儿，新回合启动 | P0 | ✅ 已覆盖 | `resumeRebuildsRealResultAndKeepsSnapshot` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 24 / 24
+- P0: 已覆盖 28 / 28
 - P1: 已覆盖 26 / 26
 - P2: 已覆盖 2 / 2
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
 - **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 56 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -35,6 +35,11 @@ enum OrphanToolCallScanner {
     ///   重复出现是合法的（模型可以复用 ID），把 A 回合的 tool result 拿来
     ///   配 B 回合的 tool_call 会掩盖真正缺失的那一个。
     ///
+    /// - Note: assistant 嵌套的 `toolCall.result` 只是展示快照，**不**算
+    ///   协议配对（#633）。生产路径先写嵌套快照、再插独立 tool 消息，
+    ///   两步之间崩溃时真实结果只存在于快照里；协议历史不会从快照生成
+    ///   tool 消息，跳过修复等于把真实结果丢掉。
+    ///
     /// - Parameter messages: 会话消息历史（按时间升序）。
     static func scan(_ messages: [Message]) -> [OrphanToolCall] {
         // tool_call_id -> 已配对的回合集合
@@ -48,8 +53,6 @@ enum OrphanToolCallScanner {
         for message in messages where message.role == .assistant {
             guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { continue }
             for toolCall in toolCalls {
-                // 展示快照里已有结果，说明这条调用已经完成。
-                guard toolCall.result == nil else { continue }
                 let pairedTurns = pairedTurnIDsByToolCallID[toolCall.id] ?? []
                 if pairedTurns.contains(message.turnID) { continue }
                 orphans.append(
@@ -76,13 +79,29 @@ enum OrphanToolCallRepair {
     interrupted before the tool returned a result. Its actual outcome is unknown.
     """
 
-    /// 为一个孤儿 tool_call 生成占位 tool result 消息。
+    /// 为一个孤儿 tool_call 生成修复用的 tool result 消息。
+    ///
+    /// 嵌套快照里已保存真实结果时（崩溃发生在「写快照」与「插独立消息」
+    /// 之间，#633），用真实结果重建协议消息，而不是伪造「结果未知」——
+    /// 否则模型看不到已完成的输出，可能重复执行副作用。
+    /// 等待用户输入的快照不是真实结果，仍补占位。
     static func placeholderMessage(
         for orphan: OrphanToolCall,
         conversationID: UUID,
         createdAt: Date = Date()
     ) -> Message {
-        Message(
+        if let result = orphan.toolCall.result, !result.awaitingUserResponse {
+            return Message(
+                conversationID: conversationID,
+                role: .tool,
+                content: result.content,
+                createdAt: createdAt,
+                turnID: orphan.turnID,
+                isError: result.isError,
+                toolCallID: orphan.toolCall.id
+            )
+        }
+        return Message(
             conversationID: conversationID,
             role: .tool,
             content: placeholderContent,

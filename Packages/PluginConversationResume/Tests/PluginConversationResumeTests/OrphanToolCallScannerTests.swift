@@ -93,15 +93,19 @@ struct OrphanToolCallScannerTests {
         #expect(orphans[0].turnID == turnB)
     }
 
-    @Test("展示快照里已有结果的工具调用不算孤儿")
-    func snapshotWithResultIsNotOrphan() {
+    /// 回归 #633：嵌套展示快照不是协议配对。生产路径先写快照、再插
+    /// 独立 tool 消息，两步之间崩溃时若按「已配对」跳过修复，真实结果
+    /// 就从协议历史里永久丢失。
+    @Test("只有嵌套展示结果、缺少独立 tool 消息时仍是孤儿，真实结果不得丢失")
+    func snapshotOnlyResultIsStillOrphan() {
         var call = toolCall(id: "call_1")
         call.result = MessageToolResult(content: "done")
         let orphans = OrphanToolCallScanner.scan([
             assistant(toolCalls: [call]),
         ])
 
-        #expect(orphans.isEmpty)
+        #expect(orphans.count == 1)
+        #expect(orphans[0].toolCall.id == "call_1")
     }
 
     // MARK: - 占位消息
@@ -158,6 +162,72 @@ struct OrphanToolCallScannerTests {
         )
 
         #expect(OrphanToolCallScanner.scan(repaired).isEmpty)
+    }
+
+    // MARK: - 真实结果重建（#633）
+
+    @Test("嵌套快照里的真实结果被重建为独立 tool 消息，不得换成占位")
+    func repairRebuildsRealResultFromSnapshot() {
+        let turnID = UUID()
+        var call = toolCall(id: "call_1")
+        call.result = MessageToolResult(content: "done")
+        let orphan = OrphanToolCall(
+            assistantMessageID: UUID(),
+            toolCall: call,
+            turnID: turnID
+        )
+
+        let message = OrphanToolCallRepair.placeholderMessage(
+            for: orphan,
+            conversationID: UUID()
+        )
+
+        #expect(message.role == .tool)
+        #expect(message.toolCallID == "call_1")
+        #expect(message.turnID == turnID)
+        #expect(message.content == "done")
+        #expect(message.isError == false)
+    }
+
+    @Test("嵌套快照里的错误结果重建后保留错误标记")
+    func repairPreservesErrorResultFromSnapshot() {
+        var call = toolCall(id: "call_1")
+        call.result = MessageToolResult(content: "permission denied", isError: true)
+        let orphan = OrphanToolCall(
+            assistantMessageID: UUID(),
+            toolCall: call,
+            turnID: UUID()
+        )
+
+        let message = OrphanToolCallRepair.placeholderMessage(
+            for: orphan,
+            conversationID: UUID()
+        )
+
+        #expect(message.content == "permission denied")
+        #expect(message.isError)
+    }
+
+    @Test("等待用户输入的嵌套快照不是真实结果，只能补占位，不得伪造回答")
+    func awaitingSnapshotGetsPlaceholder() {
+        var call = toolCall(id: "call_1")
+        call.result = MessageToolResult(
+            content: "Which file should I edit?",
+            awaitingUserResponse: true
+        )
+        let orphan = OrphanToolCall(
+            assistantMessageID: UUID(),
+            toolCall: call,
+            turnID: UUID()
+        )
+
+        let message = OrphanToolCallRepair.placeholderMessage(
+            for: orphan,
+            conversationID: UUID()
+        )
+
+        #expect(message.content == OrphanToolCallRepair.placeholderContent)
+        #expect(message.isError)
     }
 
     // MARK: - 占位消息插入位置（#636）

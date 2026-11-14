@@ -273,6 +273,9 @@ final class ResumeCoordinator {
         )
         for (orphan, placeholder) in zip(orphans, placeholders) {
             messages.insertMessage(placeholder, to: conversationID)
+            // 快照里已有结果（真实结果或等待用户输入）时不得覆盖：
+            // 真实结果要留给渲染层，等待态由授权流程自己收尾（#633）。
+            guard orphan.toolCall.result == nil else { continue }
             // 协议消息与展示快照必须一致：只插独立 .tool 消息的话，
             // 渲染层读到的嵌套 result 仍是 nil，工具行永久 loading（#634）。
             messages.updateToolCallResult(
