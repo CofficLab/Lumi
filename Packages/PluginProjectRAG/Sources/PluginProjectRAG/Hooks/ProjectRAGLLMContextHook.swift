@@ -58,7 +58,11 @@ final class ProjectRAGLLMContextHook {
             userMessageCount: userMessages.count,
             content: latestUserMessage.content
         )
-        guard !injectedTurns.contains(turnKey) else { return context }
+        // 同一用户回合的后续请求（工具调用后历史重建）复用已检索证据，而不是因
+        // 去重键命中直接丢弃——否则只有首次模型调用能看到代码上下文（#604）。
+        if let cached = injectedTurns.content(for: turnKey) {
+            return Self.reinject(cached, into: context)
+        }
 
         do {
             let response = try await coordinator.search(
@@ -113,21 +117,36 @@ final class ProjectRAGLLMContextHook {
             guard let anchor = updated.messages.lastIndex(where: { $0.role == .user }) else {
                 return context
             }
+            let systemContent = wrapper + prompt
             updated.messages.insert(
                 LLMMessage(
                     role: .system,
-                    content: wrapper + prompt
+                    content: systemContent
                 ),
                 at: anchor
             )
             searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
-            injectedTurns.record(turnKey)
+            injectedTurns.record(turnKey, content: systemContent)
             MagicLogger.debug("[ProjectRAG] autoInject injected=true topScore=\(topScore) kind=\(topKind) budget=\(context.injectedContentTokenBudget.map(String.init) ?? "nil") msgLen=\(messageLength)")
             return updated
         } catch {
             // RAG 不可用时不改变原始请求，避免检索故障阻塞正常对话。
             return context
         }
+    }
+
+    /// 把已缓存的证据重新插回当前请求：历史重建会丢掉只存在于上次请求局部副本里的
+    /// 注入消息，这里按相同锚点补回；若历史已持久化该消息则不重复插入（#604）。
+    private static func reinject(_ content: String, into context: WillSendToLLMContext) -> WillSendToLLMContext {
+        guard !context.messages.contains(where: { $0.role == .system && $0.content == content }) else {
+            return context
+        }
+        var updated = context
+        guard let anchor = updated.messages.lastIndex(where: { $0.role == .user }) else {
+            return context
+        }
+        updated.messages.insert(LLMMessage(role: .system, content: content), at: anchor)
+        return updated
     }
 
     private func containsCJK(_ text: String) -> Bool {
