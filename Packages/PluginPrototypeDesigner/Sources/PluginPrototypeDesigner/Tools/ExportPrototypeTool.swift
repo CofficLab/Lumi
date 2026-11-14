@@ -58,11 +58,6 @@ public struct ExportPrototypeTool: SuperAgentTool {
         try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
         defer { try? fileManager.removeItem(at: stagingDirectory) }
 
-        struct StagedExport {
-            let stagedURL: URL
-            let destinationURL: URL
-            let summary: String
-        }
         var staged: [StagedExport] = []
 
         for screen in project.sortedScreens {
@@ -98,10 +93,33 @@ public struct ExportPrototypeTool: SuperAgentTool {
             ))
         }
 
+        let backupDirectory = stagingDirectory.appendingPathComponent("backups", isDirectory: true)
+        try Self.installStagedExports(staged, outputDirectory: outputDirectory, backupDirectory: backupDirectory)
+
+        await PrototypeToolSupport.notify(projectID: projectID)
+        return (["Exported \(staged.count) prototype screen PNG files."] + staged.map(\.summary))
+            .joined(separator: "\n")
+    }
+
+    struct StagedExport {
+        let stagedURL: URL
+        let destinationURL: URL
+        let summary: String
+    }
+
+    /// 把暂存好的 PNG 事务性安装到用户选定目录。用户选中的导出目录可能尚不存在，
+    /// 必须先创建（含中间目录）再 moveItem，否则首张图片就安装失败、整批回滚（#427）。
+    /// 任何一步失败都回滚已安装文件并恢复备份，不留半成品。
+    static func installStagedExports(
+        _ staged: [StagedExport],
+        outputDirectory: URL,
+        backupDirectory: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        try fileManager.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
         var installedURLs: [URL] = []
         var backups: [(original: URL, backup: URL)] = []
-        let backupDirectory = stagingDirectory.appendingPathComponent("backups", isDirectory: true)
-        try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
         do {
             for (index, export) in staged.enumerated() {
                 if fileManager.fileExists(atPath: export.destinationURL.path) {
@@ -121,9 +139,5 @@ public struct ExportPrototypeTool: SuperAgentTool {
             }
             throw error
         }
-
-        await PrototypeToolSupport.notify(projectID: projectID)
-        return (["Exported \(staged.count) prototype screen PNG files."] + staged.map(\.summary))
-            .joined(separator: "\n")
     }
 }

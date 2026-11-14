@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 36 条用例。
+PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 39 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 36
+测试文件: 6 个，用例总数: 39
 
 核心组件（源码目录）:
 - `Conversation/`
@@ -41,6 +41,7 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 - **PrototypeDesignerPlugin**（23 条）：由 `pluginMetadataMatchesContract`、`contributesCompleteUniqueToolSet`、`everyToolAdvertisesAValidSchemaAndDescription` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeDesignerRuleContributor**（1 条）：由 `loadsPrototypeRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeElementConversationAction**（3 条）：由 `appendsFileURL`、`unavailableInput`、`discardsStaleSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **PrototypeExport 安装**（3 条）：由 `installsIntoDirectoryThatDoesNotExistYet`、`rollsBackWhenAnInstallStepFails`、`backsUpAndReplacesExistingFile` 用例锁定；`ExportPrototypeTool.installStagedExports` 必须先创建用户选中的导出目录（含中间目录）再 moveItem，中途失败必回滚已安装文件并恢复备份，覆盖前先备份（#427）。
 
 ## 测试用例清单
 
@@ -82,27 +83,37 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 | 34 | PrototypeDesignerPlugin | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 | 35 | 工具参数边界 | 超大设备尺寸在写盘前被拒绝（**回归 #1000**） | custom 宽 `1e20`；预设叠加 `1e20` 倍率 | 调用 `prototype_create_project` | 抛参数错误且不留下项目目录 | P0 | ✅ 已覆盖 | `oversizedDeviceMetricsAreRejectedBeforeWritingProject` |
 | 36 | PrototypeDesignerPlugin | 运行时停用后 17 个 Agent 工具、Skill 与 Rule 撤出，重新启用恢复（**回归 #1021**） | 插件已 Boot 并注册贡献 | 调用 `disablePlugin` 再 `enablePlugin` | 停用后工具/贡献者全部不可见，启用后全部恢复 | P0 | ✅ 已覆盖 | `disablingPluginWithdrawsAgentToolsAndEnablingRestores` |
+| 37 | PrototypeExport 安装 | 导出目录尚不存在时必须先创建再安装（**回归 #427**） | 暂存目录有两张 PNG，用户选中的多级导出目录尚不存在 | 调用 `installStagedExports` | 导出目录被创建，两张 PNG 均按内容安装到位 | P0 | ✅ 已覆盖 | `installsIntoDirectoryThatDoesNotExistYet` |
+| 38 | PrototypeExport 安装 | 中途失败时回滚已安装文件，不留半成品 | 第一张暂存文件有效、第二张暂存文件缺失 | 调用 `installStagedExports` | 抛错，第一张已安装文件被回滚删除，目标目录无残留 | P0 | ✅ 已覆盖 | `rollsBackWhenAnInstallStepFails` |
+| 39 | PrototypeExport 安装 | 覆盖已有文件时先备份再替换 | 目标目录已有用户同名文件 | 调用 `installStagedExports` 安装替换文件 | 目标为新内容，备份目录保留用户旧内容 | P1 | ✅ 已覆盖 | `backsUpAndReplacesExistingFile` |
 
-> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> **鉴别力验证（#427）**：本轮用三处独立变异确认用例不是「恒绿」——
+> （1）删掉 `installStagedExports` 里 `createDirectory(at: outputDirectory)` 一行（还原 #427 缺陷）后，
+> 向尚不存在的导出目录 moveItem 首张即失败，ID 37 失败；
+> （2）删掉 catch 里回滚已安装文件的 `removeItem` 循环后，中途失败时第一张残留，ID 38 失败；
+> （3）删掉覆盖前的备份分支（`moveItem` 到 backupURL 与 `backups.append`）后，
+> 已有目标文件未被备份、替换 moveItem 因目标仍在而失败，ID 39 失败。三处变异均已还原。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 24 / 24
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 25 / 25
 - P2: 已覆盖 4 / 4
-- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
+- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（25 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
