@@ -895,7 +895,27 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             selected.append(bounded)
             estimated += cost
         }
-        return selected
+        return trimmingPartialToolTurn(selected, candidates: candidates)
+    }
+
+    /// 覆盖水位不得落在工具回合中间：预算截断若切掉了某 assistant 的部分
+    /// 工具结果，就把该 assistant 连同已选结果一起去掉，否则压缩后的尾部
+    /// 以孤儿工具结果开头，provider 会静默丢弃它（#812）。
+    private func trimmingPartialToolTurn(_ selected: [Message], candidates: [Message]) -> [Message] {
+        var result = selected
+        while let last = result.last {
+            let declaredIDs = Set(result.flatMap { ($0.toolCalls ?? []).map(\.id) })
+            let selectedResultIDs = Set(result.filter { $0.role == .tool }.compactMap(\.toolCallID))
+            let hasUnselectedResult = candidates.contains { message in
+                message.role == .tool
+                    && declaredIDs.contains(message.toolCallID ?? "")
+                    && !selectedResultIDs.contains(message.toolCallID ?? "")
+            }
+            let tailOrphan = last.role == .tool && !declaredIDs.contains(last.toolCallID ?? "")
+            if !hasUnselectedResult && !tailOrphan { break }
+            result.removeLast()
+        }
+        return result
     }
 
     /// 保前缀组装压缩上下文：稳定 system 前缀 + 按内容序的不可变块消息 + 预算
@@ -958,11 +978,21 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
 
         // 工具结果不能脱离对应的 assistant tool-call；预算不足时宁可一起去掉。
-        if let first = tail.first, first.role == .tool, tailSourceIndex > 0 {
-            let preceding = tailSource[tailSourceIndex - 1]
-            let cost = LLMContextTokenEstimator.estimate(message: preceding)
-            if cost <= remaining {
-                tail.insert(preceding, at: 0)
+        // 尾部未被预算截断（tailSourceIndex == 0）时同样要修：旧块的水位可能
+        // 恰好停在 assistant 声明上，逐字尾部以孤儿工具结果开头（#812）。
+        if let first = tail.first, first.role == .tool {
+            let preceding: Message? = tailSourceIndex > 0
+                ? tailSource[tailSourceIndex - 1]
+                : history[coveredIndex]
+            if let preceding,
+               preceding.role == .assistant,
+               (preceding.toolCalls ?? []).contains(where: { $0.id == first.toolCallID }) {
+                let cost = LLMContextTokenEstimator.estimate(message: preceding)
+                if cost <= remaining {
+                    tail.insert(preceding, at: 0)
+                } else {
+                    tail.removeFirst()
+                }
             } else {
                 tail.removeFirst()
             }
@@ -1346,7 +1376,17 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             case .tool: role = "Tool"
             default: role = message.role.rawValue
             }
-            return "\(role): \(message.content)"
+            // 工具调用声明与结果配对必须进入摘要输入：只渲染正文会让摘要
+            // 模型看不到工具回合的结构，折叠后声明信息永久丢失（#812）。
+            var text = "\(role): \(message.content)"
+            if message.role == .tool, let callID = message.toolCallID {
+                text = "Tool [call \(callID)]: \(message.content)"
+            }
+            if let calls = message.toolCalls, !calls.isEmpty {
+                let declarations = calls.map { "  tool_call \($0.id) \($0.name)(\($0.arguments))" }
+                text += "\n" + declarations.joined(separator: "\n")
+            }
+            return text
         }.joined(separator: "\n\n")
     }
 

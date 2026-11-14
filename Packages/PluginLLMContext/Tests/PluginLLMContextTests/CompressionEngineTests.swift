@@ -140,6 +140,91 @@ struct CompressionEngineTests {
         #expect(middle?.map(\.id) == [messages[0].id, messages[2].id, messages[3].id])
     }
 
+    @Test("空正文但带工具声明/配对的消息不得被跳过（#812）")
+    func tier1MiddleKeepsEmptyToolTurnMessages() {
+        var messages = history(20)
+        messages[1] = Message(
+            id: messages[1].id,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: Date(timeIntervalSince1970: 1),
+            toolCalls: [MessageToolCall(id: "call-1", name: "f", arguments: "{}")]
+        )
+        messages[2] = Message(
+            id: messages[2].id,
+            conversationID: conversationID,
+            role: .tool,
+            content: "",
+            createdAt: Date(timeIntervalSince1970: 2),
+            toolCallID: "call-1"
+        )
+        let middle = CompressionEngine.tier1Middle(
+            history: messages,
+            orderedBlocks: [],
+            recentZone: 16,
+            minimumFoldMessages: 1
+        )
+        #expect(middle?.map(\.id) == messages[0 ..< 4].map(\.id))
+    }
+
+    @Test("末尾 assistant 的工具结果在最近区间时，该 assistant 不进折叠源（#812）")
+    func tier1MiddleExcludesAssistantWithResultsInRecentZone() {
+        var messages = history(20)
+        // zoneStart = 4：assistant 在边界前一条，结果落在最近区间里。
+        messages[3] = Message(
+            id: messages[3].id,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: Date(timeIntervalSince1970: 3),
+            toolCalls: [MessageToolCall(id: "call-1", name: "f", arguments: "{}")]
+        )
+        messages[4] = Message(
+            id: messages[4].id,
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: Date(timeIntervalSince1970: 4),
+            toolCallID: "call-1"
+        )
+        let middle = CompressionEngine.tier1Middle(
+            history: messages,
+            orderedBlocks: [],
+            recentZone: 16,
+            minimumFoldMessages: 1
+        )
+        #expect(middle?.map(\.id) == messages[0 ..< 3].map(\.id))
+    }
+
+    @Test("工具回合完整落在中间段时保持完整折叠（#812）")
+    func tier1MiddleKeepsCompleteToolTurn() {
+        var messages = history(20)
+        messages[2] = Message(
+            id: messages[2].id,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: Date(timeIntervalSince1970: 2),
+            toolCalls: [MessageToolCall(id: "call-1", name: "f", arguments: "{}")]
+        )
+        messages[3] = Message(
+            id: messages[3].id,
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: Date(timeIntervalSince1970: 3),
+            toolCallID: "call-1"
+        )
+        let middle = CompressionEngine.tier1Middle(
+            history: messages,
+            orderedBlocks: [],
+            recentZone: 16,
+            minimumFoldMessages: 1
+        )
+        #expect(middle?.map(\.id) == messages[0 ..< 4].map(\.id))
+    }
+
     @Test("水位消息已不在历史中时放弃折叠")
     func tier1MiddleMissingWatermark() {
         let messages = history(20)

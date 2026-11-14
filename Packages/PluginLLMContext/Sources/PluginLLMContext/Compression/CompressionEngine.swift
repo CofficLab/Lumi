@@ -50,8 +50,10 @@ enum CompressionEngine {
     /// tier-1 折叠源：水位之后、最近区间之前的「未覆盖中间段」。
     ///
     /// 增长门控：中间段不足 `minimumFoldMessages` 条时返回 nil，避免每个回合
-    /// 都为几条新消息重新压缩（#1160 增长门控、增量触发）。空内容消息不携带
-    /// 信息，直接跳过。返回的数组按时间升序，调用方再按摘要预算裁剪。
+    /// 都为几条新消息重新压缩（#1160 增长门控、增量触发）。纯空消息不携带
+    /// 信息，直接跳过；带 toolCalls 的 assistant 与带 callID 的工具结果即使
+    /// 正文为空也必须保留，否则声明/配对信息会在折叠中丢失（#812）。
+    /// 返回的数组按时间升序，调用方再按摘要预算裁剪。
     static func tier1Middle(
         history: [Message],
         orderedBlocks: [CompressionBlock],
@@ -70,8 +72,26 @@ enum CompressionEngine {
             return nil
         }
         guard startIndex < zoneStart else { return nil }
-        let middle = history[startIndex ..< zoneStart].filter {
+        // 覆盖边界不得切在工具回合中间：末尾 assistant 的工具结果若落在
+        // 最近区间里，把该 assistant 一并留给逐字尾部，否则尾部以孤儿工具
+        // 结果开头，provider 会静默丢弃它（#812）。
+        var endIndex = zoneStart
+        while endIndex > startIndex {
+            let candidate = history[endIndex - 1]
+            guard candidate.role == .assistant,
+                  let calls = candidate.toolCalls, !calls.isEmpty else { break }
+            let callIDs = Set(calls.map(\.id))
+            let hasResultInRecentZone = history[endIndex...].contains {
+                $0.role == .tool && callIDs.contains($0.toolCallID ?? "")
+            }
+            guard hasResultInRecentZone else { break }
+            endIndex -= 1
+        }
+        guard startIndex < endIndex else { return nil }
+        let middle = history[startIndex ..< endIndex].filter {
             !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || !($0.toolCalls ?? []).isEmpty
+                || ($0.role == .tool && $0.toolCallID != nil)
         }
         // 增长门控只约束「已有块之后的增量」：首次折叠（无块）只要中间段非空
         // 就执行，否则短会话永远产不出第一份摘要；已有块时不足阈值则不重压，
