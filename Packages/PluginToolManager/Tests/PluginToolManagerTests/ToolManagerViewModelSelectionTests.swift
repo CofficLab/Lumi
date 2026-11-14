@@ -19,6 +19,10 @@ private final class StubCapability: ToolManagerCapability {
     var pageDelay: Duration?
     /// 只延迟「带游标的翻页请求」，用于构造翻页中途刷新的场景。
     var delaysPaginationOnly = false
+    /// 对每一页（含首页）都施加延迟，用于构造统计加载中的重叠触发。
+    var allPagesDelay: Duration?
+    /// fetchLogPage 被调用的累计次数，用于断言重入守卫挡住重复拉取。
+    var fetchPageCount = 0
 
     func countRecords() async -> Int { records.count }
 
@@ -27,6 +31,10 @@ private final class StubCapability: ToolManagerCapability {
         beforeCreatedAt: Date?,
         beforeID: String?
     ) async -> [ToolCallRecord] {
+        fetchPageCount += 1
+        if let allPagesDelay {
+            try? await Task.sleep(for: allPagesDelay)
+        }
         if delaysPaginationOnly, beforeID != nil, let pageDelay {
             try? await Task.sleep(for: pageDelay)
         }
@@ -52,7 +60,8 @@ private struct StubTool: SuperAgentTool, @unchecked Sendable {
 private func makeRecord(
     id: String,
     toolName: String,
-    isError: Bool = false
+    isError: Bool = false,
+    duration: TimeInterval? = nil
 ) -> ToolCallRecord {
     ToolCallRecord(
         id: id,
@@ -64,7 +73,7 @@ private func makeRecord(
         createdAt: Date(),
         startedAt: Date(),
         completedAt: nil,
-        duration: nil,
+        duration: duration,
         argumentsJSON: "{}",
         resultContent: isError ? "boom" : "ok",
         resultJSON: nil,
@@ -248,4 +257,68 @@ func selectModeSwitchesMode() async {
     _ = try? await Task.sleep(nanoseconds: 200_000_000)
     #expect(viewModel.records.count == 1)
     #expect(viewModel.selectedRecordID == "r1")
+}
+
+@MainActor
+@Test("统计跨多页聚合结果正确，不驻留整段历史（#1302）")
+func statsAggregateAcrossPages() async {
+    let capability = StubCapability()
+    // 1200 条 > 单页 500，强制翻 3 页；read_file 700 次（含 100 错误、每条 0.5s），
+    // write_file 500 次（含 50 错误）。逐页归约后合并必须与一次性聚合一致。
+    var records: [ToolCallRecord] = []
+    for index in 0..<700 {
+        records.append(
+            makeRecord(
+                id: "read-\(index)",
+                toolName: "read_file",
+                isError: index < 100,
+                duration: 0.5
+            )
+        )
+    }
+    for index in 0..<500 {
+        records.append(
+            makeRecord(id: "write-\(index)", toolName: "write_file", isError: index < 50)
+        )
+    }
+    capability.records = records
+    let viewModel = ToolManagerViewModel(capability: capability)
+
+    await viewModel.reloadStats()
+
+    #expect(viewModel.totalCallCount == 1200)
+    #expect(viewModel.stats.map(\.toolName) == ["read_file", "write_file"])
+    let read = viewModel.stats.first { $0.toolName == "read_file" }
+    #expect(read?.totalCount == 700)
+    #expect(read?.errorCount == 100)
+    #expect(abs((read?.averageDuration ?? 0) - 0.5) < 0.0001)
+    let write = viewModel.stats.first { $0.toolName == "write_file" }
+    #expect(write?.totalCount == 500)
+    #expect(write?.errorCount == 50)
+    // 确实翻了多页（3 页：500 + 500 + 200）。
+    #expect(capability.fetchPageCount == 3)
+}
+
+@MainActor
+@Test("统计加载中的重叠触发被重入守卫挡住，不重复拉取（#1302）")
+func statsReentryGuardDropsOverlappingReload() async {
+    let capability = StubCapability()
+    capability.records = (0..<600).map { makeRecord(id: "r\($0)", toolName: "read_file") }
+    capability.allPagesDelay = .milliseconds(150)
+    let viewModel = ToolManagerViewModel(capability: capability)
+
+    let first = Task { await viewModel.reloadStats() }
+    while !viewModel.isLoadingStats {
+        await Task.yield()
+    }
+
+    // 加载仍在进行时再次触发：守卫必须立即返回，而不是又拉一遍整段历史。
+    await viewModel.reloadStats()
+    await first.value
+
+    // 单次运行只需 2 页（500 + 100）；没有守卫时重叠触发会翻倍。
+    #expect(capability.fetchPageCount == 2)
+    #expect(viewModel.totalCallCount == 600)
+    #expect(viewModel.stats.first?.totalCount == 600)
+    #expect(!viewModel.isLoadingStats)
 }
