@@ -14,6 +14,7 @@ struct AssistantMessageView: View {
     let verbosity: ResponseVerbosity
 
     /// V1 assistant 消息沿用 V2 的内容布局；V1 与 V2 唯一的视觉差异是 Header。
+    /// V6（standardNoHeader）同样沿用 V2 布局，只由渲染 chrome 去掉 Header。
     static func contentVerbosity(for verbosity: ResponseVerbosity) -> ResponseVerbosity {
         verbosity == .brief ? .standard : verbosity
     }

@@ -5,6 +5,7 @@ import MCP
 public enum MCPContentCodec {
     public static func encode(
         _ content: [Tool.Content],
+        structuredContent: Value? = nil,
         isError: Bool
     ) -> MCPCallResult {
         var textParts: [String] = []
@@ -22,6 +23,11 @@ public enum MCPContentCodec {
             case .resourceLink(let uri, let name, _, _, _, _):
                 textParts.append("[resource \(name): \(uri)]")
             }
+        }
+        // 仅返回 structuredContent 的合法成功结果不能落成空文本：在当前文本契约下
+        // 把它序列化为 JSON 文本保留下来，否则模型会看到「成功但无内容」（#180）。
+        if let structuredContent, let json = MCPJSONValue(from: structuredContent).jsonString() {
+            textParts.append(json)
         }
         let text = textParts.joined(separator: "\n")
         return MCPCallResult(text: text, images: images, isError: isError)

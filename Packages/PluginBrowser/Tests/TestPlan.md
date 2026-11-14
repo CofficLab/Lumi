@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 54
+测试文件: 13 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Models/`
@@ -57,6 +57,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 - **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
 - **Browser ref 分配与唯一性**（3 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。
+- **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
 
 ## 测试用例清单
 
@@ -116,16 +117,23 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 52 | Browser ref 分配与唯一性 | 快照覆盖页面预置的重复 ref，并沿用已分配的计数器（**回归 #1091**） | 两个按钮都预置 `data-lumi-browser-ref="lumi-1"` | 执行两次快照脚本（第二次带已持久化计数器） | 两次 ref 分别为 lumi-1/2 与 lumi-3/4，不重复 | P0 | ✅ 已覆盖 | `snapshotReplacesPresetDuplicateRefs` |
 | 53 | Browser ref 分配与唯一性 | 同名 ref 匹配多个元素时拒绝交互（**回归 #1091**） | 页面上两个元素共享同一 ref | 对 `@lumi-1` 执行 click | 返回失败并提示匹配 2 个元素，不点击任何元素 | P0 | ✅ 已覆盖 | `interactionRejectsAmbiguousRef` |
 | 54 | Browser ref 分配与唯一性 | 没有匹配元素时仍然报告失效 ref | 页面没有该 ref | 对 `@lumi-7` 执行 click | 返回 `STALE_REF:lumi-7` | P1 | ✅ 已覆盖 | `interactionReportsStaleRef` |
+| 55 | Browser 本地地址分类 | fc/fd 开头的公网域名不得被判为内网（**回归 #831**） | — | 对 `fdic.gov`/`fc.com` 等调用 `isLocalHost` 与 `requiresLocalAccessApproval` | 均返回 false，不触发本地网络审批 | P0 | ✅ 已覆盖 | `publicDomainsStartingWithFcOrFdAreNotLocal` |
+| 56 | Browser 本地地址分类 | 真正的 IPv6 ULA 与链路本地地址仍判为内网 | — | 对 `fc00::1`/`fd12::1`/`fe80::1` 等调用分类器 | 均返回 true | P1 | ✅ 已覆盖 | `ipv6ULAAndLinkLocalAreLocal` |
+| 57 | Browser 本地地址分类 | 既有本地与公网分类保持不变 | — | 对 localhost/::1/*.local/IPv4 私网与公网域名调用分类器 | 本地/私网为 true，公网为 false | P1 | ✅ 已覆盖 | `existingLocalAndPublicClassificationsArePreserved` |
+| 58 | Browser 脚本重复执行 | 快照脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 快照脚本 | 均无 SyntaxError，返回空树 total=0 | P0 | ✅ 已覆盖 | `snapshotScriptRunsRepeatedly` |
+| 59 | Browser 脚本重复执行 | 交互脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 滚动脚本 | 均无 SyntaxError，ok=true | P0 | ✅ 已覆盖 | `interactionScriptRunsRepeatedly` |
+| 60 | Browser 脚本重复执行 | 先快照后交互不重复声明全局 | 同一 JS 全局环境 | 先快照再交互 | 两者均成功，无 __OPTS 重复声明 | P0 | ✅ 已覆盖 | `snapshotThenInteractionSharePage` |
+| 61 | Browser 脚本重复执行 | find 脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript find 脚本 | 均无 SyntaxError，total=0 | P1 | ✅ 已覆盖 | `findScriptRunsRepeatedly` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 39 / 39
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 13 / 13
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -138,14 +146,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（39 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

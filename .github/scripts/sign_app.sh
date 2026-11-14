@@ -9,6 +9,22 @@ ENTITLEMENTS="$3"
 MAX_RETRIES=3
 RETRY_DELAY=5
 
+# Detect whether a file is a Mach-O binary (any slice flavour).
+# Resource bundles can embed stand-alone executables without a file
+# extension (for example the bundled ripgrep `rg`). Those files are invisible
+# to the extension-based component scan below, so they would reach Apple
+# notarization unsigned and get the whole DMG rejected.
+is_macho() {
+    local binary="$1"
+    [ -f "$binary" ] || return 1
+    local magic
+    magic="$(LC_ALL=C od -An -tx1 -N4 "$binary" 2>/dev/null | tr -d ' \n')"
+    case "${magic}" in
+        cffaedfe|cefaedfe|feedfacf|feedface|cafebabe|bebafeca|cafebabf|bfbafeca) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 echo "📦 Signing App: $APP_PATH"
 echo "🆔 Identity: $IDENTITY"
 echo "📄 Entitlements: $ENTITLEMENTS"
@@ -139,7 +155,43 @@ if [ -d "$MACOS_DIR" ]; then
     done
 fi
 
-# 5. Sign the Main App
+# 5. Sign Mach-O binaries embedded in resource bundles
+# Resource bundles can carry stand-alone executables without a file extension
+# (for example the bundled ripgrep `rg`). The component scan in step 2 only
+# matches by extension and deliberately skips nested resource bundles, so such
+# binaries would otherwise reach Apple notarization unsigned and get the whole
+# DMG rejected ("The binary is not signed.").
+echo "🔍 Signing Mach-O binaries inside resource bundles..."
+RESOURCES_DIR="$APP_PATH/Contents/Resources"
+if [ -d "$RESOURCES_DIR" ]; then
+    while IFS= read -r resource; do
+        if ! is_macho "$resource"; then
+            continue
+        fi
+        # Skip binaries already handled by the component scan (dylibs, so files).
+        case "$resource" in
+            *.dylib|*.so) continue ;;
+        esac
+        echo "✍️  Signing resource binary: $resource"
+        retry_count=0
+        while [ $retry_count -lt $MAX_RETRIES ]; do
+            if codesign --force --verbose --timestamp --sign "$IDENTITY" --options runtime "$resource" 2>&1; then
+                break
+            else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $MAX_RETRIES ]; then
+                    echo "   ⚠️  Signing resource binary failed (attempt $retry_count/$MAX_RETRIES), retrying in ${RETRY_DELAY}s..."
+                    sleep $RETRY_DELAY
+                else
+                    echo "   ❌  Signing resource binary failed after $MAX_RETRIES attempts"
+                    exit 1
+                fi
+            fi
+        done
+    done < <(find "$RESOURCES_DIR" -type f ! -type l 2>/dev/null)
+fi
+
+# 6. Sign the Main App
 echo "✍️  Signing Main App..."
 OPTS=(--force --verbose --timestamp --sign "$IDENTITY" --options runtime)
 if [ -n "$ENTITLEMENTS" ]; then
@@ -161,7 +213,7 @@ while [ $retry_count -lt $MAX_RETRIES ]; do
     fi
 done
 
-# 6. Verify Signature
+# 7. Verify Signature
 echo "✅ Verifying signature..."
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 

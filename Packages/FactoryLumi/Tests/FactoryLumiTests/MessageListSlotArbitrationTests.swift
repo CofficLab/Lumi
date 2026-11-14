@@ -4,6 +4,7 @@ import PluginMessageListChatGPT
 import PluginMessageListDetailed
 import PluginMessageListEmpty
 import PluginMessageListStandard
+import PluginMessageListStandardNoHeader
 import PluginMessageListZCode
 import PluginMessageManager
 import ProviderChatSection
@@ -98,8 +99,8 @@ struct MessageListSlotArbitrationTests {
     /// 核心不变式：**任一时刻 active 的 message-list item 至多一个**。
     /// 只断言「排序后的 winner」是不够的 —— 两个插件同时 active 时，
     /// winner 仍可能恰好正确，但用户会看到两个列表叠加。
-    @Test("V1–V5 往返时 active 的 message-list item 至多一个")
-    func onlyOneMessageListItemIsActiveAcrossV1ToV5() async throws {
+    @Test("V1–V6 往返时 active 的 message-list item 至多一个")
+    func onlyOneMessageListItemIsActiveAcrossV1ToV6() async throws {
         let context = try await MessageListFixtureHarness.make()
 
         for verbosity in [
@@ -108,6 +109,7 @@ struct MessageListSlotArbitrationTests {
             .detailed,
             .zcode,
             .chatGPT,
+            .standardNoHeader,
             .brief,
         ] {
             context.conversations.setVerbosity(verbosity, for: context.conversationID)
@@ -180,6 +182,36 @@ struct MessageListSlotArbitrationTests {
         )
         #expect(context.activeMessageListItemIDs.isEmpty)
     }
+
+    /// V6（standardNoHeader）选中时，槽位必须属于 V6 插件而不是 V2 插件。
+    @Test("选择无消息头 V6 时槽位属于 V6 插件")
+    func standardNoHeaderVerbosityActivatesV6Plugin() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.standardNoHeader, for: context.conversationID)
+        try await context.settle()
+
+        #expect(context.renderedMessageListItemID == context.standardNoHeaderPluginID)
+        #expect(context.activeMessageListItemIDs == [context.standardNoHeaderPluginID])
+    }
+
+    /// shutdown 后 V6 的 ChatSection item 必须被移除，且 observer 全部取消。
+    @Test("V6 shutdown 后移除 ChatSection item")
+    func standardNoHeaderShutdownRemovesChatSectionItem() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.standardNoHeader, for: context.conversationID)
+        try await context.settle()
+        #expect(context.renderedMessageListItemID == context.standardNoHeaderPluginID)
+
+        context.shutdownStandardNoHeader()
+
+        #expect(
+            !context.chat.items.contains { $0.id == context.standardNoHeaderPluginID },
+            "V6 shutdown 后 ChatSection item 仍然存在"
+        )
+        #expect(context.activeMessageListItemIDs.isEmpty)
+    }
 }
 
 // MARK: - Harness
@@ -196,6 +228,7 @@ private final class MessageListFixtureHarness {
     let emptyPluginID: String
     let zcodePluginID: String
     let chatGPTPluginID: String
+    let standardNoHeaderPluginID: String
 
     /// 必须持有插件实例：空态 item 的 `isActive` 闭包以 `[weak self]` 捕获插件，
     /// 插件被释放后闭包恒返回 `false`，会让「空态从不渲染」假象通过断言。
@@ -206,6 +239,8 @@ private final class MessageListFixtureHarness {
     private let zcodePlugin: PluginMessageListZCodePlugin
     /// V5（ChatGPT）插件同样必须被强持有。
     private let chatGPTPlugin: PluginMessageListChatGPTPlugin
+    /// V6（standardNoHeader）插件同样必须被强持有。
+    private let standardNoHeaderPlugin: PluginMessageListStandardNoHeaderPlugin
     /// 插件 shutdown 时需要的 kernel。
     private let kernel: KernelCoreContainer
 
@@ -238,6 +273,11 @@ private final class MessageListFixtureHarness {
         try? chatGPTPlugin.onShutdown(kernel: kernel)
     }
 
+    /// 关闭 V6 插件，验证 shutdown 完整清理。
+    func shutdownStandardNoHeader() {
+        try? standardNoHeaderPlugin.onShutdown(kernel: kernel)
+    }
+
     private init(
         chat: DefaultChatSectionProviding,
         messages: MessageManager,
@@ -247,10 +287,12 @@ private final class MessageListFixtureHarness {
         emptyPluginID: String,
         zcodePluginID: String,
         chatGPTPluginID: String,
+        standardNoHeaderPluginID: String,
         emptyPlugin: PluginMessageListEmptyPlugin,
         standardPlugin: PluginMessageListStandardPlugin,
         zcodePlugin: PluginMessageListZCodePlugin,
         chatGPTPlugin: PluginMessageListChatGPTPlugin,
+        standardNoHeaderPlugin: PluginMessageListStandardNoHeaderPlugin,
         kernel: KernelCoreContainer
     ) {
         self.chat = chat
@@ -261,10 +303,12 @@ private final class MessageListFixtureHarness {
         self.emptyPluginID = emptyPluginID
         self.zcodePluginID = zcodePluginID
         self.chatGPTPluginID = chatGPTPluginID
+        self.standardNoHeaderPluginID = standardNoHeaderPluginID
         self.emptyPlugin = emptyPlugin
         self.standardPlugin = standardPlugin
         self.zcodePlugin = zcodePlugin
         self.chatGPTPlugin = chatGPTPlugin
+        self.standardNoHeaderPlugin = standardNoHeaderPlugin
         self.kernel = kernel
     }
 
@@ -305,6 +349,10 @@ private final class MessageListFixtureHarness {
         let chatGPT = PluginMessageListChatGPTPlugin()
         try chatGPT.onBoot(kernel: kernel)
 
+        // V6（standardNoHeader）：与 V2 同一布局、不渲染消息头。
+        let standardNoHeader = PluginMessageListStandardNoHeaderPlugin()
+        try standardNoHeader.onBoot(kernel: kernel)
+
         let conversationID = try conversations.createConversation(
             title: "Fixture",
             projectPath: nil,
@@ -323,7 +371,7 @@ private final class MessageListFixtureHarness {
                 to: conversationID
             )
         }
-        try await Self.settle()
+        try await Self.settle(chat: chat)
         // 再等一次落盘队列排空。
         for _ in 0..<200 {
             let count = await messages.messagePageAsync(
@@ -336,7 +384,7 @@ private final class MessageListFixtureHarness {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         // 空态插件的撤销注册是异步评估的，给它跑完的时间。
-        try await Self.settle()
+        try await Self.settle(chat: chat)
 
         return MessageListFixtureHarness(
             chat: chat,
@@ -347,25 +395,57 @@ private final class MessageListFixtureHarness {
             emptyPluginID: empty.id,
             zcodePluginID: zcode.id,
             chatGPTPluginID: chatGPT.id,
+            standardNoHeaderPluginID: standardNoHeader.id,
             emptyPlugin: empty,
             standardPlugin: standard,
             zcodePlugin: zcode,
             chatGPTPlugin: chatGPT,
+            standardNoHeaderPlugin: standardNoHeader,
             kernel: kernel
         )
     }
 
+    /// 等待槽位判定收敛。
+    ///
+    /// - Important: 这里**必须**用条件等待，不能用固定 sleep。
+    ///
+    ///   固定 sleep（100 × 5ms = 500ms）有两个问题：
+    ///   1. **慢**：本文件有 8 处 `settle()`，每处 500ms 累加起来就是
+    ///      数秒的纯等待；
+    ///   2. **仍不可靠**：判定何时跑完取决于 SwiftData 查询与
+    ///      `Task.detached` 的调度，固定 500ms 只是「大概够了」——
+    ///      高负载下不够就会让断言落在「还没收敛」的状态上。
+    ///
+    ///   条件等待同时解决两者：条件成立就立刻返回，判定慢也不会误判。
     func settle() async throws {
-        for _ in 0..<100 {
-            try await Task.sleep(nanoseconds: 5_000_000)
+        try await Self.settle(chat: chat)
+    }
+
+    /// 等待槽位判定收敛（条件式）。
+    ///
+    /// 判据：连续两轮读到的 active item id 集合相同 —— 判定收敛后
+    /// 集合不再变化。空态插件的评估走 `Task.detached` + SwiftData 查询，
+    /// `Task.yield()` 不会推进真实时间，因此轮询间隔用挂钟时间。
+    private static func settle(chat: DefaultChatSectionProviding) async throws {
+        var previous: Set<String>?
+        for _ in 0..<400 {
+            let current = activeItemIDs(chat: chat)
+            if let previous, current == previous {
+                return
+            }
+            previous = current
+            try await Task.sleep(nanoseconds: 10_000_000)
         }
     }
 
-    private static func settle() async throws {
-        // 空态插件的评估走 Task.detached + SwiftData 查询，`Task.yield()`
-        // 不会推进真实时间，必须给实际挂钟时间让它跑完。
-        for _ in 0..<100 {
-            try await Task.sleep(nanoseconds: 5_000_000)
-        }
+    /// 读取当前 active 的 message-list item id 集合。
+    private static func activeItemIDs(chat: DefaultChatSectionProviding) -> Set<String> {
+        Set(
+            chat.items.compactMap { item in
+                item.exclusiveGroup == "message-list" && item.placement == .stack && item.isActive()
+                    ? item.id
+                    : nil
+            }
+        )
     }
 }

@@ -60,7 +60,7 @@ struct MessageViewChrome<Content: View>: View {
     @ViewBuilder
     private func messageBody(thinking: String?) -> some View {
         VStack(alignment: .leading, spacing: isBrief ? 0 : 4) {
-            if showsHeader && !isBrief {
+            if MessageHeaderVisibility.isVisible(showsHeader: showsHeader, verbosity: verbosity) {
                 CompactMessageHeaderView {
                     HStack(alignment: .center, spacing: 6) {
                         ChatAvatarView(kind: MessageViewHelpers.avatarKind(for: message.role))
@@ -138,6 +138,24 @@ struct MessageViewChrome<Content: View>: View {
                 hoverDebounceTask?.cancel()
                 isRowHovered = false
             }
+        }
+    }
+}
+
+/// 消息头（头像 + 名称/模型 + 操作按钮）的显示决策。
+///
+/// 纯逻辑、便于单元测试：视图只问「这一行要不要画头」，不自己拼级别判断。
+///
+/// - V1（brief）：不画头，内容和 V2 一样靠 `AssistantMessageView` 升格复用。
+/// - V6（standardNoHeader）：布局与 V2 完全一致，**只**去掉消息头。
+enum MessageHeaderVisibility {
+    static func isVisible(showsHeader: Bool, verbosity: ResponseVerbosity) -> Bool {
+        guard showsHeader else { return false }
+        switch verbosity {
+        case .brief, .standardNoHeader:
+            return false
+        case .standard, .detailed, .zcode, .chatGPT:
+            return true
         }
     }
 }

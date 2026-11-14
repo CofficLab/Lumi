@@ -272,6 +272,74 @@
           }
         }
       }
+    },
+    "Always-thinking model: Off uses the lowest effort.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always-thinking model: Off uses the lowest effort."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型强制思考，关闭将降为最低档位"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型强制思考，关闭将降为最低档位"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型强制思考，关闭将降为最低档位"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型强制思考，关闭将降为最低档位"
+          }
+        }
+      }
+    },
+    "This model cannot turn thinking off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This model cannot turn thinking off."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型不支持关闭思考"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型不支持关闭思考"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型不支持关闭思考"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该模型不支持关闭思考"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

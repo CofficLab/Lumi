@@ -21,6 +21,9 @@ final class StubAgentLoop: AgentLoopProviding {
     var resumeOutcome: AgentLoopOutcome = .completed
     /// 非 nil 时 `resumeTurn` 抛出该错误，覆盖失败分支。
     var resumeError: (any Error)?
+    /// `resumeTurn` 返回前执行的副作用；用于模拟真实 AgentLoop 在恢复
+    /// 完成时先投递终态事件、再释放等待者的时序（#164）。
+    var onResume: ((UUID) -> Void)?
     /// 被 `cancelTurn` 取消过的会话，按调用顺序记录。
     private(set) var cancelledConversationIDs: [UUID] = []
     /// `runTurn` 被调用的次数。
@@ -63,6 +66,7 @@ final class StubAgentLoop: AgentLoopProviding {
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
         if let resumeError { throw resumeError }
+        onResume?(conversationID)
         return resumeOutcome
     }
 

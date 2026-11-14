@@ -3,6 +3,7 @@ import ProviderAgentLoop
 import ProviderMessage
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 /// 串行化「会占用主线程的墙钟测量」。

@@ -7,6 +7,7 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderProjectRAG
 import ProviderLifecycleHooks
+import ProviderSettingView
 import LumiLoggingKit
 import os
 
@@ -40,6 +41,7 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
     private var searchMemory: ProjectRAGSearchMemory?
     private var projectObserver: ProjectRAGProjectObserver?
+    private var projectWatcher: RAGProjectWatcher?
 
     public init() {}
 
@@ -53,17 +55,42 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
         let provider = ProjectRAGProvider(service: service, project: project)
+        // Task 3.2：监听当前项目文件变更，debounce 后触发增量索引。
+        let watcher = RAGProjectWatcher(
+            isPaused: { await service.isIndexingPaused() },
+            currentProjectPath: { await MainActor.run { provider.currentProjectPath } },
+            trigger: { path in await service.ensureIndexedBackground(projectPath: path) }
+        )
+        self.projectWatcher = watcher
+        if let path = provider.currentProjectPath {
+            watcher.start(projectPath: path)
+        }
         if let project {
-            projectObserver = ProjectRAGProjectObserver(project: project) { [weak provider] in
+            projectObserver = ProjectRAGProjectObserver(project: project) { [weak provider, weak self] in
                 provider?.handleProjectChange()
+                self?.restartProjectWatcher()
             }
         }
         ProjectRAGRuntime.configure(provider: provider)
         try kernel.registerProvider((any ProjectRAGProviding).self, provider)
         let searchMemory = ProjectRAGSearchMemory()
         self.searchMemory = searchMemory
-        kernel.resolveProvider((any ToolManagerProviding).self)?
-            .add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
+        toolManager?.add(RAGGrepTool(), pluginID: id)
+
+        if let settingView = kernel.resolveProvider((any SettingViewProviding).self) {
+            settingView.addEntries([
+                SettingEntryItem(
+                    id: "\(id).settings",
+                    title: "Project RAG",
+                    systemImage: "text.magnifyingglass",
+                    order: 155
+                ) {
+                    ProjectRAGSettingsView(service: service)
+                },
+            ])
+        }
 
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let contextHook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
@@ -106,11 +133,17 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.remove(id: RAGCodeSearchTool.toolName)
+        toolManager?.remove(id: RAGGrepTool.toolName)
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
         scheduler = nil
+        projectWatcher?.stop()
+        projectWatcher = nil
         llmContextHookHandle?.cancel()
         llmContextHookHandle = nil
         llmContextHook = nil
@@ -122,5 +155,15 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()
+    }
+
+    /// 项目切换时停旧流起新流；没有当前项目时停流，等下次切换再启动。
+    private func restartProjectWatcher() {
+        guard let watcher = projectWatcher else { return }
+        if let path = ProjectRAGRuntime.provider?.currentProjectPath {
+            watcher.start(projectPath: path)
+        } else {
+            watcher.stop()
+        }
     }
 }

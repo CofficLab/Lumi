@@ -232,8 +232,9 @@ final class MailAgentToolsTests: XCTestCase {
         XCTAssertEqual(sent.count, 1)
         let mime = String(data: sent[0], encoding: .utf8) ?? ""
         XCTAssertTrue(mime.contains("Hello from Agent"))
-        let appended = await session.appendedDrafts
+        let appended = await session.appendedMessages
         XCTAssertEqual(appended.count, 1)
+        XCTAssertFalse(appended[0].isDraft, "回归 #403：mail_send_message 归档到 Sent 不得带草稿标记")
     }
 
     func testSendMessageThrowsAuthFailedWithoutCredentials() async {

@@ -114,9 +114,11 @@ public actor MemoryFileStorage {
         let fileName = Self.fileName(forID: id)
         let directory = directory(for: .project, scope: scope, projectPath: projectPath)
         let fileURL = directory.appendingPathComponent("\(fileName).md")
-        if fileManager.fileExists(atPath: fileURL.path) {
-            try fileManager.removeItem(at: fileURL)
+        // 目标不存在时必须报错，否则 delete_memory 会对无效 ID 报成功（#809）。
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            throw MemoryError.notFound(id)
         }
+        try fileManager.removeItem(at: fileURL)
     }
 
     // MARK: - Private
@@ -163,10 +165,25 @@ public actor MemoryFileStorage {
         fileName.removingPercentEncoding ?? fileName
     }
 
+    /// 将 project 路径一一映射为目录名：允许字符原样保留，其余按 UTF-8 百分号编码。
+    ///
+    /// 旧实现把非法字符统一替换为 `-` 再裁剪首尾 `-`，`/tmp/a b` 与 `/tmp/a-b`
+    /// 都会变成 `/tmp/a-b`，两个项目共用同一记忆目录，互相覆盖、召回与删除（#197）。
+    /// 百分号编码是可逆映射（`%` 自身编码为 `%25`），不同路径不会撞到同一目录；
+    /// 保留 `/` 使常见路径（如 `/tmp/proj`）编码后不变，无需迁移既有数据。
     private func sanitizeProjectPath(_ string: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./"))
-        return string.components(separatedBy: allowed.inverted).joined(separator: "-")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        var result = ""
+        for scalar in string.unicodeScalars {
+            if allowed.contains(scalar) {
+                result.unicodeScalars.append(scalar)
+            } else {
+                for byte in String(scalar).utf8 {
+                    result += String(format: "%%%02X", byte)
+                }
+            }
+        }
+        return result
     }
 
     private func parse(_ raw: String, filePath: String, id: String) -> MemoryItem? {
@@ -179,24 +196,27 @@ public actor MemoryFileStorage {
 
         let dateFormatter = ISO8601DateFormatter()
 
-        if raw.hasPrefix("---") {
-            let parts = raw.components(separatedBy: "---")
-            if parts.count >= 3 {
-                let frontmatter = parts[1]
-                content = parts.dropFirst(2).joined(separator: "---").trimmingCharacters(in: .whitespacesAndNewlines)
-                for line in frontmatter.components(separatedBy: .newlines) {
-                    let kv = line.split(separator: ":", maxSplits: 1).map(String.init)
-                    guard kv.count == 2 else { continue }
-                    let key = kv[0].trimmingCharacters(in: .whitespaces)
-                    let value = kv[1].trimmingCharacters(in: .whitespaces)
-                    switch key {
-                    case "name": name = value
-                    case "type": type = MemoryType(rawValue: value) ?? .project
-                    case "description": description = value
-                    case "created": createdAt = dateFormatter.date(from: value) ?? createdAt
-                    case "updated": updatedAt = dateFormatter.date(from: value) ?? updatedAt
-                    default: break
-                    }
+        // 仅把整行恰为 "---" 的行当作 frontmatter 结构分隔符；description 等
+        // 字段值内部出现的 "---"（如 alpha---beta）不是分隔符，否则描述被截断、
+        // 正文混入 created/updated 行而无法还原（#528）。
+        let lines = raw.components(separatedBy: .newlines)
+        let isDelimiter: (String) -> Bool = { $0.trimmingCharacters(in: .whitespaces) == "---" }
+        if let opening = lines.first, isDelimiter(opening),
+           let closingIndex = lines.indices.dropFirst().first(where: { isDelimiter(lines[$0]) }) {
+            let frontmatter = lines[1..<closingIndex]
+            content = lines[(closingIndex + 1)...].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            for line in frontmatter {
+                let kv = line.split(separator: ":", maxSplits: 1).map(String.init)
+                guard kv.count == 2 else { continue }
+                let key = kv[0].trimmingCharacters(in: .whitespaces)
+                let value = kv[1].trimmingCharacters(in: .whitespaces)
+                switch key {
+                case "name": name = value
+                case "type": type = MemoryType(rawValue: value) ?? .project
+                case "description": description = value
+                case "created": createdAt = dateFormatter.date(from: value) ?? createdAt
+                case "updated": updatedAt = dateFormatter.date(from: value) ?? updatedAt
+                default: break
                 }
             }
         }

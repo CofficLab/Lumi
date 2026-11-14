@@ -28,7 +28,7 @@ protocol HighlightProviderStateDelegate: AnyObject {
 @MainActor
 class HighlightProviderState {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "HighlightProviderState")
-    private var verbose: Bool = true
+    private var verbose: Bool = false
 
     /// The length to chunk ranges into when passing to the highlighter.
     private static let rangeChunkLimit = 4096

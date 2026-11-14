@@ -73,7 +73,14 @@ final class SkillSettingsViewModel: ObservableObject {
     }
 
     func refresh() {
-        Task { await reload() }
+        Task {
+            // 先按 trim 后路径失效缓存再重扫，否则 30s TTL 内看不到外部增删改（#642）。
+            if let projectPath = selectedProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !projectPath.isEmpty {
+                await service.invalidateCache(projectPath: projectPath)
+            }
+            await reload()
+        }
     }
 
     func openSkillsDirectory() {

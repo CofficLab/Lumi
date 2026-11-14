@@ -237,7 +237,8 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
             messages: request.messages,
             model: model,
             tools: request.tools,
-            reasoningEffort: request.reasoningEffort
+            reasoningEffort: request.reasoningEffort,
+            reasoningOff: request.reasoningOff
         )
         if Self.verbose {
             Self.logger.debug("\(Self.t)routing complete: conversation=\(request.conversationID.uuidString.prefix(8)), provider=\(resolved.provider.providerInfo.id, privacy: .public), model=\(model ?? "nil", privacy: .public)")
@@ -263,7 +264,8 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
             messages: request.messages,
             model: model,
             tools: request.tools,
-            reasoningEffort: request.reasoningEffort
+            reasoningEffort: request.reasoningEffort,
+            reasoningOff: request.reasoningOff
         )
         if let streamingProvider = resolved.provider as? any LLMStreamingProviding {
             if Self.verbose {

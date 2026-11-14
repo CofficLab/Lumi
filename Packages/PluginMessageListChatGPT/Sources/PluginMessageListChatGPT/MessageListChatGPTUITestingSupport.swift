@@ -4,6 +4,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import KitMessageList
 
 /// V5（ChatGPT）消息列表的 UI 测试夹具。
 ///

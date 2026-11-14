@@ -293,6 +293,64 @@ struct CreateSkillToolTests {
             atPath: project.appendingPathComponent(".lumi/skills/blank-fallback").path
         ))
 
+        // 3. #789：UI 当前项目切到 B，但工具调用所属会话绑定 A。
+        //    list / read / update / delete 未显式传路径时必须作用于 A，不得读/写/删 B。
+        //    放在本 `.serialized` 单例用例内，避免跨套件并行踩踏 SkillRuntime。
+        let projectB = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: projectB) }
+        _ = try await SkillCreationService.shared.createSkill(
+            projectPath: project.path, name: "scope-dup", title: "A", description: "A 版本",
+            content: "A 正文"
+        )
+        _ = try await SkillCreationService.shared.createSkill(
+            projectPath: projectB.path, name: "scope-dup", title: "B", description: "B 版本",
+            content: "B 正文"
+        )
+        let providerB = DefaultProjectProvider()
+        try await providerB.openProject(at: projectB.path)
+        SkillRuntime.configure(project: providerB)
+        await SkillService.shared.invalidateAllCache()
+        let contextA = makeContext(projectPath: project.path)
+
+        let listed = try await ListSkillsTool().executeResult(
+            context: contextA, arguments: arguments(["include_base": false])
+        )
+        let listData = try #require(listed.content.data(using: .utf8))
+        let listJSON = try #require(JSONSerialization.jsonObject(with: listData) as? [String: Any])
+        let names = (listJSON["skills"] as? [[String: Any]])?.compactMap { $0["name"] as? String }
+        #expect(names?.contains("scope-dup") == true)
+
+        let read = try await ReadSkillTool().executeResult(
+            context: contextA, arguments: arguments(["name": "scope-dup"])
+        )
+        #expect(read.content.contains("A 正文"))
+        #expect(!read.content.contains("B 正文"))
+
+        _ = try await UpdateSkillTool().executeResult(
+            context: contextA, arguments: arguments(["name": "scope-dup", "content": "A 改后"])
+        )
+        let bodyA = try String(
+            contentsOf: project.appendingPathComponent(".lumi/skills/scope-dup/SKILL.md"),
+            encoding: .utf8
+        )
+        let bodyB = try String(
+            contentsOf: projectB.appendingPathComponent(".lumi/skills/scope-dup/SKILL.md"),
+            encoding: .utf8
+        )
+        #expect(bodyA.contains("A 改后"))
+        #expect(bodyB.contains("B 正文"))
+
+        _ = try await DeleteSkillTool().executeResult(
+            context: contextA, arguments: arguments(["name": "scope-dup"])
+        )
+        #expect(!FileManager.default.fileExists(
+            atPath: project.appendingPathComponent(".lumi/skills/scope-dup").path
+        ))
+        #expect(FileManager.default.fileExists(
+            atPath: projectB.appendingPathComponent(".lumi/skills/scope-dup").path
+        ))
+        await SkillService.shared.invalidateAllCache()
+
         SkillRuntime.reset()
     }
 

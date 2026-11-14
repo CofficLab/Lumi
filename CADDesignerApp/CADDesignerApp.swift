@@ -24,7 +24,7 @@ struct CADDesignerApp: App {
         }
         .defaultSize(width: 1280, height: 860)
 
-        Window("设置", id: "cad-designer.settings") {
+        Window("Settings", id: "cad-designer.settings") {
             settingsView
         }
         .defaultSize(width: 780, height: 600)

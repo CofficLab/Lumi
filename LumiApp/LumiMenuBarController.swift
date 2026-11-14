@@ -181,33 +181,27 @@ struct LumiMenuBarPopover: View {
     private var actionSection: some View {
         VStack(spacing: 0) {
             LumiMenuBarActionRow(
-                title: localized("Open Lumi", chinese: "打开 Lumi"),
+                title: NSLocalizedString("Open Lumi", comment: ""),
                 icon: "macwindow",
                 color: .accentColor,
                 action: perform(onShowMainWindow)
             )
             Divider().padding(.leading, 36)
             LumiMenuBarActionRow(
-                title: localized("Check for Updates", chinese: "检查更新"),
+                title: NSLocalizedString("Check for Updates", comment: ""),
                 icon: "arrow.down.circle",
                 color: .accentColor,
                 action: perform(onCheckForUpdates)
             )
             Divider().padding(.leading, 36)
             LumiMenuBarActionRow(
-                title: localized("Quit Lumi", chinese: "退出 Lumi"),
+                title: NSLocalizedString("Quit Lumi", comment: ""),
                 icon: "power",
                 color: .red,
                 action: perform(onQuit)
             )
         }
         .padding(.vertical, 8)
-    }
-
-    /// 与旧版资源表一致的宿主级本地化。菜单栏动作并不属于任一插件，不能再
-    /// 硬编码英文；插件自己的文字仍继续由各自的 `.module` 资源提供。
-    private func localized(_ english: String, chinese: String) -> String {
-        Locale.preferredLanguages.first?.lowercased().hasPrefix("zh") == true ? chinese : english
     }
 
     private var systemColorScheme: ColorScheme {

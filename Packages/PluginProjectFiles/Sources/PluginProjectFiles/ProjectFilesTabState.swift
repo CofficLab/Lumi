@@ -15,12 +15,13 @@ public struct ProjectFilesTabState: Equatable, Sendable {
     }
 
     public init(openFileURLs: [URL], currentFileURL: URL?) {
+        var seen = Set<URL>()
         var visibleURLs: [URL] = []
         visibleURLs.reserveCapacity(openFileURLs.count + (currentFileURL == nil ? 0 : 1))
 
         func appendIfNeeded(_ url: URL) {
             let standardizedURL = url.standardizedFileURL
-            if !visibleURLs.contains(standardizedURL) {
+            if seen.insert(standardizedURL).inserted {
                 visibleURLs.append(standardizedURL)
             }
         }

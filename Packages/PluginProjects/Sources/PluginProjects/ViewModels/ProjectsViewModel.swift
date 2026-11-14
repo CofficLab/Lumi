@@ -45,12 +45,17 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 探测结果按路径缓存在 `ProjectStorageDetector` 中，缓存失效时必须让视图
     /// 重新读取，于是用这个修订号驱动重绘。
     @Published public private(set) var storageRevision = 0
+    private var storageRefreshGeneration = 0
 
     // MARK: - Dependencies
 
     public let store: ProjectsStore
     private let projectCapability: any ProjectsProjectCapability
     private var openedFilesObserver: AnyCancellable?
+
+    /// 启动后首次同步时从 Store 读出的持久化 lastUsed，按路径缓存。
+    /// 内存快照为空时用它兜底，避免把历史使用时间重置为启动时刻（#476）。
+    private var persistedLastUsedByPath: [String: Date]?
 
     // MARK: - Init
 
@@ -76,11 +81,20 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 刷新项目存储状态缓存，并递增修订号驱动视图重绘。
     ///
     /// 项目目录是否还在磁盘上会随外部操作变化（目录被删除、外置硬盘被拔出、
-    /// 网络卷重新挂载）。探测结果按路径缓存在 `ProjectStorageDetector` 中，
-    /// 因此每次刷新都要先清空缓存再让视图重新读取。
+    /// 网络卷重新挂载）。探测在后台线程执行，完成后再次递增修订号驱动重绘；
+    /// 视图 body 中的 `kind(for:)` 仅读缓存，不做同步 I/O。
     public func refreshStorageState() {
         ProjectStorageDetector.invalidateAll()
         storageRevision &+= 1
+        storageRefreshGeneration &+= 1
+        let generation = storageRefreshGeneration
+        let paths = projects.map(\.path)
+        guard !paths.isEmpty else { return }
+        Task { @MainActor [weak self] in
+            await ProjectStorageDetector.refresh(paths: paths)
+            guard let self, self.storageRefreshGeneration == generation else { return }
+            self.storageRevision &+= 1
+        }
     }
 
     /// 订阅 Store 的打开文件变更，并完成首次加载。
@@ -109,30 +123,64 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         let previousByPath = Dictionary(
             uniqueKeysWithValues: projects.map { ($0.path, $0) }
         )
-        let syncedProjects = projectCapability.projects.map { info in
+        let previousCurrentPath = currentProject?.path
+        var syncedProjects = projectCapability.projects.map { info in
             ProjectEntry(
                 name: info.name,
                 path: info.path,
                 language: info.language,
-                lastUsed: previousByPath[info.path]?.lastUsed ?? Date()
+                lastUsed: previousByPath[info.path]?.lastUsed ?? persistedLastUsed(for: info.path) ?? Date()
             )
         }
 
-        projects = syncedProjects
+        var newCurrent: ProjectEntry?
         if let info = projectCapability.currentProject {
-            currentProject = ProjectEntry(
+            newCurrent = ProjectEntry(
                 name: info.name,
                 path: info.path,
                 language: info.language,
-                lastUsed: previousByPath[info.path]?.lastUsed ?? Date()
+                lastUsed: previousByPath[info.path]?.lastUsed ?? persistedLastUsed(for: info.path) ?? Date()
             )
-        } else {
-            currentProject = nil
         }
+
+        // 选中/打开项目时推进其 lastUsed：仅在当前项目路径变化时推进一次，
+        // 无关的 Provider 事件不得反复刷新时间（#476）。
+        if let current = newCurrent, current.path != previousCurrentPath {
+            let now = Date()
+            newCurrent = ProjectEntry(
+                name: current.name,
+                path: current.path,
+                language: current.language,
+                lastUsed: now
+            )
+            if let index = syncedProjects.firstIndex(where: { $0.path == current.path }) {
+                let entry = syncedProjects[index]
+                syncedProjects[index] = ProjectEntry(
+                    name: entry.name,
+                    path: entry.path,
+                    language: entry.language,
+                    lastUsed: now
+                )
+            }
+        }
+
+        projects = syncedProjects
+        currentProject = newCurrent
 
         if persist {
             persistAsync(projects: projects, currentProject: currentProject)
         }
+    }
+
+    /// 读取某路径持久化的 lastUsed；首次访问时从 Store 加载并按路径缓存。
+    private func persistedLastUsed(for path: String) -> Date? {
+        if persistedLastUsedByPath == nil {
+            persistedLastUsedByPath = Dictionary(
+                store.loadProjects().map { ($0.path, $0.lastUsed) },
+                uniquingKeysWith: { first, _ in first }
+            )
+        }
+        return persistedLastUsedByPath?[path]
     }
 
     /// 选中项目：请求项目能力打开项目。
@@ -162,9 +210,8 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
                 providerProjects.insert(projectInfo, at: 0)
                 projectCapability.synchronizeProjects(providerProjects)
             }
-            if projectCapability.currentProject == nil, let first = providerProjects.first {
-                openProject(at: first.path)
-            }
+            // select:false 契约（add_project「不切换当前项目」）：即使当前无项目，
+            // 也只入列、不自动打开，保持「无项目」选中态（#475）。
         }
 
         return project

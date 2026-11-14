@@ -78,7 +78,7 @@ struct GoalTaskContinuationMessageView: View {
         .popover(isPresented: $showsDetail, arrowEdge: .bottom) {
             detailPopover
         }
-        .help("点击查看 Goal 自动续跑详情")
+        .help(pluginLocalization.string("Click to view Goal auto-continuation details"))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(statusText)
     }

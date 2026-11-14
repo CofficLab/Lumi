@@ -58,6 +58,7 @@ struct ChatFileAttachmentButton: View {
                         }.value
                         capability.addFileAttachment(attachment)
                     } catch {
+                        capability.recordAttachmentReadFailure()
                         capability.presentLoadError(error.localizedDescription)
                     }
                 }

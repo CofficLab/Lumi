@@ -219,4 +219,138 @@ struct CLIInstallerTests {
         #expect(contents.contains("://finder/open-project?path="))
         #expect(contents.contains("/Applications/Lumi.app"))
     }
+
+    /// 在指定 URL 写入一个可执行脚本，扮演用户已有的同名第三方程序。
+    private func writeExecutable(at url: URL, contents: String) throws {
+        try contents.write(to: url, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: Int16(0o755))],
+            ofItemAtPath: url.path
+        )
+    }
+
+    @Test("安装遇到同名第三方程序时拒绝覆盖，原内容不得丢失")
+    func installPreservesUnrelatedExecutable() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let scriptURL = directory.appendingPathComponent("lumi")
+        let original = "#!/bin/sh\necho unrelated\n"
+        try writeExecutable(at: scriptURL, contents: original)
+
+        let target = CLIInstallTarget(
+            directory: directory,
+            isOnPath: true,
+            isWritable: true
+        )
+        let outcome = CLIInstaller.install(
+            target: target,
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+
+        guard case .failed = outcome else {
+            Issue.record("期望拒绝覆盖第三方程序，实际为 \(outcome)")
+            return
+        }
+        #expect(try String(contentsOf: scriptURL, encoding: .utf8) == original)
+        #expect(FileManager.default.isExecutableFile(atPath: scriptURL.path))
+    }
+
+    @Test("卸载不得删除同名第三方程序")
+    func uninstallPreservesUnrelatedExecutable() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let scriptURL = directory.appendingPathComponent("lumi")
+        let original = "#!/bin/sh\necho unrelated\n"
+        try writeExecutable(at: scriptURL, contents: original)
+
+        let removed = CLIInstaller.uninstall(
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+
+        #expect(removed)
+        #expect(FileManager.default.fileExists(atPath: scriptURL.path))
+        #expect(try String(contentsOf: scriptURL, encoding: .utf8) == original)
+    }
+
+    @Test("状态查询不把同名第三方程序当作已安装")
+    func statusDoesNotReportUnrelatedExecutableAsInstalled() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let scriptURL = directory.appendingPathComponent("lumi")
+        try writeExecutable(at: scriptURL, contents: "#!/bin/sh\necho unrelated\n")
+
+        let status = CLIInstaller.status(
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+
+        #expect(!status.isInstalled)
+        #expect(status.installedPath == nil)
+    }
+
+    @Test("重复安装可更新已有的 Lumi 脚本（升级路径不被破坏）")
+    func installUpdatesExistingLumiScript() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let target = CLIInstallTarget(
+            directory: directory,
+            isOnPath: true,
+            isWritable: true
+        )
+        _ = CLIInstaller.install(
+            target: target,
+            urlScheme: "lumi",
+            appPath: "/Applications/Lumi.app",
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+
+        let outcome = CLIInstaller.install(
+            target: target,
+            urlScheme: "lumi",
+            appPath: "/Users/test/Applications/Lumi.app",
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+
+        guard case .installed = outcome else {
+            Issue.record("期望更新已有 Lumi 脚本成功，实际为 \(outcome)")
+            return
+        }
+        let scriptURL = directory.appendingPathComponent("lumi")
+        let contents = try String(contentsOf: scriptURL, encoding: .utf8)
+        #expect(contents.contains("/Users/test/Applications/Lumi.app"))
+        #expect(FileManager.default.isExecutableFile(atPath: scriptURL.path))
+    }
+
+    @Test("旧版 Lumi 脚本仍被识别为已安装并可卸载（向后兼容）")
+    func legacyLumiScriptIsStillRecognized() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let scriptURL = directory.appendingPathComponent("lumi")
+        // 旧版脚本只有中文签名，没有新的 ownershipMarker。
+        let legacy = "#!/bin/sh\n# 由 Lumi.app 的「设置 → 通用 → 命令行工具」自动安装。\necho legacy\n"
+        try writeExecutable(at: scriptURL, contents: legacy)
+
+        let status = CLIInstaller.status(
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+        #expect(status.isInstalled)
+        #expect(status.installedPath?.lastPathComponent == "lumi")
+
+        let removed = CLIInstaller.uninstall(
+            pathEntries: [directory.path],
+            environment: ["HOME": "/nonexistent-home"]
+        )
+        #expect(removed)
+        #expect(!FileManager.default.fileExists(atPath: scriptURL.path))
+    }
 }

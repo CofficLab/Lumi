@@ -5,7 +5,7 @@
 ProviderMessageSender Lumi 编辑器 Provider。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 26
+测试文件: 3 个，用例总数: 29
 
 ## 公开 API
 
@@ -23,8 +23,8 @@ ProviderMessageSender Lumi 编辑器 Provider。
 - **综合**（9 条）：由 `commitsUserMessageBeforeStartingTurn`、`preservesQueueBeforeDeferredTurnStart`、`sendsMessageThroughLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **DefaultMessageSender 回合中再发送的守门**（9 条）：由 `suspendedTurnQueuesNextMessage`、`externallyDrivenTurnQueuesNextMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProviderMessageSender**（4 条）：由 `commitsCollapsedBlocksIntoMetadata`、`rebasesCollapsedBlocksAfterTrim` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **DefaultMessageSender 附件读取门禁**（3 条）：由 `attachmentReadCountTracksBeginAndEnd`、`waitResumesWhenLastReadEnds`、`waitReturnsImmediatelyWhenIdle` 锁定；改动该模块时优先跑对应测试文件。
+- **ProviderMessageSender**（5 条）：由 `commitsCollapsedBlocksIntoMetadata`、`rebasesCollapsedBlocksAfterTrim`、`queuedBackgroundSendPreservesAttachmentMetadataForDrain` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DefaultMessageSender 附件读取门禁**（5 条）：由 `attachmentReadCountTracksBeginAndEnd`、`waitResumesWhenLastReadEnds`、`waitReturnsImmediatelyWhenIdle`、`waitReturnsFalseWhenAttachmentReadFails`、`readFailureFlagResetsOnNextReadWindow` 锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -56,16 +56,19 @@ ProviderMessageSender Lumi 编辑器 Provider。
 | 24 | DefaultMessageSender 附件读取门禁 | 附件读取计数随 begin / end 增减，多余的 end 不会变负 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachmentReadCountTracksBeginAndEnd` |
 | 25 | DefaultMessageSender 附件读取门禁 | 最后一个附件读取结束时唤醒等待中的发送入口 | 一次在途读取 + 等待任务 | `endAttachmentRead()` 后等待任务恢复 | 结束前未恢复，结束后恢复 | P0 | ✅ 已覆盖 | `waitResumesWhenLastReadEnds` |
 | 26 | DefaultMessageSender 附件读取门禁 | 没有在途读取时等待立即返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `waitReturnsImmediatelyWhenIdle` |
+| 27 | DefaultMessageSender 附件读取门禁 | 读取失败时等待返回 false，发送入口据此中止（#1174） | 一次在途读取 + 等待任务 | 读取窗口内 `recordAttachmentReadFailure()` 后 `endAttachmentRead()` | 等待任务收到 false，发送入口据此中止本次发送 | P0 | ✅ 已覆盖 | `waitReturnsFalseWhenAttachmentReadFails` |
+| 28 | DefaultMessageSender 附件读取门禁 | 失败标记在新读取窗口开始时复位，干净读取仍返回 true（#1174） | 先一个失败窗口，再一个干净窗口 | 失败窗口结束后 `beginAttachmentRead()` 开新窗口并正常结束 | 第一个窗口返回 false，新窗口返回 true（失败不毒化后续发送） | P0 | ✅ 已覆盖 | `readFailureFlagResetsOnNextReadWindow` |
+| 29 | ProviderMessageSender | 后台附件发送入队保留预编码 metadata，排空复用不丢附件（#1323） | 活动回合 + 后台路径提交带图片/文件的第二条消息 | `commitUserMessageInBackground` 入队 → `startTurn` 排空 | 队列条目携带入队时已编码的 `attachmentMetadata`；排空后落库消息的图片/文件附件可完整解码回来（不在主 actor 重新编码） | P0 | ✅ 已覆盖 | `queuedBackgroundSendPreservesAttachmentMetadataForDrain` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 6 / 6
 - P1: 已覆盖 23 / 23
 - P2: 已覆盖 0 / 0
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

@@ -163,6 +163,67 @@ struct ResumeEligibilityTests {
         #expect(verdict == .notResumable(reason: "回合已产出最终回复"))
     }
 
+    /// 回归 #168：判定对象是当前中断的回合。第一轮正常完成留下的
+    /// 最终回复不能挡住第二轮崩溃后的继续提示。
+    @Test("旧回合的最终回复不得挡住新中断回合的继续")
+    func olderFinalReplyDoesNotBlockNewTurnResume() {
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+        let record = interruptedRecord(conversationID: conversationID, turnID: turn2)
+        let history = [
+            Message(conversationID: conversationID, role: .user, content: "U1"),
+            Message(conversationID: conversationID, role: .assistant, content: "第一轮完成", turnID: turn1),
+            Message(conversationID: conversationID, role: .user, content: "U2"),
+            Message(
+                conversationID: conversationID, role: .assistant, content: "",
+                turnID: turn2, toolCalls: [toolCall()]
+            ),
+        ]
+
+        let verdict = ResumeEligibility.evaluate(input(record: record, messages: history))
+
+        #expect(verdict == .resumable(reason: "上一轮在执行中被中断"))
+    }
+
+    /// 回归 #168：第二轮崩溃在助手产出任何消息之前，历史末尾是用户
+    /// 消息，旧回合的最终回复同样不得挡住继续。
+    @Test("第二轮尚无助手产出时崩溃，旧最终回复不挡住继续")
+    func crashBeforeAnyAssistantOutputStillResumable() {
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+        let record = interruptedRecord(conversationID: conversationID, turnID: turn2)
+        let history = [
+            Message(conversationID: conversationID, role: .user, content: "U1"),
+            Message(conversationID: conversationID, role: .assistant, content: "第一轮完成", turnID: turn1),
+            Message(conversationID: conversationID, role: .user, content: "U2"),
+        ]
+
+        let verdict = ResumeEligibility.evaluate(input(record: record, messages: history))
+
+        #expect(verdict == .resumable(reason: "上一轮在执行中被中断"))
+    }
+
+    /// 回归 #168 护栏：末尾停在当前回合的最终回复上时，仍不该提示继续。
+    @Test("末尾是当前回合的最终回复时仍不可继续")
+    func trailingFinalReplyStillBlocksResume() {
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+        let record = interruptedRecord(conversationID: conversationID, turnID: turn2)
+        let history = [
+            Message(conversationID: conversationID, role: .user, content: "U1"),
+            Message(conversationID: conversationID, role: .assistant, content: "第一轮完成", turnID: turn1),
+            Message(conversationID: conversationID, role: .user, content: "U2"),
+            Message(conversationID: conversationID, role: .assistant, content: "第二轮也完成了", turnID: turn2),
+        ]
+
+        let verdict = ResumeEligibility.evaluate(input(record: record, messages: history))
+
+        #expect(verdict == .notResumable(reason: "回合已产出最终回复"))
+    }
+
     @Test("没有用户消息的会话不可继续")
     func noUserMessageIsNotResumable() {
         let verdict = ResumeEligibility.evaluate(

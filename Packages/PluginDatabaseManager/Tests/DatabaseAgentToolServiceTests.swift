@@ -31,6 +31,48 @@ import Foundation
         )
     }
 
+    @Test func readonlySQLRejectsWritablePragmaAssignment() {
+        // 赋值形态的 PRAGMA 会持久修改数据库，只读工具必须拒绝（#272）。
+        let writable = [
+            "PRAGMA user_version=123",
+            "PRAGMA journal_mode=WAL",
+            "PRAGMA foreign_keys=ON",
+            "PRAGMA writable_schema=ON",
+            "PRAGMA cache_size=2000",
+            "PRAGMA journal_mode='WAL'",
+        ]
+        for sql in writable {
+            #expect(throws: DatabaseAgentToolError.self) {
+                _ = try DatabaseAgentToolService.readonlySQL(sql, type: .sqlite, limit: 100)
+            }
+        }
+    }
+
+    @Test func readonlySQLRejectsWritablePragmaParenForm() {
+        // 括号赋值形态（非内省 pragma）同样是写入（#272）。
+        let writable = ["PRAGMA cache_size(2000)", "PRAGMA journal_mode(WAL)"]
+        for sql in writable {
+            #expect(throws: DatabaseAgentToolError.self) {
+                _ = try DatabaseAgentToolService.readonlySQL(sql, type: .sqlite, limit: 100)
+            }
+        }
+    }
+
+    @Test func readonlySQLAcceptsReadOnlyPragmaQueries() throws {
+        // 裸读取与只读内省 pragma 仍须放行。
+        let readOnly = [
+            "PRAGMA user_version",
+            "PRAGMA journal_mode",
+            "PRAGMA table_info(users)",
+            "PRAGMA index_list(users)",
+            "PRAGMA foreign_key_list(users)",
+            "PRAGMA integrity_check",
+        ]
+        for sql in readOnly {
+            _ = try DatabaseAgentToolService.readonlySQL(sql, type: .sqlite, limit: 100)
+        }
+    }
+
     @Test func readonlySQLAcceptsShowForMySQL() throws {
         _ = try DatabaseAgentToolService.readonlySQL(
             "SHOW TABLES", type: .mysql, limit: 100

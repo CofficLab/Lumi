@@ -86,13 +86,30 @@ struct GitWorkspaceViewModelTests {
         #expect(!viewModel.isLoading)
     }
 
+    @Test func includesUntrackedFilesInWorkingTree() async throws {
+        let status = try makeStatus(
+            branch: "main",
+            modified: ["README.md"],
+            untracked: ["new-file.txt", "another.txt"]
+        )
+        let git = StubGitWorkspaceGitProvider(statuses: ["/project": status])
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/project")
+
+        #expect(viewModel.workingTreeFiles == ["README.md", "another.txt", "new-file.txt"])
+        #expect(viewModel.changeLabel(for: "new-file.txt") == "?")
+        #expect(viewModel.changeLabel(for: "README.md") == "M")
+    }
+
     private func makeStatus(
         branch: String,
         modified: [String],
         added: [String] = [],
         deleted: [String] = [],
         renamed: [String] = [],
-        staged: [String] = []
+        staged: [String] = [],
+        untracked: [String] = []
     ) throws -> GitStatus {
         let object: [String: Any] = [
             "branch": branch,
@@ -102,6 +119,7 @@ struct GitWorkspaceViewModelTests {
             "deleted": deleted,
             "renamed": renamed,
             "staged": staged,
+            "untracked": untracked,
         ]
         return try JSONDecoder().decode(GitStatus.self, from: JSONSerialization.data(withJSONObject: object))
     }

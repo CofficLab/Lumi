@@ -144,6 +144,71 @@ struct AgentTurnNotificationPluginTests {
         try plugin.onShutdown(kernel: kernel)
     }
 
+    /// 回归 #787：挂起是非终态，不得发「回合结束」通知；
+    /// 同一回合恢复后真正完成时，只发那一次终态通知。
+    @Test("挂起不发通知，恢复后的真实终态只通知一次")
+    func suspensionDoesNotNotify() async throws {
+        let originalAvailability = AgentTurnNotificationPlugin.isNotificationDeliveryAvailable
+        AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = true
+        defer { AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = originalAvailability }
+
+        let kernel = KernelCoreContainer()
+        let hooks = DefaultLifecycleHooksProvider()
+        try kernel.registerProvider((any LifecycleHooksProviding).self, hooks)
+        let plugin = AgentTurnNotificationPlugin()
+        var notified: [String] = []
+        plugin.notifier = { title, _, _ in notified.append(title) }
+        plugin.installTapHandler = { _ in }
+        plugin.uninstallTapHandler = { _ in }
+        try plugin.onBoot(kernel: kernel)
+
+        let conversationID = UUID()
+        let turnID = UUID()
+        // ask_user / 工具授权挂起：回合还活着，不能宣称结束。
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: .suspended
+            )
+        )
+        #expect(notified.isEmpty, "挂起不是终态，不应发送回合结束通知")
+
+        // 用户回答后同一回合真正完成。
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: .completed
+            )
+        )
+        #expect(notified == [pluginLocalization.string("Task Completed")])
+
+        try plugin.onShutdown(kernel: kernel)
+    }
+
+    @Test("钩子层直接跳过 suspended，其余终态照常通知")
+    func hookSkipsSuspendedReason() {
+        var notified: [(String, String)] = []
+        let hook = TurnFinishedNotificationHook(
+            isActive: { true },
+            notifier: { title, body, _ in notified.append((title, body)) }
+        )
+        let conversationID = UUID()
+        let turnID = UUID()
+
+        hook.apply(to: TurnLifecycleContext(
+            conversationID: conversationID, turnID: turnID, endReason: .suspended
+        ))
+        #expect(notified.isEmpty)
+
+        hook.apply(to: TurnLifecycleContext(
+            conversationID: conversationID, turnID: turnID, endReason: .cancelled
+        ))
+        #expect(notified.count == 1)
+        #expect(notified[0].0 == pluginLocalization.string("Task Cancelled"))
+    }
+
     @Test("通知请求携带来源会话 ID")
     func notificationRequestCarriesConversationID() {
         let conversationID = UUID()

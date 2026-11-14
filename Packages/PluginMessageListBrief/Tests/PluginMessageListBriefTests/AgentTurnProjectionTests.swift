@@ -2,6 +2,7 @@ import Foundation
 import ProviderAgentLoop
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// README §2 Turn layout / §3 Process disclosure / §7 Message content

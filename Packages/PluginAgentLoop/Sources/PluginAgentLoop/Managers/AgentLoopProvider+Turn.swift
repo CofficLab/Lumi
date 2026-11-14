@@ -100,6 +100,11 @@ extension AgentLoopManager {
         runtimes[conversationID] = next
         resumeAccepted = true
         if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome); return outcome }
+        // 恢复被接受且回合继续执行：同一 turnID 重新进入运行态，必须像新回合
+        // 一样触发 turnStarted 钩子落盘「运行中」记录。否则记录停留在
+        // `.suspended`，此刻崩溃的话重启后 ResumeEligibility 拒绝恢复，
+        // 「继续」提示不出现（#805）。
+        await lifecycleHooks?.notifyTurnStarted(TurnLifecycleContext(conversationID: conversationID, turnID: turnID))
         if case .executingTools(let nextTurnID, let assistantMessageID, let remaining) = next.phase,
            !remaining.isEmpty {
             // 用户响应只完成当前挂起调用。剩余调用重新交给 ToolManager，

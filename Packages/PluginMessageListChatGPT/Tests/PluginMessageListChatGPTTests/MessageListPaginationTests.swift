@@ -1,6 +1,7 @@
 import Foundation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListChatGPT
 
 /// V5（ChatGPT）消息窗口分页测试。
@@ -32,19 +33,19 @@ struct MessageListPaginationTests {
 
     @Test("默认 pageSize 40、retained 300")
     func defaultBounds() {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         #expect(service.pageSize == 40)
         #expect(service.maxRetainedCount == 300)
     }
 
     @Test("越界配置被钳制到安全范围")
     func outOfRangeConfigurationIsClamped() {
-        let service = MessageListPaginationService(pageSize: 5_000, maxRetainedCount: 1_000_000)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 5_000, maxRetainedCount: 1_000_000)
         #expect(service.pageSize == 200)
         #expect(service.maxRetainedCount == 10_000)
 
         // 非正数钳到 1，不终止进程。
-        let clamped = MessageListPaginationService(pageSize: 0, maxRetainedCount: -5)
+        let clamped = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 0, maxRetainedCount: -5)
         #expect(clamped.pageSize == 1)
         #expect(clamped.maxRetainedCount == 1)
     }
@@ -57,7 +58,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 100)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let result = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages
@@ -75,7 +76,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 10)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let result = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages
@@ -87,7 +88,7 @@ struct MessageListPaginationTests {
 
     @Test("没有消息能力时首屏为空")
     func firstPageWithoutCapability() async {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         let result = await service.loadFirstPage(
             conversationID: UUID(),
             messageManager: nil
@@ -105,7 +106,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 100)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let first = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages
@@ -128,7 +129,7 @@ struct MessageListPaginationTests {
 
     @Test("没有更早消息时不翻页")
     func loadEarlierWithoutEarlierMessages() async {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         let earlier = await service.loadEarlier(
             conversationID: UUID(),
             messageManager: StubMessageCapability(),
@@ -140,7 +141,7 @@ struct MessageListPaginationTests {
 
     @Test("缺少当前首条基准时不翻页")
     func loadEarlierWithoutAnchor() async {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         let earlier = await service.loadEarlier(
             conversationID: UUID(),
             messageManager: StubMessageCapability(),
@@ -154,7 +155,7 @@ struct MessageListPaginationTests {
 
     @Test("连续 prepend 后窗口仍受上限约束")
     func repeatedPrependKeepsWindowBounded() {
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         var window = makeMessages(conversationID: UUID(), count: 200)
 
         // 模拟连续 prepend。
@@ -168,7 +169,7 @@ struct MessageListPaginationTests {
 
     @Test("窗口回收保留较新的一段")
     func evictionKeepsNewerMessages() {
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let messages = makeMessages(conversationID: UUID(), count: 500)
 
         let evicted = service.evictTailIfNeeded(messages: messages)
@@ -185,7 +186,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 60)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let first = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages
@@ -220,7 +221,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 10)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let first = await service.loadFirstPage(
             conversationID: conversationID,
             messageManager: messages
@@ -243,7 +244,7 @@ struct MessageListPaginationTests {
         let messages = StubMessageCapability()
         messages.messages = makeMessages(conversationID: conversationID, count: 5)
 
-        let service = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
+        let service = PluginMessageListChatGPT.MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let refreshed = await service.refreshTail(
             conversationID: conversationID,
             messageManager: messages,
@@ -255,7 +256,7 @@ struct MessageListPaginationTests {
 
     @Test("没有消息能力时尾部刷新不做事")
     func tailRefreshWithoutCapability() async {
-        let service = MessageListPaginationService()
+        let service = PluginMessageListChatGPT.MessageListPaginationService()
         let refreshed = await service.refreshTail(
             conversationID: UUID(),
             messageManager: nil,

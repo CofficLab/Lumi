@@ -119,6 +119,15 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
                 }
             }
 
+            // include_body 承诺同时给出请求与响应正文；响应正文沿用与请求
+            // 相同的规则（UTF-8 解码、截断到 1000 字符），否则详情里永远只有
+            // 状态码/ MIME / Headers，拿不到响应体（#311）。
+            if includeBody, let respBody = record.responseBody, !respBody.isEmpty {
+                if let bodyStr = String(data: respBody, encoding: .utf8) {
+                    sections.append("- **Body**:\n```\n\(bodyStr.prefix(1000))\n```")
+                }
+            }
+
             sections.append("")
             sections.append("### Timing")
             if let duration = record.duration {

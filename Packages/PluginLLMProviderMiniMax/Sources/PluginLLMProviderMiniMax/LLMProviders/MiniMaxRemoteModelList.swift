@@ -102,15 +102,15 @@ struct MiniMaxRemoteModelListLoader: Sendable {
     ///
     /// 已有上下文窗口时保持原值（远程解析已补全过），仅在缺失时按家族推断。
     private static func enriching(_ model: LLMModelInfo) -> LLMModelInfo {
-        guard model.contextWindowSize == nil else { return model }
         let family = MiniMaxModelFamily.family(for: model.id)
         return LLMModelInfo(
             id: model.id,
             displayName: model.displayName,
-            contextWindowSize: family.contextWindowSize,
+            contextWindowSize: model.contextWindowSize ?? family.contextWindowSize,
             supportsStreaming: model.supportsStreaming,
             supportsVision: model.supportsVision || family.supportsVision,
-            supportsTools: model.supportsTools
+            supportsTools: model.supportsTools,
+            reasoning: model.reasoning ?? MiniMaxModelFamily.reasoningCapability(for: model.id)
         )
     }
 
@@ -123,7 +123,8 @@ struct MiniMaxRemoteModelListLoader: Sendable {
             supportsStreaming: model.supportsStreaming,
             supportsVision: model.supportsVision,
             supportsTools: model.supportsTools,
-            isRetired: true
+            isRetired: true,
+            reasoning: model.reasoning
         )
     }
 }

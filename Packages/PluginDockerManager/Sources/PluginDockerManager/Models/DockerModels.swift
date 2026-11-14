@@ -23,7 +23,10 @@ public enum DockerError: Error, LocalizedError, Sendable {
 
 /// Represents a Docker image with metadata from `docker images`
 public struct DockerImage: Identifiable, Codable, Hashable, Sendable {
-    public var id: String { imageID }
+    // docker images 每个 repository/tag 输出一行，多标签共享同一 imageID。
+    // 列表身份必须按引用唯一，否则 SwiftUI List 的行 diffing/选中会错乱（#251）。
+    // repository/tag 均不含 "|"，组合后既唯一又稳定。
+    public var id: String { "\(imageID)|\(repository)|\(tag)" }
 
     public let imageID: String
     public let repository: String
@@ -165,15 +168,17 @@ public struct DockerImage: Identifiable, Codable, Hashable, Sendable {
 
 /// Image history entry from `docker history`
 public struct DockerImageHistory: Identifiable, Codable, Sendable {
-    public var id: String { String(Created) + CreatedBy }
+    public var id: String { CreatedAt + CreatedBy }
 
-    public let Created: Int64
+    public let CreatedAt: String
+    public let CreatedSince: String
     public let CreatedBy: String
     public let Size: String
     public let Comment: String
 
-    public init(Created: Int64, CreatedBy: String, Size: String, Comment: String) {
-        self.Created = Created
+    public init(CreatedAt: String, CreatedSince: String, CreatedBy: String, Size: String, Comment: String) {
+        self.CreatedAt = CreatedAt
+        self.CreatedSince = CreatedSince
         self.CreatedBy = CreatedBy
         self.Size = Size
         self.Comment = Comment
@@ -181,15 +186,23 @@ public struct DockerImageHistory: Identifiable, Codable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.Created = try container.decode(Int64.self, forKey: .Created)
+        // `docker history --format '{{json .}}'` emits CreatedAt/CreatedSince
+        // strings, never an integer Created. Decode the real CLI schema so a
+        // normal multi-layer image no longer fails on every line (#248).
+        self.CreatedAt = try container.decodeIfPresent(String.self, forKey: .CreatedAt) ?? ""
+        self.CreatedSince = try container.decodeIfPresent(String.self, forKey: .CreatedSince) ?? ""
         self.CreatedBy = try container.decode(String.self, forKey: .CreatedBy)
-        // Docker history --format outputs Size as Int64, but we store as String
+        // Size may arrive as an Int64 (bytes) or a human-readable string.
         if let sizeInt = try? container.decode(Int64.self, forKey: .Size) {
             self.Size = ByteCountFormatter.string(fromByteCount: sizeInt, countStyle: .binary)
         } else {
             self.Size = try container.decode(String.self, forKey: .Size)
         }
-        self.Comment = try container.decode(String.self, forKey: .Comment)
+        self.Comment = try container.decodeIfPresent(String.self, forKey: .Comment) ?? ""
+    }
+
+    public enum CodingKeys: String, CodingKey {
+        case CreatedAt, CreatedSince, CreatedBy, Size, Comment
     }
 }
 

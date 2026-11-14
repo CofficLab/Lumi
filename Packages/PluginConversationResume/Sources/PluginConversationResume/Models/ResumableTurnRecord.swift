@@ -91,7 +91,25 @@ actor ResumableTurnStore {
 
     init(fileURL: URL) {
         self.fileURL = fileURL
-        self.records = Self.load(from: fileURL)
+        var loaded = Self.load(from: fileURL)
+        // 新进程不可能有活着的挂起运行时：磁盘上的 `.suspended` 只能意味着
+        // 进程在挂起期间消失（退出 / 强杀 / 崩溃）。按中断处理，重启后
+        // 「继续」才有入口（#854）。进程内的活挂起不受影响——判定器还会
+        // 用 AgentLoop 的实时状态排除它。
+        var converted = false
+        for (conversationID, record) in loaded where record.outcome == .suspended {
+            loaded[conversationID] = ResumableTurnRecord(
+                conversationID: record.conversationID,
+                turnID: record.turnID,
+                outcome: .interrupted,
+                startedAt: record.startedAt,
+                recordedAt: record.recordedAt,
+                lastToolCallID: record.lastToolCallID
+            )
+            converted = true
+        }
+        self.records = loaded
+        if converted { Self.persist(records: loaded, to: fileURL) }
     }
 
     // MARK: - 读写
@@ -117,23 +135,25 @@ actor ResumableTurnStore {
     ///
     /// - Note: 只有 `.cancelled` 之外的终态才会覆盖记录。`.cancelled` 是用户
     ///   主动停止 —— 用户明确表示「不要继续了」，因此不留下「可继续」提示。
+    ///
+    /// - Important: turnID 必须与当前记录一致（#635）。终态钩子被串行
+    ///   `await`，旧回合的迟到回调可能在新回合 `markRunning` 之后才到达；
+    ///   无条件覆盖会把新回合的 `.interrupted` 抹成旧回合的终态，重启后
+    ///   真正中断的回合失去「继续」入口。口径与 `markToolCall` 一致。
     func markFinished(
         conversationID: UUID,
         turnID: UUID,
         outcome: ResumableTurnRecord.Outcome,
         recordedAt: Date = Date()
     ) {
-        // 已经存在同一回合的运行中记录时，保留它的 startedAt。
-        let startedAt = records[conversationID]?.turnID == turnID
-            ? (records[conversationID]?.startedAt ?? recordedAt)
-            : recordedAt
+        guard let record = records[conversationID], record.turnID == turnID else { return }
         records[conversationID] = ResumableTurnRecord(
             conversationID: conversationID,
             turnID: turnID,
             outcome: outcome,
-            startedAt: startedAt,
+            startedAt: record.startedAt,
             recordedAt: recordedAt,
-            lastToolCallID: records[conversationID]?.lastToolCallID
+            lastToolCallID: record.lastToolCallID
         )
         persist()
     }
@@ -172,6 +192,10 @@ actor ResumableTurnStore {
     // MARK: - 持久化
 
     private func persist() {
+        Self.persist(records: records, to: fileURL)
+    }
+
+    private nonisolated static func persist(records: [UUID: ResumableTurnRecord], to fileURL: URL) {
         let payload = Array(records.values)
         guard let data = try? JSONEncoder().encode(payload) else { return }
         let directory = fileURL.deletingLastPathComponent()

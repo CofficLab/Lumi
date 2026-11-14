@@ -295,6 +295,34 @@ struct ClipboardHistoryManagerTests {
         #expect(Set(remaining.map(\.content)) == ["expired-pinned", "fresh"])
     }
 
+    @Test("trimNonPinnedHistory 只裁剪超额非固定项，固定项不参与计数也不被删除")
+    func trimsNonPinnedBeyondLimitKeepingPinned() async throws {
+        let root = try makeTemporaryDirectory("clipm-trim")
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let manager = ClipboardHistoryManager(databaseDirectory: root)
+        // 相对当前时间构造，避免被 30 天保留策略清理掉。
+        let base = Date().addingTimeInterval(-200)
+        var seeded: [ClipboardHistoryItem] = []
+        for i in 0..<5 {
+            seeded.append(makeHistoryItem(content: "u\(i)", timestamp: base.addingTimeInterval(-Double(i))))
+        }
+        for i in 0..<3 {
+            seeded.append(makeHistoryItem(content: "p\(i)", timestamp: base.addingTimeInterval(Double(i)), isPinned: true))
+        }
+        #expect(await manager.addBatch(seeded))
+
+        // 保留最新 2 条非固定项，应删除其余 3 条；固定项不计入也不被删除。
+        #expect(await manager.trimNonPinnedHistory(keeping: 2) == 3)
+
+        let remaining = await manager.getAll()
+        #expect(remaining.filter { !$0.isPinned }.map(\.content) == ["u0", "u1"])
+        #expect(remaining.filter { $0.isPinned }.count == 3)
+
+        // 没有超额项时返回 0（幂等）。
+        #expect(await manager.trimNonPinnedHistory(keeping: 2) == 0)
+    }
+
     @Test("长期运行中，列表查询会按需清理过期记录")
     func listAccessCleansExpiredWithoutRestart() async throws {
         let root = try makeTemporaryDirectory("clipm-cleanup-runtime")

@@ -20,6 +20,10 @@ public enum MindMapMarkdownCodec {
         guard let root = map.root else { return map.title }
         var lines: [String] = []
         lines.append("# \(map.title)")
+        // 根文本与标题不同时单独成行，decode 的「顶层裸文本作根」路径据此还原；相同则省略以免冗余（#291）。
+        if !root.text.isEmpty && root.text != map.title {
+            lines.append(root.text)
+        }
         encode(node: root, map: map, indent: 0, into: &lines, isRoot: true)
         return lines.joined(separator: "\n")
     }

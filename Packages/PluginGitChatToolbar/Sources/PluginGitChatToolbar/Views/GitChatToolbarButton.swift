@@ -35,7 +35,8 @@ struct GitChatToolbarButton: View {
     // MARK: - Label
 
     private var label: some View {
-        let count = viewModel.workingChanges.count
+        // 只读计数，不消费整个变更列表（见 issue #1300）。
+        let count = viewModel.workingChangeCount
         return HStack(spacing: 3) {
             Image(systemName: "arrow.triangle.branch")
                 .font(.system(size: 10, weight: .medium))
@@ -55,8 +56,8 @@ struct GitChatToolbarButton: View {
     }
 
     private var tintColor: Color {
-        let count = viewModel.workingChanges.count
-        if count > 0 { return .orange }
+        // 只读计数，不消费整个变更列表（见 issue #1300）。
+        if viewModel.workingChangeCount > 0 { return .orange }
         return Color.accentColor
     }
 }

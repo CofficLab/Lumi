@@ -2,6 +2,7 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// 大数据量场景下的消息列表行为测试（V1 / brief 模式）。

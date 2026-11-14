@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
 import ProviderToolManager
+import KitMessageList
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
@@ -41,6 +42,19 @@ private struct MessageFingerprint: Equatable {
     /// 「结果没变、只有授权状态变了」这种回写会被漏掉，
     /// 历史行会继续持有「等待授权」的旧快照。
     let toolCallAuthorizationState: [String]
+}
+
+/// 缓存的逐消息指纹，连同上次的内容快照。
+///
+/// - Important: 性能红线（issue #1252）。`content.hashValue` 需要对整段
+///   `content` 逐字节做哈希，代价是 O(内容字节)。若每次 `rebuildHistoryRows`
+///   都对窗口内全部消息重算哈希，长会话下即便内容完全没变，主 actor 每帧
+///   也在重扫整段历史 —— 「避免昂贵行比较」的缓存检查本身反而成了昂贵操作。
+///   因此把指纹按 id 缓存，仅当内容（用 String `==` 的共享存储 O(1) identity
+///   快路径判定）或其它指纹字段变化时才重算哈希。
+private struct CachedFingerprint {
+    let content: String
+    let fingerprint: MessageFingerprint
 }
 
 /// Message List View Model (V2 / standard)
@@ -118,6 +132,11 @@ final class ListV2ViewModel: ObservableObject {
     private var streamingRowWasVisible = false
     /// Signature of the inputs used to build the last `historyRows`。
     private var lastHistoryBuildSignature: HistoryBuildSignature?
+    /// 逐消息指纹缓存（issue #1252）：避免每次重建都对未变消息重算内容哈希。
+    /// 每次重建都按当前窗口整体替换，因此容量被窗口大小界定，不会无限增长。
+    private var fingerprintCache: [UUID: CachedFingerprint] = [:]
+    /// 内容哈希实际计算次数；仅供测试断言「未变消息不重算哈希」这一性能不变式。
+    private(set) var contentHashComputeCount = 0
     /// 激活序列号，用于防止并发切换时旧的异步加载结果回写。
     private var activationSequence: UInt64 = 0
 
@@ -457,28 +476,17 @@ final class ListV2ViewModel: ObservableObject {
         let verbosity = self.verbosity
         let conversationID = selectedConversationID
         let hidesStatus = streamingRow != nil
+        var newCache: [UUID: CachedFingerprint] = [:]
+        newCache.reserveCapacity(persistedMessages.count)
+        let fingerprints = persistedMessages.map {
+            fingerprint(for: $0, reusing: fingerprintCache, into: &newCache)
+        }
+        fingerprintCache = newCache
         let signature = HistoryBuildSignature(
             conversationID: conversationID,
             verbosity: verbosity,
             hidesStatus: hidesStatus,
-            fingerprints: persistedMessages.map {
-                MessageFingerprint(
-                    id: $0.id,
-                    contentHash: $0.content.hashValue,
-                    role: $0.role,
-                    isToolExecutionOnly: $0.isToolExecutionOnly,
-                    toolCallResultState: $0.toolCalls?.map {
-                        let result = $0.result
-                        let resultState = result.map {
-                            "\($0.content.count):\($0.awaitingUserResponse == true)"
-                        } ?? "nil"
-                        return "\($0.id):\(resultState)"
-                    } ?? [],
-                    toolCallAuthorizationState: $0.toolCalls?.map {
-                        "\($0.id):\($0.authorizationState ?? "nil")"
-                    } ?? []
-                )
-            }
+            fingerprints: fingerprints
         )
 
         guard signature != lastHistoryBuildSignature else { return }
@@ -492,6 +500,50 @@ final class ListV2ViewModel: ObservableObject {
         if historyRows != rows {
             historyRows = rows
         }
+    }
+
+    /// 取单条消息的指纹，尽量复用缓存以避免重算 `content.hashValue`（issue #1252）。
+    ///
+    /// 仅当内容或任一非内容指纹字段变化时才重算哈希；未变消息直接复用缓存指纹。
+    /// 内容比较用 String `==`：落库快照在多次重建间共享同一存储（COW），
+    /// 命中 O(1) identity 快路径，不逐字节扫描。
+    private func fingerprint(
+        for message: Message,
+        reusing previous: [UUID: CachedFingerprint],
+        into cache: inout [UUID: CachedFingerprint]
+    ) -> MessageFingerprint {
+        let resultState: [String] = message.toolCalls?.map {
+            let result = $0.result
+            let state = result.map {
+                "\($0.content.count):\($0.awaitingUserResponse == true)"
+            } ?? "nil"
+            return "\($0.id):\(state)"
+        } ?? []
+        let authorizationState: [String] = message.toolCalls?.map {
+            "\($0.id):\($0.authorizationState ?? "nil")"
+        } ?? []
+
+        if let cached = previous[message.id],
+           cached.fingerprint.role == message.role,
+           cached.fingerprint.isToolExecutionOnly == message.isToolExecutionOnly,
+           cached.fingerprint.toolCallResultState == resultState,
+           cached.fingerprint.toolCallAuthorizationState == authorizationState,
+           cached.content == message.content {
+            cache[message.id] = cached
+            return cached.fingerprint
+        }
+
+        contentHashComputeCount += 1
+        let fingerprint = MessageFingerprint(
+            id: message.id,
+            contentHash: message.content.hashValue,
+            role: message.role,
+            isToolExecutionOnly: message.isToolExecutionOnly,
+            toolCallResultState: resultState,
+            toolCallAuthorizationState: authorizationState
+        )
+        cache[message.id] = CachedFingerprint(content: message.content, fingerprint: fingerprint)
+        return fingerprint
     }
 
     /// 会话加载/翻页后，把窗口内新出现的消息内容在后台线程预热进

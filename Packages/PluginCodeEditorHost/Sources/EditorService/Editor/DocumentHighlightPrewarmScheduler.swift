@@ -101,43 +101,69 @@ public final class DocumentHighlightPrewarmScheduler {
     private func prewarm(fileURL: URL) async {
         guard !Task.isCancelled else { return }
 
-        let content: String
-        if stateProvider?.currentFileURL?.standardizedFileURL == fileURL,
-           let loaded = stateProvider?.content?.string {
-            content = loaded
-        } else if let loaded = try? EditorTextFileReader.read(fileURL) {
-            content = loaded
-        } else {
-            return
-        }
+        let isActiveFile = stateProvider?.currentFileURL?.standardizedFileURL == fileURL
+
+        // 活动文件的正文已在内存中；非活动文件在后台读取并施加大小上限。
+        let activeContent: String? = isActiveFile ? stateProvider?.content?.string : nil
+        if isActiveFile, activeContent == nil { return }
+
+        // 活动文件超过大文件阈值时不做预热（沿用既有策略，避免无谓的解析开销）。
+        if isActiveFile, stateProvider?.largeFileMode != .normal { return }
 
         guard !Task.isCancelled else { return }
-        guard !content.isEmpty else { return }
 
-        if stateProvider?.currentFileURL?.standardizedFileURL == fileURL,
-           stateProvider?.largeFileMode != .normal {
-            return
-        }
-
-        let language = LanguageRegistry.shared.detectLanguage(
-            url: fileURL,
-            prefixBuffer: content.getFirstLines(5),
-            suffixBuffer: content.getLastLines(5)
-        )
-        let resolvedLanguage = language.languageId == "plaintext" ? EditorLanguageContext.plainText : language
         let highlightRevision = await MainActor.run { cache.highlightRevision }
 
-        guard let snapshot = DocumentHighlightPrewarmWorker.buildSnapshot(
-            fileURL: fileURL,
-            content: content,
-            language: resolvedLanguage,
-            highlightRevision: highlightRevision
-        ) else {
-            return
-        }
+        // 磁盘读取、tree-sitter 解析与 highlight query 全部在后台执行，
+        // 主线程只负责取回快照并写入缓存（见 issue #1276）。
+        let snapshot = await Task.detached(priority: isActiveFile ? .userInitiated : .utility) { () -> DocumentHighlightSnapshot? in
+            let content: String
+            if let activeContent {
+                content = activeContent
+            } else {
+                guard let loaded = Self.readFileWithSizeGuard(fileURL) else { return nil }
+                content = loaded
+            }
 
-        await MainActor.run {
-            cache.store(snapshot)
+            guard !content.isEmpty else { return nil }
+
+            let language = LanguageRegistry.shared.detectLanguage(
+                url: fileURL,
+                prefixBuffer: content.getFirstLines(5),
+                suffixBuffer: content.getLastLines(5)
+            )
+            let resolvedLanguage = language.languageId == "plaintext" ? EditorLanguageContext.plainText : language
+
+            return DocumentHighlightPrewarmWorker.buildSnapshot(
+                fileURL: fileURL,
+                content: content,
+                language: resolvedLanguage,
+                highlightRevision: highlightRevision
+            )
+        }.value
+
+        guard let snapshot else { return }
+
+        cache.store(snapshot)
+    }
+
+    /// 预热允许的最大文件大小。
+    ///
+    /// 与 `LargeFileMode.mediumThreshold`（1 MB）保持一致：超过该大小的文件
+    /// 即使是**非活动标签**也不再预热，避免多 MB 文件被完整读入并解析。
+    public nonisolated static let maxPrewarmFileSize = 1024 * 1024
+
+    /// 在后台读取文件正文；超过大小上限时放弃预热。
+    ///
+    /// - Important: 必须 `nonisolated` —— 该方法在 `Task.detached` 内调用，
+    ///   而外层类型标注了 `@MainActor`（见 issue #1276）。
+    nonisolated private static func readFileWithSizeGuard(_ fileURL: URL) -> String? {
+        if let fileSize = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+           fileSize > maxPrewarmFileSize {
+            return nil
         }
+        guard let content = try? EditorTextFileReader.read(fileURL) else { return nil }
+        guard content.utf8.count <= maxPrewarmFileSize else { return nil }
+        return content
     }
 }

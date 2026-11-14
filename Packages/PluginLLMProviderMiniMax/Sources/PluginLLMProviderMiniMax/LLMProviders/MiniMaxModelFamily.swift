@@ -24,6 +24,12 @@ import KitLLM
 ///
 /// - Note: 官方文档同时明确「M2.7、M2.5、M2.1 和 M2 系列仅支持文本与工具
 ///   调用相关内容块，不支持图片和视频输入」，故 M2.x 一律 `supportsVision = false`。
+///
+/// - Important: M2 系列已在上游下线（官方《模型列表》标为「历史模型」），
+///   但本枚举**仍保留 m2 分支**：远程 `/v1/models` 可能短暂返回退役前的
+///   缓存条目，且其它供应商（阿里云百炼、腾讯 TokenHub）仍在托管
+///   MiniMax-M2.x 模型。家族规则描述的是「这个 id 是什么规格的模型」，
+///   与「上游是否还在提供」是两个正交的事实——后者由 `isRetired` 表达。
 enum MiniMaxModelFamily: Sendable, Equatable {
 
     /// M3 系列：1M 上下文，原生多模态。
@@ -81,8 +87,73 @@ enum MiniMaxModelFamily: Sendable, Equatable {
         return LLMModelInfo(
             id: modelID,
             contextWindowSize: family.contextWindowSize,
-            supportsVision: family.supportsVision
+            supportsVision: family.supportsVision,
+            reasoning: reasoningCapability(for: modelID)
         )
+    }
+
+    // MARK: - 思考能力
+
+    /// 官方文档给出的思考能力（2026-11）：
+    ///
+    /// - **M3.1-Flash**：强制开启思考，传入 `thinking: {"type": "disabled"}`
+    ///   或 `reasoning_effort: "none"` 都会返回 400；思考深度用
+    ///   `reasoning_effort` 调节（low / medium / high / xhigh / max，省略时
+    ///   默认 `max`）。
+    /// - **M3**：默认开启 adaptive thinking，传入 `thinking: {"type":
+    ///   "disabled"}` 可真正关闭；但 `reasoning_effort` 只对 M3.1-Flash
+    ///   生效，M3 上会被忽略。
+    /// - **M2.x**：思考无法关闭，传入 disabled 虽被接受但不生效。
+    ///
+    /// 未知家族不声明能力（返回 `nil`），按通用行为处理。
+    static func reasoningCapability(for modelID: String) -> LLMReasoningCapability? {
+        switch family(for: modelID) {
+        case .m3:
+            guard (minorVersion(of: modelID) ?? 0) >= 1 else {
+                // M3：可关闭，但不支持档位调节。
+                return LLMReasoningCapability(
+                    supportedEfforts: [],
+                    offStrategy: .disableThinkingParameter
+                )
+            }
+            // M3.1：强制思考，只能降档；关闭 = 最低档位。
+            return LLMReasoningCapability(
+                supportedEfforts: ["low", "medium", "high", "xhigh", "max"],
+                offStrategy: .lowestEffort("low")
+            )
+        case .m2:
+            // M2.x：关不掉，也不认档位参数。
+            return LLMReasoningCapability(
+                supportedEfforts: [],
+                offStrategy: .omitParameters
+            )
+        case .unknown:
+            return nil
+        }
+    }
+
+    /// 抽取模型 id 中的次版本号（`MiniMax-M3.1-Flash` → 1；`MiniMax-M3` → 0）。
+    ///
+    /// 次版本号决定 M3.1 与 M3 的思考能力差异，必须单独解析。
+    static func minorVersion(of modelID: String) -> Int? {
+        var rest = modelID
+        if rest.lowercased().hasPrefix("minimax") {
+            rest = String(rest.dropFirst("MiniMax".count))
+        }
+        if rest.hasPrefix("-") {
+            rest = String(rest.dropFirst())
+        }
+        if rest.lowercased().hasPrefix("m") {
+            rest = String(rest.dropFirst())
+        }
+        let majorDigits = rest.prefix { $0.isASCII && $0.isNumber }
+        guard !majorDigits.isEmpty else { return nil }
+        var remainder = rest.dropFirst(majorDigits.count)
+        guard remainder.hasPrefix(".") else { return 0 }
+        remainder = remainder.dropFirst()
+        let minorDigits = remainder.prefix { $0.isASCII && $0.isNumber }
+        guard !minorDigits.isEmpty else { return 0 }
+        return Int(minorDigits)
     }
 
     // MARK: - 私有

@@ -57,7 +57,7 @@ struct ProjectContextDetail: Identifiable, Equatable {
 ///
 /// - 身份：项目名、路径、技术栈；
 /// - 就绪状态：索引、Git 未提交改动、历史上一次对话；
-/// - 展开详情：本项目会话数、关键文件。
+/// - 展开详情：本项目会话数。
 ///
 /// ## 它不负责什么
 ///
@@ -75,8 +75,6 @@ final class ProjectContextViewModel: ObservableObject {
     @Published private(set) var rows: [ProjectContextRow] = []
     /// 展开态的键值对。
     @Published private(set) var details: [ProjectContextDetail] = []
-    /// 展开态里的关键文件标签。
-    @Published private(set) var keyFiles: [String] = []
     /// 是否正在加载。
     @Published private(set) var isLoading = false
 
@@ -152,7 +150,7 @@ final class ProjectContextViewModel: ObservableObject {
             )
         }
 
-        // 根目录条目一次读完：技术栈判定与关键文件标签共用它。
+        // 根目录条目一次读完：技术栈判定用它。
         let rootEntries = await Self.readRootEntryNames(at: path)
 
         async let indexStatus = fetchIndexStatus(path: path)
@@ -172,7 +170,6 @@ final class ProjectContextViewModel: ObservableObject {
             typeLabels: type.labels,
             typeSymbol: type.symbolName
         )
-        self.keyFiles = Self.notableFiles(in: rootEntries)
         self.rows = Self.makeRows(
             index: index,
             git: git,
@@ -192,9 +189,10 @@ final class ProjectContextViewModel: ObservableObject {
     ///
     /// - Returns: 会话 ID 列表。项目下没有会话时是空数组（不是 nil）——
     ///   空数组表示「这个范围没有会话」，与「不限会话」必须区分开。
-    public func conversationIDs(forProjectAt path: String, since: Date) async -> [String] {
+    public func conversationIDs(forProjectAt path: String, since: Date, force: Bool = false) async -> [String] {
         let day = Calendar.current.startOfDay(for: since)
-        if let cached = conversationIDsCache, cached.path == path, cached.day == day {
+        // force 必须绕过按天缓存：同一天新建的会话不会改变 path/day 键，否则强制刷新仍漏掉它（#314）。
+        if !force, let cached = conversationIDsCache, cached.path == path, cached.day == day {
             return cached.ids
         }
         let ids = await conversations?.conversationIDs(projectPath: path, updatedSince: since) ?? []
@@ -220,7 +218,6 @@ final class ProjectContextViewModel: ObservableObject {
         identity = nil
         rows = []
         details = []
-        keyFiles = []
         loadedProjectPath = nil
         conversationIDsCache = nil
     }
@@ -363,30 +360,6 @@ final class ProjectContextViewModel: ObservableObject {
             )
         }
         return details
-    }
-
-    /// 值得展示为标签的根目录文件。
-    ///
-    /// 只挑「能说明这个项目是什么」的入口文件，避免把根目录所有文件都列一遍。
-    private static func notableFiles(in rootEntries: [String]) -> [String] {
-        let preferred = [
-            "README.md", "AGENTS.md", "Package.swift", "package.json",
-            "Cargo.toml", "pyproject.toml", "go.mod", "Gemfile",
-            "composer.json", "pubspec.yaml", "build.gradle", "build.zig",
-            "mix.exs", ".lumi-project",
-        ]
-        var result: [String] = []
-        for name in preferred where rootEntries.contains(name) {
-            result.append(name)
-        }
-        // 工程目录（Xcode / Visual Studio / Swift Package）也值得露出。
-        for entry in rootEntries.sorted() {
-            guard result.count < 6 else { break }
-            if entry.hasSuffix(".xcodeproj") || entry.hasSuffix(".sln") {
-                result.append(entry)
-            }
-        }
-        return Array(result.prefix(6))
     }
 
     // MARK: - 工具

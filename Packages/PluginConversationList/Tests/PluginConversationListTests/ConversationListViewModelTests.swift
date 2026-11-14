@@ -4,6 +4,19 @@ import ProviderProject
 import Testing
 @testable import PluginConversationList
 
+/// 直接读编译后的 en.lproj 字符串表：与机器语言无关，
+/// 让 header 文案断言在任何语言的机器上都确定（回归 #1299）。
+private func englishTableLocalizedString(_ key: String) -> String {
+    let bundle = pluginLocalization.bundle
+    guard let lprojPath = bundle.path(forResource: "en", ofType: "lproj"),
+          let table = NSDictionary(
+              contentsOfFile: (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+          ) as? [String: String] else {
+        return key
+    }
+    return table[key] ?? key
+}
+
 @Test @MainActor func initialLoadAndHeaderReflectConversationAndProjectState() async throws {
     let conversations = DefaultConversationManager()
     let project = DefaultProjectProvider()
@@ -17,11 +30,12 @@ import Testing
         context: context,
         attentionStore: ConversationAttentionStore(),
         sortStabilizer: ConversationSortStabilizer(),
-        scope: .all
+        scope: .all,
+        localizedString: englishTableLocalizedString
     )
     #expect(viewModel.isLoading)
     #expect(viewModel.headerVisible == false)
-    #expect(viewModel.headerTitle == "所有项目的对话")
+    #expect(viewModel.headerTitle == "Conversations from all projects")
 
     await viewModel.loadInitialIfNeeded()
     await viewModel.loadInitialIfNeeded()
@@ -44,7 +58,8 @@ import Testing
         context: makeListContext(conversations: conversations, project: project),
         attentionStore: ConversationAttentionStore(),
         sortStabilizer: ConversationSortStabilizer(),
-        scope: .currentProject
+        scope: .currentProject,
+        localizedString: englishTableLocalizedString
     )
 
     await viewModel.loadInitialIfNeeded()
@@ -52,7 +67,7 @@ import Testing
     #expect(viewModel.conversations.map(\.id) == [selectedID])
     #expect(viewModel.resolvedProjectPath == "/workspace/Two")
     #expect(viewModel.headerVisible)
-    #expect(viewModel.headerTitle == "项目对话 (Two)")
+    #expect(viewModel.headerTitle == "Project conversations (Two)")
     #expect(!viewModel.hasMultipleProjects)
     // 徽标条数只统计当前项目的对话，不含其它项目的。
     #expect(viewModel.conversationCount == 1)

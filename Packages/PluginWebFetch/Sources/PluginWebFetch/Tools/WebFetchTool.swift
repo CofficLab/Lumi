@@ -10,6 +10,9 @@ import Foundation
 public struct WebFetchTool: SuperAgentTool {
     public let name = "web_fetch"
 
+    // 每次调用新建 Sendable service，共享缓存有锁保护，可并行。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {

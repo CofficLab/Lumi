@@ -30,17 +30,7 @@ struct CollapsedContentChipGeometryTests {
         let width = 900
         let height = 120
 
-        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: width, height: height))
-        textView.font = font
-        textView.textColor = .labelColor
-        textView.isRichText = false
-        textView.isVerticallyResizable = true
-        textView.textContainerInset = NSSize(width: 4, height: 4)
-        textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.containerSize = NSSize(
-            width: CGFloat(width),
-            height: CGFloat.greatestFiniteMagnitude
-        )
+        let textView = ChipPixelProbe.makeTextView(font: font, width: CGFloat(width), height: CGFloat(height))
 
         let attachment = NSTextAttachment()
         attachment.attachmentCell = cell
@@ -57,35 +47,13 @@ struct CollapsedContentChipGeometryTests {
             layoutManager.glyphRange(for: container)
         }
 
-        let image = NSBitmapImageRep(
-            bitmapDataPlanes: nil,
-            pixelsWide: width,
-            pixelsHigh: height,
-            bitsPerSample: 8,
-            samplesPerPixel: 4,
-            hasAlpha: true,
-            isPlanar: false,
-            colorSpaceName: .deviceRGB,
-            bytesPerRow: 0,
-            bitsPerPixel: 0
-        )!
-        NSGraphicsContext.saveGraphicsState()
-        let context = NSGraphicsContext(bitmapImageRep: image)!
-        NSGraphicsContext.current = context
-        context.cgContext.setFillColor(NSColor.white.cgColor)
-        context.cgContext.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        textView.draw(NSRect(x: 0, y: 0, width: width, height: height))
-        NSGraphicsContext.restoreGraphicsState()
+        // 用 `cacheDisplay` 而不是 `textView.draw`：后者只画内容、不画背景，
+        // 位图里会留下未初始化的噪声，整幅图都会被当成「胶囊」，
+        // 量出来的高度等于画布高度。
+        let image = ChipPixelProbe.render(textView, width: width, height: height)
 
         func luminance(_ x: Int, _ y: Int) -> Double {
-            guard let raw = image.colorAt(x: x, y: y) else { return 1 }
-            let alpha = raw.alphaComponent
-            if alpha < 0.001 { return 1 }
-            let rgb = raw.usingColorSpace(.deviceRGB)!
-            let red = Double(rgb.redComponent) / alpha + (1 - alpha)
-            let green = Double(rgb.greenComponent) / alpha + (1 - alpha)
-            let blue = Double(rgb.blueComponent) / alpha + (1 - alpha)
-            return (red + green + blue) / 3
+            ChipPixelProbe.luminance(image, x: x, y: y)
         }
 
         let chipWidth = Int(cell.cellSize().width)
@@ -96,7 +64,7 @@ struct CollapsedContentChipGeometryTests {
         var top = Int.max
         var bottom = -1
         for row in 0..<height {
-            for x in 0..<min(chipWidth, width) where luminance(x, row) < 0.985 {
+            for x in 0..<min(chipWidth, width) where luminance(x, row) < ChipPixelProbe.backgroundThreshold {
                 top = min(top, row)
                 bottom = max(bottom, row)
                 break
@@ -106,7 +74,7 @@ struct CollapsedContentChipGeometryTests {
         // 正文中文的墨迹底边即基线。
         var baseline = -1
         for row in 0..<height {
-            for x in chipWidth..<min(chipWidth + bodyWidth, width) where luminance(x, row) < 0.62 {
+            for x in chipWidth..<min(chipWidth + bodyWidth, width) where luminance(x, row) < ChipPixelProbe.inkThreshold {
                 baseline = max(baseline, row)
                 break
             }

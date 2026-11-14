@@ -41,3 +41,59 @@ struct DockerImageDecodingTests {
         #expect(images.isEmpty)
     }
 }
+
+@Suite("Docker history decoding")
+struct DockerHistoryDecodingTests {
+    /// 真实 `docker history --format '{{json .}}'` 行：CreatedAt/CreatedSince
+    /// 为字符串，没有整数 Created 字段（#248）。
+    private let realHistoryLine = """
+    {"Comment":"","CreatedAt":"2026-01-01 00:00:00 +0000 UTC","CreatedBy":"/bin/sh -c #(nop) ADD file:abc123 in / ","CreatedSince":"2 months ago","ID":"<missing>","Size":"12.3MB"}
+    """
+
+    private let secondHistoryLine = """
+    {"Comment":"","CreatedAt":"2026-01-02 00:00:00 +0000 UTC","CreatedBy":"/bin/sh -c #(nop) CMD nginx","CreatedSince":"2 months ago","ID":"<missing>","Size":"0B"}
+    """
+
+    @Test("真实 docker history JSON 必须可解码，不得静默返回空历史")
+    func decodesRealHistoryLine() throws {
+        let decoded = try JSONDecoder().decode(DockerImageHistory.self, from: Data(realHistoryLine.utf8))
+        #expect(decoded.CreatedAt == "2026-01-01 00:00:00 +0000 UTC")
+        #expect(decoded.CreatedSince == "2 months ago")
+        #expect(decoded.CreatedBy.contains("ADD file"))
+        #expect(decoded.Size == "12.3MB")
+        #expect(decoded.Comment == "")
+    }
+
+    @Test("多层历史逐行解码并保序")
+    func decodesMultiLayerHistory() throws {
+        let output = realHistoryLine + "\n" + secondHistoryLine
+        let history = try DockerService.decodeHistory(from: output)
+
+        #expect(history.count == 2)
+        #expect(history.first?.CreatedBy.contains("ADD file") == true)
+        #expect(history.last?.CreatedBy.contains("CMD nginx") == true)
+    }
+
+    @Test("全部历史行解析失败时抛错，而不是返回成功的空历史")
+    func allInvalidHistoryLinesThrow() {
+        #expect(throws: DockerError.self) {
+            try DockerService.decodeHistory(from: #"{"CreatedBy":"RUN"}"#)
+        }
+    }
+
+    @Test("部分历史行解析失败时保留成功行")
+    func partialHistoryFailureKeepsValid() throws {
+        let output = realHistoryLine + "\n" + #"{"CreatedBy":"RUN"}"#
+        let history = try DockerService.decodeHistory(from: output)
+
+        #expect(history.count == 1)
+        #expect(history.first?.CreatedBy.contains("ADD file") == true)
+    }
+
+    @Test("空历史输出返回空列表")
+    func emptyHistoryOutputReturnsEmpty() throws {
+        let history = try DockerService.decodeHistory(from: "")
+
+        #expect(history.isEmpty)
+    }
+}

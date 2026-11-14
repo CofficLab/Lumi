@@ -2,6 +2,9 @@ import Foundation
 
 struct GitDirectorySnapshot: Equatable, Sendable {
     let head: String?
+    /// HEAD 的符号引用（如 `refs/heads/main`）；detached 时为 nil。
+    /// 同 commit 切换分支只改这里，hash 不变（#213）。
+    let headRef: String?
     let index: String?
     let stash: String?
     let refs: String?
@@ -65,10 +68,38 @@ enum GitDirectoryResolver {
     static func readSnapshot(gitDirectory: URL) -> GitDirectorySnapshot {
         GitDirectorySnapshot(
             head: readHeadHash(gitDirectory: gitDirectory),
+            headRef: readHeadRef(gitDirectory: gitDirectory),
             index: fileContentFingerprint(gitDirectory.appendingPathComponent("index")),
             stash: stashFingerprint(gitDirectory: gitDirectory),
             refs: refsFingerprint(gitDirectory: gitDirectory)
         )
+    }
+
+    /// 读取 HEAD 的符号引用目标；detached（直接 hash）或缺失时返回 nil。
+    static func readHeadRef(gitDirectory: URL) -> String? {
+        let headURL = gitDirectory.appendingPathComponent("HEAD")
+        guard let content = try? String(contentsOf: headURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines), !content.isEmpty else {
+            return nil
+        }
+        guard content.hasPrefix("ref:") else { return nil }
+        return content
+            .replacingOccurrences(of: "ref:", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// linked worktree 的分支 ref / packed-refs / 共享 refs 都在 common dir；
+    /// `commondir` 文件给出相对（或绝对）路径。普通仓库没有该文件，common dir 即自身（#156）。
+    static func commonDirectory(gitDirectory: URL) -> URL {
+        let commondirURL = gitDirectory.appendingPathComponent("commondir")
+        guard let raw = try? String(contentsOf: commondirURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return gitDirectory
+        }
+        if raw.hasPrefix("/") {
+            return URL(fileURLWithPath: raw, isDirectory: true).standardizedFileURL
+        }
+        return gitDirectory.appendingPathComponent(raw).standardizedFileURL
     }
 
     static func readHeadHash(gitDirectory: URL) -> String? {
@@ -82,12 +113,14 @@ enum GitDirectoryResolver {
         let refPath = content
             .replacingOccurrences(of: "ref:", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let refURL = gitDirectory.appendingPathComponent(refPath)
+        // linked worktree 的分支 ref / packed-refs 在 common dir（#156）。
+        let commonDir = commonDirectory(gitDirectory: gitDirectory)
+        let refURL = commonDir.appendingPathComponent(refPath)
         if let refHash = try? String(contentsOf: refURL, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines), !refHash.isEmpty {
             return refHash
         }
-        return readPackedRef(gitDirectory: gitDirectory, refPath: refPath)
+        return readPackedRef(gitDirectory: commonDir, refPath: refPath)
     }
 
     static func fileContentFingerprint(_ url: URL) -> String? {
@@ -101,8 +134,9 @@ enum GitDirectoryResolver {
     }
 
     private static func stashFingerprint(gitDirectory: URL) -> String? {
-        let refs = fileContentFingerprint(gitDirectory.appendingPathComponent("refs/stash"))
-        let logs = fileContentFingerprint(gitDirectory.appendingPathComponent("logs/refs/stash"))
+        let commonDir = commonDirectory(gitDirectory: gitDirectory)
+        let refs = fileContentFingerprint(commonDir.appendingPathComponent("refs/stash"))
+        let logs = fileContentFingerprint(commonDir.appendingPathComponent("logs/refs/stash"))
         switch (refs, logs) {
         case (nil, nil): return nil
         case let (value?, nil), let (nil, value?): return value
@@ -111,11 +145,12 @@ enum GitDirectoryResolver {
     }
 
     private static func refsFingerprint(gitDirectory: URL) -> String? {
+        let commonDir = commonDirectory(gitDirectory: gitDirectory)
         let values = [
-            directoryContentFingerprint(gitDirectory.appendingPathComponent("refs/heads")),
-            directoryContentFingerprint(gitDirectory.appendingPathComponent("refs/remotes")),
-            directoryContentFingerprint(gitDirectory.appendingPathComponent("refs/tags")),
-            fileContentFingerprint(gitDirectory.appendingPathComponent("packed-refs")),
+            directoryContentFingerprint(commonDir.appendingPathComponent("refs/heads")),
+            directoryContentFingerprint(commonDir.appendingPathComponent("refs/remotes")),
+            directoryContentFingerprint(commonDir.appendingPathComponent("refs/tags")),
+            fileContentFingerprint(commonDir.appendingPathComponent("packed-refs")),
         ].compactMap { $0 }
         return values.isEmpty ? nil : values.joined(separator: "|")
     }

@@ -50,15 +50,21 @@ extension BrowserSession {
         // 导航等待需要以「发起前后的 URL 是否变化」为判据。
         let urlBeforeNavigation = urlString
 
-        while Date() < deadline {
-            if try await isWaitConditionSatisfied(condition, value: value, urlBeforeNavigation: urlBeforeNavigation) {
-                return BrowserWaitResult(
-                    condition: condition,
-                    timedOut: false,
-                    detail: waitDetail(for: condition, value: value)
-                )
-            }
-            try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+        let loop = BrowserWaitLoop(pollInterval: pollInterval, deadline: deadline)
+        let satisfied = try await loop.run {
+            try await self.isWaitConditionSatisfied(
+                condition,
+                value: value,
+                urlBeforeNavigation: urlBeforeNavigation
+            )
+        }
+
+        if satisfied {
+            return BrowserWaitResult(
+                condition: condition,
+                timedOut: false,
+                detail: waitDetail(for: condition, value: value)
+            )
         }
 
         return BrowserWaitResult(
@@ -271,14 +277,25 @@ extension BrowserSession {
 
         #if os(macOS)
         let image = try await webView.takeSnapshot(configuration: configuration)
-        guard let data = image.tiffRepresentation else {
+
+        // - Important: 编码在后台线程完成。
+        //   `BrowserSession` 是 `@MainActor`，原先的 TIFF → PNG 编码整段跑在
+        //   主线程上；全页截图还要做三次，编码一张大图足以让 UI 卡住
+        //   （见 issue #1282）。
+        //
+        //   同时直接从 CGImage 建位图，跳过 TIFF 往返：
+        //   `tiffRepresentation` 会先把位图编码成 TIFF，再解回位图才能编码 PNG，
+        //   一次多余的完整编解码。
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw BrowserSession.SessionError.screenshotUnavailable
         }
-        guard let bitmap = NSBitmapImageRep(data: data),
-              let png = bitmap.representation(using: .png, properties: [:]) else {
-            throw BrowserSession.SessionError.screenshotUnavailable
-        }
-        return png
+        return try await Task.detached(priority: .userInitiated) {
+            let bitmap = NSBitmapImageRep(cgImage: cgImage)
+            guard let png = bitmap.representation(using: .png, properties: [:]) else {
+                throw BrowserSession.SessionError.screenshotUnavailable
+            }
+            return png
+        }.value
         #else
         let image = try await webView.takeSnapshot(configuration: configuration)
         guard let data = image.pngData() else {

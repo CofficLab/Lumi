@@ -1,6 +1,7 @@
 import Foundation
 import ProviderMessage
 import SwiftUI
+import KitMessageList
 
 /// Message List Scroll Coordinator
 ///

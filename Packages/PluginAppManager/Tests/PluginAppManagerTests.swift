@@ -237,6 +237,88 @@ struct PluginAppManagerTests {
         #expect(!AppService.isContained(path: "\(root)Extra/Child", in: root))
     }
 
+    @Test
+    func untrustedBundleIdentifierCannotEscapeLibrary() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-bundle-id-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        // 创建全部 Library 子目录，使 `../..` 能在文件系统层面解析。
+        for lib in ["Application Support", "Caches", "Preferences", "Saved Application State",
+                    "Containers", "Logs", "Cookies", "WebKit"] {
+            try FileManager.default.createDirectory(
+                at: home.appendingPathComponent("Library/\(lib)", isDirectory: true),
+                withIntermediateDirectories: true
+            )
+        }
+        // Library 之外的无辜目标：目录、plist、savedState 各一，分别对应策略 A/C/D。
+        let documents = home.appendingPathComponent("Documents", isDirectory: true)
+        let innocentDir = documents.appendingPathComponent("LumiAuditTarget", isDirectory: true)
+        let innocentPlist = documents.appendingPathComponent("LumiAuditTarget.plist")
+        let innocentState = documents.appendingPathComponent("LumiAuditTarget.savedState", isDirectory: true)
+        try FileManager.default.createDirectory(at: innocentDir, withIntermediateDirectories: true)
+        try "secret".write(to: innocentPlist, atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: innocentState, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Evil",
+            bundleName: "Evil",
+            bundleIdentifier: "../../Documents/LumiAuditTarget"
+        )
+        let app = AppModel(bundleURL: appURL)
+        #expect(app.bundleIdentifier == "../../Documents/LumiAuditTarget")
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        // 任何关联文件都不得落入 Library 之外的 Documents（#211）。
+        let documentsPrefix = documents.standardizedFileURL.path + "/"
+        #expect(!files.contains { URL(fileURLWithPath: $0.path).standardizedFileURL.path.hasPrefix(documentsPrefix) })
+        #expect(!files.contains { $0.path == innocentDir.path })
+        #expect(!files.contains { $0.path == innocentPlist.path })
+        #expect(!files.contains { $0.path == innocentState.path })
+        // 无辜目标必须原封不动（未被移入废纸篓）。
+        #expect(FileManager.default.fileExists(atPath: innocentDir.path))
+        #expect(FileManager.default.fileExists(atPath: innocentPlist.path))
+        #expect(FileManager.default.fileExists(atPath: innocentState.path))
+    }
+
+    @Test
+    func validBundleIdentifierStillMatchesLibraryFiles() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-valid-id-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let preferences = home.appendingPathComponent("Library/Preferences", isDirectory: true)
+        let savedState = home.appendingPathComponent("Library/Saved Application State", isDirectory: true)
+        let supportDir = support.appendingPathComponent("com.example.app", isDirectory: true)
+        let plistFile = preferences.appendingPathComponent("com.example.app.plist")
+        let stateDir = savedState.appendingPathComponent("com.example.app.savedState", isDirectory: true)
+        try FileManager.default.createDirectory(at: supportDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: preferences, withIntermediateDirectories: true)
+        try "prefs".write(to: plistFile, atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: stateDir, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Good",
+            bundleName: "Good",
+            bundleIdentifier: "com.example.app"
+        )
+        let app = AppModel(bundleURL: appURL)
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+        let paths = Set(files.map { URL(fileURLWithPath: $0.path).standardizedFileURL.path })
+
+        // 合法 Bundle ID 仍须命中 Application Support / Preferences plist / Saved State。
+        #expect(paths.contains(supportDir.standardizedFileURL.path))
+        #expect(paths.contains(plistFile.standardizedFileURL.path))
+        #expect(paths.contains(stateDir.standardizedFileURL.path))
+    }
+
     private static func makeApp(
         in directory: URL,
         name: String,

@@ -17,7 +17,7 @@ import LumiLoggingKit
 public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-message-sender", category: "MessageSender")
     nonisolated public static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
@@ -61,12 +61,19 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
     /// 又滚进下一条消息（#1023）。
     private var attachmentReadCount = 0
-    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+    /// 当前读取窗口内是否出现过失败；窗口开始（计数 0→1）时复位。
+    private var attachmentReadFailed = false
+    private var attachmentReadWaiters: [CheckedContinuation<Bool, Never>] = []
 
     public var pendingAttachmentReadCount: Int { attachmentReadCount }
 
     public func beginAttachmentRead() {
+        if attachmentReadCount == 0 { attachmentReadFailed = false }
         attachmentReadCount += 1
+    }
+
+    public func recordAttachmentReadFailure() {
+        attachmentReadFailed = true
     }
 
     public func endAttachmentRead() {
@@ -75,12 +82,13 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         guard attachmentReadCount == 0 else { return }
         let waiters = attachmentReadWaiters
         attachmentReadWaiters.removeAll()
-        waiters.forEach { $0.resume() }
+        let succeeded = !attachmentReadFailed
+        waiters.forEach { $0.resume(returning: succeeded) }
     }
 
-    public func waitForAttachmentReads() async {
-        guard attachmentReadCount > 0 else { return }
-        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    public func waitForAttachmentReads() async -> Bool {
+        guard attachmentReadCount > 0 else { return true }
+        return await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Sending State Observation
@@ -385,7 +393,9 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
                 content: trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
-                collapsedBlocks: resolvedBlocks
+                collapsedBlocks: resolvedBlocks,
+                // 带走后台已编码好的附件 metadata，排空时复用，不在主 actor 重编码（#1323）。
+                attachmentMetadata: metadata
             ))
             notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
@@ -739,9 +749,13 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
         notify(.pendingMessagesChanged(conversationID: conversationID))
 
-        var metadata: [String: String] = [:]
-        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }
-        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(next.fileAttachments)) { _, new in new }
+        // 复用入队时已在后台编码好的附件 metadata，避免排空瞬间在主 actor 上
+        // 对整段 Base64 payload 再做一次 JSON 序列化 + UTF-8 校验（#1323）。
+        // 仅同步提交路径（无预编码结果）才回落到现场编码。
+        var metadata = next.attachmentMetadata ?? Self.encodeAttachmentMetadata(
+            imageAttachments: next.imageAttachments,
+            fileAttachments: next.fileAttachments
+        )
         // 队列条目自带折叠块，回放时必须原样带回，否则排队期间折叠的内容
         // 会在真正发出时退化成一大段文字。
         metadata.merge(

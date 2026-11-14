@@ -2,6 +2,7 @@ import KitAgentTool
 import KernelCore
 import ProviderChatSection
 import ProviderAgentRules
+import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderProject
 import ProviderSettingView
@@ -118,9 +119,10 @@ public final class AgentRulesPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         self.projectObserver = projectObserver
 
         // 在 LLM 请求前注入项目规则和已启用插件贡献的规则。
+        // 项目规则按会话绑定项目解析，避免并发切换会话时串入别的项目规则。
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let hook = AgentRuleInjectionHook(
-                project: project,
+                conversations: kernel.resolveProvider((any ConversationManaging).self),
                 ruleProvider: kernel.resolveProvider((any AgentRuleProviding).self)
             )
             ruleInjectionHook = hook

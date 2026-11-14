@@ -67,7 +67,7 @@ final class ConversationForkCoordinator {
     /// 避免弹窗里显示的条数与真正被摘要的内容对不上。
     func preview(for conversationID: UUID) async -> ConversationForkPreview {
         let history = await messages.messagesSnapshot(in: conversationID)
-        let relevant = ConversationSummarizer.filteredMessages(history)
+        let relevant = await ConversationSummarizer.filteredMessagesOffMainActor(history)
         let requests = relevant.filter { $0.role == .user }
         let summary = conversations.conversations.first { $0.id == conversationID }
 
@@ -89,7 +89,7 @@ final class ConversationForkCoordinator {
     ///   这样用户确认的与实际分叉的才是同一份上下文。
     func fork(conversationID: UUID) async throws -> Outcome {
         let history = await messages.messagesSnapshot(in: conversationID)
-        guard !ConversationSummarizer.filteredMessages(history).isEmpty else {
+        guard await !ConversationSummarizer.filteredMessagesOffMainActor(history).isEmpty else {
             throw ForkError.emptyConversation
         }
 

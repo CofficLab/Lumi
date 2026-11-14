@@ -402,6 +402,259 @@ extension SharedManagerSuite {
             #expect(systems.count == 2)
             #expect(systems.contains { $0.contains("Automatic Continuation") } == false)
         }
+
+        // MARK: - 用户编辑提示（#1332）
+
+        @Test("用户编辑后下一轮注入新文本与一次性提示，提示只出现一次")
+        func testUserEditInjectsNewContentAndOneShotNotice() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            let created = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Original goal",
+                description: "original description",
+                successCriteria: "original criteria",
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalContent(
+                id: created.goal.id,
+                title: "Revised goal",
+                description: "revised description",
+                successCriteria: "revised criteria"
+            )
+
+            let hook = GoalPromptInjectionHook()
+            let first = await hook.apply(to: context(conversationID))
+            let systems = systemTexts(first)
+
+            // 契约 + 进度 + 编辑提示；静态契约仍在最前且内容不变
+            #expect(systems.count == 3, "实际注入 \(systems.count) 段")
+            guard systems.count == 3 else { return }
+            #expect(systems[0].contains("Autonomous Execution Contract"))
+            #expect(systems[1].contains("**Title:** Revised goal"))
+            #expect(systems[1].contains("**Description:** revised description"))
+            #expect(systems[1].contains("**Success Criteria:** revised criteria"))
+            #expect(systems[2].contains("## ✏️ Goal Edited by User"))
+            #expect(systems[2].contains(created.goal.id))
+            #expect(systems[2].contains("Re-evaluate every remaining task"))
+            // 动态内容仍锚定在最新 user 之前
+            #expect(first.messages.last?.content == "hello")
+
+            // 第二次请求：新文本仍在，一次性提示已被消费
+            let second = await hook.apply(to: context(conversationID))
+            let secondSystems = systemTexts(second)
+            #expect(secondSystems.count == 2)
+            #expect(secondSystems.contains { $0.contains("Goal Edited by User") } == false)
+            #expect(secondSystems[1].contains("**Description:** revised description"))
+        }
+
+        @Test("没有用户编辑时不注入编辑提示")
+        func testNoEditNoticeWithoutUserEdit() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Untouched goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+
+            let result = await GoalPromptInjectionHook().apply(to: context(conversationID))
+            let systems = systemTexts(result)
+
+            #expect(systems.count == 2)
+            #expect(systems.contains { $0.contains("Goal Edited by User") } == false)
+        }
+
+        @Test("blocked 期间编辑不消费提示标记，重新活跃后才注入")
+        func testEditNoticeDeferredWhileBlocked() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            let created = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Blocked goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalStatus(
+                id: created.goal.id, status: .blocked, blockedReason: "missing credentials"
+            )
+            _ = try await manager.updateGoalContent(
+                id: created.goal.id, title: "Edited while blocked", description: nil, successCriteria: nil
+            )
+
+            let hook = GoalPromptInjectionHook()
+            let blockedResult = await hook.apply(to: context(conversationID))
+            let blockedSystems = systemTexts(blockedResult)
+            #expect(blockedSystems.count == 1)
+            #expect(blockedSystems[0].contains("Goal Blocked"))
+            #expect(blockedSystems.contains { $0.contains("Goal Edited by User") } == false)
+
+            _ = try await manager.updateGoalStatus(id: created.goal.id, status: .inProgress)
+
+            let activeResult = await hook.apply(to: context(conversationID))
+            let activeSystems = systemTexts(activeResult)
+            #expect(activeSystems.contains { $0.contains("Goal Edited by User") })
+            #expect(activeSystems.contains { $0.contains("**Title:** Edited while blocked") })
+        }
+
+        // MARK: - 注入位置（保前缀缓存）
+
+        @Test("动态进度锚定在最新 user 之前，稳定历史前缀逐字节不变")
+        func testDynamicProgressAnchorsBeforeLatestUserPreservingPrefix() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Ship it",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+
+            let history = [
+                LLMMessage(role: .system, content: "base system"),
+                LLMMessage(role: .user, content: "earlier question"),
+                LLMMessage(role: .assistant, content: "earlier answer"),
+                LLMMessage(role: .user, content: "latest question"),
+            ]
+            let result = await GoalPromptInjectionHook().apply(
+                to: WillSendToLLMContext(messages: history, conversationID: conversationID)
+            )
+
+            // 静态契约前置 + 动态进度插最新 user 之前 = 多 2 条
+            #expect(result.messages.count == history.count + 2)
+            #expect(result.messages[0].role == .system)
+            #expect(result.messages[0].content.contains("Autonomous Execution Contract"))
+            // 稳定历史前缀逐字节不变
+            #expect(result.messages[1] == history[0])
+            #expect(result.messages[2] == history[1])
+            #expect(result.messages[3] == history[2])
+            // 动态进度落在最新 user 之前，而非 prepend 到 0
+            #expect(result.messages[4].role == .system)
+            #expect(result.messages[4].content.contains("## 🎯 Current Goal"))
+            #expect(result.messages[5] == history[3])
+        }
+
+        @Test("有尾随 system 消息时动态进度仍锚定最新 user")
+        func testDynamicProgressAnchorsOnLatestUserWithTrailingSystem() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Trailing",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+
+            let history = [
+                LLMMessage(role: .user, content: "earlier question"),
+                LLMMessage(role: .assistant, content: "earlier answer"),
+                LLMMessage(role: .user, content: "latest question"),
+                LLMMessage(role: .system, content: "trailing system"),
+            ]
+            let result = await GoalPromptInjectionHook().apply(
+                to: WillSendToLLMContext(messages: history, conversationID: conversationID)
+            )
+
+            #expect(result.messages.count == history.count + 2)
+            // [contract, earlier-user, answer, progress, latest-user, trailing-system]
+            #expect(result.messages[3].role == .system)
+            #expect(result.messages[3].content.contains("## 🎯 Current Goal"))
+            #expect(result.messages[4] == history[2])
+            #expect(result.messages[5] == history[3])
+        }
+
+        @Test("blocked 提示锚定在最新 user 之前，不前置契约")
+        func testBlockedPromptAnchorsBeforeLatestUser() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            let created = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Blocked goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalStatus(id: created.goal.id, status: .blocked)
+
+            let history = [
+                LLMMessage(role: .system, content: "base system"),
+                LLMMessage(role: .user, content: "earlier question"),
+                LLMMessage(role: .assistant, content: "earlier answer"),
+                LLMMessage(role: .user, content: "latest question"),
+            ]
+            let result = await GoalPromptInjectionHook().apply(
+                to: WillSendToLLMContext(messages: history, conversationID: conversationID)
+            )
+
+            // 只注入 blocked 一条，无契约
+            #expect(result.messages.count == history.count + 1)
+            #expect(Array(result.messages[0..<3]) == Array(history[0..<3]))
+            #expect(result.messages[3].role == .system)
+            #expect(result.messages[3].content.contains("## 🎯 Goal Blocked"))
+            #expect(result.messages[4] == history[3])
+        }
+
+        @Test("续跑指令与进度一起锚定在最新 user 之前且保持顺序")
+        func testContinuationPromptAnchorsBeforeLatestUserInOrder() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Continuing",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            await manager.markContinuation(conversationId: conversationID.uuidString)
+
+            let history = [
+                LLMMessage(role: .system, content: "base system"),
+                LLMMessage(role: .user, content: "earlier question"),
+                LLMMessage(role: .assistant, content: "earlier answer"),
+                LLMMessage(role: .user, content: "latest question"),
+            ]
+            let result = await GoalPromptInjectionHook().apply(
+                to: WillSendToLLMContext(messages: history, conversationID: conversationID)
+            )
+
+            // contract + progress + continuation = 多 3 条
+            #expect(result.messages.count == history.count + 3)
+            #expect(result.messages[0].content.contains("Autonomous Execution Contract"))
+            #expect(Array(result.messages[1..<4]) == Array(history[0..<3]))
+            // 进度在前、续跑在后，都落在最新 user 之前
+            #expect(result.messages[4].content.contains("## 🎯 Current Goal"))
+            #expect(result.messages[5].content.contains("Automatic Continuation"))
+            #expect(result.messages[6] == history[3])
+        }
     }
 }
 

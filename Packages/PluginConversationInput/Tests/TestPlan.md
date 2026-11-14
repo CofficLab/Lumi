@@ -363,9 +363,32 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **171 条场景 / 177 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 177 tests in 25 suites；其中 6 条 chip 几何用例在本机
-> Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
+### 折叠粘贴原文保真（回归 #336）与命中 / 缓存 / 分流用例补登记
+
+> ID 176–177 是本轮 #336 的回归用例；ID 178–189 为此前已实跑通过、但漏登记到
+> 清单的既有用例（非文件 URL 分流、附件位图解码缓存、粘贴 chip 命中测试），
+> 本轮一并补齐，使 `verify-testplan.py` 的双向方法核对恢复绿色。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 176 | 折叠块 | 折叠粘贴保留原文首尾换行，发送正文不黏连（**回归 #336**） | 正文 `"prefix"` + 粘贴「换行 + 1200 个 A + 换行」+ `"suffix"` | `handlePaste` 后发布正文 | draft 为 `prefix + 原文 + suffix`（首尾换行保留），折叠区间 start=6、length=原文长度 | P0 | ✅ 已覆盖 | `collapsedPastePreservesOriginalNewlines` |
+| 177 | 折叠块 | 纯换行粘贴不折叠，交回普通粘贴通道（#336） | 粘贴 `"\n\n\n"` | `handlePaste` | 返回 false，不插入 chip | P1 | ✅ 已覆盖 | `newlineOnlyPasteIsNotCollapsed` |
+| 178 | 拖放 | mailto 链接不进入附件链 | 空能力层 | `attach(droppedURL: mailto:)` | 文件 / 图片池均空，无错误提示 | P1 | ✅ 已覆盖 | `mailtoLinkIsRejected` |
+| 179 | 拖放 | https 链接不进入附件链 | 空能力层 | `attach(droppedURL: https:)` | 文件 / 图片池均空，无错误提示 | P1 | ✅ 已覆盖 | `httpsLinkIsRejected` |
+| 180 | 拖放 | 非文件 URL 不被当成目录插入文本 | 空能力层 | `attach(droppedURL: mailto:)` | `pendingBlock == nil` | P1 | ✅ 已覆盖 | `nonFileURLDoesNotInsertDirectoryPath` |
+| 181 | 拖放 | 输入框拖放只把本地文件交给附件处理器 | 文件 / 远程 / mailto URL | 校验 `isFileAttachmentURL` | 文件为 true，远程与 mailto 为 false | P1 | ✅ 已覆盖 | `editorOnlyRoutesLocalFilesToAttachmentHandler` |
+| 182 | 附件缓存 | 同一附件重复取图只解码一次 | 1×1 PNG 附件 | 连续两次 `image(for:)` | 返回同一实例（命中缓存） | P1 | ✅ 已覆盖 | `sameAttachmentDecodesOnlyOnce` |
+| 183 | 附件缓存 | 文本变化后仍复用同一份位图 | 挂起图片 + 连续 `setText` | 多次按键后 `image(for:)` | 与首次为同一实例 | P1 | ✅ 已覆盖 | `reusesImageAcrossTextChanges` |
+| 184 | 附件缓存 | 移除附件后释放其位图缓存 | 挂起图片 | 移除附件并 refresh 后重新取图 | 重新解码（不再命中旧缓存） | P1 | ✅ 已覆盖 | `removingAttachmentReleasesCache` |
+| 185 | 附件缓存 | 非法 Base64 返回 nil 且不缓存 | 损坏的 base64 附件 | 两次 `image(for:)` | 均为 nil | P1 | ✅ 已覆盖 | `invalidBase64ReturnsNil` |
+| 186 | 附件缓存 | 只保留挂起中的附件缓存 | 两个附件 | `retainOnly(ids: [kept])` | kept 命中旧实例，dropped 重新解码 | P1 | ✅ 已覆盖 | `retainOnlyKeepsPendingAttachments` |
+| 187 | 命中测试 | chip 矩形内的点命中 chip | 仅含一个粘贴 chip 的编辑器 | `pastePreviewHit(at: 矩形中心)` | 非 nil | P1 | ✅ 已覆盖 | `pointInsideChipHitsChip` |
+| 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
+| 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
+
+> 说明：清单 **202 条场景 / 208 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 208 tests in 31 suites，全部通过；早期记录的 6 条 chip 几何
+> 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -384,12 +407,95 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > - **UTF-16 与 Swift 索引是两套坐标系**（ID 51–53）：`NSTextView` 的选区是 UTF-16
 >   偏移，`String.Index` 按 grapheme 计数，emoji 让两者不再相等。
 
+### 补充轮次（ID 190）：折叠块启动补投 FIFO（回归 #204）
+
+> 输入插件可能晚于一次右键发送才装配好。`DefaultConversationInputBlockProvider`
+> 在首个观察者注册前缓冲提交的块，注册时**同步**逐个补投，于是
+> `ConversationInputObserver` 一注册就连续 `enqueue` 多个块。旧实现用单槽
+> `pendingBlock`，后块覆盖前块——补投 A、B 后只剩 B，A 静默丢失。本轮用真实
+> Provider + Adapter + Observer 走完整补投链路，锁住 FIFO 保真。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 190 | 折叠块 | 启动补投的多个块按提交顺序逐个待插入，消费一个推进到下一个（**回归 #204**） | 真实 Provider 缓冲 3 个块后装配 Adapter + Observer | 注册触发同步补投 → 依次消费队首 | 队首始终为最早未消费块（first→second→third→nil），单槽覆盖会丢前块 | P0 | ✅ 已覆盖 | `startupReplayDeliversBlocksInOrder` |
+
+> **鉴别力验证**：两处变异分别确认两道守卫——把 `enqueue` 改成用最新 `request`
+> 覆盖 `pendingBlock`（恢复单槽旧行为），补投后队首变 third，首个断言失败；把
+> `consumePendingBlock` 的 `pendingBlock = pendingBlockQueue.first` 改成 `= nil`，
+> 消费 first 后队首为 nil，第二个断言失败。两处均已还原。
+
+### 补充轮次（ID 191–192）：延迟发送快照保真（回归 #1172）
+
+> 附件异步读取期间用户可能继续编辑草稿。旧实现在等待结束后才递归 `send()`
+> 快照正文，于是发出去的是读取结束后的新草稿，成功清理还会把这份新草稿抹掉。
+> 修复把正文与折叠块的快照提前到**按下 Send 的瞬间**，等待结束后用快照提交；
+> 附件仍等读取结束再入快照（保留 #1023）。两条发送入口各锁一条用例。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 191 | 发送 | 回车路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → `setText("first edited")` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
+| 192 | 发送 | 按钮路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → 改写正文为 `"first edited"` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
+
+### 补充轮次（ID 193–194）：延迟发送会话绑定（回归 #1173）
+
+> 等待附件读取的发送未绑定发起会话。旧实现等待结束后递归 `send()` 读取
+> **当前**选中会话并以 `conversationID: nil` 提交，于是等待期间切换会话后，
+> 新会话的独立草稿会被当成这次发送提交并清空。修复在按下 Send 的瞬间一并
+> 快照 `selectedConversationID`，提交时显式传入，使发送始终落在发起会话。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 193 | 发送 | 回车路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并 `setText("B draft")` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 不被提交也不被清空 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
+| 194 | 发送 | 按钮路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并改写正文 `"B draft"` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 保留，无后台提交 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
+
+### 补充轮次（ID 195–196）：延迟清理的会话身份（回归 #1175）
+
+> 提交成功后的草稿清理只用正文相等做身份判定。A 发起的后台编码提交完成时
+> 用户可能已切到 B 并输入**相同文本**的独立草稿，仅凭正文相等会把 B 的草稿
+> 一并清空。修复让 `clearSentDraft` 先校验当前仍选中发起发送的会话，再比正文。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 195 | 发送 | 回车路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并 `setText("same")` → 放行提交 | 提交落在 A；B 的 `"same"` 在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
+| 196 | 发送 | 按钮路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并改写正文 `"same"` → 放行提交 | 提交落在 A；B 的 `"same"` 保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
+
+### 补充轮次（ID 197–198）：附件读取失败中止延迟发送（回归 #1174）
+
+> 附件读取失败时，旧实现的等待门禁只负责「唤醒」，不区分成功与失败，发送入口
+> 被唤醒后照常提交，于是本该带附件的消息被悄悄降级成纯文本发出，错误提示也被
+> 提交流程清掉。修复让 `waitForAttachmentReads()` 返回 Bool（读取失败为 false），
+> 发送入口据此中止本次发送，保留草稿与错误提示，由用户决定重试或去掉附件。
+> 两条发送入口各锁一条用例；发送器侧的 Bool 门禁与失败标记复位另见
+> `ProviderMessageSender` / `PluginMessageSender` 的附件读取门禁套件。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 197 | 发送 | 回车路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，`canSend` 仍为 true | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSend` |
+| 198 | 发送 | 按钮路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，按钮仍可发送 | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSendFromButton` |
+
+### 补充轮次（ID 199–202）：编辑器拍平缓存（回归 #1261）
+
+> 带 chip 时，每次按键都会让 `publishCommittedText` 与随后的 `updateNSView`
+> 各把整篇文档拍平一遍，代价是 O(编辑次数 × 文档长度)。修复在 `EditorTextView`
+> 上按文本存储版本（`storageRevision`）缓存拍平结果：版本未变即复用，只有真正
+> 改动存储才重算。版本号由 `NSTextStorage.didProcessEditingNotification` 同步递增，
+> **刻意不用 `didChangeText`**——撤销与外部代码直接改 `textStorage` 都不走后者，
+> 漏掉这些路径会让缓存发 stale，把已删除的 chip 或 U+FFFC 占位符当正文发出去。
+> 本轮重点锁定「版本号覆盖全部改动路径」与「改动后缓存立即失效」。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 199 | 编辑器 | 直接改 textStorage 也递增版本号（append / delete / setAttributedString）（**回归 #1261**） | 空 `EditorTextView` | 依次 `append` / `deleteCharacters` / `setAttributedString` | 每次改动后 `storageRevision` 严格递增（覆盖不走 `didChangeText` 的路径） | P1 | ✅ 已覆盖 | `storageMutationBumpsRevision` |
+| 200 | 编辑器 | 无存储改动时重复发布复用缓存，版本号不变（**回归 #1261**） | 正文 `"summarize "` + chip `"BODY"` | 发布一次 → 不改存储再发布一次 | 草稿为 `"summarize BODY"`；版本号不变，`cachedResolvedContent()` 命中同一份拍平结果 | P0 | ✅ 已覆盖 | `repeatedPublishReusesCacheWithoutMutation` |
+| 201 | 编辑器 | 直接追加文字后发布得到新正文，缓存不发 stale（**回归 #1261**） | chip `"BODY"` 已发布 | 直接 `textStorage.append(" tail")` → 再发布 | 草稿为 `"BODY tail"`，折叠块区间仍指向 chip（缓存按新版本重算） | P0 | ✅ 已覆盖 | `directStorageEditInvalidatesCache` |
+| 202 | 编辑器 | 删除 chip 后缓存失效，正文不再含 chip 原文（**回归 #1261**） | 正文 `"A "` + chip `"BODY"` 已发布 | 直接 `deleteCharacters` 删掉 chip 占位 → 再发布 | 草稿为 `"A "`，折叠块清空，`hasPastePreviewAttachments` 归 false | P0 | ✅ 已覆盖 | `deletingChipInvalidatesCache` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 55 / 55
-- P1: 已覆盖 102 / 102
+- P0: 已覆盖 68 / 68
+- P1: 已覆盖 116 / 116
 - P2: 已覆盖 18 / 18
-- **合计: 175 / 175**（仅表示清单场景，非源码覆盖率）
+- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

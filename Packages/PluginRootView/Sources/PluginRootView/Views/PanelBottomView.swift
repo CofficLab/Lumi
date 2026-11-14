@@ -40,7 +40,6 @@ struct PanelBottomView: View {
             Divider()
             content
         }
-        .debugViewBadge("Panel Bottom", alignment: .bottomLeading)
         .onAppear { mountActiveItem() }
         .onChange(of: provider.activeItemID) { _ in
             mountActiveItem()
@@ -78,7 +77,6 @@ struct PanelBottomView: View {
                         .allowsHitTesting(presentation.allowsHitTesting)
                         .zIndex(presentation.zIndex)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .debugViewBadge(item.id)
                 }
             }
         }

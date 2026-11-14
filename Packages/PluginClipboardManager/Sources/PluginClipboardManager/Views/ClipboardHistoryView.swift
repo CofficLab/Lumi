@@ -19,7 +19,9 @@ public struct ClipboardHistoryView: View {
                     placeholder: pluginLocalization.string("Search clipboard history...")
                 )
                 .onChange(of: viewModel.searchText) { _ in
-                    viewModel.filterItems()
+                    // 逐键输入走带防抖的搜索，避免每次按键都全量扫描历史记录
+                    // （见 issue #1192）。
+                    viewModel.scheduleFilter()
                 }
                 
                 if !viewModel.searchText.isEmpty {

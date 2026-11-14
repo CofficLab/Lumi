@@ -131,7 +131,7 @@ struct SendActionBarViewModelTests {
         let commit = try #require(capability.commits.first)
         // 传原文而非预 trim 文本：折叠块区间以原文为坐标系，trim 由 sender 做。
         #expect(commit.content == "  hello world  ")
-        // 发送时显式传 nil，由发送能力解析目标会话。
+        // 传按下 Send 时锁定的会话；本用例未选中会话，故为 nil（#1173）。
         #expect(commit.conversationID == nil)
         #expect(commit.usedBackgroundPath == false)
         // 提交后输入框立即清空，错误提示一并复位。
@@ -318,6 +318,91 @@ struct SendActionBarViewModelTests {
         #expect(capability.text == "first edited")
     }
 
+    @Test("附件读取期间继续编辑时，发送的是按下 Send 时的草稿（#1172）")
+    func deferredSendSubmitsSnapshotTakenAtSendPress() async throws {
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 按下 Send：正文快照为 "first"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 读取期间用户继续编辑，并选中了一个附件。
+        capability.text = "first edited"
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        capability.pendingFileAttachments = [file]
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未走后台提交") { !capability.backgroundCommits.isEmpty }
+        let commit = try #require(capability.backgroundCommits.first)
+        // 提交的是按下 Send 时的 "first"，而不是读取结束后的 "first edited"。
+        #expect(commit.content == "first")
+        #expect(commit.fileAttachments.map(\.id) == [file.id])
+
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+        #expect(capability.text == "first edited")
+    }
+
+    @Test("等待附件读取期间切换会话，按钮发送仍落在发起会话（#1173）")
+    func deferredSendStaysBoundToOriginatingConversation() async throws {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "A draft"
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 在 A 按下 Send：快照 A + "A draft"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 等待期间切换到 B 并输入独立草稿，但不在 B 按发送。
+        capability.selectedConversationID = b
+        capability.text = "B draft"
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未提交") { !capability.commits.isEmpty }
+        // 无附件走同步提交；目标必须是发起发送的 A，正文是 A 的快照。
+        let commit = try #require(capability.commits.first)
+        #expect(commit.conversationID == a)
+        #expect(commit.content == "A draft")
+        // B 的独立草稿既不能被提交，也不能被清理。
+        #expect(capability.text == "B draft")
+        #expect(capability.backgroundCommits.isEmpty)
+    }
+
+    @Test("后台编码期间切到相同文本的新会话，成功提交不清空新会话草稿（#1175）")
+    func backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation() async throws {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "same"
+        capability.pendingFileAttachments = [
+            UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        ]
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.holdsBackgroundCommits = true
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+        await waitUntil("后台提交未开始") { !capability.backgroundCommits.isEmpty }
+
+        // 编码期间切到 B，并输入与 A 发送内容**相同文本**的独立草稿。
+        capability.selectedConversationID = b
+        capability.text = "same"
+        capability.releaseBackgroundCommits()
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+
+        // 消息提交到 A；B 的相同文本草稿不能仅凭正文相等就被清理抹掉。
+        let commit = try #require(capability.backgroundCommits.first)
+        #expect(commit.conversationID == a)
+        #expect(capability.text == "same")
+    }
+
     @Test("发送前清除旧的错误提示")
     func sendClearsPreviousError() throws {
         let capability = SendActionBarTestCapability()
@@ -489,10 +574,16 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     // MARK: - Attachment reading
 
     private(set) var pendingAttachmentReadCount = 0
-    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+    private var attachmentReadFailed = false
+    private var attachmentReadWaiters: [CheckedContinuation<Bool, Never>] = []
 
     func beginAttachmentRead() {
+        if pendingAttachmentReadCount == 0 { attachmentReadFailed = false }
         pendingAttachmentReadCount += 1
+    }
+
+    func recordAttachmentReadFailure() {
+        attachmentReadFailed = true
     }
 
     func endAttachmentRead() {
@@ -501,12 +592,13 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         guard pendingAttachmentReadCount == 0 else { return }
         let waiters = attachmentReadWaiters
         attachmentReadWaiters = []
-        waiters.forEach { $0.resume() }
+        let succeeded = !attachmentReadFailed
+        waiters.forEach { $0.resume(returning: succeeded) }
     }
 
-    func waitForAttachmentReads() async {
-        guard pendingAttachmentReadCount > 0 else { return }
-        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    func waitForAttachmentReads() async -> Bool {
+        guard pendingAttachmentReadCount > 0 else { return true }
+        return await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Send

@@ -1,6 +1,7 @@
 import Foundation
 import ProviderConversation
 import ProviderMessage
+import KitMessageList
 
 /// Message List Row Builder
 ///
@@ -145,6 +146,12 @@ struct MessageListRowBuilder {
         let head = ordered.first
             ?? Message(conversationID: UUID(), role: .assistant, content: "")
         let allToolCalls = ordered.flatMap { $0.toolCalls ?? [] }
+        // 合成行必须保留成员的思考内容（#148）：单条原样带出，多条按时间顺序
+        // 合并，避免支持思考输出的模型在工具调用阶段丢失思考展示。
+        let mergedReasoning = ordered
+            .compactMap { $0.reasoningContent }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
         return Message(
             id: derivedGroupID(head: head, messages: ordered),
             conversationID: head.conversationID,
@@ -157,6 +164,7 @@ struct MessageListRowBuilder {
             providerID: head.providerID,
             modelName: head.modelName,
             renderKind: head.turnID == nil ? "tool-step-group" : "turn-activity",
+            reasoningContent: mergedReasoning.isEmpty ? nil : mergedReasoning,
             toolCalls: allToolCalls
         )
     }

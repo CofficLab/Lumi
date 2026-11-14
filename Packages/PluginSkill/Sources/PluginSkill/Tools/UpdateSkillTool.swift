@@ -57,8 +57,28 @@ public struct UpdateSkillTool: SuperAgentTool {
         .medium
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let projectPath = await SkillToolSupport.resolveProjectPath(arguments) else {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        guard let projectPath = await SkillToolSupport.resolveProjectPath(
+            arguments,
+            conversationProjectPath: conversationProjectPath
+        ) else {
             throw SkillCreationError.invalidName("project_path is required (no current project selected)")
         }
         guard let name = SkillToolSupport.string(arguments, "name") else {

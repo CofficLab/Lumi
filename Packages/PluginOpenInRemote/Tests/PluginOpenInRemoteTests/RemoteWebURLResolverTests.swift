@@ -148,4 +148,41 @@ struct RemoteWebURLResolverTests {
         )
         #expect(RemoteWebURLResolver.webURLString(fromRemote: "not-a-remote") == nil)
     }
+
+    /// 回归 #298：HTTPS remote 内嵌的 `user:password@` 不得进入浏览器链接。
+    @Test("https remote 内嵌的用户名与密码必须被剥离")
+    func stripsUserinfoFromHTTPSRemote() {
+        let url = RemoteWebURLResolver.webURL(fromRemote: "https://user:secret@github.com/acme/repo.git")
+        #expect(url?.absoluteString == "https://github.com/acme/repo")
+        #expect(url?.user == nil)
+        #expect(url?.password == nil)
+    }
+
+    /// 回归 #298：HTTP remote 同样不得携带凭据。
+    @Test("http remote 内嵌的用户名与密码必须被剥离")
+    func stripsUserinfoFromHTTPRemote() {
+        let url = RemoteWebURLResolver.webURL(fromRemote: "http://user:secret@github.com/acme/repo.git")
+        #expect(url?.absoluteString == "http://github.com/acme/repo")
+        #expect(url?.user == nil)
+        #expect(url?.password == nil)
+    }
+
+    /// 回归 #298：只有用户名（无密码）时也要剥离。
+    @Test("https remote 仅含 user@ 前缀时同样剥离")
+    func stripsUserOnlyFromHTTPSRemote() {
+        let url = RemoteWebURLResolver.webURL(fromRemote: "https://user@github.com/acme/repo.git")
+        #expect(url?.absoluteString == "https://github.com/acme/repo")
+        #expect(url?.user == nil)
+    }
+
+    /// 回归 #298：剥离凭据时不得解码路径中的百分号编码（与 #1095 一致）。
+    @Test("剥离凭据后仍保留路径中的百分号编码")
+    func stripsUserinfoPreservesEncodedPath() {
+        let url = RemoteWebURLResolver.webURL(fromRemote: "https://user:secret@code.example.com/acme/repo%23draft.git")
+        #expect(url?.absoluteString == "https://code.example.com/acme/repo%23draft")
+        #expect(url?.path == "/acme/repo#draft")
+        #expect(url?.fragment == nil)
+        #expect(url?.user == nil)
+        #expect(url?.password == nil)
+    }
 }

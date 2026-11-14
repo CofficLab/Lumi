@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 84
+测试文件: 14 个，用例总数: 98
 
 ## 公开 API
 
@@ -27,14 +27,18 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 - **DefaultHTTPClient**（8 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadConfigurationAndState**（4 条）：由 `defaults`、`customOverrides`、`nonFinal` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadCancellationPropagation**（3 条）：由 `cancellingCallerCancelsInternalDownload`、`cancelledCallerReportsCancelledStateAndStopsWrite`、`uncancelledDownloadStillCompletes` 锁定调用方（工具 Job / turn / 会话）取消必须经 `withTaskCancellationHandler` 转发到内部非结构化下载 Task，立即停掉 HTTP 请求与文件写入并进入 `.cancelled`；未取消的正常下载不得被误伤（**回归 #471**）；改动下载取消转发或任务等待时优先跑对应测试文件。
+- **DownloadConcurrencyLimit**（3 条）：由 `maxConcurrentDownloadsLimitIsEnforced`、`defaultLimitAllowsThreeConcurrentButNotFour`、`failedDownloadReleasesSlotForQueuedDownload` 锁定 `maxConcurrentDownloads` 必须真正限制并发：名额耗尽时后续下载不得进入 HTTPClient，下载到达任一终态（含失败）必须归还名额并唤醒排队者（**回归 #484**）；改动下载并发调度时优先跑对应测试文件。
 - **DownloadCoverage**（7 条）：由 `convenienceDownload`、`resumeWithoutPartialFile`、`isCompleteMissingFile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadError**（2 条）：由 `errorDescriptionsNotEmpty`、`errorEquality` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadManager**（18 条）：由 `downloadSuccess`、`downloadFailure`、`getTaskState` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadRestartIdentity**（1 条）：由 `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` 锁定取消后以同 id 重启时，旧任务的晚到终态写回与收尾清理必须按代次作废，不得把新任务改成 `.cancelled` 或注销其 `activeTasks`/`progressHandlers`（**回归 #157**）；改动下载取消/重启或状态写回时优先跑对应测试文件。
 - **DownloadProgress**（8 条）：由 `defaultProgress`、`fractionCompletedCalculation`、`zeroTotalBytes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadTask**（5 条）：由 `taskCreation`、`incompleteURL`、`customId` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **FileValidator**（8 条）：由 `validateExistingFile`、`validateNonExistentFile`、`validateEmptyFile` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **FileValidator**（10 条）：由 `validateExistingFile`、`validateNonExistentFile`、`validateEmptyFileWithoutExpectationSucceeds`、`validateZeroByteFileWithExpectedZero` 等用例锁定大小匹配必须先于空文件判断，合法零字节文件（含 `expectedSize == 0` 与 nil）不得被误判为 emptyFile 失败（**回归 #159**）；改动该模块时优先跑对应测试文件。
+- **ZeroByteDownload**（2 条）：由 `zeroByteDownloadWithNilExpectedSizeCompletes`、`zeroByteDownloadWithZeroExpectedSizeCompletes` 锁定服务器成功返回零字节文件时下载任务必须进入 `.completed`，覆盖 DownloadManager → FileValidator 完整链路（**回归 #159**）；改动下载完成校验时优先跑对应测试文件。
 - **RateLimiter**（10 条）：由 `unlimitedRateLimiterReturnsImmediately`、`staticUnlimitedInstance`、`rateLimiterEnforcesSpeedLimit` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ResumeHandler**（9 条）：由 `saveAndGetResumeData`、`removeResumeData`、`appendDataCreatesMissingDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeHandler**（12 条）：由 `saveAndGetResumeData`、`removeResumeData`、`appendDataCreatesMissingDirectory`、`finalizeDownloadKeepsExistingFileWhenSourceMissing` 等用例锁定 `finalizeDownload` 必须先校验源文件、再用原子替换覆盖，源缺失或替换失败时不得删除已存在的最终文件（**回归 #160**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -94,7 +98,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 52 | DownloadTask | 任务状态相等性 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `taskStateEquality` |
 | 53 | FileValidator | 验证存在的文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateExistingFile` |
 | 54 | FileValidator | 验证不存在的文件抛出错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateNonExistentFile` |
-| 55 | FileValidator | 验证空文件抛出错误 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `validateEmptyFile` |
+| 55 | FileValidator | 无期望大小时合法空文件必须验证成功，不得误判为空文件失败（**回归 #159**） | 成功下载产生的空文件，expectedSize 为 nil | 调用 `validate` | 返回 true，不抛 emptyFile | P0 | ✅ 已覆盖 | `validateEmptyFileWithoutExpectationSucceeds` |
 | 56 | FileValidator | 验证文件大小不匹配抛出错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateSizeMismatch` |
 | 57 | FileValidator | 验证文件大小匹配成功 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateSizeMatch` |
 | 58 | FileValidator | 检查完整文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isCompleteWithCompleteFile` |
@@ -124,27 +128,52 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 82 | DefaultHTTPClient | 服务器忽略 If-Range 返回 206 但 ETag 已变时从头重下 | 本地 validator 与响应 ETag 不一致 | 第一次 206、第二次 200 | 共 2 次请求，第二次无 Range，最终文件为新版本完整内容 | P0 | ✅ 已覆盖 | `ignoredIfRangeWithChangedETagRestartsFromScratch` |
 | 83 | DefaultHTTPClient | 下载中断后持久化 validator，再次请求可条件续传 | 下载到一半被取消 | 重新下载同一 URL | If-Range 携带原 validator，续传后文件完整，完成后清除 validator | P1 | ✅ 已覆盖 | `interruptedDownloadPersistsValidatorAndResumesConditionally` |
 | 84 | DownloadManager | URLSession 的 URLError.cancelled 保持为 cancelled 状态 | 底层客户端抛出 NSURLError -999 | 调用 `download` | 抛出 `DownloadError.cancelled`，任务状态为 `.cancelled` | P1 | ✅ 已覆盖 | `urlSessionCancellationStaysCancelled` |
+| 85 | FileValidator | 期望大小为零的空文件必须验证成功，不得误判失败（**回归 #159**） | 空文件，expectedSize 为 0 | 调用 `validate` | 返回 true，不抛 emptyFile | P0 | ✅ 已覆盖 | `validateZeroByteFileWithExpectedZero` |
+| 86 | FileValidator | 期望大小为零但文件非空时抛出大小不匹配 | 非空文件，expectedSize 为 0 | 调用 `validate` | 抛出 `DownloadError.sizeMismatch` | P1 | ✅ 已覆盖 | `validateNonEmptyFileWithExpectedZeroThrows` |
+| 87 | ZeroByteDownload | expectedSize 为 nil 的零字节下载必须进入完成态，不得误判失败（**回归 #159**） | MockHTTPClient 返回 200 + 空 body，expectedSize 为 nil | 调用 `DownloadManager.download` | 返回目标路径（.completed），磁盘文件 0 字节 | P0 | ✅ 已覆盖 | `zeroByteDownloadWithNilExpectedSizeCompletes` |
+| 88 | ZeroByteDownload | expectedSize 为 0 的零字节下载必须进入完成态，不得误判失败（**回归 #159**） | MockHTTPClient 返回 200 + 空 body，expectedSize 为 0 | 调用 `DownloadManager.download` | 返回目标路径（.completed） | P0 | ✅ 已覆盖 | `zeroByteDownloadWithZeroExpectedSizeCompletes` |
+| 89 | ResumeHandler | 源文件缺失时不得删除已存在的最终文件（**回归 #160**） | 最终文件已存在且内容有效，未完成源文件不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，最终文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `finalizeDownloadKeepsExistingFileWhenSourceMissing` |
+| 90 | ResumeHandler | 源文件缺失且无最终文件时抛错且不创建任何文件 | 源文件与最终文件均不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，不创建最终文件，目录为空 | P1 | ✅ 已覆盖 | `finalizeDownloadMissingSourceThrowsWithoutCreatingDestination` |
+| 91 | ResumeHandler | 原子替换覆盖后只保留最终文件，不残留源或临时文件 | 最终文件与源文件均存在且内容不同 | 调用 `finalizeDownload(from:to:)` | 最终文件为新内容，源文件被消费，目录仅剩最终文件 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwriteLeavesNoResidualFiles` |
+| 92 | DownloadRestartIdentity | 取消后以同 id 重启，旧任务的晚到收尾不得取消或注销新任务（**回归 #157**） | 门控 HTTPClient 挂起 A/B 下载，精确控制取消收尾晚于重启 | 启动 A→取消→同 id 启动 B→放行 A 的取消收尾 | B 状态不被改成 `.cancelled` 且仍在下载，同 id 第三个下载仍被去重拒绝 | P0 | ✅ 已覆盖 | `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` |
+| 93 | DownloadConcurrencyLimit | maxConcurrentDownloads 必须真正限制并发，名额耗尽时后续下载不得进入 HTTPClient（**回归 #484**） | maxConcurrentDownloads=1，门控 HTTPClient 记录进入次数与峰值并发 | 第一个进入占满名额后启动第二个，再放行第一个 | 放行前仅 1 个进入，放行后第二个才进入，峰值并发为 1 | P0 | ✅ 已覆盖 | `maxConcurrentDownloadsLimitIsEnforced` |
+| 94 | DownloadConcurrencyLimit | 默认并发上限 3：四个下载时只有三个进入，第四个排队补位 | 默认配置（maxConcurrentDownloads=3），门控 HTTPClient | 依次启动前三个占满名额，再启动第四个，放行一个 | 第四个放行前不得进入（共 3 个），放行后补位（共 4 个），峰值并发为 3 | P1 | ✅ 已覆盖 | `defaultLimitAllowsThreeConcurrentButNotFour` |
+| 95 | DownloadConcurrencyLimit | 下载失败必须归还名额，排队的后续下载得以进入并完成（**回归 #484**） | maxConcurrentDownloads=1，第一个下载放行后失败 | 第一个占满名额后启动第二个，放行第一个使其失败 | 第二个仍被挡住直到第一个失败归还名额，随后进入并完成，峰值并发为 1 | P0 | ✅ 已覆盖 | `failedDownloadReleasesSlotForQueuedDownload` |
+| 96 | DownloadCancellationPropagation | 取消调用方任务必须把取消转发到内部下载（**回归 #471**） | 取消探针 HTTPClient 进入后挂起轮询 Task.isCancelled | 启动下载待其进入后取消调用方 Task | 内部下载观察到取消并抛 CancellationError，调用方抛错 | P0 | ✅ 已覆盖 | `cancellingCallerCancelsInternalDownload` |
+| 97 | DownloadCancellationPropagation | 取消调用方后任务进入 cancelled 态且不再写文件（**回归 #471**） | 同上 | 取消调用方后等待内部取消并读取任务状态 | 状态为 `.cancelled`，目标文件未被写出，调用方抛 DownloadError | P0 | ✅ 已覆盖 | `cancelledCallerReportsCancelledStateAndStopsWrite` |
+| 98 | DownloadCancellationPropagation | 未取消的下载仍正常完成，取消转发不得误伤正常路径 | 取消探针 HTTPClient，不放行取消只放行完成 | 启动下载待其进入后放行 | 返回目标路径，状态 `.completed`，未观察到取消，文件已写出 | P1 | ✅ 已覆盖 | `uncancelledDownloadStillCompletes` |
 
-> 说明：全部 **84 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **98 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> **回归 #484 变异验证**（`DownloadConcurrencyLimitTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 移除 `performDownload` 的 `await acquireSlot()` + `defer { releaseSlot() }`（完全不门控）→ 93/94/95 全 RED（峰值并发 2 / 4，超出配置）。
+> - **M2** `acquireSlot` 容量判断 `> 0` 改成 `>= 0`（多放一个名额）→ 93/94/95 全 RED（峰值并发 2 / 4）。
+> - **M3** `releaseSlot` 只 `availableSlots += 1`、不再唤醒 `slotWaiters` 队首（排队者永久饿死）→ 93/94/95 全 RED（后续下载永不进入，`waitUntilStarted` 超时）。
+> 三处变异各自独立命中并发上限的不同失效面，还原后全绿。
+
+> **回归 #471 变异验证**（`DownloadCancellationPropagationTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 把 `withTaskCancellationHandler { await downloadTask.value } onCancel { downloadTask.cancel() }` 退回裸 `await downloadTask.value`（不转发取消）→ 96/97 RED（内部下载永不见取消，`waitUntilCancelled` 超时），98 仍绿。
+> - **M2** 在等待前无条件 `downloadTask.cancel()`（误伤正常下载）→ 96/97/98 全 RED（任务在进入探针前即被 `checkCancellation` 拦截，正常下载也被取消）。
+> 两处变异分别命中「取消未转发」与「过度取消」两个失效面，还原后 98 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 69 / 69
-- P2: 已覆盖 8 / 8
-- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 74 / 74
+- P2: 已覆盖 7 / 7
+- **合计: 98 / 98**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（69 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（73 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

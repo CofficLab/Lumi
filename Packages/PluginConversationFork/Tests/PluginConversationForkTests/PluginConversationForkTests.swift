@@ -180,6 +180,45 @@ struct ConversationForkPluginTests {
         #expect(result[0].content.count == ConversationSummarizer.maxCharsPerMessage + "…[truncated]".count)
     }
 
+    @Test("filteredMessages 附件解码仅限保留窗口")
+    func filteredMessagesBoundsAttachmentDecodeToRetainedWindow() {
+        let id = UUID()
+        let base64 = Data("payload".utf8).base64EncodedString()
+        let total = ConversationSummarizer.maxMessages + 40
+        var history: [Message] = []
+        for i in 0..<total {
+            let metadata = UserAttachmentMetadata.encodeImageAttachments([
+                UserImageAttachment(mimeType: "image/png", base64Data: base64),
+            ])
+            history.append(Message(conversationID: id, role: .user, content: "m\(i)", metadata: metadata))
+        }
+
+        ConversationSummarizer.attachmentDecodeCount = 0
+        let result = ConversationSummarizer.filteredMessages(history)
+
+        #expect(result.count == ConversationSummarizer.maxMessages)
+        #expect(ConversationSummarizer.attachmentDecodeCount <= ConversationSummarizer.maxMessages)
+        #expect(result.first?.content.hasPrefix("m40") == true)
+        #expect(result.last?.content.hasPrefix("m\(total - 1)") == true)
+    }
+
+    @Test("filteredMessages 反向扫描跳过空消息保留最近可用条")
+    func filteredMessagesReverseScanKeepsRecentUsableWithEmpties() {
+        let id = UUID()
+        var history: [Message] = []
+        for i in 0..<(ConversationSummarizer.maxMessages + 10) {
+            history.append(Message(conversationID: id, role: .user, content: "u\(i)"))
+            history.append(Message(conversationID: id, role: .user, content: "   "))
+        }
+
+        let result = ConversationSummarizer.filteredMessages(history)
+
+        #expect(result.count == ConversationSummarizer.maxMessages)
+        #expect(result.first?.content == "u10")
+        #expect(result.last?.content == "u\(ConversationSummarizer.maxMessages + 9)")
+        #expect(result.allSatisfy { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+    }
+
     @Test("Fork 按钮通过 sender 发送摘要到新对话")
     func forkSendsSummary() async throws {
         let conversations = DefaultConversationManager()

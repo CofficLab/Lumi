@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 15 条用例。
+PluginWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 15
+测试文件: 2 个，用例总数: 16
 
 ## 公开 API
 
@@ -18,7 +18,7 @@ PluginWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 15 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **WebServerPlugin**（4 条）：由 `installsServerAndRoutes`、`contributesRoutesOnReady`、`keepsCoreAndToolRoutesTogether`、`exposesRegistrar` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **WebServerPlugin**（5 条）：由 `installsServerAndRoutes`、`contributesRoutesOnReady`、`keepsCoreAndToolRoutesTogether`、`exposesRegistrar`、`routeCountsByPluginMatchesRegisteredRoutes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **WebRouteRegistrar**（4 条）：由 `registersRoutes`、`replacesOnSecondRegistration`、`revokesRoutes`、`aggregatesByPlugin` 锁定。
 - **WebRouteContributionHost**（7 条）：由 `publishesRoutes`、`skipsDisabledPlugins`、`routesComeOnlineOnEnable` 等用例锁定。
 
@@ -41,27 +41,28 @@ PluginWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 15 
 | 13 | WebServerPlugin | 插件可声明式贡献端点并在 ready 后下发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contributesRoutesOnReady` |
 | 14 | WebServerPlugin | 核心控制面与工具桥接的路由同时生效 | — | 在同一插件下注册控制面与工具桥接路由 | `/api/v1/status`、`/api/v1/conversations`、`/api/v1/tools` 同时存在 | P1 | ✅ 已覆盖 | `keepsCoreAndToolRoutesTogether` |
 | 15 | WebServerPlugin | 插件可取得自己的路由登记器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exposesRegistrar` |
+| 16 | WebServerPlugin | 按插件统计的路由数与服务器实际注册一致 | 内核注册主题/默认 WebServer/设置 Provider，插件完成 onBoot | 调用 `routeCountsByPlugin(server:)` 统计 | 本插件计 10 条核心控制面路由，各插件计数之和等于 `registeredRouteCount` | P1 | ✅ 已覆盖 | `routeCountsByPluginMatchesRegisteredRoutes` |
 
-> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 15 / 15
+- P1: 已覆盖 16 / 16
 - P2: 已覆盖 0 / 0
-- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（15 条）
+- **P1**: 其余功能性用例（16 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

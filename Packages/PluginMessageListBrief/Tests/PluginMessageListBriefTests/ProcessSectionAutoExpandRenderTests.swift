@@ -4,6 +4,7 @@ import ProviderAgentLoop
 import ProviderMessage
 import SwiftUI
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// 过程折叠区的**自动展开**渲染级验证。

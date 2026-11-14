@@ -384,9 +384,13 @@ final class ConditionBox {
 ///
 /// 这些滚动测试都依赖真实时钟的延迟窗口；MainActor 被其他并行测试抢占时，
 /// 固定 `Task.sleep` 可能不足以让后续滚动落地，改为轮询更稳定。
+/// 轮询直到条件成立。
+///
+/// - Important: 超时给到 10s。默认 3s 在高负载下（CI 上多个包同时跑）
+///   偶尔不够 → **偶发**失败。上限只影响失败路径。
 @MainActor
 private func waitUntil(
-    timeout: TimeInterval = 3,
+    timeout: TimeInterval = 10,
     _ condition: () -> Bool
 ) async {
     let deadline = Date().addingTimeInterval(timeout)

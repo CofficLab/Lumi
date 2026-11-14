@@ -151,10 +151,10 @@ public struct MailWorkspaceView: View {
             Image(systemName: "envelope.badge")
                 .font(.system(size: 44))
                 .foregroundColor(theme.textTertiary)
-            Text("还没有邮件账户")
+            Text(pluginLocalization.string("No Mail Accounts"))
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
-            Text("请到「设置 → 邮件」添加 IMAP/SMTP 账户。")
+            Text(pluginLocalization.string("Add an IMAP/SMTP account in Settings → Mail."))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -171,7 +171,7 @@ public struct MailWorkspaceView: View {
             VStack {
                 ProgressView()
                     .controlSize(.small)
-                Text("正在加载正文…")
+                Text(pluginLocalization.string("Loading message body…"))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -181,7 +181,7 @@ public struct MailWorkspaceView: View {
                 Image(systemName: "text.alignleft")
                     .font(.system(size: 36))
                     .foregroundColor(theme.textTertiary)
-                Text("选择一封邮件查看内容")
+                Text(pluginLocalization.string("Select a message to view its content"))
                     .font(.appBody)
                     .foregroundColor(theme.textSecondary)
             }

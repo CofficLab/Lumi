@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 /// `InitialPositionGate` 的**兜底预算语义**回归测试。

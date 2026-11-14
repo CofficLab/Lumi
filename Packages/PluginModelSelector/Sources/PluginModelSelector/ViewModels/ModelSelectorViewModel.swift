@@ -129,6 +129,21 @@ final class ModelSelectorViewModel: ObservableObject {
         return Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
     }
 
+    /// 指定供应商声明的轻量任务模型 id（对话标题、上下文摘要等幕后调用）。
+    ///
+    /// 供应商未声明时返回 `nil`——此时这些幕后任务回退到对话主模型。
+    /// 声明值若已被上游下线，也不会出现在模型列表里，因此这里不必再校验模型池。
+    func utilityModelID(for providerID: String) -> String? {
+        providerInfo(id: providerID)?.recommendedUtilityModel
+    }
+
+    /// 指定模型是否为该供应商声明的轻量任务模型。
+    ///
+    /// 仅用于 UI 标记，不影响选择、筛选或路由。
+    func isUtilityModel(providerID: String, model: String) -> Bool {
+        utilityModelID(for: providerID) == model
+    }
+
     /// 类别筛选 + 搜索框文本过滤后的可见模型列表。
     ///
     /// 从 View 下沉到此处：渲染逻辑只依赖 ViewModel 快照，可被单元测试直接覆盖，

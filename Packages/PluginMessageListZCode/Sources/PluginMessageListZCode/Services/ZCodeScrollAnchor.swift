@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import KitMessageList
 
 /// 滚动事件的来源。
 ///

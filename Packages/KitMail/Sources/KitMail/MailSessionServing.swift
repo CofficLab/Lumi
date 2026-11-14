@@ -2,7 +2,7 @@ import Foundation
 
 /// 邮件会话薄抽象：KitMail 对协议栈的唯一依赖面。
 ///
-/// 设计约束（见 docs/plans/2026-10-01-mail-client-plugin.md 第 5 节）：
+/// 设计约束（见 Mail 客户端方案第 5 节，docs/plans/2026-10-01-mail-client-plugin.md，已完成归档）：
 /// - 上层（PluginMail）只依赖本协议，不触碰任何第三方类型；
 /// - 实现可替换：`MailCoreAdapter`（A）／ swift-nio-imap + 自建 SMTP（B）／
 ///   自实现最小协议子集（C），切换不影响上层；
@@ -37,8 +37,10 @@ public protocol MailSessionServing: Sendable {
     /// 通过 SMTP 发送邮件（`mime` 为完整 RFC 5322 原始字节）。
     func sendMessage(mime: Data) async throws
 
-    /// 追加草稿到服务器端草稿文件夹（失败降级：仅本地记录，不阻断成功态）。
-    func appendDraft(mime: Data, folder: String) async throws
+    /// 追加一封 MIME 邮件到服务器端文件夹。
+    /// - Parameter isDraft: `true` 存为草稿（`\Draft`）；`false` 归档已发送副本（`\Seen`，不得带 `\Draft`）。
+    /// 失败降级：仅本地记录，不阻断成功态。
+    func appendMessage(mime: Data, folder: String, isDraft: Bool) async throws
 }
 
 /// 会话工厂：由账户配置 + 凭据创建会话。

@@ -86,13 +86,14 @@ final class RAGSQLiteStore: @unchecked Sendable {
         try execute(RAGSQL.createChunksProjectIndex)
         try execute(RAGSQL.createChunksFileIndex)
         try execute(RAGSQL.createIndexStateTable)
+        try execute(RAGSQL.createMetaTable)
     }
 
-    func configureVectorBackend(embeddingDimension: Int) throws {
+    func configureVectorBackend(embeddingDimension: Int, embeddingModel: String? = nil) throws {
         lock.lock()
         defer { lock.unlock() }
         guard db != nil else { return }
-        runtimeInfo = try detectRuntimeInfo(embeddingDimension: embeddingDimension)
+        runtimeInfo = try detectRuntimeInfo(embeddingDimension: embeddingDimension, embeddingModel: embeddingModel)
     }
 
     func fetchIndexedFileStates(projectPath: String) throws -> [String: RAGIndexedFileState] {
@@ -689,7 +690,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         return rows
     }
 
-    private func detectRuntimeInfo(embeddingDimension: Int) throws -> RAGRuntimeInfo {
+    private func detectRuntimeInfo(embeddingDimension: Int, embeddingModel: String?) throws -> RAGRuntimeInfo {
         guard db != nil else {
             throw RAGError.dbError("RAG 数据库未就绪，无法启用 sqlite-vec")
         }
@@ -710,8 +711,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         for path in existingCandidates {
             do {
                 try loadSQLiteExtension(at: path)
-                try ensureVectorTable(dimension: embeddingDimension)
-                try rebuildVectorTableFromChunks()
+                try prepareVectorTable(dimension: embeddingDimension, model: embeddingModel)
                 sqliteVecPathLoaded = path
                 return RAGRuntimeInfo(
                     vectorBackend: .sqliteVec,
@@ -823,9 +823,72 @@ final class RAGSQLiteStore: @unchecked Sendable {
         }
     }
 
-    private func ensureVectorTable(dimension: Int) throws {
+    /// Task 3.1：vec0 表跨启动持久化。维度/模型一致且行数完整 → 不 DROP、不回灌；
+    /// 表缺失、维度/模型变化、或 vec 与 chunks 行数不一致（上次崩溃在半途）→ 重建回灌。
+    private func prepareVectorTable(dimension: Int, model: String?) throws {
+        let storedDimension = metaValue(key: "vector_dimension").flatMap(Int.init)
+        let storedModel = metaValue(key: "embedding_model")
+        let modelMatches = model == nil || storedModel == model
+
+        if vectorTableExists(), storedDimension == dimension, modelMatches {
+            let vectorCount = try countRows(in: Self.vecTableName)
+            let chunkCount = try countRows(in: "rag_chunks")
+            if vectorCount == chunkCount {
+                return
+            }
+        }
+
         try execute(RAGSQL.dropVectorTable)
         try execute(RAGSQL.createVectorTable(dimension: dimension))
+        try rebuildVectorTableFromChunks()
+        try setMetaValue(key: "vector_dimension", value: String(dimension))
+        if let model {
+            try setMetaValue(key: "embedding_model", value: model)
+        }
+    }
+
+    private func vectorTableExists() -> Bool {
+        let sql = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '\(Self.vecTableName)';"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { return false }
+        defer { sqlite3_finalize(statement) }
+        return sqlite3_step(statement) == SQLITE_ROW
+    }
+
+    private func countRows(in table: String) throws -> Int {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM \(table);", -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare countRows(\(table)) failed")
+        }
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_ROW else {
+            throw dbError("countRows(\(table)) failed")
+        }
+        return Int(sqlite3_column_int64(statement, 0))
+    }
+
+    private func metaValue(key: String) -> String? {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, RAGSQL.fetchMeta, -1, &statement, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, (key as NSString).utf8String, -1, nil)
+        guard sqlite3_step(statement) == SQLITE_ROW, let pointer = sqlite3_column_text(statement, 0) else {
+            return nil
+        }
+        return String(cString: pointer)
+    }
+
+    private func setMetaValue(key: String, value: String) throws {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, RAGSQL.upsertMeta, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare setMetaValue failed")
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, (key as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (value as NSString).utf8String, -1, nil)
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw dbError("setMetaValue failed")
+        }
     }
 
     private func rebuildVectorTableFromChunks() throws {

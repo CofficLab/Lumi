@@ -24,19 +24,6 @@ public struct TopNetworkProcessesView: View {
         let maxSpeed = processes.map(\.totalSpeed).max() ?? 0
 
         VStack(alignment: .leading, spacing: 0) {
-            // 标题
-            HStack(spacing: 4) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-
-                Text(pluginLocalization.string("Top Processes"))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 6)
-
             if processes.isEmpty {
                 Text(pluginLocalization.string(viewModel.hasProcessSnapshot ? "No active processes" : "Collecting..."))
                     .font(.system(size: 10))

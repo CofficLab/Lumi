@@ -14,9 +14,11 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
 
     private var projectRootPath: String = ""
     private var refreshTask: Task<Void, Never>?
+    private var workerTask: Task<[PackageDependency], Never>?
 
     deinit {
         refreshTask?.cancel()
+        workerTask?.cancel()
     }
 
     public init() {}
@@ -35,6 +37,7 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
 
     public func refresh() {
         refreshTask?.cancel()
+        workerTask?.cancel()
         let path = projectRootPath
         guard !path.isEmpty else {
             dependencies = []
@@ -45,15 +48,19 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
 
         isLoading = true
         refreshTask = Task { @MainActor [weak self] in
-            // 在后台线程同时判定「是否需要解析」与「执行解析」，避免主线程磁盘扫描。
-            let result = await Task.detached(priority: .utility) {
+            guard !Task.isCancelled else { return }
+            let worker = Task.detached(priority: .utility) {
+                guard !Task.isCancelled else { return [PackageDependency]() }
                 guard PackageDependencyResolver.shouldShowPackageDependencies(
                     projectRootURL: URL(fileURLWithPath: path)
                 ) else {
                     return [PackageDependency]()
                 }
+                guard !Task.isCancelled else { return [PackageDependency]() }
                 return PackageDependencyResolver.resolve(projectRootURL: URL(fileURLWithPath: path))
-            }.value
+            }
+            self?.workerTask = worker
+            let result = await worker.value
             guard let self, !Task.isCancelled, self.projectRootPath == path else { return }
             self.dependencies = result
             self.diagnostic = result.isEmpty ? "No Swift package dependencies found." : nil

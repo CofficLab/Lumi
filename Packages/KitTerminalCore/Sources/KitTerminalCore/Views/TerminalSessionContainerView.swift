@@ -12,10 +12,27 @@ public struct TerminalSessionContainerView: View {
     }
 
     public var body: some View {
-        NativeTerminalHostView(session: session)
-            .padding(10)
-            .background(Color(nsColor: session.terminalView.nativeBackgroundColor))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack {
+            NativeTerminalHostView(session: session)
+                .padding(10)
+                .background(Color(nsColor: session.terminalView.nativeBackgroundColor))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // 工作目录无效等启动失败时展示原因，避免黑屏且误以为已连接（#174）。
+            if let startupError = session.startupError {
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 28))
+                    Text(startupError)
+                        .font(.system(size: 13))
+                        .multilineTextAlignment(.center)
+                }
+                .foregroundStyle(.secondary)
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: session.terminalView.nativeBackgroundColor))
+            }
+        }
     }
 }
 

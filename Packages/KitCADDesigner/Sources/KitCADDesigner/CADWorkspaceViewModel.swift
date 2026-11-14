@@ -229,19 +229,27 @@ final class CADWorkspaceViewModel: ObservableObject {
 
     // MARK: - Persistence
 
-    func saveProject(to url: URL) {
+    /// 保存当前文档到指定 URL。
+    ///
+    /// JSON 编码与磁盘写入在后台线程完成（见 issue #1176），主线程只在结果返回后
+    /// 更新导出 URL 或错误提示，保存大项目时不会冻结界面。
+    func saveProject(to url: URL) async {
         guard let document else { return }
         do {
-            try saveLoadService.save(document: document, to: url)
+            try await saveLoadService.save(document: document, to: url)
             store.setExportURL(url)
         } catch {
             store.setError(error.localizedDescription)
         }
     }
 
-    func loadProject(from url: URL) {
+    /// 从指定 URL 加载文档。
+    ///
+    /// 读取与解码在后台线程完成（见 issue #1176），主线程只在结果返回后更新场景、
+    /// BOM 与导出 URL，加载大项目时不会冻结界面。
+    func loadProject(from url: URL) async {
         do {
-            let loaded = try saveLoadService.load(from: url)
+            let loaded = try await saveLoadService.load(from: url)
             _ = store.importDocument(loaded)
             syncScene()
             refreshBOM()
@@ -255,13 +263,13 @@ final class CADWorkspaceViewModel: ObservableObject {
     ///
     /// 只接受 `.cadproj`/`.json` 文件；其他扩展名或加载失败都会在 store 上留下
     /// 对应文件的错误，而不是静默保留当前（可能是自动创建的空）项目。
-    func openProjectURL(_ url: URL) {
+    func openProjectURL(_ url: URL) async {
         let fileExtension = url.pathExtension.lowercased()
         guard url.isFileURL, Self.projectFileExtensions.contains(fileExtension) else {
             store.setError("Unsupported project file: \(url.lastPathComponent)")
             return
         }
-        loadProject(from: url)
+        await loadProject(from: url)
     }
 
     static let projectFileExtensions: Set<String> = ["cadproj", "json"]

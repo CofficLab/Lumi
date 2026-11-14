@@ -5,7 +5,7 @@
 QuickFileSearchPlugin Fast file search with Cmd+P
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 31
+测试文件: 1 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Models/`
@@ -34,7 +34,7 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（26 条）：由 `v2PluginPreservesQuickOpenIdentity`、`fileIndexStoreNeedsReindexWhenNeverUpdated`、`fileIndexStoreDoesNotNeedReindexAfterFreshUpdate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（28 条）：由 `v2PluginPreservesQuickOpenIdentity`、`fileIndexStoreNeedsReindexWhenNeverUpdated`、`fileIndexStoreDoesNotNeedReindexAfterFreshUpdate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **设置项目状态**（5 条）：由 `settingsStatusShowsProjectActiveAtStartup`、`settingsStatusFollowsProjectSwitch`、`settingsStatusRecoversAfterStartingWithoutProject`、`settingsStatusClearsPathAfterProjectClose`、`settingsStatusIgnoresUnrelatedProjectEvents` 锁定。设置页必须订阅 `ProjectProviding` 的 `.currentProjectChanged` 并更新当前路径，不得把插件启动时的项目路径冻结成不可变字符串（**回归 #937**）。
 
 ## 测试用例清单
@@ -72,27 +72,29 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 | 29 | 设置项目状态 | 启动时无项目，之后选择项目也能更新（**回归 #937**） | 初始无项目 | 发出 `.currentProjectChanged(B)` | 路径从空变为 B | P0 | ✅ 已覆盖 | `settingsStatusRecoversAfterStartingWithoutProject` |
 | 30 | 设置项目状态 | 关闭项目后清空项目路径 | 初始项目 A | 发出 `.currentProjectChanged(nil)` | 路径为空 | P1 | ✅ 已覆盖 | `settingsStatusClearsPathAfterProjectClose` |
 | 31 | 设置项目状态 | 非当前项目事件不改变状态 | 初始项目 A | 发出 `.openFilesChanged` | 路径仍为 A | P2 | ✅ 已覆盖 | `settingsStatusIgnoresUnrelatedProjectEvents` |
+| 32 | 综合 | shouldSkipPath 仅匹配项目根内部的相对路径段（**#375**） | 项目根为 `/Users/alice/build/Demo` | 对根内源码与根内 build 目录调用 `shouldSkipPath(_:root:)` | 祖先 build 不触发跳过；根内 build 仍跳过 | P1 | ✅ 已覆盖 | `shouldSkipPathIgnoresAncestorDirectoryNames` |
+| 33 | 综合 | 项目位于忽略名祖先目录下时源码不得被整体排除（**#375**） | 项目根 `<tmp>/build/Demo` 含 Sources/App.swift 与 build/Generated.swift | 调用 `scanProjectFiles(at:)` | 搜到 Sources/App.swift，跳过根内 build/Generated.swift | P0 | ✅ 已覆盖 | `scanProjectFilesFindsFilesUnderIgnoredAncestorDirectory` |
 
-> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 18 / 18
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 7 / 7
-- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（18 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

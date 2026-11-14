@@ -33,10 +33,20 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 待插入编辑器的折叠块。生产方递交后由编辑器消费（插入 chip），
     /// 消费完成后清空，避免同一个块被重复插入。
     @Published private(set) var pendingBlock: ConversationInputBlockRequest?
+    /// 启动补投会同步连续 enqueue 多个块，单槽 pendingBlock 会让后者覆盖前者。
+    /// 用 FIFO 暂存未消费的块，pendingBlock 始终指向队首，消费一个再推进到下一个（#204）。
+    private var pendingBlockQueue: [ConversationInputBlockRequest] = []
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
     private var isWaitingForAttachmentReads = false
+
+    /// 待发送图片附件的位图解码缓存。
+    ///
+    /// 预览挂在输入框上方，输入框每次按键都会让本 ViewModel 发出失效广播，
+    /// 预览 body 因此重跑。若在 body 里现算 Base64 解码，每张待发图片都要在
+    /// 主线程重复做一次全量解码（见 issue #1298）。
+    let attachmentImageDecoder = AttachmentImageDecoder()
 
     /// 文本写入后的旁路回调，供派生的发送按钮同步状态。
     ///
@@ -81,6 +91,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         if images != attachmentSnapshot.imageAttachments {
             attachmentSnapshot.imageAttachments = images
             imageAttachments = images
+            // 只保留仍挂起的附件，释放已移除附件占用的位图（见 issue #1298）。
+            attachmentImageDecoder.retainOnly(ids: Set(images.map(\.id)))
         }
         let files = capability.pendingFileAttachments
         if files != attachmentSnapshot.fileAttachments {
@@ -106,13 +118,16 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     ///
     /// 焦点一并打开，用户可以直接在 chip 旁边继续写指令。
     func enqueue(_ block: ConversationInputBlock) {
-        pendingBlock = ConversationInputBlockRequest(
+        let request = ConversationInputBlockRequest(
             id: block.id,
             text: block.text,
             title: block.title,
             systemImage: block.systemImage,
             collapseThreshold: block.collapseThreshold
         )
+        pendingBlockQueue.append(request)
+        // 已有块在等待编辑器消费时只入队、不覆盖，消费后由 consumePendingBlock 推进。
+        if pendingBlock == nil { pendingBlock = pendingBlockQueue.first }
         capability.isInputFocused = true
         revision &+= 1
     }
@@ -129,7 +144,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
     func consumePendingBlock(id: UUID) {
         guard pendingBlock?.id == id else { return }
-        pendingBlock = nil
+        pendingBlockQueue.removeAll { $0.id == id }
+        pendingBlock = pendingBlockQueue.first
     }
 
     /// 对话切换：清空输入与未提交附件。
@@ -249,32 +265,56 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         // 附件）当成新消息重复提交。标记由两条发送入口共用。
         guard !capability.isCommittingDraft else { return }
 
-        // 附件还在异步读取：等读取结束再快照，否则这条消息会漏掉用户刚选中
+        // 在按下 Send 的瞬间快照正文与折叠块。附件异步读取期间用户可能继续
+        // 编辑，发出去的必须是按下 Send 时的那一份草稿，而不是读取结束后
+        // 输入框里的新内容（#1172）。附件本身仍等读取结束再快照，以免漏掉
+        // 用户刚选中、尚在读取的附件（#1023）。
+        let content = capability.text
+        let blocks = capability.collapsedBlocks
+        // 同时锁定按下 Send 时选中的会话：等待期间用户可能切换会话，提交必须
+        // 仍落在发起发送的那个会话，绝不能把新会话的独立草稿当成这次发送（#1173）。
+        let conversationID = capability.selectedConversationID
+
+        // 附件还在异步读取：等读取结束再提交，否则这条消息会漏掉用户刚选中
         // 的附件，附件又滚进下一条无关消息（#1023）。
         if capability.pendingAttachmentReadCount > 0 {
             guard !isWaitingForAttachmentReads else { return }
             isWaitingForAttachmentReads = true
             Task { @MainActor in
-                await capability.waitForAttachmentReads()
+                let succeeded = await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
-                send()
+                // 读取失败：中止本次发送，保留草稿与错误提示，让用户自行决定
+                // 重试或去掉附件，而不是悄悄降级成纯文本提交（#1174）。
+                guard succeeded else {
+                    refresh()
+                    return
+                }
+                performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return
         }
 
+        performSend(content: content, blocks: blocks, conversationID: conversationID)
+    }
+
+    /// 用按下 Send 时快照的正文、折叠块与目标会话执行提交。
+    ///
+    /// 附件从能力层当前挂起池读取（等待读取结束后才调用本方法），正文、
+    /// 折叠块与目标会话则沿用快照，确保提交内容与清理目标都是用户按下
+    /// Send 的那一份，且不会被等待期间的会话切换劫持。
+    private func performSend(
+        content: String,
+        blocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) {
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
-        let content = capability.text
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let imageAttachments = capability.pendingImageAttachments
         let fileAttachments = capability.pendingFileAttachments
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
-
-        // 发送瞬间的折叠块区间。提交成功后草稿被清空，区间也必须同时作废，
-        // 否则下一次发送会带上上一条消息的区间。
-        let blocks = capability.collapsedBlocks
 
         capability.errorMessage = nil
 
@@ -293,7 +333,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
-                        conversationID: nil
+                        conversationID: conversationID
                     )
                 } catch {
                     // 提交失败：附件已被消费，放回挂起池；正文与折叠块从未
@@ -317,7 +357,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                     return
                 }
 
-                clearSentDraft(content: content)
+                clearSentDraft(content: content, conversationID: conversationID)
                 refresh()
                 if Self.verbose {
                     Self.logger.info("attachment commit completed queued=\(commit.wasQueued)")
@@ -334,14 +374,14 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
-                conversationID: nil
+                conversationID: conversationID
             ) else {
                 // 未形成有效提交：草稿原样保留，只清掉旧的错误提示。
                 refresh()
                 return
             }
 
-            clearSentDraft(content: content)
+            clearSentDraft(content: content, conversationID: conversationID)
             refresh()
             guard !commit.wasQueued else { return }
 
@@ -360,7 +400,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     ///
     /// - Important: 只清空**本次发送的那一份**草稿。附件编码期间用户可能继续
     ///   输入，此时输入框已经不是发出去的内容，直接清空会吞掉新草稿。
-    private func clearSentDraft(content: String) {
+    ///   还可能切到别的会话并输入**相同文本**：仅凭正文相等会误清新会话的
+    ///   独立草稿，因此必须同时校验当前仍选中发起发送的会话（#1175）。
+    private func clearSentDraft(content: String, conversationID: UUID?) {
+        guard capability.selectedConversationID == conversationID else { return }
         guard capability.text == content else { return }
         capability.text = ""
         capability.collapsedBlocks = []
@@ -423,6 +466,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 capability.addFileAttachment(attachment)
                 capability.isInputFocused = true
             } catch {
+                capability.recordAttachmentReadFailure()
                 capability.errorMessage = error.localizedDescription
                 refresh()
             }
@@ -443,6 +487,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             // 空文件保持静默忽略（见 #520），但非空字节必须能解码才算图片。
             guard let data, !data.isEmpty else { return }
             guard ChatInputEditorRules.isDecodableImageData(data) else {
+                capability.recordAttachmentReadFailure()
                 capability.errorMessage = String(
                     format: pluginLocalization.string("Could not read image: %@"),
                     url.lastPathComponent
@@ -463,6 +508,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     func removeImageAttachment(id: UUID) {
         capability.removeImageAttachment(id: id)
+        // 附件已离开挂起池，位图缓存一并释放（见 issue #1298）。
+        attachmentImageDecoder.remove(id: id)
     }
 
     func removeFileAttachment(id: UUID) {

@@ -5,6 +5,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderLLMContext
 import ProviderLLMManager
+import ProviderLifecycleHooks
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
@@ -129,6 +130,57 @@ struct MultipleSuspensionsResumeTests {
             fixture.observedStartedTurnIDs == [fixture.turnID],
             "恢复路径必须发布可让会话状态回到 running 的回合事件"
         )
+    }
+
+    /// 回归 #805：恢复被接受后，同一 turnID 必须再次触发 turnStarted 钩子。
+    /// ResumeCoordinator 只在该钩子里 markRunning；缺少它，持久化记录停留
+    /// 在 `.suspended`，回答后立刻崩溃的话重启后不会提示「继续」。
+    @Test("恢复后同一回合再次触发 turnStarted 钩子")
+    func resumeFiresTurnStartedHookAgain() async throws {
+        let fixture = Fixture(suspensions: ["call_a"])
+        fixture.installSingleSuspension("call_a")
+        let hooks = DefaultLifecycleHooksProvider()
+        var started: [TurnLifecycleContext] = []
+        hooks.addTurnStartedHook { started.append($0) }
+        fixture.loop.setLifecycleHooks(hooks)
+
+        let outcome = try await fixture.loop.resumeTurn(
+            in: fixture.conversationID,
+            request: AgentTurnResumeRequest(
+                suspensionID: "userInput:call_a",
+                answer: "answer a"
+            )
+        )
+
+        #expect(outcome == .completed)
+        #expect(started.map(\.turnID) == [fixture.turnID], "恢复必须沿用同一 turnID 重新声明运行中")
+        #expect(started.allSatisfy { $0.conversationID == fixture.conversationID })
+    }
+
+    /// 回归 #805：恢复后停在下一个挂起点时，运行中记录必须先落盘，
+    /// 再被新的 `.suspended` 终态覆盖——顺序反了等于没写。
+    @Test("恢复后重新挂起时，turnStarted 先于新的 suspended 终态")
+    func resumeThenResuspendKeepsHookOrder() async throws {
+        let fixture = Fixture()
+        let hooks = DefaultLifecycleHooksProvider()
+        var events: [String] = []
+        hooks.addTurnStartedHook { _ in events.append("started") }
+        hooks.addTurnFinishedHook { context in
+            events.append("finished:\(context.endReason?.rawValue ?? "nil")")
+        }
+        fixture.loop.setLifecycleHooks(hooks)
+
+        let outcome = try await fixture.loop.resumeTurn(
+            in: fixture.conversationID,
+            request: AgentTurnResumeRequest(
+                suspensionID: "userInput:call_b",
+                answer: "answer b"
+            )
+        )
+
+        #expect(outcome == .suspended("userInput:call_a"))
+        await waitUntil { events.count >= 2 }
+        #expect(events == ["started", "finished:suspended"])
     }
 }
 

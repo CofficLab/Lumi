@@ -5,8 +5,8 @@ import ProviderMessage
 
 /// 工具调用组的「折叠 / 展开」决策（纯逻辑，便于单元测试）。
 ///
-/// **只有 V2（standard）折叠。** V1（brief）与 V3（detailed）都保持
-/// 逐条铺开的原样：
+/// **只有 V2（standard）与 V6（standardNoHeader）折叠。** V1（brief）与
+/// V3（detailed）都保持逐条铺开的原样：
 ///
 /// - **V1**：回复级别 brief 被升格为 standard 以复用 V2 的内容布局
 ///   （见 `AssistantMessageView.contentVerbosity`），因此「是否折叠」
@@ -57,8 +57,9 @@ enum ToolCallGroupCollapsePolicy {
         _ toolCalls: [MessageToolCall],
         verbosity: ResponseVerbosity
     ) -> Bool {
-        // 只有 V2 折叠：V1 与 V3 保持原有逐条铺开的效果。
-        guard verbosity == .standard else { return false }
+        // 只有 V2 / V6 折叠：V1 与 V3 保持原有逐条铺开的效果。
+        // V6 是 V2 去掉消息头的呈现变体，折叠行为必须与 V2 一致。
+        guard verbosity == .standard || verbosity == .standardNoHeader else { return false }
         // 少于两个调用：铺开即可，折叠没有收益。
         guard toolCalls.count > 1 else { return false }
         // 有交互挂起：必须让用户看得见，不能藏。

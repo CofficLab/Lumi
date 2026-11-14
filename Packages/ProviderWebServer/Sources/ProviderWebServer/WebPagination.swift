@@ -53,7 +53,11 @@ public struct WebPagination: Sendable, Equatable, Codable {
         if let raw = query["offset"], let value = Int(raw), value >= 0 {
             offset = value
         } else if let raw = query["page"], let value = Int(raw), value >= 1 {
-            offset = (value - 1) * limit
+            // page 可以是任意正 Int，`(value - 1) * limit` 可能溢出 Int；
+            // Swift 的 trapping 算术会直接终止整个进程（#1161）。溢出时
+            // 视同非法分页，回退到默认偏移，与其他非法参数的行为一致。
+            let (product, overflow) = (value - 1).multipliedReportingOverflow(by: limit)
+            offset = overflow ? 0 : product
         } else {
             offset = 0
         }

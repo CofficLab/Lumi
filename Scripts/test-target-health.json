@@ -947,11 +947,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "ProviderDiagnostics": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "ProviderEditor": {
     "status": "ok",
     "errors": [],
@@ -1058,5 +1053,95 @@
     "status": "ok",
     "errors": [],
     "hasTestPlan": true
+  },
+  "KitBootstrapEnvironment": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "KitLumiCLI": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "KitProjectDetect": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "KitTestSupport": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "KitWebAPI": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationResume": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "PluginConversationTokenUsage": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "PluginDiskSpeedTest": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginFinder": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGitChatToolbar": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGitHubIssue": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGitToolbar": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginHTMLCanvas": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListChatGPT": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListStandardNoHeader": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListZCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginRailTokenTrend": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginToolLLMProvider": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
   }
 }

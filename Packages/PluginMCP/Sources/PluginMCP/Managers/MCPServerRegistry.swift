@@ -21,11 +21,15 @@ public final class MCPServerRegistry: ObservableObject {
     // MARK: - Storage
 
     private let fileURL: URL
+    private let deletedTemplatesFileURL: URL
+    /// 用户删除的服务器墓碑（command + arguments）；阻止内置模板重启后被重新 seed（#295）。
+    private var deletedTemplates: [MCPServerConfig] = []
 
     // MARK: - Init
 
     public init(directory: URL, contributor: MCPServerContributor? = nil) {
         self.fileURL = directory.appendingPathComponent("mcp-servers.json", isDirectory: false)
+        self.deletedTemplatesFileURL = directory.appendingPathComponent("mcp-deleted-templates.json", isDirectory: false)
         load()
         if let contributor {
             observeContributor(contributor)
@@ -33,6 +37,8 @@ public final class MCPServerRegistry: ObservableObject {
     }
 
     private func load() {
+        deletedTemplates = (try? Data(contentsOf: deletedTemplatesFileURL))
+            .flatMap { try? JSONDecoder().decode([MCPServerConfig].self, from: $0) } ?? []
         guard let data = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
         else {
@@ -70,6 +76,8 @@ public final class MCPServerRegistry: ObservableObject {
         var changed = false
         for var template in contributions where !servers.contains(where: {
             $0.command == template.command && $0.arguments == template.arguments
+        }) && !deletedTemplates.contains(where: {
+            $0.command == template.command && $0.arguments == template.arguments
         }) {
             template.enabled = false
             servers.append(template)
@@ -106,6 +114,9 @@ public final class MCPServerRegistry: ObservableObject {
 
     /// 按 id 移除服务器。
     public func removeServer(id: String) {
+        if let removed = servers.first(where: { $0.id == id }) {
+            recordDeletedTemplate(removed)
+        }
         servers.removeAll { $0.id == id }
         persist()
     }
@@ -122,6 +133,23 @@ public final class MCPServerRegistry: ObservableObject {
             try data.write(to: fileURL, options: .atomic)
         } catch {
             print("[MCPServerRegistry] persist failed: \(error)")
+        }
+    }
+
+    private func recordDeletedTemplate(_ config: MCPServerConfig) {
+        guard !deletedTemplates.contains(where: {
+            $0.command == config.command && $0.arguments == config.arguments
+        }) else { return }
+        deletedTemplates.append(config)
+        persistDeletedTemplates()
+    }
+
+    private func persistDeletedTemplates() {
+        do {
+            let data = try JSONEncoder().encode(deletedTemplates)
+            try data.write(to: deletedTemplatesFileURL, options: .atomic)
+        } catch {
+            print("[MCPServerRegistry] persist deleted templates failed: \(error)")
         }
     }
 }

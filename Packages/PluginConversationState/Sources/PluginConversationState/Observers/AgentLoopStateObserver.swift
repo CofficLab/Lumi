@@ -29,6 +29,16 @@ final class AgentLoopStateObserver: SuperLog {
         handle = nil
     }
 
+    /// 事件是否属于已被新回合取代的旧回合（#438）。
+    ///
+    /// 终态通知异步投递，旧回合的迟到终态不得把新回合的 running 状态
+    /// 覆盖成 completed/failed/cancelled。快照尚未记录 turnID（观察者
+    /// 中途接入、外部回合未发 started）或事件未携带 turnID 时保持旧行为。
+    private func isStale(_ turn: UUID?, for conversationID: UUID) -> Bool {
+        guard let turn, let current = provider.state(for: conversationID).turnID else { return false }
+        return turn != current
+    }
+
     private func consume(_ event: AgentLoopEvent) {
         switch event {
         case .started(let id, let turn):
@@ -42,6 +52,7 @@ final class AgentLoopStateObserver: SuperLog {
                 clearError: true
             )
         case .toolCallsReceived(let id, let turn, _, _):
+            guard !isStale(turn, for: id) else { return }
             // 回合恢复后会重新进入这一步：用户已经做出授权/回答决定，
             // 会话级授权状态必须回落，否则盾牌会一直挂到回合结束。
             provider.update(
@@ -53,6 +64,7 @@ final class AgentLoopStateObserver: SuperLog {
                 activity: .executingTool
             )
         case .llmResponseReceived(let id, let turn, _):
+            guard !isStale(turn, for: id) else { return }
             provider.update(
                 conversationID: id,
                 turnID: turn,
@@ -82,6 +94,7 @@ final class AgentLoopStateObserver: SuperLog {
                 activity: .waitingForUser
             )
         case .completed(let id, let turn):
+            guard !isStale(turn, for: id) else { return }
             provider.update(
                 conversationID: id,
                 turnID: turn,
@@ -91,6 +104,7 @@ final class AgentLoopStateObserver: SuperLog {
                 clearActivity: true
             )
         case .failed(let id, let turn, let reason):
+            guard !isStale(turn, for: id) else { return }
             Self.logger.error("\(Self.t)AgentLoop failed conversation=\(id.uuidString, privacy: .public): \(reason, privacy: .public)")
             provider.update(
                 conversationID: id,
@@ -102,6 +116,7 @@ final class AgentLoopStateObserver: SuperLog {
                 lastError: reason
             )
         case .cancelled(let id, let turn):
+            guard !isStale(turn, for: id) else { return }
             provider.update(
                 conversationID: id,
                 turnID: turn,

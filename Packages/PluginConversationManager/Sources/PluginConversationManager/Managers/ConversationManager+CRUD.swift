@@ -137,9 +137,27 @@ extension ConversationManager {
         modelID: String?,
         parentConversationID: UUID?
     ) async throws -> UUID {
-        let draft = makeConversationDraft(
+        try await createConversationAndWait(
             title: title,
             binding: projectPath.map(ProjectBinding.project) ?? .inheritCurrent,
+            modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    /// 以显式项目绑定创建对话并等待落库完成。
+    ///
+    /// 子代理会话必须走这个入口：父会话未绑定项目时传 `.none`，
+    /// 子会话才不会回退到创建时刻的当前项目。
+    public func createConversationAndWait(
+        title: String?,
+        binding: ProjectBinding,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID {
+        let draft = makeConversationDraft(
+            title: title,
+            binding: binding,
             modelID: modelID,
             parentConversationID: parentConversationID
         )
@@ -252,7 +270,8 @@ extension ConversationManager {
             projectPath: draft.projectPath,
             parentConversationID: draft.parentConversationID,
             reasoningEffort: draft.reasoningEffort,
-            automationLevel: draft.automationLevel
+            automationLevel: draft.automationLevel,
+            language: draft.language
         )
         eventBus?.publishAsLegacy(
             ConversationDidCreateEvent(conversationID: draft.id),

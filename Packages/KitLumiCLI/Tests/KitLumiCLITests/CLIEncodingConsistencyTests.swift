@@ -34,8 +34,9 @@ struct CLIEncodingConsistencyTests {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
         process.arguments = [
+            "-0777",
             "-ne",
-            "chomp; s/([^A-Za-z0-9._~-])/sprintf(\"%%%02X\", ord($1))/ge; print",
+            "s/([^A-Za-z0-9._~-])/sprintf(\"%%%02X\", ord($1))/ge; print",
         ]
         let outputPipe = Pipe()
         let inputPipe = Pipe()
@@ -43,7 +44,7 @@ struct CLIEncodingConsistencyTests {
         process.standardInput = inputPipe
         try process.run()
 
-        inputPipe.fileHandleForWriting.write(Data((path + "\n").utf8))
+        inputPipe.fileHandleForWriting.write(Data(path.utf8))
         inputPipe.fileHandleForWriting.closeFile()
         let output = String(
             data: outputPipe.fileHandleForReading.readDataToEndOfFile(),
@@ -108,6 +109,8 @@ struct CLIEncodingConsistencyTests {
             script.contains("s/([^A-Za-z0-9._~-])/sprintf(\"%%%02X\", ord($1))/ge"),
             "脚本的编码表达式变化时必须同步更新本测试"
         )
+        #expect(script.contains("perl -0777 -ne"), "脚本必须用 slurp 模式整串编码（#143）")
+        #expect(!script.contains("-ne 'chomp"), "脚本不得用行输入模式 + chomp，否则会丢弃目录名中的换行（#143）")
 
         // 脚本里的表达式与测试里的表达式必须产出相同结果。
         let path = "/tmp/中文 目录#1"
@@ -115,15 +118,16 @@ struct CLIEncodingConsistencyTests {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
         process.arguments = [
+            "-0777",
             "-ne",
-            "chomp; s/([^A-Za-z0-9._~-])/sprintf(\"%%%02X\", ord($1))/ge; print",
+            "s/([^A-Za-z0-9._~-])/sprintf(\"%%%02X\", ord($1))/ge; print",
         ]
         let input = Pipe()
         let output = Pipe()
         process.standardInput = input
         process.standardOutput = output
         try process.run()
-        input.fileHandleForWriting.write(Data((path + "\n").utf8))
+        input.fileHandleForWriting.write(Data(path.utf8))
         input.fileHandleForWriting.closeFile()
         let actual = String(
             data: output.fileHandleForReading.readDataToEndOfFile(),

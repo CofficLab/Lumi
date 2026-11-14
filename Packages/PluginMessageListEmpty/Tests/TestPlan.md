@@ -54,8 +54,8 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **ActivityCardLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityCardLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
 - **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
 
-- **Project context**（19 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`gitRowFollowsTheWorkingTree`、`gitNavigationEnablesDisabledWorkspace`、`gitRowAvailabilityFollowsEntryAndController` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情、「没有项目就清空」以及跨插件导航（含为默认禁用的 Git Workspace 补启用）等不变量；改动 `ProjectContextViewModel` 或 `ProjectContextNavigator` 时必须优先跑该文件。
-- **Activity scope**（4 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」四条语义；改动活动卡的统计口径时必须优先跑该文件。
+- **Project context**（18 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`gitRowFollowsTheWorkingTree`、`gitNavigationEnablesDisabledWorkspace`、`gitRowAvailabilityFollowsEntryAndController` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情、「没有项目就清空」以及跨插件导航（含为默认禁用的 Git Workspace 补启用）等不变量；改动 `ProjectContextViewModel` 或 `ProjectContextNavigator` 时必须优先跑该文件。
+- **Activity scope**（5 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads`、`forcedReloadRefreshesProjectConversationIDs` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」「强制刷新绕过按天会话缓存（**回归 #314**：同一天新建的会话不改变 (path, day) 缓存键，force 必须重取集合）」五条语义；改动活动卡的统计口径或 `conversationIDs(forProjectAt:since:force:)` 缓存时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -128,41 +128,41 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 62 | Project context | 只有存在未提交改动时才出现 Git 行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitRowFollowsTheWorkingTree` |
 | 63 | Project context | 上次会话行指向最近一次会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lastConversationRowAppears` |
 | 64 | Project context | 详情报告本项目的会话数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailsReportConversationCount` |
-| 65 | Project context | 入口文件变成标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `notableFilesBecomeLabels` |
-| 66 | Project context | 没有项目时清空全部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noProjectClearsEverything` |
-| 67 | Activity scope | 项目维度必须只统计这个项目的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `projectScopeFiltersByConversation` |
-| 68 | Activity scope | 没有项目时退回全局口径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToGlobalWithoutProject` |
-| 69 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
-| 70 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
-| 71 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
-| 72 | Project context | 点击「打开文件树」先切回 Chat 再选中文件树（**回归 #1014**） | Browser 等工作区已隐藏 Rail，活动栏处于其它入口 | 调用 `ProjectContextNavigator.openFileTree`，用记录器观察调用顺序 | 先 `activateItem` Chat 入口，再 `activateTab` 文件树；顺序不可颠倒 | P0 | ✅ 已覆盖 | `fileTreeNavigationActivatesChatFirst` |
-| 73 | Project context | 缺少活动栏时仍退回激活文件树 tab（**#1014 护栏**） | 活动栏为 nil | 同上 | 只发生 `activateTab`，不崩溃、不吞掉导航 | P1 | ✅ 已覆盖 | `fileTreeNavigationFallsBackToRail` |
-| 74 | EmptyStateTokenTrend | 有消息但零 token 时隐藏曲线与分隔线，只留热力图（**回归 #1042**） | 窗口内消息数 > 0、token 合计为 0 | 构造模型并读取 `showsTokenTrend` | 为 `false`；`tokenDays` 全为零但不会被绘制 | P1 | ✅ 已覆盖 | `zeroTokensHideTrendWithMessages` |
-| 75 | EmptyStateTokenTrend | 有 token 消耗时曲线随热力图一起显示 | 窗口内消息数 > 0、token 合计 > 0 | 构造模型并读取 `showsTokenTrend` | 为 `true`，曲线数据包含非零值 | P1 | ✅ 已覆盖 | `tokenActivityShowsTrendWithMessages` |
-| 76 | Project context | Git 入口已存在时直接激活，不重复启用插件 | Activity Bar 已含 Git Workspace 入口 | 调用 `openGitWorkspace` | 只发生一次 `activateItem` | P1 | ✅ 已覆盖 | `gitNavigationActivatesExistingEntry` |
-| 77 | Project context | Git 入口缺失时先启用 Git Workspace 再激活新入口（**回归 #1041**） | 插件默认禁用、Activity Bar 无入口，启停控制可用 | 启用回调中模拟注册入口，调用 `openGitWorkspace` | 先 `enablePlugin`，随后激活刚注册的入口 | P1 | ✅ 已覆盖 | `gitNavigationEnablesDisabledWorkspace` |
-| 78 | Project context | 启用失败时不激活任何入口 | 启停控制返回失败 | 调用 `openGitWorkspace` | 只记录一次启用尝试，界面不被改动 | P1 | ✅ 已覆盖 | `gitNavigationStopsWhenEnablingFails` |
-| 79 | Project context | Git 行仅在目标可达时提供动作 | 入口缺失 / 有启停控制 / 入口已存在三种组合 | 调用 `canOpenGitWorkspace` | 仅后两种为 `true`，否则不渲染该死按钮 | P1 | ✅ 已覆盖 | `gitRowAvailabilityFollowsEntryAndController` |
-| 80 | Project context | 关闭项目后在途的旧加载不得写回旧项目身份（**回归 #889**） | 项目 P 的加载卡在索引状态查询上 | 关闭 P 并触发清空，再放行旧查询 | identity / rows / details 保持为空 | P0 | ✅ 已覆盖 | `closingProjectInvalidatesInFlightLoad` |
-| 81 | Project context | 关闭项目后清空不得留下残留身份（**回归 #889**） | 项目 P 已加载出身份 | 关闭 P 并触发清空 | identity 为 nil，hasProject 为 false | P0 | ✅ 已覆盖 | `clearingAfterCloseLeavesNoStaleIdentity` |
-| 82 | Project context | 没有项目时不得展示残留的项目身份（**回归 #889 护栏**） | 项目 P 已加载出身份 | 关闭 P，读取 `displayIdentity` | 为 nil | P0 | ✅ 已覆盖 | `displayIdentityRequiresCurrentProject` |
+| 65 | Project context | 没有项目时清空全部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noProjectClearsEverything` |
+| 66 | Activity scope | 项目维度必须只统计这个项目的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `projectScopeFiltersByConversation` |
+| 67 | Activity scope | 没有项目时退回全局口径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToGlobalWithoutProject` |
+| 68 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
+| 69 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
+| 70 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
+| 71 | Project context | 点击「打开文件树」先切回 Chat 再选中文件树（**回归 #1014**） | Browser 等工作区已隐藏 Rail，活动栏处于其它入口 | 调用 `ProjectContextNavigator.openFileTree`，用记录器观察调用顺序 | 先 `activateItem` Chat 入口，再 `activateTab` 文件树；顺序不可颠倒 | P0 | ✅ 已覆盖 | `fileTreeNavigationActivatesChatFirst` |
+| 72 | Project context | 缺少活动栏时仍退回激活文件树 tab（**#1014 护栏**） | 活动栏为 nil | 同上 | 只发生 `activateTab`，不崩溃、不吞掉导航 | P1 | ✅ 已覆盖 | `fileTreeNavigationFallsBackToRail` |
+| 73 | EmptyStateTokenTrend | 有消息但零 token 时隐藏曲线与分隔线，只留热力图（**回归 #1042**） | 窗口内消息数 > 0、token 合计为 0 | 构造模型并读取 `showsTokenTrend` | 为 `false`；`tokenDays` 全为零但不会被绘制 | P1 | ✅ 已覆盖 | `zeroTokensHideTrendWithMessages` |
+| 74 | EmptyStateTokenTrend | 有 token 消耗时曲线随热力图一起显示 | 窗口内消息数 > 0、token 合计 > 0 | 构造模型并读取 `showsTokenTrend` | 为 `true`，曲线数据包含非零值 | P1 | ✅ 已覆盖 | `tokenActivityShowsTrendWithMessages` |
+| 75 | Project context | Git 入口已存在时直接激活，不重复启用插件 | Activity Bar 已含 Git Workspace 入口 | 调用 `openGitWorkspace` | 只发生一次 `activateItem` | P1 | ✅ 已覆盖 | `gitNavigationActivatesExistingEntry` |
+| 76 | Project context | Git 入口缺失时先启用 Git Workspace 再激活新入口（**回归 #1041**） | 插件默认禁用、Activity Bar 无入口，启停控制可用 | 启用回调中模拟注册入口，调用 `openGitWorkspace` | 先 `enablePlugin`，随后激活刚注册的入口 | P1 | ✅ 已覆盖 | `gitNavigationEnablesDisabledWorkspace` |
+| 77 | Project context | 启用失败时不激活任何入口 | 启停控制返回失败 | 调用 `openGitWorkspace` | 只记录一次启用尝试，界面不被改动 | P1 | ✅ 已覆盖 | `gitNavigationStopsWhenEnablingFails` |
+| 78 | Project context | Git 行仅在目标可达时提供动作 | 入口缺失 / 有启停控制 / 入口已存在三种组合 | 调用 `canOpenGitWorkspace` | 仅后两种为 `true`，否则不渲染该死按钮 | P1 | ✅ 已覆盖 | `gitRowAvailabilityFollowsEntryAndController` |
+| 79 | Project context | 关闭项目后在途的旧加载不得写回旧项目身份（**回归 #889**） | 项目 P 的加载卡在索引状态查询上 | 关闭 P 并触发清空，再放行旧查询 | identity / rows / details 保持为空 | P0 | ✅ 已覆盖 | `closingProjectInvalidatesInFlightLoad` |
+| 80 | Project context | 关闭项目后清空不得留下残留身份（**回归 #889**） | 项目 P 已加载出身份 | 关闭 P 并触发清空 | identity 为 nil，hasProject 为 false | P0 | ✅ 已覆盖 | `clearingAfterCloseLeavesNoStaleIdentity` |
+| 81 | Project context | 没有项目时不得展示残留的项目身份（**回归 #889 护栏**） | 项目 P 已加载出身份 | 关闭 P，读取 `displayIdentity` | 为 nil | P0 | ✅ 已覆盖 | `displayIdentityRequiresCurrentProject` |
+| 82 | Activity scope | 强制刷新必须重新取项目会话集合，当天新建会话也计入（**回归 #314**） | 项目维度已加载会话 A；同一天新建会话 B（缓存键 path/day 不变） | 切到 All 再切回 This project 触发 force 加载 | 查询的会话集合同时含 A 与 B | P0 | ✅ 已覆盖 | `forcedReloadRefreshesProjectConversationIDs` |
 
 > 说明：全部 **82 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
+- P0: 已覆盖 17 / 17
 - P1: 已覆盖 58 / 58
-- P2: 已覆盖 8 / 8
+- P2: 已覆盖 7 / 7
 - **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
 - **P1**: 其余功能性用例（58 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## UI 测试
 

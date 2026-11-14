@@ -4,6 +4,8 @@ import KitAgentTool
 /// 查看未推送到远程的本地 commit 数量与 hash 列表。
 public struct GitUnpushedV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_unpushed"
+    // libgit2 访问由 GitService 按仓库串行化（协作池外执行），可并行调度。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let project: (any GitProjectCapability)?
     public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "Check how many local commits have not been pushed to the remote repository." }

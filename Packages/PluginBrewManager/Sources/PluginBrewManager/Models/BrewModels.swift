@@ -114,9 +114,15 @@ public struct BrewPackageInfo: Codable, Sendable {
         versions = try container.decodeIfPresent(BrewVersions.self, forKey: .versions)
 
         // Formulae return an array here, while Homebrew casks return the
-        // installed version as a string. The cask version is already exposed
-        // through `version`, so the string form can safely be ignored.
-        installed = try? container.decode([InstalledVersion].self, forKey: .installed)
+        // installed version as a string. Normalize both shapes so an installed
+        // cask keeps its real installed version instead of being dropped.
+        if let array = try? container.decode([InstalledVersion].self, forKey: .installed) {
+            installed = array
+        } else if let string = try? container.decode(String.self, forKey: .installed) {
+            installed = [InstalledVersion(version: string, installed_on_request: nil)]
+        } else {
+            installed = nil
+        }
 
         outdated = try container.decodeIfPresent(Bool.self, forKey: .outdated)
         token = try container.decodeIfPresent(String.self, forKey: .token)

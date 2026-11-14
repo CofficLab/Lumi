@@ -7,17 +7,17 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginMessageListEmpty", targets: ["PluginMessageListEmpty"])],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitProjectDetect"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProjectRAG"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
     ],
     targets: [
         .target(

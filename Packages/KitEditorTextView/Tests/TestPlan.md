@@ -2,7 +2,7 @@
 
 ## 包概述
 
-KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditApp 的 [EditorCodeEditTextView](https://github.com/CodeEditApp/EditorCodeEditTextView)）。提供自研 `TextView`（`NSView`），用于替代部分场景下的 `NSTextView`，支持快速布局与大文档编辑。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ↑ 本 Kit package ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 渲染基础层 | | **职责** | 高性能 `NSView` 文本渲染、布局、输入处理；大文档编辑性能优化 | | **上游依赖** | `TextStory`、`swift-collections` | | **下游消费者** | `EditorSource`（核心文
+KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditApp 的 [EditorCodeEditTextView](https://github.com/CodeEditApp/EditorCodeEditTextView)）。提供自研 `TextView`（`NSView`），用于替代部分场景下的 `NSTextView`，支持快速布局与大文档编辑。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ↑ 本 Kit package ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 渲染基础层 | | **职责** | 高性能 `NSView` 文本渲染、布局、输入处理；大文档编辑性能优化 | | **上游依赖** | `TextStory`、`swift-collections` | | **下游消费者** | `EditorSource`（核心文
 
 平台: macOS 14+, iOS 17+
 测试文件: 11 个，用例总数: 80

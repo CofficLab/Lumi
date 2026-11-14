@@ -2,7 +2,7 @@
 
 ## 包概述
 
-KitEditorSource 维护中的 CodeEdit 源码编辑器包（源自 CodeEditApp 的 `CodeEditSourceEditor`）。提供编辑器 UI 与文本编辑能力（语法高亮、Tree-sitter、查找替换等）。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↑ 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 视图层 | | **职责** | `SourceEditor` SwiftUI 组件；Tree-sitter 语法高亮管线；缩进与文本格式化规则 | | **上游依赖** | `EditorTextView`、`EditorLanguages`、`EditorSymbols`、`TextFormation` | | **下游消费者** | `EditorService`（`SourceEditorAdapter` 绑定）、`E
+KitEditorSource 维护中的 CodeEdit 源码编辑器包（源自 CodeEditApp 的 `CodeEditSourceEditor`）。提供编辑器 UI 与文本编辑能力（语法高亮、Tree-sitter、查找替换等）。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↑ 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 视图层 | | **职责** | `SourceEditor` SwiftUI 组件；Tree-sitter 语法高亮管线；缩进与文本格式化规则 | | **上游依赖** | `EditorTextView`、`EditorLanguages`、`EditorSymbols`、`TextFormation` | | **下游消费者** | `EditorService`（`SourceEditorAdapter` 绑定）、`E
 
 平台: macOS 14+, iOS 17+
 测试文件: 15 个，用例总数: 71

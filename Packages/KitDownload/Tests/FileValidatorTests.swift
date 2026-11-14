@@ -37,14 +37,41 @@ struct FileValidatorTests {
         }
     }
 
-    @Test("验证空文件抛出错误")
-    func validateEmptyFile() async throws {
+    /// 回归 #159：validate 仅在 HTTP 200/206 成功返回后调用，干净返回的零字节
+    /// 是合法资源。无期望大小时不得一律判为 emptyFile 失败（旧契约错误地锁定抛出）。
+    @Test("无期望大小时合法空文件必须验证成功，不得误判为空文件失败")
+    func validateEmptyFileWithoutExpectationSucceeds() async throws {
         try await withTempDir { tempDir in
             let fileURL = tempDir.appendingPathComponent("empty.txt")
             try Data().write(to: fileURL)
 
+            let result = try validator.validate(fileAt: fileURL)
+            #expect(result == true)
+        }
+    }
+
+    /// 回归 #159：期望 0 字节且实际 0 字节是合法下载，大小匹配必须先于空文件判断，
+    /// 否则 expectedSize == 0 永远无法通过。
+    @Test("期望大小为零的空文件必须验证成功，不得误判失败")
+    func validateZeroByteFileWithExpectedZero() async throws {
+        try await withTempDir { tempDir in
+            let fileURL = tempDir.appendingPathComponent("empty.txt")
+            try Data().write(to: fileURL)
+
+            let result = try validator.validate(fileAt: fileURL, expectedSize: 0)
+            #expect(result == true)
+        }
+    }
+
+    /// 期望 0 字节仍须严格校验：实际非空时按大小不匹配抛出，而非放行。
+    @Test("期望大小为零但文件非空时抛出大小不匹配")
+    func validateNonEmptyFileWithExpectedZeroThrows() async throws {
+        try await withTempDir { tempDir in
+            let fileURL = tempDir.appendingPathComponent("nonempty.txt")
+            try "Hello".write(to: fileURL, atomically: true, encoding: .utf8)
+
             #expect(throws: DownloadError.self) {
-                try validator.validate(fileAt: fileURL)
+                try validator.validate(fileAt: fileURL, expectedSize: 0)
             }
         }
     }

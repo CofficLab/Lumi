@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 /// Message Timeline Pagination Service
 ///

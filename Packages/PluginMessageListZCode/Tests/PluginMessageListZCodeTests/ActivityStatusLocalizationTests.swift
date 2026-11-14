@@ -3,6 +3,7 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListZCode
 
 /// 活动状态行的本地化契约（#886）。

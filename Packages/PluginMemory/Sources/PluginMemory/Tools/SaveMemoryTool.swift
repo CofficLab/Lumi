@@ -41,7 +41,24 @@ public struct SaveMemoryTool: SuperAgentTool, @unchecked Sendable {
         return "保存记忆：\(name)"
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
         guard let id = MemoryToolSupport.string(arguments, "id"),
               let name = MemoryToolSupport.string(arguments, "name"),
               let content = MemoryToolSupport.string(arguments, "content"),
@@ -51,7 +68,10 @@ public struct SaveMemoryTool: SuperAgentTool, @unchecked Sendable {
         let type = MemoryToolSupport.type(arguments) ?? .project
         let scope = MemoryToolSupport.scope(arguments)
         let description = MemoryToolSupport.string(arguments, "description") ?? ""
-        let projectPath = await MainActor.run { projectCapability.currentProjectPath }
+        let projectPath = await MemoryToolSupport.resolveProjectPath(
+            conversationProjectPath: conversationProjectPath,
+            capability: projectCapability
+        )
 
         let item = try await storage.save(
             id: id,

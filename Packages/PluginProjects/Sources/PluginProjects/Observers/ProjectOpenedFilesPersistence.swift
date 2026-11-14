@@ -96,8 +96,9 @@ final class ProjectOpenedFilesPersistence {
     }
 
     private func normalized(_ urls: [URL]) -> [URL] {
+        var seen = Set<URL>()
         var result: [URL] = []
-        for url in urls.map(\.standardizedFileURL) where !result.contains(url) {
+        for url in urls.map(\.standardizedFileURL) where seen.insert(url).inserted {
             result.append(url)
         }
         return result

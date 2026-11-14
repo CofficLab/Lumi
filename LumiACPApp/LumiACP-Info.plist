@@ -4,6 +4,14 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Lumi ACP</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>zh-HK</string>
+		<string>zh-TW</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>LumiACP</string>
 	<key>LSBackgroundOnly</key>

@@ -55,17 +55,36 @@ public final class VendorAPIService: @unchecked Sendable {
     ) async throws -> Data {
         try await withRetry {
             let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
-            if let networkProvider {
-                let (data, response) = try await networkProvider.send(request: request, body: bodyData)
-                try validateResponse(response, data: data)
-                return data
-            }
-            var mutableRequest = request
-            mutableRequest.httpBody = bodyData
-            let (data, response) = try await session.data(for: mutableRequest)
+            return try await perform(request: request, bodyData: bodyData)
+        }
+    }
+
+    /// 发送**已序列化**的聊天完成请求。
+    ///
+    /// 请求体序列化与历史长度成正比（一张 2 MB 图片的 base64 就是 2.7 MB
+    /// 的字符串），放在主线程上会卡住 UI。调用方可以在后台线程完成序列化
+    /// 后把字节交给这里（Issue #1269）。
+    public func sendChatRequest(
+        request: URLRequest,
+        bodyData: Data
+    ) async throws -> Data {
+        try await withRetry {
+            try await perform(request: request, bodyData: bodyData)
+        }
+    }
+
+    /// 实际执行一次请求（不负责重试）。
+    private func perform(request: URLRequest, bodyData: Data) async throws -> Data {
+        if let networkProvider {
+            let (data, response) = try await networkProvider.send(request: request, body: bodyData)
             try validateResponse(response, data: data)
             return data
         }
+        var mutableRequest = request
+        mutableRequest.httpBody = bodyData
+        let (data, response) = try await session.data(for: mutableRequest)
+        try validateResponse(response, data: data)
+        return data
     }
 
     /// 发送任意 JSON 请求（Responses 协议等）。
@@ -103,10 +122,22 @@ public final class VendorAPIService: @unchecked Sendable {
         body: [String: Any],
         onEvent: @escaping @Sendable (Data) async -> Bool
     ) async throws {
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        try await sendStreamingChatRequest(request: request, bodyData: bodyData, onEvent: onEvent)
+    }
+
+    /// 发送**已序列化**的流式聊天完成请求（SSE）。
+    ///
+    /// 与非流式版本同理：请求体序列化应放在后台线程完成，避免主线程被
+    /// 大体积历史（图片 base64、工具参数）卡住（Issue #1269）。
+    public func sendStreamingChatRequest(
+        request: URLRequest,
+        bodyData: Data,
+        onEvent: @escaping @Sendable (Data) async -> Bool
+    ) async throws {
         let receipt = EventReceipt()
         try await withRetry {
             receipt.reset()
-            let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
             let forward: @Sendable (Data) async -> Bool = { event in
                 receipt.markReceived()
                 return await onEvent(event)

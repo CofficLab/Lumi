@@ -149,9 +149,11 @@ public final class TableChangeManager: ObservableObject {
         guard let key = rowKey(rowValues: rowValues, columns: columns) else { return }
         // 已删除的行不允许再改单元格
         guard !deletedRowKeys.contains(key) else { return }
+        let original = value(of: column, in: rowValues, columns: columns)
+        // BLOB 在 v1 只读：拒绝暂存，避免把占位文本当成字符串覆盖原始二进制（#281）。
+        if case .data = original { return }
         recordUndo()
 
-        let original = value(of: column, in: rowValues, columns: columns)
         if newValue == original {
             if var row = updatesByRow[key] {
                 row.columnUpdates.removeValue(forKey: column)
@@ -265,11 +267,13 @@ public final class TableChangeManager: ObservableObject {
 
         return pendingInserts.map { insert in
             if insert.columnValues.isEmpty {
-                // 空行：让数据库填充默认值
+                // 空行：让数据库填充默认值。
+                // SQLite 与 PostgreSQL 都接受 DEFAULT VALUES；MySQL 不支持该语法，
+                // 须用空列清单 () VALUES ()，否则 PostgreSQL 会语法报错并回滚保存（#280）。
                 switch type {
-                case .sqlite:
+                case .sqlite, .postgresql:
                     return "INSERT INTO \(tableExpr) DEFAULT VALUES;"
-                case .mysql, .postgresql:
+                case .mysql:
                     return "INSERT INTO \(tableExpr) () VALUES ();"
                 case .redis:
                     return ""

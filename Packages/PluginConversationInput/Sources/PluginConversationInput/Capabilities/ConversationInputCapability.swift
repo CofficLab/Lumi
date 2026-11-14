@@ -52,8 +52,11 @@ protocol ConversationInputCapability: AnyObject {
     var pendingAttachmentReadCount: Int { get }
     func beginAttachmentRead()
     func endAttachmentRead()
+    /// 标记当前读取窗口内有一次附件读取失败（#1174）。
+    func recordAttachmentReadFailure()
     /// 等待全部在途附件读取结束；没有在途读取时立即返回。
-    func waitForAttachmentReads() async
+    /// 返回 `false` 表示窗口内至少一次读取失败，发送入口应中止本次发送。
+    func waitForAttachmentReads() async -> Bool
 
     // MARK: - Send
 
@@ -221,8 +224,12 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         sender?.endAttachmentRead()
     }
 
-    func waitForAttachmentReads() async {
-        await sender?.waitForAttachmentReads()
+    func recordAttachmentReadFailure() {
+        sender?.recordAttachmentReadFailure()
+    }
+
+    func waitForAttachmentReads() async -> Bool {
+        await sender?.waitForAttachmentReads() ?? true
     }
 
     func removeImageAttachment(id: UUID) {

@@ -58,7 +58,7 @@ struct MailComposeView: View {
                 .foregroundColor(theme.textPrimary)
             Spacer()
             if let savedAt = viewModel.draftSavedAt {
-                Text("草稿已保存 \(savedAt.formatted(date: .omitted, time: .shortened))")
+                Text(String(format: pluginLocalization.string("Draft saved at %@"), savedAt.formatted(date: .omitted, time: .shortened)))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
             }
@@ -133,7 +133,7 @@ struct MailComposeView: View {
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
             if viewModel.attachments.isEmpty {
-                Text("拖入附件到窗口，或点击添加")
+                Text(pluginLocalization.string("Drag attachments into the window, or click to add"))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
             } else {
@@ -159,7 +159,7 @@ struct MailComposeView: View {
             }
             Spacer()
             if !viewModel.attachments.isEmpty {
-                Text("\(viewModel.attachments.count) 个附件")
+                Text(String(format: pluginLocalization.string("%lld attachments"), Int64(viewModel.attachments.count)))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
             }

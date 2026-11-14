@@ -82,6 +82,23 @@ public enum RecordableWindowProvider {
         }
     }
 
+    /// 定向查询单个窗口是否仍然存在。
+    ///
+    /// 存活检测只需要知道「这个 `CGWindowID` 还在不在」，
+    /// 而 `availableWindows()` 会全量枚举窗口列表并为每个窗口构造一次
+    /// `NSRunningApplication` —— 那是纯冗余的主线程开销（见 issue #1272）。
+    ///
+    /// - Important: `nonisolated`，可以放到后台线程执行。
+    nonisolated public static func windowExists(id: CGWindowID) -> Bool {
+        guard let rawWindows = CGWindowListCopyWindowInfo(
+            [.optionIncludingWindow, .optionOnScreenOnly],
+            id
+        ) as? [[CFString: Any]] else { return false }
+        return rawWindows.contains { raw in
+            (raw[kCGWindowNumber] as? NSNumber)?.uint32Value == id
+        }
+    }
+
     /// 按应用名/bundleId 与窗口标题子串匹配选择一个窗口。
     @MainActor
     public static func select(

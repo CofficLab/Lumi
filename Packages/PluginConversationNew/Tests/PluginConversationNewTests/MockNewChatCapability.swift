@@ -12,12 +12,24 @@ final class MockNewChatCapability: NewChatCapability {
     private(set) var selections: [UUID] = []
     var modelID: String?
     var projectPath: String?
+    /// 按对话 ID 注册的项目/模型归属，用于模拟「发起调用的对话」与 UI 选中对话不同（#331）。
+    var bindings: [UUID: (projectPath: String?, modelID: String?)] = [:]
     /// 下一次创建时抛出的错误；nil 表示成功。
     var createError: Error?
 
     var selectedConversationID: UUID? { selectedID }
     var currentModelID: String? { modelID }
     var currentProjectPath: String? { projectPath }
+
+    func projectPath(for conversationID: UUID?) -> String? {
+        guard let conversationID else { return nil }
+        return bindings[conversationID]?.projectPath
+    }
+
+    func modelID(for conversationID: UUID?) -> String? {
+        guard let conversationID else { return nil }
+        return bindings[conversationID]?.modelID
+    }
 
     func createTopLevelConversation(
         title: String?,

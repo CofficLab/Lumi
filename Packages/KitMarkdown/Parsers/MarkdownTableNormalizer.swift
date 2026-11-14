@@ -27,7 +27,7 @@ enum MarkdownTableNormalizer {
         
         var result: [String] = []
         var i = 0
-        var activeFence: String?
+        var activeFence: (character: Character, length: Int)?
         var activeIndentedCode = false
         
         while i < lines.count {
@@ -45,7 +45,7 @@ enum MarkdownTableNormalizer {
 
             if let fence = activeFence {
                 result.append(line)
-                if trimmed.hasPrefix(fence) {
+                if isClosingFence(trimmed, for: fence) {
                     activeFence = nil
                 }
                 i += 1
@@ -135,10 +135,24 @@ enum MarkdownTableNormalizer {
         line.filter { $0 == "|" }.count >= 2
     }
 
-    private static func openingFence(in line: String) -> String? {
-        if line.hasPrefix("```") { return "```" }
-        if line.hasPrefix("~~~") { return "~~~" }
-        return nil
+    /// 识别围栏代码块的起始行，记录围栏字符与真实长度。
+    ///
+    /// CommonMark 规定闭合围栏须与起始围栏字符相同、长度不短于起始围栏，
+    /// 故必须保留实际长度；否则四反引号外层会被三反引号的内层示例提前闭合，
+    /// 导致示例表格被误规整（#339）。
+    private static func openingFence(in line: String) -> (character: Character, length: Int)? {
+        guard let first = line.first, first == "`" || first == "~" else { return nil }
+        let length = line.prefix { $0 == first }.count
+        guard length >= 3 else { return nil }
+        return (first, length)
+    }
+
+    /// 判断一行是否为当前围栏的合法闭合行：同种字符、长度不短于起始围栏，
+    /// 且其后只能跟空白（闭合围栏不能携带 info string）。
+    private static func isClosingFence(_ line: String, for fence: (character: Character, length: Int)) -> Bool {
+        let length = line.prefix { $0 == fence.character }.count
+        guard length >= fence.length else { return false }
+        return line.dropFirst(length).allSatisfy { $0 == " " || $0 == "\t" }
     }
 
     private static func startsIndentedCodeBlock(_ line: String, at index: Int, in lines: [String.SubSequence]) -> Bool {

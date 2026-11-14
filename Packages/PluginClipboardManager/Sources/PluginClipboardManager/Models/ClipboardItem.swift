@@ -53,10 +53,25 @@ public struct ClipboardItem: Identifiable, Codable, Sendable, Equatable {
         self.timestamp = Date()
         self.isPinned = isPinned
         self.appName = appName
-        self.searchKeywords = content.lowercased()
+        self.searchKeywords = Self.searchKeywords(from: content)
         let payload = Self.sanitizedRichText(rtf: richTextRTF, html: richTextHTML)
         self.richTextRTF = payload.rtf
         self.richTextHTML = payload.html
+    }
+
+    /// 搜索关键词的最大长度。
+    ///
+    /// 关键词只用于「包含匹配」，超长内容（整篇日志、大段富文本）即使截断，
+    /// 前若干字符也足以让绝大多数查询命中。设上限让「条目数 × 关键词长度」
+    /// 这个乘积有界，否则单条超长内容会让每次搜索的扫描成本失控
+    /// （见 issue #1192）。
+    static let searchKeywordLimit = 4096
+
+    /// 由正文生成搜索关键词（小写，长度有界）。
+    static func searchKeywords(from content: String) -> String {
+        let lowered = content.lowercased()
+        guard lowered.count > searchKeywordLimit else { return lowered }
+        return String(lowered.prefix(searchKeywordLimit))
     }
 
     /// 富文本负载超过总上限时整体丢弃，退化为纯文本。

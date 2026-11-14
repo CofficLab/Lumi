@@ -66,7 +66,8 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             agentTurn: agentTurn,
             conversationState: conversationState,
             chat: chat,
-            statsCapability: ConversationStatsCapabilityAdapter(conversations: conversations)
+            statsCapability: ConversationStatsCapabilityAdapter(conversations: conversations),
+            stopCapability: ConversationStopCapabilityAdapter(agentLoop: agentTurn)
         )
         self.context = context
 

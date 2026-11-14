@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 使用 NSCollectionView 实现高性能文件树渲染。
 @MainActor
-final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTreeGitStatusUpdating {
+final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTreeGitStatusUpdating, FileTreeRefreshing {
     nonisolated static let emoji = "📂"
     nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
@@ -40,7 +40,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
     var context: FileTreeContext?
 
     /// 批量删除执行器；测试注入桩以观察删除目标，生产环境走真实废纸篓。
-    var trashHandler: ([URL]) -> FileTreeFacade.TrashBatchResult = {
+    var trashHandler: @Sendable ([URL]) -> FileTreeFacade.TrashBatchResult = {
         FileTreeFacade.trashItemsReporting(at: $0)
     }
 
@@ -597,26 +597,32 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
         ), let name = FileTreeActions.creationName(from: rawName) else { return }
-        
-        guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
-            context?.toast?.show(
-                pluginLocalization.string("Could not create the file. The name may be invalid or a file with that name already exists."),
-                style: .error
+
+        Task { @MainActor [weak self] in
+            let newURL = await Task.detached(priority: .userInitiated) {
+                FileTreeFacade.createFile(in: url, name: name)
+            }.value
+            guard let self else { return }
+            guard let newURL else {
+                self.context?.toast?.show(
+                    pluginLocalization.string("Could not create the file. The name may be invalid or a file with that name already exists."),
+                    style: .error
+                )
+                return
+            }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)创建文件：\(newURL.path)")
+            }
+            self.ensureDirectoryExpanded(url)
+            self.refreshAfterMutation(parentURL: url)
+            self.context?.toast?.show(
+                pluginLocalization.string("New File"),
+                detail: name,
+                style: .success
             )
-            return
         }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)创建文件：\(newURL.path)")
-        }
-        ensureDirectoryExpanded(url)
-        refreshAfterMutation(parentURL: url)
-        context?.toast?.show(
-            pluginLocalization.string("New File"),
-            detail: name,
-            style: .success
-        )
     }
-    
+
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let rawName = FileTreeActions.presentNamePrompt(
@@ -625,26 +631,32 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
         ), let name = FileTreeActions.creationName(from: rawName) else { return }
-        
-        guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
-            context?.toast?.show(
-                pluginLocalization.string("Could not create the folder. The name may be invalid or a folder with that name already exists."),
-                style: .error
+
+        Task { @MainActor [weak self] in
+            let newURL = await Task.detached(priority: .userInitiated) {
+                FileTreeFacade.createFolder(in: url, name: name)
+            }.value
+            guard let self else { return }
+            guard let newURL else {
+                self.context?.toast?.show(
+                    pluginLocalization.string("Could not create the folder. The name may be invalid or a folder with that name already exists."),
+                    style: .error
+                )
+                return
+            }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)创建文件夹：\(newURL.path)")
+            }
+            self.ensureDirectoryExpanded(url)
+            self.refreshAfterMutation(parentURL: url)
+            self.context?.toast?.show(
+                pluginLocalization.string("New Folder"),
+                detail: name,
+                style: .success
             )
-            return
         }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)创建文件夹：\(newURL.path)")
-        }
-        ensureDirectoryExpanded(url)
-        refreshAfterMutation(parentURL: url)
-        context?.toast?.show(
-            pluginLocalization.string("New Folder"),
-            detail: name,
-            style: .success
-        )
     }
-    
+
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let rawName = FileTreeActions.presentNamePrompt(
@@ -656,36 +668,47 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             from: rawName,
             currentName: url.lastPathComponent
         ) else { return }
-        
-        guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
-            context?.toast?.show(
-                pluginLocalization.string("Could not rename the item. The name may be invalid or an item with that name already exists."),
-                style: .error
+
+        Task { @MainActor [weak self] in
+            let newURL = await Task.detached(priority: .userInitiated) {
+                FileTreeFacade.renameItem(at: url, newName: newName)
+            }.value
+            guard let self else { return }
+            guard let newURL else {
+                self.context?.toast?.show(
+                    pluginLocalization.string("Could not rename the item. The name may be invalid or an item with that name already exists."),
+                    style: .error
+                )
+                return
+            }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
+            }
+            self.refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
+            self.context?.toast?.show(
+                pluginLocalization.string("Rename"),
+                detail: "\(url.lastPathComponent) → \(newURL.lastPathComponent)",
+                style: .success
             )
-            return
         }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
-        }
-        refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
-        context?.toast?.show(
-            pluginLocalization.string("Rename"),
-            detail: "\(url.lastPathComponent) → \(newURL.lastPathComponent)",
-            style: .success
-        )
     }
     
     @objc private func deleteItem(_ sender: NSMenuItem) {
         guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
         guard FileTreeActions.presentDeleteConfirmation(urls: urls) else { return }
-        performDelete(targets: urls)
+        Task { @MainActor [weak self] in
+            await self?.performDelete(targets: urls)
+        }
     }
 
     /// 执行批量删除：菜单的多选目标全部交给 `trashItemsReporting`，按成功项
     /// 移除选择并刷新父目录，失败项单独汇报，避免只删除右键项（回归 #1109）。
-    func performDelete(targets: [URL]) {
+    func performDelete(targets: [URL]) async {
         guard !targets.isEmpty else { return }
-        let result = trashHandler(targets)
+        let handler = trashHandler
+        let result = await Task.detached(priority: .userInitiated) {
+            handler(targets)
+        }.value
 
         guard !result.trashedURLs.isEmpty else {
             let message = result.failedURLs.count > 1
@@ -812,39 +835,46 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     // MARK: - Drag & Drop
     
     func handleDropFiles(targetURL: URL, sourceURLs: [URL]) -> Bool {
-        let result = FileTreeDropProcessor.process(
-            enabled: ProjectFileTreePlugin.dragAndDropEnabled,
-            targetURL: targetURL,
-            sourceURLs: sourceURLs,
-            isTargetDirectory: FileTreeFacade.isDirectory,
-            moveItem: { FileTreeFacade.moveItem(from: $0, to: $1) }
-        )
-        
-        switch result {
-        case .rejected:
-            return false
-        case .moved(_, let failedSources, let affectedParents):
-            onTreeMutation?()
-            
-            for parent in affectedParents {
-                fileTreeDataSource.reloadDirectory(at: parent)
-            }
-            
-            ensureDirectoryExpanded(targetURL)
-            
-            if !failedSources.isEmpty {
-                context?.toast?.show(
-                    String(
-                        format: pluginLocalization.string("%lld items could not be moved"),
-                        failedSources.count
-                    ),
-                    detail: failedSources.map(\.lastPathComponent).joined(separator: ", "),
-                    style: .warning
+        guard ProjectFileTreePlugin.dragAndDropEnabled else { return false }
+        guard FileTreeFacade.isDirectory(targetURL) else { return false }
+        guard !sourceURLs.isEmpty else { return false }
+
+        Task { @MainActor [weak self] in
+            let result = await Task.detached(priority: .userInitiated) {
+                FileTreeDropProcessor.process(
+                    enabled: true,
+                    targetURL: targetURL,
+                    sourceURLs: sourceURLs,
+                    isTargetDirectory: { FileTreeFacade.isDirectory($0) },
+                    moveItem: { FileTreeFacade.moveItem(from: $0, to: $1) }
                 )
+            }.value
+            guard let self else { return }
+            switch result {
+            case .rejected:
+                break
+            case .moved(_, let failedSources, let affectedParents):
+                self.onTreeMutation?()
+
+                for parent in affectedParents {
+                    self.fileTreeDataSource.reloadDirectory(at: parent)
+                }
+
+                self.ensureDirectoryExpanded(targetURL)
+
+                if !failedSources.isEmpty {
+                    self.context?.toast?.show(
+                        String(
+                            format: pluginLocalization.string("%lld items could not be moved"),
+                            failedSources.count
+                        ),
+                        detail: failedSources.map(\.lastPathComponent).joined(separator: ", "),
+                        style: .warning
+                    )
+                }
             }
-            
-            return true
         }
+        return true
     }
 }
 

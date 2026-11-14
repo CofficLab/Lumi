@@ -39,7 +39,8 @@ public final class MCPPlugin: SuperPlugin, SuperLog {
     public static let settingsEntryID = "com.coffic.lumi.plugin.mcp.settings"
 
     private var registry: MCPServerRegistry?
-    private var manager: MCPConnectionManager?
+    // 读取权限放开到 internal（@testable 可见），供关闭回归测试注入可观察会话；写入仍私有。
+    private(set) var manager: MCPConnectionManager?
     private var contributor: MCPServerContributor?
 
     public init() {}
@@ -98,8 +99,11 @@ public final class MCPPlugin: SuperPlugin, SuperLog {
             manager.removeAllToolsSynchronously()
         }
         // 异步：断开全部会话（fire-and-forget，进程退出由会话内部处理）。
-        Task { [weak manager] in
-            await manager?.disconnectAllSessions()
+        // 先持有强引用再调度：下面会把 manager 置 nil，弱捕获会让 Task 读到 nil
+        // 而静默跳过 disconnectAllSessions，导致会话/子进程泄漏（#141）。
+        let managerToDisconnect = manager
+        Task {
+            await managerToDisconnect?.disconnectAllSessions()
         }
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])

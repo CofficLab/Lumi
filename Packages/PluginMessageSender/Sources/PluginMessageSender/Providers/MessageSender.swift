@@ -14,7 +14,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         category: "MessageSender"
     )
     nonisolated public static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
@@ -32,6 +32,20 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     private var pendingTurnStarts: Set<UUID> = []
     private var pendingOutcomes: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
+    /// 每个会话最近一次 `started` 事件的回合身份（#165）。
+    ///
+    /// 终态事件是异步投递的：旧回合 A 的迟到终态可能在新回合 B 已开始后才
+    /// 到达。只有携带当前回合身份的终态才能唤醒等待者、写完成缓存、排空队列。
+    private var activeTurnIDs: [UUID: UUID] = [:]
+    /// 每个会话最近一次已广播终态的回合身份（#164）。
+    ///
+    /// 恢复回合有两条终态来源：AgentLoop 的异步终态事件与 `resumeTurn`
+    /// 返回后的补偿逻辑。两条路径都可能通知完成并排空队列，必须按回合
+    /// 身份去重，否则两条排队消息会被连续发出，破坏串行语义。
+    private var terminalNotifiedTurns: [UUID: UUID] = [:]
+    /// 已删除的会话（#167）：排空守卫不得再为它们落库消息或拉起回合。
+    private var deletedConversations: Set<UUID> = []
+    private var conversationObserver: (any ConversationObserverHandle)?
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
     public private(set) var isSending = false {
@@ -50,12 +64,19 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
     /// 又滚进下一条消息（#1023）。
     private var attachmentReadCount = 0
-    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+    /// 当前读取窗口内是否出现过失败；窗口开始（计数 0→1）时复位。
+    private var attachmentReadFailed = false
+    private var attachmentReadWaiters: [CheckedContinuation<Bool, Never>] = []
 
     public var pendingAttachmentReadCount: Int { attachmentReadCount }
 
     public func beginAttachmentRead() {
+        if attachmentReadCount == 0 { attachmentReadFailed = false }
         attachmentReadCount += 1
+    }
+
+    public func recordAttachmentReadFailure() {
+        attachmentReadFailed = true
     }
 
     public func endAttachmentRead() {
@@ -64,12 +85,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         guard attachmentReadCount == 0 else { return }
         let waiters = attachmentReadWaiters
         attachmentReadWaiters.removeAll()
-        waiters.forEach { $0.resume() }
+        let succeeded = !attachmentReadFailed
+        waiters.forEach { $0.resume(returning: succeeded) }
     }
 
-    public func waitForAttachmentReads() async {
-        guard attachmentReadCount > 0 else { return }
-        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    public func waitForAttachmentReads() async -> Bool {
+        guard attachmentReadCount > 0 else { return true }
+        return await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Sending State Observation
@@ -104,6 +126,10 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         self.conversations = conversations
         self.messages = messages
         self.agentLoop = agentLoop
+        conversationObserver = conversations.addConversationObserver { [weak self] event in
+            guard case .deleted(let id) = event else { return }
+            self?.invalidateDeletedConversation(id)
+        }
     }
 
     @discardableResult
@@ -342,7 +368,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
                 content: trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
-                collapsedBlocks: resolvedBlocks
+                collapsedBlocks: resolvedBlocks,
+                // 带走后台已编码好的附件 metadata，排空时复用，不在主 actor 重编码（#1323）。
+                attachmentMetadata: metadata
             ))
             notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
@@ -409,6 +437,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
 
     public func startTurn(for commit: MessageSendCommit) async {
         guard let userMessageID = commit.userMessageID else { return }
+        // 提交与启动之间可能隔着附件读取等异步窗口，会话若已在窗口内被
+        // 删除，这里不得再为它拉起回合（#167）。
+        guard !deletedConversations.contains(commit.conversationID) else { return }
         let task = beginTurn(
             conversationID: commit.conversationID,
             userMessageID: userMessageID
@@ -479,15 +510,23 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     ) async throws -> AgentLoopOutcome {
         isSending = true
         notify(.started(conversationID: conversationID))
-        defer { isSending = false }
+        // 补偿排空可能已经拉起下一条消息的跟踪任务；收尾不能无条件复位，
+        // 否则新回合在跑而 isSending 却是 false（#164）。
+        defer { isSending = !currentTasks.isEmpty || !pendingTurnStarts.isEmpty }
         if Self.verbose {
             Self.logger.info("\(self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
         }
         do {
             let outcome = try await agentLoop.resumeTurn(in: conversationID, request: request)
-            notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            // AgentLoop 的终态事件可能先于 resumeTurn 返回到达并已广播；
+            // 同一回合的终态只通知一次（#164）。
+            let turnID = outcome.isTerminal ? agentLoop.currentTurnID(for: conversationID) : nil
+            if !markTerminalNotified(turnID: turnID, for: conversationID) {
+                notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            }
             // 恢复后的回合可能已到达终态。恢复路径没有回合跟踪任务，
-            // 队列没人排空——这里补上。
+            // 队列没人排空——这里补上。若事件路径已排空并拉起新回合，
+            // drainPendingQueue 的在途守卫会挡住第二次排空。
             if outcome.isTerminal {
                 drainPendingQueue(conversationID: conversationID)
             }
@@ -553,10 +592,18 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         let conversationID: UUID
         let outcome: AgentLoopOutcome
         switch event {
-        case .completed(let id, _):
+        case .started(let id, let turn):
+            activeTurnIDs[id] = turn
+            // 新回合使上一回合缓存的终态失效，避免污染下一次等待。
+            completedOutcomes.removeValue(forKey: id)
+            return
+        case .completed(let id, let turn):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .completed
-            notify(.turnCompleted(conversationID: id, outcome: outcome))
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnCompleted(conversationID: id, outcome: outcome))
+            }
         case .suspended(let id, let turn, let suspension):
             // AgentLoop 的 finish 通知是异步投递的。若该回合已恢复，迟到的旧挂起
             // 事件不能结束发送任务或启动队列中的下一条消息。
@@ -568,15 +615,21 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             conversationID = id
             outcome = .suspended(suspension.suspensionID)
             notify(.turnCompleted(conversationID: id, outcome: outcome))
-        case .cancelled(let id, _):
+        case .cancelled(let id, let turn):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .cancelled
-            notify(.turnCompleted(conversationID: id, outcome: outcome))
-        case .failed(let id, _, let reason):
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnCompleted(conversationID: id, outcome: outcome))
+            }
+        case .failed(let id, let turn, let reason):
+            guard !isStaleTerminalEvent(turnID: turn, for: id) else { return }
             conversationID = id
             outcome = .failed(reason)
-            notify(.turnFailed(conversationID: id, reason: reason))
-        case .started, .toolCallsReceived, .llmResponseReceived:
+            if !markTerminalNotified(turnID: turn, for: id) {
+                notify(.turnFailed(conversationID: id, reason: reason))
+            }
+        case .toolCallsReceived, .llmResponseReceived:
             return
         }
 
@@ -601,6 +654,26 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
            !pendingTurnStarts.contains(conversationID) {
             drainPendingQueue(conversationID: conversationID)
         }
+    }
+
+    /// 记录并查询回合终态是否已广播（#164）。
+    ///
+    /// 返回 `true` 表示该回合的终态已由另一条路径通知过，调用方不得重复
+    /// 广播。未携带 turnID 时无法去重，保持旧行为。
+    private func markTerminalNotified(turnID: UUID?, for conversationID: UUID) -> Bool {
+        guard let turnID else { return false }
+        if terminalNotifiedTurns[conversationID] == turnID { return true }
+        terminalNotifiedTurns[conversationID] = turnID
+        return false
+    }
+
+    /// 终态事件是否属于已被新回合取代的旧回合（#165）。
+    ///
+    /// 事件未携带 turnID（旧实现或合成取消）或会话尚未记录任何 `started`
+    /// 时保持旧行为放行；只有「双方身份都已知且不一致」才判为迟到。
+    private func isStaleTerminalEvent(turnID: UUID?, for conversationID: UUID) -> Bool {
+        guard let turnID, let active = activeTurnIDs[conversationID] else { return false }
+        return turnID != active
     }
 
     private func waitForAgentLoop(in conversationID: UUID) async -> AgentLoopOutcome {
@@ -708,10 +781,38 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     }
 
     /// 依次发送待发队列（同一会话串行）。
+    /// 会话删除后，它的待发工作必须随之失效（#167）。
+    ///
+    /// 删除通知先于异步清理到达；若不在此刻清掉队列与跟踪任务，取消的
+    /// 终态事件和任务收尾还会把排队消息重新落库、为已删除的会话拉起回合。
+    private func invalidateDeletedConversation(_ conversationID: UUID) {
+        deletedConversations.insert(conversationID)
+        currentTasks[conversationID]?.cancel()
+        currentTasks.removeValue(forKey: conversationID)
+        // 代号一并移除：被取消的跟踪任务收尾时代号不匹配，不会再排空队列。
+        turnGenerations.removeValue(forKey: conversationID)
+        pendingTurnStarts.remove(conversationID)
+        pendingQueues.removeValue(forKey: conversationID)
+        completedOutcomes.removeValue(forKey: conversationID)
+        activeTurnIDs.removeValue(forKey: conversationID)
+        terminalNotifiedTurns.removeValue(forKey: conversationID)
+        // 跟踪任务挂在 continuation 上，取消 Task 不会让它自己返回。
+        let waiters = pendingOutcomes.removeValue(forKey: conversationID) ?? []
+        waiters.forEach { $0.resume(returning: .cancelled) }
+        notify(.pendingMessagesChanged(conversationID: conversationID))
+        isSending = !currentTasks.isEmpty || !pendingTurnStarts.isEmpty
+    }
+
     private func drainPendingQueue(conversationID: UUID) {
+        // 已删除的会话不得再落库消息或拉起回合（#167）。
+        guard !deletedConversations.contains(conversationID) else { return }
         // 在途守卫：排空过程中会 `beginTurn`，其收尾又可能触发排空。
         // 不加守卫会让同一会话并发拉起两个回合。
         guard !drainingConversations.contains(conversationID) else { return }
+        // 已有回合在跑（或即将开跑）时不得抢发下一条：恢复回合的事件路径
+        // 与补偿路径可能先后触发排空，第一条消息发出后第二次必须止步（#164）。
+        guard currentTasks[conversationID] == nil,
+              !pendingTurnStarts.contains(conversationID) else { return }
         guard var queue = pendingQueues[conversationID], !queue.isEmpty else {
             pendingQueues.removeValue(forKey: conversationID)
             return
@@ -726,9 +827,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
         notify(.pendingMessagesChanged(conversationID: conversationID))
 
-        var metadata: [String: String] = [:]
-        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }
-        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(next.fileAttachments)) { _, new in new }
+        // 复用入队时已在后台编码好的附件 metadata，避免排空瞬间在主 actor 上
+        // 对整段 Base64 payload 再做一次 JSON 序列化 + UTF-8 校验（#1323）。
+        // 仅同步提交路径（无预编码结果）才回落到现场编码。
+        var metadata = next.attachmentMetadata ?? Self.encodeAttachmentMetadata(
+            imageAttachments: next.imageAttachments,
+            fileAttachments: next.fileAttachments
+        )
         // 队列条目自带折叠块，回放时必须原样带回，否则排队期间折叠的内容
         // 会在真正发出时退化成一大段文字。
         metadata.merge(

@@ -1,6 +1,7 @@
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
+import KitMessageList
 
 /// 新版 V1 的 AgentTurn 记录（由消息重建的展示快照）。
 ///

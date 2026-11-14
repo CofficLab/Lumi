@@ -244,6 +244,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
 
         rawDataBuffer.removeAll()
         partialLine = ""
+        pendingBytes.removeAll()
         historyBuffer.removeAll()
         processDetails.removeAll()
         seenPIDs.removeAll()
@@ -258,9 +259,32 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     private var rawDataBuffer: [RawProcessData] = []
     private var bufferTimer: Timer?
     private var partialLine = ""
-    
+    /// 上一 chunk 尾部未完成的 UTF-8 字节（多字节字符可能跨 availableData 边界，#824）。
+    private var pendingBytes = Data()
+
     func processOutput(_ data: Data) {
-        guard let string = String(data: data, encoding: .utf8) else { return }
+        pendingBytes.append(data)
+
+        // chunk 边界可能落在多字节 UTF-8 字符中间：整段解码失败时最多回退
+        // 3 个尾部字节（最长 4 字节序列缺末字节的情形）重试，把未完成的字符
+        // 留给下一 chunk 合并；仍失败说明含真正非法序列，用替换字符兜底解码，
+        // 绝不静默丢弃整段输出（#824）。
+        var decodable = pendingBytes
+        var decoded = String(data: decodable, encoding: .utf8)
+        var heldBack = 0
+        while decoded == nil && heldBack < 3 && !decodable.isEmpty {
+            decodable = decodable.dropLast()
+            heldBack += 1
+            decoded = String(data: decodable, encoding: .utf8)
+        }
+        let string: String
+        if let decoded {
+            string = decoded
+            pendingBytes = heldBack > 0 ? pendingBytes.suffix(heldBack) : Data()
+        } else {
+            string = String(decoding: pendingBytes, as: UTF8.self)
+            pendingBytes = Data()
+        }
 
         let fullString = partialLine + string
         let lines = fullString.components(separatedBy: .newlines)

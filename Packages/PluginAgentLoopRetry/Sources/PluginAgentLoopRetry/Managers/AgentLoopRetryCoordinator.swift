@@ -18,6 +18,10 @@ final class AgentLoopRetryCoordinator {
         var attempts: Int
         var failedTurnID: UUID
         var retryStartPending = false
+        /// `retryTurn` 已发出、正在等它自己的 `.started` 事件。
+        /// 退避等待期间 `retryStartPending` 也为 true，但那时到达的
+        /// `.started` 只可能是外部新回合，不能当成自己的重试（#508）。
+        var retryLaunchInFlight = false
         var retryTask: Task<Void, Never>?
     }
 
@@ -69,12 +73,15 @@ final class AgentLoopRetryCoordinator {
         switch event {
         case .started(let conversationID, let turnID):
             guard var state = states[conversationID] else { return }
-            if state.retryStartPending {
+            if state.retryLaunchInFlight {
+                state.retryLaunchInFlight = false
                 state.retryStartPending = false
                 state.failedTurnID = turnID
                 states[conversationID] = state
             } else {
-                // A start not initiated by this coordinator begins a new retry chain.
+                // 外部新回合（如用户在退避等待期间主动发送）：旧重试链
+                // 作废，取消等待任务并清空预算，新回合的失败从 1/N 重新
+                // 计费，而不是继承上一回合的 attempts（#508）。
                 state.retryTask?.cancel()
                 states.removeValue(forKey: conversationID)
             }
@@ -193,6 +200,9 @@ final class AgentLoopRetryCoordinator {
             }
         }
 
+        // 从这里到 retryTurn 内部发出 .started 之间没有挂起点，标记不会被
+        // 外部事件抢先；等待期间到达的 .started 则一律视为外部新回合。
+        states[conversationID]?.retryLaunchInFlight = true
         do {
             let outcome = try await loop.retryTurn(
                 in: conversationID,

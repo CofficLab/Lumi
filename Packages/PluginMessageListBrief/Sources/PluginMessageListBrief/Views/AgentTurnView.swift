@@ -2,6 +2,7 @@ import LumiUI
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
+import KitMessageList
 
 /// V1 中一个完整的 AgentTurn。
 ///

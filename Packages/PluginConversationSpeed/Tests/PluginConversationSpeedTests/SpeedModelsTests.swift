@@ -3,10 +3,35 @@ import ProviderMessage
 import Testing
 @testable import PluginConversationSpeed
 
-@Test func speedDurationUsesTheLongerAvailableRequestDuration() {
+@Test func speedDurationPrefersStreamingGenerationTime() {
+    // #237：streaming 与 latency 同时有效时取生成时长（1200），而非完整延迟（2500）。
     let message = speedMessage(streamingDurationMs: 1_200, latencyMs: 2_500)
-    #expect(message.speedDurationMs == 2_500)
-    #expect(message.speedTokensPerSecond == 48)
+    #expect(message.speedDurationMs == 1_200)
+    #expect(message.speedTokensPerSecond == 100)
+}
+
+@Test func streamingSpeedExcludesTimeToFirstToken() {
+    // #237：100 tokens，TTFT 2s，首 token 后生成 8s，完整延迟 10s。
+    // 生成速度应为 100/8 = 12.5，而非 100/max(8,10) = 10。
+    let message = speedMessage(
+        outputTokens: 100,
+        streamingDurationMs: 8_000,
+        latencyMs: 10_000,
+        timeToFirstTokenMs: 2_000
+    )
+    #expect(message.speedDurationMs == 8_000)
+    #expect(message.speedTokensPerSecond == 12.5)
+}
+
+@Test func averageSpeedUsesStreamingDurationWhenBothPresent() {
+    // #237：历史曲线/平均同样走 speedDurationMs，须用生成时长而非完整延迟。
+    let messages = [
+        speedMessage(outputTokens: 100, streamingDurationMs: 8_000, latencyMs: 10_000),
+        speedMessage(outputTokens: 60, streamingDurationMs: 2_000, latencyMs: 5_000),
+    ]
+    let samples = SpeedSample.samples(from: messages)
+    // 100/8 = 12.5，60/2 = 30 → 平均 21.25；误用完整延迟则为 (10 + 12)/2 = 11。
+    #expect(SpeedSample.averageTokensPerSecond(from: samples) == 21.25)
 }
 
 @Test func speedDurationFallsBackToEitherPositiveMeasurement() {
@@ -29,8 +54,8 @@ import Testing
         ]
     )
 
-    #expect(message.speedDurationMs == 6_000)
-    #expect(message.speedTokensPerSecond == 20)
+    #expect(message.speedDurationMs == 4_000)
+    #expect(message.speedTokensPerSecond == 30)
     #expect(message.speedTimeToFirstTokenMs == 2_000)
 }
 
@@ -45,7 +70,7 @@ import Testing
         ]
     )
 
-    #expect(message.speedDurationMs == 2_000)
+    #expect(message.speedDurationMs == 1_000)
     #expect(message.speedTimeToFirstTokenMs == 500)
 }
 

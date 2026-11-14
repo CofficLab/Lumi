@@ -357,6 +357,91 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(viewModel.text == "first edited")
     }
 
+    @Test("附件读取期间继续编辑时，发送的是按下 Send 时的草稿（#1172）")
+    func deferredSendSubmitsSnapshotTakenAtSendPress() async {
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 按下 Send：正文快照为 "first"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 读取期间用户继续编辑，并选中了一个附件。
+        viewModel.setText("first edited")
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        capability.pendingFileAttachments = [file]
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未走后台提交") { !capability.backgroundCommits.isEmpty }
+        // 提交的是按下 Send 时的 "first"，而不是读取结束后的 "first edited"。
+        #expect(capability.backgroundCommits.first?.content == "first")
+        #expect(capability.backgroundCommits.first?.fileAttachments.map(\.id) == [file.id])
+
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+        // 读取期间的新草稿不能被提交成功的清理抹掉。
+        #expect(capability.text == "first edited")
+        #expect(viewModel.text == "first edited")
+    }
+
+    @Test("等待附件读取期间切换会话，回车发送仍落在发起会话（#1173）")
+    func deferredSendStaysBoundToOriginatingConversation() async {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "A draft"
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 在 A 按下 Send：快照 A + "A draft"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 等待期间切换到 B 并输入独立草稿，但不在 B 按发送。
+        capability.selectedConversationID = b
+        viewModel.setText("B draft")
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未提交") { !capability.commits.isEmpty }
+        // 提交目标必须是发起发送的 A，正文是 A 的快照，而非 B 的草稿。
+        #expect(capability.commits.first?.conversationID == a)
+        #expect(capability.commits.first?.content == "A draft")
+        // B 的独立草稿既不能被提交，也不能被清理。
+        #expect(capability.text == "B draft")
+        #expect(viewModel.text == "B draft")
+    }
+
+    @Test("后台编码期间切到相同文本的新会话，成功提交不清空新会话草稿（#1175）")
+    func backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation() async {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "same"
+        capability.pendingFileAttachments = [
+            UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        ]
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.holdsBackgroundCommits = true
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.send()
+        await waitUntil("后台提交未开始") { !capability.backgroundCommits.isEmpty }
+
+        // 编码期间切到 B，并输入与 A 发送内容**相同文本**的独立草稿。
+        capability.selectedConversationID = b
+        viewModel.setText("same")
+        capability.releaseBackgroundCommits()
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+
+        // 消息提交到 A；B 的相同文本草稿不能仅凭正文相等就被清理抹掉。
+        #expect(capability.backgroundCommits.first?.conversationID == a)
+        #expect(capability.text == "same")
+        #expect(viewModel.text == "same")
+    }
+
     // MARK: - 焦点 / 高度绑定
 
     @Test("焦点与高度绑定双向同步到能力层")

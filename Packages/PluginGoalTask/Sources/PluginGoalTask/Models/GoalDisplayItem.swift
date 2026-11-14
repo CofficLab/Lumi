@@ -12,6 +12,7 @@ public struct GoalDisplayItem: Identifiable, Equatable {
     public let status: Goal.GoalStatus
     public let blockedReason: String?
     public let goalDescription: String?
+    public let successCriteria: String?
 
     public init(from goal: Goal) {
         self.id = goal.id
@@ -19,6 +20,7 @@ public struct GoalDisplayItem: Identifiable, Equatable {
         self.status = goal.status
         self.blockedReason = goal.blockedReason
         self.goalDescription = goal.goalDescription
+        self.successCriteria = goal.successCriteria
     }
 
     /// 是否为终态(completed / failed / skipped),非终态即视为「活跃」。

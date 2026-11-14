@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 /// 构造一条测试消息。
@@ -814,8 +815,12 @@ struct ListV3ViewModelHistoryTests {
 /// 流式刷新走 16ms 单飞帧门禁，固定 `Task.sleep` 在 MainActor 被其他
 /// 并行测试抢占时会偶发读到中间态；轮询让断言与真实完成时刻对齐。
 @MainActor
+/// 轮询直到条件成立。
+///
+/// - Important: 超时给到 10s。默认 2s 在高负载下（CI 上多个包同时跑）
+///   偶尔不够 → **偶发**失败。上限只影响失败路径。
 private func waitUntil(
-    timeout: TimeInterval = 2,
+    timeout: TimeInterval = 10,
     _ condition: () -> Bool
 ) async {
     let deadline = Date().addingTimeInterval(timeout)

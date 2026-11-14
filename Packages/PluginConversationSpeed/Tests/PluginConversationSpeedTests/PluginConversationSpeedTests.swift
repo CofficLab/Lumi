@@ -45,9 +45,9 @@ import ProviderMessage
 
     viewModel.selectConversation(conversationID, messages: [message])
 
-    #expect(viewModel.cachedTPS == 20)
+    #expect(viewModel.cachedTPS == 30)
     #expect(viewModel.speedHistory.count == 1)
-    #expect(viewModel.streamingDurationMs == 6_000)
+    #expect(viewModel.streamingDurationMs == 4_000)
     #expect(viewModel.timeToFirstTokenMs == 2_000)
     #expect(viewModel.unavailabilityReason == .waitingForResponse)
 }

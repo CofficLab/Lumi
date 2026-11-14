@@ -625,7 +625,9 @@ struct EditorKernelTests {
 
         controller.recordUnchangedModificationDate(modDate)
         #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: false) == false)
-        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: true) == true)
+        // #397：纯本地 dirty 且磁盘未变，不得误报为外部改动；磁盘真的变了仍须检出。
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: true) == false)
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(1.0), hasUnsavedChanges: true) == true)
     }
 
     @Test
@@ -1489,6 +1491,135 @@ struct EditorKernelTests {
         )
         #expect(transposed?.replacementText == "ba")
         #expect(transposed?.selectedRanges == [NSRange(location: 2, length: 0)])
+    }
+
+    @Test
+    func transposeSwapsWholeEmojiWithoutSplittingSurrogatePair() throws {
+        // #337: 光标在 emoji 与 b 之间（UTF-16 location 2），必须按完整字符交换，
+        // 不能把代理对拆开，写回后不得出现 U+FFFD。
+        let result = try #require(LineEditingController.transpose(
+            in: "😀b",
+            selections: [NSRange(location: 2, length: 0)]
+        ))
+        #expect(result.replacementText == "b😀")
+        #expect(result.replacementRange == NSRange(location: 0, length: 3))
+        #expect(result.selectedRanges == [NSRange(location: 3, length: 0)])
+
+        let buffer = EditorBuffer(text: "😀b")
+        let applied = buffer.apply(EditorTransaction(replacements: [
+            .init(
+                range: EditorRange(location: result.replacementRange.location, length: result.replacementRange.length),
+                text: result.replacementText
+            )
+        ]))
+        #expect(applied != nil)
+        #expect(buffer.text == "b😀")
+        #expect(!buffer.text.contains("\u{FFFD}"))
+    }
+
+    @Test
+    func transposeSwapsEmojiThatFollowsTheCursor() throws {
+        let result = try #require(LineEditingController.transpose(
+            in: "b😀",
+            selections: [NSRange(location: 1, length: 0)]
+        ))
+        #expect(result.replacementText == "😀b")
+        #expect(result.replacementRange == NSRange(location: 0, length: 3))
+        #expect(result.selectedRanges == [NSRange(location: 3, length: 0)])
+
+        let buffer = EditorBuffer(text: "b😀")
+        let applied = buffer.apply(EditorTransaction(replacements: [
+            .init(
+                range: EditorRange(location: result.replacementRange.location, length: result.replacementRange.length),
+                text: result.replacementText
+            )
+        ]))
+        #expect(applied != nil)
+        #expect(buffer.text == "😀b")
+        #expect(!buffer.text.contains("\u{FFFD}"))
+    }
+
+    @Test
+    func transposeSwapsCombiningMarkGraphemeAsOneUnit() throws {
+        // "e\u{301}" 是一个字素簇（é），占两个 UTF-16 码元，必须整体交换。
+        let result = try #require(LineEditingController.transpose(
+            in: "e\u{301}b",
+            selections: [NSRange(location: 2, length: 0)]
+        ))
+        #expect(result.replacementText == "be\u{301}")
+        #expect(result.replacementRange == NSRange(location: 0, length: 3))
+        #expect(result.selectedRanges == [NSRange(location: 3, length: 0)])
+
+        let buffer = EditorBuffer(text: "e\u{301}b")
+        let applied = buffer.apply(EditorTransaction(replacements: [
+            .init(
+                range: EditorRange(location: result.replacementRange.location, length: result.replacementRange.length),
+                text: result.replacementText
+            )
+        ]))
+        #expect(applied != nil)
+        #expect(buffer.text == "be\u{301}")
+        #expect(buffer.text.count == 2)
+        #expect(!buffer.text.contains("\u{FFFD}"))
+    }
+
+    @Test
+    func transposeSwapsFlagEmojiGraphemeAsOneUnit() throws {
+        // 旗帜 "🇺🇸" 由两个区域指示符组成，占四个 UTF-16 码元，仍是一个字符。
+        let result = try #require(LineEditingController.transpose(
+            in: "🇺🇸b",
+            selections: [NSRange(location: 4, length: 0)]
+        ))
+        #expect(result.replacementText == "b🇺🇸")
+        #expect(result.replacementRange == NSRange(location: 0, length: 5))
+        #expect(result.selectedRanges == [NSRange(location: 5, length: 0)])
+
+        let buffer = EditorBuffer(text: "🇺🇸b")
+        let applied = buffer.apply(EditorTransaction(replacements: [
+            .init(
+                range: EditorRange(location: result.replacementRange.location, length: result.replacementRange.length),
+                text: result.replacementText
+            )
+        ]))
+        #expect(applied != nil)
+        #expect(buffer.text == "b🇺🇸")
+        #expect(!buffer.text.contains("\u{FFFD}"))
+    }
+
+    @Test
+    func transposeKeepsASCIISelectionMathAtNonZeroOffset() throws {
+        let result = try #require(LineEditingController.transpose(
+            in: "abc",
+            selections: [NSRange(location: 2, length: 0)]
+        ))
+        #expect(result.replacementText == "cb")
+        #expect(result.replacementRange == NSRange(location: 1, length: 2))
+        #expect(result.selectedRanges == [NSRange(location: 3, length: 0)])
+
+        let buffer = EditorBuffer(text: "abc")
+        buffer.apply(EditorTransaction(replacements: [
+            .init(
+                range: EditorRange(location: result.replacementRange.location, length: result.replacementRange.length),
+                text: result.replacementText
+            )
+        ]))
+        #expect(buffer.text == "acb")
+    }
+
+    @Test
+    func transposeReturnsNilAtLineEndingBoundary() {
+        #expect(LineEditingController.transpose(
+            in: "a\nb",
+            selections: [NSRange(location: 1, length: 0)]
+        ) == nil)
+        #expect(LineEditingController.transpose(
+            in: "a\nb",
+            selections: [NSRange(location: 2, length: 0)]
+        ) == nil)
+        #expect(LineEditingController.transpose(
+            in: "a\rb",
+            selections: [NSRange(location: 1, length: 0)]
+        ) == nil)
     }
 
     @Test

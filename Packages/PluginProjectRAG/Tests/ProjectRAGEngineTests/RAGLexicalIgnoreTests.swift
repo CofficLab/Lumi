@@ -32,7 +32,7 @@ import Testing
         #expect(arguments.last == "/tmp/project")
     }
 
-    @Test func lexicalSearchFindsSourceInGitignoredDirectory() throws {
+    @Test func lexicalSearchFindsSourceInGitignoredDirectory() async throws {
         let root = try makeProject()
         defer { try? FileManager.default.removeItem(at: root) }
         try gitInit(root)
@@ -50,7 +50,7 @@ import Testing
             to: root.appendingPathComponent(".gitignore"), atomically: true, encoding: .utf8
         )
 
-        let results = try RAGLexicalFileSearcher.search(query: "needle", projectPath: root.path, topK: 5)
+        let results = try await RAGLexicalFileSearcher.search(query: "needle", projectPath: root.path, topK: 5)
         let sources = Set(results.map(\.source))
         #expect(sources.contains("Tracked.swift"))
         #expect(sources.contains("generated/Ignored.swift"))

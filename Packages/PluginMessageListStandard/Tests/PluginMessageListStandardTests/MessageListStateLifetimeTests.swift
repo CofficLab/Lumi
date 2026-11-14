@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 /// 消息列表视图的**状态生命周期**回归测试。

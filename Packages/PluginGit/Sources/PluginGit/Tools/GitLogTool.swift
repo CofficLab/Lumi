@@ -8,6 +8,8 @@ import ProviderGit
 public struct GitLogTool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "git_log"
     public let name = Self.toolName
+    // libgit2 访问由 GitService 按仓库串行化（协作池外执行），可并行调度。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
     private let project: (any GitProjectCapability)?
     public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file." }

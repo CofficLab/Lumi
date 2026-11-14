@@ -241,7 +241,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
                 messages: request.messages,
                 model: model,
                 tools: request.tools,
-                reasoningEffort: request.reasoningEffort
+                reasoningEffort: request.reasoningEffort,
+                reasoningOff: request.reasoningOff
             )
             return try await resolved.provider.complete(routed)
         }
@@ -256,7 +257,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
                 messages: request.messages,
                 model: model ?? request.model,
                 tools: request.tools,
-                reasoningEffort: request.reasoningEffort
+                reasoningEffort: request.reasoningEffort,
+                reasoningOff: request.reasoningOff
             )
             return try await provider.complete(routed)
         }
@@ -271,7 +273,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             messages: request.messages,
             model: model,
             tools: request.tools,
-            reasoningEffort: request.reasoningEffort
+            reasoningEffort: request.reasoningEffort,
+            reasoningOff: request.reasoningOff
         )
         if Self.verbose {
             Self.logger.debug("\(Self.t)routing complete: conversation=\(request.conversationID.uuidString.prefix(8)), provider=\(resolved.provider.providerInfo.id, privacy: .public), model=\(model ?? "nil", privacy: .public)")
@@ -298,7 +301,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
                 messages: request.messages,
                 model: model,
                 tools: request.tools,
-                reasoningEffort: request.reasoningEffort
+                reasoningEffort: request.reasoningEffort,
+                reasoningOff: request.reasoningOff
             )
             if let streamingProvider = resolved.provider as? any LLMStreamingProviding {
                 return try await streamingProvider.streamComplete(routed, onChunk: onChunk)
@@ -316,7 +320,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
                 messages: request.messages,
                 model: model ?? request.model,
                 tools: request.tools,
-                reasoningEffort: request.reasoningEffort
+                reasoningEffort: request.reasoningEffort,
+                reasoningOff: request.reasoningOff
             )
             if let streamingProvider = provider as? any LLMStreamingProviding {
                 return try await streamingProvider.streamComplete(routed, onChunk: onChunk)
@@ -334,7 +339,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             messages: request.messages,
             model: model,
             tools: request.tools,
-            reasoningEffort: request.reasoningEffort
+            reasoningEffort: request.reasoningEffort,
+            reasoningOff: request.reasoningOff
         )
         if let streamingProvider = resolved.provider as? any LLMStreamingProviding {
             if Self.verbose {

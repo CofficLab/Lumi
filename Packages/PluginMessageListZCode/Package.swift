@@ -3,20 +3,21 @@ import PackageDescription
 
 /// V4（ZCode 风格）消息列表插件。
 ///
-/// 与 V1 / V2 / V3 一样是**独立 Package**，不依赖其它消息列表包。
-/// 共享的通用设施（Provider 层、渲染分发、滚动跟踪）在本包内各自实现，
-/// 避免「插件依赖插件」。
+/// 与其它消息列表插件一样是**独立 Package**，只依赖共享的 `KitMessageList`
+/// 与 Provider 层，不依赖其它消息列表插件（避免「插件依赖插件」）。
+/// 本档特有的滚动栈、行构建与取窗策略仍在本包内实现。
 let package = Package(
     name: "PluginMessageListZCode",
     defaultLocalization: "en",
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginMessageListZCode", targets: ["PluginMessageListZCode"])],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.22.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../KitMarkdown"),
-        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../KitMessageList"),
+        .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -25,13 +26,14 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
         .target(name: "PluginMessageListZCode", dependencies: [
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiUI", package: "LumiUI"),
             .product(name: "KitMarkdown", package: "KitMarkdown"),
+            .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -49,6 +51,7 @@ let package = Package(
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListZCodeTests", dependencies: [
             "PluginMessageListZCode",
+            .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiUI", package: "LumiUI"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),

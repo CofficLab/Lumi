@@ -112,7 +112,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
 
         Task {
             do {
-                let freed = try await service.cleanup(paths: pathsToClean)
+                let freed = try await service.cleanup(paths: pathsToClean, toleratingMissing: true)
                 if Self.verbose {
                     if DiskManagerPlugin.verbose {
                                             DiskManagerPlugin.logger.info("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")

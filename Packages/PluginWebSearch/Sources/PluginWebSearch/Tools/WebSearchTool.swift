@@ -14,6 +14,9 @@ public struct WebSearchTool: SuperAgentTool {
 
     public let name = "web_search"
 
+    // 无共享可变状态，网络请求与 HTML 解析均为每次调用独立，可并行。
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
     public init(
         searchClient: (@Sendable (String) async throws -> [WebSearchResult])? = nil
     ) {
@@ -61,7 +64,11 @@ public struct WebSearchTool: SuperAgentTool {
             guard let network = await MainActor.run(body: { WebSearchRuntime.network }) else {
                 throw ToolExecutionError.executionFailed(toolName: name, reason: "Network service is unavailable.")
             }
-            results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
+            do {
+                results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
+            } catch let error as WebSearchError {
+                throw ToolExecutionError.executionFailed(toolName: name, reason: error.localizedDescription)
+            }
         }
 
         if results.isEmpty {
@@ -106,7 +113,7 @@ public struct WebSearchResult: Equatable, Sendable {
 }
 
 extension WebSearchTool {
-    private static func fetchDuckDuckGoResults(
+    static func fetchDuckDuckGoResults(
         query: String,
         network: any NetworkProviding
     ) async throws -> [WebSearchResult] {
@@ -121,6 +128,11 @@ extension WebSearchTool {
             headers: ["User-Agent": "Lumi/1.0"],
             timeout: 12
         )
+        // 非 200 的响应（429/500 错误页、DDG 反爬的 202 挑战页）都不含 result__a，
+        // 直接解析会把拦截伪装成「无结果」的成功；202 属于 2xx，故必须精确判 200（#332）。
+        guard response.statusCode == 200 else {
+            throw WebSearchError.badStatus(response.statusCode)
+        }
         let data = response.body
 
         guard let html = String(data: data, encoding: .utf8) else {
@@ -251,9 +263,9 @@ public enum WebSearchError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .badStatus(let code):
-            return "HTTP \(code)"
+            return "Search backend returned HTTP \(code) instead of 200; the search did not run. This is a backend failure, not evidence that the web has no such information."
         case .invalidResponse:
-            return "Invalid response"
+            return "Search backend returned an unreadable response; the search did not run."
         }
     }
 }

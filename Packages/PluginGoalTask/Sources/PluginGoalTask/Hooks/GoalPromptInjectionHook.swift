@@ -14,10 +14,13 @@ import ProviderLifecycleHooks
 ///
 /// ## 注入结构
 ///
-/// 两条 system message 分离，静态在前、动态在后：
-/// 1. `autonomyContract`：内容恒定，随活跃 goal 存在与否才增删。
-///    放在最前可被 provider 的 prefix cache 命中。
-/// 2. `goalProgress`：每轮随进度变化，不参与缓存。
+/// 静态与动态内容分开放置，保住供应商前缀缓存：
+/// 1. `autonomyContract`：内容恒定，前置（prepend）。跨轮字节稳定，
+///    留在前缀里可被 provider 的 prefix cache 命中。
+/// 2. `goalProgress` / 续跑指令 / blocked 提示：每轮随状态变化，尾追加到
+///    最新 user 消息之前（与 `ProjectRAGLLMContextHook` 同一约定）。稳定
+///    历史前缀因此逐字节不变，缓存可命中到注入点之前。旧实现把整组
+///    prepend 到 0，每轮变化的进度会让其后整段历史的前缀缓存失效。
 ///
 /// 自动续跑轮额外追加一条「直接接下一个任务」的指令，避免模型把续跑
 /// 当成一次重新汇报的开场。
@@ -38,24 +41,34 @@ final class GoalPromptInjectionHook {
             guard let blocked = goals.first(where: { $0.status == .blocked }) else {
                 return context
             }
-            return Self.injecting(
+            // blocked 是每轮可能变化的状态，按动态内容尾追加。
+            return Self.injectingDynamic(
                 [Self.blockedPrompt(blocked)],
                 into: context
             )
         }
 
-        var injected = [Self.autonomyContract]
+        // 静态契约前置：内容恒定，跨轮字节稳定，可被 prefix cache 命中。
+        var result = Self.injectingStatic([Self.autonomyContract], into: context)
 
+        // 动态进度与续跑指令每轮变化，尾追加到最新 user 之前，
+        // 避免破坏稳定历史前缀。
+        var dynamic: [String] = []
         for goal in activeGoals {
             let tasks = await manager.fetchTasks(goalId: goal.id)
-            injected.append(Self.progressPrompt(goal: goal, tasks: tasks))
+            dynamic.append(Self.progressPrompt(goal: goal, tasks: tasks))
+            // 用户编辑过内容时追加一次性提示：进度文本虽然每轮最新，但历史里
+            // 还留着按旧目标拆的计划，需要显式让模型重估。blocked 分支不在
+            // 这里消费标记，编辑提示保留到 Goal 重新活跃。
+            if await manager.consumeUserEditNotice(goalId: goal.id, conversationId: conversationId) {
+                dynamic.append(Self.userEditPrompt(goal))
+            }
         }
-
         if await manager.consumeContinuation(conversationId: conversationId) {
-            injected.append(Self.continuationPrompt)
+            dynamic.append(Self.continuationPrompt)
         }
 
-        return Self.injecting(injected, into: context)
+        return Self.injectingDynamic(dynamic, into: result)
     }
 
     // MARK: - Private Helpers
@@ -66,12 +79,32 @@ final class GoalPromptInjectionHook {
         goal.status == .pending || goal.status == .inProgress
     }
 
-    private static func injecting(
+    /// 静态指令前置（prepend）。内容跨轮恒定，留在前缀里可被缓存命中。
+    private static func injectingStatic(
         _ prompts: [String],
         into context: WillSendToLLMContext
     ) -> WillSendToLLMContext {
+        guard !prompts.isEmpty else { return context }
         var result = context
-        result.messages = prompts.map { LLMMessage(role: .system, content: $0) } + context.messages
+        result.messages = prompts.map { LLMMessage(role: .system, content: $0) } + result.messages
+        return result
+    }
+
+    /// 动态指令尾追加：插在最新 user 消息之前，历史前缀 `[0..<anchor]` 逐字节
+    /// 不变，供应商前缀缓存可命中到注入点之前。不得插 0（会让其后整段稳定
+    /// 历史失效）。没有 user 消息时回退到末尾。与 `ProjectRAGLLMContextHook`
+    /// 的注入位置约定一致。
+    private static func injectingDynamic(
+        _ prompts: [String],
+        into context: WillSendToLLMContext
+    ) -> WillSendToLLMContext {
+        guard !prompts.isEmpty else { return context }
+        var result = context
+        let anchor = result.messages.lastIndex(where: { $0.role == .user }) ?? result.messages.endIndex
+        result.messages.insert(
+            contentsOf: prompts.map { LLMMessage(role: .system, content: $0) },
+            at: anchor
+        )
         return result
     }
 
@@ -129,6 +162,19 @@ final class GoalPromptInjectionHook {
     - Call `update_task_status` as soon as a task finishes; never batch status updates
       at the end.
     """
+
+    /// 用户手动编辑目标后的一次性提示，消费即清除（见 `consumeUserEditNotice`）。
+    private static func userEditPrompt(_ goal: Goal) -> String {
+        """
+        ## ✏️ Goal Edited by User
+
+        The user manually edited goal `\(goal.id)` (**\(goal.title)**). The title, description, and success criteria above are the current, authoritative version.
+
+        - Re-evaluate every remaining task against the updated goal.
+        - Adjust the plan with `add_tasks_to_goal` / `update_task_status`: skip tasks that no longer fit, add tasks the new objective requires.
+        - Do NOT ask the user to confirm the changes; apply them and continue.
+        """
+    }
 
     /// 单个 goal 的进度视图，含任务表与当前焦点。
     private static func progressPrompt(goal: Goal, tasks: [GoalTask]) -> String {

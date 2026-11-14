@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import KitMessageList
 @testable import PluginMessageListBrief
 
 /// 消息列表视图（V1 / 简洁模式）的**状态生命周期**回归测试。

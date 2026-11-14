@@ -2,23 +2,14 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 132 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 229 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 132
+测试文件: 36 个，用例总数: 229
 
 核心组件（源码目录）:
-- `Hooks/`
-- `Navigation/`
-- `Observers/`
-- `Providers/`
-- `Support/`
-- `Tools/`
-- `Core/`
-- `Models/`
-- `Observers/`
-- `Services/`
-- `Utils/`
+- PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
+- ProjectRAGEngine: `Core/` `Models/` `Observers/` `Services/` `Utils/`
 
 ## 公开 API
 
@@ -56,8 +47,12 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 - **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
 - **RAGLexicalIgnore**（2 条）：由 `ripgrepArgumentsDisableIgnoreRules`、`lexicalSearchFindsSourceInGitignoredDirectory` 锁定。索引扫描和路径搜索都不读取 `.gitignore`，词法搜索的 ripgrep 参数必须带 `--no-ignore`，否则被忽略目录中的源码在有其他匹配时会被静默漏掉（**回归 #1113**）。
+- **RAGAncestorExclusion**（5 条）：由 `scannerFindsSourcesWhenProjectLivesUnderBuildAncestor`、`skipDecisionIgnoresAncestorsOutsideProjectRoot` 等用例锁定。排除目录（build/temp/DerivedData 等）只作用于项目根「内部」：`shouldSkipPath` 必须先相对 projectRoot 化再逐段匹配，扫描、词法 ripgrep 过滤与路径搜索都传入同一项目根，否则位于同名祖先目录下的项目整体不可搜索（**回归 #194**）。
+- **RAGRipgrepLocator**（3 条）：由 `bundledRipgrepResolvesAndRuns`、`bundledCandidatePrecedesSystemPaths`、`bundledRipgrepIsUniversal` 锁定。ripgrep 随包内置（`Resources/rg`，universal），解析优先于系统 PATH，不依赖用户机器安装 rg；应用内签名副本由构建脚本放入 `Contents/MacOS`，资源 bundle 内未签名副本不得优先。
 - **RAGSQLiteCandidateDedup**（3 条）：由 `mergeKeepsChunksThatShareContentPrefix`、`partialMatchDoesNotEvictFullMatch`、`fallbackOverlapIsDeduplicated` 锁定。词法与回退候选合并必须按数据库 chunk id 去重；不能用「路径 + 内容前 80 字符」，否则同前缀的不同 chunk 会互相覆盖，完整命中的旧 chunk 会在评分前被较新的部分匹配挤掉（**回归 #1115**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
+- **工具调度能力**（4 条）：由 grep/search_code 各自的 `declaresParallelReadOnlyCapability` 与 `concurrentGrepsKeepResultsIndependent`、`concurrentSearchesKeepResultsIndependent` 锁定。grep 与 search_code 声明 `parallelReadOnly`（#1312）：每次 grep 是独立 ripgrep 进程，索引访问经 RAGService actor 内部串行，工具层无共享可变状态；并发调用不得互相污染结果。
+- **RAGProcessRunnerNonBlocking**（2 条）：由 `concurrentGrepsDoNotStarveCooperativePool`、`concurrentGrepsDoNotBlockEachOther` 锁定。ripgrep 调用必须离开 Swift Concurrency 协作线程池（在 GCD 线程上等待进程退出），否则并发 grep 会占满线程池、MainActor 停止调度、进程整体冻结；并发 grep 之间也不得串行化。
 
 ## 测试用例清单
 
@@ -195,27 +190,129 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 130 | RAGServiceEnsureOutcome | 只有完成索引或索引新鲜算作进展（**回归 #1116**） | 四种结果值 | 检查 `confirmsProgress` | `indexed`/`fresh` 为 true，`throttled`/`paused` 为 false | P1 | ✅ 已覆盖 | `onlyIndexedAndFreshConfirmProgress` |
 | 131 | RAGServiceCancellation | 中断前捕获的令牌无法重新打开后台索引（**回归 #1117**） | 服务已初始化，先捕获令牌再调用 `cancelBackgroundIndexing` | 用旧令牌以 `background: true` 调用 `ensureIndexed`（连续两次），再用新令牌索引 | 旧令牌抛 `CancellationError` 且没有写入索引状态；新令牌返回 `.indexed` 且 chunk 数大于 0 | P0 | ✅ 已覆盖 | `staleTokenCannotRestartBackgroundIndexing` |
 | 132 | RAGServiceCancellation | 前台索引不受后台取消令牌影响 | 服务已初始化并调用过 `cancelBackgroundIndexing` | 以 `background: false` 调用 `ensureIndexed` | 返回 `.indexed`，索引状态有 chunk，前台工作不被后台令牌阻断 | P1 | ✅ 已覆盖 | `foregroundIndexingIgnoresBackgroundCancellation` |
+| 133 | RAGRipgrepLocator | 内置 ripgrep 优先解析且可执行 | 包资源内置 rg | 调用 `RAGRipgrepLocator.executable()` 并运行 `--version` | 返回 bundle 内 rg 而非系统 PATH 副本，退出码 0 且输出含 ripgrep | P0 | ✅ 已覆盖 | `bundledRipgrepResolvesAndRuns` |
+| 134 | RAGRipgrepLocator | bundle 候选排在系统 PATH 之前 | 包资源内置 rg，PATH 中可能存在 rg | 比较 `candidates()` 中 bundle 路径与各 PATH 候选的顺序 | bundle 候选先于所有系统 PATH 候选 | P0 | ✅ 已覆盖 | `bundledCandidatePrecedesSystemPaths` |
+| 135 | RAGRipgrepLocator | 内置 rg 为双架构 universal 二进制 | 包资源内置 rg | 对 bundle rg 运行 `lipo -archs` | 同时包含 arm64 与 x86_64 | P1 | ✅ 已覆盖 | `bundledRipgrepIsUniversal` |
+| 136 | RAGContextBuilderBudget | prompt 落在 token 预算内且片段完整 | 10 个片段、maxTokens 600、utf8/3 估算器 | 调用 `buildPrompt` 并估算结果 | 估算 ≤ 600，保留片段内容完整无半截，且少于 10 个 | P1 | ✅ 已覆盖 | `promptFitsTokenBudget` |
+| 137 | RAGContextBuilderBudget | nil 预算保留 9000 字符旧上限 | 6 个 4000 字符片段、maxTokens nil | 调用 `buildPrompt` | 总字符 < 11000 且含截断标记 | P1 | ✅ 已覆盖 | `nilBudgetKeepsLegacyCharLimit` |
+| 138 | RAGContextBuilderBudget | 极小预算丢弃全部片段并跳过注入 | maxTokens 10 | 调用 `buildPrompt` | 返回 nil（连 disclaimer 都放不下） | P1 | ✅ 已覆盖 | `tinyBudgetDropsAllSnippets` |
+| 139 | ProjectRAGLLMContextHookBudget | 预算为 0 时不注入 | injectedContentTokenBudget 0 | 调用 `hook.apply` | messages 不变 | P0 | ✅ 已覆盖 | `hookSkipsInjectionWhenBudgetZero` |
+| 140 | ProjectRAGLLMContextHookBudget | 注入消息整体遵守预算 | injectedContentTokenBudget 600、10 个片段 | 调用 `hook.apply` 并估算注入消息 | 注入消息估算 ≤ 600 | P0 | ✅ 已覆盖 | `hookHonorsInjectedContentBudget` |
+| 141 | ProjectRAGLLMContextHookPosition | 注入保留历史前缀 | [system, user1, assistant1, user2] | 调用 `hook.apply` | 前 3 条逐元素不变，新 system 位于下标 3，user2 顺延 | P1 | ✅ 已覆盖 | `injectionPreservesHistoryPrefix` |
+| 142 | ProjectRAGLLMContextHookPosition | 末尾有 system 时仍以最后一条 user 为锚 | [user1, assistant1, user2, system] | 调用 `hook.apply` | 新 system 位于下标 2，user2 与末尾 system 顺延 | P1 | ✅ 已覆盖 | `injectionBeforeLatestUserWhenTrailingSystemExists` |
+| 143 | RAGIntentAnalyzerAutoInject | 闲聊问句不自动注入 | 「今天天气怎么样」 | 调用 `shouldAutoInject` | false | P1 | ✅ 已覆盖 | `casualQuestionDoesNotAutoInject` |
+| 144 | RAGIntentAnalyzerAutoInject | 设计类问句自动注入 | 「登录功能是怎么设计的」 | 调用 `shouldAutoInject` | true（含「设计」） | P1 | ✅ 已覆盖 | `designQuestionAutoInjects` |
+| 145 | RAGIntentAnalyzerAutoInject | 标识符问句自动注入 | 「LoginViewController 在哪初始化」 | 调用 `shouldAutoInject` | true（含标识符样词） | P1 | ✅ 已覆盖 | `identifierQuestionAutoInjects` |
+| 146 | RAGIntentAnalyzerAutoInject | 宽触发词仍允许工具侧检索但不自动注入 | 「这个项目怎么样」 | 比较 `shouldUseRAG` 与 `shouldAutoInject` | 前者 true，后者 false | P1 | ✅ 已覆盖 | `broadTriggerStillAllowsToolUse` |
+| 147 | RAGInjectionPolicy | 语义分低于阈值不注入 | 单条 semantic 0.49 | 调用 `shouldInject` | false | P1 | ✅ 已覆盖 | `semanticBelowThresholdDoesNotInject` |
+| 148 | RAGInjectionPolicy | 语义分达到阈值注入 | 单条 semantic 0.50 | 调用 `shouldInject` | true | P1 | ✅ 已覆盖 | `semanticAtThresholdInjects` |
+| 149 | RAGInjectionPolicy | 两条词法命中注入 | filesystemLexical + indexedLexical | 调用 `shouldInject` | true | P1 | ✅ 已覆盖 | `twoLexicalHitsInject` |
+| 150 | RAGInjectionPolicy | 单条词法命中不注入 | 单条 filesystemLexical | 调用 `shouldInject` | false | P1 | ✅ 已覆盖 | `singleLexicalHitDoesNotInject` |
+| 151 | ProjectRAGLLMContextHookGate | 开关关闭时不注入 | UserDefaults autoInjectEnabled=false | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `hookToggleDisabledSkipsInjection` |
+| 152 | ProjectRAGLLMContextHookGate | 低置信结果不注入 | 单条 semantic 0.40 | 调用 `hook.apply` | messages 不变 | P1 | ✅ 已覆盖 | `lowConfidenceResultsSkipInjection` |
+| 153 | RAGCodeSearchToolContract | 缺少 query 必须抛工具错误 | arguments 为空 | 调用 `execute` | 抛 `ToolExecutionError`，不返回错误字符串 | P0 | ✅ 已覆盖 | `missingQueryThrows` |
+| 154 | RAGCodeSearchToolContract | 无项目上下文必须抛工具错误 | Runtime 未配置且无 project_path | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingProjectThrows` |
+| 155 | RAGCodeSearchToolContract | 不存在的路径必须抛工具错误 | project_path 指向不存在目录 | 调用 `execute` | 抛 `ToolExecutionError` 且 reason 含该路径 | P0 | ✅ 已覆盖 | `nonexistentPathThrows` |
+| 156 | RAGCodeSearchToolContract | provider 不可用必须抛工具错误 | Runtime 已 reset、路径存在 | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `unavailableProviderThrows` |
+| 157 | RAGCodeSearchToolContract | 越界 top_k 安全钳制不得崩溃 | top_k = -5 / 999 / "abc" | 调用 `execute` 并记录 provider 收到的 topK | 依次钳制为 1 / 20 / 默认 8，无 trap | P0 | ✅ 已覆盖 | `topKClampedToSchemaRange` |
+| 158 | RAGCodeSearchToolContract | 空结果返回引导文案而非错误 | provider 返回空结果 | 调用 `execute` | 含 No code matched 与 grep 建议，不含 Error | P1 | ✅ 已覆盖 | `emptyResultReturnsInformationalString` |
+| 159 | RAGGrepSearcher | 字面量与正则命中 | fixture 含 handleRequest/HandleRequest | 分别用字面量与 `[Hh]andleRequest` 搜索 | 命中 1 与 2 条，行号正确 | P1 | ✅ 已覆盖 | `findsLiteralAndRegexMatches` |
+| 160 | RAGGrepSearcher | gitignore 目录内文件不得漏掉（**回归 #1113 同构**） | git 仓库且 generated/ 被忽略 | 搜索 needle | 跟踪与被忽略文件都命中 | P0 | ✅ 已覆盖 | `respectsNoIgnore` |
+| 161 | RAGGrepSearcher | glob 过滤生效 | a.swift 与 notes.md 均含 needle | glob `*.swift` | 仅 a.swift 命中 | P1 | ✅ 已覆盖 | `globFilterWorks` |
+| 162 | RAGGrepSearcher | case_insensitive 开关生效 | 文件内容为 Needle | 默认与 caseInsensitive 搜索 needle | 分别命中 0 与 1 条 | P1 | ✅ 已覆盖 | `caseInsensitiveFlagWorks` |
+| 163 | RAGGrepSearcher | 非法正则必须抛错 | pattern 为 `[` | 调用 `search` | 抛 `RAGGrepError` | P0 | ✅ 已覆盖 | `invalidRegexThrows` |
+| 164 | RAGGrepSearcher | rg 缺失必须显式报错不得静默回退 | 注入不存在的可执行路径 | 调用 `search` | 抛 `RAGGrepError.ripgrepUnavailable` | P0 | ✅ 已覆盖 | `missingRipgrepThrows` |
+| 165 | RAGGrepSearcher | maxResults 截断命中但总数完整 | 10 行命中、maxResults 3 | 调用 `search` | 3 条命中、totalMatchCount 10 | P1 | ✅ 已覆盖 | `maxResultsCapsMatchesButCountsAll` |
+| 166 | RAGGrepSearcher | context_lines 携带上下文行 | 3 行文件、contextLines 1 | 调用 `search` | 共 3 行其中 2 行 isContext | P1 | ✅ 已覆盖 | `contextLinesIncluded` |
+| 167 | RAGGrepSearcher | 超预算输出截断附标记且字节封顶 | 400 条 120 字符命中 | 调用 `formatOutput` | utf8 ≤ 20000 且 truncated 计数正确 | P0 | ✅ 已覆盖 | `outputBudgetTruncatesWithMarker` |
+| 168 | RAGGrepSearcher | 输出用相对路径且上下文行用 - 分隔 | 合成 2 行 outcome | 调用 `formatOutput` | `src/A.swift-1-` 与 `src/A.swift:2:` | P1 | ✅ 已覆盖 | `formatOutputUsesRelativePathsAndContextSeparator` |
+| 169 | RAGGrepTool | 缺少 pattern 必须抛工具错误 | arguments 为空 | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingPatternThrows` |
+| 170 | RAGGrepTool | 不存在的路径必须抛工具错误 | path 指向不存在目录 | 调用 `execute` | 抛错且 reason 含该路径 | P0 | ✅ 已覆盖 | `nonexistentPathThrows` |
+| 171 | RAGGrepTool | 无项目上下文必须抛工具错误 | Runtime 已 reset 且无 path | 调用 `execute` | 抛 `ToolExecutionError` | P0 | ✅ 已覆盖 | `missingProjectThrows` |
+| 172 | RAGGrepTool | 无命中返回引导文案 | fixture 无匹配 pattern | 调用 `execute` | 含 No matches，不含 Error | P1 | ✅ 已覆盖 | `noMatchReturnsInformationalString` |
+| 173 | RAGGrepTool | 越界 max_results 安全钳制不得崩溃 | -5 / 9999 / "abc" | 调用 `execute` 并统计命中行 | 依次 1 / 10 / 10 行，无 trap | P0 | ✅ 已覆盖 | `maxResultsClampedToSchemaRange` |
+| 174 | RAGGrepTool | 显式 path 优先于会话项目 | 会话指向不存在目录 | 带 path 调用 `executeResult` | 命中显式目录内文件 | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
+| 175 | RAGGrepTool | 无显式 path 时使用会话项目 | 会话绑定真实目录 | 不带 path 调用 `executeResult` | 命中该目录文件 | P1 | ✅ 已覆盖 | `conversationProjectUsedWhenNoExplicitPath` |
+| 176 | RAGGrepTool | context_lines 输出上下文 | 3 行 fixture、context_lines 1 | 调用 `execute` | 含 -1- / :2: / -3- 三种行 | P1 | ✅ 已覆盖 | `contextLinesAddsSurroundingLines` |
+| 177 | CodeNavigationCoordinatorIndexing | 索引进行中实时搜索必须仍返回结果 | isIndexing true、项目内有匹配文件 | 调用 `coordinator.search` | 非空且全部为实时 matchKind | P0 | ✅ 已覆盖 | `liveSearchWorksWhileIndexing` |
+| 178 | CodeNavigationCoordinatorIndexing | 索引进行中语义检索不得排队 | isIndexing true | 调用 search 并统计 provider 调用 | search 与 ensureIndexed 均 0 次 | P0 | ✅ 已覆盖 | `semanticSkippedWhileIndexing` |
+| 179 | CodeNavigationCoordinatorIndexing | 索引就绪时语义与实时结果合并 | isIndexing false、索引存在 | 调用 search | semantic 与 filesystemLexical 都在 | P1 | ✅ 已覆盖 | `semanticMergedWhenIdle` |
+| 180 | RAGQueryAnalyzer | 中文设计问句提取领域词 | 「登录功能是怎么设计的」 | 调用 `extractTerms` | 含登录，不含怎么/功能/设计 | P1 | ✅ 已覆盖 | `chineseDesignQuestionExtractsDomainTerm` |
+| 181 | RAGQueryAnalyzer | 标识符保留原大小写且普通英文词不算 | 「Where is LoginViewController defined」 | 调用 `extractTerms` | 含 LoginViewController，不含 where/defined | P1 | ✅ 已覆盖 | `identifierPreserved` |
+| 182 | RAGQueryAnalyzer | 文件名片段保留 | 「打开 Package.swift 看看」 | 调用 `extractTerms` | 含 Package.swift | P1 | ✅ 已覆盖 | `fileNamePreserved` |
+| 183 | RAGQueryAnalyzer | 空提取回退旧分词 | 「hello world」 | 调用 `extractTerms` | 与 `RAGTextUtils.tokenize` 一致 | P1 | ✅ 已覆盖 | `emptyExtractionFallsBackToTokenize` |
+| 184 | RAGQueryAnalyzer | 搜索词上限 8 个 | 10 个标识符 | 调用 `extractTerms` | 取前 8 个 | P1 | ✅ 已覆盖 | `termCapAtEight` |
+| 185 | RAGQueryAnalyzer | 优先级标识符 > 文件名 > CJK | 混合查询 | 调用 `extractTerms` | 按优先级顺序输出 | P1 | ✅ 已覆盖 | `priorityOrderIdentifierThenFileNameThenCJK` |
+| 186 | RAGQueryAnalyzer | 下划线/数字算标识符 | 「user_id 和 abc123 在哪」 | 调用 `extractTerms` | 含 user_id 与 abc123 | P1 | ✅ 已覆盖 | `snakeCaseAndDigitsQualifyAsIdentifiers` |
+| 187 | CodeNavigationCoordinatorQuery | 词法搜索必须使用提取后的搜索词 | A 仅含疑问词、B 含领域词 | search topK 1 | 命中 B.swift 而非 A.swift | P0 | ✅ 已覆盖 | `lexicalSearchUsesExtractedTerms` |
+| 188 | CodeNavigationFusion | 跨源共识必须优先于单路高分 | X 词法/路径第 1、语义第 5；Y 仅语义第 1 原始分 0.99 | 调用 `fuse` | X 排第一，展示分 0.3 | P0 | ✅ 已覆盖 | `rrfPrefersCrossSourceConsensus` |
+| 189 | CodeNavigationFusion | 同文件重叠区间去重 | A.swift 15-25 与 10-20 | 调用 `fuse` | 仅 1 条且 fusedScore > 1/61 | P1 | ✅ 已覆盖 | `overlappingLineRangesDeduplicated` |
+| 190 | CodeNavigationFusion | 展示分保留簇内最佳原始分 | 同一证据两路 0.4 / 0.7 | 调用 `fuse` | bestOriginalScore 0.7 | P1 | ✅ 已覆盖 | `displayScoreKeepsBestOriginal` |
+| 191 | CodeNavigationFusion | 相同内容跨文件去重 | A/B 不同文件同内容 | 调用 `fuse` | 仅 1 条 | P1 | ✅ 已覆盖 | `identicalContentDeduplicatedAcrossSources` |
+| 192 | CodeNavigationFusion | 协调器排序走 RRF 且保留最佳展示分 | 语义 Y 0.99 + X、词法 X | 调用 `coordinator.search` | X 第一且 score ≈ 0.85 | P0 | ✅ 已覆盖 | `coordinatorOrdersCrossSourceConsensusFirst` |
+| 193 | RAGCodeSearchToolOutput | 超预算输出必须截断附标记 | 20 个大片段 | 调用 `execute` | utf8 ≤ 20000 且含 truncated 与 grep 建议 | P0 | ✅ 已覆盖 | `searchCodeOutputBudgetTruncates` |
+| 194 | RAGCodeSearchToolOutput | 单片段 3000 字符截断 | 5000 字符片段 | 调用 `execute` | 不含 3001 连续字符且含 snippet clipped | P0 | ✅ 已覆盖 | `searchCodeSnippetClippedAt3000` |
+| 195 | RAGCodeSearchToolOutput | 头部展示证据构成 | semantic/lexical/path 各 1 | 调用 `execute` | 含 semantic: 1, live-lexical: 1, path: 1 | P1 | ✅ 已覆盖 | `searchCodeHeaderShowsEvidenceMix` |
+| 196 | RAGFTS5AvailabilityProbe | 探测内置 SQLite 的 FTS5 可用性 | 内存数据库 | CREATE VIRTUAL TABLE fts5 + PRAGMA compile_options | 建表结果与 ENABLE_FTS5 编译项一致 | P2 | ✅ 已覆盖 | `probeFTS5Availability` |
+| 197 | RAGBM25 | 稀有词命中排在高频词之上 | 3 候选文档 cache 高频 quokka 稀有 | 调用 `RAGBM25.scores` | 含稀有词文档得分最高 | P1 | ✅ 已覆盖 | `bm25RanksRareTermHigher` |
+| 198 | RAGBM25 | 同词频下短文档得分更高 | needle 各出现一次的长短文档 | 调用 `RAGBM25.scores` | 短文档得分高于长文档 | P1 | ✅ 已覆盖 | `bm25PrefersShorterDocumentAtEqualFrequency` |
+| 199 | RAGBM25 | 中文查询逐字分词后仍有得分 | 查询「登录」中英候选各一 | 调用 `RAGBM25.scores` | 中文文档 > 0 无关文档 = 0 | P1 | ✅ 已覆盖 | `cjkQueryReturnsResults` |
+| 200 | RAGRetrieverBM25Fusion | ANN 与 BM25 候选必须经 RRF 融合排序 | ANN X/Y + 词法 Z/X | 调用 `retrieve` | 共识 X 第一且 Z 为 indexedLexical | P0 | ✅ 已覆盖 | `rrfFusesAnnAndLexical` |
+| 201 | RAGChunkerBoundary | 切点优先落在空行 | 窗口内含空行与函数 | 调用 `chunk` | 首块收口在空行前不进函数体 | P1 | ✅ 已覆盖 | `chunkBoundaryPrefersBlankLine` |
+| 202 | RAGChunkerBoundary | 小函数整体保留在同一块 | 13 行文件函数跨窗口末端 | 调用 `chunk` | 函数首尾同块且首块不含函数 | P1 | ✅ 已覆盖 | `smallFunctionKeptWhole` |
+| 203 | RAGChunkerBoundary | 无空行时切在顶层声明之前 | public struct 起始行在窗口内 | 调用 `chunk` | 首块止于声明前一行 | P1 | ✅ 已覆盖 | `declarationStartPreferredOverMidBody` |
+| 204 | RAGChunkerBoundary | 超长声明退回字符窗口 | 单行 500+ 字符声明 | 调用 `chunk` | 多块且每块 ≤ maxChars | P1 | ✅ 已覆盖 | `oversizedDeclarationFallsBackToCharWindow` |
+| 205 | RAGRetrieverThreshold | 低分语义候选必须丢弃 | cosine≈0.1 语义 + 词法命中 | 调用 `retrieve` | 仅剩词法结果 | P1 | ✅ 已覆盖 | `lowScoreSemanticCandidatesDropped` |
+| 206 | RAGRetrieverThreshold | 语义全丢时走词法兜底 | topK=1 融合仅低分语义 | 调用 `retrieve` | 返回词法命中 indexedLexical | P1 | ✅ 已覆盖 | `allDroppedFallsBackToLexical` |
+| 207 | RAGVectorPersistence | 二次初始化不得 DROP 或回灌 vec 行 | chunks embedding 漂移为 32 维 | 两次 `configureVectorBackend` | 二次成功且 ANN 仍命中 | P0 | ✅ 已覆盖 | `secondInitializeKeepsVectorRows` |
+| 208 | RAGVectorPersistence | 维度变化强制重建 vec 表 | 64→32 维且 chunks 已重嵌 | 调用 `configureVectorBackend` | ANN 命中且 rag_meta 记录 32 | P1 | ✅ 已覆盖 | `dimensionChangeForcesRebuild` |
+| 209 | RAGVectorPersistence | vec 行数不一致必须触发回灌 | 模拟崩溃丢失 vec 行 | 调用 `configureVectorBackend` | ANN 重新命中 | P0 | ✅ 已覆盖 | `rowCountMismatchTriggersRebuild` |
+| 210 | RAGProjectWatcher | debounce 合并连续事件为一次触发 | debounce 0.1s，连发 3 个事件 | 调用 `handleEvent` 三次 | 仅触发 1 次增量索引 | P1 | ✅ 已覆盖 | `debounceCoalescesEvents` |
+| 211 | RAGProjectWatcher | 旧项目晚到事件不得触发索引 | 当前项目已切换为其它路径 | 旧路径事件过 debounce | 身份校验丢弃，0 次触发 | P0 | ✅ 已覆盖 | `staleProjectEventDropped` |
+| 212 | RAGProjectWatcher | 索引暂停时不得触发 | `isPaused` 返回 true | 事件过 debounce | 0 次触发 | P0 | ✅ 已覆盖 | `pausedWatcherDoesNotTrigger` |
+| 213 | RAGProjectWatcher | 真实 FSEvents 流写入后触发 | 临时目录真实流，latency 0.1s | 写入一个 Swift 文件 | debounce 后触发该项目索引 | P1 | ✅ 已覆盖 | `fileEventsStreamTriggersOnWrite` |
+| 214 | ProjectRAGSettings | 自动注入默认开启 | 全新 UserDefaults suite | 初始化设置 ViewModel | autoInjectEnabled == true | P1 | ✅ 已覆盖 | `autoInjectDefaultsToEnabled` |
+| 215 | ProjectRAGSettings | 注入开关必须写入 Hook 读取的同一 key | 设置 ViewModel 绑定独立 suite | 关闭开关后重建 ViewModel | policy key 为 false 且重读一致 | P0 | ✅ 已覆盖 | `autoInjectTogglePersistsToPolicyKey` |
+| 216 | ProjectRAGSettings | 暂停开关驱动服务并回读真实状态 | 未暂停的 RAGService | 切换暂停开/关 | service 与 ViewModel 状态一致 | P1 | ✅ 已覆盖 | `pauseToggleDrivesService` |
+| 217 | ProjectRAGSettings | load 反映外部设置的暂停状态 | 外部先暂停 service | 调用 `load` | ViewModel 显示已暂停 | P1 | ✅ 已覆盖 | `loadReflectsServiceState` |
+| 218 | ProjectRAGSettings | shutdown 必须撤回设置入口 | 内核注册 DefaultSettingViewProviding | onBoot 后 onShutdown | 入口先注册后移除 | P0 | ✅ 已覆盖 | `settingsEntryLifecycle` |
+| 219 | RAGGrepTool | grep 声明并行只读能力（#1312） | — | 读取 `executionCapability` | 为 `.parallelReadOnly` | P1 | ✅ 已覆盖 | `declaresParallelReadOnlyCapability` |
+| 220 | RAGGrepTool | 并发 grep 结果互不污染（#1312） | fixture A/B 各含不同标记行 | TaskGroup 并发执行 4 个 grep | 每份输出只含自己的标记，4 份结果各自独立 | P1 | ✅ 已覆盖 | `concurrentGrepsKeepResultsIndependent` |
+| 221 | RAGCodeSearchToolContract | search_code 声明并行只读能力（#1312） | — | 读取 `executionCapability` | 为 `.parallelReadOnly` | P1 | ✅ 已覆盖 | `declaresParallelReadOnlyCapability` |
+| 222 | RAGCodeSearchToolContract | 并发 search_code 结果互不污染（#1312） | echo 桩 provider 按查询返回结果 | 并发执行 4 个查询 | 每份输出只含自己的 echo 标记，不含其他查询的标记 | P1 | ✅ 已覆盖 | `concurrentSearchesKeepResultsIndependent` |
+| 223 | RAGProcessRunnerNonBlocking | 并发 ripgrep 不会占满协作线程池 | 200 文件大项目、2×核数个并发 grep | grep 期间以主 actor 心跳为探针 | 心跳全程持续增长，协作池未被占满 | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotStarveCooperativePool` |
+| 224 | RAGProcessRunnerNonBlocking | 并发 grep 不会互相阻塞 | 150 文件大项目 | 并发执行 3 个 grep | 三个都命中且总耗时 < 2s（非串行） | P0 | ✅ 已覆盖 | `concurrentGrepsDoNotBlockEachOther` |
+| 225 | RAGAncestorExclusion | 位于 build 祖先目录下的项目仍可被扫描索引（**回归 #194**） | `<tmp>/build/Demo` 含 Sources/App.swift 与项目内 build/Junk.swift | 调用 `discoverFiles` | 仅返回 App.swift；祖先 build 不触发排除，项目内 build 仍被跳过 | P0 | ✅ 已覆盖 | `scannerFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 226 | RAGAncestorExclusion | build 祖先目录下词法搜索必须命中（**回归 #194**） | 同上，App.swift 含唯一符号 | 调用 `RAGLexicalFileSearcher.search` | 结果包含 Sources/App.swift | P0 | ✅ 已覆盖 | `lexicalSearchFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 227 | RAGAncestorExclusion | build 祖先目录下路径搜索必须命中（**回归 #194**） | 同上 | 以 "Sources/App.swift" 调用 `RAGFilePathSearcher.search` | 结果包含 Sources/App.swift | P1 | ✅ 已覆盖 | `pathSearchFindsSourcesWhenProjectLivesUnderBuildAncestor` |
+| 228 | RAGAncestorExclusion | 排除判定不得误杀项目根之外的祖先目录（**回归 #194**） | 祖先分别为 build/temp/DerivedData-* 的根 | 带 projectRoot 调用 `shouldSkipPath` | 项目内源码不被跳过（含尾斜杠根）；项目内 build/node_modules/DerivedData 仍跳过 | P0 | ✅ 已覆盖 | `skipDecisionIgnoresAncestorsOutsideProjectRoot` |
+| 229 | RAGAncestorExclusion | ripgrep 结果过滤必须相对项目根（**回归 #194**） | build 祖先下的绝对路径 | 调用 `acceptsResultPath` | 源码被接受；项目内 build 与非允许扩展名被拒绝 | P1 | ✅ 已覆盖 | `lexicalResultFilterUsesProjectRelativeExclusions` |
 
-> 说明：全部 **132 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **229 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
+> Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
+> Task 3.1 启动成本实测（2026-11-12）：500 chunks×384 维，全量回灌 370.2ms → 保留路径 0.8ms（约 460 倍）。
+> Task 3.2 新鲜度链路（2026-11-12）：真实 FSEvents 流测试证明「保存文件 → debounce → 触发增量索引」；macOS 27 实测 dispatch queue 回调的 eventPaths 为 C 字符串数组（按 CFArray 解引用会段错误），已按此 ABI 读取。索引完成后 search_code 即可命中新内容。
+> Task 4.1 设置开关（2026-11-12）：独立设置入口「Project RAG」暴露自动注入与索引暂停两个进程级开关；ViewModel 测试覆盖开关键一致性与暂停回读，布局登记进 FactoryLumi SettingsLayoutConformance 审计表。真实 App 内手工拨动开关未验证（环境无法启动整 App），行为等价性由 215/216 用例保证。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 101 / 101
-- P2: 已覆盖 13 / 13
-- **合计: 132 / 132**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 54 / 54
+- P1: 已覆盖 161 / 161
+- P2: 已覆盖 14 / 14
+- **合计: 229 / 229**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（101 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
+- **P1**: 其余功能性用例（161 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 132 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 229 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

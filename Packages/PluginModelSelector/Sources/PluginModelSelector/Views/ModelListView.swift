@@ -51,7 +51,7 @@ enum ModelCategory: String, CaseIterable {
         case .all:
             return true
         case .language:
-            return !isAudio && !isImage
+            return !isAudio && !isImage && !supportsVision
         case .vision:
             return !isAudio && !isImage && supportsVision
         case .tools:
@@ -147,6 +147,7 @@ struct ModelListView: View {
                                 model: model,
                                 isSelected: isSelected,
                                 modelInfo: modelInfo,
+                                isUtilityModel: viewModel.isUtilityModel(providerID: providerID, model: model),
                                 onSelect: {
                                     viewModel.select(providerID: providerID, model: model)
                                     onSelect?(providerID, model)

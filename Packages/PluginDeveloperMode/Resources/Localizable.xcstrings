@@ -1,17 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "DEBUG" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DEBUG"
-          }
-        }
-      }
-    },
     "Developer mode" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32,6 +21,18 @@
             "state" : "translated",
             "value" : "開發者模式"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式"
+          }
         }
       }
     },
@@ -42,29 +43,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DEV"
-          }
-        }
-      }
-    },
-    "Running a Debug build" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Running a Debug build"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前运行的是 Debug 构建"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前執行的是 Debug 建置"
           }
         }
       }
@@ -89,6 +67,18 @@
             "state" : "translated",
             "value" : "開發者模式已開啟"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已開啟"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已開啟"
+          }
         }
       }
     },
@@ -108,6 +98,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已關閉"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者模式已關閉"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "開發者模式已關閉"

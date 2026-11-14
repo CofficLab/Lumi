@@ -292,3 +292,16 @@ private func withTempFile(
         ])
     }
 }
+
+/// 回归 #503：read_file 的文件系统失败（文件不存在/不可读）必须抛出，
+/// 默认 `executeResult` 不得把 "Error reading file: ..." 包成 `isError == false` 的成功结果。
+@MainActor
+@Test func readFileThrowsWhenFileDoesNotExist() async {
+    let missing = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-missing-\(UUID().uuidString).txt")
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await ReadFileTool().executeResult(arguments: [
+            "path": ToolArgument(missing.path),
+        ])
+    }
+}

@@ -26,6 +26,11 @@ final class GoalVM: ObservableObject, SuperLog {
     /// 数据源提供器;注入点允许外部传入自定义 `GoalStateManager`(测试 / 多实例场景)。
     private let managerProvider: () -> GoalStateManager?
 
+    /// 内容写入 seam：默认经 `managerProvider` 写库；测试注入门闩替身，
+    /// 构造「旧请求晚到」验证身份守卫（与 `managerProvider` 同一注入范式）。
+    typealias ContentUpdater = @MainActor (String, String, String?, String?) async throws -> Void
+    private let contentUpdater: ContentUpdater
+
     @Published var currentConversationID: UUID?
 
     /// 当前对话的所有 Goal(每个携带自己的任务),按创建时间升序。
@@ -35,8 +40,22 @@ final class GoalVM: ObservableObject, SuperLog {
     /// 是否正在拉取 Goal 列表。
     @Published public var isLoading: Bool = false
 
-    public init(managerProvider: @escaping () -> GoalStateManager? = { GoalTaskPluginSupport.currentManager() }) {
+    public init(
+        managerProvider: @escaping () -> GoalStateManager? = { GoalTaskPluginSupport.currentManager() },
+        contentUpdater: ContentUpdater? = nil
+    ) {
         self.managerProvider = managerProvider
+        self.contentUpdater = contentUpdater ?? { goalID, title, description, successCriteria in
+            guard let manager = managerProvider() else {
+                throw GoalStateError.managerUnavailable
+            }
+            try await manager.updateGoalContent(
+                id: goalID,
+                title: title,
+                description: description,
+                successCriteria: successCriteria
+            )
+        }
     }
 
     // MARK: - 列表派生态(工具栏弹窗)
@@ -115,6 +134,25 @@ final class GoalVM: ObservableObject, SuperLog {
         guard activeGoal != nil, !activeTasks.isEmpty else { return "" }
         let completed = activeTasks.filter { $0.status == .completed || $0.status == .skipped }.count
         return "\(completed)/\(activeTasks.count)"
+    }
+
+    // MARK: - 写入
+
+    /// 保存用户对 Goal 内容的手动编辑（#1332）。
+    ///
+    /// 成功后只发 `GoalChangeCenter` 通知，由插件观察者驱动 `refresh()` 重载，
+    /// 不手改 `goals`，保持单一数据源。await 之后、通知之前比对会话身份：
+    /// 旧会话里发起的迟到保存不得刷新/污染新会话（AGENTS.md 异步写回约定）。
+    func updateGoalContent(
+        goalID: String,
+        title: String,
+        description: String?,
+        successCriteria: String?
+    ) async throws {
+        let conversationID = currentConversationID
+        try await contentUpdater(goalID, title, description, successCriteria)
+        guard let conversationID, currentConversationID == conversationID else { return }
+        GoalChangeCenter.shared.notify(conversationID: conversationID)
     }
 
     // MARK: - 会话与刷新

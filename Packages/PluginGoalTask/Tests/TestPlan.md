@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 150
+测试文件: 15 个，用例总数: 162
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -43,17 +43,17 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalDisplayAndVM**（19 条）：由 `testMappingPreservesFields`、`testIsTerminal`、`testStatusSystemImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalForkAttachmentIsolation**（1 条）：由 `testForkCommitDoesNotConsumePendingAttachments` 锁定；分叉提交必须走显式附件重载，改动该调用点时优先跑对应测试文件。
 - **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoalHooks**（26 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalHooks**（30 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskMigration**（3 条）：由 `v5MigrationLandsDatabaseAtReadPath`、`promotesMisplacedStoreOnlyWhenReadPathIsEmpty` 锁定；升级迁移必须把 v5 数据库放到 `GoalStateManager` 实际读取的位置，改动迁移或数据库路径时优先跑对应测试文件。
-- **GoalStateManager**（14 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalStateManager**（16 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；全部任务终态且含失败时 Goal 必须推导为 failed，不得停留在 inProgress/pending（**回归** #188），改动该模块时优先跑对应测试文件。
 - **GoalTaskTimeline**（2 条）：由 `continuationMessage`、`limitReachedMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalToolbarButtonVisibility**（5 条）：由 `testHiddenWithoutGoals`、`testHiddenForSingleActiveGoal`、`testShownForMultipleGoals` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskTools**（20 条）：由 `addTasksAppendsAndReports`、`addTasksResolvesOmittedGoalId`、`addTasksFiltersEntriesWithoutTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoalTaskV2**（9 条）：由 `preservesPluginIdentityAndPolicy`、`preservesLegacyToolNamesAndRequiredArguments`、`createGoalUsesExecutionConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalTaskV2**（13 条）：由 `preservesPluginIdentityAndPolicy`、`preservesLegacyToolNamesAndRequiredArguments`、`createGoalUsesExecutionConversation`、`testPreciseGoalIdCannotCrossConversations`、`testUpdateTaskStatusCannotCrossConversations` 等用例锁定；带会话上下文时精确 goal_id 必须属于本会话（**回归** #189），update_task_status 必须校验任务归属会话、禁止跨会话改写（**回归** #190），改动该模块时优先跑对应测试文件。
 - **TaskListSurface**（4 条）：由 `bottomEdgeHasVisibleShadow`、`topAndBottomShadowAreSymmetric`、`bottomBandMirrorsTopBand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalViewRender**（8 条）：由 `taskRowHeightIsThirtyPoints`、`taskRowUsesOrangeSurface`、`longTitleIsTruncatedAtRowEdge` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoalTopShadow**（3 条）：由 `topShadowRendersAbovePanelEdge`、`topShadowFadesMonotonically`、`noShadowWithoutActiveGoal` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalTopShadow**（5 条）：由 `topShadowRendersAbovePanelEdge`、`topShadowFadesMonotonically`、`topShadowHasSolidContactLine`、`topShadowPeakIsAtPanelEdge`、`noShadowWithoutActiveGoal` 锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskConversationCleanup**（2 条）：由 `deletingConversationRemovesOnlyItsGoals`、`deletingMultipleConversationsRemovesEachGoalSet` 锁定；会话删除必须同步清理该会话的 Goals（**回归** #771），改动删除观察者时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -210,27 +210,39 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 148 | GoalHooks | 续跑预算耗尽时只把本次活跃 Goal 标记失败 | 历史 failed Goal + 一个活跃 Goal，续跑次数已耗尽 | 触发 completed 钩子 | 历史失败原因保持不变，活跃 Goal 被标记为超限失败（**回归** #904） | P1 | ✅ 已覆盖 | `testLimitReachedKeepsHistoricalFailureReason` |
 | 149 | GoalHooks | 新 Goal 获得独立续跑预算 | 上一 Goal 的续跑计数已耗尽并被标记 failed | 创建新 Goal 后触发 completed 钩子 | 新 Goal 正常续跑（1/5），不被立即判超限（**回归** #903） | P1 | ✅ 已覆盖 | `testNewGoalGetsFreshContinuationBudget` |
 | 150 | GoalStateManager | 创建新 Goal 重置会话续跑与代答预算 | 两个预算都已耗尽 | 调用 `createGoal` | 两个计数都从 1 重新开始（**回归** #903） | P1 | ✅ 已覆盖 | `testCreateGoalClearsConversationBudgets` |
+| 151 | GoalHooks | 活跃 Goal 静态契约留最前、动态进度锚定最新 user 之前，稳定历史前缀逐字节不变（保前缀缓存） | 多轮历史 + 一个活跃 Goal | 调用 `GoalPromptInjectionHook.apply` | 契约在 [0]、历史前缀不变、进度落在最新 user 之前，消息数 +2 | P1 | ✅ 已覆盖 | `testDynamicProgressAnchorsBeforeLatestUserPreservingPrefix` |
+| 152 | GoalHooks | 最新 user 之后仍有尾随 system 消息时，动态进度仍锚定该 user 之前 | 历史末尾为 user + system | 调用 `GoalPromptInjectionHook.apply` | 进度插在最新 user 之前，尾随 system 保持在末尾，消息数 +2 | P1 | ✅ 已覆盖 | `testDynamicProgressAnchorsOnLatestUserWithTrailingSystem` |
+| 153 | GoalHooks | blocked 等待指令锚定最新 user 之前，不前置静态契约 | 一个 blocked Goal + 多轮历史 | 调用 `GoalPromptInjectionHook.apply` | 只注入 blocked 一条、历史前缀不变、落在最新 user 之前，消息数 +1 | P1 | ✅ 已覆盖 | `testBlockedPromptAnchorsBeforeLatestUser` |
+| 154 | GoalHooks | 续跑开场指令与进度一起锚定最新 user 之前且保持顺序 | 活跃 Goal + 已置位续跑标记 | 调用 `GoalPromptInjectionHook.apply` | 契约在 [0]、进度在续跑指令之前、两者都落在最新 user 之前，消息数 +3 | P1 | ✅ 已覆盖 | `testContinuationPromptAnchorsBeforeLatestUserInOrder` |
+| 155 | GoalStateManager | 部分任务成功部分失败时 Goal 推导为终态 failed | 两任务 Goal，A completed、B failed | 调用 `updateGoalTaskStatus` | Goal 状态为 failed 且 isTerminal，不再永久占用活跃槽（**回归** #188） | P0 | ✅ 已覆盖 | `testPartialFailureDerivesFailedGoal` |
+| 156 | GoalStateManager | failed 与 skipped 混合且无待办时 Goal 推导为终态 failed | 两任务 Goal，A failed、B skipped | 调用 `updateGoalTaskStatus` | Goal 状态为 failed 且 isTerminal（**回归** #188） | P0 | ✅ 已覆盖 | `testFailedAndSkippedDerivesFailedGoal` |
+| 157 | GoalTopShadow | 面板顶边处有一条实心接触线，其上才是衰减区 | 渲染带活跃 goal 的面板 | 取样接触线各行亮度 | 接触线内部浓度接近（实心），其上第一行明显变淡 | P1 | ✅ 已覆盖 | `topShadowHasSolidContactLine` |
+| 158 | GoalTopShadow | 阴影浓度峰值位于面板顶边而非带的中段 | 渲染带活跃 goal 的面板 | 比较顶边行与带中段行亮度 | 顶边行比中段更暗，峰值在接触处 | P1 | ✅ 已覆盖 | `topShadowPeakIsAtPanelEdge` |
+| 159 | GoalTaskV2 | 精确 goal_id 不得跨会话解析（读取/改状态/追加任务均拒绝） | 会话 A 有 Goal，从会话 B 上下文传 A 的 goal_id | 调用 `get_goal_progress` / `update_goal_status` / `add_tasks_to_goal` | 三者均抛 goal not found；A 的 Goal 状态与任务数不变（**回归** #189） | P0 | ✅ 已覆盖 | `testPreciseGoalIdCannotCrossConversations` |
+| 160 | GoalTaskV2 | 精确 goal_id 在本会话内仍可解析（含终态 Goal） | 本会话创建 Goal 并取得 goal_id | 调用 `get_goal_progress`，标记 completed 后再查 | 两次均 isError==false，完成后可读到 completed（**回归** #189） | P1 | ✅ 已覆盖 | `testPreciseGoalIdResolvesWithinSameConversation` |
+| 161 | GoalTaskV2 | update_task_status 不得跨会话改写任务 | 会话 A 有 Goal+任务，从会话 B 上下文传 A 的 task_id | 调用 `update_task_status`（status=completed） | 抛 task not found；A 的任务/Goal 状态不变，续跑计数不被清零（**回归** #190） | P0 | ✅ 已覆盖 | `testUpdateTaskStatusCannotCrossConversations` |
+| 162 | GoalTaskV2 | update_task_status 在本会话内仍可更新任务 | 本会话创建 Goal+任务并取得 task_id | 调用 `update_task_status`（status=completed） | isError==false，任务状态变为 completed（**回归** #190） | P1 | ✅ 已覆盖 | `testUpdateTaskStatusResolvesWithinSameConversation` |
 
-> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **162 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 120 / 120
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 128 / 128
 - P2: 已覆盖 15 / 15
-- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
+- **合计: 162 / 162**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（118 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（128 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 147 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 162 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

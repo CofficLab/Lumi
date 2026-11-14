@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
+KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 338
+测试文件: 20 个，用例总数: 351
 
 ## 公开 API
 
@@ -33,8 +33,9 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 - **EditorCommandCategoryLocalization**（1 条）：由 `loadsSimplifiedChineseCategoryTitles` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorDocumentSymbol**（24 条）：由 `initializationWithRequestDocumentSymbols`、`refreshSetsIsLoadingAndUpdatesSymbols`、`clearResetsState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorKernelCoverageAdditional**（37 条）：由 `findMatchingBracketAtOpenAndClosePositions`、`findMatchingBracketRejectsInvalidCursor`、`shouldAutoCloseRespectsStringAndCommentContexts` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorKernel**（127 条）：由 `textInputControllerBuildsBracketAndIndentPlans`、`bracketAndIndentPoliciesHandleLanguageAndOutdentRules`、`inputCommandControllerBuildsLineEditAndCursorPlans` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorKernel**（133 条）：由 `textInputControllerBuildsBracketAndIndentPlans`、`bracketAndIndentPoliciesHandleLanguageAndOutdentRules`、`inputCommandControllerBuildsLineEditAndCursorPlans` 等用例锁定；改动该模块时优先跑对应测试文件。`transpose` 须按完整字素簇交换，不得拆散代理对/组合序列而引入 U+FFFD（#337，由 `transposeSwapsWholeEmojiWithoutSplittingSurrogatePair` 等锁定）。
 - **EditorTextDiffEngine**（10 条）：由 `identicalTextsProduceEmptyDiff`、`emptyToContentIsPureAddition`、`contentToEmptyIsPureRemoval` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorTextMetrics**（4 条）：由 `newlineCountMatchesFilterSemantics`、`totalLineCountMatchesFilterPlusOne`、`emptyContentIsOneLine` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorLSPActionPolicy**（5 条）：由 `languageIDMapping`、`statusMessageKeyMapping`、`referenceResultSorting` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorNavigationController**（3 条）：由 `resolveReferenceRequest`、`cursorPositionsForDiagnostic`、`resolvedDefinitionTargetHighlightLine` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorOpenItemCommandController**（7 条）：由 `resolveWorkspaceSymbolCommand`、`resolveWorkspaceSymbolCommandWithUnescapedFileURL`、`resolveProblemCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -52,6 +53,13 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 - **EditorSaveController**（5 条）：由 `buildsPipelineOptions`、`performSaveReportsMissingFile`、`performSaveReportsFailure` 等用例锁定。
 - **EditorSaveStateController**（3 条）：由 `appliesSaveSuccess`、`appliesSaveFailure`、`appliesMissingFileFailure` 锁定。
 - **EditorSaveWorkflowPolicy**（2 条）：由 `saveStateIcons`、`policyDecisions` 锁定。
+- **EditorExternalFileConflict**（3 条）：由 `purelyLocalDirtyEditIsNotAnExternalConflict`、`realExternalChangeIsDetectedRegardlessOfDirtyState`、`unknownBaselineReloadsConservatively` 锁定（**回归 #397**）：`EditorExternalFileController.shouldReloadForChange` 判断是否外部改动只取决于磁盘修改时间相对上次已知值是否真的变化（0.5s 容差），与本地是否 dirty 无关；纯本地 dirty 且磁盘未变不得误报为外部冲突，磁盘真的变了无论 dirty 与否都必须检出，无基线时保守允许重载。既有 `externalFileControllerTracksConflictsAndReloadThresholds` 中「dirty+磁盘未变→true」的断言已随修复更正为 false。改动该控制器的外部改动判定阈值时优先跑对应测试文件。
+
+> **#397 变异验证**（`EditorExternalFileConflictTests`，3 个独立变异均 RED）：
+> 1. 重新加回 `!hasUnsavedChanges` 前置守卫（复现原 bug）→ `purelyLocalDirtyEditIsNotAnExternalConflict` 失败（dirty+磁盘未变又误报 true）。
+> 2. 把容差比较 `< 0.5` 反转为 `>= 0.5` → `purelyLocalDirtyEditIsNotAnExternalConflict` 与 `realExternalChangeIsDetectedRegardlessOfDirtyState` 均失败。
+> 3. 把兜底 `return true` 改为 `return false`（永不检出外部改动）→ `realExternalChangeIsDetectedRegardlessOfDirtyState` 与 `unknownBaselineReloadsConservatively` 均失败。
+> 三个变异分别锁定「dirty 不得参与判定」「容差方向」「兜底必须保守重载」三条不变量，恢复修复后全部 GREEN。
 
 ## 测试用例清单
 
@@ -395,27 +403,40 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 | 336 | EditorSaveStateController | 文件缺失时进入 fileNotFound 错误状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `appliesMissingFileFailure` |
 | 337 | EditorSaveWorkflowPolicy | 保存状态枚举暴露图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `saveStateIcons` |
 | 338 | EditorSaveWorkflowPolicy | 策略只按未保存标记与保存中状态判断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `policyDecisions` |
+| 339 | EditorKernel | 光标在 emoji 与字符间交换时不得拆散代理对，写回不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsWholeEmojiWithoutSplittingSurrogatePair` |
+| 340 | EditorKernel | 光标后为 emoji 时按完整字符交换，不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsEmojiThatFollowsTheCursor` |
+| 341 | EditorKernel | 组合标记字素簇必须整体交换，不得拆成半个字符（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsCombiningMarkGraphemeAsOneUnit` |
+| 342 | EditorKernel | 旗帜 emoji 字素簇必须整体交换，不得出现 U+FFFD（#337） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transposeSwapsFlagEmojiGraphemeAsOneUnit` |
+| 343 | EditorKernel | 非零偏移处 ASCII 交换的替换区间与光标位置保持正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transposeKeepsASCIISelectionMathAtNonZeroOffset` |
+| 344 | EditorKernel | 光标紧邻换行符时 transpose 返回 nil，不跨行交换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transposeReturnsNilAtLineEndingBoundary` |
+| 345 | EditorTextMetrics | 换行统计与 filter 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `newlineCountMatchesFilterSemantics` |
+| 346 | EditorTextMetrics | 总行数与 filter + 1 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountMatchesFilterPlusOne` |
+| 347 | EditorTextMetrics | 空正文算一行 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyContentIsOneLine` |
+| 348 | EditorTextMetrics | CRLF 组合不单独计数，与既有 filter 语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `carriageReturnFollowedByNewlineIsNotCounted` |
+| 349 | EditorExternalFileConflict | 纯本地 dirty 且磁盘未变不得误报为外部改动（**回归 #397**） | 记录基线修改时间 | 以 dirty=true、磁盘时间不变或容差内调用 shouldReloadForChange | 返回 false | P0 | ✅ 已覆盖 | `purelyLocalDirtyEditIsNotAnExternalConflict` |
+| 350 | EditorExternalFileConflict | 磁盘真的被外部修改时无论 dirty 与否都必须检出（**回归 #397**） | 记录基线修改时间 | 磁盘时间前进超过容差，dirty 取 true/false | 均返回 true | P0 | ✅ 已覆盖 | `realExternalChangeIsDetectedRegardlessOfDirtyState` |
+| 351 | EditorExternalFileConflict | 尚无已知修改时间时保守地允许重载 | 新建控制器未记录基线 | 以 dirty=true/false 调用 shouldReloadForChange | 均返回 true | P1 | ✅ 已覆盖 | `unknownBaselineReloadsConservatively` |
 
-> 说明：全部 **338 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **351 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
-- P1: 已覆盖 249 / 249
-- P2: 已覆盖 61 / 61
-- **合计: 338 / 338**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 34 / 34
+- P1: 已覆盖 255 / 255
+- P2: 已覆盖 62 / 62
+- **合计: 351 / 351**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
-- **P1**: 其余功能性用例（249 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（61 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
+- **P1**: 其余功能性用例（255 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（62 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 338 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 351 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

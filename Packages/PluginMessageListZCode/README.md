@@ -18,10 +18,10 @@ Lumi 的消息列表有四档呈现，各自是**独立 Package**、独立插件
 
 ## 与其它档位的关系
 
-- **不依赖任何其它消息列表包**（插件不得依赖插件）。
-- 通用设施（Provider 层协议、渲染分发、滚动跟踪、分页、首屏门禁）
-  在本包内**各自实现一份**，不与 V1–V3 共享代码。
-  代价是存在两份近似实现，收益是各档位可以独立演进、独立发布。
+- **不依赖任何其它消息列表插件**（插件不得依赖插件）。
+- 行为一致的通用设施（能力协议、服务容器、分页、首屏门禁、尾部刷新门、
+  行样式、底部状态盒）已抽到共享的 `KitMessageList`；
+  本档特有的滚动栈、滚动锚点与轮次投影仍在本包内实现。
 - 渲染层（`PluginMessageRenderer`）是**共用**的：`.zcode` 只是同一个
   renderer 内的分支，第三方 renderer 的注册顺序、`order` 值与分发逻辑
   完全不变。
@@ -51,7 +51,3 @@ Sources/PluginMessageListZCode/
 └── Views/                               ListV4View、ZCodeTurnView 等
 ```
 
-## 相关文档
-
-- 评审与审计：`docs/plans/artifacts/zcode-message-list-v4/AUDIT.md`
-- 截图矩阵清单：`docs/plans/artifacts/zcode-message-list-v4/README.md`

@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import ProviderMessage
+import KitMessageList
 
 struct AgentTurnMessageProjection: Equatable {
     var userMessages: [Message] = []

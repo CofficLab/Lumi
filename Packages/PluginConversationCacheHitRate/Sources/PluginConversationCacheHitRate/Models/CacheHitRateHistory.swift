@@ -21,6 +21,13 @@ struct CacheHitRateRequestMetrics: Equatable {
     ///
     /// 新消息使用 ProviderMessage 的强类型 token 字段；旧消息仍可从
     /// metadata 读取，避免迁移前已保存的消息完全丢失统计。
+    ///
+    /// 总输入的取值顺序必须是：强类型 `cacheTotalInputTokenCount` →
+    /// metadata `cacheTotalInputTokens` → 最后才回退 `inputTokenCount`。
+    /// 旧版 DeepSeek 数据把**未命中缓存的输入**写进强类型 `inputTokenCount`、
+    /// 把**完整总输入**写进 metadata；若让 `inputTokenCount` 参与首选，
+    /// 它会掩盖 metadata 里的真实总量，再把 cached 钳到这个偏小的分母上，
+    /// 历史命中率被算成虚假的 100%（issue #782）。
     static func parse(_ message: Message) -> CacheHitRateRequestMetrics? {
         guard message.role == .assistant else { return nil }
         guard let cached = metricValue(
@@ -29,10 +36,10 @@ struct CacheHitRateRequestMetrics: Equatable {
             key: "cachedInputTokens"
         ),
         let total = metricValue(
-            message.cacheTotalInputTokenCount ?? message.inputTokenCount,
+            message.cacheTotalInputTokenCount,
             metadata: message.metadata,
             key: "cacheTotalInputTokens"
-        ),
+        ) ?? message.inputTokenCount,
         cached >= 0,
         total > 0 else {
             return nil

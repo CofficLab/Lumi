@@ -1,4 +1,5 @@
 import Foundation
+import KitMessageList
 
 /// V5（ChatGPT）列表的运行时状态容器。
 ///

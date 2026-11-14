@@ -6,9 +6,17 @@ final class NetworkHistoryViewModel: ObservableObject {
     @Published private(set) var recentHistory: [NetworkDataPoint] = []
     @Published private(set) var longTermHistory: [NetworkDataPoint] = []
 
+    /// 各时间范围裁剪结果的缓存。
+    ///
+    /// 裁剪是对整份缓冲做一次线性扫描，而图表视图每次 hover 更新都会重新
+    /// 求值 `data(for:)`，30 天范围下是数万次元素操作（见 issue #1211）。
+    /// 这里按范围缓存，缓冲或范围变化时失效。
+    private var rangeCache: [TimeRange: [NetworkDataPoint]] = [:]
+
     func apply(recent: [NetworkDataPoint], longTerm: [NetworkDataPoint]) {
         recentHistory = recent
         longTermHistory = longTerm
+        rangeCache.removeAll()
     }
 
     /// 按时间范围裁剪历史数据。
@@ -16,8 +24,13 @@ final class NetworkHistoryViewModel: ObservableObject {
     /// 1 小时范围取秒级高频缓冲,更长范围取分钟级聚合缓冲;
     /// 两者都按 `range.duration` 剔除过期样本,避免不同范围展示同一份数据。
     func data(for range: TimeRange) -> [NetworkDataPoint] {
+        if let cached = rangeCache[range] {
+            return cached
+        }
         let buffer = range.usesHighResolutionBuffer ? recentHistory : longTermHistory
-        return points(in: buffer, within: range.duration)
+        let result = points(in: buffer, within: range.duration)
+        rangeCache[range] = result
+        return result
     }
 
     /// 取最近若干秒的样本。

@@ -165,10 +165,14 @@ public enum UserAttachmentMetadata {
     ///
     /// 二进制附件不把 base64 字节混入提示词：优先从持久化的字节快照恢复到
     /// 受管目录并引用该稳定路径，只有旧消息没有快照时才回退到原始 `localPath`。
+    /// - Parameter materializeBinary: 是否把二进制附件的字节快照物化到受管目录。
+    ///   估算上下文预算时传 `false`：只渲染文本附件正文与二进制占位，不产生磁盘
+    ///   写入副作用（#814）。文本附件的渲染结果与物化与否完全一致。
     public static func appendingFileAttachments(
         _ attachments: [UserFileAttachment],
         to content: String,
-        snapshotDirectory: URL = UserAttachmentSnapshotStore.defaultDirectory
+        snapshotDirectory: URL = UserAttachmentSnapshotStore.defaultDirectory,
+        materializeBinary: Bool = true
     ) -> String {
         guard !attachments.isEmpty else { return content }
 
@@ -180,8 +184,9 @@ public enum UserAttachmentMetadata {
                 // 正文里的 `<` / `>` / `&` 必须转义，否则文件内容可以写出
                 // `</attached_file>` 提前结束真实附件并伪造新的附件块。
                 body = escapeText(textContent)
-            } else if let resolvedPath = UserAttachmentSnapshotStore
-                .materialize(attachment, in: snapshotDirectory)?.path ?? attachment.localPath {
+            } else if let resolvedPath = (materializeBinary
+                ? UserAttachmentSnapshotStore.materialize(attachment, in: snapshotDirectory)?.path
+                : nil) ?? attachment.localPath {
                 let path = escapeText(resolvedPath)
                 body = """
                 [Binary file; content is not decoded. MIME type: \(attachment.mimeType)]

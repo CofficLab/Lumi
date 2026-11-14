@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginWebFetch 的实现包，包含 6 个主要类型；当前测试覆盖 22 条用例。
+PluginWebFetch 的实现包，包含 6 个主要类型；当前测试覆盖 32 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 22
+测试文件: 4 个，用例总数: 32
 
 核心组件（源码目录）:
 - `Internal/`
@@ -29,8 +29,8 @@ PluginWebFetch 的实现包，包含 6 个主要类型；当前测试覆盖 22 �
 
 - **HTMLToMarkdownConverter**（4 条）：由 `removesUnwantedContentAndDecodesEntities`、`resolvesDocumentURLs`、`convertsStructuredContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **WebFetchCache**（5 条）：由 `updatingExistingValueDoesNotEvict`、`addingAtCapacityEvictsOldest`、`expiresStaleValues` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **WebFetchPlugin**（5 条）：由 `pluginMetadata`、`pluginRegistersTool`、`toolSchemaRequiresURL` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **WebFetchService**（8 条）：由 `validatesURLsBeforeFetching`、`fetchesResponseOnceAndServesItFromCache`、`retriesFailedHTTPResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **WebFetchPlugin**（6 条）：由 `pluginMetadata`、`pluginRegistersTool`、`toolSchemaRequiresURL` 等用例锁定；改动该模块时优先跑对应测试文件。`web_fetch` 声明 `parallelReadOnly`（#1312）：每次调用新建 Sendable service，共享缓存有锁保护。
+- **WebFetchService**（17 条）：由 `validatesURLsBeforeFetching`、`fetchesResponseOnceAndServesItFromCache`、`retriesFailedHTTPResponses` 等用例锁定；改动该模块时优先跑对应测试文件。文本解码须按 Content-Type 声明的 charset 进行（GBK/GB18030/ISO-8859-1 等），不得只试 UTF-8/ASCII 而拒绝合法正文（#360，由 `decodesGBKHTMLUsingDeclaredCharset` 等锁定）。
 
 ## 测试用例清单
 
@@ -58,27 +58,37 @@ PluginWebFetch 的实现包，包含 6 个主要类型；当前测试覆盖 22 �
 | 20 | WebFetchService | formats valid JSON and reports invalid JSON without losing its body | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `formatsJSONResponses` |
 | 21 | WebFetchService | routes plain text, sniffed HTML, and undecodable text | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `processesTextContentTypes` |
 | 22 | WebFetchService | saves binary and image responses under the supplied temporary directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `savesDownloadedFiles` |
+| 23 | WebFetchPlugin | 工具声明并行只读能力（#1312） | — | 读取 `executionCapability` | 为 `.parallelReadOnly` | P1 | ✅ 已覆盖 | `toolDeclaresParallelReadOnly` |
+| 24 | WebFetchService | resolves relative links against the final post-redirect URL（**回归 #192**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesRelativeLinksAgainstFinalURL` |
+| 25 | WebFetchService | caches the full document so each prompt filters independently（**回归 #191**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cachesFullDocumentForIndependentPrompts` |
+| 26 | WebFetchService | GBK HTML 须按声明 charset 解码，正文不得丢失（#360） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `decodesGBKHTMLUsingDeclaredCharset` |
+| 27 | WebFetchService | GBK 纯文本须按声明 charset 解码，正文不得丢失（#360） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `decodesGBKPlainTextUsingDeclaredCharset` |
+| 28 | WebFetchService | GB18030 纯文本按声明 charset 解码（#360） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesGB18030PlainTextUsingDeclaredCharset` |
+| 29 | WebFetchService | 带引号、大小写不敏感的 charset 参数同样生效（#360） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `honorsQuotedAndCaseInsensitiveCharset` |
+| 30 | WebFetchService | ISO-8859-1 文本按声明 charset 解码（#360） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesLatin1UsingDeclaredCharset` |
+| 31 | WebFetchService | 声明 charset 无法识别时回退 UTF-8（#360） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToUTF8WhenCharsetUnknown` |
+| 32 | WebFetchService | fetch 端到端解码 GBK 响应，正文不得丢失（#360） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fetchDecodesGBKResponseEndToEnd` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 16 / 16
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 1 / 1
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

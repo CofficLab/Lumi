@@ -41,6 +41,23 @@ private struct GitPathEchoTool: SuperAgentTool {
     #expect(toolManager.tool(named: "git_branch")?.permissionRiskLevel(arguments: ["action": ToolArgument("checkout")]) == .medium)
 }
 
+/// #1312：读工具经注册链路（ConversationScopedGitTool 包装）声明并行只读；
+/// 写工具保持协议默认的串行副作用，防止过度声明。
+@MainActor
+@Test func gitReadToolsDeclareParallelReadOnlyWhileWritesStaySerial() throws {
+    let kernel = KernelCoreContainer()
+    let toolManager = DefaultToolManagerProviding()
+    try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+
+    try GitSourceControlPlugin().onBoot(kernel: kernel)
+
+    for name in ["git_status", "git_diff", "git_log", "git_show", "git_unpushed"] {
+        #expect(toolManager.tool(named: name)?.executionCapability == .parallelReadOnly)
+    }
+    #expect(toolManager.tool(named: "git_commit")?.executionCapability == .serialSideEffect)
+    #expect(toolManager.tool(named: "git_branch")?.executionCapability == .serialSideEffect)
+}
+
 @MainActor
 @Test func gitLogToolNormalizesCount() throws {
     #expect(GitLogTool.normalizedCount(nil) == 10)

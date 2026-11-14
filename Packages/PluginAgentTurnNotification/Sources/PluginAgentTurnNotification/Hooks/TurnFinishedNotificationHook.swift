@@ -21,6 +21,10 @@ final class TurnFinishedNotificationHook {
     /// 处理回合结束事件；插件未激活时不发送通知。
     func apply(to context: TurnLifecycleContext) {
         guard isActive() else { return }
+        // 挂起不是终态：回合还活着，只是停在等用户回答或工具授权。
+        // 此刻宣称「回合结束」是误报，且恢复后同一回合还会再发一次
+        // 真正的终态通知（#787）。
+        guard context.endReason != .suspended else { return }
         let (title, body) = Self.presentation(for: context.endReason?.rawValue ?? "completed")
         notifier(title, body, context.conversationID)
     }

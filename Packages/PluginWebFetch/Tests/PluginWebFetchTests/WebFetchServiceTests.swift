@@ -50,6 +50,45 @@ struct WebFetchServiceTests {
         #expect(await requests.count() == 1)
     }
 
+    @Test("resolves relative links against the final post-redirect URL (#192)")
+    func resolvesRelativeLinksAgainstFinalURL() async throws {
+        let html = Data("<a href=\"guide.html\">Guide</a>".utf8)
+        let fetcher = StubFetcher(
+            data: html,
+            headers: ["Content-Type": "text/html; charset=utf-8"],
+            counter: RequestCounter(),
+            responseURL: URL(string: "https://example.com/docs/index.html")!
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: nil)
+
+        let result = try await service.fetch(urlString: "https://example.com/start")
+
+        #expect(result.contains("[Guide](https://example.com/docs/guide.html)"))
+        #expect(!result.contains("[Guide](https://example.com/guide.html)"))
+    }
+
+    @Test("caches the full document so each prompt filters independently (#191)")
+    func cachesFullDocumentForIndependentPrompts() async throws {
+        let html = Data("<p>Install the package.</p><p>Pricing starts at $10.</p>".utf8)
+        let requests = RequestCounter()
+        let fetcher = StubFetcher(
+            data: html,
+            headers: ["Content-Type": "text/html; charset=utf-8"],
+            counter: requests
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: WebFetchCache())
+
+        let first = try await service.fetch(urlString: "https://example.com/page", prompt: "install")
+        let second = try await service.fetch(urlString: "https://example.com/page", prompt: "pricing")
+        let third = try await service.fetch(urlString: "https://example.com/page")
+
+        #expect(first.contains("Install the package."))
+        #expect(second.contains("Pricing starts at $10."))
+        #expect(third.contains("Install the package."))
+        #expect(third.contains("Pricing starts at $10."))
+        #expect(await requests.count() == 1)
+    }
+
     @Test("does not cache HTTP errors")
     func retriesFailedHTTPResponses() async {
         let requests = RequestCounter()
@@ -190,6 +229,119 @@ struct WebFetchServiceTests {
         #expect(try Data(contentsOf: files.first { $0.pathExtension == "pdf" }!) == pdfData)
         #expect(try Data(contentsOf: files.first { $0.pathExtension == "png" }!) == imageData)
     }
+
+    @Test("decodes GBK HTML using the declared charset (#360)")
+    func decodesGBKHTMLUsingDeclaredCharset() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+        let html = "<html><body><p>中文</p></body></html>"
+        let gbkData = try #require(html.data(using: encoding("GBK")))
+
+        let result = try service.processContent(
+            data: gbkData,
+            contentType: "text/html; charset=GBK",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("中文"))
+    }
+
+    @Test("decodes GBK plain text using the declared charset (#360)")
+    func decodesGBKPlainTextUsingDeclaredCharset() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+        let gbkData = try #require("中文".data(using: encoding("GBK")))
+
+        let result = try service.processContent(
+            data: gbkData,
+            contentType: "text/plain; charset=GBK",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("中文"))
+    }
+
+    @Test("decodes GB18030 plain text using the declared charset (#360)")
+    func decodesGB18030PlainTextUsingDeclaredCharset() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+        let data = try #require("中文".data(using: encoding("GB18030")))
+
+        let result = try service.processContent(
+            data: data,
+            contentType: "text/plain; charset=GB18030",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("中文"))
+    }
+
+    @Test("honors a quoted, case-insensitive charset parameter (#360)")
+    func honorsQuotedAndCaseInsensitiveCharset() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+        let gbkData = try #require("中文".data(using: encoding("GBK")))
+
+        let result = try service.processContent(
+            data: gbkData,
+            contentType: "text/plain; CHARSET=\"GBK\"",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("中文"))
+    }
+
+    @Test("decodes ISO-8859-1 text using the declared charset (#360)")
+    func decodesLatin1UsingDeclaredCharset() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+        let latin1Data = try #require("café".data(using: encoding("ISO-8859-1")))
+
+        let result = try service.processContent(
+            data: latin1Data,
+            contentType: "text/plain; charset=ISO-8859-1",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("café"))
+    }
+
+    @Test("falls back to UTF-8 when the declared charset is unknown (#360)")
+    func fallsBackToUTF8WhenCharsetUnknown() throws {
+        let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
+
+        let result = try service.processContent(
+            data: Data("中文".utf8),
+            contentType: "text/plain; charset=x-unknown-charset",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        #expect(result.contains("中文"))
+    }
+
+    @Test("fetch decodes a GBK response end to end (#360)")
+    func fetchDecodesGBKResponseEndToEnd() async throws {
+        let html = "<html><body><p>中文</p></body></html>"
+        let gbkData = try #require(html.data(using: encoding("GBK")))
+        let fetcher = StubFetcher(
+            data: gbkData,
+            headers: ["Content-Type": "text/html; charset=GBK"],
+            counter: RequestCounter()
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: nil)
+
+        let result = try await service.fetch(urlString: "https://example.com/gbk")
+        #expect(result.contains("中文"))
+    }
+
+    private func encoding(_ ianaName: String) -> String.Encoding {
+        String.Encoding(
+            rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringConvertIANACharSetNameToEncoding(ianaName as CFString)
+            )
+        )
+    }
 }
 
 private struct StubFetcher: WebFetchFetching {
@@ -197,10 +349,12 @@ private struct StubFetcher: WebFetchFetching {
     var statusCode = 200
     var headers: [String: String] = ["Content-Type": "text/plain"]
     let counter: RequestCounter
+    /// 模拟 URLSession 自动跟随重定向后的最终响应 URL（默认与请求 URL 相同）。
+    var responseURL: URL?
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         await counter.record()
-        let url = request.url ?? URL(string: "https://example.com")!
+        let url = responseURL ?? request.url ?? URL(string: "https://example.com")!
         let response = HTTPURLResponse(
             url: url,
             statusCode: statusCode,

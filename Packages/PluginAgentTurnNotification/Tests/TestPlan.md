@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTurnNotification 的实现包，包含 2 个主要类型；当前测试覆盖 7 条用例。
+PluginAgentTurnNotification 的实现包，包含 2 个主要类型；当前测试覆盖 9 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 7
+测试文件: 1 个，用例总数: 9
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -22,7 +22,7 @@ PluginAgentTurnNotification 的实现包，包含 2 个主要类型；当前测�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（7 条）：由 `lifecycle`、`presentationTitles`、`finishedTriggersNotifier` 等用例锁定；改动该模块时优先跑对应测试文件。通知文案必须经 `pluginLocalization` 解析，不能写死中文。
+- **综合**（9 条）：由 `lifecycle`、`presentationTitles`、`finishedTriggersNotifier` 等用例锁定；改动该模块时优先跑对应测试文件。通知文案必须经 `pluginLocalization` 解析，不能写死中文。
 
 ## 测试用例清单
 
@@ -35,27 +35,29 @@ PluginAgentTurnNotification 的实现包，包含 2 个主要类型；当前测�
 | 5 | 综合 | 点击通知激活应用并选中来源会话（**回归 #1075**） | 注册 `DefaultConversationManager`，注入 delegate 安装/卸载与激活回调 | `onBoot` 后用安装的 handler 处理带 `conversationId` 的 userInfo，再 `onShutdown` | handler 返回 true；激活回调触发；管理器选中该会话；关闭时卸载 delegate | P1 | ✅ 已覆盖 | `tapSelectsOriginatingConversation` |
 | 6 | 综合 | 缺少或非法会话 ID 的通知点击不改变选中会话 | — | 用空 userInfo 与非 UUID 字符串调用 handler | 返回 false，不激活应用、不选择会话 | P2 | ✅ 已覆盖 | `tapIgnoresInvalidConversationID` |
 | 7 | 本地化 | 通知标题与正文在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 下均有译文 | 编译后的资源包 | 读取各语言 `Localizable.strings` | 7 个词条都有对应译文，不回退成其它语言（**回归** #898） | P1 | ✅ 已覆盖 | `presentationLabelsHaveTranslationsInCompiledBundle` |
+| 8 | 综合 | 挂起不发通知，恢复后的真实终态只通知一次（**回归 #787**） | 强制开启通知可用性，注册钩子 Provider | 先投递 `endReason: .suspended`，再对同一 turnID 投递 `.completed` | 挂起时 notifier 零调用；完成后恰好一条「任务完成」 | P1 | ✅ 已覆盖 | `suspensionDoesNotNotify` |
+| 9 | 综合 | 钩子层直接跳过 suspended，其余终态照常通知（**回归 #787**） | 注入记录型 notifier | 依次以 `.suspended`、`.cancelled` 调用 `apply` | suspended 零通知；cancelled 恰好一条「任务已取消」 | P1 | ✅ 已覆盖 | `hookSkipsSuspendedReason` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P1: 已覆盖 7 / 7
 - P2: 已覆盖 2 / 2
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（5 条）
+- **P1**: 其余功能性用例（7 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 9 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

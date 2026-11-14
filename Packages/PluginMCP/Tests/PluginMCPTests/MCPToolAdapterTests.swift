@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import KitLLM
 import KitMCP
 import MCP
 import Testing
@@ -200,5 +201,51 @@ struct MCPToolAdapterTests {
         #expect(MCPToolAdapter.friendlyHint(for: "No workspace is currently open") != nil)
         // 未知名错误不产生提示。
         #expect(MCPToolAdapter.friendlyHint(for: "something else happened") == nil)
+    }
+
+    // MARK: - 规范化 schema 文本（Issue #1275）
+
+    @Test("适配器提供规范化 schema 文本")
+    func providesNormalizedSchemaText() async throws {
+        let (session, tools) = try await makeSession()
+        let echo = try #require(tools.first { $0.name == "echo" })
+        let adapter = adapter(for: echo, session: session)
+
+        let normalized = try #require(adapter.normalizedInputSchemaJSON)
+        // 规范化文本必须能解析回同一份 schema。
+        let reparsed = try #require(
+            try? JSONSerialization.jsonObject(with: Data(normalized.utf8)) as? [String: Any]
+        )
+        let parameters = adapter.inputSchema(for: .english)
+        #expect(NSDictionary(dictionary: reparsed).isEqual(to: parameters))
+    }
+
+    @Test("适配器实现 NormalizedSchemaProviding 协议")
+    func conformsToNormalizedSchemaProviding() async throws {
+        let (session, tools) = try await makeSession()
+        let echo = try #require(tools.first { $0.name == "echo" })
+        let adapter = adapter(for: echo, session: session)
+
+        // AgentLoop 通过这个协议拿规范化文本，从而省掉每个请求的
+        // 「解析→再序列化」往返。
+        let providing = adapter as any NormalizedSchemaProviding
+        #expect(providing.normalizedInputSchemaJSON != nil)
+    }
+
+    @Test("规范化文本与直接序列化结果一致")
+    func normalizedTextMatchesDirectSerialization() async throws {
+        let (session, tools) = try await makeSession()
+        let echo = try #require(tools.first { $0.name == "echo" })
+        let adapter = adapter(for: echo, session: session)
+
+        let normalized = try #require(adapter.normalizedInputSchemaJSON)
+        let expected = String(
+            data: try JSONSerialization.data(
+                withJSONObject: adapter.inputSchema(for: .english),
+                options: [.sortedKeys]
+            ),
+            encoding: .utf8
+        )
+        #expect(normalized == expected)
     }
 }

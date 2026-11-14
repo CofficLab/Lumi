@@ -33,8 +33,11 @@ struct CacheHitRateLineChart: View {
             let perRequestPoints = geometry.points(for: samples, value: \.hitRate)
             let cumulativePoints = geometry.points(for: samples, value: \.cumulativeHitRate)
 
+            // 累计曲线：填充与描边共用同一条路径，避免重复构建。
+            let cumulativePath = Self.smoothedPath(points: cumulativePoints)
+
             // Fill area under the cumulative curve
-            var fill = Self.smoothedPath(points: cumulativePoints)
+            var fill = cumulativePath
             fill.addLine(to: CGPoint(x: cumulativePoints.last?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
             fill.addLine(to: CGPoint(x: cumulativePoints.first?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
             fill.closeSubpath()
@@ -53,7 +56,7 @@ struct CacheHitRateLineChart: View {
 
             // Cumulative line (thick, primary)
             context.stroke(
-                Self.smoothedPath(points: cumulativePoints),
+                cumulativePath,
                 with: .color(.teal),
                 lineWidth: 2.4
             )
@@ -64,46 +67,43 @@ struct CacheHitRateLineChart: View {
                 context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.teal.opacity(0.32)), lineWidth: 2)
             }
 
-            // Hover indicator line
-            if let hoveredIndex,
-               cumulativePoints.indices.contains(hoveredIndex) {
-                let point = cumulativePoints[hoveredIndex]
-                context.stroke(
-                    Path { path in
-                        path.move(to: CGPoint(x: point.x, y: Self.inset.top))
-                        path.addLine(to: CGPoint(x: point.x, y: Self.inset.top + geometry.plotHeight))
-                    },
-                    with: .color(.teal.opacity(0.45)),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 4])
-                )
-            }
+            // - Important: hover 指示线**不在** Canvas 里画。
+            //   `hoveredIndex` 变化会让整个 Canvas 重绘，从而把全量点集映射
+            //   与平滑路径重建都重跑一遍；鼠标每移动一次就是一次全量重算
+            //   （见 issue #1224）。指示线改由 overlay 用 O(1) 计算绘制。
         }
         .overlay {
             GeometryReader { proxy in
                 let geometry = ChartGeometry(size: proxy.size, inset: Self.inset)
-                let perRequestPoints = geometry.points(for: samples, value: \.hitRate)
-                let cumulativePoints = geometry.points(for: samples, value: \.cumulativeHitRate)
+
+                // - Important: 只算 hoveredIndex 那一���的点，不重建全量点集。
+                //   鼠标每移动一次都会重跑 overlay 的 body，全量映射是 O(N)
+                //   （见 issue #1224）。
+                let hoveredPoints: (perRequest: CGPoint, cumulative: CGPoint)? = {
+                    guard let hoveredIndex, samples.indices.contains(hoveredIndex) else { return nil }
+                    return (
+                        geometry.point(at: hoveredIndex, in: samples.count, value: samples[hoveredIndex].hitRate),
+                        geometry.point(at: hoveredIndex, in: samples.count, value: samples[hoveredIndex].cumulativeHitRate)
+                    )
+                }()
 
                 ZStack {
                     if let hoveredIndex,
-                       samples.indices.contains(hoveredIndex) {
+                       samples.indices.contains(hoveredIndex),
+                       let hoveredPoints {
                         let sample = samples[hoveredIndex]
 
-                        if perRequestPoints.indices.contains(hoveredIndex) {
-                            Circle()
-                                .fill(.teal.opacity(0.55))
-                                .frame(width: 7, height: 7)
-                                .overlay(Circle().stroke(.white, lineWidth: 1.5))
-                                .position(perRequestPoints[hoveredIndex])
-                        }
+                        Circle()
+                            .fill(.teal.opacity(0.55))
+                            .frame(width: 7, height: 7)
+                            .overlay(Circle().stroke(.white, lineWidth: 1.5))
+                            .position(hoveredPoints.perRequest)
 
-                        if cumulativePoints.indices.contains(hoveredIndex) {
-                            Circle()
-                                .fill(.teal)
-                                .frame(width: 9, height: 9)
-                                .overlay(Circle().stroke(.white, lineWidth: 2))
-                                .position(cumulativePoints[hoveredIndex])
-                        }
+                        Circle()
+                            .fill(.teal)
+                            .frame(width: 9, height: 9)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .position(hoveredPoints.cumulative)
 
                         VStack(alignment: .leading, spacing: 3) {
                             Text(Self.tooltipDateFormatter.string(from: sample.date))
@@ -132,7 +132,7 @@ struct CacheHitRateLineChart: View {
                         }
                         .shadow(radius: 3, y: 1)
                         .fixedSize()
-                        .position(x: min(max(cumulativePoints[hoveredIndex].x, 84), max(proxy.size.width - 84, 84)), y: 42)
+                        .position(x: min(max(hoveredPoints.cumulative.x, 84), max(proxy.size.width - 84, 84)), y: 42)
                     }
                 }
                 .contentShape(Rectangle())
@@ -213,12 +213,31 @@ struct CacheHitRateLineChart: View {
 // MARK: - Chart Geometry
 
 /// 采样点到画布坐标的映射，绘制层与交互层共用，避免两处坐标计算漂移。
-private struct ChartGeometry {
+struct ChartGeometry {
     let size: CGSize
     let inset: EdgeInsets
 
     var plotWidth: CGFloat { max(size.width - inset.leading - inset.trailing, 1) }
     var plotHeight: CGFloat { max(size.height - inset.top - inset.bottom, 1) }
+
+    /// 绘图区顶边。
+    var plotTop: CGFloat { inset.top }
+
+    /// 绘图区底边。
+    var plotBottom: CGFloat { inset.top + plotHeight }
+
+    /// 单个采样点映射到画布坐标；纵轴固定 0...1。
+    ///
+    /// 与 ``points(for:value:)`` 中对应下标的坐标完全一致，
+    /// 但代价是 O(1) 而不是 O(N)。
+    func point(at index: Int, in count: Int, value: Double) -> CGPoint {
+        let xRatio = count == 1 ? 0.5 : Double(index) / Double(count - 1)
+        let yRatio = min(max(value, 0), 1)
+        return CGPoint(
+            x: inset.leading + plotWidth * xRatio,
+            y: inset.top + plotHeight * (1 - yRatio)
+        )
+    }
 
     /// 将采样点映射到画布坐标；纵轴固定 0...1。
     func points(for samples: [CacheHitRateSample], value: KeyPath<CacheHitRateSample, Double>) -> [CGPoint] {

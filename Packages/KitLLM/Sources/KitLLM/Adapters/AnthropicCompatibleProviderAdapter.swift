@@ -19,6 +19,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         self.configuration = configuration
     }
 
+    /// 工具调用参数的解析缓存。
+    ///
+    /// 进程内共享：一次会话的多个 LLM step 反复回传同一批历史工具调用，
+    /// 每次都重新解析 JSON 是纯粹的浪费（Issue #1269）。
+    private static let argumentsParser = ToolCallArgumentsParser()
+
     // MARK: - 请求构建
 
     /// 构建 HTTP 请求
@@ -76,7 +82,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     private func validateToolCallArguments(in messages: [LLMMessage]) throws {
         for message in messages {
             for toolCall in message.toolCalls ?? [] {
-                try toolCall.validateArguments()
+                // 走缓存：校验与「拼 tool_use 块」共用同一份解析结果，
+                // 同一批历史参数不再被解析两次（Issue #1269）。
+                try Self.argumentsParser.validate(toolCall)
             }
         }
     }
@@ -181,7 +189,13 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         cacheWriteInputTokens: Int?,
         cacheTotalInputTokens: Int?,
         responseID: String?,
-        stopReason: String?
+        stopReason: String?,
+        redactedThinking: [LLMRedactedThinkingBlock],
+        /// 归一后的 token 计数。
+        ///
+        /// 随响应一起解码得出，调用方不必把整份响应再解析一遍只为读
+        /// `usage`（Issue #1270）。
+        tokenUsage: ResponseTokenUsage.Counts
     ) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
@@ -191,10 +205,15 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
+        var redactedThinking: [LLMRedactedThinkingBlock] = []
 
         for item in response.content {
             if item.type == "text", let text = item.text {
                 textContent += text
+            } else if item.type == "redacted_thinking", let data = item.data, !data.isEmpty {
+                // 不透明密文整块保留：整段 JSON 回退必须与 SSE 一样带上它，
+                // 否则下一轮请求无法回传原始 redacted_thinking 块（#1167）。
+                redactedThinking.append(LLMRedactedThinkingBlock(data: data))
             } else if item.type == "tool_use",
                       let id = item.id,
                       let name = item.name,
@@ -232,7 +251,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 cacheWriteInputTokens: cacheWriteInputTokens
             ),
             response.id,
-            response.stopReason
+            response.stopReason,
+            redactedThinking,
+            ResponseTokenUsage.counts(from: usage, anthropic: true)
         )
     }
 
@@ -256,7 +277,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
            !trimmed.contains("event:"),
            !trimmed.contains("data:") {
             let parsed = try parseResponse(data: data)
-            if !parsed.content.isEmpty || parsed.toolCalls != nil {
+            if !parsed.content.isEmpty || parsed.toolCalls != nil || !parsed.redactedThinking.isEmpty {
                 // 必须带上响应元数据：网关从 SSE 换成整段 JSON 时，最终
                 // 响应的 token 用量、缓存用量、响应 ID、停止原因不应改变。
                 return StreamChunk(
@@ -271,7 +292,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                     cacheWriteInputTokens: parsed.cacheWriteInputTokens,
                     cacheTotalInputTokens: parsed.cacheTotalInputTokens,
                     responseID: parsed.responseID,
-                    stopReason: parsed.stopReason
+                    stopReason: parsed.stopReason,
+                    // 整段 JSON 一次到达多个 opaque 块，用数组承载，
+                    // 与 SSE 逐块下发的最终结果保持一致（#1167）。
+                    redactedThinkingBlocks: parsed.redactedThinking.isEmpty
+                        ? nil
+                        : parsed.redactedThinking.map(\.data)
                 )
             }
         }
@@ -567,13 +593,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             }
 
             for tc in toolCalls {
-                let inputObject: [String: Any]
-                if let data = tc.arguments.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    inputObject = json
-                } else {
-                    inputObject = [:]
-                }
+                // 复用缓存里的解析结果：此前同一批历史参数在「校验」和
+                // 「拼 tool_use 块」时各解析一次（Issue #1269）。
+                let inputObject = Self.argumentsParser.parse(id: tc.id, arguments: tc.arguments).object ?? [:]
                 // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝
                 content.append(["type": "tool_use", "id": tc.id, "name": LLMToolNameSanitizer.sanitize(tc.name), "input": inputObject])
             }

@@ -91,14 +91,47 @@ struct AskUserToolArgumentTests {
         #expect(options.map(\.label) == ["Debug"])
     }
 
-    @Test("纯空白标签不被丢弃（原样保留）")
-    func choiceKeepsWhitespaceLabel() {
-        // 现状：`parseOptions` 只判 `isEmpty`，不 trim。模型传出 `"   "` 时
-        // 会渲染出一个空按钮。这里锁住当前行为，避免有人误以为已做清洗；
-        // 若将来在 parseOptions 或 UI 侧补 trim，这条断言会失败并提醒同步。
-        let options = AskUserTool.parseOptions([["label": "   "]])
-        #expect(options.map(\.label) == ["   "])
-        #expect(options.count == 1)
+    @Test("纯空白标签被丢弃，合法标签 trim 后保留（与 UI submit 一致，#328）")
+    func choiceDropsWhitespaceOnlyLabels() {
+        // 裸字符串与对象形式的纯空白标签都必须丢弃，否则会渲染出无法提交的空按钮。
+        #expect(AskUserTool.parseOptions(["   "]).isEmpty)
+        #expect(AskUserTool.parseOptions([["label": "   "]]).isEmpty)
+        #expect(AskUserTool.parseOptions([["label": " \n\t "]]).isEmpty)
+        // 混合数组：空白项丢弃，合法项保留。
+        #expect(AskUserTool.parseOptions(["   ", "Debug"]).map(\.label) == ["Debug"])
+        // 合法标签首尾空白被 trim：显示值与 UI 提交的回答值一致。
+        #expect(AskUserTool.parseOptions([" Debug "]).map(\.label) == ["Debug"])
+        #expect(AskUserTool.parseOptions([["label": " Release "]]).map(\.label) == ["Release"])
+    }
+
+    @Test("纯空白 choice 不得挂起：参数阶段抛出可纠正错误（#328）")
+    func rejectsWhitespaceOnlyChoiceWithoutSuspending() async throws {
+        // 唯一选项是纯空白：解析后为空，必须抛出而不是创建一个永远无法提交的挂起。
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument(["   "]),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument([["label": "   "]]),
+            ])
+        }
+        // 含合法选项时正常挂起，且空白项被剔除。
+        let result = try await AskUserTool().executeResult(arguments: [
+            "question": ToolArgument("选哪个?"),
+            "mode": ToolArgument("choice"),
+            "options": ToolArgument(["   ", "Debug"]),
+        ])
+        #expect(result.awaitingUserResponse)
+        #expect(!result.isError)
+        let payload = try #require(result.content.data(using: .utf8))
+        let response = try JSONDecoder().decode(AskUserPendingResponse.self, from: payload)
+        #expect(response.options.map(\.label) == ["Debug"])
     }
 
     @Test("非数组的 options 返回空（由上层报 choice 缺选项错误）")
@@ -158,6 +191,41 @@ struct AskUserToolArgumentTests {
                 "mode": ToolArgument("choice"),
             ])
         }
+    }
+
+    // MARK: - #221 choice 重复标签
+
+    @Test("choice 重复标签必须抛出可处理错误，不得挂起后崩溃 ACP")
+    func rejectsDuplicateChoiceLabels() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument(["Debug", "Debug"]),
+            ])
+        }
+    }
+
+    @Test("choice 对象形式的重复标签同样抛出")
+    func rejectsDuplicateChoiceLabelsFromObjects() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+                "options": ToolArgument([["label": "Debug"], ["label": "Debug", "badge": "推荐"]]),
+            ])
+        }
+    }
+
+    @Test("choice 标签互异时正常挂起")
+    func acceptsDistinctChoiceLabels() async throws {
+        let result = try await AskUserTool().executeResult(arguments: [
+            "question": ToolArgument("选哪个?"),
+            "mode": ToolArgument("choice"),
+            "options": ToolArgument(["Debug", "Release"]),
+        ])
+        #expect(result.awaitingUserResponse)
+        #expect(!result.isError)
     }
 
     @Test("合法调用返回 awaitingUserResponse 且 interactionState 为 waiting")

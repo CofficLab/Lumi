@@ -322,7 +322,7 @@ final class CADDesignerLogicTests: XCTestCase {
 
     // MARK: - Project Save/Load
 
-    func testProjectSaveLoadRoundTrip() throws {
+    func testProjectSaveLoadRoundTrip() async throws {
         let service = ProjectSaveLoadService()
         let document = CADDocument(
             name: "SaveLoad Test",
@@ -331,8 +331,8 @@ final class CADDesignerLogicTests: XCTestCase {
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("CADDesignerTest-\(UUID().uuidString).cadproj")
-        try service.save(document: document, to: url)
-        let loaded = try service.load(from: url)
+        try await service.save(document: document, to: url)
+        let loaded = try await service.load(from: url)
         try? FileManager.default.removeItem(at: url)
 
         XCTAssertEqual(document.id, loaded.id)
@@ -353,7 +353,7 @@ final class CADDesignerLogicTests: XCTestCase {
     // MARK: - File Association Open
 
     @MainActor
-    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() throws {
+    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         let document = CADDocument(
@@ -362,14 +362,14 @@ final class CADDesignerLogicTests: XCTestCase {
         )
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("CADFinderOpen-\(UUID().uuidString).cadproj")
-        try ProjectSaveLoadService().save(document: document, to: url)
+        try await ProjectSaveLoadService().save(document: document, to: url)
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
         // 工作区启动时会自动创建空项目；系统打开的文件必须替换为选中的项目。
         XCTAssertEqual(store.selectedDocument?.name, "Untitled Project")
 
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Finder Open")
         XCTAssertEqual(store.selectedDocument?.components.count, 1)
@@ -378,7 +378,7 @@ final class CADDesignerLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() throws {
+    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         _ = store.createDocument(name: "Keep Me")
@@ -388,7 +388,7 @@ final class CADDesignerLogicTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
         XCTAssertEqual(store.documents.count, 1)
@@ -396,7 +396,7 @@ final class CADDesignerLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() throws {
+    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() async throws {
         let store = CADDocumentStore.shared
         store.resetForTests()
         _ = store.createDocument(name: "Keep Me")
@@ -406,10 +406,64 @@ final class CADDesignerLogicTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CADWorkspaceViewModel(store: store, library: library)
-        viewModel.openProjectURL(url)
+        await viewModel.openProjectURL(url)
 
         XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertNotNil(store.lastError, "加载失败必须暴露对应文件的错误，而不是静默保留空项目")
+    }
+
+    // MARK: - Export PNG path (#433)
+
+    func testExportPNGURLDistinctForSameNameDocuments() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiCADDesigner", isDirectory: true)
+
+        // 两个默认同名文档（不同 ID）：导出路径必须不同，否则后者静默覆盖前者。
+        let first = CADDocument(id: "aaaa1111", name: "Untitled Project")
+        let second = CADDocument(id: "bbbb2222", name: "Untitled Project")
+        let firstURL = CADDesignerView.exportPNGURL(for: first, in: directory)
+        let secondURL = CADDesignerView.exportPNGURL(for: second, in: directory)
+        XCTAssertNotEqual(firstURL, secondURL, "同名不同文档的导出路径必须不同")
+        XCTAssertEqual(firstURL.deletingLastPathComponent(), directory)
+        XCTAssertEqual(secondURL.deletingLastPathComponent(), directory)
+        XCTAssertTrue(firstURL.lastPathComponent.contains("aaaa1111"))
+        XCTAssertTrue(secondURL.lastPathComponent.contains("bbbb2222"))
+
+        // 不同名字但规范化后相同（my-design），ID 不同仍须落到不同路径。
+        let third = CADDocument(id: "id-one", name: "My Design!")
+        let fourth = CADDocument(id: "id-two", name: "My Design?")
+        XCTAssertNotEqual(
+            CADDesignerView.exportPNGURL(for: third, in: directory),
+            CADDesignerView.exportPNGURL(for: fourth, in: directory),
+            "规范化后同名的不同文档导出路径必须不同"
+        )
+    }
+
+    func testExportPNGURLStableForSameDocument() {
+        let directory = FileManager.default.temporaryDirectory
+        let document = CADDocument(id: "stable-id", name: "Frame")
+        let first = CADDesignerView.exportPNGURL(for: document, in: directory)
+        let second = CADDesignerView.exportPNGURL(for: document, in: directory)
+        XCTAssertEqual(first, second, "同一文档的导出路径必须稳定")
+        XCTAssertEqual(first.lastPathComponent, "frame-stable-id.png")
+    }
+
+    func testExportPNGURLFallsBackForNilDocument() {
+        let directory = FileManager.default.temporaryDirectory
+        let url = CADDesignerView.exportPNGURL(for: nil, in: directory)
+        XCTAssertEqual(url.lastPathComponent, "design.png")
+        XCTAssertEqual(url.deletingLastPathComponent(), directory)
+    }
+
+    func testExportPNGURLSanitizesUnsafeDocumentID() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiCADDesigner", isDirectory: true)
+        // 载入文档的 ID 可能含路径分隔符；导出路径不得越出暂存目录。
+        let document = CADDocument(id: "../../evil", name: "Design")
+        let url = CADDesignerView.exportPNGURL(for: document, in: directory)
+        XCTAssertEqual(url.deletingLastPathComponent(), directory, "导出路径必须仍在暂存目录内")
+        XCTAssertFalse(url.lastPathComponent.contains("/"))
+        XCTAssertFalse(url.lastPathComponent.contains(".."))
     }
 }

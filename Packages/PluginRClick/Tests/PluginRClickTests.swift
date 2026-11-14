@@ -287,3 +287,53 @@ import ProviderStorage
     #expect(item != nil)
     #expect(item?.isEnabled == true)
 }
+
+@MainActor
+private final class CountingRClickConfigManager: RClickConfigManager {
+    private(set) var loadCount = 0
+    override func loadConfig() {
+        loadCount += 1
+        super.loadConfig()
+    }
+}
+
+@MainActor
+@Test func configObserverDoesNotLoopOnItsOwnWriteBack() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigObserver-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let configURL = directory.appending(path: RClickConfigManager.sharedConfigFilename)
+    let store = RClickPluginLocalStore(pluginDirectory: directory.appending(path: "LocalStore"))
+
+    let seed = RClickConfig(
+        items: [RClickMenuItem(id: "copy", type: .copyPath, customTitle: "Copy Absolute Path")],
+        fileTemplates: [NewFileTemplate(id: "swift", name: "Swift", extensionName: "swift")]
+    )
+    try JSONEncoder().encode(seed).write(to: configURL, options: .atomic)
+
+    let manager = CountingRClickConfigManager(appGroupConfigFileURL: configURL, store: store)
+    let observer = RClickConfigObserver(configManager: manager, configURL: configURL)
+    defer { observer.cancel() }
+    let baselineLoads = manager.loadCount
+
+    // 外部写入，并把修改时间钉到确定的过去值，确保与观察者基线不同（不依赖文件系统时间戳精度）。
+    let external = RClickConfig(
+        items: [RClickMenuItem(id: "copy", type: .copyPath, customTitle: "Changed Externally")],
+        fileTemplates: []
+    )
+    try JSONEncoder().encode(external).write(to: configURL, options: .atomic)
+    try FileManager.default.setAttributes(
+        [.modificationDate: Date(timeIntervalSince1970: 1_000_000)],
+        ofItemAtPath: configURL.path
+    )
+
+    observer.checkForChanges()
+    #expect(manager.config.items.first { $0.id == "copy" }?.customTitle == "Changed Externally")
+    #expect(manager.loadCount == baselineLoads + 1)
+
+    // 文件自此不再变动：再次轮询不得再次装载/写回，否则即每秒重载→保存的死循环。
+    observer.checkForChanges()
+    #expect(manager.loadCount == baselineLoads + 1)
+}

@@ -210,7 +210,8 @@ private actor FakeDockerManagerService: DockerManagerServicing {
         }
         return [
             DockerImageHistory(
-                Created: 0,
+                CreatedAt: "2026-01-01 00:00:00 +0000 UTC",
+                CreatedSince: "1 day ago",
                 CreatedBy: "test",
                 Size: "0 B",
                 Comment: id

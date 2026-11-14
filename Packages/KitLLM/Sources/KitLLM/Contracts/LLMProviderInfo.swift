@@ -130,6 +130,13 @@ public struct LLMModelInfo: Sendable, Equatable {
     ///   或刷新失败时必须保持 `false`，否则会把全部模型误标为退役。
     public let isRetired: Bool
 
+    /// 该模型的思考能力契约。
+    ///
+    /// `nil` 表示模型未声明能力（按通用行为处理：档位全开、关闭即不下发参数）。
+    /// 声明后，UI 会按能力过滤档位并对「关闭」给出真实语义，请求构建也会按
+    /// 声明映射关闭策略（见 `LLMReasoningCapability`）。
+    public let reasoning: LLMReasoningCapability?
+
     public init(
         id: String,
         displayName: String? = nil,
@@ -137,7 +144,8 @@ public struct LLMModelInfo: Sendable, Equatable {
         supportsStreaming: Bool = true,
         supportsVision: Bool = false,
         supportsTools: Bool = true,
-        isRetired: Bool = false
+        isRetired: Bool = false,
+        reasoning: LLMReasoningCapability? = nil
     ) {
         self.id = id
         self.displayName = displayName ?? id
@@ -146,6 +154,7 @@ public struct LLMModelInfo: Sendable, Equatable {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
         self.isRetired = isRetired
+        self.reasoning = reasoning
     }
 }
 

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 用于在 UI 上区分本机内置磁盘与外置设备（U 盘、移动硬盘、外置硬盘盒等），
 /// 并把「目录已从磁盘上消失」这类异常状态单独标出来。
-enum ProjectStorageKind: Equatable {
+enum ProjectStorageKind: Equatable, Sendable {
     /// 本机内置磁盘。
     case internalDisk
     /// 外置设备（U 盘、移动硬盘、外置硬盘盒）。

@@ -127,6 +127,83 @@ struct ToolCallIdentityNormalizationEdgeCaseTests {
         #expect((normalized.toolCalls ?? []).isEmpty)
         #expect(normalized.content == "直接回答")
     }
+
+    // MARK: - normalize 保留非身份字段（回归 #1166）
+
+    /// 归一化只改工具调用身份。即使 ID 唯一、无需任何修改，重建路径也
+    /// 必须保留 Anthropic 的 opaque redacted_thinking，否则下一轮请求无法
+    /// 原样回传，破坏 extended-thinking 工具调用历史。
+    @Test("回归 #1166：ID 无冲突时归一化仍保留 redactedThinking")
+    func normalizePreservesRedactedThinking() {
+        let original = LLMResponse(
+            content: "",
+            model: "claude-sonnet-4-20250514",
+            toolCalls: [LLMToolCall(id: "toolu_1", name: "read_file", arguments: "{}")],
+            redactedThinking: [LLMRedactedThinkingBlock(data: "opaque-data")]
+        )
+
+        let normalized = ToolCallIdentityNormalizer.normalize(original, avoiding: [])
+
+        #expect(normalized.toolCalls?.first?.id == "toolu_1")
+        #expect(normalized.redactedThinking == [LLMRedactedThinkingBlock(data: "opaque-data")])
+    }
+
+    /// ID 冲突被替换时同样不能丢掉 redactedThinking。
+    @Test("回归 #1166：ID 被替换时归一化仍保留 redactedThinking")
+    func normalizePreservesRedactedThinkingWhenIDReplaced() {
+        let original = LLMResponse(
+            content: "",
+            toolCalls: [LLMToolCall(id: "taken", name: "read_file", arguments: "{}")],
+            redactedThinking: [LLMRedactedThinkingBlock(data: "opaque-data")]
+        )
+
+        let normalized = ToolCallIdentityNormalizer.normalize(original, avoiding: ["taken"])
+
+        #expect(normalized.toolCalls?.first?.id != "taken")
+        #expect(normalized.redactedThinking == [LLMRedactedThinkingBlock(data: "opaque-data")])
+    }
+
+    /// 同一重建路径也漏掉了 images，一并保留，避免「只生成图片」的回合丢图。
+    @Test("回归 #1166：归一化保留 images")
+    func normalizePreservesImages() {
+        let image = MessageImage(data: Data("img".utf8), mimeType: "image/png")
+        let original = LLMResponse(
+            content: "",
+            toolCalls: [LLMToolCall(id: "toolu_1", name: "read_file", arguments: "{}")],
+            images: [image]
+        )
+
+        let normalized = ToolCallIdentityNormalizer.normalize(original, avoiding: [])
+
+        #expect(normalized.images == [image])
+    }
+
+    /// 全字段守卫：ID 无冲突时归一化结果必须与原响应完全相等，
+    /// 任何被遗漏的字段都会让这条 Equatable 断言失败。
+    @Test("回归 #1166：归一化保留全部非身份字段")
+    func normalizeKeepsEveryNonIdentityField() {
+        let original = LLMResponse(
+            content: "正文",
+            model: "claude-sonnet-4-20250514",
+            toolCalls: [LLMToolCall(id: "toolu_1", name: "read_file", arguments: "{}")],
+            reasoningContent: "思考",
+            redactedThinking: [LLMRedactedThinkingBlock(data: "opaque-data")],
+            inputTokenCount: 12,
+            outputTokenCount: 3,
+            cachedInputTokenCount: 5,
+            cacheWriteInputTokenCount: 4,
+            cacheTotalInputTokenCount: 12,
+            responseID: "msg_123",
+            rawResponseJSON: "{\"id\":\"msg_123\"}",
+            rawStreamEventsJSON: "[\"event\"]",
+            stopReason: "tool_use",
+            images: [MessageImage(data: Data("img".utf8), mimeType: "image/png")]
+        )
+
+        let normalized = ToolCallIdentityNormalizer.normalize(original, avoiding: [])
+
+        #expect(normalized == original)
+    }
 }
 
 // MARK: - Helpers 边界分支
@@ -421,4 +498,57 @@ private struct PlainScrubbingTool: SuperAgentTool {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
 
     func displayDescription(for arguments: [String: ToolArgument]) -> String { "Plain demo" }
+}
+
+@Suite("恢复提示注入位置（保前缀缓存）")
+struct RecoveryHintInsertionTests {
+    @Test("恢复提示插在最新 user 之前，稳定历史前缀逐字节不变")
+    func recoveryHintAnchorsBeforeLatestUser() {
+        let history = [
+            LLMMessage(role: .system, content: "base system"),
+            LLMMessage(role: .user, content: "earlier"),
+            LLMMessage(role: .assistant, content: "answer"),
+            LLMMessage(role: .user, content: "latest"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(Array(result[0..<3]) == Array(history[0..<3]))
+        #expect(result[3].role == .system)
+        #expect(result[3].content == "retry hint")
+        #expect(result[4] == history[3])
+    }
+
+    @Test("有尾随 system 消息时仍锚定最新 user")
+    func recoveryHintAnchorsOnLatestUserWithTrailingSystem() {
+        let history = [
+            LLMMessage(role: .user, content: "earlier"),
+            LLMMessage(role: .user, content: "latest"),
+            LLMMessage(role: .system, content: "trailing"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(result[1].role == .system)
+        #expect(result[1].content == "retry hint")
+        #expect(result[2] == history[1])
+        #expect(result[3] == history[2])
+    }
+
+    @Test("没有 user 消息时回退到末尾")
+    func recoveryHintAppendsWhenNoUser() {
+        let history = [
+            LLMMessage(role: .system, content: "base"),
+            LLMMessage(role: .assistant, content: "answer"),
+        ]
+
+        let result = insertingRecoveryHint("retry hint", into: history)
+
+        #expect(result.count == history.count + 1)
+        #expect(Array(result[0..<2]) == Array(history[0..<2]))
+        #expect(result[2].role == .system)
+        #expect(result[2].content == "retry hint")
+    }
 }

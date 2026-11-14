@@ -214,7 +214,7 @@ final class EmptyStateActivityViewModel: ObservableObject {
         if effectiveScope == .project,
            let projectContext,
            let path = projectContext.currentProjectPath {
-            conversationIDs = await projectContext.conversationIDs(forProjectAt: path, since: startDate)
+            conversationIDs = await projectContext.conversationIDs(forProjectAt: path, since: startDate, force: force)
         } else {
             conversationIDs = nil
         }

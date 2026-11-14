@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
 import ProviderToolManager
+import KitMessageList
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
@@ -28,6 +29,8 @@ private struct MessageFingerprintV3: Equatable {
     /// 会漏掉这种更新，历史行会继续持有旧文本。消息的落库版本可能因为重写、
     /// 重试覆盖而产生等长结果，这不是纯理论情况。
     let contentHash: Int
+    /// 思考内容指纹（#147）：V3 显示 reasoningContent，新增/改写须触发重建。
+    let reasoningContentHash: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
     let toolCallResultState: [String]
@@ -445,12 +448,14 @@ final class ListV3ViewModel: ObservableObject {
                 MessageFingerprintV3(
                     id: $0.id,
                     contentHash: $0.content.hashValue,
+                    reasoningContentHash: $0.reasoningContent.hashValue,
                     role: $0.role,
                     isToolExecutionOnly: $0.isToolExecutionOnly,
                     toolCallResultState: $0.toolCalls?.map {
                         let result = $0.result
                         let resultState = result.map {
-                            "\($0.content.count):\($0.awaitingUserResponse == true)"
+                            // 完整文本哈希 + isError + 交互状态（#147），只比长度会漏掉等长替换与状态回写。
+                            "\($0.content.hashValue):\($0.isError):\($0.awaitingUserResponse):\(String(describing: $0.interactionState))"
                         } ?? "nil"
                         return "\($0.id):\(resultState)"
                     } ?? [],

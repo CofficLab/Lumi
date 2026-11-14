@@ -355,10 +355,10 @@ struct MCPServerEditSheet: View {
                     .labelsHidden()
                     .pickerStyle(.segmented)
                 }
-                formField(MCPText.string("Command")) {
-                    TextField("xcrun", text: $command)
-                }
                 if transport == .stdio {
+                    formField(MCPText.string("Command")) {
+                        TextField("xcrun", text: $command)
+                    }
                     formField(MCPText.string("Arguments (space-separated)")) {
                         TextField("mcpbridge", text: $argumentsText)
                     }
@@ -423,21 +423,34 @@ struct MCPServerEditSheet: View {
         }
     }
 
+    /// 表单校验：返回错误的本地化 key；`nil` 表示通过。入参应已去除首尾空白。
+    ///
+    /// `command` 只对 stdio 必填：HTTP 传输仅凭 URL 建连，从不读取
+    /// command，强制填写无意义的占位值会让合法的远程服务器无法保存（#1159）。
+    static func validationError(
+        name: String,
+        command: String,
+        url: String,
+        transport: MCPTransport
+    ) -> String? {
+        if name.isEmpty { return "Name is required." }
+        if transport == .stdio, command.isEmpty { return "Command is required." }
+        if transport == .streamableHTTP, url.isEmpty { return "URL is required for HTTP transport." }
+        return nil
+    }
+
     private func saveAndConnect() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCommand = command.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !trimmedName.isEmpty else {
-            errorMessage = MCPText.string("Name is required.")
-            return
-        }
-        guard !trimmedCommand.isEmpty else {
-            errorMessage = MCPText.string("Command is required.")
-            return
-        }
-        if transport == .streamableHTTP, trimmedURL.isEmpty {
-            errorMessage = MCPText.string("URL is required for HTTP transport.")
+        if let key = Self.validationError(
+            name: trimmedName,
+            command: trimmedCommand,
+            url: trimmedURL,
+            transport: transport
+        ) {
+            errorMessage = MCPText.string(key)
             return
         }
 

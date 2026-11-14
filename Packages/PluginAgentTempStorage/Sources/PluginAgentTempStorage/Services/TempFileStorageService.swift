@@ -76,16 +76,20 @@ actor TempFileStorageService {
             return
         }
 
-        guard let entries = try? fileManager.contentsOfDirectory(
+        // 写入支持嵌套相对路径，清理必须与 listFiles 一样递归枚举，
+        // 否则子目录里的过期文件永远不会被删除（#200）。
+        // 不能跳过隐藏文件：`.audit.txt` 这类点文件是合法临时文件，可写可读，
+        // 若清理跳过它们就永远不会过期删除（#327）。
+        guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsPackageDescendants]
         ) else {
             return
         }
 
         var failures: [(name: String, reason: String)] = []
-        for entry in entries {
+        for case let entry as URL in enumerator {
             let values = try? entry.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
             if values?.isDirectory == true {
                 continue
@@ -138,10 +142,12 @@ actor TempFileStorageService {
     func listFiles() throws -> [TempFileInfo] {
         try purgeExpiredFiles()
         let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey]
+        // 与清理一致：点文件是合法临时文件，列表不得跳过隐藏文件，
+        // 否则 `.audit.txt` 可写可读却永远不可见（#327）。
         guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: keys,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            options: [.skipsPackageDescendants]
         ) else {
             return []
         }
@@ -187,12 +193,43 @@ actor TempFileStorageService {
         }
 
         let url = filesDirectory.appendingPathComponent(filename)
-        let resolved = url.standardizedFileURL
+        let candidate = url.standardizedFileURL
         let root = filesDirectory.standardizedFileURL.path
-        let resolvedPath = resolved.path
-        guard resolvedPath == root || resolvedPath.hasPrefix(root + "/") else {
+        let candidatePath = candidate.path
+        guard candidatePath == root || candidatePath.hasPrefix(root + "/") else {
             throw TempFileStorageError.pathTraversal
         }
-        return resolved
+
+        // 词法前缀检查挡不住符号链接：目录内指向外部的文件或目录链接
+        // 会被 Foundation 的读写跟随，越界访问存储目录之外的内容（#232）。
+        // 解析后的路径也必须留在根目录内（与 PlanFileStorageService 一致）。
+        let resolvedRoot = filesDirectory.resolvingSymlinksInPath().standardizedFileURL
+        let resolved = resolvedDestination(of: candidate)
+        guard resolved.path == resolvedRoot.path || resolved.path.hasPrefix(resolvedRoot.path + "/") else {
+            throw TempFileStorageError.pathTraversal
+        }
+        return candidate
+    }
+
+    /// 解析候选路径的真实落点。
+    ///
+    /// `resolvingSymlinksInPath` 对「不存在的路径」整体不做解析：新建文件
+    /// `exports/data.json` 的叶子不存在时，中间已存在的符号链接目录 `exports`
+    /// 也不会被解析。因此先回退到最近的存在祖先，解析它，再拼回不存在的尾部
+    /// （尾部组件尚未创建，不可能是符号链接）。
+    private func resolvedDestination(of candidate: URL) -> URL {
+        var existing = candidate
+        var tail: [String] = []
+        // 用 lstat 语义判断存在：悬空符号链接本身也是目录项，必须参与解析，
+        // 否则会被当作「不存在」跳过，写入时再被 Foundation 跟随到外部。
+        while (try? fileManager.attributesOfItem(atPath: existing.path)) == nil {
+            tail.append(existing.lastPathComponent)
+            existing = existing.deletingLastPathComponent()
+        }
+        var resolved = existing.resolvingSymlinksInPath().standardizedFileURL
+        for component in tail.reversed() {
+            resolved = resolved.appendingPathComponent(component)
+        }
+        return resolved.standardizedFileURL
     }
 }

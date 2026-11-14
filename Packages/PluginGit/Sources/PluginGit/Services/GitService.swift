@@ -460,20 +460,26 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
         if files.isEmpty {
             resolvedFiles = files
         } else {
-            resolvedFiles = files.map { filePath -> String in
-                let resolved = Self.resolvePath(filePath)
-                // 如果路径以仓库根目录开头，转换为相对路径
-                if resolved.hasPrefix(repoPath) {
-                    let relative = String(resolved.dropFirst(repoPath.count))
-                    // 移除开头的 /
-                    return relative.hasPrefix("/") ? String(relative.dropFirst()) : relative
+            resolvedFiles = try files.map { filePath -> String in
+                let expanded = (filePath as NSString).expandingTildeInPath
+                // 相对路径按 git 约定相对仓库根目录，直接透传给 LibGit2。
+                guard expanded.hasPrefix("/") else { return filePath }
+                // 绝对路径必须等于仓库根或位于 root + "/" 之下。仓库外路径必须明确拒绝，
+                // 绝不能用裸 hasPrefix 把同名前缀的外部文件（/App-old/f）改写成另一个
+                // 内部路径（-old/f）从而提交错误的文件（#176）。
+                guard let relative = Self.relativePath(expanded, fromRepositoryRoot: repoPath) else {
+                    throw GitServiceError.pathNotAllowed(path: expanded, allowedDirectories: [repoPath])
                 }
-                return filePath
+                return relative
             }
         }
 
         let commitHash: String = try await performOnGitQueue(repoPath: repoPath) {
             if amend {
+                // amend 只读取当前 index，不会自动暂存工作区改动；必须先按 files 暂存，
+                // 否则指定的修改会留在工作区却不进入 amended 提交，工具却报告成功（#358）。
+                // 空列表与新建提交一致：暂存全部变更。
+                try LibGit2.addFiles(resolvedFiles, at: repoPath, verbose: Self.verbose)
                 return try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
             }
             // addAndCommit with empty files correctly stages ALL changes then commits.

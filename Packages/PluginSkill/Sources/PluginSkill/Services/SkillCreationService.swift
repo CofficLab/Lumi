@@ -145,7 +145,10 @@ public actor SkillCreationService {
     /// 删除技能目录（连同 `metadata.json` 与 `SKILL.md`）。
     ///
     /// 删除的是技能**实际所在**的目录（`.lumi/skills` 或历史目录 `.agent/skills`）。
-    public func deleteSkill(projectPath: String, name: String) throws {
+    ///
+    /// - Returns: 本次实际删除的目录 URL，供调用方如实回报（#643）。
+    @discardableResult
+    public func deleteSkill(projectPath: String, name: String) throws -> URL {
         let name = Self.sanitize(name)
         // 删除以「实际存在的目录」为准：残缺的 `.lumi` 条目同样要能被删掉，
         // 否则它会一直占着名字，让历史条目永远读不到。
@@ -158,7 +161,15 @@ public actor SkillCreationService {
                 .appendingPathComponent(name).path
             )
         }
+        // 技能条目必须是目录：`locate` 只看 fileExists，同名普通文件也会命中。
+        // 普通文件不是技能，拒绝删除并原样保留；残缺目录仍允许删除（#525）。
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            throw SkillCreationError.notFound(directoryURL.path)
+        }
         try fileManager.removeItem(at: directoryURL)
+        return directoryURL
     }
 
     // MARK: - 内部

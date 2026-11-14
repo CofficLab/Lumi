@@ -137,6 +137,60 @@ struct MemoryPluginTests {
         #expect(try await storage.load(id: "a@b", type: .project, scope: .global, projectPath: nil)?.content == "content-B")
     }
 
+    @Test("不同 project 路径编码后不碰撞：保存、召回、删除互不影响")
+    func distinctProjectPathsDoNotCollide() async throws {
+        let (storage, root) = makeTempStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // "/tmp/a b" 与 "/tmp/a-b" 在旧的有损映射下都会变成 "/tmp/a-b"，
+        // 两个项目共用同一记忆目录，互相覆盖、召回与删除（#197）。
+        let first = try await storage.save(
+            id: "architecture", type: .project, name: "A", description: "",
+            content: "content-A", scope: .project, projectPath: "/tmp/a b"
+        )
+        let second = try await storage.save(
+            id: "architecture", type: .project, name: "B", description: "",
+            content: "content-B", scope: .project, projectPath: "/tmp/a-b"
+        )
+
+        #expect(first.filePath != second.filePath)
+
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a b")?.content == "content-A")
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a-b")?.content == "content-B")
+
+        let listedA = await storage.list(scope: .project, projectPath: "/tmp/a b")
+        let listedB = await storage.list(scope: .project, projectPath: "/tmp/a-b")
+        #expect(listedA.count == 1)
+        #expect(listedA.first?.content == "content-A")
+        #expect(listedB.count == 1)
+        #expect(listedB.first?.content == "content-B")
+
+        try await storage.delete(id: "architecture", scope: .project, projectPath: "/tmp/a b")
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a b") == nil)
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a-b")?.content == "content-B")
+    }
+
+    @Test("project 路径中的字面量百分号不与编码结果碰撞")
+    func projectPathPercentLiteralDoesNotCollide() async throws {
+        let (storage, root) = makeTempStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // "/tmp/a b" 编码为 "/tmp/a%20b"；若项目路径本身就是字面量
+        // "/tmp/a%20b"，二者必须落在不同目录（% 自身也要编码为 %25）。
+        let first = try await storage.save(
+            id: "architecture", type: .project, name: "A", description: "",
+            content: "content-A", scope: .project, projectPath: "/tmp/a b"
+        )
+        let second = try await storage.save(
+            id: "architecture", type: .project, name: "B", description: "",
+            content: "content-B", scope: .project, projectPath: "/tmp/a%20b"
+        )
+
+        #expect(first.filePath != second.filePath)
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a b")?.content == "content-A")
+        #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a%20b")?.content == "content-B")
+    }
+
     @Test("插件注册 4 个记忆工具")
     func pluginRegistersTools() throws {
         let kernel = KernelCoreContainer()

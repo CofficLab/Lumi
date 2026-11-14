@@ -28,6 +28,8 @@ public final class ProjectsStore: SuperLog, ObservableObject {
     /// 是唯一能感知「存储已更新」的信号。
     @Published public private(set) var openedFilesRevision = 0
 
+    private var openedFilesCache: [String: ProjectOpenedFiles]?
+
     // MARK: - Constants
 
     // 文件名常量与写入逻辑均无并发风险（纯值/纯函数），标记 nonisolated 以支持后台写入。
@@ -97,26 +99,38 @@ public final class ProjectsStore: SuperLog, ObservableObject {
     // MARK: - Opened Files (per project)
 
     /// 加载所有项目打开过的文件记录，key 为标准化后的项目路径。
-    /// 文件不存在或解析失败时返回空字典（不抛错）。
+    /// 优先返回内存缓存，避免每次变更都重新读盘解码。
     public func loadOpenedFiles() -> [String: ProjectOpenedFiles] {
+        if let cached = openedFilesCache {
+            return cached
+        }
         guard FileManager.default.fileExists(atPath: openedFilesFileURL.path),
               let data = try? Data(contentsOf: openedFilesFileURL),
               let openedFiles = try? JSONDecoder().decode([String: ProjectOpenedFiles].self, from: data)
         else {
             return [:]
         }
+        openedFilesCache = openedFiles
         return openedFiles
     }
 
     /// 保存所有项目打开过的文件记录。
-    public func saveOpenedFiles(_ openedFiles: [String: ProjectOpenedFiles]) {
-        try? FileManager.default.createDirectory(
-            at: settingsDirectory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        Self.write(openedFiles, to: openedFilesFileURL)
+    /// 内存缓存立即更新，磁盘写入在后台执行。
+    @discardableResult
+    public func saveOpenedFiles(_ openedFiles: [String: ProjectOpenedFiles]) -> Task<Void, Never> {
+        openedFilesCache = openedFiles
+        let fileURL = openedFilesFileURL
+        let directory = settingsDirectory
+        let task = Task.detached(priority: .utility) {
+            try? FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            Self.write(openedFiles, to: fileURL)
+        }
         openedFilesRevision &+= 1
+        return task
     }
 
     /// 添加项目到列表，返回更新后的列表

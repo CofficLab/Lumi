@@ -16,4 +16,20 @@ enum MemoryToolSupport {
     static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? {
         (arguments[key]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    /// 解析项目域记忆的项目路径：优先工具调用所属会话绑定的项目，其次 UI 当前项目。
+    ///
+    /// 后台回合执行期间用户可能已切到别的项目，只有会话绑定的项目才是这次工具
+    /// 调用真正作用的记忆域（#607）。仅当调用缺少会话上下文（旧入口传 `nil`）时
+    /// 才回退到当前 UI 项目。
+    @MainActor
+    static func resolveProjectPath(
+        conversationProjectPath: String?,
+        capability: MemoryProjectCapability
+    ) -> String? {
+        if let conversationProjectPath, !conversationProjectPath.isEmpty {
+            return conversationProjectPath
+        }
+        return capability.currentProjectPath
+    }
 }

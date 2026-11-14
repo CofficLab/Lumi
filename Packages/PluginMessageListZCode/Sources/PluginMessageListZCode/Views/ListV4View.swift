@@ -3,6 +3,7 @@ import LumiUI
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
+import KitMessageList
 
 /// Message List V4 View (ZCode 风格)
 ///
@@ -77,7 +78,6 @@ struct ListV4View: View {
             if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.surface.opacity(0.6))
             }
             // 「回到底部」按钮：只在脱离跟随且有内容时出现。
             if scrollAnchor.shouldShowBackToBottom(rowCount: projection.turns.count) {
@@ -240,6 +240,7 @@ struct ListV4View: View {
     private var projection: ZCodeTurnProjection {
         projectionStore.snapshot(
             history: viewModel.historyRows,
+            historyRevision: viewModel.historyRevision,
             streaming: viewModel.streamingRow,
             activity: viewModel.activityMessage
         )

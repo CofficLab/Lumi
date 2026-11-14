@@ -219,8 +219,23 @@ public actor MCPServerSession: MCPServerServing {
     public func listTools() async throws -> [MCPToolDescriptor] {
         let client = try connectedClient()
         do {
-            let (tools, _) = try await client.listTools()
-            return tools.map(MCPToolDescriptor.init(tool:))
+            // 工具列表可能分页：必须跟随 nextCursor 逐页取尽，否则第二页起的工具
+            // 会被静默漏注册（#181）。跨页重名按名字去重，保留首次出现的描述。
+            var descriptors: [MCPToolDescriptor] = []
+            var seenNames: Set<String> = []
+            var seenCursors: Set<String> = []
+            var cursor: String?
+            repeat {
+                let (tools, nextCursor) = try await client.listTools(cursor: cursor)
+                for tool in tools where seenNames.insert(tool.name).inserted {
+                    descriptors.append(MCPToolDescriptor(tool: tool))
+                }
+                guard let nextCursor else { break }
+                // 外部服务器可能错误地回吐重复游标；不设防会无限翻页挂起工具发现。
+                guard seenCursors.insert(nextCursor).inserted else { break }
+                cursor = nextCursor
+            } while true
+            return descriptors
         } catch {
             throw MCPClientError.transport(Self.message(error, diagnostics: prepared?.diagnosticOutput?()))
         }
@@ -234,11 +249,18 @@ public actor MCPServerSession: MCPServerServing {
         let mappedArguments = arguments.isEmpty
             ? nil
             : arguments.mapValues { $0.mcpValue() }
-        let (content, isError) = try await client.callTool(
+        // 便利重载只回 (content, isError)，会丢掉 structuredContent；改用完整结果
+        // 重载读取该字段，避免仅返回结构化内容的成功结果被落成空文本（#180）。
+        let context: RequestContext<CallTool.Result> = try await client.callTool(
             name: name,
             arguments: mappedArguments
         )
-        return MCPContentCodec.encode(content, isError: isError ?? false)
+        let result = try await context.value
+        return MCPContentCodec.encode(
+            result.content,
+            structuredContent: result.structuredContent,
+            isError: result.isError ?? false
+        )
     }
 
     // MARK: - Private

@@ -86,8 +86,12 @@ final class GitBranchToolbarViewModel: ObservableObject {
         defer { isBusy = false }
         do {
             try await capability.checkout(branch: branch.name, atPath: path)
+            // await 期间可能已切到别的项目：写回前复核仍是发起操作的项目，否则
+            // nextGeneration() 会让 A 的迟到结果拿到最新代次并覆盖 B 的胶囊（#214）。
+            guard path == projectPath else { return }
             await reload(path: path, generation: nextGeneration())
         } catch {
+            guard path == projectPath else { return }
             errorMessage = Self.describe(error)
             errorCameFromLoad = false
             await reload(path: path, generation: nextGeneration())
@@ -106,8 +110,10 @@ final class GitBranchToolbarViewModel: ObservableObject {
         defer { isBusy = false }
         do {
             try await capability.createBranch(named: trimmed, atPath: path)
+            guard path == projectPath else { return }
             await reload(path: path, generation: nextGeneration())
         } catch {
+            guard path == projectPath else { return }
             errorMessage = Self.describe(error)
             errorCameFromLoad = false
             await reload(path: path, generation: nextGeneration())

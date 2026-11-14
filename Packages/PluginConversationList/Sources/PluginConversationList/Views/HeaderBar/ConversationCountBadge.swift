@@ -33,11 +33,11 @@ struct ConversationCountBadge: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("查看对话统计")
+        .accessibilityHint(pluginLocalization.string("View conversation statistics"))
     }
 
     private var accessibilityLabel: String {
-        count == 1 ? "1 个对话" : "\(count) 个对话"
+        String(format: pluginLocalization.string("%lld conversations"), count)
     }
 }
 

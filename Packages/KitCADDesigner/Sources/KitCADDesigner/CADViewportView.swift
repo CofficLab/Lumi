@@ -21,7 +21,7 @@ struct CADViewportView: View {
                 VStack {
                     Spacer()
                     HStack {
-                        Label("已选中：\(id.prefix(8))", systemImage: "checkmark.circle.fill")
+                        Label(String(format: pluginLocalization.string("Selected: %@"), String(id.prefix(8))), systemImage: "checkmark.circle.fill")
                             .font(.caption)
                             .padding(8)
                             .background(.regularMaterial)

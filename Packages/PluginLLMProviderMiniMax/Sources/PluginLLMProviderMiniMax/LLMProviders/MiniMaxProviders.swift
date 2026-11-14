@@ -4,11 +4,12 @@ import ProviderLLMManager
 
 /// MiniMax 供应商族：三个协议变体共用的模型列表。
 ///
-/// 元数据来源（2026-10 实测国内站 `GET /v1/models` + 官方文档）：
-/// - 上下文窗口：官方文档标注 M3 系列为 1,000,000；M2 系列为 204,800
-///   （与服务端 `max_tokens` 上限报错 `> 196608` 相互印证）。
-/// - 视觉能力：官方文档明确「M2.7、M2.5、M2.1 和 M2 系列仅支持文本与工具
-///   调用相关内容块，不支持图片和视频输入」，仅 M3 / M3.1-Flash 支持图片。
+/// 元数据来源（2026-11 实测国内站 `GET /v1/models` + 官方文档）：
+/// - **可用语言模型只有两个**：`MiniMax-M3.1-Flash` 与 `MiniMax-M3`。
+///   官方《模型列表》把 M2 / M2.1 / M2.5 / M2.7 全系列标为「已下线」，
+///   其中 M2.5 / M2.7 系列**正式下线日为 2026-11-18**。
+/// - 上下文窗口：官方文档标注 M3 系列为 1,000,000。
+/// - 视觉能力：官方文档明确「仅 M3 / M3.1-Flash 支持图片」输入。
 ///
 /// - Important: id 必须与上游 `/v1/models` **完全一致**，否则远程刷新后
 ///   会出现「清单里的旧 id」与「远程的真实 id」两个条目并存。历史清单里的
@@ -16,15 +17,18 @@ import ProviderLLMManager
 ///   已修正。
 enum MiniMaxVendorModels {
     static let all: [LLMModelInfo] = [
-        LLMModelInfo(id: "MiniMax-M3.1-Flash", contextWindowSize: 1_000_000, supportsVision: true),
-        LLMModelInfo(id: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
-        LLMModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2.5", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2.5-highspeed", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2.1", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2.1-highspeed", contextWindowSize: 204_800, supportsVision: false),
-        LLMModelInfo(id: "MiniMax-M2", contextWindowSize: 204_800, supportsVision: false),
+        LLMModelInfo(
+            id: "MiniMax-M3.1-Flash",
+            contextWindowSize: 1_000_000,
+            supportsVision: true,
+            reasoning: MiniMaxModelFamily.reasoningCapability(for: "MiniMax-M3.1-Flash")
+        ),
+        LLMModelInfo(
+            id: "MiniMax-M3",
+            contextWindowSize: 1_000_000,
+            supportsVision: true,
+            reasoning: MiniMaxModelFamily.reasoningCapability(for: "MiniMax-M3")
+        ),
     ]
 }
 
@@ -77,7 +81,18 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
                 models: MiniMaxVendorModels.all,
                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
                 apiFormat: .openAI,
-                apiKeyStorageKey: MiniMaxSharedConstants.apiKeyStorageKey
+                apiKeyStorageKey: MiniMaxSharedConstants.apiKeyStorageKey,
+                // 轻量任务模型：对话标题、上下文摘要等幕后调用用它，
+                // 而不是消耗对话主模型的额度。
+                //
+                // 选 M3.1-Flash 的依据（2026-11 官方定价页）：
+                // 输入 ¥1.00/M、输出 ¥4.00/M、缓存读取 ¥0.10/M，
+                // 而 M3 是 ¥2.10 / ¥8.40 / ¥0.42——便宜约 2.1 倍。
+                //
+                // 注意：M3.1-Flash 的思考深度**不可关闭**，标题这类短请求
+                // 也会带上思考 token；正文与思考内容在响应里是分开解析的
+                // （`content` vs `reasoning_content`），不会污染标题。
+                recommendedUtilityModel: "MiniMax-M3.1-Flash"
             ),
             apiService: apiService
         )
@@ -155,7 +170,7 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
 //                 id: "minimax-tokenplan-anthropic",
 //                 displayName: "MiniMax (Anthropic)",
 //                 description: "MiniMax Token Plan via Anthropic-compatible API",
-//                 defaultModel: "MiniMax-M2.7",
+//                 defaultModel: "MiniMax-M3.1-Flash",
 //                 models: MiniMaxVendorModels.all,
 //                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
 //                 apiFormat: .anthropic,

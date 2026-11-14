@@ -68,6 +68,17 @@ protocol ResumeMessageCapability: AnyObject {
     /// 写入一条消息。
     func insertMessage(_ message: Message, to conversationID: UUID)
 
+    /// 回写 assistant 消息内嵌套工具调用的展示快照。
+    ///
+    /// 只插入独立 `.tool` 消息而不回写嵌套结果，UI 会永远看到
+    /// `result == nil`，工具行与折叠组停在 loading（#634）。
+    func updateToolCallResult(
+        _ result: MessageToolResult,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        in conversationID: UUID
+    )
+
     @discardableResult
     func addObserver(
         _ callback: @escaping (UUID) -> Void
@@ -109,6 +120,21 @@ final class ResumeMessageCapabilityAdapter: ResumeMessageCapability {
 
     func insertMessage(_ message: Message, to conversationID: UUID) {
         messages.insertMessage(message, to: conversationID)
+    }
+
+    func updateToolCallResult(
+        _ result: MessageToolResult,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        in conversationID: UUID
+    ) {
+        messages.updateToolCallResult(
+            result,
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            in: conversationID,
+            authorizationState: nil
+        )
     }
 
     @discardableResult

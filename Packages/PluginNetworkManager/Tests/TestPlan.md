@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 95
+测试文件: 22 个，用例总数: 128
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -44,11 +44,21 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkProviderResponseHeaderTimeout**（1 条）：由 `stalledResponseHeaderTimeoutSurvivesRetryClassification` 锁定兜底超时必须带 `NSURLErrorTimedOut`；改动流式响应头超时或错误归一化时优先跑对应测试文件。
+- **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
+- **NetworkProviderURLErrorCode**（2 条）：由 `requestPreservesURLErrorCode`、`nonStreamingTimeoutRetriesThroughRealRequestPath` 锁定（**回归 #310**）：非流式 `NetworkProvider.request` 捕获传输错误时必须保留 `NSURLErrorDomain` 的底层码（`underlyingCode`），与流式路径一致，否则 `LLMNetworkProviderAdapter` 无法归一化为可重试网络错误，超时/断网/连接丢失退化为 `requestFailed`、重试白名单永不命中。用 URLProtocol 桩驱动真实 `request` 路径（而非直接抛 `HTTPNetworkError` 的桩）。改动 `NetworkProvider.request` 的错误转换时优先跑对应测试文件（串行套件）。
+- **NetworkProviderStreamStatus**（2 条）：由 `streamRejects529BodyWithoutForwardingEvents`、`streaming529RetriesThroughRealStreamPath` 锁定（**回归 #163**）：流式 `NetworkProvider.stream` 收到非 2xx（如 529/5xx）时必须在**转发任何 SSE 事件之前**按状态码拒绝，错误正文只收进 `receivedBody` 供错误上下文、绝不回调 `onChunk`；否则上层 `VendorAPIService` 的 `EventReceipt.hasReceived` 置真，「首个事件前断线才安全重试」的保护拒绝重放，瞬态重试被永久禁止。用 URLProtocol 桩驱动真实 `stream` 路径（返回 529 **且带 SSE 错误正文**，而非直接抛错、不投递 chunk 的桩）。改动 `NetworkProvider.stream` 的状态码检查时机或正文转发时优先跑对应测试文件（串行套件）。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
+- **DownloadFileToolSchemeCase**（2 条）：由 `uppercaseSchemeDownloadsLikeLowercase`、`nonHTTPSchemesAreStillRejected` 锁定 scheme 校验必须大小写不敏感（Foundation 保留 scheme 原样），大写/混合大小写 HTTP/HTTPS 不得被误拒，非 HTTP(S) 协议仍拒绝（**回归 #825**）；改动 `network_download_file` 协议校验时优先跑对应测试文件。
+- **DownloadFileToolPathSafety**（4 条）：由 `escapingOrNestedFilenameIsRejected`、`absoluteFilenameIsRejected`、`existingFileIsNotOverwritten`、`plainFilenameStillDownloads` 锁定（**回归 #448**）：`filename` 标准化后必须仍是保存目录的直接子路径（拒绝 `/`、`..`、嵌套与绝对路径），非法文件名在发起下载前即抛出，已有文件不得被静默覆盖，普通文件名仍正常下载。改动 `network_download_file` 的目标路径拼接或写入逻辑时优先跑对应测试文件。
+- **ProcessMonitorUTF8ChunkBoundary**（3 条）：由 `multibyteNameSplitAcrossChunksSurvives`、`completeASCIIRowInFailedChunkIsNotLost`、`invalidBytesDoNotDiscardValidRows` 锁定 nettop 输出跨 chunk 的多字节 UTF-8 字符必须合并解码，未完成的尾部字节留到下一 chunk，真正非法序列用替换字符兜底，正常进程行绝不丢失（**回归 #824**）；改动 `ProcessMonitorService.processOutput` 解码或缓冲逻辑时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **综合**（25 条）：由 `brotliSSEDecompressionHandlesHighCompressionRatio`、`publicIPRefreshUsesCache`、`publicIPRefreshCanBeForced` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HTTPExchangeStorePaginationOverflow**（3 条）：由 `overflowMatchesSurviveWhenScanEndsBelowWindow`、`overflowMatchesSurviveWhenScanFillsWindow`、`overflowMatchesSurviveWithDomainFilter` 锁定 `loadListPage` 一次扫描产出多于 limit 的匹配时，游标只前进到本页实际返回的最后一条匹配，溢出匹配必须能在后续页取回、不得永久丢弃（**回归 #215**）；改动 HTTP 日志分页游标逻辑时优先跑对应测试文件。
+- **NetworkUsageSnapshot**（4 条）：由 `samplingTickPublishesExactlyOneAtomicSnapshot`、`usageRecordingWritesOneHistoryPointPerSnapshot`、`observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` 等用例锁定（**回归 #216**）：每个 1Hz 采样 tick 只发布一个原子快照，历史边界每个快照只写一个点，订阅时重放的当前值不得再记录；改动 `NetworkService` 采样发布或 `NetworkMetricsObserver` 接线时优先跑 `NetworkUsageSnapshotTests.swift`（串行套件，共享进程级单例）。
+- **HTTPFailedRequestClassification**（2 条）：由 `networkFilterExcludesRecordsThatReceivedAnHTTPStatus`、`summaryAndDetailsDoNotDoubleCountHTTPStatusErrors` 锁定（**回归 #821**）：`get_http_failed_requests` 的 network 类别只保留「未取得 HTTP 状态码」的传输失败（`errorDescription != nil && responseStatusCode == nil`）；已收到 4xx/5xx 响应、同时带 errorDescription 的记录只归入 http_4xx/http_5xx，过滤、汇总与明细都不得把同一条请求重复计为 network。改动该工具的分类谓词时优先跑对应测试文件（串行套件，共享进程级单例）。
+- **HTTPExchangeDetailBody**（4 条）：由 `detailIncludesResponseBodyWhenRequested`、`detailOmitsBodiesWhenNotRequested`、`detailResponseBodyHonorsSameLengthLimitAsRequest`、`detailSkipsNonUTF8ResponseBodyLikeRequest` 锁定（**回归 #311**）：`get_http_exchange_detail` 的 `include_body=true` 必须同时输出请求与响应正文，响应正文沿用与请求相同的规则（UTF-8 解码、截断到 1000 字符、非 UTF-8 跳过），未请求时两者都不输出。改动该工具的正文装配时优先跑对应测试文件（串行套件，共享进程级单例）。
 
 ## 测试用例清单
 
@@ -149,27 +159,89 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 93 | DownloadFileToolExchangeLogging | 成功下载写入一条 HTTP exchange（**回归 #977**） | 注入返回 200 + 正文的下载桩，配置临时 exchange store | 调用 `network_download_file` | 记录 1 条 GET，URL/状态码/响应正文/完成时间/耗时齐全 | P1 | ✅ 已覆盖 | `successfulDownloadIsRecordedInExchangeLog` |
 | 94 | DownloadFileToolExchangeLogging | 网络失败下载写入带错误的 HTTP exchange（**回归 #977**） | 注入抛 `URLError(.timedOut)` 的下载桩 | 调用 `network_download_file` | 仍然记录 1 条 exchange，errorDomain/errorCode 为 NSURLError 超时，状态码为空 | P1 | ✅ 已覆盖 | `failedDownloadIsRecordedWithError` |
 | 95 | DownloadFileToolExchangeLogging | 非 2xx 下载写入带状态码的 HTTP exchange（**回归 #977**） | 注入返回 500 + 正文的下载桩 | 调用 `network_download_file` | 记录 1 条 exchange，状态码 500 且保留响应正文 | P1 | ✅ 已覆盖 | `non2xxDownloadIsRecordedWithStatus` |
+| 96 | NetworkProviderRedirectURL | 重定向后 request 返回最终响应 URL，供相对链接解析（**回归 #192**） | 注入 `/start` 302 → `/docs/index.html` 200 的 URLProtocol 桩 | 调用 `NetworkProvider.request` | 状态码 200，`response.url` 为 `/docs/index.html` 而非原始请求 URL | P1 | ✅ 已覆盖 | `requestReturnsFinalURLAfterRedirect` |
+| 97 | DownloadFileToolSchemeCase | 大写/混合大小写的 HTTP/HTTPS scheme 必须走正常下载（**回归 #825**） | 注入返回 200 + 正文的下载桩与临时 exchange store | 分别以 `HTTPS://`、`HTTP://`、`HtTpS://` 调用 `network_download_file` | 三种地址均下载成功、文件落盘且记录 1 条 exchange，不得在请求前被拒绝 | P0 | ✅ 已覆盖 | `uppercaseSchemeDownloadsLikeLowercase` |
+| 98 | DownloadFileToolSchemeCase | 非 HTTP(S) 协议无论大小写仍被拒绝 | 注入会记录失败的下载桩 | 以 `ftp://`、`FTP://`、`file://` 调用 `network_download_file` | 全部抛出工具错误，不发起下载、不记录 exchange | P1 | ✅ 已覆盖 | `nonHTTPSchemesAreStillRejected` |
+| 99 | ProcessMonitorUTF8ChunkBoundary | 进程名跨 chunk 边界时整行不得丢失（**回归 #824**） | 中文进程名「微信」，第二帧在「微」的首字节后切成两个 chunk | 依次 `processOutput` 两个 chunk + flush | 进程行完整发布，名称为「微信」，速率 1024/2048 | P0 | ✅ 已覆盖 | `multibyteNameSplitAcrossChunksSurvives` |
+| 100 | ProcessMonitorUTF8ChunkBoundary | 解码失败的 chunk 中已完整的 ASCII 行不得被连带丢弃（**回归 #824**） | chunk1 = 完整 Lumi 行 + 「中」首字节，chunk2 = 剩余字节 + 完整行 | 依次 `processOutput` 两个 chunk + flush | Lumi 与「中」两条进程行均发布，速率各自正确 | P0 | ✅ 已覆盖 | `completeASCIIRowInFailedChunkIsNotLost` |
+| 101 | ProcessMonitorUTF8ChunkBoundary | 真正非法的字节不得吞掉同一 chunk 里的有效进程行（**回归 #824**） | chunk 以非法字节 0xFF 开头，后接完整 Lumi 行 | `processOutput` + flush | 有效进程行仍发布，速率 1024/2048 | P0 | ✅ 已覆盖 | `invalidBytesDoNotDiscardValidRows` |
+| 102 | HTTPExchangeStorePaginationOverflow | 扫描不足一窗时溢出匹配仍须可翻页取回，不得永久丢弃（#215） | limit=3（窗口 12），仅 4 条匹配 | drain 所有页 | 首页 hasMore=true，4 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanEndsBelowWindow` |
+| 103 | HTTPExchangeStorePaginationOverflow | 满窗扫描溢出时游标不得越过未返回的匹配（#215） | limit=2（窗口 8），9 条匹配 | drain 所有页 | 9 条全部取回且不重复 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWhenScanFillsWindow` |
+| 104 | HTTPExchangeStorePaginationOverflow | 带域名过滤的溢出翻页须取回全部匹配且不混入他域（#215） | limit=3（窗口 12），12 行中 5 行匹配目标域名 | 按域名 drain 所有页 | 5 条匹配全部取回，无他域记录 | P0 | ✅ 已覆盖 | `overflowMatchesSurviveWithDomainFilter` |
+| 105 | NetworkUsageSnapshot | 每个采样 tick 必须只发布一个原子快照（**回归 #216**） | 启动监控并订阅 `$usageSnapshot` | 连续驱动 3 个采样 tick 并等待完成 | 恰好 3 个快照，末个与四个 legacy 属性一致 | P0 | ✅ 已覆盖 | `samplingTickPublishesExactlyOneAtomicSnapshot` |
+| 106 | NetworkUsageSnapshot | 历史录制边界每个快照必须只写一个点（**回归 #216**） | 受控发布器 + 录制/UI 回调 | 连发 3 个快照 | 3 次记录与 3 次 UI 更新，数值逐一对应 | P0 | ✅ 已覆盖 | `usageRecordingWritesOneHistoryPointPerSnapshot` |
+| 107 | NetworkUsageSnapshot | 快照四字段在录制与 UI 更新中原子到达（**回归 #216**） | 受控发布器 | 发送单个各字段不同的快照 | 录制与 UI 各收到一次该完整四元组，无字段混用 | P1 | ✅ 已覆盖 | `usageRecordingKeepsSnapshotFieldsAtomic` |
+| 108 | NetworkUsageSnapshot | observer 接线只记录新快照，订阅重放值不得再记一点（**回归 #216**） | 同步构造真实 observer（不让出主 actor） | 直接给 service 赋新快照 | 历史恰好新增 1 点，UI 状态同步更新 | P0 | ✅ 已覆盖 | `observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` |
+| 109 | HTTPFailedRequestClassification | network 过滤排除已收到 HTTP 状态码的记录（**回归 #821**） | 临时 store：1 条无状态码传输失败 + 404 + 500（均带 errorDescription） | 以 `error_types=["network"]` 调用 `get_http_failed_requests` | 仅返回传输失败那一条，404/500 不出现，Summary=1、Network Errors=1 | P0 | ✅ 已覆盖 | `networkFilterExcludesRecordsThatReceivedAnHTTPStatus` |
+| 110 | HTTPFailedRequestClassification | 汇总与明细不把 HTTP 状态错误重复计为 network（**回归 #821**） | 同上 3 条记录 | 不带 `error_types` 调用 `get_http_failed_requests` | Summary=3、Network/4xx/5xx 各 1，404 在明细中只出现一次 | P0 | ✅ 已覆盖 | `summaryAndDetailsDoNotDoubleCountHTTPStatusErrors` |
+| 111 | HTTPExchangeDetailBody | include_body=true 必须输出响应正文，不得丢失（**回归 #311**） | 临时 store：一条带请求/响应正文的 200 记录 | 按 id + include_body=true 调用 detail 工具 | 请求与响应正文均出现，响应正文落在 Response 段之后 | P0 | ✅ 已覆盖 | `detailIncludesResponseBodyWhenRequested` |
+| 112 | HTTPExchangeDetailBody | 未请求正文时不输出请求/响应正文（**回归 #311**） | 同上记录 | 分别以 include_body=false 与缺省调用 detail 工具 | 两种情况都不含请求/响应正文 | P1 | ✅ 已覆盖 | `detailOmitsBodiesWhenNotRequested` |
+| 113 | HTTPExchangeDetailBody | 响应正文与请求一样截断到 1000 字符（**回归 #311**） | 响应正文超过 1000 字符，首尾各带标记 | 按 id + include_body=true 调用 detail 工具 | 保留开头标记，超出 1000 的尾部标记不出现 | P0 | ✅ 已覆盖 | `detailResponseBodyHonorsSameLengthLimitAsRequest` |
+| 114 | HTTPExchangeDetailBody | 非 UTF-8 响应正文与请求一样被跳过（**回归 #311**） | 请求/响应正文均为非法 UTF-8 字节 | 按 id + include_body=true 调用 detail 工具 | 输出含 Response 段但无任何正文代码块围栏 | P1 | ✅ 已覆盖 | `detailSkipsNonUTF8ResponseBodyLikeRequest` |
+| 115 | DownloadFileToolPathSafety | 逃出目录或嵌套的文件名被拒绝，且不发起下载（**回归 #448**） | 注入返回 200 + 正文的下载桩与临时 store，保存目录 root/downloads | 分别以 `../victim`、`sub/file.bin`、`..`、`.` 作为 filename 调用 | 均抛出工具错误，store 为空，root/victim 不被写出 | P0 | ✅ 已覆盖 | `escapingOrNestedFilenameIsRejected` |
+| 116 | DownloadFileToolPathSafety | 绝对路径文件名被拒绝（**回归 #448**） | 同上 | filename 传目录外的绝对路径 | 抛出工具错误，不发起下载，目录外文件不被写出 | P0 | ✅ 已覆盖 | `absoluteFilenameIsRejected` |
+| 117 | DownloadFileToolPathSafety | 已有文件不被静默覆盖（**回归 #448**） | 预置 target.bin 内容为 original，下载桩返回 new | 以同名 filename 调用 | 抛出工具错误，target.bin 内容仍为 original，store 为空 | P0 | ✅ 已覆盖 | `existingFileIsNotOverwritten` |
+| 118 | DownloadFileToolPathSafety | 普通文件名仍正常下载，防止过度拒绝（**回归 #448**） | 注入返回 200 + 正文的下载桩 | 以 `ok.bin` 调用 | 下载成功，文件内容为 payload，记录 1 条 exchange | P1 | ✅ 已覆盖 | `plainFilenameStillDownloads` |
+| 119 | Network 图表几何量 | 几何量与逐点计算一致 | 50 个采样点 | 构造 ChartGeometry | downloadValues/uploadValues 与逐点 map 一致 | P1 | ✅ 已覆盖 | `geometryMatchesPointWiseComputation` |
+| 120 | Network 图表几何量 | 最大值取上下行较大值并留 10% 余量 | 上行峰值高于下行 | 构造 ChartGeometry | maxValue 为两者较大值乘 1.1 且不低于下限 | P1 | ✅ 已覆盖 | `maxValueUsesBothSeries` |
+| 121 | Network 图表几何量 | 最大值有最小刻度下限 | 极小速率点 | 构造 ChartGeometry | maxValue 为 1024*10 下限 | P2 | ✅ 已覆盖 | `maxValueHasFloor` |
+| 122 | Network 图表几何量 | 空数据返回空几何量 | 空点数组 | 构造 ChartGeometry | 上下行值为空，timeFractions 为 nil | P2 | ✅ 已覆盖 | `emptyPointsProduceEmptyGeometry` |
+| 123 | Network 图表几何量 | 时间位置与静态 timeFractions 一致 | 20 个采样点 | 构造 ChartGeometry | geometry.timeFractions 与视图静态 helper 一致 | P1 | ✅ 已覆盖 | `timeFractionsMatchStaticHelper` |
+| 124 | Network 图表几何量 | 裁剪结果按范围缓存，缓冲变化后必须失效 | 应用缓冲后取 hour1 两次，再追加新点 | 调用 data(for:) | 缓存命中条数一致；缓冲更新后返回新条数 | P0 | ✅ 已覆盖 | `rangeCacheInvalidatesOnBufferChange` |
+| 125 | NetworkProvider URLError 码 | 非流式 request 必须保留 URLError 底层码（**回归 #310**） | URLProtocol 桩按路径抛 timedOut/offline/connectionLost | 调用真实 NetworkProvider.request | 抛出的 HTTPNetworkError.underlyingCode 等于对应 NSURLError 码 | P0 | ✅ 已覆盖 | `requestPreservesURLErrorCode` |
+| 126 | NetworkProvider URLError 码 | 非流式超时经真实 request 路径触发重试至上限（**回归 #310**） | 计数桩始终超时 | 经 LLMNetworkProviderAdapter+VendorAPIService 发送 | 请求计数为 3（maxAttempts），而非首次即止 | P0 | ✅ 已覆盖 | `nonStreamingTimeoutRetriesThroughRealRequestPath` |
+| 127 | NetworkProviderStreamStatus | 流式 529 带错误正文时 onChunk 一次都不调用且按状态码抛错（**回归 #163**） | URLProtocol 桩返回 529 + SSE 错误正文 | 调用真实 NetworkProvider.stream | onChunk 计数为 0，抛出 HTTPNetworkError.statusCode==529 | P0 | ✅ 已覆盖 | `streamRejects529BodyWithoutForwardingEvents` |
+| 128 | NetworkProviderStreamStatus | 流式 529 经真实 stream 路径触发重试至上限且不转发事件（**回归 #163**） | 计数桩返回 529 + SSE 错误正文 | 经 LLMNetworkProviderAdapter+VendorAPIService 流式发送 | 请求计数为 3（maxAttempts），onEvent 计数为 0 | P0 | ✅ 已覆盖 | `streaming529RetriesThroughRealStreamPath` |
 
-> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **128 条场景**已在本包 `swift test` 中实跑通过。
+> ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
+> （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
+> `verify-testplan.py` 的双向方法核对恢复绿色。
+>
+> **鉴别力验证（#448）**：本轮用三处独立变异确认用例不是「恒绿」——
+> （1）删除标准化包含性守卫后，`../victim` 真的写出目录外文件、
+> `sub/file.bin` 与绝对路径都发起了下载，ID 115/116 失败（5 issues）；
+> （2）把包含性比较 `==` 改成 `!=` 后，普通文件名 `ok.bin` 被误拒，
+> ID 118 失败（6 issues）；
+> （3）删除「不覆盖已有文件」守卫后，`target.bin` 被新内容覆盖，
+> ID 117 失败（3 issues）。三处变异均已还原。
+>
+> **鉴别力验证（#310）**：对 `NetworkProvider.request` 的错误转换施加三处独立变异，
+> 逐一跑 `swift test --filter NetworkProviderURLErrorCodeTests` 确认 RED 再还原——
+> （1）删除 `underlyingCode` 字段（退回仅 description）→ ID 125 三个码全部 nil、
+> ID 126 请求计数为 1（首次即止，不重试），4 issues；
+> （2）把域判断 `== NSURLErrorDomain` 改成 `== "NotNSURLErrorDomain"`（恒不命中）→
+> 底层码恒 nil，ID 125/126 同样失败，4 issues；
+> （3）域判断正确但把码值写成 `0`（`? 0 : nil`）→ ID 125 码值不符、
+> ID 126 因 0 不在可重试白名单仍只请求 1 次，4 issues。三处变异均已还原。
+>
+> **鉴别力验证（#163）**：对 `NetworkProvider.stream` 的状态码拒绝时机施加三处独立变异，
+> 逐一跑 `swift test --filter NetworkProviderStreamStatusTests` 确认 RED 再还原——
+> （1）在早期拒绝分支里把错误正文 `onChunk(receivedBody)` 转发出去 → ID 127 的 onChunk
+> 计数为 1、ID 128 因 EventReceipt 置真只请求 1 次且 onEvent 计数为 1，3 issues；
+> （2）删除早期分支的 `throw`（只收正文不拒绝）→ ID 127 未抛错（Issue recorded），1 issue
+> （ID 128 仍绿，因适配层 onResponse 元数据后置检查兜底抛 529，证明 ID 127 守的是传输层本身）；
+> （3）整体退回原始顺序（删早期检查、恢复方法末尾检查）→ 错误正文经正常 SSE 路径先转发、
+> 末尾才抛 529，ID 127 onChunk 计数为 1、ID 128 只请求 1 次，3 issues。三处变异均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 34 / 34
-- P1: 已覆盖 55 / 55
-- P2: 已覆盖 6 / 6
-- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 56 / 56
+- P1: 已覆盖 64 / 64
+- P2: 已覆盖 8 / 8
+- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（55 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（56 条）
+- **P1**: 其余功能性用例（64 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

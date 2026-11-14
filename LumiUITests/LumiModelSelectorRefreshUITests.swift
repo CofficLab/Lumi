@@ -4,8 +4,9 @@ import AppKit
 /// 模型选择器「刷新模型列表」UI 测试。
 ///
 /// 确定性：App 以 `--lumi-ui-testing` 启动时，MiniMax 插件装配桩网络，
-/// 刷新固定返回 9 个模型（与上游实测一致），不依赖真实网络与
-/// 用户 API Key（范式参照 Cisum 的 `--cisum-ui-testing` 夹具注入）。
+/// 刷新固定返回 3 个模型（上游在售 2 个 + 上游独有的 M3.5），
+/// 不依赖真实网络与用户 API Key（范式参照 Cisum 的 `--cisum-ui-testing`
+/// 夹具注入）。
 ///
 /// 根因：App 实际使用的 `CustomLLMManager`（PluginLLMManager 插件替换了
 /// 默认的 `DefaultLLMManager`）漏实现 `notifyModelsRefreshed`，调用落到
@@ -14,21 +15,21 @@ import AppKit
 /// 包内单元测试直接使用 `DefaultLLMManager`（实现正确），无法暴露该问题，
 /// 只有驱动真实 App 装配的 UI 测试能复现。
 ///
-/// - Note: 静态清单补全 M2.1 系列后，「刷新前 6 个 → 刷新后 9 个」这个计数差
-///   已不复存在（清单与上游同为 9 个）。因此改用「上游有、清单没有」的
-///   `MiniMax-M2.8` 作为刷新生效的信号：它出现在列表里，唯一可能就是
+/// - Note: 静态清单 2026-11 起收敛为在售的 2 个模型（M2 全系列已被官方
+///   下线），刷新前 2 个 → 刷新后 3 个。因此改用「上游有、清单没有」的
+///   `MiniMax-M3.5` 作为刷新生效的信号：它出现在列表里，唯一可能就是
 ///   `.modelsRefreshed` 已广播、box 快照已刷新。
 final class LumiModelSelectorRefreshUITests: LumiUITestCase {
     private enum Identifiers {
         static let popover = "lumi.model-selector.popover"
         static let miniMaxRow = "lumi.model-selector.provider.minimax-tokenplan"
-        static let newModelRow = "lumi.model-selector.model.MiniMax-M2.8"
+        static let newModelRow = "lumi.model-selector.model.MiniMax-M3.5"
     }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
         launchLumi(extraArguments: [
-            // MiniMax 刷新走桩网络（固定 9 模型 + 上游独有 M2.8），见 MiniMaxUITestingSupport。
+            // MiniMax 刷新走桩网络（固定 3 模型），见 MiniMaxUITestingSupport。
             "--lumi-ui-testing",
             // 隔离存储：否则本地 models.json 的真实条目会污染模型计数断言。
             "--lumi-ui-testing-isolated-storage",
@@ -41,7 +42,7 @@ final class LumiModelSelectorRefreshUITests: LumiUITestCase {
         try super.tearDownWithError()
     }
 
-    /// 等待 MiniMax 供应商行的聚合无障碍标签包含指定片段（如 "6 models"）。
+    /// 等待 MiniMax 供应商行的聚合无障碍标签包含指定片段（如 "2 models"）。
     @discardableResult
     private func waitForMiniMaxRowLabel(containing fragment: String, timeout: TimeInterval) -> Bool {
         let row = element(identifier: Identifiers.miniMaxRow)
@@ -76,10 +77,10 @@ final class LumiModelSelectorRefreshUITests: LumiUITestCase {
         XCTAssertTrue(miniMaxRow.waitForExistence(timeout: 5), "云端供应商列表缺少 MiniMax")
         miniMaxRow.click()
 
-        // 刷新前：静态清单 9 个模型（桩响应多一个上游独有的 M2.8）。
+        // 刷新前：静态清单 2 个模型（桩响应多一个上游独有的 M3.5）。
         XCTAssertTrue(
-            waitForMiniMaxRowLabel(containing: "9 models", timeout: 5),
-            "刷新前 MiniMax 供应商行应显示 9 models"
+            waitForMiniMaxRowLabel(containing: "2 models", timeout: 5),
+            "刷新前 MiniMax 供应商行应显示 2 models"
         )
 
         // 点击右侧模型列表顶部的刷新按钮。
@@ -87,34 +88,26 @@ final class LumiModelSelectorRefreshUITests: LumiUITestCase {
         XCTAssertTrue(refreshButton.waitForExistence(timeout: 5), "模型列表缺少刷新按钮")
         refreshButton.click()
 
-        // 核心断言：刷新成功后模型数必须增加（9 → 10）。
+        // 核心断言：刷新成功后模型数必须增加（2 → 3）。
         // 缺陷版本中刷新链路成功落盘但 .modelsRefreshed 事件未广播，
-        // box 快照不刷新，界面一直停留在 9 models，本断言超时失败。
+        // box 快照不刷新，界面一直停留在 2 models，本断言超时失败。
         XCTAssertTrue(
-            waitForMiniMaxRowLabel(containing: "10 models", timeout: 20),
-            "刷新后 MiniMax 供应商行应显示 10 models，实际仍为旧值"
+            waitForMiniMaxRowLabel(containing: "3 models", timeout: 20),
+            "刷新后 MiniMax 供应商行应显示 3 models，实际仍为旧值"
         )
         XCTAssertFalse(
-            waitForMiniMaxRowLabel(containing: "9 models", timeout: 1),
-            "刷新后不应再显示 9 models"
+            waitForMiniMaxRowLabel(containing: "2 models", timeout: 1),
+            "刷新后不应再显示 2 models"
         )
 
-        // 远程新增模型应出现在右侧模型列表：模型数达到阈值（>8）后出现搜索框，
-        // 用搜索过滤避免 LazyVStack 懒加载行未物化。
-        let searchField = app.textFields.matching(
-            NSPredicate(format: "placeholderValue == %@", "Search models")
-        ).firstMatch
-        XCTAssertTrue(searchField.waitForExistence(timeout: 5), "模型列表缺少搜索框（模型数达到阈值后应显示）")
-        // 搜索框只需「有文本」作为前置条件，走 `typeText`（模拟用户打字），
-        // 不走剪贴板。本类继承的是 XCTestCase 而非 LumiUITestCase、不经
-        // `launchLumi`，因此切输入源由本类自己在 setUp / tearDown 里做。
-        searchField.click()
-        searchField.typeText("MiniMax-M2.8")
-
+        // 远程新增模型应出现在右侧模型列表。
+        //
+        // - Note: 不再依赖搜索框过滤。模型数 3 低于搜索框阈值（8），
+        //   搜索框不会出现；且 3 行远小于列表可视高度，一屏即可全部物化。
         let newModelRow = element(identifier: Identifiers.newModelRow)
         XCTAssertTrue(
             newModelRow.waitForExistence(timeout: 5),
-            "远程新增模型 MiniMax-M2.8 未出现在模型列表"
+            "远程新增模型 MiniMax-M3.5 未出现在模型列表"
         )
     }
 }

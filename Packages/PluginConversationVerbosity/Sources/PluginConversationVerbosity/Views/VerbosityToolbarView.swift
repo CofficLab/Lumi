@@ -47,7 +47,7 @@ private struct VerbosityPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(pluginLocalization.string("Response Detail"))
+            Text(pluginLocalization.string("Message List Style"))
                 .font(.system(size: 12, weight: .semibold))
 
             ForEach(ResponseVerbosity.allCases) { level in
@@ -81,7 +81,7 @@ private struct VerbosityRow: View {
                         .font(.system(size: 12, weight: .semibold))
                     Text(level.localizedDisplayName())
                         .font(.system(size: 11))
-                    if level == .brief || level == .zcode || level == .chatGPT {
+                    if level == .brief || level == .zcode || level == .chatGPT || level == .standardNoHeader {
                         BetaBadgeView()
                     }
                 }

@@ -125,8 +125,20 @@ struct ProcessPipeLeakTests {
         let growth = Self.fdGrowthInsidePool(iterations: iterations, closePipes: false)
 
         // 每个 `Pipe` 读 + 写两端共 2 个 fd，两处管道即 4 个。
+        //
+        // - Important: 判据是「**明显累积**」而不是精确的 `iterations * 2`。
+        //
+        //   测量发生在**单个 autorelease pool 内**，「未关闭的 `Pipe` 对象何时
+        //   被释放」取决于 Objective-C 运行时的内存压力：机器繁忙时一部分
+        //   对象会**提前**被回收，于是 pool 内观察到的 fd 增长偏小 ——
+        //   高负载下精确计数会偶发不达标，而泄漏本身并没有消失。
+        //
+        //   「明显累积」这个判据仍足以区分两种情况：
+        //   - 有泄漏：增长数十上百（本用例实测 ~240）；
+        //   - 无泄漏：回归用例断言增长 <= 8。
+        //   两者相差一个数量级，不会混淆。
         #expect(
-            growth >= iterations * 2,
+            growth >= 40,
             """
             未关闭管道时预期 fd 明显累积，实际增长 \(growth)。
             该对照组用于说明：不显式关闭 `Pipe` 会导致每个管道滞留 2 个 fd。

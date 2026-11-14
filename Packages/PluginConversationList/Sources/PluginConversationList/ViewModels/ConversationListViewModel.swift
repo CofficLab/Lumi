@@ -42,6 +42,9 @@ final class ConversationListViewModel: ObservableObject {
 
     let scope: Scope
 
+    /// 文案解析缝隙：默认走插件目录；测试可注入显式 locale 以脱离机器语言。
+    private let localizedString: (String) -> String
+
     private let context: ConversationListContext
     private let attentionStore: ConversationAttentionStore
     private let sortStabilizer: ConversationSortStabilizer
@@ -55,12 +58,14 @@ final class ConversationListViewModel: ObservableObject {
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer,
-        scope: Scope
+        scope: Scope,
+        localizedString: @escaping (String) -> String = { pluginLocalization.string($0) }
     ) {
         self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
         self.scope = scope
+        self.localizedString = localizedString
         self.selectedConversationID = context.selectedConversationID
         self.immediateSelectionID = context.selectedConversationID
         self.resolvedProjectPath = effectiveProjectPath
@@ -104,9 +109,9 @@ final class ConversationListViewModel: ObservableObject {
         switch scope {
         case .currentProject:
             let projectName = context.currentProjectName ?? "—"
-            return String(format: "项目对话 (%@)", projectName)
+            return String(format: localizedString("Project conversations (%@)"), projectName)
         case .all:
-            return "所有项目的对话"
+            return localizedString("Conversations from all projects")
         }
     }
 
@@ -155,6 +160,19 @@ final class ConversationListViewModel: ObservableObject {
 
     func deleteConversation(id: UUID) {
         context.conversations.deleteConversation(id: id)
+    }
+
+    /// 停止指定会话正在运行 / 挂起的回合。
+    ///
+    /// - Important: 停的是**被右键的那一条**对话，不是当前选中对话。
+    ///   用户浏览历史会话时右键历史行，停的必须是那个历史会话。
+    func stopConversation(id: UUID) {
+        context.stopCapability.stop(conversationID: id)
+    }
+
+    /// 指定会话当前是否可以被停止（回合 running / suspended）。
+    func canStopConversation(id: UUID) -> Bool {
+        context.stopCapability.canStop(conversationID: id)
     }
 
     // MARK: - 数据加载

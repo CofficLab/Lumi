@@ -58,7 +58,10 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
             let failedRecords = store.scanHistory { record in
                 guard record.startedAt >= cutoff else { return false }
 
-                let hasNetworkError = record.errorDescription != nil
+                // network 仅指「未取得 HTTP 状态码」的传输失败；已收到 4xx/5xx
+                // 响应的记录虽带 errorDescription，仍只归入 http_4xx/http_5xx，
+                // 否则同一条请求会在 Network 与 HTTP 错误两处重复计数（#821）。
+                let hasNetworkError = record.errorDescription != nil && record.responseStatusCode == nil
                 let statusCode = record.responseStatusCode ?? 0
                 let hasHTTPError = statusCode >= 400
 
@@ -80,7 +83,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 return "No failed requests found."
             }
 
-            let networkErrors = failedRecords.filter { $0.errorDescription != nil }
+            let networkErrors = failedRecords.filter { $0.errorDescription != nil && $0.responseStatusCode == nil }
             let http4xxErrors = failedRecords.filter { (($0.responseStatusCode ?? 0) >= 400 && ($0.responseStatusCode ?? 0) < 500) }
             let http5xxErrors = failedRecords.filter { ($0.responseStatusCode ?? 0) >= 500 }
 
@@ -95,7 +98,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 sections.append("- Showing first \(results.count) of \(failedRecords.count) detail records (limit: \(limit))")
             }
 
-            let detailNetworkErrors = results.filter { $0.errorDescription != nil }
+            let detailNetworkErrors = results.filter { $0.errorDescription != nil && $0.responseStatusCode == nil }
             let detailHTTP4xx = results.filter { (($0.responseStatusCode ?? 0) >= 400 && ($0.responseStatusCode ?? 0) < 500) }
             let detailHTTP5xx = results.filter { ($0.responseStatusCode ?? 0) >= 500 }
 

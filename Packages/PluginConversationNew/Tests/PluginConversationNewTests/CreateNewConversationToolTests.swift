@@ -123,6 +123,56 @@ struct CreateNewConversationToolTests {
         #expect(created.projectPath == "/tmp/demo")
     }
 
+    // MARK: - 会话归属（#331）
+
+    private func makeContext(conversationID: UUID) -> ToolExecutionContext {
+        ToolExecutionContext(jobID: "job-\(conversationID.uuidString)", conversationID: conversationID)
+    }
+
+    @Test("新对话继承发起调用的对话 A 的项目与模型，而非 UI 当前对话 B（回归 #331）")
+    func createInheritsCallingConversationProjectAndModel() async throws {
+        let calling = UUID()
+        let current = UUID()
+        let capability = MockNewChatCapability()
+        capability.bindings[calling] = (projectPath: "/tmp/A", modelID: "model-A")
+        // 执行时 UI 已切到 B：current* 反映 B，绝不能用它创建新对话。
+        capability.restoreSelection(to: current)
+        capability.projectPath = "/tmp/B"
+        capability.modelID = "model-B"
+        let tool = CreateNewConversationTool(conversations: capability)
+
+        _ = try await tool.executeResult(
+            context: makeContext(conversationID: calling),
+            arguments: ["task": ToolArgument("Unrelated background task")]
+        )
+
+        let created = try #require(capability.createdConversations.first)
+        #expect(created.projectPath == "/tmp/A")
+        #expect(created.modelID == "model-A")
+        #expect(capability.selectedConversationID == current, "回合内不得改变 UI 选中态")
+    }
+
+    @Test("发起调用的对话未绑定项目/模型时不得泄漏 UI 当前对话的归属（回归 #331）")
+    func callingConversationUnboundDoesNotLeakCurrent() async throws {
+        let calling = UUID()
+        let current = UUID()
+        let capability = MockNewChatCapability()
+        capability.bindings[calling] = (projectPath: nil, modelID: nil)
+        capability.restoreSelection(to: current)
+        capability.projectPath = "/tmp/B"
+        capability.modelID = "model-B"
+        let tool = CreateNewConversationTool(conversations: capability)
+
+        _ = try await tool.executeResult(
+            context: makeContext(conversationID: calling),
+            arguments: ["task": ToolArgument("Unrelated background task")]
+        )
+
+        let created = try #require(capability.createdConversations.first)
+        #expect(created.projectPath == nil)
+        #expect(created.modelID == nil)
+    }
+
     // MARK: - 标题推导
 
     @Test(

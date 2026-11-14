@@ -336,7 +336,7 @@ private final class FreshInstallHarness {
 
         // 等空态插件的首次异步判定落地（它读的是真实 SwiftData）。
         // 在实例上调用：`settleUntilSettled` 依赖实例状态，故不能走 `Self.`。
-        await harness.settleUntilSettled()
+        await harness.settleUntilEmptyStateOwnsSlot()
         return harness
     }
 
@@ -353,11 +353,12 @@ private final class FreshInstallHarness {
             modelName: nil
         )
         _conversationID = id
+        print("DIAG-AFTERCREATE selected=\(conversations.selectedConversationID?.uuidString.prefix(8) ?? "nil")")
         messages.insertMessage(
             Message(conversationID: id, role: .user, content: text),
             to: id
         )
-        await settleUntilSettled()
+        await settleUntilMessageListOwnsSlot()
     }
 
     /// 给真实挂钟时间跑完异步判定。
@@ -367,27 +368,58 @@ private final class FreshInstallHarness {
     ///   对话列表另有 80ms 去抖。固定 sleep 在单独跑时够用、在整包并发时
     ///   不够（表现为 `清空消息` 用例偶发失败），且失败点会随机器负载漂移，
     ///   极易被误判成产品缺陷。因此统一改用「等目标状态真的出现」。
-    private func settleUntilSettled() async {
-        // 空态插件的判定无对外完成信号，只能等它不再处于「判定中」：
-        // `.evaluating` 时 `isActive` 恒为 false，槽位会被上一位渲染者占住。
-        _ = await waitUntil { !emptyPluginIsEvaluating }
-        // 再给去抖窗口一点余量：对话列表的 80ms debounce 尚未启动时
-        // 上面的条件可能已满足，但 rail 的写入还没发生。
+    /// 等**全新安装**的空态判定收敛（空态占据 message-list 槽位）。
+    ///
+    /// - Important: 判据必须是「空态活跃」—— 此时没有任何会话，空态占据
+    ///   槽位才是正确终态。
+    private func settleUntilEmptyStateOwnsSlot() async {
+        _ = await waitUntil { emptyPluginOwnsSlot }
+        await settleDebounceMargin()
+    }
+
+    /// 等**写入首条消息后**的判定收敛（空态让位，消息列表接管槽位）。
+    ///
+    /// - Important: 判据与 ``settleUntilEmptyStateOwnsSlot()`` 相反：
+    ///   有消息就不该显示空态，空态此时**正确地**不活跃。
+    ///
+    //   原先两个场景共用一个方法，等的都是「空态活跃」—— 在写入消息之后
+    //   那个条件**永远不会成立**，于是每次都走满整个超时（实测白等 15s），
+    //   还把「等了一个不可能成立的条件」伪装成「判定慢」。
+    private func settleUntilMessageListOwnsSlot() async {
+        _ = await waitUntil { messageListOwnsSlot }
+        await settleDebounceMargin()
+    }
+
+    /// 给去抖窗口一点余量：对话列表的 80ms debounce 尚未启动时，
+    /// 上面的条件可能已满足，但 rail 的写入还没发生。
+    private func settleDebounceMargin() async {
         try? await Task.sleep(for: .milliseconds(120))
     }
 
-    /// 空态插件当前是否处于「判定中」。
-    ///
-    /// 用渲染结果反推而非读取内部状态：判定在途时空态让位给消息列表，
-    /// 因此「空态重新占据槽位」等价于判定已收敛为 `.resolved(true)`。
-    /// 这条性质本身也是被测对象之一，不宜作为前提依赖。
-    private var emptyPluginIsEvaluating: Bool {
-        !chat.items
+    /// 空态插件是否正占据 message-list 槽位。
+    private var emptyPluginOwnsSlot: Bool {
+        chat.items
             .filter { $0.placement == .stack }
             .contains { $0.id == emptyPluginID && $0.isActive() }
     }
 
-    func waitUntil(timeout: Duration = .seconds(5), condition: @MainActor () -> Bool) async -> Bool {
+    /// 消息列表插件是否已接管 message-list 槽位。
+    ///
+    /// 用渲染结果反推而非读取内部状态：判定在途时空态让位给消息列表，
+    /// 因此「消息列表接管槽位」等价于空态判定已收敛。
+    /// 这条性质本身也是被测对象之一，不宜作为前提依赖。
+    private var messageListOwnsSlot: Bool {
+        chat.items
+            .filter { $0.placement == .stack }
+            .contains { $0.id == standardPluginID && $0.isActive() }
+    }
+
+    /// 轮询直到条件成立。
+    ///
+    /// - Important: 超时给到 15s。默认 5s 在高负载下（CI 上多个包同时跑）
+    ///   偶尔不够 —— 空态插件的重判要等数据库可见性，高负载下会更慢 ——
+    ///   于是**偶发**失败。上限只影响失败路径。
+    func waitUntil(timeout: Duration = .seconds(15), condition: @MainActor () -> Bool) async -> Bool {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: timeout)
         while clock.now < deadline {
@@ -403,7 +435,7 @@ private final class FreshInstallHarness {
     /// 同步闭包里会让条件变成「尚未开始求值的 Task」，恒为假 —— 那正是此前
     /// 「清空消息」用例在整包并发下偶发失败的根因。
     func waitUntilAsync(
-        timeout: Duration = .seconds(5),
+        timeout: Duration = .seconds(15),
         condition: @MainActor () async -> Bool
     ) async -> Bool {
         let clock = ContinuousClock()

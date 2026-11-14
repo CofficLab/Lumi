@@ -35,6 +35,12 @@
             "value" : "改动"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改動"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -59,6 +65,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "提交"
@@ -93,6 +105,12 @@
             "value" : "个文件"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個檔案"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -120,6 +138,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Git 变更"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Git 變更"
           }
         },
         "zh-HK" : {
@@ -151,6 +175,12 @@
             "value" : "无改动"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無改動"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -178,6 +208,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无提交"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無提交"
           }
         },
         "zh-HK" : {
@@ -209,6 +245,12 @@
             "value" : "在聊天工具栏快速查看提交列表与工作区改动。"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天工具列快速檢視提交列表與工作區改動。"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -236,6 +278,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刷新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理"
           }
         },
         "zh-HK" : {
@@ -270,6 +318,12 @@
             "value" : "工作区干净。"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作區乾淨。"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,6 +351,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仓库尚无提交。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倉庫尚無提交。"
           }
         },
         "zh-HK" : {

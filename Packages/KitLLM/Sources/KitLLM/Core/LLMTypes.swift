@@ -104,11 +104,26 @@ public struct LLMFunctionSchema: @unchecked Sendable, Equatable {
     public let name: String
     public let description: String
     public let parameters: [String: Any]
+    /// `parameters` 的规范化 JSON 文本（键序稳定）。
+    ///
+    /// 仅供**估算**使用：调用方若已经持有规范化文本（ MCP 工具在注册时
+    /// 就算好了），带上它可以省掉一次「序列化回去」的往返——那一步的成本
+    /// 与解析本身相当（Issue #1275）。
+    ///
+    /// 为 `nil` 时调用方应回退到自行序列化；两种路径产出的字节数一致，
+    /// 因此估算结果不受影响。
+    public let normalizedParametersJSON: String?
 
-    public init(name: String, description: String, parameters: [String: Any]) {
+    public init(
+        name: String,
+        description: String,
+        parameters: [String: Any],
+        normalizedParametersJSON: String? = nil
+    ) {
         self.name = name
         self.description = description
         self.parameters = parameters
+        self.normalizedParametersJSON = normalizedParametersJSON
     }
 
     public static func == (lhs: LLMFunctionSchema, rhs: LLMFunctionSchema) -> Bool {
@@ -132,6 +147,13 @@ public struct LLMRequest: Sendable {
     public let model: String?
     public let tools: [LLMFunctionSchema]?
     public let reasoningEffort: String?
+    /// 用户显式关闭了思考。
+    ///
+    /// 必须与「未指定档位」区分开：档位为空时请求不下发任何推理参数，服务端
+    /// 会按自身默认档位思考（MiniMax-M3.1-Flash 即为 `max`）；而「用户关了
+    /// 思考」需要按下发模型的实际能力映射——能关就下发关闭参数，不能关就
+    /// 降档，否则用户选了「关闭」反而拿到最高档位的思考。
+    public let reasoningOff: Bool
 
     public init(
         conversationID: UUID = UUID(),
@@ -140,7 +162,8 @@ public struct LLMRequest: Sendable {
         messages: [LLMMessage],
         model: String? = nil,
         tools: [LLMFunctionSchema]? = nil,
-        reasoningEffort: String? = nil
+        reasoningEffort: String? = nil,
+        reasoningOff: Bool = false
     ) {
         self.conversationID = conversationID
         self.providerID = providerID
@@ -149,6 +172,7 @@ public struct LLMRequest: Sendable {
         self.model = model
         self.tools = tools
         self.reasoningEffort = reasoningEffort
+        self.reasoningOff = reasoningOff
     }
 }
 

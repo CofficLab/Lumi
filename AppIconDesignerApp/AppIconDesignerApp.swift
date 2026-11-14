@@ -48,7 +48,7 @@ struct AppIconDesignerApp: App {
 
         // 与 BookletMaker 使用相同的普通 Window Scene，避免 macOS Settings 容器
         // 额外注入边距/安全区域，导致共享设置视图被裁切。
-        Window("设置", id: "app-icon-designer.settings") {
+        Window("Settings", id: "app-icon-designer.settings") {
             settingsView
         }
         .windowStyle(.hiddenTitleBar)

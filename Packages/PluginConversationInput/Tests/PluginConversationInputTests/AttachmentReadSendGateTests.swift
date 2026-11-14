@@ -121,4 +121,69 @@ struct AttachmentReadSendGateTests {
         }
         #expect(capability.pendingAttachmentReadCount == 0)
     }
+
+    @Test("附件读取失败时中止延迟发送，保留草稿与错误提示（#1174）")
+    func failedAttachmentReadAbortsDeferredSend() async throws {
+        let capability = SendActionBarTestCapability()
+        capability.text = "draft with file"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 已选中附件、还在读取的窗口内按下 Send。
+        capability.beginAttachmentRead()
+        viewModel.send()
+
+        await awaitSettle()
+        #expect(capability.commits.isEmpty)
+        #expect(capability.backgroundCommits.isEmpty)
+
+        // 读取失败：attachFile 的 catch 登记失败并写入错误提示，随后结束读取。
+        capability.recordAttachmentReadFailure()
+        capability.errorMessage = "Could not read file"
+        capability.endAttachmentRead()
+
+        // 失败分支会 refresh() 把错误提示回灌到 ViewModel，以此作为中止信号。
+        await waitUntil("读取失败后未中止发送") { viewModel.errorMessage != nil }
+
+        // 必须中止本次发送，而不是悄悄降级成纯文本提交。
+        #expect(capability.commits.isEmpty)
+        #expect(capability.backgroundCommits.isEmpty)
+        #expect(capability.startedCommits.isEmpty)
+        // 草稿与错误提示原样保留，用户可自行决定重试或去掉附件。
+        #expect(capability.text == "draft with file")
+        #expect(viewModel.text == "draft with file")
+        #expect(viewModel.errorMessage == "Could not read file")
+        #expect(!capability.isCommittingDraft)
+        #expect(viewModel.canSend)
+    }
+
+    @Test("发送按钮路径同样在附件读取失败时中止并保留草稿（#1174）")
+    func failedAttachmentReadAbortsDeferredSendFromButton() async throws {
+        let capability = SendActionBarTestCapability()
+        capability.text = "draft with file"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        capability.beginAttachmentRead()
+        viewModel.send()
+
+        await awaitSettle()
+        #expect(capability.commits.isEmpty)
+        #expect(capability.backgroundCommits.isEmpty)
+
+        capability.recordAttachmentReadFailure()
+        capability.errorMessage = "Could not read file"
+        capability.endAttachmentRead()
+
+        await awaitSettle()
+        // 读取失败必须中止发送，不提交任何消息。
+        #expect(capability.commits.isEmpty)
+        #expect(capability.backgroundCommits.isEmpty)
+        #expect(capability.startedCommits.isEmpty)
+        // 草稿与错误提示保留，按钮仍可发送（用户可去掉附件后重试）。
+        #expect(capability.text == "draft with file")
+        #expect(capability.errorMessage == "Could not read file")
+        #expect(!capability.isCommittingDraft)
+        #expect(viewModel.state.canSend)
+    }
 }

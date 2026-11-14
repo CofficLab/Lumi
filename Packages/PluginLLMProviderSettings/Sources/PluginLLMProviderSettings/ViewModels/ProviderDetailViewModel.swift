@@ -58,8 +58,19 @@ final class ProviderDetailViewModel: ObservableObject {
         downloadCapability = capability.makeModelDownloadCapability(for: providerID)
         isCustomProvider = capability.isCustomProvider(id: providerID)
         loadAPIKey()
-        customCancellable = capability.customProviderConfigurationsPublisher.sink { [weak self] _ in
-            self?.isCustomProvider = self?.capability.isCustomProvider(id: providerID) ?? false
+        customCancellable = capability.customProviderConfigurationsPublisher.sink { [weak self] configurations in
+            guard let self else { return }
+            // 保存/删除自定义供应商会替换同 ID 的 Provider 并广播配置变化；详情按 ID
+            // 永久缓存，必须重读名称/描述/站点/模型，否则永久停在初始化快照（#335）。
+            let info = self.capability.provider(id: self.providerID)?.providerInfo
+            self.displayName = info?.displayName ?? self.providerID
+            self.providerDescription = info?.description ?? ""
+            self.websiteURL = info?.websiteURL
+            self.isLocal = info?.isLocal ?? false
+            self.models = self.capability.availableModels(for: self.providerID)
+            // @Published 在 willSet 广播，此刻 store.configurations 仍是旧值；
+            // 自定义身份要用广播带来的新配置判断，否则删除后仍标记为自定义。
+            self.isCustomProvider = configurations.contains { $0.id == self.providerID }
         }
         // 订阅远程模型刷新事件：当前 provider 刷新成功后刷新 models。
         modelsCancellable = capability.modelsUpdatedPublisher

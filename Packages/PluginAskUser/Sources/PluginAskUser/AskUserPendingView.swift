@@ -54,7 +54,7 @@ struct AskUserPendingView: View {
 
             if isFreeText {
                 HStack(spacing: 8) {
-                    TextField("输入回答…", text: $answer)
+                    TextField(pluginLocalization.string("Type your answer…"), text: $answer)
                         .textFieldStyle(.plain)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)

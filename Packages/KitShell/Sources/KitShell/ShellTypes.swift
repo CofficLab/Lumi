@@ -44,6 +44,67 @@ public struct ShellResult: Sendable {
     }
 }
 
+// MARK: - Background Execution
+
+/// The outcome of a shell execution whose foreground budget may expire.
+///
+/// The two cases mirror the two lifecycles a command can have: it either
+/// finished inside the budget, or the budget expired and the process was
+/// handed off to the background **without being killed**.
+public enum ShellExecutionOutcome: Sendable {
+    /// The process exited before the foreground budget expired.
+    case completed(ShellResult)
+
+    /// The foreground budget expired; the process is still running.
+    case backgrounded(BackgroundShellHandle)
+}
+
+/// A live process that was handed off to background execution.
+///
+/// The handle is the caller's ownership of the process: it can observe the
+/// exit status and terminate the process tree. Cancelling the foreground task
+/// that produced the handle does **not** stop the process — that is the whole
+/// point of the handoff.
+public struct BackgroundShellHandle: Sendable {
+    /// PID of the spawned process.
+    public let processIdentifier: Int32
+
+    /// Process group used for tree termination, when a group was created.
+    public let processGroupIdentifier: Int32?
+
+    /// When the process was spawned.
+    public let startedAt: Date
+
+    private let terminateAction: @Sendable () -> Void
+    private let exitAction: @Sendable () async -> Int32
+
+    /// Creates a handle. Prefer `ShellExecutor`'s handoff APIs over building
+    /// one by hand; only the executor owns the underlying process state.
+    public init(
+        processIdentifier: Int32,
+        processGroupIdentifier: Int32? = nil,
+        startedAt: Date = Date(),
+        terminate: @escaping @Sendable () -> Void,
+        waitForExit: @escaping @Sendable () async -> Int32
+    ) {
+        self.processIdentifier = processIdentifier
+        self.processGroupIdentifier = processGroupIdentifier
+        self.startedAt = startedAt
+        self.terminateAction = terminate
+        self.exitAction = waitForExit
+    }
+
+    /// Terminates the process tree: SIGTERM, grace period, then SIGKILL.
+    public func terminate() {
+        terminateAction()
+    }
+
+    /// Suspends until the process exits and returns its exit status.
+    public func waitForExit() async -> Int32 {
+        await exitAction()
+    }
+}
+
 /// Shell command execution options
 public struct ShellOptions: Sendable {
     /// Shell executable used by command-string APIs
@@ -76,6 +137,14 @@ public struct ShellOptions: Sendable {
     /// Maximum time spent draining pipe data after the process exits.
     public let outputDrainTimeout: TimeInterval
 
+    /// Whether the process should be handed off to the background
+    /// **immediately** after it starts.
+    ///
+    /// This is the explicit "run it in the background" mode: the caller gets a
+    /// `BackgroundShellHandle` straight away instead of waiting for a
+    /// foreground budget to expire. The process is never terminated.
+    public let handsOffImmediately: Bool
+
     /// Creates new ShellOptions
     public init(
         shellExecutable: String = "/bin/bash",
@@ -87,7 +156,8 @@ public struct ShellOptions: Sendable {
         terminatesProcessTree: Bool = true,
         terminationGracePeriod: TimeInterval = 2.0,
         maxOutputBytes: Int = 64 * 1024,
-        outputDrainTimeout: TimeInterval = 0.5
+        outputDrainTimeout: TimeInterval = 0.5,
+        handsOffImmediately: Bool = false
     ) {
         self.shellExecutable = shellExecutable
         self.workingDirectory = workingDirectory
@@ -99,6 +169,7 @@ public struct ShellOptions: Sendable {
         self.terminationGracePeriod = terminationGracePeriod
         self.maxOutputBytes = max(0, maxOutputBytes)
         self.outputDrainTimeout = max(0, outputDrainTimeout)
+        self.handsOffImmediately = handsOffImmediately
     }
 
     /// Default options

@@ -60,7 +60,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 - **ProcessSectionInnerScrollResponse**（2 条）：由 `innerRespondsToScrollWheel`、`innerIsNestedInsideOuterList` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProcessSectionLayout**（9 条）：由 `maxHeightUsesViewportFraction`、`maxHeightFallsBackToMinimum`、`maxHeightHandlesInvalidViewport` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProcessSectionMinHeight**（2 条）：由 `overflowingContentKeepsNonZeroViewport`、`shortContentStaysAdaptive` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProcessSectionScrollDirection**（3 条）：由 `swiftUIInnerUsesOppositeDirection`、`relayDrivesInnerWithNativeDirection`、`scrollingUpFromBottomMovesInnerOffset` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionScrollDirection**（3 条）：由 `relayDirectionMatchesNativeScrollView`、`relayDrivesInnerWithNativeDirection`、`scrollingUpFromBottomMovesInnerOffset` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProcessSectionScrollRelay**（10 条）：由 `forwardsWhenInnerReachesBottom`、`keepsScrollInsideInnerWhenNotAtBoundary`、`forwardsWhenInnerReachesTop` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StuckLoadingMask**（4 条）：由 `gateReleasesMaskWithinBudgetWithoutAnySettleRound`、`gateReleasesMaskWithinBudgetAfterConversationSwitch`、`gateAcceptsNewRoundForSameConversationAfterStaleRound` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -203,7 +203,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 133 | ProcessSectionLayout | 非法高度不判定为溢出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overflowIgnoresInvalidHeights` |
 | 134 | ProcessSectionMinHeight | 内容超限时：内层有非零可视高度，且内容完整未被裁剪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overflowingContentKeepsNonZeroViewport` |
 | 135 | ProcessSectionMinHeight | 内容短于上限时：高度自适应，不占满上限 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shortContentStaysAdaptive` |
-| 136 | ProcessSectionScrollDirection | 事实基准：SwiftUI 内层的方向语义是 offset -= deltaY | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `swiftUIInnerUsesOppositeDirection` |
+| 136 | ProcessSectionScrollDirection | 契约基准：relay 的方向语义与原生滚动视图一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relayDirectionMatchesNativeScrollView` |
 | 137 | ProcessSectionScrollDirection | 修复：relay 主动驱动内层时用原生语义（offset += deltaY） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relayDrivesInnerWithNativeDirection` |
 | 138 | ProcessSectionScrollDirection | 用户场景：贴底时向上滚，内层确实能滚 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scrollingUpFromBottomMovesInnerOffset` |
 | 139 | ProcessSectionScrollRelay | 内层已到底时向下滚，增量让给外层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsWhenInnerReachesBottom` |

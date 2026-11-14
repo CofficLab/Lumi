@@ -10,7 +10,7 @@ import ProviderConversation
 public final class ToolManager: ToolManagerProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private var recordStoreValue: ToolCallRecordStore? {
         didSet {
@@ -30,6 +30,9 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
     let eventManager = ToolManagerEventManager()
     let toolExecutionManager = ToolExecutionManager()
     weak var conversationManager: (any ConversationManaging)?
+
+    /// 后台任务登记表。跨回合存活的进程由它管理，不走 ToolJob 事件通道。
+    var backgroundTaskRegistry: BackgroundTaskRegistry?
 
     public var recordStore: ProviderToolManager.ToolCallRecordStore? {
         get { recordStoreValue }
@@ -148,7 +151,23 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         )
         add(ReadImageTool(), pluginID: Self.toolManagerPluginID)
         add(
-            ShellTool(workspaceRootProvider: workspaceRootProvider),
+            ShellTool(
+                workspaceRootProvider: workspaceRootProvider,
+                backgroundTaskRegistryProvider: { [weak self] in
+                    self?.backgroundTaskRegistry
+                },
+                currentConversationIDProvider: { [weak self] in
+                    self?.conversationManager?.selectedConversationID
+                }
+            ),
+            pluginID: Self.toolManagerPluginID
+        )
+        add(
+            StopBackgroundTaskTool(
+                registryProvider: { [weak self] in
+                    self?.backgroundTaskRegistry
+                }
+            ),
             pluginID: Self.toolManagerPluginID
         )
     }

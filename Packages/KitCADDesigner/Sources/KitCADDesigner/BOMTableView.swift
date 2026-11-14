@@ -90,7 +90,7 @@ struct BOMTableView: View {
             if let result = viewModel.cutResult {
                 VStack(alignment: .leading, spacing: 6) {
                     if result.stockCount > 0 {
-                        Text("\(result.stockCount) × \(Int(result.stockLength))mm 原料 · 总利用率 \(String(format: "%.1f%%", result.totalUtilization * 100))")
+                        Text(String(format: pluginLocalization.string("%lld × %lldmm 原料 · 总利用率 %@"), Int64(result.stockCount), Int64(result.stockLength), String(format: "%.1f%%", result.totalUtilization * 100)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -113,7 +113,7 @@ struct BOMTableView: View {
 
                     ForEach(Array(result.stocks.enumerated()), id: \.offset) { index, stock in
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("原料 #\(index + 1)：余 \(Int(stock.remainder))mm · 利用率 \(String(format: "%.1f%%", stock.utilization * 100))")
+                            Text(String(format: pluginLocalization.string("原料 #%lld：余 %lldmm · 利用率 %@"), Int64(index + 1), Int64(stock.remainder), String(format: "%.1f%%", stock.utilization * 100)))
                                 .font(.caption2.monospacedDigit())
                             Text(stock.cuts.map { "\(Int($0))" }.joined(separator: " + ") + " mm")
                                 .font(.caption2.monospacedDigit())

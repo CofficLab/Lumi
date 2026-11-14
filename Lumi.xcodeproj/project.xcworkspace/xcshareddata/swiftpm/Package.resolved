@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fbe7c64bb7376f8bd7136140101e208f2a1c53f96b503308692c1def391e621",
+  "originHash" : "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/LibGit2Swift.git",
       "state" : {
-        "revision" : "547bbc76a08f24018560fea13543500713d157b6",
-        "version" : "1.0.7"
+        "revision" : "5cc1b96e18c39ad1bd0e81c9b5d80865dd8038f7",
+        "version" : "1.1.1"
       }
     },
     {
@@ -150,8 +150,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginActivityBar.git",
       "state" : {
-        "revision" : "ab7c6757b4cd6fdaf5261b399705aff5572d1408",
-        "version" : "1.0.3"
+        "revision" : "070b7ca5d1cf5f8956c732051b074d34dbd2fd73",
+        "version" : "1.0.5"
       }
     },
     {
@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",
       "state" : {
-        "revision" : "ce8102858d0bb2a6c88605719ddfb6017e125057",
-        "version" : "1.1.3"
+        "revision" : "64ecd85f1952c67218f6b8b7bc0149e5e3717104",
+        "version" : "1.1.4"
       }
     },
     {
@@ -179,6 +179,15 @@
       "state" : {
         "revision" : "cbf25032b899d23e3619bc2403543bdca9afda22",
         "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumiplugindevice",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginDevice.git",
+      "state" : {
+        "revision" : "ea573a509f249331283be83fff57fefe987d2838",
+        "version" : "1.0.0"
       }
     },
     {
@@ -202,10 +211,10 @@
     {
       "identity" : "lumipluginlogos",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CofficLab/LumiPluginLogos.git",
+      "location" : "https://github.com/lumi-softworks/LumiPluginLogos.git",
       "state" : {
-        "revision" : "7b8076f94140980faa690fe009a3090a79c6feaf",
-        "version" : "1.0.0"
+        "revision" : "76d2c7a01f54b03e5fb6ae9af33d7baec7c1e37c",
+        "version" : "1.0.1"
       }
     },
     {
@@ -215,6 +224,15 @@
       "state" : {
         "revision" : "29f1ada0b17b99e960cf86da1d330e65e831963e",
         "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "lumipluginrootview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiPluginRootView.git",
+      "state" : {
+        "revision" : "da93b69e855e638f3062d46c6c41cd02244f2d39",
+        "version" : "1.3.1"
       }
     },
     {
@@ -231,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginStorage.git",
       "state" : {
-        "revision" : "e52232ff8d6b95fa799a4ddffefb18c1df3e2d24",
-        "version" : "1.2.1"
+        "revision" : "dc857098d1b7d44536100b0b579b34c057e0dcbe",
+        "version" : "1.2.2"
       }
     },
     {
@@ -267,8 +285,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "3df57f9c165ae72221aafce0a231918c51b1dbdb",
-        "version" : "1.22.2"
+        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
+        "version" : "1.23.0"
       }
     },
     {
@@ -294,8 +312,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "e04e122994c9d22e16c7fba2aa611e911612c1ab",
-        "version" : "1.13.2"
+        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
+        "version" : "1.17.1"
       }
     },
     {
@@ -348,8 +366,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/postgres-nio",
       "state" : {
-        "revision" : "649adba966158859f4fb1767e4d11802966d3fb4",
-        "version" : "1.33.2"
+        "revision" : "c7320acff7ba4034d8eb7acac2daf200855996d3",
+        "version" : "1.33.3"
       }
     },
     {

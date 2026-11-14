@@ -22,7 +22,6 @@ PluginRootView Lumi 的根布局插件。 本包不是公共 `ProviderRootView` 
 - `PanelBottomPlugin`
 - `PanelBottomStateStore`
 - `LumiRootViewProvider`
-- `BadgeOverflowLayout`
 - `ContentPlaceholderView`
 - `DefaultRootHostView`
 - `PanelBottomView`

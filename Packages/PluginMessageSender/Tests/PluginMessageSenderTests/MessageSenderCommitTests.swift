@@ -107,6 +107,48 @@ struct MessageSenderCommitTests {
         #expect(startedEvents == [conversationID, conversationID])
     }
 
+    @Test("后台附件发送入队保留预编码 metadata，排空复用不丢附件（#1323）")
+    func queuedBackgroundSendPreservesAttachmentMetadataForDrain() async throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        let image = UserImageAttachment.fixture()
+        let file = UserFileAttachment.fixture()
+
+        // 第一条文本消息立即落库并登记回合，使会话进入「忙」状态。
+        let first = try #require(
+            try fixture.sender.commitUserMessage("first", conversationID: conversationID)
+        )
+
+        // 忙时带附件发送：走后台编码并入队。
+        let second = try await fixture.sender.commitUserMessageInBackground(
+            "second",
+            imageAttachments: [image],
+            fileAttachments: [file],
+            conversationID: conversationID
+        )
+        #expect(second?.wasQueued == true)
+
+        // 队列条目必须带走后台已编码好的附件 metadata，供排空复用，而不是
+        // 只存原始附件、等排空时在主 actor 上对整段 Base64 重新编码（#1323）。
+        let entry = try #require(fixture.sender.pendingMessages(for: conversationID).first)
+        let preserved = try #require(entry.attachmentMetadata)
+        #expect(UserAttachmentMetadata.decodeImageAttachments(from: preserved) == [image])
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: preserved) == [file])
+
+        // 回合结束 → 排空：第二条落库，附件 metadata 原样复用，不丢内容。
+        fixture.sender.handleAgentLoopEvent(.completed(conversationID: conversationID, turnID: UUID()))
+        await fixture.sender.startTurn(for: first)
+
+        #expect(fixture.sender.pendingMessages(for: conversationID).isEmpty)
+        let drained = try #require(
+            fixture.messages.messages(for: conversationID).first { $0.content == "second" }
+        )
+        #expect(UserAttachmentMetadata.decodeImageAttachments(from: drained.metadata) == [image])
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: drained.metadata) == [file])
+    }
+
     // MARK: - ID 8: 取消队列条目
 
     @Test("cancelPendingMessage 移除指定条目并广播队列变化")

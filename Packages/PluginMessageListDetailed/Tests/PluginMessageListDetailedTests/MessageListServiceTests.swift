@@ -4,6 +4,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderToolManager
+import KitMessageList
 @testable import PluginMessageListDetailed
 
 @MainActor

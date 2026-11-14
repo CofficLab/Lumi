@@ -120,17 +120,18 @@ struct MiniMaxModelFamilyTests {
     @Test("合并时静态清单优先，远程不覆盖同 id 的元数据")
     func mergePrefersStaticMetadata() throws {
         let base = MiniMaxVendorModels.all
-        // 远程同 id 但元数据不同（模拟家族规则变更后误覆盖）
+        // 远程同 id 但元数据不同（模拟家族规则变更后误覆盖）。
+        // 用 M3.1-Flash —— 它在静态清单里，才能验证「同 id 不覆盖」。
         let remote = [
-            LLMModelInfo(id: "MiniMax-M2.7", contextWindowSize: 999, supportsVision: true),
+            LLMModelInfo(id: "MiniMax-M3.1-Flash", contextWindowSize: 999, supportsVision: false),
         ]
 
         let merged = MiniMaxRemoteModelListLoader.merge(base: base, remote: remote)
 
         #expect(merged.count == base.count, "同 id 不应产生重复条目")
-        let m27 = try #require(merged.first { $0.id == "MiniMax-M2.7" })
-        #expect(m27.contextWindowSize == 204_800, "应保留静态清单的上下文窗口")
-        #expect(m27.supportsVision == false, "应保留静态清单的视觉能力")
+        let flash = try #require(merged.first { $0.id == "MiniMax-M3.1-Flash" })
+        #expect(flash.contextWindowSize == 1_000_000, "应保留静态清单的上下文窗口")
+        #expect(flash.supportsVision == true, "应保留静态清单的视觉能力")
     }
 
     // MARK: - 静态清单一致性
@@ -149,17 +150,23 @@ struct MiniMaxModelFamilyTests {
 
     @Test("静态清单 id 与上游实测返回逐字一致")
     func staticCatalogIDsMatchUpstream() {
-        // 上游 `GET /v1/models` 实测返回的 9 个 id
+        // 上游 `GET /v1/models` 实测返回的 2 个 id（2026-11）。
+        // M2 全系列已被官方《模型列表》标为「已下线」，不再进静态清单。
         #expect(MiniMaxVendorModels.all.map(\.id) == [
             "MiniMax-M3.1-Flash",
             "MiniMax-M3",
-            "MiniMax-M2.7",
-            "MiniMax-M2.7-highspeed",
-            "MiniMax-M2.5",
-            "MiniMax-M2.5-highspeed",
-            "MiniMax-M2.1",
-            "MiniMax-M2.1-highspeed",
-            "MiniMax-M2",
         ])
+    }
+
+    @Test("静态清单不含已下线的 M2 系列")
+    func staticCatalogExcludesRetiredM2Series() {
+        let ids = MiniMaxVendorModels.all.map(\.id)
+        for retired in [
+            "MiniMax-M2", "MiniMax-M2.1", "MiniMax-M2.1-highspeed",
+            "MiniMax-M2.5", "MiniMax-M2.5-highspeed",
+            "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
+        ] {
+            #expect(!ids.contains(retired), "已下线的 \(retired) 不应留在静态清单")
+        }
     }
 }

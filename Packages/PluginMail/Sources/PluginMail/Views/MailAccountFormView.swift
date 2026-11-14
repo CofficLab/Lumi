@@ -127,8 +127,8 @@ public struct MailAccountFormView: View {
     // MARK: - 服务商预设
 
     private var providerRow: some View {
-        AppSettingRow(title: "服务商", icon: "server.rack") {
-            Picker("服务商", selection: $draft.provider) {
+        AppSettingRow(title: pluginLocalization.string("Provider"), icon: "server.rack") {
+            Picker(pluginLocalization.string("Provider"), selection: $draft.provider) {
                 ForEach(MailProviderPreset.allCases) { preset in
                     Text(preset.displayName).tag(preset)
                 }
@@ -159,7 +159,7 @@ public struct MailAccountFormView: View {
                 )
                 .textFieldStyle(.plain)
                 if !MailAccountDraft.isValidPort(port.wrappedValue) {
-                    Text("端口必须在 1–65535 之间。")
+                    Text(pluginLocalization.string("Port must be between 1 and 65535."))
                         .font(.appCaption)
                         .foregroundColor(theme.error)
                 }

@@ -113,6 +113,8 @@ extension EditorState {
             replaceText: documentController.replaceText,
             transactionController: transactionController
         )
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
         totalLines = replacePayload.commitPayload.totalLines
         lspClient.replaceDocument(
@@ -191,8 +193,10 @@ extension EditorState {
         }
 
         let result = documentController.replaceText(viewText)
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        applyTotalLineCountAfterReplacement(of: result.snapshot.text)
         if viewportVisibleLineRange.isEmpty {
             resetViewportObservation(totalLines: totalLines)
         }
@@ -257,6 +261,9 @@ extension EditorState {
         Task {
             do {
                 guard let newContent = try await externalFileController.loadExternalText(from: url) else { return }
+                // await 期间可能已切到别的文件：写回前复核当前标签仍是发起重读的文件，
+                // 否则丢弃旧文件的结果，避免 A 的内容覆盖 B 并被随后保存写坏（#206）。
+                guard self.currentFileURL == url else { return }
 
                 switch self.externalFileWorkflowController.reloadDecision(
                     newContent: newContent,
@@ -342,6 +349,8 @@ extension EditorState {
             replaceText: documentController.replaceText,
             transactionController: transactionController
         )
+        // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
         totalLines = replacePayload.commitPayload.totalLines
 

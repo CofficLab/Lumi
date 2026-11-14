@@ -5,7 +5,7 @@ import Foundation
 /// Git 仓库只读访问能力的 Provider 契约。
 ///
 /// 插件需要 Git 数据时依赖本契约包，而不是反向依赖 `PluginGit`——插件之间
-/// 不得互相依赖（见 docs/editor-kernel-plugin-rearchitecture-plan.md §6）。
+/// 不得互相依赖（见 docs/plans/2026-08-15-editor-kernel-plugin-rearchitecture-plan.md §6）。
 /// 真实实现由 `PluginGit` 在 `onBoot` 通过
 /// `registerProvider((any GitRepositoryReading).self, ...)` 发布。
 ///

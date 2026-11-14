@@ -25,21 +25,34 @@ public final class EditorWorkspaceSearchController {
             }
         }
 
-        return parse(output: output, query: trimmedQuery, projectRootPath: projectRootPath, limit: limit)
+        // - Important: 解析在后台线程完成。
+        //   ripgrep 的输出可能有成千上万行，解析整段输出是纯计算，
+        //   放在主线程上会占住 UI（见 issue #1327）。
+        return await parse(
+            output: output,
+            query: trimmedQuery,
+            projectRootPath: projectRootPath,
+            limit: limit
+        )
     }
 
+    /// 解析 ripgrep 输出。
+    ///
+    /// - Note: 在后台线程执行；`EditorWorkspaceSearchPolicy` 不再是 `@MainActor`。
     public func parse(
         output: String,
         query: String,
         projectRootPath: String,
         limit: Int = 200
-    ) -> EditorWorkspaceSearchResponse {
-        EditorWorkspaceSearchPolicy.parse(
-            output: output,
-            query: query,
-            projectRootPath: projectRootPath,
-            limit: limit
-        )
+    ) async -> EditorWorkspaceSearchResponse {
+        await Task.detached(priority: .userInitiated) {
+            EditorWorkspaceSearchPolicy.parse(
+                output: output,
+                query: query,
+                projectRootPath: projectRootPath,
+                limit: limit
+            )
+        }.value
     }
 
     public func exportSearchEditor(

@@ -1,6 +1,7 @@
 import Foundation
 import ProviderMessage
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 /// 大数据量场景下的消息列表行为测试。

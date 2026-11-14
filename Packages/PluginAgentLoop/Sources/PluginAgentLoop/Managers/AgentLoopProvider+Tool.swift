@@ -654,12 +654,19 @@ extension AgentLoopManager {
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
         var tools = automationLevel.allowsTools ? rawTools : []
+        // 子代理会话只拿只读工具，且永远不含 run_subagent 自身（#1313）：
+        // 过滤规则与委托工具注册共用 SubagentToolPolicy，防止递归与副作用。
+        if await conversations.fetchConversation(id: conversationID)?.parentConversationID != nil {
+            tools = SubagentToolPolicy.childTools(from: tools)
+        }
         // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
         // 与当前回合是否允许调用工具无关。
         let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
         let language = languagePreference(for: conversationID)
-        let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
-            .flatMap { $0.rawValue }
+        let reasoningPreference = conversations.reasoningEffortOptional(for: conversationID)
+        let reasoningEffort = reasoningPreference?.rawValue
+        // 档位为空 = 用户关闭了思考；必须与「未指定」区分下发。
+        let reasoningOff = reasoningPreference == nil
         var runtime = runtimes[conversationID] ?? TurnRuntime()
         if runtime.modelRoute == nil {
             runtime.modelRoute = resolveModelRoute(for: conversationID)
@@ -688,14 +695,11 @@ extension AgentLoopManager {
             let firstFive = tools.prefix(5).map(\.name)
             Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
         }
-        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
-            LLMFunctionSchema(
-                name: tool.name,
-                description: tool.description(for: language),
-                parameters: tool.inputSchema(for: language)
-            )
-        }
-        let toolSchemaTokens = estimateToolSchemaTokens(schemas)
+        // 工具 schema 的构建在后台线程完成：这一步要遍历全部工具、取出
+        // 各自的 input schema。MCP 工具的 schema 在注册时就已解析好（零成本），
+        // 但仍要组装成 schema 数组——约 130 个工具时在主线程上组装会卡顿。
+        let schemas = await ToolSchemaBuilder.buildSchemas(tools, language: language)
+        let toolSchemaTokens = ToolSchemaBuilder.estimateTokens(schemas)
         let contextRequest = LLMContextPreparationRequest(
             conversationID: conversationID,
             modelID: modelRoute?.modelID,
@@ -714,7 +718,6 @@ extension AgentLoopManager {
         let contextProvider = self.contextProvider
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        var llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
 
         // 模型能力过滤：明确声明「不支持视觉」的模型不得收到图片。
         //
@@ -722,24 +725,23 @@ extension AgentLoopManager {
         // 但此前只用于模型列表的展示，请求构建链完全不读它。结果是纯文本
         // 模型（如内置的 `gpt-4` / `gpt-3.5-turbo`）仍然收到 base64 图片
         // 块——一个本地就能拦下的能力错误被推迟成供应商的协议失败。
-        if modelInfo?.supportsVision == false {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)模型不支持视觉，剥离图片 model=\(modelName ?? "unknown")")
-            }
-            llmHistory = llmHistory.map { message in
-                message.images.isEmpty
-                    ? message
-                    : LLMMessage(
-                        role: message.role,
-                        content: message.content,
-                        toolCalls: message.toolCalls,
-                        toolCallID: message.toolCallID,
-                        reasoningContent: message.reasoningContent,
-                        redactedThinking: message.redactedThinking,
-                        isError: message.isError
-                    )
-            }
+        //
+        // 判定必须在**转换之前**：`includesImages == false` 时历史转换
+        // 根本不解码图片字节。此前是「先解码再剥离」，图片白白解码一遍
+        // 随即丢弃——一张 1.5 MB 截图解码一次约 1.2 ms，一段带图历史实测
+        // 38 ms，全在主线程上（Issue #1268）。
+        let includesImages = modelInfo?.supportsVision != false
+        if !includesImages, Self.verbose {
+            Self.logger.info("\(Self.t)模型不支持视觉，跳过图片解码 model=\(modelName ?? "unknown")")
         }
+        // 历史转换在后台线程完成：它要遍历全部历史消息、JSON 解码附件
+        // metadata 并解码图片 base64，实测一段带图历史耗时 38 ms。放在
+        // 主线程上会卡住滚动与输入（Issue #1268）。
+        let llmHistory = await llmMessagesOffMainActor(
+            from: history,
+            omittedArgumentKeys: omittedArgumentKeys,
+            includesImages: includesImages
+        )
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
@@ -759,10 +761,8 @@ extension AgentLoopManager {
         if let recoveryHint = runtimes[conversationID]?.llmRecoveryHint {
             // 生命周期钩子可以重写待发送消息，因此恢复提示必须在钩子之后注入。
             // 它仍然只是本次请求的临时 system message，不写入会话历史。
-            preparedMessages.insert(
-                LLMMessage(role: .system, content: recoveryHint),
-                at: 0
-            )
+            // 插在最新 user 之前而非 0，避免每轮变化的提示破坏稳定历史的前缀缓存。
+            preparedMessages = insertingRecoveryHint(recoveryHint, into: preparedMessages)
         }
 
         if Self.verbose && Self.printMessages {
@@ -783,7 +783,8 @@ extension AgentLoopManager {
             messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
-            reasoningEffort: reasoningEffort
+            reasoningEffort: reasoningEffort,
+            reasoningOff: reasoningOff
         )
 
         streaming.start(conversationID: conversationID)
@@ -995,6 +996,14 @@ extension AgentLoopManager {
         max(inputTokenLimit - LLMContextTokenEstimator.estimate(messages: preparedHistory), 0)
     }
 
+    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
+    ///
+    /// 转发到 `ToolSchemaBuilder`——那才是真正实现它的地方；这里保留
+    /// 转发是为了不破坏既有调用点。
+    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+        ToolSchemaBuilder.estimateTokens(schemas)
+    }
+
     /// 上下文校准使用的实际输入 token 数。
     ///
     /// 缓存型端点（如 Anthropic 兼容协议）的 `inputTokenCount` 可能只表示
@@ -1002,38 +1011,6 @@ extension AgentLoopManager {
     /// 缺省时才退回 `inputTokenCount`。
     func reportedInputTokenCount(for response: LLMResponse) -> Int? {
         response.cacheTotalInputTokenCount ?? response.inputTokenCount
-    }
-
-    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
-    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
-        schemas.reduce(0) { total, schema in
-            let parameters = Self.jsonText(for: schema.parameters)
-            return total
-                + LLMContextTokenEstimator.estimate(text: schema.name)
-                + LLMContextTokenEstimator.estimate(text: schema.description)
-                + LLMContextTokenEstimator.estimate(text: parameters)
-                + 16
-        }
-    }
-
-    /// 把工具参数序列化为键序稳定的 JSON 文本，供 token 估算使用。
-    ///
-    /// - Important: 必须先用 `isValidJSONObject` 预检，不能只靠 `try?`。
-    ///   `JSONSerialization.data(withJSONObject:)` 遇到非 JSON 类型（闭包、
-    ///   `Date`、`Data`、`NaN` 等）时抛的是 ObjC `NSException` 而非 Swift
-    ///   `Error`，`try?` 捕获不到，会直接 abort 整个进程（signal 6）。
-    ///   因此畸形工具 schema 必须先降级为文本估算，而不是让回合崩溃。
-    private static func jsonText(for parameters: [String: Any]) -> String {
-        guard JSONSerialization.isValidJSONObject(parameters),
-              let data = try? JSONSerialization.data(
-                withJSONObject: parameters,
-                options: [.sortedKeys]
-              ),
-              let text = String(data: data, encoding: .utf8)
-        else {
-            return String(describing: parameters)
-        }
-        return text
     }
 
     func isContextLimitError(_ error: Error) -> Bool {

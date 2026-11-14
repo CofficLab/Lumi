@@ -15,6 +15,12 @@ struct MemorySettingsView: View {
     @State private var selectedTypeFilter: MemoryType? = nil
     @State private var selectedMemoryID: String? = nil
     @State private var searchQuery: String = ""
+    /// 实际用于过滤的查询词。
+    ///
+    /// 与 `searchQuery` 之间有 200ms 防抖：每次按键都会让 body 重跑，
+    /// 若直接用 `searchQuery` 过滤，每次按键都要全量过滤一遍记忆列表
+    /// （见 issue #1304）。
+    @State private var appliedSearchQuery: String = ""
     @State private var isLoading = false
     @State private var showDeleteConfirmation = false
     @State private var itemToDelete: MemoryItem? = nil
@@ -25,19 +31,21 @@ struct MemorySettingsView: View {
 
     private var filteredItems: [MemoryItem] {
         let items = selectedScope == .global ? globalItems : projectItems
-        return items.filter { item in
-            let matchesType = selectedTypeFilter == nil || item.type == selectedTypeFilter
-            let matchesSearch = searchQuery.isEmpty
-                || item.name.localizedCaseInsensitiveContains(searchQuery)
-                || item.description.localizedCaseInsensitiveContains(searchQuery)
-                || item.id.localizedCaseInsensitiveContains(searchQuery)
-            return matchesType && matchesSearch
-        }
+        return MemoryListFilter.filter(
+            items,
+            type: selectedTypeFilter,
+            query: appliedSearchQuery
+        )
     }
 
+    /// 当前选中的记忆条目。
+    ///
+    /// - Note: 直接从 `globalItems` / `projectItems` 查，而不是从 `filteredItems` 查，
+    ///   避免再多触发一次全量过滤（见 issue #1304）。
     private var selectedMemory: MemoryItem? {
         guard let id = selectedMemoryID else { return nil }
-        return filteredItems.first { $0.id == id }
+        let items = selectedScope == .global ? globalItems : projectItems
+        return items.first { $0.id == id }
     }
 
     var body: some View {
@@ -60,8 +68,13 @@ struct MemorySettingsView: View {
                     // 主体内容贴边后，用一条顶部分隔线把头部行与主从容器分开。
                     AppDivider()
 
+                    // 过滤结果只算一次并向下传递：原先 `filteredItems` 是纯计算属性，
+                    // body 每次求值会读它 3~4 次，每次都全量过滤一遍记忆列表
+                    // （见 issue #1304）。
+                    let filtered = filteredItems
+
                     HStack(spacing: 0) {
-                        sidebar
+                        sidebar(items: filtered)
                             .frame(width: 300)
                             .frame(maxHeight: .infinity)
 
@@ -82,50 +95,61 @@ struct MemorySettingsView: View {
         .task {
             await reloadItems()
         }
-        .alert("确认删除", isPresented: $showDeleteConfirmation) {
-            Button("取消", role: .cancel) {
+        // 搜索防抖：`searchQuery` 变化时取消上一个待执行任务，
+        // 只在用户停下输入 200ms 后才真正过滤（见 issue #1304）。
+        .task(id: searchQuery) {
+            guard !searchQuery.isEmpty else {
+                appliedSearchQuery = ""
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else { return }
+            appliedSearchQuery = searchQuery
+        }
+        .alert(pluginLocalization.string("Delete Memory"), isPresented: $showDeleteConfirmation) {
+            Button(pluginLocalization.string("Cancel"), role: .cancel) {
                 itemToDelete = nil
             }
-            Button("删除", role: .destructive) {
+            Button(pluginLocalization.string("Delete"), role: .destructive) {
                 if let item = itemToDelete {
                     Task { await deleteItem(item) }
                 }
             }
         } message: {
             if let item = itemToDelete {
-                Text("确定要删除记忆「\(item.name)」吗？此操作不可撤销。")
+                Text(String(format: pluginLocalization.string("Delete memory \"%@\"? This action cannot be undone."), item.name))
             }
         }
     }
 
     // MARK: - Sidebar
 
-    private var sidebar: some View {
+    private func sidebar(items: [MemoryItem]) -> some View {
         VStack(spacing: 0) {
             scopeTabs
             typeFilter
             searchField
             AppDivider()
 
-            if isLoading && filteredItems.isEmpty {
+            if isLoading && items.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("加载中...")
+                    Text(pluginLocalization.string("Loading..."))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredItems.isEmpty {
+            } else if items.isEmpty {
                 AppEmptyState(
                     icon: "brain",
-                    title: searchQuery.isEmpty ? "暂无记忆条目" : "没有匹配的记忆"
+                    title: appliedSearchQuery.isEmpty ? "暂无记忆条目" : "没有匹配的记忆"
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(filteredItems) { item in
+                        ForEach(items) { item in
                             memoryRow(item)
                         }
                     }
@@ -192,7 +216,7 @@ struct MemorySettingsView: View {
             Image(systemName: "magnifyingglass")
                 .font(.appCaption)
                 .foregroundStyle(theme.textTertiary)
-            TextField("搜索记忆...", text: $searchQuery)
+            TextField(pluginLocalization.string("Search memories..."), text: $searchQuery)
                 .textFieldStyle(.plain)
                 .font(.appCaption)
             if !searchQuery.isEmpty {
@@ -280,7 +304,7 @@ struct MemorySettingsView: View {
                                 .background(theme.error.opacity(0.1), in: Circle())
                         }
                         .buttonStyle(.plain)
-                        .help("删除记忆")
+                        .help(pluginLocalization.string("Delete Memory"))
                     }
 
                     if !memory.description.isEmpty {
@@ -351,10 +375,18 @@ struct MemorySettingsView: View {
         }
     }
 
-    private func formattedDate(_ date: Date) -> String {
+    /// 相对时间格式化器。
+    ///
+    /// `RelativeDateTimeFormatter` 的初始化不便宜，详情面板每次求值都会用到，
+    /// 因此复用同一个实例。
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return formatter
+    }()
+
+    private func formattedDate(_ date: Date) -> String {
+        Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
     // MARK: - Actions

@@ -132,7 +132,12 @@ public final class ACPFileClient {
         }
         let candidate = URL(fileURLWithPath: expanded).standardizedFileURL
         let root = URL(fileURLWithPath: record.cwd).standardizedFileURL
-        guard Self.isContained(candidate, in: root) else {
+        // standardizedFileURL 不解析符号链接：workspace 内的 symlink 可指向外部，
+        // 越权判定必须按解析后的真实路径比较（root 同样解析，避免 /var→/private/var
+        // 这类前缀符号链接造成误判），返回给 Client 的仍是归一化后的原路径（#356）。
+        let realCandidate = candidate.resolvingSymlinksInPath()
+        let realRoot = root.resolvingSymlinksInPath()
+        guard Self.isContained(realCandidate, in: realRoot) else {
             throw ACPFileClientError.pathOutsideWorkspace(path: candidate.path, root: root.path)
         }
         return candidate.path

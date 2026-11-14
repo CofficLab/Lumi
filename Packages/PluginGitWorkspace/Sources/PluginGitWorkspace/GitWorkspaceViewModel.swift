@@ -46,7 +46,7 @@ final class GitWorkspaceViewModel: ObservableObject {
 
     var workingTreeFiles: [String] {
         guard let status else { return [] }
-        return Array(Set(status.modified + status.added + status.deleted + status.renamed + status.staged)).sorted()
+        return Array(Set(status.modified + status.added + status.deleted + status.renamed + status.staged + status.untracked)).sorted()
     }
 
     init(git: any GitWorkspaceGitProviding) {
@@ -59,6 +59,7 @@ final class GitWorkspaceViewModel: ObservableObject {
         if status.added.contains(file) { return "A" }
         if status.deleted.contains(file) { return "D" }
         if status.renamed.contains(file) { return "R" }
+        if status.untracked.contains(file) { return "?" }
         return "M"
     }
 

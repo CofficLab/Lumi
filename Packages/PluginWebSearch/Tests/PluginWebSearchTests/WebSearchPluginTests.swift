@@ -39,6 +39,38 @@ struct PluginWebSearchTests {
         #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
     }
 
+    // MARK: - #1312：并行只读调度声明
+
+    @Test("tool declares parallel read-only scheduling capability")
+    func toolDeclaresParallelReadOnly() {
+        #expect(WebSearchTool().executionCapability == .parallelReadOnly)
+    }
+
+    @Test("concurrent searches keep results independent")
+    func concurrentSearchesKeepResultsIndependent() async throws {
+        let tool = WebSearchTool { query in
+            [WebSearchResult(title: "title-\(query)", url: "https://example.com/\(query)", snippet: nil)]
+        }
+        let queries = ["alpha", "beta", "gamma", "delta"]
+        try await withThrowingTaskGroup(of: (String, String).self) { group in
+            for query in queries {
+                group.addTask {
+                    let output = try await tool.execute(arguments: ["query": ToolArgument(query)])
+                    return (query, output)
+                }
+            }
+            var seen: Set<String> = []
+            for try await (query, output) in group {
+                seen.insert(query)
+                #expect(output.contains("title-\(query)"))
+                for other in queries where other != query {
+                    #expect(!output.contains("title-\(other)"))
+                }
+            }
+            #expect(seen.count == queries.count)
+        }
+    }
+
     @Test("tool trims copied query whitespace")
     func toolTrimsCopiedQueryWhitespace() async throws {
         let tool = WebSearchTool { query in

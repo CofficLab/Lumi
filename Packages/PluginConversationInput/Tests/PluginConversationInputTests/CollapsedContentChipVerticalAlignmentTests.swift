@@ -37,17 +37,7 @@ struct CollapsedContentChipVerticalAlignmentTests {
         let width = 900
         let height = 120
 
-        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: width, height: height))
-        textView.font = font
-        textView.textColor = .labelColor
-        textView.isRichText = false
-        textView.isVerticallyResizable = true
-        textView.textContainerInset = NSSize(width: 4, height: 4)
-        textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.containerSize = NSSize(
-            width: CGFloat(width),
-            height: CGFloat.greatestFiniteMagnitude
-        )
+        let textView = ChipPixelProbe.makeTextView(font: font, width: CGFloat(width), height: CGFloat(height))
 
         // 走 App 的真实插入路径：真 attachment + insertText，
         // 而不是直接 append 到 textStorage。
@@ -76,33 +66,12 @@ struct CollapsedContentChipVerticalAlignmentTests {
             layoutManager.glyphRange(for: container)
         }
 
-        let bounds = NSRect(x: 0, y: 0, width: width, height: height)
         // 固定 1× 位图：量测代码按「1 point = 1 pixel」取坐标，若用设备 scale
         // 的 rep，Retina 上整张图的坐标会翻倍，正文列区间直接落到 chip 内部。
-        let image = NSBitmapImageRep(
-            bitmapDataPlanes: nil,
-            pixelsWide: width,
-            pixelsHigh: height,
-            bitsPerSample: 8,
-            samplesPerPixel: 4,
-            hasAlpha: true,
-            isPlanar: false,
-            colorSpaceName: .deviceRGB,
-            bytesPerRow: 0,
-            bitsPerPixel: 0
-        )!
-        image.size = bounds.size
-        textView.cacheDisplay(in: bounds, to: image)
+        let image = ChipPixelProbe.render(textView, width: width, height: height)
 
         func luminance(_ x: Int, _ y: Int) -> Double {
-            guard let raw = image.colorAt(x: x, y: y) else { return 1 }
-            let alpha = raw.alphaComponent
-            if alpha < 0.001 { return 1 }
-            let rgb = raw.usingColorSpace(.deviceRGB)!
-            let red = Double(rgb.redComponent) / alpha + (1 - alpha)
-            let green = Double(rgb.greenComponent) / alpha + (1 - alpha)
-            let blue = Double(rgb.blueComponent) / alpha + (1 - alpha)
-            return (red + green + blue) / 3
+            ChipPixelProbe.luminance(image, x: x, y: y)
         }
 
         /// 找某一列区间里最深的像素列——写死单列会落在字与字的空隙里。
@@ -136,7 +105,7 @@ struct CollapsedContentChipVerticalAlignmentTests {
             var top = Int.max
             var bottom = -1
             for y in 0..<height {
-                if luminance(column, y) < 0.985 {
+                if luminance(column, y) < ChipPixelProbe.backgroundThreshold {
                     top = min(top, y)
                     bottom = y
                 } else if bottom >= 0 {
@@ -155,29 +124,29 @@ struct CollapsedContentChipVerticalAlignmentTests {
             + Int(CollapsedContentChipStyle.iconSpacing)
         let bodyStart = cellX + Int(chipWidth) + 4
 
-        let titleColumn = darkestColumn(titleStart, titleStart + 40, threshold: 0.62)
-        let bodyColumn = darkestColumn(bodyStart, bodyStart + 40, threshold: 0.62)
+        let titleColumn = darkestColumn(titleStart, titleStart + 40, threshold: ChipPixelProbe.inkThreshold)
+        let bodyColumn = darkestColumn(bodyStart, bodyStart + 40, threshold: ChipPixelProbe.inkThreshold)
         // 胶囊是圆角矩形，边缘几列会被圆角切掉，量不到底色。
         var pillColumn: Int?
         var pillCount = 0
         for x in cellX..<min(cellX + Int(chipWidth), width) {
             var count = 0
-            for y in 0..<height where luminance(x, y) < 0.985 { count += 1 }
+            for y in 0..<height where luminance(x, y) < ChipPixelProbe.backgroundThreshold { count += 1 }
             if count > pillCount {
                 pillCount = count
                 pillColumn = x
             }
         }
 
-        let titleInk = titleColumn.flatMap { inkRange(at: $0, threshold: 0.62) }
-        let bodyInk = bodyColumn.flatMap { inkRange(at: $0, threshold: 0.62) }
+        let titleInk = titleColumn.flatMap { inkRange(at: $0, threshold: ChipPixelProbe.inkThreshold) }
+        let bodyInk = bodyColumn.flatMap { inkRange(at: $0, threshold: ChipPixelProbe.inkThreshold) }
         let pill = pillColumn.flatMap { pillRange(at: $0) }
 
         var secondBodyTop = -1
         var foundFirstLine = false
         var foundLineGap = false
         for y in 0..<height {
-            let hasInk = (0..<width).contains { luminance($0, y) < 0.62 }
+            let hasInk = (0..<width).contains { luminance($0, y) < ChipPixelProbe.inkThreshold }
             if hasInk {
                 if foundLineGap {
                     secondBodyTop = y

@@ -361,9 +361,16 @@ public final class MindMapStore: ObservableObject {
             return previous
         }
         next.updatedAt = Date()
+        // 先落盘再提交内存：保存失败时内存保持与磁盘一致，并把错误抛给工具，
+        // 否则工具会误报成功、用户重载后丢失修改（#429）。
+        do {
+            try saveToDisk(next, scope: scope)
+        } catch {
+            lastError = error.localizedDescription
+            throw error
+        }
         list[index] = next
         setList(list, for: scope)
-        persist(next, scope: scope)
         lastError = nil
         return next
     }
@@ -374,11 +381,17 @@ public final class MindMapStore: ObservableObject {
         setList(list, for: scope)
     }
 
-    private func persist(_ map: MindMap, scope: MindMapScope) {
+    /// 真正落盘；路径为空视为无项目、跳过（与历史 persist 行为一致）。
+    /// 写入失败时抛出，由调用方决定是否提交内存。
+    private func saveToDisk(_ map: MindMap, scope: MindMapScope) throws {
         let path = storagePath(for: scope)
         guard !path.isEmpty else { return }
+        try MindMapFileStore.save(map, storagePath: path)
+    }
+
+    private func persist(_ map: MindMap, scope: MindMapScope) {
         do {
-            try MindMapFileStore.save(map, storagePath: path)
+            try saveToDisk(map, scope: scope)
         } catch {
             lastError = error.localizedDescription
         }

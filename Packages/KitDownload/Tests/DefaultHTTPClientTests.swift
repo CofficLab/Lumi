@@ -289,11 +289,20 @@ struct DefaultHTTPClientTests {
                 progressHandler: { _, _ in progressed.value = true }, onCancelled: { _ in }
             )
         }
-        for _ in 0..<400 {
-            if progressed.value { break }
-            try await Task.sleep(for: .milliseconds(5))
+        // 等待首次进度回调。
+        //
+        // - Important: 首次回调要等**写满一个 64KB 缓冲**才触发
+        //   （见 HTTPClient.download：按缓冲批次申请令牌），而限速是
+        //   64KB/s —— 也就是说首个回调最早在 ~1s 后才可能出现。
+        //   原先只等 2s（400 × 5ms），在并发负载下（CI 上 8 个包同时跑）
+        //   调度延迟会把实际等待撑到 2s 以上，于是**偶发**失败。
+        //
+        //   这里把上限提到 10s：单跑约 1s 即返回，等待上限只影响失败路径。
+        let deadline = ContinuousClock.now + .seconds(10)
+        while !progressed.value, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
         }
-        #expect(progressed.value)
+        #expect(progressed.value, "等待 10s 仍未收到首次进度回调")
         task.cancel()
         let result = await task.result
         if case .success = result {

@@ -21,6 +21,20 @@ public enum CLIScriptBuilder {
     /// 显式指定 App 路径的环境变量名。
     public static let appPathEnvironmentKey = "LUMI_APP"
 
+    /// 写入脚本头部的归属标记。
+    ///
+    /// 安装器据此把 Lumi 安装的脚本与用户已有的同名第三方程序区分开：
+    /// 覆盖或删除前必须确认归属，避免破坏用户自己的 `lumi`（#134）。
+    public static let ownershipMarker = "# lumi-cli-owner: Lumi.app"
+
+    /// 引入 `ownershipMarker` 之前的旧版脚本归属签名，用于兼容已安装的脚本。
+    static let legacyOwnershipSignature = "由 Lumi.app 的「设置 → 通用 → 命令行工具」自动安装。"
+
+    /// 判断脚本内容是否由 Lumi 安装（含旧版脚本兼容）。
+    public static func isLumiOwnedScriptContents(_ contents: String) -> Bool {
+        contents.contains(ownershipMarker) || contents.contains(legacyOwnershipSignature)
+    }
+
     /// 生成脚本内容。
     ///
     /// - Parameters:
@@ -33,9 +47,10 @@ public enum CLIScriptBuilder {
         urlScheme: String = defaultURLScheme,
         appPath: String? = nil
     ) -> String {
-        let embeddedAppPath = appPath ?? ""
+        let embeddedAppPath = shellSingleQuoted(appPath ?? "")
         return """
         #!/bin/sh
+        \(ownershipMarker)
         #
         # \(commandName) — 在 Lumi 中打开当前目录（或指定目录）。
         #
@@ -62,7 +77,7 @@ public enum CLIScriptBuilder {
                 return 1
             fi
             for candidate in \\
-                "\(embeddedAppPath)" \\
+                \(embeddedAppPath) \\
                 "/Applications/Lumi.app" \\
                 "$HOME/Applications/Lumi.app"
             do
@@ -116,10 +131,12 @@ public enum CLIScriptBuilder {
         ABS_TARGET="$(cd "$TARGET" 2>/dev/null && pwd -P || printf '%s' "$TARGET")"
 
         # --- 编码为 URL -----------------------------------------------------------
-        # 手工百分号编码，保证路径中的空格、#、&、中文等字符都能安全通过
+        # 手工百分号编码，保证路径中的空格、#、&、中文、换行等字符都能安全通过
         # query 传递。不依赖 URI::Escape 等非核心 perl 模块。
+        # 用 -0777 slurp 整串、不 chomp：目录名里的换行/回车必须逐字节编码为
+        # %0A/%0D，逐行读取 + chomp 会把它们丢弃从而指向另一个路径（#143）。
         urlencode() {
-            printf '%s' "$1" | /usr/bin/perl -ne 'chomp; s/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge; print'
+            printf '%s' "$1" | /usr/bin/perl -0777 -ne 's/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge; print'
         }
 
         ENCODED_PATH="$(urlencode "$ABS_TARGET")"
@@ -139,5 +156,14 @@ public enum CLIScriptBuilder {
         exit 0
 
         """
+    }
+
+    /// 把任意字符串编码为 POSIX shell 单引号字面量。
+    ///
+    /// 单引号内除 `'` 外所有字符都按字面处理（`$`、反引号、`"`、`\` 都不展开），
+    /// 唯一的例外 `'` 用 `'\''` 拼接。安装路径里的合法特殊字符因此不会被 shell
+    /// 展开或改写（#142）。
+    static func shellSingleQuoted(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }

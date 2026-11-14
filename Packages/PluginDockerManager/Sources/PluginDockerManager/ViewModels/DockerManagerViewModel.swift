@@ -137,6 +137,9 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     
     private let service: any DockerManagerServicing
     private var imageDetailsTask: Task<Void, Never>?
+    /// 列表代次：每次刷新或删除递增，只有最新一代的刷新结果可写回列表，
+    /// 避免删除前发起的旧刷新把已删除镜像重新插回（#252）。
+    private var listGeneration = 0
     private var cancellables = Set<AnyCancellable>()
     
     init(service: any DockerManagerServicing = LiveDockerManagerService()) {
@@ -171,9 +174,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         beginLoading()
         defer { endLoading() }
         errorMessage = nil
+        listGeneration += 1
+        let generation = listGeneration
 
         do {
             let fetched = try await service.listImages()
+            // 期间已有更新的刷新或删除：旧快照不得覆盖最新列表。
+            guard generation == listGeneration else { return }
             self.images = fetched
             filterAndSortImages()
             if Self.verbose {
@@ -182,6 +189,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            // 同理，旧刷新的失败不应覆盖最新一次的状态。
+            guard generation == listGeneration else { return }
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.error("\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
             }
@@ -196,14 +205,24 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             }
         }
         errorMessage = nil
+        // 普通删除 untag 选中引用，避免多标签共享 ID 被 Docker 拒绝；悬空镜像与强制删除仍按 imageID（#250）。
+        let untag = !force && image.repository != "<none>" && image.tag != "<none>"
+        let target = untag ? "\(image.repository):\(image.tag)" : image.imageID
         do {
-            try await service.removeImage(image.imageID, force: force)
-            // Remove locally to update UI immediately
-            if let index = images.firstIndex(where: { $0.imageID == image.imageID }) {
-                images.remove(at: index)
-                filterAndSortImages()
-            }
-            if selectedImage?.imageID == image.imageID {
+            try await service.removeImage(target, force: force)
+            // 使删除前发起的在途刷新失效，避免旧快照把已删除镜像重新插回（#252）。
+            listGeneration += 1
+            // 只移除被删引用行；整镜像删除才清空共享 imageID 的所有标签。
+            let matches: (DockerImage) -> Bool = untag
+                ? { $0.id == image.id }
+                : { $0.imageID == image.imageID }
+            let before = images.count
+            images.removeAll(where: matches)
+            if images.count != before { filterAndSortImages() }
+            let selectionMatches = untag
+                ? selectedImage?.id == image.id
+                : selectedImage?.imageID == image.imageID
+            if selectionMatches {
                 selectedImage = nil
                 selectedImageDetail = nil
             }

@@ -63,9 +63,10 @@ final class MailComposerServiceTests: XCTestCase {
         XCTAssertTrue(mimeString.contains("lisi@example.com"), "MIME 应含收件人")
         XCTAssertTrue(mimeString.contains("Hello, Li Si!"), "MIME 应含正文")
 
-        let appended = await session.appendedDrafts
+        let appended = await session.appendedMessages
         XCTAssertEqual(appended.count, 1, "成功后应归档到已发送")
         XCTAssertEqual(appended[0].folder, "[Gmail]/Sent Mail", "mock 提供 sent 文件夹，应归档到该文件夹")
+        XCTAssertFalse(appended[0].isDraft, "回归 #403：已发送副本不得标记为草稿")
     }
 
     func testSendThrowsAuthFailedWithoutPassword() async {
@@ -96,8 +97,26 @@ final class MailComposerServiceTests: XCTestCase {
         let composer = MailComposerService(sessionManager: manager, accountStore: store)
         try await composer.send(draft: makeDraft(), account: account)
 
-        let appended = await session.appendedDrafts
+        let appended = await session.appendedMessages
         XCTAssertEqual(appended.first?.folder, "[Gmail]/Sent Mail")
+    }
+
+    /// 回归 #403：保存草稿仍须用 `\Draft`，与已发送归档区分开。
+    func testAppendDraftUsesDraftFlag() async throws {
+        let session = MockMailSession(messages: [])
+        let manager = MailSessionManager(factory: SingleSessionFactory(session: session), accountStore: store)
+        let account = makeAccount()
+        store.setPassword("p", for: account.id)
+
+        let composer = MailComposerService(sessionManager: manager, accountStore: store)
+        try await composer.appendDraft(draft: makeDraft(), account: account)
+
+        let appended = await session.appendedMessages
+        XCTAssertEqual(appended.count, 1, "应 APPEND 一次草稿")
+        XCTAssertEqual(appended[0].folder, "Drafts", "mock 无 drafts 文件夹，应回退到 Drafts")
+        XCTAssertTrue(appended[0].isDraft, "草稿必须标记为草稿")
+        let sent = await session.sentMIMEs
+        XCTAssertTrue(sent.isEmpty, "保存草稿不应触发 SMTP 发送")
     }
 }
 

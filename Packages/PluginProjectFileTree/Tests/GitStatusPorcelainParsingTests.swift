@@ -3,16 +3,13 @@ import Testing
 
 @testable import PluginProjectFileTree
 
-/// 回归 #1106：porcelain 的 `old -> new` 分隔只属于 rename/copy 条目。
-/// 普通文件名本身可以包含 ` -> `，无条件截断会让快照键失真。
+/// 回归 #1106 / #442：porcelain 以 `-z` NUL 分隔输出，路径原样保留。
+/// 普通文件名里的 ` -> ` 不属于重命名；rename/copy 的旧路径是独立的 NUL 字段。
 struct GitStatusPorcelainParsingTests {
 
     @Test("普通文件名中的箭头不会被当作重命名")
     func arrowInRegularFileNameIsPreserved() {
-        let porcelain = """
-        ?? Sources/a -> b.swift
-         M Sources/c -> d.swift
-        """
+        let porcelain = "?? Sources/a -> b.swift\0 M Sources/c -> d.swift\0"
 
         let unstaged = GitStatusProvider.unstagedFiles(from: porcelain)
 
@@ -20,17 +17,17 @@ struct GitStatusPorcelainParsingTests {
         #expect(unstaged.map(\.changeType) == ["?", "M"])
     }
 
-    @Test("暂存区重命名仍取箭头后的新路径")
+    @Test("暂存区重命名取新路径字段")
     func stagedRenameUsesDestinationPath() {
-        let staged = GitStatusProvider.stagedFiles(from: "R  old.swift -> new.swift")
+        let staged = GitStatusProvider.stagedFiles(from: "R  new.swift\0old.swift\0")
 
         #expect(staged.map(\.file) == ["new.swift"])
         #expect(staged.map(\.changeType) == ["R"])
     }
 
-    @Test("工作区重命名同样取箭头后的新路径")
+    @Test("工作区重命名同样取新路径字段")
     func worktreeRenameUsesDestinationPath() {
-        let unstaged = GitStatusProvider.unstagedFiles(from: " R old.swift -> new.swift")
+        let unstaged = GitStatusProvider.unstagedFiles(from: " R new.swift\0old.swift\0")
 
         #expect(unstaged.map(\.file) == ["new.swift"])
         #expect(unstaged.map(\.changeType) == ["R"])
@@ -38,11 +35,7 @@ struct GitStatusPorcelainParsingTests {
 
     @Test("add/add 与 delete/delete 冲突按 conflicted 处理")
     func addAddAndDeleteDeleteAreConflicted() {
-        let porcelain = """
-        AA Conflict.swift
-        DD Removed.swift
-        UU Both.swift
-        """
+        let porcelain = "AA Conflict.swift\0DD Removed.swift\0UU Both.swift\0"
 
         let staged = GitStatusProvider.stagedFiles(from: porcelain)
 
@@ -69,5 +62,26 @@ struct GitStatusPorcelainParsingTests {
                 "\(code) 不应识别为未合并"
             )
         }
+    }
+
+    @Test("中文文件名经 NUL 分隔解析后原样保留，不得丢失或转义")
+    func nulSeparatedChinesePathIsPreserved() {
+        let porcelain = " M 测试.txt\0?? 新建文件夹/文档.swift\0"
+
+        let unstaged = GitStatusProvider.unstagedFiles(from: porcelain)
+
+        #expect(unstaged.map(\.file) == ["测试.txt", "新建文件夹/文档.swift"])
+        #expect(unstaged.map(\.changeType) == ["M", "?"])
+    }
+
+    @Test("rename 的旧路径字段被消费，不会被当成独立条目")
+    func renameOldPathFieldIsConsumed() {
+        let porcelain = "R  new.swift\0old.swift\0 M other.swift\0"
+
+        let staged = GitStatusProvider.stagedFiles(from: porcelain)
+        let unstaged = GitStatusProvider.unstagedFiles(from: porcelain)
+
+        #expect(staged.map(\.file) == ["new.swift"])
+        #expect(unstaged.map(\.file) == ["other.swift"])
     }
 }

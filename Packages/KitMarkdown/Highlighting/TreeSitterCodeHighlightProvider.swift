@@ -64,8 +64,6 @@ public final class TreeSitterCodeHighlightProvider: CodeHighlightProviding, @unc
         guard let tree = parser.parse(code), let rootNode = tree.rootNode else { return nil }
 
         var attributed = AttributedString(code)
-        let utf8 = code.utf8
-        let utf8Length = utf8.count
 
         let cursor = query.execute(node: rootNode, in: tree)
         cursor.matchLimit = 512
@@ -76,18 +74,50 @@ public final class TreeSitterCodeHighlightProvider: CodeHighlightProviding, @unc
                       let color = palette.color(forCapture: name)
                 else { continue }
 
-                let location = capture.range.location
-                let length = capture.range.length
-                guard location >= 0, length >= 0, location + length <= utf8Length else { continue }
+                guard let range = Self.attributedRange(
+                    in: attributed,
+                    source: code,
+                    location: capture.range.location,
+                    length: capture.range.length
+                ) else { continue }
 
-                let lower = utf8.index(utf8.startIndex, offsetBy: location)
-                let upper = utf8.index(lower, offsetBy: length)
-                guard let range = Range(lower..<upper, in: attributed) else { continue }
                 attributed[range].foregroundColor = color
             }
         }
 
         return attributed
+    }
+
+    // MARK: - 偏移换算
+
+    /// 把 tree-sitter 的捕获范围换算成 `AttributedString` 的字符范围。
+    ///
+    /// 关键点：**偏移单位取决于解析时使用的字节编码**。
+    /// `SwiftTreeSitter.Parser.parse(_ string:)` 内部以 UTF-16LE 喂给
+    /// tree-sitter（见 `Parser.parse(_:)` 里的 `TSInputEncodingUTF16LE`），
+    /// 因此 `capture.range.location/length` 是 **UTF-16 code unit** 偏移，
+    /// 不是 UTF-8 字节偏移。
+    ///
+    /// 纯 ASCII 代码两种单位恰好相同，所以问题只在包含非 ASCII 字符
+    /// （例如中文注释）时暴露：偏移量偏小，捕获范围整体前移错位，
+    /// 表现为注释被切成碎片、相邻语法着色串位。
+    ///
+    /// 这里按 UTF-16 偏移换算，保证与解析端编码一致。
+    private static func attributedRange(
+        in attributed: AttributedString,
+        source: String,
+        location: Int,
+        length: Int
+    ) -> Range<AttributedString.Index>? {
+        guard location >= 0, length >= 0 else { return nil }
+
+        let utf16 = source.utf16
+        guard location + length <= utf16.count else { return nil }
+
+        let lower = utf16.index(utf16.startIndex, offsetBy: location)
+        let upper = utf16.index(utf16.startIndex, offsetBy: location + length)
+
+        return Range(lower..<upper, in: attributed)
     }
 
     // MARK: - 语法

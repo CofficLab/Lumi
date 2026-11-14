@@ -16,11 +16,11 @@ public enum RAGLexicalFileSearcher {
         query: String,
         projectPath: String,
         topK: Int
-    ) throws -> [RAGSearchResult] {
+    ) async throws -> [RAGSearchResult] {
         let terms = RAGTextUtils.tokenize(query.lowercased())
         guard !terms.isEmpty else { return [] }
 
-        if let ripgrepResults = try searchWithRipgrep(query: query, terms: terms, projectPath: projectPath, topK: topK),
+        if let ripgrepResults = try await searchWithRipgrep(query: query, terms: terms, projectPath: projectPath, topK: topK),
            !ripgrepResults.isEmpty {
             return ripgrepResults
         }
@@ -65,34 +65,29 @@ public enum RAGLexicalFileSearcher {
         terms: [String],
         projectPath: String,
         topK: Int
-    ) throws -> [RAGSearchResult]? {
-        guard let executable = ripgrepExecutable() else { return nil }
+    ) async throws -> [RAGSearchResult]? {
+        guard let executable = RAGRipgrepLocator.executable() else { return nil }
 
         let arguments = ripgrepArguments(terms: terms, projectPath: projectPath)
 
-        let outputPipe = Pipe()
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        process.standardOutput = outputPipe
-        process.standardError = FileHandle.nullDevice
-        // 确定性回收管道 fd，避免热路径上依赖 autorelease pool 造成 fd 泄漏。
-        defer {
-            try? outputPipe.fileHandleForReading.close()
-            try? outputPipe.fileHandleForWriting.close()
-        }
-
+        // ripgrep 调用必须离开协作线程池：`readDataToEndOfFile()` 与
+        // `waitUntilExit()` 都是阻塞调用，大项目扫描会占住负责调度
+        // MainActor 的线程，导致 UI 卡死（#1288 同类问题）。
+        let result: RAGProcessRunner.Result
         do {
-            try process.run()
+            result = try await RAGProcessRunner.run(
+                executable: executable,
+                arguments: arguments,
+                discardStandardError: true
+            )
         } catch {
             return nil
         }
-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
         try Task.checkCancellation()
+        let output = result.standardOutput
 
         // rg 的 1 表示“没有匹配”，大于 1 才是执行错误。
-        guard process.terminationStatus == 0 || process.terminationStatus == 1 else { return nil }
+        guard result.terminationStatus == 0 || result.terminationStatus == 1 else { return nil }
 
         struct Match {
             let filePath: String
@@ -113,9 +108,7 @@ public enum RAGLexicalFileSearcher {
                   let line = (data["lines"] as? [String: Any])?["text"] as? String else {
                 continue
             }
-            let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
-            guard RAGFileScanner.allowedExtensions.contains(fileExtension),
-                  !RAGFileScanner.shouldSkipPath(path) else {
+            guard acceptsResultPath(path, projectRoot: projectPath) else {
                 continue
             }
 
@@ -159,6 +152,14 @@ public enum RAGLexicalFileSearcher {
             }
     }
 
+    /// ripgrep 输出的是绝对路径；扩展名与排除目录的判断必须相对项目根进行，
+    /// 否则位于 `build`/`temp` 等祖先目录下的项目会被整体过滤掉（#194）。
+    static func acceptsResultPath(_ path: String, projectRoot: String) -> Bool {
+        let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
+        return RAGFileScanner.allowedExtensions.contains(fileExtension)
+            && !RAGFileScanner.shouldSkipPath(path, projectRoot: projectRoot)
+    }
+
     /// ripgrep 参数。
     ///
     /// `--no-ignore` 必须保留：索引扫描（`RAGFileScanner`）和路径搜索
@@ -183,20 +184,6 @@ public enum RAGLexicalFileSearcher {
         }
         arguments.append(contentsOf: ["--regexp", pattern, projectPath])
         return arguments
-    }
-
-    private static func ripgrepExecutable() -> URL? {
-        let pathEntries = ProcessInfo.processInfo.environment["PATH"]?
-            .split(separator: ":")
-            .map(String.init) ?? []
-        let candidates = pathEntries.map { "\($0)/rg" } + [
-            "/opt/homebrew/bin/rg",
-            "/usr/local/bin/rg",
-            "/usr/bin/rg",
-        ]
-        return candidates.lazy
-            .map { URL(fileURLWithPath: $0) }
-            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
 
     private static func makeSnippet(content: String, terms: [String]) -> Snippet {

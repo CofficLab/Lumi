@@ -29,6 +29,12 @@
             "state" : "translated",
             "value" : "%lld 個檔案"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個檔案"
+          }
         }
       }
     },
@@ -57,6 +63,12 @@
             "state" : "translated",
             "value" : "%lld 個項目未能移動"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目未能移動"
+          }
         }
       }
     },
@@ -65,25 +77,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to delete \"%@\"?"
+            "value" : "Are you sure you want to delete \\\"%@\\\"?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "确定要删除 \"%@\" 吗？"
+            "value" : "确定要删除 \\\"%@\\\" 吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "確定要刪除 \"%@\" 嗎？"
+            "value" : "確定要刪除 \\\"%@\\\" 嗎？"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "確定要刪除 \"%@\" 嗎？"
+            "value" : "確定要刪除 \\\"%@\\\" 嗎？"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 \\\"%@\\\" 嗎？"
           }
         }
       }
@@ -109,6 +127,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 %lld 個項目嗎？"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "確定要刪除 %lld 個項目嗎？"
@@ -175,6 +199,12 @@
             "state" : "translated",
             "value" : "取消"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
         }
       }
     },
@@ -199,6 +229,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對話輸入不可用。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "對話輸入不可用。"
@@ -231,6 +267,12 @@
             "state" : "translated",
             "value" : "複製路徑"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製路徑"
+          }
         }
       }
     },
@@ -255,6 +297,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法建立檔案。名稱可能無效，或同名檔案已存在。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法建立檔案。名稱可能無效，或同名檔案已存在。"
@@ -287,6 +335,12 @@
             "state" : "translated",
             "value" : "無法建立資料夾。名稱可能無效，或同名資料夾已存在。"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法建立資料夾。名稱可能無效，或同名資料夾已存在。"
+          }
         }
       }
     },
@@ -311,6 +365,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法將該項目移到垃圾桶。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法將該項目移到垃圾桶。"
@@ -343,6 +403,12 @@
             "state" : "translated",
             "value" : "無法在 VS Code 中開啟。"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在 VS Code 中開啟。"
+          }
         }
       }
     },
@@ -367,6 +433,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法重新命名該項目。名稱可能無效，或同名項目已存在。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法重新命名該項目。名稱可能無效，或同名項目已存在。"
@@ -399,6 +471,12 @@
             "state" : "translated",
             "value" : "建立"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
+          }
         }
       }
     },
@@ -423,6 +501,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新檔案的名稱。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "請輸入新檔案的名稱。"
@@ -455,6 +539,12 @@
             "state" : "translated",
             "value" : "請輸入新資料夾的名稱。"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新資料夾的名稱。"
+          }
         }
       }
     },
@@ -479,6 +569,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新的名稱。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "請輸入新的名稱。"
@@ -579,6 +675,12 @@
             "state" : "translated",
             "value" : "移到垃圾桶"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移到垃圾桶"
+          }
         }
       }
     },
@@ -603,6 +705,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到垃圾桶"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "已移到垃圾桶"
@@ -635,6 +743,12 @@
             "state" : "translated",
             "value" : "名稱"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
+          }
         }
       }
     },
@@ -659,6 +773,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增檔案"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增檔案"
@@ -691,6 +811,12 @@
             "state" : "translated",
             "value" : "新增資料夾"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
+          }
         }
       }
     },
@@ -715,6 +841,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無專案"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫無專案"
@@ -747,6 +879,12 @@
             "state" : "translated",
             "value" : "在終端機中開啟"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在終端機中開啟"
+          }
         }
       }
     },
@@ -771,6 +909,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 VS Code 中開啟"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 VS Code 中開啟"
@@ -803,6 +947,12 @@
             "state" : "translated",
             "value" : "軟體套件依賴"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "軟體套件依賴"
+          }
         }
       }
     },
@@ -827,6 +977,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "路徑已複製到剪貼簿"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "路徑已複製到剪貼簿"
@@ -893,6 +1049,12 @@
             "state" : "translated",
             "value" : "重命名"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
+          }
         }
       }
     },
@@ -951,6 +1113,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中顯示"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 Finder 中顯示"
@@ -1051,6 +1219,12 @@
             "state" : "translated",
             "value" : "該項目將被移到垃圾桶。"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該項目將被移到垃圾桶。"
+          }
         }
       }
     },
@@ -1075,6 +1249,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些項目將被移到垃圾桶。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "這些項目將被移到垃圾桶。"

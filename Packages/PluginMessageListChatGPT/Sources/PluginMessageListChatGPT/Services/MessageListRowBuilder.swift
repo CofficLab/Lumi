@@ -1,6 +1,7 @@
 import Foundation
 import ProviderConversation
 import ProviderMessage
+import KitMessageList
 
 /// V5（ChatGPT）消息行的合并规则。
 ///

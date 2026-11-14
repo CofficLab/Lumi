@@ -4,9 +4,11 @@ import UniformTypeIdentifiers
 struct ConversationExportToolbarView: View {
     @ObservedObject var viewModel: ConversationExportViewModel
 
+    @State private var isPopoverPresented = false
+
     var body: some View {
         Button {
-            viewModel.beginExport()
+            isPopoverPresented.toggle()
         } label: {
             Group {
                 if viewModel.isPreparing {
@@ -28,6 +30,12 @@ struct ConversationExportToolbarView: View {
         .buttonStyle(.plain)
         .disabled(!viewModel.canExport)
         .help(Text(pluginLocalization.string("Export current conversation as HTML")))
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            ConversationExportPopoverView { mode in
+                isPopoverPresented = false
+                viewModel.beginExport(mode: mode)
+            }
+        }
         .fileExporter(
             isPresented: $viewModel.isExporterPresented,
             document: viewModel.document,

@@ -7,6 +7,9 @@ import Testing
 ///
 /// 关键不变式：历史轮次只在 `historyRows` 变化时做一次 O(n) 重建；
 /// 流式 / 活动行更新只重做 live tail，不得每个 token 扫描整个长会话。
+///
+/// - Important: 历史是否变化由 ViewModel 提供的**版本号**决定，
+///   而不是对全部历史内容做哈希（issue #1183）。
 @Suite("ZCode 轮次投影缓存")
 @MainActor
 struct ZCodeTurnProjectionStoreTests {
@@ -16,7 +19,12 @@ struct ZCodeTurnProjectionStoreTests {
         let store = ZCodeTurnProjectionStore()
         let history = [makeMessage(role: .user, content: "问题")]
 
-        let snapshot = store.snapshot(history: history, streaming: nil, activity: nil)
+        let snapshot = store.snapshot(
+            history: history,
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(snapshot.turns.count == 1)
         #expect(store.historyRebuildCount == 1)
@@ -27,9 +35,32 @@ struct ZCodeTurnProjectionStoreTests {
         let store = ZCodeTurnProjectionStore()
         let history = [makeMessage(role: .user, content: "问题")]
 
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
+
+        #expect(store.historyRebuildCount == 1)
+    }
+
+    @Test("版本号不变即视为历史未变，即使内容不同")
+    func unchangedRevisionSkipsRebuildRegardlessOfContent() {
+        let store = ZCodeTurnProjectionStore()
+
+        _ = store.snapshot(
+            history: [makeMessage(role: .user, content: "第一段")],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
+        #expect(store.historyRebuildCount == 1)
+
+        // 版本号没动 —— 投影缓存直接复用，不重扫内容。
+        _ = store.snapshot(
+            history: [makeMessage(role: .user, content: "完全不同的内容")],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(store.historyRebuildCount == 1)
     }
@@ -39,9 +70,14 @@ struct ZCodeTurnProjectionStoreTests {
         let store = ZCodeTurnProjectionStore()
         let history = [makeMessage(role: .user, content: "问题")]
 
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
         let appended = history + [makeMessage(role: .assistant, content: "回答")]
-        _ = store.snapshot(history: appended, streaming: nil, activity: nil)
+        _ = store.snapshot(
+            history: appended,
+            historyRevision: 2,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(store.historyRebuildCount == 2)
     }
@@ -53,12 +89,17 @@ struct ZCodeTurnProjectionStoreTests {
             makeMessage(role: .user, content: "问题 \(index)")
         }
 
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
         let rebuildsAfterHistory = store.historyRebuildCount
 
         for tick in 0..<100 {
             let streaming = makeMessage(role: .assistant, content: "流式 \(tick)")
-            _ = store.snapshot(history: history, streaming: streaming, activity: nil)
+            _ = store.snapshot(
+                history: history,
+                historyRevision: 1,
+                streaming: streaming,
+                activity: nil
+            )
         }
 
         #expect(rebuildsAfterHistory == 1)
@@ -73,9 +114,15 @@ struct ZCodeTurnProjectionStoreTests {
             makeMessage(role: .assistant, content: "回答"),
         ]
 
-        let before = store.snapshot(history: history, streaming: nil, activity: nil)
+        let before = store.snapshot(
+            history: history,
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
         let after = store.snapshot(
             history: history,
+            historyRevision: 1,
             streaming: makeMessage(role: .assistant, content: "流式"),
             activity: nil
         )
@@ -90,13 +137,19 @@ struct ZCodeTurnProjectionStoreTests {
         let store = ZCodeTurnProjectionStore()
         let history = [makeMessage(role: .user, content: "问题")]
 
-        _ = store.snapshot(history: history, streaming: nil, activity: nil)
+        _ = store.snapshot(history: history, historyRevision: 1, streaming: nil, activity: nil)
         _ = store.snapshot(
             history: history,
+            historyRevision: 1,
             streaming: makeMessage(role: .assistant, content: "流式"),
             activity: nil
         )
-        let final = store.snapshot(history: history, streaming: nil, activity: nil)
+        let final = store.snapshot(
+            history: history,
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(final.turns.count == 1)
         #expect(final.turns[0].rows[0].origin == .history)
@@ -106,10 +159,38 @@ struct ZCodeTurnProjectionStoreTests {
     func historyResetTriggersRebuild() {
         let store = ZCodeTurnProjectionStore()
 
-        _ = store.snapshot(history: [makeMessage(role: .user, content: "A")], streaming: nil, activity: nil)
+        _ = store.snapshot(
+            history: [makeMessage(role: .user, content: "A")],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
         store.reset()
-        _ = store.snapshot(history: [makeMessage(role: .user, content: "B")], streaming: nil, activity: nil)
+        _ = store.snapshot(
+            history: [makeMessage(role: .user, content: "B")],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
 
+        #expect(store.historyRebuildCount == 2)
+    }
+
+    @Test("reset 后同一个版本号也会重建")
+    func resetRebuildsForSameRevision() {
+        let store = ZCodeTurnProjectionStore()
+        let history = [makeMessage(role: .user, content: "问")]
+
+        _ = store.snapshot(history: history, historyRevision: 7, streaming: nil, activity: nil)
+        #expect(store.historyRebuildCount == 1)
+
+        store.reset()
+
+        // 版本号没变，但缓存被清了 —— 仍要重建。
+        //
+        // - Note: V4 的 `reset()` 不清零 `historyRebuildCount`（与 V5 不同，
+        //   那是既有差异），所以这里断言的是「重建发生了一次」而不是绝对值。
+        _ = store.snapshot(history: history, historyRevision: 7, streaming: nil, activity: nil)
         #expect(store.historyRebuildCount == 2)
     }
 
@@ -117,7 +198,12 @@ struct ZCodeTurnProjectionStoreTests {
     func emptyInputsDoNotCrash() {
         let store = ZCodeTurnProjectionStore()
 
-        let snapshot = store.snapshot(history: [], streaming: nil, activity: nil)
+        let snapshot = store.snapshot(
+            history: [],
+            historyRevision: 1,
+            streaming: nil,
+            activity: nil
+        )
 
         #expect(snapshot.turns.isEmpty)
         #expect(store.historyRebuildCount == 1)
@@ -129,8 +215,18 @@ struct ZCodeTurnProjectionStoreTests {
         let history = [makeMessage(role: .user, content: "问题")]
         let activity = makeMessage(role: .assistant, content: "活动")
 
-        let first = store.snapshot(history: history, streaming: nil, activity: activity)
-        let second = store.snapshot(history: history, streaming: nil, activity: activity)
+        let first = store.snapshot(
+            history: history,
+            historyRevision: 1,
+            streaming: nil,
+            activity: activity
+        )
+        let second = store.snapshot(
+            history: history,
+            historyRevision: 1,
+            streaming: nil,
+            activity: activity
+        )
 
         #expect(first == second)
         #expect(first.turns.count == 2)

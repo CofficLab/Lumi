@@ -186,3 +186,42 @@ import Testing
     streaming.appendThinking("thought", conversationID: conversationID)
     #expect(streaming.streamingMessage(for: conversationID)?.reasoningContent == "thought")
 }
+
+@Test @MainActor func appendingChunksDoesNotMutateAPreviouslyReadSnapshot() {
+    let streaming = DefaultMessageStreamingProviding()
+    let conversationID = UUID()
+
+    streaming.start(conversationID: conversationID)
+    streaming.appendContent("Hello", conversationID: conversationID)
+    streaming.appendThinking("Reason", conversationID: conversationID)
+
+    // UI 按帧读取快照；快照之后的追加不能污染已读出的值。
+    let snapshot = streaming.streamingMessage(for: conversationID)
+    streaming.appendContent(" world", conversationID: conversationID)
+    streaming.appendThinking("ing", conversationID: conversationID)
+
+    #expect(snapshot?.content == "Hello")
+    #expect(snapshot?.reasoningContent == "Reason")
+    #expect(streaming.streamingMessage(for: conversationID)?.content == "Hello world")
+    #expect(streaming.streamingMessage(for: conversationID)?.reasoningContent == "Reasoning")
+}
+
+@Test @MainActor func thousandsOfChunksAccumulateExactly() {
+    let streaming = DefaultMessageStreamingProviding()
+    let conversationID = UUID()
+    let chunk = String(repeating: "x", count: 64)
+    let chunkCount = 5000
+
+    streaming.start(conversationID: conversationID)
+    for i in 0..<chunkCount {
+        streaming.appendContent(chunk, conversationID: conversationID)
+        if i % 2 == 0 {
+            streaming.appendThinking("y", conversationID: conversationID)
+        }
+    }
+
+    #expect(streaming.streamingMessage(for: conversationID)?.content == String(repeating: "x", count: 64 * chunkCount))
+    #expect(streaming.streamingMessage(for: conversationID)?.reasoningContent == String(repeating: "y", count: chunkCount / 2))
+    // 最后一次迭代 i=4999 为奇数，只追加正文，stage 停在 generating。
+    #expect(streaming.stage(for: conversationID) == .generating)
+}

@@ -11,7 +11,7 @@ import Testing
 struct ProviderAPIKeyLegacyProviderResolutionTests {
 
     @Test("旧消息按 rawErrorDetail 中的供应商名绑定")
-    func legacyRawErrorDetailBindsOwningProvider() {
+    func legacyRawErrorDetailBindsOwningProvider() async {
         let (viewModel, providerA, providerB) = makeViewModel(
             message: legacyMessage(rawErrorDetail: "Missing API key for: Provider A")
         )
@@ -22,6 +22,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
 
         viewModel.apiKey = "sk-a"
         viewModel.saveAPIKey()
+        await waitForSave(viewModel)
 
         #expect(providerA.storedKey == "sk-a")
         #expect(providerB.storedKey == "sk-b")
@@ -29,7 +30,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
     }
 
     @Test("旧版 missingAPIKey 文本同样按供应商名绑定")
-    func legacyContentBindsOwningProvider() {
+    func legacyContentBindsOwningProvider() async {
         let (viewModel, providerA, providerB) = makeViewModel(
             message: legacyMessage(content: "missingAPIKey(\"Provider A\")")
         )
@@ -39,13 +40,14 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
 
         viewModel.apiKey = "sk-a"
         viewModel.saveAPIKey()
+        await waitForSave(viewModel)
 
         #expect(providerA.storedKey == "sk-a")
         #expect(providerB.storedKey == "sk-b")
     }
 
     @Test("旧消息记录的供应商未注册时禁用内联写入")
-    func unknownLegacyProviderDisablesInlineSave() {
+    func unknownLegacyProviderDisablesInlineSave() async {
         let (viewModel, providerA, providerB) = makeViewModel(
             message: legacyMessage(rawErrorDetail: "Missing API key for: Provider C")
         )
@@ -56,6 +58,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
 
         viewModel.apiKey = "sk-c"
         viewModel.saveAPIKey()
+        await waitForSave(viewModel)
 
         #expect(providerA.storedKey == "sk-a")
         #expect(providerB.storedKey == "sk-b")
@@ -63,7 +66,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
     }
 
     @Test("旧消息无法解析供应商身份时不回退到当前选中项")
-    func identitylessLegacyMessageDisablesInlineSave() {
+    func identitylessLegacyMessageDisablesInlineSave() async {
         let (viewModel, providerA, providerB) = makeViewModel(
             message: legacyMessage(content: "API Key missing")
         )
@@ -74,6 +77,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
 
         viewModel.apiKey = "sk-should-not-save"
         viewModel.saveAPIKey()
+        await waitForSave(viewModel)
 
         #expect(providerA.storedKey == "sk-a")
         #expect(providerB.storedKey == "sk-b")
@@ -81,7 +85,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
     }
 
     @Test("展示名重复时无法唯一归属，禁用内联写入")
-    func ambiguousDisplayNameDisablesInlineSave() {
+    func ambiguousDisplayNameDisablesInlineSave() async {
         let (viewModel, providerA, providerB) = makeViewModel(
             message: legacyMessage(rawErrorDetail: "Missing API key for: Provider A"),
             duplicateDisplayName: true
@@ -92,6 +96,7 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
 
         viewModel.apiKey = "sk-ambiguous"
         viewModel.saveAPIKey()
+        await waitForSave(viewModel)
 
         #expect(providerA.storedKey == "sk-a")
         #expect(providerB.storedKey == "sk-b")
@@ -99,6 +104,18 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
     }
 
     // MARK: - Helpers
+
+    /// 等待异步保存完成。
+    ///
+    /// - Note: 保存走后台线程（Keychain 同步 IPC 不能在主线程做，
+    ///   见 issue #1286），断言前需要让出一轮主 actor。
+    private func waitForSave(_ viewModel: ProviderAPIKeyViewModel) async {
+        for _ in 0..<50 {
+            if viewModel.didSaveAPIKey || viewModel.saveError != nil { return }
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+    }
 
     private func legacyMessage(
         content: String = "API Key missing",
@@ -131,7 +148,41 @@ struct ProviderAPIKeyLegacyProviderResolutionTests {
             providers: [providerA, providerB],
             selectedProviderID: providerB.providerID
         )
-        let viewModel = ProviderAPIKeyViewModel(capability: capability, message: message)
+        // 注入 stub 的 Key 操作：保存是异步的（Keychain 同步 IPC 不能在
+        // 主线程做，见 issue #1286），测试必须走与生产一致的路径。
+        let viewModel = ProviderAPIKeyViewModel(
+            capability: capability,
+            message: message,
+            keyOperations: ProviderAPIKeyViewModel.KeyOperations(
+                read: { storageKey in
+                    await MainActor.run {
+                        storageKey == providerA.providerInfo.apiKeyStorageKey
+                            ? providerA.storedKey
+                            : providerB.storedKey
+                    }
+                },
+                resolve: { storageKey, displayName in
+                    let value = await MainActor.run {
+                        storageKey == providerA.providerInfo.apiKeyStorageKey
+                            ? providerA.storedKey
+                            : providerB.storedKey
+                    }
+                    guard !value.isEmpty else {
+                        throw VendorAPIError.missingAPIKey(displayName)
+                    }
+                    return value
+                },
+                write: { storageKey, apiKey in
+                    await MainActor.run {
+                        if storageKey == providerA.providerInfo.apiKeyStorageKey {
+                            providerA.setStoredKeyForTest(apiKey)
+                        } else {
+                            providerB.setStoredKeyForTest(apiKey)
+                        }
+                    }
+                }
+            )
+        )
         return (viewModel, providerA, providerB)
     }
 }
@@ -183,6 +234,11 @@ private final class LegacyStubProvider: SuperLLMProvider {
     }
 
     func setApiKeyReportingErrors(_ apiKey: String) throws {
+        setStoredKeyForTest(apiKey)
+    }
+
+    /// 写入 Key；供 `keyOperations` 在主 actor 上调用。
+    func setStoredKeyForTest(_ apiKey: String) {
         storedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

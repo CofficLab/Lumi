@@ -76,19 +76,6 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             workspaceRoot: workspaceRootOverride ?? defaultRoot
         )
         do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-            guard fileSize <= Self.maxWholeFileBytes else {
-                throw ToolExecutionError.executionFailed(
-                    toolName: name,
-                    reason: "File is too large (\(fileSize) bytes; maximum is \(Self.maxWholeFileBytes) bytes). Read it in chunks."
-                )
-            }
-
-            let rawText = try String(contentsOf: url, encoding: .utf8)
-            let lines = rawText.components(separatedBy: "\n")
-            let totalLines = lines.count
-
             let requestedOffset = arguments.toolInt("offset")
             let requestedLimit = arguments.toolInt("limit")
 
@@ -102,6 +89,22 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             if let requestedLimit, requestedLimit <= 0 {
                 throw ToolExecutionError.executionFailed(toolName: name, reason: "'limit' must be a positive integer.")
             }
+
+            // 显式 offset/limit 是有界分块读取，输出仍受 250 行 / 30,000 字符限制，
+            // 总大小不得否决它（#393）；只有未指定范围的整文件读取才受总大小限制。
+            let hasExplicitRange = arguments["offset"]?.value != nil || arguments["limit"]?.value != nil
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+            if !hasExplicitRange && fileSize > Self.maxWholeFileBytes {
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "File is too large (\(fileSize) bytes; maximum is \(Self.maxWholeFileBytes) bytes). Read it in chunks."
+                )
+            }
+
+            let rawText = try String(contentsOf: url, encoding: .utf8)
+            let lines = rawText.components(separatedBy: "\n")
+            let totalLines = lines.count
 
             let limit = min(requestedLimit ?? Self.defaultLineLimit, Self.maxLineLimit)
             let startIndex: Int

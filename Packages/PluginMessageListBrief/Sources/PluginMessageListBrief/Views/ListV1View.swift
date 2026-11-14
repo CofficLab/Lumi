@@ -3,6 +3,7 @@ import LumiUI
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
+import KitMessageList
 
 /// Message List V1 View (brief / 简洁模式)
 ///
@@ -73,7 +74,6 @@ struct ListV1View: View {
             if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.surface.opacity(0.6))
             }
         }
         .task {

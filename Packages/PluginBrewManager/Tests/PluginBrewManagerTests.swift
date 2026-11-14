@@ -45,7 +45,7 @@ struct PluginBrewManagerTests {
 
         #expect(info.formulae.first?.installed?.first?.version == "26.4.0")
         #expect(info.casks.first?.name == "Applite")
-        #expect(info.casks.first?.installed == nil)
+        #expect(info.casks.first?.installed?.first?.version == "1.2.5")
         #expect(info.casks.first?.version == "1.2.5")
     }
 

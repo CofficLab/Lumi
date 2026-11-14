@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 58
+测试文件: 4 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,9 +29,10 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DockerManagerLogic**（37 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DockerManagerLogic**（45 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `multipleTagsOfSameImageHaveUniqueStableIDs` 锁定（**回归 #251**）：`DockerImage.id` 必须按 imageID+repository+tag 组合唯一，同一镜像多标签不得共享列表身份，同一引用的身份必须稳定；改动 `DockerImage.id` 或 List 行身份时优先跑该用例。`staleRefreshAfterDeleteDoesNotReinsertImage`、`overlappingRefreshesUseLatestRequestedSnapshot`、`staleRefreshFailureDoesNotClobberNewerSuccess` 锁定（**回归 #252**）：刷新/删除按 `listGeneration` 代次串行写回，只有最新一代的刷新结果（成功或失败）可写回列表与错误状态，删除会递增代次使在途旧刷新失效；改动 `refreshImages`/`deleteImage` 的写回逻辑时优先跑这三条。`ordinaryDeleteUntagsSelectedReferenceAndKeepsOtherTags`、`deletingAnotherTagKeepsSelectedReference`、`ordinaryDeleteOfDanglingImageFallsBackToImageID`、`forceDeleteRemovesWholeImageByImageID` 锁定（**回归 #250**）：普通删除按选中的 `repository:tag` 引用 untag（悬空镜像回退 imageID），只移除该引用行并按引用身份清空选中，强制删除才按 imageID 移除整镜像全部标签；改动 `deleteImage` 的删除目标或行/选中身份时优先跑这四条。
 - **DockerManagerPluginLifecycle**（9 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootRegistersActivityBarItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`selectingAnotherImageIgnoresStaleDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Docker history decoding**（5 条）：由 `decodesRealHistoryLine`、`decodesMultiLayerHistory`、`allInvalidHistoryLinesThrow` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -95,27 +96,40 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 56 | 综合 | docker save 未产出文件时报告失败且不留下文件 | 服务成功返回但未写文件 | 调用 `exportImage` | 返回 false，错误信息含 no output file，目录为空 | P1 | ✅ 已覆盖 | `exportWithoutOutputFileReportsFailureAndRemovesNothingElse` |
 | 57 | DockerManagerLogic | 扫描期间切换镜像后，旧扫描结果不再写入详情页 | 镜像 A 扫描延迟 300ms，期间选中镜像 B | 扫描 A → 切到 B → 等 A 返回 | `selectedImage` 仍为 B，`scanResult` 保持 nil，`isLoading` 为 false | P0 | ✅ 已覆盖 | `staleScanResultIsIgnoredAfterImageSwitch` |
 | 58 | DockerManagerLogic | 重叠操作期间转圈保持到最后一个操作结束 | 扫描耗时 400ms | 扫描进行中再刷新镜像列表 | 刷新结束时 `isLoading` 仍为 true，扫描结束后才变 false | P1 | ✅ 已覆盖 | `overlappingOperationsKeepLoadingUntilLastCompletes` |
+| 59 | Docker history decoding | 真实 docker history JSON 必须可解码，不得静默返回空历史 | Docker CLI 输出 CreatedAt/CreatedSince 字符串，无整数 Created | 解码该行 | CreatedAt/CreatedSince/CreatedBy/Size/Comment 均正确 | P0 | ✅ 已覆盖 | `decodesRealHistoryLine` |
+| 60 | Docker history decoding | 多层历史逐行解码并保序 | 两行真实历史 JSON | 调用 `decodeHistory` | 返回 2 条且顺序与输入一致 | P1 | ✅ 已覆盖 | `decodesMultiLayerHistory` |
+| 61 | Docker history decoding | 全部历史行解析失败时抛错，而不是返回成功的空历史 | 只有无效 JSON 行 | 调用 `decodeHistory` | 抛出 `DockerError.parsingFailed` | P0 | ✅ 已覆盖 | `allInvalidHistoryLinesThrow` |
+| 62 | Docker history decoding | 部分历史行解析失败时保留成功行 | 一行有效 + 一行无效 | 调用 `decodeHistory` | 返回有效历史，不抛错 | P1 | ✅ 已覆盖 | `partialHistoryFailureKeepsValid` |
+| 63 | Docker history decoding | 空历史输出返回空列表 | 空字符串 | 调用 `decodeHistory` | 返回空数组 | P2 | ✅ 已覆盖 | `emptyHistoryOutputReturnsEmpty` |
+| 64 | DockerManagerLogic | 同一镜像多标签的列表标识必须唯一且稳定，不得碰撞 | 同一 imageID 的不同 repository/tag，及同引用不同元数据 | 比较 `DockerImage.id` | 不同引用 id 互异且不等于裸 imageID；同引用 id 稳定 | P0 | ✅ 已覆盖 | `multipleTagsOfSameImageHaveUniqueStableIDs` |
+| 65 | DockerManagerLogic | 删除后迟到的旧刷新不得把已删除镜像重新插回列表 | 镜像 A 在列表，刷新被闸门挂起，期间删除 A | 刷新 A → 删除 A → 释放闸门 → 等刷新返回 | `images`/`filteredImages` 为空，`isLoading` 为 false | P0 | ✅ 已覆盖 | `staleRefreshAfterDeleteDoesNotReinsertImage` |
+| 66 | DockerManagerLogic | 重叠刷新按最新请求写回，旧响应不得覆盖新列表 | 两次刷新被闸门挂起，第二次请求时列表已含 B | r1 → 改列表 → r2 → 先放 r2 → 再放 r1 | 最终列表为最新快照（含 B），`isLoading` 为 false | P0 | ✅ 已覆盖 | `overlappingRefreshesUseLatestRequestedSnapshot` |
+| 67 | DockerManagerLogic | 旧刷新失败不得覆盖最新一次成功刷新的状态 | r1 注入失败、r2 成功，均被闸门挂起 | r1 → r2 → 先放 r2 → 再放 r1 | `errorMessage` 为 nil，列表保留最新成功结果，`isLoading` 为 false | P0 | ✅ 已覆盖 | `staleRefreshFailureDoesNotClobberNewerSuccess` |
+| 68 | DockerManagerLogic | 普通删除多标签镜像只 untag 选中引用，保留其它标签 | 同一 imageID 的 alpha:latest 与 alpha:dev | 普通删除 alpha:dev | 下发 `rmi alpha:dev`（force=false），列表仅剩 alpha:latest | P0 | ✅ 已覆盖 | `ordinaryDeleteUntagsSelectedReferenceAndKeepsOtherTags` |
+| 69 | DockerManagerLogic | 删除同一镜像的另一个标签不得清空当前选中的引用 | 选中 alpha:latest，存在同 ID 的 alpha:dev | 普通删除 alpha:dev | `selectedImage` 仍为 alpha:latest，下发 `rmi alpha:dev` | P0 | ✅ 已覆盖 | `deletingAnotherTagKeepsSelectedReference` |
+| 70 | DockerManagerLogic | 悬空镜像（<none>）普通删除回退到 imageID | repository/tag 均为 <none> | 普通删除该镜像 | 下发 `rmi <imageID>`，列表清空 | P1 | ✅ 已覆盖 | `ordinaryDeleteOfDanglingImageFallsBackToImageID` |
+| 71 | DockerManagerLogic | 强制删除按 imageID 移除整镜像的全部标签 | 同一 imageID 的两个标签 | `deleteImage(force: true)` | 下发 `rmi <imageID>`（force=true），两个标签行全部移除 | P1 | ✅ 已覆盖 | `forceDeleteRemovesWholeImageByImageID` |
 
-> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 43 / 43
-- P2: 已覆盖 3 / 3
-- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 47 / 47
+- P2: 已覆盖 4 / 4
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（43 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（47 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

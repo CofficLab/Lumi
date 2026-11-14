@@ -5,7 +5,7 @@
 KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的终端渲染、Shell 集成、主题适配与多标签会话管理。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 8
+测试文件: 1 个，用例总数: 13
 
 核心组件（源码目录）:
 - `Core/`
@@ -21,6 +21,7 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 - `LumiTerminalView`
 - `ShellIntegration`
 - `TerminalThemeAdapter`
+- `TerminalWorkingDirectory`
 - `TerminalSession`
 - `TerminalTabsViewModel`
 - `TerminalSessionContainerView`
@@ -29,7 +30,7 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（8 条）：由 `shellIntegrationAutoDetect`、`shellDefaultPath`、`themeAdapterDefaultColors` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（13 条）：由 `shellIntegrationAutoDetect`、`shellDefaultPath`、`themeAdapterDefaultColors` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -43,27 +44,32 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 | 6 | 综合 | TerminalTabsViewModel initialization | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tabsViewModelInit` |
 | 7 | 综合 | TerminalSession initialization with theme | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sessionInitWithTheme` |
 | 8 | 综合 | 切回较早会话后只有该会话可接收输入（**回归 #1018**） | 已选中较新的会话 | 把选中项切回较早会话，读取两个会话的呈现状态 | 较早会话不透明、可命中测试且 zIndex 更高；较新会话透明、不参与命中测试且 zIndex 更低 | P0 | ✅ 已覆盖 | `onlySelectedSessionIsHitTestable` |
+| 9 | 综合 | 无效工作目录不得启动 shell 且保持未连接（**回归 #174**） | 工作目录不存在 | 以缺失目录创建会话并调用 startIfNeeded | 会话保持未连接、不创建进程且暴露 startupError | P0 | ✅ 已覆盖 | `invalidWorkingDirectoryDoesNotStartShell` |
+| 10 | 综合 | 不存在的工作目录被拒绝（**回归 #174**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `workingDirectoryValidatorRejectsMissingPath` |
+| 11 | 综合 | 普通文件不是目录被拒绝（**回归 #174**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `workingDirectoryValidatorRejectsRegularFile` |
+| 12 | 综合 | 无搜索权限的目录被拒绝（**回归 #174**） | 非 root 运行 | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `workingDirectoryValidatorRejectsInaccessibleDirectory` |
+| 13 | 综合 | nil/空串/有效目录均通过校验（**回归 #174**） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `workingDirectoryValidatorAcceptsValidInput` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
+- P0: 已覆盖 5 / 5
 - P1: 已覆盖 4 / 4
-- P2: 已覆盖 3 / 3
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 4 / 4
+- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
 - **P1**: 其余功能性用例（4 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

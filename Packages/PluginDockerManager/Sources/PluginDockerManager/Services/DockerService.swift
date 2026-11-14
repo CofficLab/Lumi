@@ -134,24 +134,36 @@ public actor DockerService: SuperLog {
     /// - Returns: Array of DockerImageHistory objects
     public func getImageHistory(_ id: String) async throws -> [DockerImageHistory] {
         let output = try await runDockerCommand(["history", "--format", "{{json .}}", "--no-trunc", id])
-        
-        var history: [DockerImageHistory] = []
+        return try Self.decodeHistory(from: output)
+    }
+
+    /// 逐行解码 `docker history --format '{{json .}}'` 的输出。
+    ///
+    /// 单行失败会被记录；若所有非空行都失败，则抛出错误而不是把
+    /// 解析失败伪装成「成功返回空历史」（#248）。
+    static func decodeHistory(from output: String) throws -> [DockerImageHistory] {
         let lines = output.components(separatedBy: .newlines)
+        var history: [DockerImageHistory] = []
+        var failedLines = 0
         let decoder = JSONDecoder()
-        
+
         for line in lines where !line.isEmpty {
-            if let data = line.data(using: .utf8) {
-                do {
-                    let item = try decoder.decode(DockerImageHistory.self, from: data)
-                    history.append(item)
-                } catch {
-                    if DockerKit.verbose {
-                                            DockerKit.logger.error("\(self.t)Failed to decode history line: \(error)")
-                    }
-                }
+            guard let data = line.data(using: .utf8) else {
+                failedLines += 1
+                DockerKit.logger.error("DockerKit: history line is not valid UTF-8")
+                continue
+            }
+            do {
+                history.append(try decoder.decode(DockerImageHistory.self, from: data))
+            } catch {
+                failedLines += 1
+                DockerKit.logger.error("DockerKit: failed to decode history line: \(error)")
             }
         }
-        
+
+        if history.isEmpty, failedLines > 0 {
+            throw DockerError.parsingFailed("\(failedLines) history line(s) could not be decoded")
+        }
         return history
     }
     

@@ -20,7 +20,27 @@ struct ModelListItem: View {
     let model: String
     let isSelected: Bool
     let modelInfo: LLMModelInfo?
+    /// 该模型是否为供应商声明的轻量任务模型（对话标题、上下文摘要等幕后调用）。
+    ///
+    /// 只做视觉标记：轻量模型仍然可以被正常选中作为对话主模型。
+    let isUtilityModel: Bool
     let onSelect: () -> Void
+
+    init(
+        displayName: String,
+        model: String,
+        isSelected: Bool,
+        modelInfo: LLMModelInfo?,
+        isUtilityModel: Bool = false,
+        onSelect: @escaping () -> Void
+    ) {
+        self.displayName = displayName
+        self.model = model
+        self.isSelected = isSelected
+        self.modelInfo = modelInfo
+        self.isUtilityModel = isUtilityModel
+        self.onSelect = onSelect
+    }
 
     /// 当前模型是否已被上游下线。
     private var isRetired: Bool { modelInfo?.isRetired == true }
@@ -41,6 +61,11 @@ struct ModelListItem: View {
                     }
 
                     Spacer()
+
+                    if isUtilityModel {
+                        AppTag(pluginLocalization.string("Lightweight"), systemImage: "bolt.fill")
+                            .help(pluginLocalization.string("Used for background tasks such as conversation titles and context summaries"))
+                    }
 
                     if isRetired {
                         AppTag(pluginLocalization.string("Retired"), systemImage: "clock.badge.xmark")

@@ -191,3 +191,56 @@ func pipCommandReturnsNilOnlyWhenEveryEntryIsUnavailable() {
 
     #expect(PipCommand.firstAvailable(among: []) == nil)
 }
+
+// MARK: - Pip 默认源识别（回归 #848）
+
+@Test("pip 未设置 index-url 的 No such key 报错识别为默认 PyPI 源")
+func pipUnsetIndexURLIsRecognizedAsDefaultSource() {
+    // pip config get global.index-url 在键未设置时的真实 stderr。
+    #expect(RegistryService.pipIndexURLIsUnset("ERROR: No such key - global.index-url"))
+    // 真正的命令失败不得被误判为默认源。
+    #expect(!RegistryService.pipIndexURLIsUnset("zsh: command not found: pip"))
+    #expect(!RegistryService.pipIndexURLIsUnset("ERROR: Could not open requirements file"))
+    #expect(!RegistryService.pipIndexURLIsUnset(""))
+}
+
+@Test("pip 未设置键的真实退出行为经 execute 捕获后判定为默认源")
+func pipUnsetKeyFailureIsClassifiedAsDefaultNotUnknown() async {
+    // 复刻 pip config get global.index-url 在键未设置时的行为：退出码 1、
+    // stdout 为空、stderr 为 "ERROR: No such key - global.index-url"。
+    do {
+        _ = try await RegistryService.shared.execute(
+            "printf 'ERROR: No such key - global.index-url\\n' >&2; exit 1"
+        )
+        Issue.record("未设置键时 pip 以非零退出，应当抛错")
+    } catch let error as RegistryServiceError {
+        guard case .commandFailed(_, let status, let output) = error else {
+            Issue.record("意外的错误类型: \(error)")
+            return
+        }
+        #expect(status == 1)
+        // 生产 catch 用同一判定把该错误归为默认 PyPI 源，而非 Default/Unknown。
+        #expect(RegistryService.pipIndexURLIsUnset(output))
+    } catch {
+        Issue.record("意外的错误: \(error)")
+    }
+}
+
+@Test("pip 真正的查询失败不得被当作默认源")
+func pipGenuineFailureIsNotTreatedAsDefault() async {
+    do {
+        _ = try await RegistryService.shared.execute(
+            "printf 'ERROR: Could not open requirements file\\n' >&2; exit 2"
+        )
+        Issue.record("非零退出应当抛错")
+    } catch let error as RegistryServiceError {
+        guard case .commandFailed(_, let status, let output) = error else {
+            Issue.record("意外的错误类型: \(error)")
+            return
+        }
+        #expect(status == 2)
+        #expect(!RegistryService.pipIndexURLIsUnset(output))
+    } catch {
+        Issue.record("意外的错误: \(error)")
+    }
+}

@@ -214,3 +214,184 @@ struct SQLiteReturningTests {
         ))
     }
 }
+
+@Suite("SQLite WITH (CTE)")
+struct SQLiteWithQueryTests {
+    @Test("WITH 查询识别为读路径，注释前缀与大小写不影响判定")
+    @MainActor
+    func withQueryUsesReadPath() {
+        // issue #276 的复现语句：只读 CTE 必须走 query。
+        #expect(DatabaseViewModel.isReadStatement(
+            "WITH x AS (SELECT 1 AS n) SELECT n FROM x;",
+            type: .sqlite
+        ))
+        // 注释前缀不能被误判成写入。
+        #expect(DatabaseViewModel.isReadStatement(
+            "-- leading comment\nWITH x AS (SELECT 1 AS n) SELECT n FROM x",
+            type: .sqlite
+        ))
+        #expect(DatabaseViewModel.isReadStatement(
+            "/* block */ with x as (select 1 as n) select n from x",
+            type: .sqlite
+        ))
+        // 普通写入（无 RETURNING）仍走 execute，不被 WITH 改动误伤。
+        #expect(!DatabaseViewModel.isReadStatement(
+            "INSERT INTO t(name) VALUES('first')",
+            type: .sqlite
+        ))
+    }
+
+    @Test("WITH 查询经 query 路径返回真实结果行")
+    @MainActor
+    func withQueryReturnsRowsEndToEnd() async throws {
+        let path = NSTemporaryDirectory() + "/lumi-with-\(UUID().uuidString).sqlite"
+        defer { try? FileManager.default.removeItem(atPath: path) }
+
+        let connection = try await SQLiteDriver().connect(config: DatabaseConfig(
+            name: "With",
+            type: .sqlite,
+            database: path
+        ))
+
+        let sql = "WITH x AS (SELECT 1 AS n) SELECT n FROM x;"
+        // 生产 executeQuery 依据 isReadStatement 选择 query；这里锁定该判定为读。
+        #expect(DatabaseViewModel.isReadStatement(sql, type: .sqlite))
+
+        let result = try await connection.query(sql, params: nil)
+        #expect(result.columns == ["n"])
+        #expect(result.rows == [[.integer(1)]])
+        await connection.close()
+    }
+}
+
+@Suite("Redis read-command routing")
+struct RedisReadCommandRoutingTests {
+    @Test("Redis 只读命令识别为读路径（含 KEYS/TYPE，大小写不敏感）")
+    @MainActor
+    func redisReadCommandsUseQueryPath() {
+        // issue #277 的复现命令：KEYS / TYPE 必须走 query 才能展示真实 RESP 值。
+        let readCommands = [
+            "KEYS *", "TYPE mykey", "EXISTS mykey", "TTL mykey",
+            "HGETALL h", "MGET a b", "ZRANGEBYSCORE z 0 10", "INFO",
+            "keys *", "type mykey", "  GET mykey  ",
+            // 既有读命令不能被改坏。
+            "GET mykey", "SCAN 0", "HGET h f", "LRANGE l 0 -1",
+            "SMEMBERS s", "ZRANGE z 0 -1",
+        ]
+        for command in readCommands {
+            #expect(DatabaseViewModel.isReadStatement(command, type: .redis),
+                    "\(command) 应识别为读路径")
+        }
+    }
+
+    @Test("Redis 写入命令仍走 execute，前缀相近的写命令不被误判为读")
+    @MainActor
+    func redisWriteCommandsUseExecutePath() {
+        let writeCommands = [
+            "SET k v", "DEL k", "HSET h f v", "LPUSH l v", "SADD s v", "ZADD z 1 v",
+            "EXPIRE k 10", "FLUSHDB",
+            // 与读命令共享前缀、但本质是写入：精确匹配后不得再被当成读。
+            "GETSET k v", "GETDEL k", "ZRANGESTORE dst z 0 -1",
+            // 多词命令的写子命令统一交给 execute。
+            "CONFIG SET maxmemory 100mb",
+        ]
+        for command in writeCommands {
+            #expect(!DatabaseViewModel.isReadStatement(command, type: .redis),
+                    "\(command) 应识别为写入路径")
+        }
+    }
+}
+
+/// 记录下发命令的假 Redis 连接：只捕获 sql，不做真实网络往返。
+private actor RecordingRedisConnection: DatabaseConnection {
+    private var commands: [String] = []
+
+    func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
+        commands.append(sql)
+        return QueryResult(columns: ["Key", "Value"], rows: [], rowsAffected: 0)
+    }
+
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
+        commands.append(sql)
+        return 0
+    }
+
+    func beginTransaction() async throws -> any DatabaseTransaction {
+        RecordingRedisTransaction()
+    }
+
+    func close() async {}
+    func isAlive() async -> Bool { true }
+    func isClosed() -> Bool { false }
+
+    func reset() { commands.removeAll() }
+    func lastCommand() -> String? { commands.last }
+}
+
+private struct RecordingRedisTransaction: DatabaseTransaction {
+    func commit() async throws {}
+    func rollback() async throws {}
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int { 0 }
+}
+
+private actor RecordingRedisDriver: DatabaseDriver {
+    nonisolated let type: DatabaseType
+    private let connection: RecordingRedisConnection
+
+    init(connection: RecordingRedisConnection) {
+        self.type = .redis
+        self.connection = connection
+    }
+
+    func connect(config: DatabaseConfig) async throws -> any DatabaseConnection {
+        connection
+    }
+}
+
+@MainActor
+@Suite("Redis key quoting")
+struct RedisKeyQuotingTests {
+    @Test("含空格/引号/反斜杠的键经 quote 后 tokenize 仍还原为单个参数（#282）")
+    func quotedKeyRoundTripsAsSingleArgument() throws {
+        let keys = [
+            "foo bar",            // issue #282 的复现键
+            "plain",
+            "",                   // 空键
+            "a\tb",               // 制表符
+            "a\nb",               // 换行
+            "has\"quote",         // 双引号
+            "has'single",         // 单引号
+            "back\\slash",        // 反斜杠
+            "mix \" \\ ' end ",   // 混合 + 尾随空格
+            "trailing\\",         // 尾随反斜杠
+        ]
+        for key in keys {
+            let quoted = RedisCommandParser.quote(key)
+            #expect(try RedisCommandParser.tokenize(quoted) == [key],
+                    "键 \(key.debugDescription) 引用后必须还原为单个参数")
+            #expect(try RedisCommandParser.tokenize("GET \(quoted)") == ["GET", key],
+                    "GET \(key.debugDescription) 必须解析成命令 + 单个完整键")
+        }
+    }
+
+    @Test("侧边栏打开含空格的键时，下发的 GET 只携带一个完整键参数（#282）")
+    func openRedisKeySendsSingleExactKeyArgument() async throws {
+        let manager = DatabaseManagerCore()
+        // 先 bootstrap 标记该 manager 已注册，再用假驱动覆盖 .redis，
+        // 否则 connect 内的 registerBuiltinsIfNeeded 会用真实 RedisDriver 覆盖假驱动。
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        let connection = RecordingRedisConnection()
+        await manager.register(driver: RecordingRedisDriver(connection: connection))
+        let viewModel = DatabaseViewModel(loadSavedConfigs: false, manager: manager)
+        await viewModel.connect(config: DatabaseConfig(name: "redis", type: .redis, database: "0"))
+
+        await connection.reset()
+        await viewModel.openRedisKey("foo bar")
+
+        let sent = try #require(await connection.lastCommand(), "openRedisKey 必须向连接下发命令")
+        // 真实 RedisConnection.query 用 compose 解析命令；这里复刻该解析，
+        // 断言含空格的键没有被拆成多个参数（修复前会得到 ["GET","foo","bar"]）。
+        let args = try RedisCommandArguments.compose(command: sent, params: nil)
+        #expect(args == ["GET", "foo bar"], "GET 必须只携带一个完整键 foo bar，实际 \(args)")
+    }
+}

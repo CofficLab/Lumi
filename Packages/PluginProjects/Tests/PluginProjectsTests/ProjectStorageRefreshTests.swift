@@ -36,7 +36,7 @@ struct ProjectStorageRefreshTests {
 
     /// 刷新必须清空探测缓存，否则目录删除后视图仍显示旧状态。
     @Test("刷新会清空探测缓存")
-    func refreshInvalidatesDetectorCache() {
+    func refreshInvalidatesDetectorCache() async {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -44,15 +44,16 @@ struct ProjectStorageRefreshTests {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         ProjectStorageDetector.invalidateAll()
-        #expect(ProjectStorageDetector.kind(for: directory.path) == .internalDisk)
+        #expect(ProjectStorageDetector.probeAndCache(for: directory.path) == .internalDisk)
 
         try? FileManager.default.removeItem(at: directory)
 
         // 未刷新时缓存仍返回旧结果。
         #expect(ProjectStorageDetector.kind(for: directory.path) == .internalDisk)
 
-        // 刷新后重新探测，能看到目录已从磁盘上消失。
+        // 刷新后后台重新探测，能看到目录已从磁盘上消失。
         viewModel.refreshStorageState()
+        await ProjectStorageDetector.refresh(paths: [directory.path])
         #expect(ProjectStorageDetector.kind(for: directory.path) == .missingDirectory)
     }
 

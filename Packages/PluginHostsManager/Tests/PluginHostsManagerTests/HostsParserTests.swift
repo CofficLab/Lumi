@@ -77,4 +77,41 @@ struct HostsParserTests {
 
         #expect(reparsed.map(\.type) == entries.map(\.type))
     }
+
+    @Test("parses a legal absolute domain (trailing root dot) as an active entry, not a comment")
+    func parsesAbsoluteDomainAsActiveEntry() throws {
+        let content = "127.0.0.1 example.com.\n"
+        let entries = HostsParser.parse(content: content)
+
+        let entry = try #require(entries.first)
+        #expect(entry.type == .entry(ip: "127.0.0.1", domains: ["example.com."], isEnabled: true, comment: nil))
+        #expect(entry.isEnabled)
+        // Saving an unrelated edit must keep the mapping active, not write it back commented out.
+        #expect(HostsParser.serialize(entries: entries) == content)
+    }
+
+    @Test("accepts a single trailing root dot but rejects double dots and root-only")
+    func acceptsAbsoluteDomainWithTrailingRootDot() {
+        #expect(HostsParser.isValidDomain("example.com."))
+        #expect(HostsParser.isValidDomain("localhost."))
+        #expect(HostsParser.isValidDomain("example.com..") == false)
+        #expect(HostsParser.isValidDomain(".") == false)
+    }
+
+    @Test("keeps an unrecognized active line verbatim and enabled across save (must not comment it out)")
+    func preservesUnrecognizedActiveLineVerbatim() throws {
+        // A legal hosts mapping whose alias falls outside the ASCII grammar (IDN).
+        let content = "127.0.0.1 例子.com\n"
+        let entries = HostsParser.parse(content: content)
+
+        let entry = try #require(entries.first)
+        #expect(entry.type == .comment("127.0.0.1 例子.com"))
+
+        let serialized = HostsParser.serialize(entries: entries)
+        #expect(serialized == content)
+        #expect(serialized.hasPrefix("#") == false)
+
+        let reparsed = HostsParser.parse(content: serialized)
+        #expect(reparsed.map(\.type) == entries.map(\.type))
+    }
 }

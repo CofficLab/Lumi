@@ -61,6 +61,16 @@ public actor DownloadManager {
     private var taskStates: [String: DownloadTaskState] = [:]
     /// 进度回调
     private var progressHandlers: [String: @Sendable (DownloadProgress) -> Void] = [:]
+    /// 每个 id 当前所属的下载代次。取消后立即以同 id 重启时，旧任务的晚到
+    /// 状态写回与收尾清理据此被作废，不得改写或注销新任务（#157）。
+    private var taskGenerations: [String: Int] = [:]
+    private var generationCounter: Int = 0
+
+    /// 并发下载名额（信号量），让 `maxConcurrentDownloads` 真正生效。
+    /// 名额耗尽时后续下载在 `acquireSlot` 挂起排队，直到某个下载到达终态在
+    /// `releaseSlot` 归还名额并唤醒队首等待者（#484）。
+    private var availableSlots: Int
+    private var slotWaiters: [CheckedContinuation<Void, Never>] = []
 
     // MARK: - Initialization
 
@@ -69,6 +79,8 @@ public actor DownloadManager {
         httpClient: HTTPClient? = nil
     ) {
         self.configuration = configuration
+        // 至少保留 1 个名额：配置为 0 或负数时不至于让所有下载永久排队。
+        self.availableSlots = max(1, configuration.maxConcurrentDownloads)
 
         // 用户未提供 HTTPClient 时，创建带共享限速器的 DefaultHTTPClient，
         // 使运行时 setMaxBytesPerSecond 能即时生效（下载到一半改限速）。
@@ -119,21 +131,40 @@ public actor DownloadManager {
             progressHandlers[task.id] = handler
         }
 
+        // 为本次调用分配代次，作为「同 id 任务实例」的身份。await 期间若被取消并以
+        // 同 id 重启，新调用会覆盖该代次，旧调用据此作废自己的晚到写回与清理。
+        generationCounter &+= 1
+        let generation = generationCounter
+        taskGenerations[task.id] = generation
+
         // 创建下载任务
         let downloadTask = Task { [weak self] in
             guard let self else { return }
-            await self.performDownload(task)
+            await self.performDownload(task, generation: generation)
         }
 
         activeTasks[task.id] = downloadTask
 
-        // 等待任务完成
-        await downloadTask.value
+        // 等待任务完成。downloadTask 是非结构化 Task，不继承调用方的取消；
+        // 工具 Job / turn / 会话被取消时必须显式转发，否则内部 HTTP 请求与文件
+        // 写入会一直跑到自然结束，Job 卡在 cancelling（#471）。
+        await withTaskCancellationHandler {
+            await downloadTask.value
+        } onCancel: {
+            downloadTask.cancel()
+        }
+
+        // 本次调用已被同 id 的新任务取代：不得读取或清理新任务的状态与注册，
+        // 否则会把新任务误标为 cancelled 并注销其 activeTasks/progressHandlers。
+        guard taskGenerations[task.id] == generation else {
+            throw DownloadError.cancelled
+        }
 
         // 检查结果
         let finalState = taskStates[task.id] ?? .pending
         activeTasks.removeValue(forKey: task.id)
         progressHandlers.removeValue(forKey: task.id)
+        taskGenerations.removeValue(forKey: task.id)
 
         switch finalState {
         case .completed:
@@ -198,18 +229,44 @@ public actor DownloadManager {
 
     // MARK: - Private Methods
 
-    private func performDownload(_ task: DownloadTask) async {
+    /// 取得一个并发名额；名额耗尽时挂起排队，直到 `releaseSlot` 唤醒。
+    private func acquireSlot() async {
+        if availableSlots > 0 {
+            availableSlots -= 1
+            return
+        }
+        await withCheckedContinuation { continuation in
+            slotWaiters.append(continuation)
+        }
+    }
+
+    /// 归还一个并发名额：有排队者时把名额直接转交给队首（不增加可用计数），
+    /// 否则可用名额加一。如此活跃下载数始终不超过 `maxConcurrentDownloads`。
+    private func releaseSlot() {
+        if let next = slotWaiters.first {
+            slotWaiters.removeFirst()
+            next.resume()
+        } else {
+            availableSlots += 1
+        }
+    }
+
+    private func performDownload(_ task: DownloadTask, generation: Int) async {
+        // 取得并发名额后才进入实际下载；defer 保证完成/失败/取消/提前返回
+        // 任一终态都归还名额并唤醒排队者，避免名额泄漏导致后续下载永久等待。
+        await acquireSlot()
+        defer { releaseSlot() }
         do {
             // 检查是否已取消
             try Task.checkCancellation()
 
             // 更新状态为下载中
-            updateState(task.id, .downloading(progress: DownloadProgress()))
+            updateState(task.id, generation: generation, .downloading(progress: DownloadProgress()))
 
             // 检查文件是否已完整下载
             if let expectedSize = task.expectedSize,
                fileValidator.isComplete(fileAt: task.destination, expectedSize: expectedSize) {
-                updateState(task.id, .completed)
+                updateState(task.id, generation: generation, .completed)
                 return
             }
 
@@ -261,7 +318,7 @@ public actor DownloadManager {
                     // 跳过覆盖（见下方实现），避免滞后的进度回调把 .cancelled 改回
                     // .downloading，从而让取消后重新下载同 id 被误判为「已在进行中」。
                     Task { [weak self] in
-                        await self?.updateStateAndNotify(taskId, progress)
+                        await self?.updateStateAndNotify(taskId, generation: generation, progress)
                     }
                 },
                 onCancelled: { _ in
@@ -293,17 +350,18 @@ public actor DownloadManager {
             }
 
             // 更新状态为完成
-            updateState(task.id, .completed)
+            updateState(task.id, generation: generation, .completed)
 
         } catch {
             // 用户取消可能以 Swift CancellationError 或 URLError.cancelled(-999) 的形式
             // 从 URLSession 冒出来，两者都必须保持为 .cancelled，不能被改写成未知失败。
+            // 写回前校验代次：取消后以同 id 重启的新任务不得被旧任务的晚到终态覆盖（#157）。
             if Self.isCancellation(error) {
-                updateState(task.id, .cancelled)
+                updateState(task.id, generation: generation, .cancelled)
             } else if let downloadError = error as? DownloadError {
-                updateState(task.id, .failed(downloadError))
+                updateState(task.id, generation: generation, .failed(downloadError))
             } else {
-                updateState(task.id, .failed(.unknown(error.localizedDescription)))
+                updateState(task.id, generation: generation, .failed(.unknown(error.localizedDescription)))
             }
         }
     }
@@ -316,11 +374,15 @@ public actor DownloadManager {
         return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
-    private func updateState(_ taskId: String, _ state: DownloadTaskState) {
+    private func updateState(_ taskId: String, generation: Int, _ state: DownloadTaskState) {
+        // 仅当本次调用仍是该 id 的当前代次时才写回，作废旧任务的晚到终态。
+        guard taskGenerations[taskId] == generation else { return }
         taskStates[taskId] = state
     }
 
-    private func updateStateAndNotify(_ taskId: String, _ progress: DownloadProgress) {
+    private func updateStateAndNotify(_ taskId: String, generation: Int, _ progress: DownloadProgress) {
+        // 旧任务（已被同 id 新任务取代）的滞后进度不得写入新任务的状态。
+        guard taskGenerations[taskId] == generation else { return }
         // 若任务已被取消/失败/完成（终态），不再被滞后的进度回调覆盖回 .downloading。
         // 这是取消（暂停）后能重新下载同一文件的关键：否则残留的 .downloading 状态会让
         // 下一次 download() 的前置检查误抛「任务已在进行中」。

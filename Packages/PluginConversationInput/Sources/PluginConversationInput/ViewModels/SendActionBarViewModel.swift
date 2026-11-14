@@ -1,6 +1,7 @@
 import Foundation
 import os
 import LumiLoggingKit
+import ProviderMessage
 import ProviderMessageSender
 /// Manages the state and actions for the send/stop action bar.
 ///
@@ -12,7 +13,7 @@ import ProviderMessageSender
 final class SendActionBarViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin-conversation-input", category: "SendActionBarButton")
     nonisolated public static let emoji = "🔘"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复点击排起多条发送链。
@@ -94,23 +95,46 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         // 附件）当成新消息重复提交。标记由两条发送入口共用。
         guard !capability.isCommittingDraft else { return }
 
-        // 附件还在异步读取：等读取结束再快照，否则这条消息会漏掉用户刚选中
+        // 在按下 Send 的瞬间快照正文与折叠块。附件异步读取期间用户可能继续
+        // 编辑，发出去的必须是按下 Send 时的那一份草稿，而不是读取结束后
+        // 输入框里的新内容（#1172）。附件本身仍等读取结束再快照（#1023）。
+        let content = capability.text
+        let blocks = capability.collapsedBlocks
+        // 同时锁定按下 Send 时选中的会话：等待期间用户可能切换会话，提交必须
+        // 仍落在发起发送的那个会话，绝不能把新会话的独立草稿当成这次发送（#1173）。
+        let conversationID = capability.selectedConversationID
+
+        // 附件还在异步读取：等读取结束再提交，否则这条消息会漏掉用户刚选中
         // 的附件，附件又滚进下一条无关消息（#1023）。
         if capability.pendingAttachmentReadCount > 0 {
             guard !isWaitingForAttachmentReads else { return }
             isWaitingForAttachmentReads = true
             Task { @MainActor in
-                await capability.waitForAttachmentReads()
+                let succeeded = await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
-                send()
+                // 读取失败：中止本次发送，保留草稿与错误提示，让用户自行决定
+                // 重试或去掉附件，而不是悄悄降级成纯文本提交（#1174）。
+                guard succeeded else {
+                    refreshSendState()
+                    return
+                }
+                performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return
         }
 
+        performSend(content: content, blocks: blocks, conversationID: conversationID)
+    }
+
+    /// 用按下 Send 时快照的正文、折叠块与目标会话执行提交。
+    private func performSend(
+        content: String,
+        blocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) {
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
-        let content = capability.text
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let imageAttachments = capability.pendingImageAttachments
         let fileAttachments = capability.pendingFileAttachments
@@ -118,9 +142,6 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
-        // 发送瞬间的折叠块区间。提交成功后草稿被清空，区间也必须同时作废，
-        // 否则下一次发送会带上上一条消息的区间。
-        let blocks = capability.collapsedBlocks
         capability.errorMessage = nil
 
         if hasAttachments {
@@ -138,7 +159,7 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
-                        conversationID: nil
+                        conversationID: conversationID
                     )
                 } catch {
                     Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
@@ -163,7 +184,7 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
                     return
                 }
 
-                clearSentDraft(content: content)
+                clearSentDraft(content: content, conversationID: conversationID)
                 refreshSendState()
                 Self.logger.info("\(self.t)message attachments encoded and committed")
                 guard !commit.wasQueued else { return }
@@ -178,14 +199,14 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
-                conversationID: nil
+                conversationID: conversationID
             ) else {
                 // 未形成有效提交：草稿原样保留，只刷新按钮状态。
                 refreshSendState()
                 return
             }
 
-            clearSentDraft(content: content)
+            clearSentDraft(content: content, conversationID: conversationID)
             refreshSendState()
             Self.logger.info("\(self.t)message committed successfully")
             guard !commit.wasQueued else { return }
@@ -206,7 +227,10 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
     ///
     /// - Important: 只清空**本次发送的那一份**草稿。附件编码期间用户可能继续
     ///   输入，此时输入框已经不是发出去的内容，直接清空会吞掉新草稿。
-    private func clearSentDraft(content: String) {
+    ///   还可能切到别的会话并输入**相同文本**：仅凭正文相等会误清新会话的
+    ///   独立草稿，因此必须同时校验当前仍选中发起发送的会话（#1175）。
+    private func clearSentDraft(content: String, conversationID: UUID?) {
+        guard capability.selectedConversationID == conversationID else { return }
         guard capability.text == content else { return }
         capability.text = ""
         capability.collapsedBlocks = []

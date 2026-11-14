@@ -349,10 +349,11 @@ public struct PostgreSQLIntrospector: DatabaseIntrospector {
                     return DatabaseObject(kind: kind, name: name, database: database, schema: schema)
                 }
             }
-            let schemaFilter = schema ?? "current_schema()"
+            // 未指定 schema 时用 current_schema() 函数（不带引号）；显式 schema 才转义成字符串字面量（#275）。
+            let schemaCondition = schema.map { "'\(Self.escape($0))'" } ?? "current_schema()"
             let sql = """
             SELECT table_name FROM information_schema.tables
-            WHERE table_schema = '\(Self.escape(schemaFilter))' AND table_type = '\(tableType)'
+            WHERE table_schema = \(schemaCondition) AND table_type = '\(tableType)'
             ORDER BY table_name;
             """
             let result = try await connection.query(sql, params: nil)
@@ -362,11 +363,11 @@ public struct PostgreSQLIntrospector: DatabaseIntrospector {
             }
         case .procedure, .function:
             let kindFilter = kind == .procedure ? "p" : "f"
-            let schemaFilter = schema ?? "current_schema()"
+            let schemaCondition = schema.map { "'\(Self.escape($0))'" } ?? "current_schema()"
             let sql = """
             SELECT p.proname FROM pg_proc p
             JOIN pg_namespace n ON n.oid = p.pronamespace
-            WHERE n.nspname = '\(Self.escape(schemaFilter))' AND p.prokind = '\(kindFilter)'
+            WHERE n.nspname = \(schemaCondition) AND p.prokind = '\(kindFilter)'
             ORDER BY p.proname;
             """
             let result = try await connection.query(sql, params: nil)

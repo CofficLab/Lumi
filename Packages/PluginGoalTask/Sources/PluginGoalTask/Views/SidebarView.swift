@@ -73,6 +73,7 @@ public struct SidebarView: View {
                     isCollapsed: isCollapsed,
                     forkCoordinator: forkCoordinator,
                     tasks: viewModel.activeTasks,
+                    onSaveGoal: viewModel.updateGoalContent,
                     onToggleCollapsed: { isCollapsed.toggle() }
                 )
 

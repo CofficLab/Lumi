@@ -7,18 +7,18 @@ import ProviderMessage
 extension Message {
     /// 用于速度计算的有效时长（毫秒）。
     ///
-    /// `streamingDurationMs` 从第一个 token 开始计时。如果供应商缓冲了整个响应
-    /// 再一次性发送，该值可能接近零。此时 `latencyMs`（完整请求延迟）更能反映
-    /// 用户感知速度。
+    /// 优先用 `streamingDurationMs`（从第一个 token 到结束的生成时长）作为分母，
+    /// TPS 只衡量生成速度，不含排队/预填充（TTFT）。仅当 streaming 缺失或为零
+    /// （供应商缓冲整个响应再一次性发送）时，才回退到 `latencyMs`（完整请求延迟）。
     var speedDurationMs: Double? {
         // 旧版把计时写进 metadata，没有强类型列。强类型优先、metadata 兜底，
         // 否则升级后历史响应的样本会被整体丢弃（#1029）。
         let streaming = streamingDurationMs ?? legacyTimingMs("streamingDurationMs")
         let latency = latencyMs ?? legacyTimingMs("latencyMs")
 
+        // latency = TTFT + streaming，取 max 会让完整延迟恒胜，把预填充时间
+        // 算进生成时长，系统性低估 TPS（#237）。streaming 有效时直接用它。
         switch (streaming, latency) {
-        case let (s?, l?) where s > 0 && l > 0:
-            return max(s, l)
         case let (s?, _) where s > 0:
             return s
         case let (_, l?) where l > 0:

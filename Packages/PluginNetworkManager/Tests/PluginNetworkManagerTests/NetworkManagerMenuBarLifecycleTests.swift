@@ -3,7 +3,7 @@ import ProviderMenuBar
 import Testing
 @testable import PluginNetworkManager
 
-@Suite("NetworkManager 菜单栏生命周期")
+@Suite("NetworkManager 菜单栏生命周期", HTTPExchangeStoreGateTrait())
 @MainActor
 struct NetworkManagerMenuBarLifecycleTests {
     @Test("禁用自动撤回，重新启用恢复贡献")

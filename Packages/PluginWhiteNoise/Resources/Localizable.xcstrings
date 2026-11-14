@@ -26,6 +26,18 @@
             "state" : "translated",
             "value" : "15 / 30 / 60 分鐘後自動停止,帶倒計時。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 / 30 / 60 分鐘後自動停止,帶倒計時。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 / 30 / 60 分鐘後自動停止,帶倒計時。"
+          }
         }
       }
     },
@@ -82,6 +94,18 @@
             "state" : "translated",
             "value" : "棕噪音"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "棕噪音"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "棕噪音"
+          }
         }
       }
     },
@@ -100,6 +124,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "核心能力"
@@ -126,6 +162,18 @@
             "state" : "translated",
             "value" : "啟用外掛"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用外掛"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用外掛"
+          }
         }
       }
     },
@@ -144,6 +192,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基於 AVAudioEngine 逐幀生成,無音訊檔案、真正無縫循環。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基於 AVAudioEngine 逐幀生成,無音訊檔案、真正無縫循環。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "基於 AVAudioEngine 逐幀生成,無音訊檔案、真正無縫循環。"
@@ -170,6 +230,18 @@
             "state" : "translated",
             "value" : "運作原理"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "運作原理"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "運作原理"
+          }
         }
       }
     },
@@ -188,6 +260,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獨立音量"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獨立音量"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "獨立音量"
@@ -231,6 +315,12 @@
     },
     "Master Volume" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Master Volume"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -276,6 +366,18 @@
             "state" : "translated",
             "value" : "混音"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混音"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混音"
+          }
         }
       }
     },
@@ -294,6 +396,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混合噪聲"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混合噪聲"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "混合噪聲"
@@ -320,6 +434,18 @@
             "state" : "translated",
             "value" : "以混音模式運行,不打斷你正在聽的音樂。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以混音模式運行,不打斷你正在聽的音樂。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以混音模式運行,不打斷你正在聽的音樂。"
+          }
         }
       }
     },
@@ -338,6 +464,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "噪聲音軌"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "噪聲音軌"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "噪聲音軌"
@@ -398,6 +536,18 @@
             "state" : "translated",
             "value" : "打開側邊欄視圖"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開側邊欄視圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開側邊欄視圖"
+          }
         }
       }
     },
@@ -437,6 +587,12 @@
     },
     "Paused" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -482,11 +638,29 @@
             "state" : "translated",
             "value" : "粉噪音"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粉噪音"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粉噪音"
+          }
         }
       }
     },
     "Playing" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -532,6 +706,18 @@
             "state" : "translated",
             "value" : "與其它音訊共存"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與其它音訊共存"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與其它音訊共存"
+          }
         }
       }
     },
@@ -550,6 +736,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
@@ -576,6 +774,18 @@
             "state" : "translated",
             "value" : "即時演算法生成"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時演算法生成"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時演算法生成"
+          }
         }
       }
     },
@@ -594,6 +804,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "睡眠定時"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "睡眠定時"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "睡眠定時"
@@ -620,6 +842,18 @@
             "state" : "translated",
             "value" : "睡眠定時"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "睡眠定時"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "睡眠定時"
+          }
         }
       }
     },
@@ -642,11 +876,29 @@
             "state" : "translated",
             "value" : "側邊欄 ActivityBar 出現白噪音容器。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄 ActivityBar 出現白噪音容器。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄 ActivityBar 出現白噪音容器。"
+          }
         }
       }
     },
     "This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer." : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -692,6 +944,18 @@
             "state" : "translated",
             "value" : "三軌混音"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三軌混音"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三軌混音"
+          }
         }
       }
     },
@@ -710,6 +974,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開關音軌、調節音量、按需設定睡眠定時。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開關音軌、調節音量、按需設定睡眠定時。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "開關音軌、調節音量、按需設定睡眠定時。"
@@ -736,6 +1012,18 @@
             "state" : "translated",
             "value" : "白 / 粉 / 棕噪聲獨立開關、各自調節音量,混合輸出。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "白 / 粉 / 棕噪聲獨立開關、各自調節音量,混合輸出。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "白 / 粉 / 棕噪聲獨立開關、各自調節音量,混合輸出。"
+          }
         }
       }
     },
@@ -754,6 +1042,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設關閉,在外掛管理中啟用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設關閉,在外掛管理中啟用。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "預設關閉,在外掛管理中啟用。"
@@ -811,6 +1111,18 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "白噪音"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "白噪音"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "白噪音"

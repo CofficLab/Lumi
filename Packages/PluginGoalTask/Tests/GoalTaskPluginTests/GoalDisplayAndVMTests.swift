@@ -31,7 +31,7 @@ struct GoalDisplayItemTests {
             conversationId: "c",
             title: "Title",
             goalDescription: "desc",
-            successCriteria: nil,
+            successCriteria: "criteria",
             status: .blocked,
             blockedReason: "reason"
         )
@@ -42,6 +42,7 @@ struct GoalDisplayItemTests {
         #expect(item.status == .blocked)
         #expect(item.blockedReason == "reason")
         #expect(item.goalDescription == "desc")
+        #expect(item.successCriteria == "criteria")
     }
 
     @Test("终态判定只认 completed / failed / skipped")
@@ -411,6 +412,132 @@ struct GoalVMTests {
             try await Task.sleep(nanoseconds: 25_000_000)
         }
         #expect(vm.goals.count == 1)
+    }
+
+    // MARK: - updateGoalContent（#1332）
+
+    @Test("保存编辑写库并经 GoalChangeCenter 通知当前会话")
+    func testUpdateGoalContentNotifiesAndPersists() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let conversationID = UUID()
+        let created = try await manager.createGoal(
+            conversationId: conversationID.uuidString,
+            title: "Before",
+            description: "old",
+            successCriteria: nil,
+            tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        let vm = GoalVM(managerProvider: { manager })
+        vm.updateCurrentConversationID(conversationID)
+        await vm.refresh()
+
+        var notified: [UUID] = []
+        let observer = GoalChangeObserver { notified.append($0) }
+        defer { observer.cancel() }
+
+        try await vm.updateGoalContent(
+            goalID: created.goal.id,
+            title: "After",
+            description: "new",
+            successCriteria: "done when tested"
+        )
+
+        // GoalChangeCenter 是进程级单例，并行 suite 也会 notify；只断言本会话
+        #expect(notified.filter { $0 == conversationID } == [conversationID])
+        await vm.refresh()
+        #expect(vm.activeGoal?.title == "After")
+        #expect(vm.activeGoal?.goalDescription == "new")
+        #expect(vm.activeGoal?.successCriteria == "done when tested")
+    }
+
+    /// 回归测试（AGENTS.md 异步写回约定）：旧会话里发起的保存在切换后迟到，
+    /// 不得通知或污染新会话。用门闩把写入挂起，确保「捕获旧身份 → 切换 → 放行」。
+    @Test("旧会话的迟到保存不通知新会话")
+    func testStaleSaveDoesNotNotifyAfterConversationSwitch() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let oldID = UUID()
+        let newID = UUID()
+        let created = try await manager.createGoal(
+            conversationId: oldID.uuidString,
+            title: "Old goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        var gate: CheckedContinuation<Void, Never>?
+        var writeStarted = false
+        let vm = GoalVM(
+            managerProvider: { manager },
+            contentUpdater: { id, title, description, criteria in
+                writeStarted = true
+                await withCheckedContinuation { gate = $0 }
+                try await manager.updateGoalContent(
+                    id: id, title: title, description: description, successCriteria: criteria
+                )
+            }
+        )
+        vm.updateCurrentConversationID(oldID)
+
+        var notified: [UUID] = []
+        let observer = GoalChangeObserver { notified.append($0) }
+        defer { observer.cancel() }
+
+        let save = Task {
+            try await vm.updateGoalContent(
+                goalID: created.goal.id, title: "Edited", description: nil, successCriteria: nil
+            )
+        }
+        for _ in 0..<200 {
+            if writeStarted { break }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(writeStarted)
+
+        // 写入仍挂起时切换会话，再放行：保存结果属于旧会话
+        vm.updateCurrentConversationID(newID)
+        gate?.resume()
+        try await save.value
+
+        // 只关心本测试两个会话的通知，进程级单例上的其他 suite 噪音不计
+        #expect(notified.filter { $0 == oldID || $0 == newID }.isEmpty)
+        #expect(vm.currentConversationID == newID)
+        #expect(vm.goals.isEmpty)
+    }
+
+    @Test("写入失败时原样抛出且不通知")
+    func testUpdateGoalContentRethrowsWithoutNotify() async throws {
+        struct WriteError: Error {}
+        let conversationID = UUID()
+        let vm = GoalVM(
+            managerProvider: { nil },
+            contentUpdater: { _, _, _, _ in throw WriteError() }
+        )
+        vm.updateCurrentConversationID(conversationID)
+
+        var notified: [UUID] = []
+        let observer = GoalChangeObserver { notified.append($0) }
+        defer { observer.cancel() }
+
+        await #expect(throws: WriteError.self) {
+            try await vm.updateGoalContent(goalID: "g", title: "T", description: nil, successCriteria: nil)
+        }
+        #expect(notified.contains(conversationID) == false)
+    }
+
+    @Test("manager 不可用时保存抛出 managerUnavailable")
+    func testUpdateGoalContentWithoutManagerThrows() async throws {
+        let vm = GoalVM(managerProvider: { nil })
+        vm.updateCurrentConversationID(UUID())
+
+        await #expect(throws: GoalStateError.managerUnavailable) {
+            try await vm.updateGoalContent(goalID: "g", title: "T", description: nil, successCriteria: nil)
+        }
     }
 }
 

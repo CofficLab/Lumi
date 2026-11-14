@@ -132,7 +132,7 @@ def test_packager() -> None:
             app / "Frameworks/Sparkle.framework", app / "Resources/PluginProjectRAG_ProjectRAGEngine.bundle",
             app / "Resources/PluginACP_PluginACP.bundle", archive / "dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF",
         ): directory.mkdir(parents=True)
-        for binary in (app / "MacOS/Lumi", app / "MacOS/lumi-acp",
+        for binary in (app / "MacOS/Lumi", app / "MacOS/lumi-acp", app / "MacOS/rg",
                        app / "PlugIns/LumiFinder.appex/Contents/MacOS/LumiFinder", app / "Frameworks/vec0.dylib"):
             binary.write_text("fake"); os.chmod(binary, 0o755)
         (archive / "dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF/Lumi").write_text("fake")

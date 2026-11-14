@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitAgentTool
 import LumiLoggingKit
 import os
 import ProviderChatSection
@@ -9,6 +10,7 @@ import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import ProviderStorage
+import ProviderToolManager
 
 /// 为 App 提供 LLM 上下文准备能力的独立插件。
 @MainActor
@@ -34,6 +36,8 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     private var toolbarObserver: ContextToolbarObserver?
     /// `turnFinished` 钩子（见 `Hooks/LLMContextTurnFinishedHook.swift`）。
     private var turnFinishedHook: LLMContextTurnFinishedHook?
+    /// 会话删除时清理压缩块、旧摘要与幕后用量（#350）。
+    private var deletionObserver: LLMContextConversationDeletionObserver?
 
     public init() {}
 
@@ -47,21 +51,30 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         }
 
         let summaryStore: ContextSummaryStore?
+        let blockStore: CompressionBlockStore?
         let auxiliaryStore: AuxiliaryUsageStore?
+        let decompressionDirectory: URL?
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let directory = storage.pluginDataDirectory(for: id)
             summaryStore = try? ContextSummaryStore(directory: directory)
             if summaryStore == nil {
                 Self.logger.error("\(Self.t)上下文摘要数据库初始化失败，改用内存摘要")
             }
+            blockStore = try? CompressionBlockStore(directory: directory)
+            if blockStore == nil {
+                Self.logger.error("\(Self.t)压缩块数据库初始化失败，改用内存块")
+            }
             auxiliaryStore = try? AuxiliaryUsageStore(directory: directory)
             if auxiliaryStore == nil {
                 Self.logger.error("\(Self.t)幕后用量数据库初始化失败，改用内存账本")
             }
+            decompressionDirectory = directory.appendingPathComponent("decompressed", isDirectory: true)
         } else {
             summaryStore = nil
+            blockStore = nil
             auxiliaryStore = nil
-            Self.logger.error("\(Self.t)缺少 StorageProviding，摘要与幕后用量不会持久化")
+            decompressionDirectory = nil
+            Self.logger.error("\(Self.t)缺少 StorageProviding，摘要、压缩块与幕后用量不会持久化")
         }
 
         let auxiliaryLedger = AuxiliaryUsageLedger(store: auxiliaryStore)
@@ -70,6 +83,7 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             llmProvider: llmProvider,
             summaryStore: summaryStore,
+            blockStore: blockStore,
             auxiliaryUsage: auxiliaryLedger
         )
         self.provider = provider
@@ -117,13 +131,53 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
             .addTurnFinishedHook { [weak hook] context in
                 hook?.apply(to: context)
             }
+
+        registerRecoveryTools(
+            kernel: kernel,
+            provider: provider,
+            directory: decompressionDirectory
+        )
+
+        deletionObserver?.cancel()
+        deletionObserver = LLMContextConversationDeletionObserver(conversations: conversations) {
+            [weak provider, weak auxiliaryLedger] conversationID in
+            await provider?.purgeConversation(conversationID)
+            await auxiliaryLedger?.remove(conversationID: conversationID)
+        }
+    }
+
+    /// 注册上下文恢复工具（#1160 Phase C）：组成报告、搜索、按块解压。
+    ///
+    /// 缺少 ToolManagerProviding 时只记录日志、跳过注册——上下文压缩本身仍工作，
+    /// 恢复工具是可选增强，不应阻塞插件启动。
+    private func registerRecoveryTools(
+        kernel: KernelCoreContainer,
+        provider: LLMContextProvider,
+        directory: URL?
+    ) {
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)缺少 ToolManagerProviding，上下文恢复工具未注册")
+            return
+        }
+        toolManager.add(ContextStatusTool(provider: provider), pluginID: id)
+        toolManager.add(SearchContextTool(provider: provider), pluginID: id)
+        toolManager.add(
+            DecompressContextTool(provider: provider, directory: directory),
+            pluginID: id
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         toolbarObserver?.cancel()
         toolbarObserver = nil
+        deletionObserver?.cancel()
+        deletionObserver = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).context-toolbar-button")
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.remove(id: ContextStatusTool.toolName)
+        toolManager?.remove(id: SearchContextTool.toolName)
+        toolManager?.remove(id: DecompressContextTool.toolName)
         turnFinishedHook = nil
         provider?.shutdown()
         provider = nil

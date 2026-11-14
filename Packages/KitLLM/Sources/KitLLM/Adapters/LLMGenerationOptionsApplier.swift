@@ -35,12 +35,54 @@ public enum OpenAICompatibleGenerationOptionsApplier {
             }
         }
 
+        let capability = config.reasoningCapability
+
+        // 用户显式关闭思考：按模型声明的能力映射，实际语义由模型决定。
+        if config.reasoningOff {
+            applyOffStrategy(
+                capability: capability,
+                model: model,
+                additionalReasoningEfforts: additionalReasoningEfforts,
+                to: &body
+            )
+            return
+        }
+
         if supportsReasoningEffort(model: model),
            let reasoningEffort = normalizedReasoningEffort(
                config.reasoningEffort,
-               additionalReasoningEfforts: additionalReasoningEfforts
+               additionalReasoningEfforts: additionalReasoningEfforts,
+               allowedEfforts: capability?.supportedEfforts
            ) {
             body["reasoning_effort"] = reasoningEffort
+        }
+    }
+
+    /// 把「关闭思考」映射成该模型真正生效的请求参数。
+    ///
+    /// - `.omitParameters`：不下发任何推理参数（该模型关不掉思考）。
+    /// - `.disableThinkingParameter`：下发 `thinking: {"type": "disabled"}`。
+    /// - `.lowestEffort`：模型强制思考，只能降档——下发最低档位。
+    private static func applyOffStrategy(
+        capability: LLMReasoningCapability?,
+        model: String,
+        additionalReasoningEfforts: [String],
+        to body: inout [String: Any]
+    ) {
+        guard let capability else { return }
+        switch capability.offStrategy {
+        case .omitParameters:
+            return
+        case .disableThinkingParameter:
+            body["thinking"] = ["type": "disabled"]
+        case .lowestEffort(let effort):
+            guard supportsReasoningEffort(model: model),
+                  let normalized = normalizedReasoningEffort(
+                      effort,
+                      additionalReasoningEfforts: additionalReasoningEfforts,
+                      allowedEfforts: capability.supportedEfforts
+                  ) else { return }
+            body["reasoning_effort"] = normalized
         }
     }
 
@@ -50,16 +92,21 @@ public enum OpenAICompatibleGenerationOptionsApplier {
     ///   - value: 用户选择的档位原始字符串。
     ///   - additionalReasoningEfforts: 供应商额外支持的档位（见
     ///     `OpenAICompatibleProviderConfiguration.additionalReasoningEfforts`）。
+    ///   - allowedEfforts: 模型声明支持的档位；非空时只允许其中之一。
     ///   - Returns: 归一化后的档位；该档位不被接受时返回 `nil`（不下发该参数）。
     static func normalizedReasoningEffort(
         _ value: String?,
-        additionalReasoningEfforts: [String] = []
+        additionalReasoningEfforts: [String] = [],
+        allowedEfforts: [String]? = nil
     ) -> String? {
         guard let value else { return nil }
         let normalized = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized != "auto", normalized != "automatic" else { return nil }
         guard baseReasoningEfforts.contains(normalized)
                 || additionalReasoningEfforts.contains(normalized) else { return nil }
+        if let allowedEfforts, !allowedEfforts.isEmpty, !allowedEfforts.contains(normalized) {
+            return nil
+        }
         return normalized
     }
 }

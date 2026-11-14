@@ -21,6 +21,14 @@ protocol NewChatCapability: AnyObject {
     /// 当前选中对话绑定的项目路径。
     var currentProjectPath: String? { get }
 
+    /// 指定对话绑定的项目路径；nil 表示无此对话或未绑定项目。
+    ///
+    /// 用于按「发起工具调用的对话」而非 UI 当前选中对话解析归属（#331）。
+    func projectPath(for conversationID: UUID?) -> String?
+
+    /// 指定对话绑定的模型 ID；nil 表示无此对话或未绑定模型。
+    func modelID(for conversationID: UUID?) -> String?
+
     /// 创建一个顶层对话（会进入侧边栏列表）。
     ///
     /// 等待持久化完成：落库失败会抛错，调用方必须把失败如实反馈给用户，
@@ -34,7 +42,7 @@ protocol NewChatCapability: AnyObject {
     /// 切换到指定对话。
     func selectConversation(id: UUID)
 
-    /// 将选中态恢复为 `conversationID`。nil 视为无操作。
+    /// 将选中态恢复为 `conversationID`；nil 表示恢复「未选中」（新建会话）态。
     func restoreSelection(to conversationID: UUID?)
 }
 
@@ -53,11 +61,17 @@ final class NewChatCapabilityAdapter: NewChatCapability {
 
     var selectedConversationID: UUID? { conversations?.selectedConversationID }
 
-    var currentModelID: String? { conversations?.modelID(for: selectedConversationID) }
+    var currentModelID: String? { modelID(for: selectedConversationID) }
 
-    var currentProjectPath: String? {
-        guard let id = selectedConversationID else { return nil }
+    var currentProjectPath: String? { projectPath(for: selectedConversationID) }
+
+    func projectPath(for conversationID: UUID?) -> String? {
+        guard let id = conversationID else { return nil }
         return conversations?.conversations.first { $0.id == id }?.projectPath
+    }
+
+    func modelID(for conversationID: UUID?) -> String? {
+        conversations?.modelID(for: conversationID)
     }
 
     /// 创建顶层对话：显式传 `parentConversationID: nil`。
@@ -88,7 +102,12 @@ final class NewChatCapabilityAdapter: NewChatCapability {
     }
 
     func restoreSelection(to conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            // nil 表示调用前处于「新建会话」未选中态：创建顶层对话会抢占选中态，
+            // 必须显式取消选择才能恢复空选中，而不是把用户甩进新建的空对话（#260）。
+            conversations?.deselectConversation()
+            return
+        }
         conversations?.selectConversation(id: conversationID)
     }
 }

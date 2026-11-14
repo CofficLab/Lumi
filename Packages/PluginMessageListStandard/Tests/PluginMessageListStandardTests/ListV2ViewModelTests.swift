@@ -8,6 +8,7 @@ import ProviderMessageRendering
 import ProviderMessageStreaming
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 // MARK: - Test doubles for narrow capabilities
@@ -611,6 +612,122 @@ func conversationStateChangeRefreshesActivity() async {
     // 其他会话的状态事件被忽略
     harness.viewModel.handleConversationStateChange(.updated(UUID()))
     #expect(harness.viewModel.activityMessage == nil)
+}
+
+// MARK: - History fingerprint memoization (#1252)
+
+@MainActor
+@Test("历史重建对未变消息复用指纹，不重算内容哈希 (#1252)")
+func historyRebuildReusesFingerprintForUnchangedContent() async {
+    let conversationID = UUID()
+    let page = (0..<5).map {
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: String(repeating: "x", count: 2_000) + "\($0)"
+        )
+    }
+    let harness = ViewModelHarness(selected: conversationID, page: page)
+    await harness.viewModel.activateCurrentConversation()
+    let baseline = harness.viewModel.contentHashComputeCount
+    #expect(baseline >= page.count)
+
+    // 强制一次真实重建：verbosity 改变 → 签名不同 → buildHistory 执行，
+    // 但窗口内容完全未变，指纹应全部命中缓存。
+    harness.conversations.defaultVerbosity = .brief
+    harness.viewModel.refreshConversationSettingsIfNeeded()
+
+    #expect(
+        harness.viewModel.contentHashComputeCount == baseline,
+        "未变消息不应重算内容哈希（缓存检查本身不得扫描全部内容）"
+    )
+}
+
+@MainActor
+@Test("等长内容替换被指纹检测并重算哈希 (#1252)")
+func historyRebuildRehashesEqualLengthContentEdit() async {
+    let conversationID = UUID()
+    let original = makeMessage(conversationID: conversationID, role: .user, content: "AAAA")
+    let harness = ViewModelHarness(selected: conversationID, page: [original])
+    await harness.viewModel.activateCurrentConversation()
+    let baseline = harness.viewModel.contentHashComputeCount
+
+    // 等长替换：长度不变，按长度判定会漏掉，必须靠内容指纹捕捉。
+    let revised = makeMessage(id: original.id, conversationID: conversationID, role: .user, content: "BBBB")
+    harness.viewModel.handleMessageChange(.inserted(revised, conversationID: conversationID))
+
+    #expect(harness.viewModel.contentHashComputeCount == baseline + 1)
+    #expect(harness.viewModel.persistedMessages.first?.content == "BBBB")
+    #expect(harness.viewModel.historyRows.contains { $0.id == original.id && $0.content == "BBBB" })
+}
+
+@MainActor
+@Test("多条窗口中只重算被编辑消息的哈希 (#1252)")
+func historyRebuildRehashesOnlyChangedMessage() async {
+    let conversationID = UUID()
+    let page = (0..<6).map {
+        makeMessage(conversationID: conversationID, role: .user, content: "msg-\($0)")
+    }
+    let harness = ViewModelHarness(selected: conversationID, page: page)
+    await harness.viewModel.activateCurrentConversation()
+    let baseline = harness.viewModel.contentHashComputeCount
+
+    let target = page[2]
+    let revised = makeMessage(id: target.id, conversationID: conversationID, role: .user, content: "edited")
+    harness.viewModel.handleMessageChange(.inserted(revised, conversationID: conversationID))
+
+    #expect(
+        harness.viewModel.contentHashComputeCount == baseline + 1,
+        "只有一条消息变化，应只重算一次哈希，其余复用缓存"
+    )
+}
+
+@MainActor
+@Test("工具结果写回（内容不变）使指纹失效并重建 (#1252)")
+func historyRebuildDetectsToolResultWriteback() async {
+    let conversationID = UUID()
+    let call = MessageToolCall(id: "c1", name: "tool", arguments: "{}")
+    let original = makeMessage(
+        conversationID: conversationID, role: .assistant, content: "same", toolCalls: [call]
+    )
+    let harness = ViewModelHarness(selected: conversationID, page: [original])
+    await harness.viewModel.activateCurrentConversation()
+    let baseline = harness.viewModel.contentHashComputeCount
+
+    var updatedCall = call
+    updatedCall.result = MessageToolResult(content: "result")
+    let revised = makeMessage(
+        id: original.id, conversationID: conversationID, role: .assistant,
+        content: "same", toolCalls: [updatedCall]
+    )
+    harness.viewModel.handleMessageChange(.inserted(revised, conversationID: conversationID))
+
+    // 内容未变，但 resultState 变 → 缓存校验失败 → 重算哈希，
+    // 证明非内容字段同样纳入指纹失效判定。
+    #expect(harness.viewModel.contentHashComputeCount == baseline + 1)
+}
+
+@MainActor
+@Test("授权状态变化（内容不变）使指纹失效并重建 (#1252)")
+func historyRebuildDetectsAuthorizationStateChange() async {
+    let conversationID = UUID()
+    let call = MessageToolCall(id: "c1", name: "tool", arguments: "{}", authorizationState: "pendingAuthorization")
+    let original = makeMessage(
+        conversationID: conversationID, role: .assistant, content: "same", toolCalls: [call]
+    )
+    let harness = ViewModelHarness(selected: conversationID, page: [original])
+    await harness.viewModel.activateCurrentConversation()
+    let baseline = harness.viewModel.contentHashComputeCount
+
+    var updatedCall = call
+    updatedCall.authorizationState = "userApproved"
+    let revised = makeMessage(
+        id: original.id, conversationID: conversationID, role: .assistant,
+        content: "same", toolCalls: [updatedCall]
+    )
+    harness.viewModel.handleMessageChange(.inserted(revised, conversationID: conversationID))
+
+    #expect(harness.viewModel.contentHashComputeCount == baseline + 1)
 }
 
 // MARK: - Sequenced message capability

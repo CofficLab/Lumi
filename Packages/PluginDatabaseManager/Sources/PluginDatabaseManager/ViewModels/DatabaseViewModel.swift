@@ -436,18 +436,51 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         await recordExecutedSQLs(statements, config: config)
     }
 
+    /// Redis 只读命令集合（按首个命令词精确匹配）。
+    /// 不含 CONFIG/CLIENT/COMMAND/MEMORY 等多词命令：其子命令有读有写，
+    /// 仅凭首词无法区分，统一交给 execute，避免把写子命令误判为读。
+    private static let redisReadCommands: Set<String> = [
+        // string / bit
+        "GET", "MGET", "GETRANGE", "SUBSTR", "STRLEN", "GETBIT", "BITCOUNT", "BITPOS",
+        // keys
+        "KEYS", "SCAN", "TYPE", "EXISTS", "TTL", "PTTL", "EXPIRETIME", "PEXPIRETIME",
+        "RANDOMKEY", "DUMP", "DBSIZE",
+        // hash
+        "HGET", "HGETALL", "HMGET", "HKEYS", "HVALS", "HLEN", "HEXISTS", "HSTRLEN", "HRANDFIELD",
+        // list
+        "LRANGE", "LLEN", "LINDEX", "LPOS",
+        // set
+        "SMEMBERS", "SCARD", "SISMEMBER", "SMISMEMBER", "SRANDMEMBER",
+        "SUNION", "SINTER", "SDIFF", "SINTERCARD",
+        // sorted set
+        "ZRANGE", "ZRANGEBYSCORE", "ZRANGEBYLEX", "ZREVRANGE", "ZREVRANGEBYSCORE", "ZREVRANGEBYLEX",
+        "ZCARD", "ZSCORE", "ZMSCORE", "ZCOUNT", "ZLEXCOUNT", "ZRANK", "ZREVRANK", "ZRANDMEMBER",
+        "ZUNION", "ZINTER", "ZDIFF", "ZINTERCARD",
+        // hyperloglog / geo
+        "PFCOUNT", "GEOPOS", "GEODIST", "GEOHASH", "GEOSEARCH",
+        // server info（只读）
+        "INFO", "PING", "ECHO", "TIME", "LASTSAVE", "LOLWUT",
+    ]
+
     /// 判断一条 SQL 是否为"读"语句（走 query 路径）而非"写"（走 execute 路径）。
     public static func isReadStatement(_ sql: String, type: DatabaseType) -> Bool {
         if type == .redis {
-            let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            return upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET")
-                || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE")
+            // 按首个命令词精确匹配：hasPrefix 会把 GETSET/GETDEL/ZRANGESTORE 等写入
+            // 误判为读。KEYS/TYPE 等只读命令必须走 query 才能展示真实 RESP 值，
+            // 否则被送进 execute，数组/简单字符串被统一折算成 1/0 而丢掉内容（#277）。
+            let command = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+                .split(whereSeparator: { $0.isWhitespace })
+                .first.map { $0.uppercased() } ?? ""
+            return Self.redisReadCommands.contains(command)
         }
         let upper = SQLStatementParser.stripLiteralsAndComments(sql)
             .uppercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA")
             || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE")
+            // WITH ... SELECT（CTE）同样产生结果行，必须走 query 才能把行展示出来；
+            // 否则被当成写入送进 execute，只回一个影响行数而丢掉结果集（#276）。
+            || upper.hasPrefix("WITH")
             // DML ... RETURNING 也产生结果行，必须走 query 才能把返回行展示出来。
             || upper.contains("RETURNING")
     }
@@ -525,7 +558,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     
     /// 打开指定 Redis 键（设置查询并执行 GET）
     public func openRedisKey(_ key: String) async {
-        queryText = "GET \(key)"
+        // 键可能含空格/引号/反斜杠，必须引用后再拼进命令，
+        // 否则 tokenize 会把它拆成多个参数，GET 报参数个数错误（#282）。
+        queryText = "GET \(RedisCommandParser.quote(key))"
         await executeQuery()
     }
 

@@ -3,6 +3,12 @@
   "strings": {
     "Cancel": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -133,6 +139,12 @@
     },
     "Lumi needs Screen Recording permission to capture screenshots. Please grant access in System Settings, then try again.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi needs Screen Recording permission to capture screenshots. Please grant access in System Settings, then try again."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -161,6 +173,12 @@
     },
     "Open System Settings": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -189,6 +207,12 @@
     },
     "Screen Recording Permission Required": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Recording Permission Required"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",

@@ -71,7 +71,7 @@ struct BrewManagerView: View {
                     BrewManagerErrorView(
                         message: errorMessage,
                         onDismiss: { viewModel.errorMessage = nil },
-                        onRetry: { viewModel.errorMessage = nil }
+                        onRetry: { viewModel.retry() }
                     )
                     .transition(.opacity)
                     .accessibilityAddTraits(.isModal)
@@ -94,6 +94,7 @@ struct BrewManagerView: View {
                                     Spacer()
                                     AppButton(pluginLocalization.string("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
                                     .padding()
+                                    .disabled(viewModel.isLoading)
                                 }
                             }
 

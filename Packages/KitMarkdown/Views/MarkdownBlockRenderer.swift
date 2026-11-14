@@ -323,6 +323,10 @@ public struct MarkdownBlockRenderer: View {
 /// dedicated streaming slot therefore remembers the last streamed content and,
 /// when the new content is a prefix-append of it (the common token-by-token
 /// case), re-parses only the still-changing tail instead of the whole string.
+///
+/// 锁纪律：锁只保护字典与流式槽位的读写，**所有解析都在锁外执行**。
+/// 流式输出期间主线程每帧都会查询缓存，若后台解析持锁，查询会被阻塞整段
+/// 解析时长 —— 这正是 `warm(markdown:)` 早已遵循、此处补齐的模式。
 final class MarkdownBlockCache: @unchecked Sendable {
     static let shared = MarkdownBlockCache()
 
@@ -338,73 +342,71 @@ final class MarkdownBlockCache: @unchecked Sendable {
 
     func blocks(for markdown: String) -> [MarkdownBlock] {
         lock.lock()
-        defer { lock.unlock() }
-
         // 1) Exact hit — the common case for stable history rows.
         if let cached = cache[markdown] {
+            lock.unlock()
             return cached
         }
+        let slot = streamingSlot
+        lock.unlock()
 
-        // 2) Streaming append — new content starts with the last content seen.
-        //    Re-parse only the tail beyond the stable boundary.
-        if let slot = streamingSlot,
-           markdown.hasPrefix(slot.stableSource) {
-            let stableLength = slot.stableSource.count
-            let tail = markdown.count > stableLength
-                ? String(markdown.dropFirst(stableLength))
-                : ""
+        // 2) Streaming append — new content starts with the last stable prefix.
+        //    Parse only the newly-stable span plus the still-growing tail. All
+        //    parsing runs outside the lock: a background parse must never block
+        //    the main thread's cache queries (view rebuilds during streaming).
+        if let slot, markdown.hasPrefix(slot.stableSource) {
+            let spans = Self.appendSpans(stableLength: slot.stableSource.count, in: markdown)
+            let newBlocks = spans.newlyStable.map {
+                MarkdownParser.parse(Self.substring(markdown, $0))
+            } ?? []
+            let tail = Self.substring(markdown, spans.tail)
             let tailBlocks = tail.isEmpty ? [] : MarkdownParser.parse(tail)
-            let merged = slot.stableBlocks + tailBlocks
-            // Advance the stable boundary for the next append. Do not write into
-            // the bounded history cache — this content is still changing.
-            let boundary = nextStableBoundary(in: markdown)
-            streamingSlot = (
-                stableSource: String(markdown.prefix(boundary)),
-                stableBlocks: boundary == stableLength
-                    ? slot.stableBlocks
-                    : MarkdownParser.parse(String(markdown.prefix(boundary)))
-            )
+            let merged = slot.stableBlocks + newBlocks + tailBlocks
+
+            lock.lock()
+            // 仅当槽位仍是读取时的快照才推进，避免覆盖并发任务已推进的边界。
+            if streamingSlot?.stableSource == slot.stableSource {
+                streamingSlot = spans.newlyStable == nil
+                    ? slot
+                    : (
+                        stableSource: String(markdown.prefix(spans.boundary)),
+                        stableBlocks: slot.stableBlocks + newBlocks
+                    )
+            }
+            lock.unlock()
             return merged
         }
 
-        // 3) Miss — full parse. Seed the streaming slot so the next append can
-        //    reuse the stable prefix.
+        // 3) Miss — full parse, also outside the lock. Seed the streaming slot
+        //    so the next append can reuse the stable prefix.
         let parsed = MarkdownParser.parse(markdown)
-        cache[markdown] = parsed
-        keys.append(markdown)
-        evictIfNeeded()
-        let boundary = nextStableBoundary(in: markdown)
-        streamingSlot = (
-            stableSource: String(markdown.prefix(boundary)),
-            stableBlocks: boundary == markdown.count
-                ? parsed
-                : MarkdownParser.parse(String(markdown.prefix(boundary)))
-        )
+        let boundary = Self.nextStableBoundary(in: markdown)
+        let stableSource = String(markdown.prefix(boundary))
+        let stableBlocks = boundary == markdown.count
+            ? parsed
+            : MarkdownParser.parse(stableSource)
+
+        lock.lock()
+        defer { lock.unlock() }
+        if cache[markdown] == nil {
+            cache[markdown] = parsed
+            keys.append(markdown)
+            evictIfNeeded()
+        }
+        streamingSlot = (stableSource: stableSource, stableBlocks: stableBlocks)
         return parsed
     }
 
-    /// 只返回缓存命中或流式增量结果,不触发全量解析。
+    /// 只返回历史缓存命中,不触发任何解析。
     ///
     /// 供 `MarkdownBlockRenderer.init` 用:命中时同步初始化(首屏即有 measured
     /// height);miss 时返回 nil,init 用空数组初始化,由 `.task` 异步解析后填充,
     /// 避免长文本首次出现时在主线程同步全量解析造成卡顿。
+    /// 流式追加的增量结果由 `blocks(for:)` 在后台产出,此路径只做一次字典查询。
     func cachedBlocks(for markdown: String) -> [MarkdownBlock]? {
         lock.lock()
         defer { lock.unlock() }
-
-        // 1) Exact hit.
-        if let cached = cache[markdown] {
-            return cached
-        }
-
-        // 2) Streaming append — already cheap (tail parse only), return inline.
-        if let slot = streamingSlot,
-           markdown.hasPrefix(slot.stableSource) {
-            return nil // 仍交给 blocks(for:) 处理(它需要推进 stable boundary)
-        }
-
-        // 3) Miss — 需全量解析,返回 nil 让调用方异步处理。
-        return nil
+        return cache[markdown]
     }
 
     /// 后台预热:未缓存时解析并写入历史缓存。
@@ -430,15 +432,81 @@ final class MarkdownBlockCache: @unchecked Sendable {
         evictIfNeeded()
     }
 
+    /// 流式追加的区段划分（纯决策单元，便于单测锁定线性成本）。
+    struct AppendSpans {
+        /// 本次新稳定的区段（旧边界..<新边界）；边界未推进时为 nil。
+        let newlyStable: Range<Int>?
+        /// 仍在增长的尾部（新边界..<末尾），每次追加都需重解析。
+        let tail: Range<Int>
+        /// 新的稳定边界（最后一个空行之后的位置）。
+        let boundary: Int
+    }
+
+    /// 计算追加后的区段划分。不变式：稳定前缀以空行结尾（或为空），且新内容
+    /// 以其为前缀，故新边界必然 ≥ 旧边界 —— 每个字符至多被"稳定"解析一次，
+    /// 累计成本线性；若回头重解析整个前缀则退化为平方级。
+    static func appendSpans(stableLength: Int, in markdown: String) -> AppendSpans {
+        let boundary = nextStableBoundary(in: markdown)
+        return AppendSpans(
+            newlyStable: boundary > stableLength ? stableLength..<boundary : nil,
+            tail: boundary..<markdown.count,
+            boundary: boundary
+        )
+    }
+
+    private static func substring(_ markdown: String, _ range: Range<Int>) -> String {
+        guard !range.isEmpty else { return "" }
+        let start = markdown.index(markdown.startIndex, offsetBy: range.lowerBound)
+        let end = markdown.index(markdown.startIndex, offsetBy: range.upperBound)
+        return String(markdown[start..<end])
+    }
+
     /// Returns the length of the prefix of `markdown` that ends at the last
-    /// block boundary (a blank line). Content after it may still be growing and
-    /// must be re-parsed on the next append; content before it is stable.
-    /// Falls back to 0 (re-parse everything) when there is no boundary yet.
-    private func nextStableBoundary(in markdown: String) -> Int {
-        if let range = markdown.range(of: "\n\n", options: .backwards) {
-            return markdown.distance(from: markdown.startIndex, to: range.upperBound)
+    /// block boundary (a blank line) **outside any fenced code block**. Content
+    /// after it may still be growing and must be re-parsed on the next append;
+    /// content before it is stable. Falls back to 0 (re-parse everything) when
+    /// there is no such boundary yet.
+    ///
+    /// 围栏内的空行不是块边界：若把代码块中途当作稳定前缀，前缀会是一个未闭合的
+    /// 代码块，追加时尾段从代码中间独立解析，拼出的块结构与整体解析不一致（#340）。
+    private static func nextStableBoundary(in markdown: String) -> Int {
+        var activeFence: (character: Character, length: Int)?
+        var lastBoundary = 0
+        var offset = 0
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false)
+        for (index, sub) in lines.enumerated() {
+            let line = String(sub)
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if let fence = activeFence {
+                if isClosingFence(trimmed, for: fence) { activeFence = nil }
+            } else if let fence = openingFence(in: trimmed) {
+                activeFence = fence
+            }
+            // 只有围栏外的空行才是稳定边界；末尾的幻影空行（结尾换行产生）不计。
+            if line.isEmpty && activeFence == nil && index < lines.count - 1 {
+                lastBoundary = offset + 1
+            }
+            offset += line.count + 1
         }
-        return 0
+        return lastBoundary
+    }
+
+    /// 开围栏：≥3 个连续反引号或波浪号（行首已去空白）。
+    private static func openingFence(in line: String) -> (character: Character, length: Int)? {
+        guard let first = line.first, first == "`" || first == "~" else { return nil }
+        let length = line.prefix { $0 == first }.count
+        guard length >= 3 else { return nil }
+        return (first, length)
+    }
+
+    /// 闭围栏：同种字符、长度不短于开围栏，其后仅余空白。
+    private static func isClosingFence(
+        _ line: String,
+        for fence: (character: Character, length: Int)
+    ) -> Bool {
+        let length = line.prefix { $0 == fence.character }.count
+        guard length >= fence.length else { return false }
+        return line.dropFirst(length).allSatisfy { $0 == " " || $0 == "\t" }
     }
 
     private func evictIfNeeded() {
@@ -515,14 +583,22 @@ private final class MarkdownInlineParseCache: @unchecked Sendable {
 private struct CachedMarkdownInlineText: View {
     let text: String
 
-    @State private var attributedText: AttributedString?
+    /// 解析结果连同生成时的源文本一起保存：文本变化（流式追加、原位重写）后
+    /// 旧结果必须立即失效，否则视图会停在旧快照上不再跟随新内容
+    /// （与 `HighlightedCodeView` 的 `highlighted.source == code` 同契约）。
+    @State private var parsed: ParsedInlineText?
+
+    private struct ParsedInlineText {
+        let source: String
+        let attributed: AttributedString
+    }
 
     var body: some View {
         Group {
             // 同步命中(历史行滚回视口的常见情况):首帧即富文本,
             // 无"纯文本 → 富文本"的高度跳变,也不占异步任务。
-            if let attributedText {
-                Text(attributedText)
+            if let parsed, parsed.source == text {
+                Text(parsed.attributed)
             } else if let cached = MarkdownInlineParseCache.shared.cachedAttributedString(for: text) {
                 Text(cached)
             } else {
@@ -530,17 +606,16 @@ private struct CachedMarkdownInlineText: View {
             }
         }
         .task(id: text) {
-            guard attributedText == nil else { return }
+            guard parsed?.source != text else { return }
             // 与块级解析同理(P8):miss 时的解析下放后台线程,
             // 主线程只接收结果;text 变化时丢弃过期结果。
             let source = text
-            let parsed = await Task.detached(priority: .userInitiated) {
+            let result = await Task.detached(priority: .userInitiated) {
                 MarkdownInlineParseCache.shared.attributedString(for: source)
             }.value
             guard !Task.isCancelled else { return }
-            if attributedText != parsed {
-                attributedText = parsed
-            }
+            guard parsed?.source != source else { return }
+            parsed = ParsedInlineText(source: source, attributed: result)
         }
     }
 }

@@ -29,13 +29,13 @@ private struct BrowserPageView: View {
                     Image(systemName: "chevron.left")
                 }
                 .disabled(!session.canGoBack)
-                .help("Back")
+                .help(pluginLocalization.string("Back"))
 
                 Button { session.goForward() } label: {
                     Image(systemName: "chevron.right")
                 }
                 .disabled(!session.canGoForward)
-                .help("Forward")
+                .help(pluginLocalization.string("Forward"))
 
                 Button {
                     if session.isLoading { session.stop() } else { session.reload() }
@@ -44,7 +44,7 @@ private struct BrowserPageView: View {
                 }
                 .help(session.isLoading ? "Stop loading" : "Reload")
 
-                TextField("Search or enter website name", text: $address)
+                TextField(pluginLocalization.string("Search or enter website name"), text: $address)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { manager.navigateAddressBar(address) }
                     .accessibilityLabel("Website address")
@@ -78,15 +78,15 @@ private struct BrowserEmptyView: View {
             Image(systemName: "globe")
                 .font(.system(size: 38, weight: .light))
                 .foregroundStyle(.secondary)
-            Text("Browser")
+            Text(pluginLocalization.string("Browser"))
                 .font(.title2.weight(.semibold))
-            Text("Ask Lumi to open a page, or enter a website address.")
+            Text(pluginLocalization.string("Ask Lumi to open a page, or enter a website address."))
                 .foregroundStyle(.secondary)
             HStack {
                 TextField("https://example.com", text: $address)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { manager.navigateAddressBar(address) }
-                Button("Open") { manager.navigateAddressBar(address) }
+                Button(pluginLocalization.string("Open")) { manager.navigateAddressBar(address) }
                     .disabled(address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .frame(maxWidth: 520)

@@ -7,6 +7,7 @@ import LumiLoggingKit
 import LumiUI
 import ProviderLifecycleHooks
 import ProviderChatSection
+import ProviderConversation
 import ProviderProject
 import ProviderSettingView
 import ProviderSkill
@@ -108,10 +109,10 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
         }
 
         // 3. willSendToLLM 钩子：注入可用技能列表（插件贡献 + 内置 + 项目）。
-        //    无当前项目时也注入，保证通用技能始终可用。
+        //    项目技能按会话绑定项目解析；无绑定项目时仍注入通用底座技能。
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let hook = SkillInjectionHook(
-                project: project,
+                conversations: kernel.resolveProvider((any ConversationManaging).self),
                 skillProvider: skillProvider,
                 skillService: skillService
             )

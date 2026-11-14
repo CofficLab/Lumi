@@ -258,8 +258,13 @@ struct ToolCallRowsView: View {
         // 升格为 standard 传入，导致 V1 也命中 ask_user 等挂起交互的自定义
         // renderer。这里使用调用方显式传入的 allowsCustomToolRenderers。
         let useCustomRenderer = allowsCustomToolRenderers
+        // 匹配阶段用**不含图片**的轻量桥接：没有任何 `canRender` 会读结果
+        // 图片，而完整桥接会把每张截图都 Base64 解码成二进制（两张 1.5 MB
+        // 截图约 3.7 ms）。这段代码在 SwiftUI body 里，每次 body 求值都
+        // 要付一次——匹配失败时结果被丢弃，匹配成功时渲染阶段又要重新
+        // 解码一遍（Issue #1274）。
         if useCustomRenderer,
-           let customRenderer = capability.toolCallRenderer(for: toolCall.agentToolCall) {
+           let customRenderer = capability.toolCallRenderer(for: toolCall.agentToolCallForMatching) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
@@ -486,7 +491,7 @@ struct ToolCallRowView: View {
     @ViewBuilder
     private func liveJobDetails(_ projection: ToolJobActivityProjection) -> some View {
         HStack(spacing: 8) {
-            Text("耗时\(MessageViewHelpers.formatDuration(projection.duration))")
+            Text(String(format: pluginLocalization.string("Elapsed: %@"), MessageViewHelpers.formatDuration(projection.duration)))
                 .font(.appMicro)
                 .foregroundColor(theme.textSecondary)
 
@@ -498,7 +503,7 @@ struct ToolCallRowView: View {
             }
 
             if projection.isStale {
-                Text("暂无新进度")
+                Text(pluginLocalization.string("No new progress"))
                     .font(.appMicro)
                     .foregroundColor(theme.warning)
             }
@@ -514,7 +519,7 @@ struct ToolCallRowView: View {
                 ) {
                     isJobOutputPresented.toggle()
                 }
-                .help("查看输出")
+                .help(pluginLocalization.string("View Output"))
                 .popover(isPresented: $isJobOutputPresented, arrowEdge: .bottom) {
                     if let job = jobActivity.job {
                         ToolJobOutputPopover(job: job)

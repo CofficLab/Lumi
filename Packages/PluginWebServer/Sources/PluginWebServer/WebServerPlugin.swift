@@ -223,7 +223,13 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
             pluginManager: kernel.resolveProvider((any PluginManaging).self)
         )
 
-        let routes = WebControlRoutes.makeRoutes(context: context) { [weak server] in
+        let routes = WebControlRoutes.makeRoutes(
+            context: context,
+            routeCounts: { [weak server] in
+                guard let server else { return [:] }
+                return Self.routeCountsByPlugin(server: server)
+            }
+        ) { [weak server] in
             guard let server else {
                 return WebStatusResponse.Service(
                     version: WebAPIVersion.current.rawValue,
@@ -247,6 +253,14 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         return routes
     }
 
+    /// 按插件 id 统计服务器当前已注册的路由数。
+    ///
+    /// 供控制面 `/api/v1/plugins` 实时返回每个插件贡献的路由数量（#1150）。
+    static func routeCountsByPlugin(server: LumiWebServer) -> [String: Int] {
+        Dictionary(grouping: server.registeredRouteSummaries(), by: \.pluginID)
+            .mapValues(\.count)
+    }
+
     /// 构造 Agent Tool 桥接路由。
     private func makeToolRoutes(kernel: KernelCoreContainer) -> [WebRoute] {
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
@@ -261,6 +275,12 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
             toolManager: toolManager,
             conversationResolver: { @MainActor in
                 conversations?.selectedConversationID
+            },
+            conversationExists: { @MainActor id in
+                // 没有会话管理器时任何 ID 都无法证实存在，一律拒绝，
+                // 避免虚构会话被策略层当成 Build（issue #1153）。
+                guard let conversations else { return false }
+                return await conversations.fetchConversation(id: id) != nil
             }
         )
         self.toolBridge = bridge

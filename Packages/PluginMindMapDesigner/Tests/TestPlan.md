@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 33 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 37 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 33
+测试文件: 5 个，用例总数: 37
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,10 +38,11 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MindMapDesignerPlugin**（11 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MindMapMarkdownCodec 健壮性**（9 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
+- **MindMapMarkdownCodec 健壮性**（11 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
 - **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
+- **MindMapStore 保存失败**（2 条）：由 `failedSavePropagatesAndKeepsStateUnchanged`、`successfulSaveUpdatesMemoryAndDisk` 用例锁定；`updateMap` 必须先落盘再提交内存，目录不可写导致保存失败时把错误抛给工具并写入 `lastError`，内存与磁盘都保持旧值，不得误报成功（#429）。
 
 ## 测试用例清单
 
@@ -80,27 +81,39 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 31 | MindMapMarkdownCodec 健壮性 | Tab 与两空格缩进产生相同结构 | — | 分别解码同一大纲的 Tab 版与两空格版 | 两版节点父子关系完全一致 | P1 | ✅ 已覆盖 | `tabAndSpaceIndentationProduceSameShape` |
 | 32 | MindMapDesignerPlugin | `save_mind_map` 重建缺失的 backing JSON（**回归 #1080**） | 地图已在内存，JSON 文件被删除 | 调用 `save_mind_map(mapId:)` | 返回成功且磁盘重新出现该地图，内存列表仍包含它 | P0 | ✅ 已覆盖 | `saveMindMapRecreatesMissingBackingFile` |
 | 33 | MindMapDesignerPlugin | `save_mind_map` 写入失败必须抛错（**回归 #1080**） | 地图已创建，存储目录路径被普通文件占据 | 调用 `save_mind_map(mapId:)` | 抛出错误，不返回保存成功 | P0 | ✅ 已覆盖 | `saveMindMapReportsWriteFailure` |
+| 34 | MindMapMarkdownCodec 健壮性 | Markdown 往返不丢失与标题不同的根节点文本（**回归 #291**） | 标题 `Project`、根文本 `Central Problem`、含一个子节点 | 编码后再解码 | 标题仍为 `Project`，根节点文本仍为 `Central Problem`，子节点保留 | P0 | ✅ 已覆盖 | `roundTripPreservesDistinctRootText` |
+| 35 | MindMapMarkdownCodec 健壮性 | 仅含根节点时往返仍保留独立根文本 | 标题 `Project`、根文本 `Central Problem`、无子节点 | 编码后再解码 | 标题为 `Project`，根文本为 `Central Problem`，仅一个节点 | P1 | ✅ 已覆盖 | `roundTripPreservesDistinctRootTextWithoutChildren` |
+| 36 | MindMapStore 保存失败 | 保存失败时抛错、保留错误状态且内存与磁盘不变（**回归 #429**） | 已创建一张导图，存储目录设为只读 | 调用 `updateNode` 改根文本后再 reload | 抛错，`lastError` 非空，内存与磁盘根文本仍为旧值，重载后不变 | P0 | ✅ 已覆盖 | `failedSavePropagatesAndKeepsStateUnchanged` |
+| 37 | MindMapStore 保存失败 | 可写时保存成功并同步内存与磁盘 | 已创建一张导图，存储目录可写 | 调用 `updateNode` 改根文本 | 不抛错，`lastError` 为空，内存与磁盘根文本均为新值 | P1 | ✅ 已覆盖 | `successfulSaveUpdatesMemoryAndDisk` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
+> （1）把 `updateMap` 还原成「先提交内存再 `persist`、随后 `lastError = nil`」的旧顺序后，
+> 保存失败被吞掉、`updateNode` 返回成功且内存被改写，ID 36 失败（3 issues）；
+> （2）保留先落盘但把 catch 里的 `throw error` 换成 `return previous`（只写 `lastError` 不抛出）后，
+> `updateNode` 不再抛错而是返回旧图，ID 36 的「必须抛错」断言失败（1 issue）；
+> （3）删掉 catch 里的 `lastError = error.localizedDescription`（保留 throw）后，
+> 错误状态丢失，ID 36 的 `lastError != nil` 断言失败（1 issue）。三处变异均已还原。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 25 / 25
 - P2: 已覆盖 0 / 0
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（25 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

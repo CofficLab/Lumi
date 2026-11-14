@@ -50,7 +50,7 @@ public struct MailSettingsView: View {
         AppSettingSection(title: "账户", titleAlignment: .leading) {
             VStack(spacing: 0) {
                 if accounts.isEmpty {
-                    Text("还没有邮件账户。点击下方「添加账户」开始配置。")
+                    Text(pluginLocalization.string("No mail accounts yet. Click Add Account below to get started."))
                         .font(.appBody)
                         .foregroundColor(theme.textSecondary)
                 } else {

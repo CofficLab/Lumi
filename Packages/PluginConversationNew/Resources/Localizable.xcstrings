@@ -50,6 +50,12 @@
             "value": "新对话"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新對話"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -76,6 +82,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在新对话中开始"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在新對話中開始"
           }
         },
         "zh-HK": {
@@ -106,6 +118,12 @@
             "value": "准备新对话"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "準備新對話"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -132,6 +150,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "在新对话中开始"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新對話中開始"
           }
         },
         "zh-HK": {
@@ -162,6 +186,12 @@
             "value": "在新对话中开始这个任务"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新對話中開始這個任務"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -190,6 +220,12 @@
             "value": "正在开始…"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在開始…"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -216,6 +252,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "建议换个话题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建議換個話題"
           }
         },
         "zh-HK": {

@@ -53,16 +53,18 @@ public struct OcrImageTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let rawPath = (arguments["path"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            !rawPath.isEmpty else {
+        // trim 只用于判空：macOS 文件名可以合法地以空格/换行结尾，
+        // 存在性检查与 OCR 读取必须使用调用方给出的原始路径，
+        // 否则会误报不存在、或静默识别 trim 后的同名文件（#827）。
+        guard let originalPath = arguments["path"]?.value as? String,
+              !originalPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Missing required 'path' argument. Provide an absolute path to a local image."
             )
         }
 
-        let url = URL(fileURLWithPath: (rawPath as NSString).expandingTildeInPath).standardizedFileURL
+        let url = URL(fileURLWithPath: (originalPath as NSString).expandingTildeInPath).standardizedFileURL
         let path = url.path
 
         guard FileManager.default.fileExists(atPath: path) else {
@@ -76,8 +78,13 @@ public struct OcrImageTool: SuperAgentTool {
                 reason: "Path is a directory, not a file: \(path)"
             )
         }
-        // 仅在能解析出 UTType 且明确不是图片时拒绝；未知扩展名放行交由 Vision 尝试。
-        if let type = UTType(filenameExtension: url.pathExtension), !type.conforms(to: .image) {
+        // 仅在能解析出「已声明」的 UTType 且明确不是图片时拒绝。
+        // 未知扩展名会被 macOS 解析成动态类型（isDynamic），它不 conform
+        // `.image` 但内容完全可能是合法图片（如 `.jif` 实为 JPEG），必须放行
+        // 交由按内容解码的 OcrEngine 判定，不得在闸门处误拒（#828）。
+        if let type = UTType(filenameExtension: url.pathExtension),
+           !type.isDynamic,
+           !type.conforms(to: .image) {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Not an image file: \(url.lastPathComponent)"

@@ -190,6 +190,7 @@ final class ToolExecutionManager {
         }), job.status.isTerminal else { return }
         jobsByID.removeValue(forKey: job.id)
         resultsByID.removeValue(forKey: job.id)
+        outputTailBuffers.removeValue(forKey: job.id)
         submissionOrder.removeAll { $0 == job.id }
     }
 
@@ -495,6 +496,9 @@ final class ToolExecutionManager {
         job.errorMessage = errorMessage
         jobsByID[jobID] = job
         resultsByID[jobID] = result
+        // 终态后不会再有 chunk，字节缓冲可以释放：
+        // `latestOutput` 已经落在 job 上，缓冲只是加速追加用的。
+        outputTailBuffers.removeValue(forKey: jobID)
         persist(job, result: result)
         emitTerminal(jobID: jobID, status: status, result: result, snapshot: job)
         let continuations = waiters.removeValue(forKey: jobID) ?? []
@@ -529,6 +533,17 @@ final class ToolExecutionManager {
         }
     }
 
+    /// 各任务输出尾部的字节缓冲。
+    ///
+    /// - Important: 原先每次 chunk 都执行
+    ///   `Data(job.latestOutput.utf8) + data` —— 每次都要把整个 64 KiB 尾
+    ///   **重新编码**成字节再拼接。命令输出是分块到达的，
+    ///   于是总代价是 O(chunk 数 × 尾部字节数)（见 issue #1310）。
+    ///
+    ///   这里按任务保存字节缓冲，追加是 O(chunk)；
+    ///   只有真正需要字符串时才解码一次。
+    private var outputTailBuffers: [String: OutputTailBuffer] = [:]
+
     fileprivate func recordOutput(
         jobID: String,
         stream: ToolExecutionOutputStream,
@@ -537,13 +552,14 @@ final class ToolExecutionManager {
         guard var job = jobsByID[jobID], !job.status.isTerminal else { return }
         let data = Data(chunk.utf8)
         job.outputByteCount += data.count
-        let combined = Data(job.latestOutput.utf8) + data
+
         // Keep the tail so the live preview shows the newest output, matching
         // the tail-keeping policy of KitShell's BoundedOutputBuffer.
-        job.latestOutput = String(
-            decoding: combined.suffix(Self.maxOutputBytes),
-            as: UTF8.self
-        )
+        var tail = outputTailBuffers[jobID] ?? OutputTailBuffer(maxBytes: Self.maxOutputBytes)
+        tail.append(data)
+        outputTailBuffers[jobID] = tail
+        job.latestOutput = tail.string
+
         job.updatedAt = Date()
         jobsByID[jobID] = job
         persist(job)
@@ -554,6 +570,40 @@ final class ToolExecutionManager {
             chunk: chunk,
             snapshot: job
         ))
+    }
+
+    /// 输出尾部的字节缓冲：只保留最后 N 字节。
+    struct OutputTailBuffer {
+        private let maxBytes: Int
+        private var data = Data()
+
+        init(maxBytes: Int, initial: Data = Data()) {
+            self.maxBytes = max(0, maxBytes)
+            if initial.count > maxBytes {
+                self.data = initial.suffix(maxBytes)
+            } else {
+                self.data = initial
+            }
+        }
+
+        /// 追加字节；超出预算时丢弃最旧的部分（保留尾部）。
+        mutating func append(_ newData: Data) {
+            guard !newData.isEmpty else { return }
+            if newData.count > maxBytes {
+                data = newData.suffix(maxBytes)
+                return
+            }
+            let overflow = data.count + newData.count - maxBytes
+            if overflow > 0 {
+                data.removeFirst(overflow)
+            }
+            data.append(newData)
+        }
+
+        /// 当前尾部内容。
+        var string: String {
+            String(decoding: data, as: UTF8.self)
+        }
     }
 
     fileprivate func recordProgress(
@@ -636,6 +686,12 @@ final class ToolExecutionManager {
                     errorMessage: record.errorMessage
                 )
                 jobsByID[job.id] = job
+                // 恢复的 job 没有字节缓冲，用记录里的尾部内容初始化，
+                // 这样后续 chunk 仍然是 O(chunk) 追加。
+                outputTailBuffers[job.id] = OutputTailBuffer(
+                    maxBytes: Self.maxOutputBytes,
+                    initial: Data(record.latestOutput.utf8)
+                )
                 if let result = record.result {
                     resultsByID[job.id] = result
                 }

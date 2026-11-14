@@ -9,9 +9,9 @@ import Foundation
 /// - 指纹与宽度桶均一致 → 命中，调用方跳过测量；
 /// - 任一变化 → 未命中，调用方重新测量后 `store` 覆盖旧值。
 ///
-/// 契约由 `HorizontalFittingSizeCacheTests` 覆盖，对应 UI 性能审计
-/// P1（docs/ui-performance-audit-2026-08.md）：流式输出期间
-/// `updateNSView` 每帧被调用，只要内容指纹未变，就不应重新测量。
+/// 契约由 `HorizontalFittingSizeCacheTests` 覆盖（UI 性能审计 P1，
+/// 2026-08）：流式输出期间 `updateNSView` 每帧被调用，
+/// 只要内容指纹未变，就不应重新测量。
 struct HorizontalFittingSizeCache<Fingerprint: Hashable> {
 
     /// 最近一次测量结果；`nil` 表示尚无缓存。

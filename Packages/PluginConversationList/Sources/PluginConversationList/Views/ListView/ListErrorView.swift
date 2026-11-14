@@ -21,7 +21,7 @@ struct ListErrorView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.error.opacity(0.7))
 
-            Text("无法加载对话")
+            Text(pluginLocalization.string("Failed to load conversations"))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
                 .multilineTextAlignment(.center)

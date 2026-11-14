@@ -62,7 +62,7 @@ struct GitChatPopoverView: View {
 
     private func segmentTitle(_ index: Int) -> String {
         switch index {
-        case 0: return "\(pluginLocalization.string("Changes")) (\(viewModel.workingChanges.count))"
+        case 0: return "\(pluginLocalization.string("Changes")) (\(viewModel.workingChangeCount))"
         case 1: return "\(pluginLocalization.string("Commits")) (\(viewModel.commits.count))"
         default: return ""
         }
@@ -72,7 +72,7 @@ struct GitChatPopoverView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let errorMessage = viewModel.errorMessage, viewModel.workingChanges.isEmpty && viewModel.commits.isEmpty {
+        if let errorMessage = viewModel.errorMessage, viewModel.workingChangeCount == 0 && viewModel.commits.isEmpty {
             GitChatErrorBanner(message: errorMessage)
         } else if segment == 0 {
             changesSection
@@ -83,9 +83,9 @@ struct GitChatPopoverView: View {
 
     @ViewBuilder
     private var changesSection: some View {
-        if viewModel.isLoading && viewModel.workingChanges.isEmpty {
+        if viewModel.isLoading && viewModel.workingChangeCount == 0 {
             GitChatSkeletonView()
-        } else if viewModel.workingChanges.isEmpty {
+        } else if viewModel.workingChangeCount == 0 {
             GitChatEmptyState(
                 icon: "checkmark.circle",
                 title: pluginLocalization.string("No Changes"),

@@ -6,7 +6,7 @@ public enum IconDocumentFileStore {
     private static nonisolated(unsafe) let fileManager = FileManager.default
     private static nonisolated(unsafe) let fileService = IconDocumentFileService()
 
-    /// 列出指定目录下的全部图标文档（按文件名排序）。
+    /// 列出指定目录下的全部图标文档（按文件名排序，同一 ID 仅保留最新修订）。
     public static func loadAll(storagePath: String) -> [IconDocument] {
         guard !storagePath.isEmpty else { return [] }
         let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
@@ -18,10 +18,20 @@ public enum IconDocumentFileStore {
             )
         else { return [] }
 
-        return urls
+        let sortedURLs = urls
             .filter { $0.pathExtension.lowercased() == "json" }
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
-            .compactMap { try? fileService.load(from: $0) }
+        // 标题重命名可能让同一 ID 残留多个文件，仅保留 updatedAt 最新的修订，
+        // 避免列表出现重复 ID；无重复时输出仍与文件名排序一致（#292）。
+        var bestByID: [String: (order: Int, document: IconDocument)] = [:]
+        for (order, url) in sortedURLs.enumerated() {
+            guard let document = try? fileService.load(from: url) else { continue }
+            if let existing = bestByID[document.id], existing.document.updatedAt >= document.updatedAt {
+                continue
+            }
+            bestByID[document.id] = (order, document)
+        }
+        return bestByID.values.sorted { $0.order < $1.order }.map(\.document)
     }
 
     /// 将文档写入指定目录（原子写），自动创建目录。
@@ -32,22 +42,17 @@ public enum IconDocumentFileStore {
         try fileService.save(document: document, to: directory.appendingPathComponent(fileName(for: document)))
     }
 
-    /// 删除指定目录下属于该文档的文件。优先按文件名删除，失败时按 id 前缀扫描兜底，
-    /// 以兼容标题被重命名后残留的旧文件。
+    /// 删除指定目录下属于该文档的全部文件。按 id 前缀扫描，确保标题重命名后
+    /// 残留的旧文件一并清除，而不是只删当前标题的主文件。
     public static func delete(_ document: IconDocument, storagePath: String) {
         guard !storagePath.isEmpty else { return }
         let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
-        let primary = directory.appendingPathComponent(fileName(for: document))
-        if fileManager.fileExists(atPath: primary.path) {
-            try? fileManager.removeItem(at: primary)
-            return
-        }
-        // 兜底：扫描 id 前缀。
         guard let urls = try? fileManager.contentsOfDirectory(
             at: directory,
             includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         ) else { return }
+        // 只删主文件会让旧标题版本在重载后复活，故清除该 ID 的全部派生文件（#292）。
         let suffix = "-\(document.id.prefix(8)).json"
         for url in urls where url.pathExtension.lowercased() == "json" && url.lastPathComponent.hasSuffix(suffix) {
             try? fileManager.removeItem(at: url)

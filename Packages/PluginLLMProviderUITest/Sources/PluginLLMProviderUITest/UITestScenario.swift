@@ -77,6 +77,15 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// 两段式判据与 ask_user / approval 场景完全一致，桩无需维护跨请求状态。
     case goal = "ui-test-goal"
 
+    /// 与 `goal` 同样创建目标，但后续每轮都调用 `add_tasks_to_goal` 而不是收尾。
+    ///
+    /// 存在理由：`goal` 场景收尾后，`GoalTaskTurnFinishedHook` 会自动续跑
+    /// 直到预算耗尽并把目标标成 `.failed`（终态）。编辑入口对终态目标隐藏，
+    /// 编辑流程的 UI 测试因此会与续跑计时赛跑。本场景的每轮工具调用都会
+    /// 重置续跑预算（见 `AddTasksToGoalV2Tool`），目标始终停留在非终态，
+    /// 「编辑按钮可用」成为一个可稳定采样的状态。
+    case goalEdit = "ui-test-goal-edit"
+
     /// 未知模型时的默认场景，保证不返回意外结果。
     case unknown = "ui-test-unknown"
 
@@ -89,7 +98,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
             supportsStreaming: true,
             supportsVision: false,
             // ask_user 是工具调用场景，必须声明支持工具，否则请求体里不会带 tools。
-            supportsTools: self == .tool || self.isAskUser || self == .text || self == .approval || self == .goal
+            supportsTools: self == .tool || self.isAskUser || self == .text || self == .approval || self.isGoal
         )
     }
 
@@ -106,9 +115,9 @@ enum UITestScenario: String, CaseIterable, Sendable {
         self == .approval
     }
 
-    /// 是否为 goal 创建场景。
+    /// 是否为 goal 场景（创建 / 编辑保活）。
     var isGoal: Bool {
-        self == .goal
+        self == .goal || self == .goalEdit
     }
 
     /// 该场景发起的 `ask_user` 工具调用参数 JSON。
@@ -154,6 +163,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
         case .askUserFreeText: return "UI Test Ask User Free Text"
         case .approval: return "UI Test Approval"
         case .goal: return "UI Test Goal"
+        case .goalEdit: return "UI Test Goal Edit"
         case .unknown: return "UI Test Unknown"
         }
     }
@@ -331,6 +341,24 @@ enum UITestFixtures {
     /// 判据与 ask_user / approval 场景相同：请求体里出现 `role=tool` 消息
     /// （即 `create_goal` 已执行）时才产出。
     static let goalFollowUpResponse = "UI Testing Goal Created"
+
+    // MARK: - goal 编辑保活场景
+
+    /// 保活场景后续轮调用的工具名。
+    ///
+    /// 与 `AddTasksToGoalV2Tool.toolName` 一致。该工具执行时会重置续跑预算，
+    /// 因此每轮调用一次即可让目标始终停留在非终态。`goal_id` 刻意省略：
+    /// 会话内恰好一个活跃 goal 时工具会自动解析。
+    static let goalKeepaliveToolName = "add_tasks_to_goal"
+
+    /// 保活场景的工具调用 id。
+    static let goalKeepaliveToolCallID = "call_ui_test_goal_keepalive"
+
+    /// 保活场景每轮追加的任务标题。
+    static let goalKeepaliveTaskTitle = "UI Testing Keepalive Task"
+
+    /// 保活场景的工具参数，符合 `AddTasksToGoalV2Tool.inputSchema`。
+    static let goalKeepaliveArguments = #"{"tasks":[{"title":"\#(goalKeepaliveTaskTitle)"}]}"#
 
     /// 慢速场景每段之间的延迟（秒）。
     static let slowChunkDelay: Double = 0.4

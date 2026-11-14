@@ -35,3 +35,11 @@ FAILED=$(wc -l < "$OUT/FAILED.txt" | tr -d ' ')
 } > "$OUT/summary.txt"
 
 cat "$OUT/summary.txt"
+
+# 任一包失败都必须让脚本非零退出，否则 CI 门禁会把失败读成绿灯。
+# rc 文件缺失已在上面按 99 计入 FAILED.txt，不能当作跳过。
+if [ "$FAILED" -ne 0 ]; then
+  exit 1
+fi
+
+exit 0

@@ -34,6 +34,13 @@ public final class GitChatToolbarViewModel: ObservableObject {
     private var reloadGeneration: UInt64 = 0
     private var reloadTask: Task<Void, Never>?
 
+    /// 缓存的工作区变更项。
+    ///
+    /// 原先 ``workingChanges`` 是每次访问都重新合成并排序的计算属性，
+    /// 按钮的 label 与 tintColor 各读一次，弹层再读若干次 ——
+    /// 每次 body 求值要跑 O(N log N)，而 N 可达数千（见 issue #1300）。
+    private var cachedWorkingChanges: [GitWorkingChange] = []
+
     public init(
         capability: (any GitChatCapability)?,
         projectCapability: (any GitChatProjectCapability)? = nil
@@ -45,8 +52,18 @@ public final class GitChatToolbarViewModel: ObservableObject {
     // MARK: - Derived
 
     /// 工作区变更项列表（已合成 staged/未暂存 标记与状态枚举）。
+    ///
+    /// - Note: 结果在 `status` 变化时合成一次并缓存，
+    ///   不再每次访问都重新合成并排序（见 issue #1300）。
     public var workingChanges: [GitWorkingChange] {
-        status?.workingChanges() ?? []
+        cachedWorkingChanges
+    }
+
+    /// 工作区变更文件数量。
+    ///
+    /// 按钮只需要计数，用它避免消费整个列表（见 issue #1300）。
+    public var workingChangeCount: Int {
+        cachedWorkingChanges.count
     }
 
     /// 当前显示的 commit 列表的变更文件（选中 commit 时）。
@@ -73,6 +90,7 @@ public final class GitChatToolbarViewModel: ObservableObject {
         projectPath = path
         // 项目切换：清空所有状态后立即重新加载（首次无去抖，后续事件才有 1s 去抖）。
         status = nil
+        cachedWorkingChanges = []
         commits = []
         selectedCommitHash = nil
         selectedCommitChanges = []
@@ -88,6 +106,7 @@ public final class GitChatToolbarViewModel: ObservableObject {
     /// 仓库 watch 停止时清空数据（项目被 close 等场景）。
     public func resetForMissingWatch() {
         status = nil
+        cachedWorkingChanges = []
         commits = []
         selectedCommitHash = nil
         selectedCommitChanges = []
@@ -167,6 +186,7 @@ public final class GitChatToolbarViewModel: ObservableObject {
         guard let capability, let path = projectPath, !path.isEmpty else {
             isGitRepository = false
             status = nil
+            cachedWorkingChanges = []
             commits = []
             errorMessage = nil
             isLoading = false
@@ -188,9 +208,13 @@ public final class GitChatToolbarViewModel: ObservableObject {
 
         isGitRepository = repo
         switch statusResult {
-        case .success(let value): status = value
+        case .success(let value):
+            status = value
+            // 变更项在此处合成一次并缓存（见 issue #1300）。
+            cachedWorkingChanges = value?.workingChanges() ?? []
         case .failure(let error):
             status = nil
+            cachedWorkingChanges = []
             errorMessage = Self.describe(error)
         }
         switch commitsResult {

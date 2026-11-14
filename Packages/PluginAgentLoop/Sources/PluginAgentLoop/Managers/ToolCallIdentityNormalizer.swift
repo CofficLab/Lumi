@@ -48,6 +48,7 @@ enum ToolCallIdentityNormalizer {
             model: response.model,
             toolCalls: normalizedToolCalls,
             reasoningContent: response.reasoningContent,
+            redactedThinking: response.redactedThinking,
             inputTokenCount: response.inputTokenCount,
             outputTokenCount: response.outputTokenCount,
             cachedInputTokenCount: response.cachedInputTokenCount,
@@ -56,7 +57,8 @@ enum ToolCallIdentityNormalizer {
             responseID: response.responseID,
             rawResponseJSON: response.rawResponseJSON,
             rawStreamEventsJSON: response.rawStreamEventsJSON,
-            stopReason: response.stopReason
+            stopReason: response.stopReason,
+            images: response.images
         )
     }
 

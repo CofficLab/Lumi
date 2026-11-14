@@ -473,4 +473,37 @@ struct ProviderMessageTests {
         #expect(MessageTimelineEvent.integerMetadata("k", from: nonNumeric) == nil)
         #expect(MessageTimelineEvent.integerMetadata("k", from: missing) == nil)
     }
+
+    @Test("子代理委托时间线事件可识别且不回流 LLM")
+    func subagentDelegationTimelineDetection() {
+        let conv = UUID()
+        let card = Message(
+            conversationID: conv,
+            role: .system,
+            content: "Subagent delegation: Research",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.subagentDelegation],
+            renderKind: MessageTimelineEvent.subagentDelegationRenderKind
+        )
+
+        #expect(MessageTimelineEvent.isSubagentDelegation(card))
+        #expect(MessageTimelineEvent.isTimelineEvent(card))
+        #expect(!MessageTimelineEvent.isContextCompaction(card))
+        #expect(!MessageTimelineEvent.isAgentLoopRetry(card))
+        #expect(!MessageTimelineEvent.isFinder(card))
+    }
+
+    @Test("子代理委托事件仅凭 renderKind 也可识别")
+    func subagentDelegationDetectionByRenderKind() {
+        let conv = UUID()
+        let byRenderKind = Message(
+            conversationID: conv,
+            role: .system,
+            content: "",
+            renderKind: MessageTimelineEvent.subagentDelegationRenderKind
+        )
+        let plain = Message(conversationID: conv, role: .system, content: "普通系统消息")
+
+        #expect(MessageTimelineEvent.isSubagentDelegation(byRenderKind))
+        #expect(!MessageTimelineEvent.isSubagentDelegation(plain))
+    }
 }

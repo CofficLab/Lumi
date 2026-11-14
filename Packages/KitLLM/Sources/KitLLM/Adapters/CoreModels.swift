@@ -78,6 +78,11 @@ public struct StreamChunk: Sendable, Equatable {
     public let stopReason: String?
     /// `redacted_thinking` 块的不透明数据，原样收集后回传。
     public let redactedThinkingData: String?
+    /// 整段 JSON 回退一次携带的多个 `redacted_thinking` 不透明块（#1167）。
+    ///
+    /// SSE 每个 content_block_start 只带一块，用 `redactedThinkingData`；
+    /// 整段 JSON 回退是单个 chunk，可能含多块，用数组承载以免丢失。
+    public let redactedThinkingBlocks: [String]?
     /// 生成的图片（图像生成模型的产物）。
     ///
     /// OpenRouter 等图像模型在 `message.images` / `delta.images` 里返回
@@ -109,6 +114,7 @@ public struct StreamChunk: Sendable, Equatable {
             responseID: responseID,
             stopReason: stopReason,
             redactedThinkingData: redactedThinkingData,
+            redactedThinkingBlocks: redactedThinkingBlocks,
             images: images
         )
     }
@@ -131,6 +137,7 @@ public struct StreamChunk: Sendable, Equatable {
         responseID: String? = nil,
         stopReason: String? = nil,
         redactedThinkingData: String? = nil,
+        redactedThinkingBlocks: [String]? = nil,
         images: [MessageImage]? = nil
     ) {
         self.content = content
@@ -150,14 +157,15 @@ public struct StreamChunk: Sendable, Equatable {
         self.responseID = responseID
         self.stopReason = stopReason
         self.redactedThinkingData = redactedThinkingData
+        self.redactedThinkingBlocks = redactedThinkingBlocks
         self.images = images
     }
 
     public func withRawStreamPayload(_ raw: String?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData)
+        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, redactedThinkingBlocks: redactedThinkingBlocks)
     }
 
     public func withToolCalls(_ newToolCalls: [ToolCall]?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData)
+        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, redactedThinkingBlocks: redactedThinkingBlocks)
     }
 }

@@ -3,6 +3,7 @@ import Foundation
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import KitMessageList
 
 /// PluginMessageListStandard（V2 / 标准模式）的 UI 测试夹具（仅 DEBUG）。
 ///

@@ -2,7 +2,7 @@ import Foundation
 
 /// 编辑器 Host Capability 总入口。
 ///
-/// 见 `docs/editor-kernel-plugin-rearchitecture-plan.md` §8。
+/// 见 `docs/plans/2026-08-15-editor-kernel-plugin-rearchitecture-plan.md` §8。
 /// 本协议由 `EditorHostPlugin` 实现并注册。所有编辑器能力通过本入口
 /// 暴露为独立的 capability，具体实现仍由 Host 持有。
 ///

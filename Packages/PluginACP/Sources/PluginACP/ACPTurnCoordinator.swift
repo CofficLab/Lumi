@@ -520,6 +520,9 @@ public final class ACPTurnCoordinator {
         // 一律以 cancelled 收尾，Client 才能正确收敛 UI 状态。
         cancelPendingPermissions(sessionID: sessionID)
         publishCancelledToolCalls(sessionID: sessionID)
+        // 失败回合同样要收敛工具状态：已落库的结果补发 completed/failed，
+        // 否则客户端的工具行永久停在 pending（#481）。
+        publishTerminalToolUpdates(conversationID: conversationID, sessionID: sessionID)
 
         // stopReason 必须如实反映回合结局：把失败混成 end_turn 会让客户端
         // 把错误当成功（方案 §5 约定 failed → refusal）。因此先判定是否失败。
@@ -576,13 +579,13 @@ public final class ACPTurnCoordinator {
         toolCallMetadata = toolCallMetadata.filter { $0.value.sessionID != sessionID }
     }
 
-    /// 回合正常结束后：补发工具完成状态 + 最终 assistant 文本。
-    private func publishFinalContent(conversationID: UUID, sessionID: ACPSessionId) async {
+    /// 补发已落库工具结果的终态（completed/failed）。
+    ///
+    /// 成功与失败路径都必须调用：失败回合虽然跳过最终文本，但工具结果
+    /// 是已经落库的事实，不补发会让客户端的工具行永久停在 pending（#481）。
+    private func publishTerminalToolUpdates(conversationID: UUID, sessionID: ACPSessionId) {
         let snapshot = messages.messagesSnapshot(in: conversationID)
-        let assistantMessages = snapshot.reversed().filter { $0.role == .assistant }
-
-        // 1. 补发尚未报告的 tool_call_update（completed/failed）。
-        for message in assistantMessages {
+        for message in snapshot.reversed() where message.role == .assistant {
             for call in message.toolCalls ?? [] {
                 guard let result = call.result else { continue }
                 sendUpdate(
@@ -595,8 +598,14 @@ public final class ACPTurnCoordinator {
                 )
             }
         }
+    }
 
-        // 2. 最终 assistant 文本（第一个非空内容）。
+    /// 回合正常结束后：补发最终 assistant 文本。
+    private func publishFinalContent(conversationID: UUID, sessionID: ACPSessionId) async {
+        let snapshot = messages.messagesSnapshot(in: conversationID)
+        let assistantMessages = snapshot.reversed().filter { $0.role == .assistant }
+
+        // 最终 assistant 文本（第一个非空内容）。
         // 已经流式发出过增量的回合不再整段重发，否则客户端会看到重复文本。
         if streaming?.didStream(conversationID: conversationID) != true,
            let finalText = assistantMessages.first(where: { !$0.content.isEmpty })?.content {
@@ -674,7 +683,7 @@ public final class ACPTurnCoordinator {
     /// 解析 AskUser choice 选项（对象 {label,description?,badge?} 或裸字符串）。
     static func choiceOptions(from raw: Any?) -> [String] {
         guard let array = raw as? [Any] else { return [] }
-        return array.compactMap { element -> String? in
+        let labels = array.compactMap { element -> String? in
             if let string = element as? String, !string.isEmpty { return string }
             if let dict = element as? [String: Any] {
                 let label = (dict["label"] as? String)
@@ -685,6 +694,10 @@ public final class ACPTurnCoordinator {
             }
             return nil
         }
+        // 去重并保持首次出现顺序：labels 同时用作 optionId 与 answersByOptionID
+        // 的键，重复标签会让 Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃（#221）。
+        var seen = Set<String>()
+        return labels.filter { seen.insert($0).inserted }
     }
 }
 

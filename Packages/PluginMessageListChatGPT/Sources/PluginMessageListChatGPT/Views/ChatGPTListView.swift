@@ -4,6 +4,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT 风格）消息列表视图。
 ///
@@ -86,7 +87,6 @@ struct ChatGPTListView: View {
             if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.surface.opacity(0.6))
             }
             // 「回到底部」按钮：只在脱离跟随且有内容时出现。
             if scrollAnchor.shouldShowBackToBottom(rowCount: projection.turns.count) {
@@ -255,6 +255,7 @@ struct ChatGPTListView: View {
     private var projection: ChatGPTTurnProjection {
         projectionStore.snapshot(
             history: viewModel.historyRows,
+            historyRevision: viewModel.historyRevision,
             streaming: viewModel.streamingRow,
             activity: viewModel.activityMessage
         )

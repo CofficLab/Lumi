@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 25 条用例。
+PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 29 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 25
+测试文件: 5 个，用例总数: 29
 
 核心组件（源码目录）:
 - `Models/`
@@ -40,6 +40,8 @@ PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 - **AppIconDesignerPlugin**（7 条）：由 `registersAndActivatesContributions`、`registersPromptSuggestionWhileDisabled`、`promptSuggestionLocalizationResolves` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppIconDesignerRuleContributor**（1 条）：由 `contributesAppIconRule` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **IconDocumentFileStore**（3 条）：由 `deleteClearsAllDerivedFilesOfID`、`loadAllDeduplicatesByIDKeepingNewest`、`deleteStillRemovesSingleVersion` 锁定；改动文件名派生/落盘/删除/重载去重时优先跑对应测试文件。
+- **错误镜像**（1 条）：由 `exportErrorIsMirroredAndClearedOnSuccess` 锁定；改动 `AppIconDesignerViewModel` 对 store 的镜像同步（objectWillChange 时序，#293）时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -70,27 +72,31 @@ PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 23 | 导出 | SVG 导出不得把 SF Symbol 输出为字面名称 | 含 `sparkles` 符号图层与阴影 | 调用 `IconSVGRenderer.render` | 输出内嵌 base64 PNG 的 `<image>`，不出现 `<text>` 或符号名字面文本 | P0 | ✅ 已覆盖 | `svgExportRasterizesSymbolsInsteadOfLiteralNames` |
 | 24 | Agent 工具 | 缺少必填参数时抛出 `ToolExecutionError`，不返回本地化错误字符串 | 无 | 调用 `apply_icon_preset` / `export_app_icon` 不传必填参数 | 两次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `missingParameterThrows` |
 | 25 | Agent 工具 | 未知预设抛出 `ToolExecutionError` | 无 | 调用 `apply_icon_preset(presetId: not-a-preset)` | 抛出 `ToolExecutionError`，不返回错误文案 | P1 | ✅ 已覆盖 | `unknownPresetThrows` |
+| 26 | 文件存储 | delete 清除同一 ID 的全部派生文件，旧标题残留文件不得保留（**回归 #292**） | 同一 ID 以旧/新两个标题各落盘一个 JSON | 以新标题文档调用 `IconDocumentFileStore.delete` | 该 ID 后缀的全部 JSON 文件均被删除 | P0 | ✅ 已覆盖 | `deleteClearsAllDerivedFilesOfID` |
+| 27 | 文件存储 | loadAll 按 ID 去重，保留 updatedAt 最新修订而非文件名最后一条（**回归 #292**） | 同一 ID 落盘两个标题文件，较新修订标题字母序靠前 | 调用 `IconDocumentFileStore.loadAll` | 仅返回一条，id 匹配且标题为最新修订 | P1 | ✅ 已覆盖 | `loadAllDeduplicatesByIDKeepingNewest` |
+| 28 | 文件存储 | delete 仍清除单一版本文档，常规删除路径不回归 | 目录内仅一个文档文件 | 调用 `IconDocumentFileStore.delete` | 重载后列表为空 | P1 | ✅ 已覆盖 | `deleteStillRemovesSingleVersion` |
+| 29 | 错误镜像 | objectWillChange 在新值安装前触发，ViewModel 必须镜像安装后的导出错误，成功后不得残留旧错误（**回归 #293**） | 新建 store 与 ViewModel | `store.setError(...)` 后再 `store.setExportURL(...)` | 错误及时镜像显示；成功后 lastError 归 nil、lastExportURL 更新 | P0 | ✅ 已覆盖 | `exportErrorIsMirroredAndClearedOnSuccess` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 17 / 17
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 6 / 6
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（17 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

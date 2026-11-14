@@ -31,7 +31,7 @@ public enum MessageListBriefUITestingSupport {
     /// 夹具会话标题。
     public static let conversationTitle = "Message List Brief UI Testing"
 
-    /// 强制 verbosity = brief（README §1 要求的「Response Detail = L (Brief)」）。
+    /// 强制 verbosity = brief（README §1 要求的「消息列表风格 = 简洁」）。
     public static let verbosity: ResponseVerbosity = .brief
 
     /// 植入的 5 个 turn 起始时间（基准时间）。

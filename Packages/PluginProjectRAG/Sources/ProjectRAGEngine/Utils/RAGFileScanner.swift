@@ -98,7 +98,7 @@ public enum RAGFileScanner: SuperLog {
 
         for case let url as URL in enumerator {
             let path = url.path
-            if shouldSkipPath(path) {
+            if shouldSkipPath(path, projectRoot: projectPath) {
                 skippedDirs += 1
                 enumerator.skipDescendants()
                 continue
@@ -126,9 +126,19 @@ public enum RAGFileScanner: SuperLog {
         return files
     }
 
-    /// 判断路径是否应该跳过
-    public static func shouldSkipPath(_ path: String) -> Bool {
-        let components = path.split(separator: "/").map(String.init)
+    /// 判断路径是否应该跳过。
+    ///
+    /// 排除规则只作用于项目根「内部」的目录：先把路径相对 `projectRoot` 化，
+    /// 再逐段匹配。否则项目恰好位于 `build`/`temp`/`DerivedData` 等祖先目录下时，
+    /// 祖先段会被误匹配，整棵项目的源码全部被排除（#194）。
+    public static func shouldSkipPath(_ path: String, projectRoot: String) -> Bool {
+        let root = RAGPathUtils.normalizeProjectPath(projectRoot)
+        let normalizedPath = RAGPathUtils.normalizeProjectPath(path)
+        let prefix = root == "/" ? "/" : root + "/"
+        let relative = normalizedPath.hasPrefix(prefix)
+            ? String(normalizedPath.dropFirst(prefix.count))
+            : normalizedPath
+        let components = relative.split(separator: "/").map(String.init)
         for component in components {
             // 精确匹配作用于所有路径段（含目录条目本身），保留 discoverFiles 的
             // skipDescendants() 剪枝能力——遇到 build/.git 等目录时整棵子树直接跳过。

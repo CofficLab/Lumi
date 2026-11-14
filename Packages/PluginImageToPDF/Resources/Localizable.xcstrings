@@ -16,6 +16,12 @@
             "value": "添加文件"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加檔案"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -45,6 +51,12 @@
             "value": "选择导出 PDF 的目标文件夹"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇匯出 PDF 的目標資料夾"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -69,6 +81,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "清空"
@@ -103,6 +121,12 @@
             "value": "转换"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -130,6 +154,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法导出：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法匯出：%@"
           }
         },
         "zh-HK": {
@@ -161,6 +191,12 @@
             "value": "无法读取图片：%@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法讀取圖片：%@"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -185,6 +221,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "完成"
@@ -217,6 +259,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "将图片拖拽到此处"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將圖片拖曳到這裡"
           }
         },
         "zh-HK": {
@@ -283,6 +331,12 @@
             "value": "导出"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -310,6 +364,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "导出到…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出至…"
           }
         },
         "zh-HK": {
@@ -341,6 +401,12 @@
             "value": "失败"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -368,6 +434,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法为 %@ 创建 PDF 上下文"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法為 %@ 建立 PDF 內容"
           }
         },
         "zh-HK": {
@@ -399,6 +471,12 @@
             "value": "写入 PDF 失败：%@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寫入 PDF 失敗：%@"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -428,6 +506,12 @@
             "value": "文件数：%lld"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案數：%lld"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -455,6 +539,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "图片尺寸为 0：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖片尺寸為 0：%@"
           }
         },
         "zh-HK": {
@@ -521,6 +611,12 @@
             "value": "暂无 PDF"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未有 PDF"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -548,6 +644,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟"
           }
         },
         "zh-HK": {
@@ -579,6 +681,12 @@
             "value": "或点击选择文件"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或點擊選擇檔案"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -603,6 +711,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "PDF"
@@ -637,6 +751,12 @@
             "value": "等待中"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待中"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -664,6 +784,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "处理中…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "處理中…"
           }
         },
         "zh-HK": {
@@ -695,6 +821,12 @@
             "value": "重新转换会替换输出列表中此前的 PDF"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新轉換會取代輸出列表中先前的 PDF"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -719,6 +851,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "移除"
@@ -753,6 +891,12 @@
             "value": "在访达中显示"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "於 Finder 顯示"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -780,6 +924,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未知错误"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知錯誤"
           }
         },
         "zh-HK": {

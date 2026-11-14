@@ -108,7 +108,7 @@ public enum MessageListEmptyUITestingSupport {
         messages: any MessageManaging,
         project: (any ProjectProviding)?
     ) {
-        // 需要项目时建一个临时目录（含清单文件），让项目类型判定与关键文件标签有内容。
+        // 需要项目时建一个临时目录（含清单文件），让项目类型判定有内容。
         guard let root = makeFixtureProjectDirectoryIfRequested() else {
             createConversations(conversations: conversations, messages: messages, projectPath: nil)
             return
@@ -168,7 +168,7 @@ public enum MessageListEmptyUITestingSupport {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("lumi-ui-empty-state-project-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        // 两个入口文件：项目类型判定与「关键文件」标签都靠它们。
+        // 清单文件：项目类型判定靠它。
         try? Data().write(to: root.appendingPathComponent("Package.swift"))
         try? Data().write(to: root.appendingPathComponent("README.md"))
         return root.path

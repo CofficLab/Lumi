@@ -66,9 +66,9 @@ private struct RunningView: View {
             AppSheetIconHeader(systemImage: "trash.fill", title: nil as String?, tint: .red)
 
             VStack(spacing: 6) {
-                Text("正在卸载 Lumi…")
+                Text(pluginLocalization.string("Uninstalling Lumi…"))
                     .font(.appTitle)
-                Text("正在清除插件数据、偏好设置、扩展数据和凭据。")
+                Text(pluginLocalization.string("Removing plugin data, preferences, extension data, and credentials."))
                     .font(.appBody)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -94,7 +94,7 @@ private struct SucceededView: View {
             AppSheetIconHeader(systemImage: "checkmark.circle.fill", title: nil as String?, tint: .green)
 
             VStack(spacing: 6) {
-                Text("卸载完成")
+                Text(pluginLocalization.string("Uninstall Complete"))
                     .font(.appTitle)
                 Text(applicationMovedToTrash
                      ? "Lumi 已从你的 Mac 移除，应用已移到废纸篓。"
@@ -110,7 +110,7 @@ private struct SucceededView: View {
                     .font(.system(size: 40, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
                     .contentTransition(.numericText())
-                Text("秒后自动退出")
+                Text(pluginLocalization.string("Seconds Until Automatic Quit"))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -140,9 +140,9 @@ private struct FailedView: View {
             AppSheetIconHeader(systemImage: "exclamationmark.triangle.fill", title: nil as String?, tint: .orange)
 
             VStack(spacing: 6) {
-                Text("卸载未完成")
+                Text(pluginLocalization.string("Uninstall Incomplete"))
                     .font(.appTitle)
-                Text("部分数据未能清除，应用未移除。")
+                Text(pluginLocalization.string("Some data could not be removed. The app was not deleted."))
                     .font(.appBody)
                     .foregroundStyle(.secondary)
             }

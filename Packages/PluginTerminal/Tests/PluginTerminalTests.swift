@@ -60,3 +60,17 @@ import SwiftUI
     #expect(rootView.isRailViewVisible)
     #expect(rootView.isContentHeaderViewHidden == false)
 }
+
+/// 回归 #498：终端项目路径的首尾空白是合法文件名字符。
+/// 裁剪后会以错误目录启动会话；保留原字节才在用户指定的目录启动。
+/// 空白-only / 空 / nil 仍须回退为 nil（保留原有空值语义）。
+@MainActor
+@Test func terminalPreservesLeadingTrailingWhitespaceInProjectPath() throws {
+    let spaced = "/tmp/lumi-terminal-\(UUID().uuidString) "
+    let view = TerminalMainView(projectPath: spaced)
+    #expect(view.currentProjectPathForTerminal == spaced)
+
+    #expect(TerminalMainView(projectPath: "   ").currentProjectPathForTerminal == nil)
+    #expect(TerminalMainView(projectPath: "").currentProjectPathForTerminal == nil)
+    #expect(TerminalMainView(projectPath: nil).currentProjectPathForTerminal == nil)
+}

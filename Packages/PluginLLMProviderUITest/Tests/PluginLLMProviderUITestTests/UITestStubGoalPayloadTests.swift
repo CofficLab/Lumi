@@ -131,6 +131,52 @@ struct UITestStubGoalPayloadTests {
         )
     }
 
+    // MARK: - goalEdit 保活场景
+
+    @Test("goalEdit 首轮与 goal 首轮一致：同样发 create_goal")
+    func goalEditFirstRoundMatchesGoal() throws {
+        let editEvents = try UITestStubNetwork.sseEvents(for: .goalEdit, alreadyAnswered: false)
+        let goalEvents = try UITestStubNetwork.sseEvents(for: .goal, alreadyAnswered: false)
+        // 事件块里的 model 字段不同，其余形态必须一致。
+        let normalizedEdit = editEvents.map { $0.replacingOccurrences(of: UITestScenario.goalEdit.rawValue, with: UITestScenario.goal.rawValue) }
+        #expect(normalizedEdit == goalEvents)
+    }
+
+    @Test("goalEdit 后续轮发 add_tasks_to_goal 保活调用，arguments 分两片")
+    func goalEditFollowUpEmitsKeepaliveToolCall() throws {
+        let events = try UITestStubNetwork.sseEvents(for: .goalEdit, alreadyAnswered: true)
+        let fragments = try argumentsFragments(in: events)
+
+        #expect(fragments.count == 2, "arguments 应分两片，实际 \(fragments.count) 片")
+        #expect(fragments.joined() == UITestFixtures.goalKeepaliveArguments)
+        #expect(try contentDeltas(in: events).isEmpty, "保活轮不应产出正文")
+
+        let object = try jsonObject(of: #require(events.first))
+        let delta = try #require((object["choices"] as? [[String: Any]])?.first?["delta"] as? [String: Any])
+        let call = try #require((delta["tool_calls"] as? [[String: Any]])?.first)
+        let function = try #require(call["function"] as? [String: Any])
+        #expect(call["id"] as? String == UITestFixtures.goalKeepaliveToolCallID)
+        #expect(function["name"] as? String == UITestFixtures.goalKeepaliveToolName)
+    }
+
+    @Test("保活参数符合 add_tasks_to_goal schema，且省略 goal_id 走自动解析")
+    func keepaliveArgumentsAreWellFormed() throws {
+        let raw = UITestFixtures.goalKeepaliveArguments
+        let object = try #require(
+            try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any]
+        )
+        #expect(object["goal_id"] == nil, "goal_id 应省略，由工具自动解析唯一活跃 goal")
+        let tasks = try #require(object["tasks"] as? [[String: Any]], "缺 tasks")
+        #expect(tasks.count == 1)
+        #expect(tasks.first?["title"] as? String == UITestFixtures.goalKeepaliveTaskTitle)
+    }
+
+    @Test("goalEdit 场景模型可被供应商目录查到")
+    func goalEditModelIsRegistered() {
+        let provider = UITestProvider()
+        #expect(provider.providerInfo.contains(model: UITestScenario.goalEdit.rawValue))
+    }
+
     // MARK: - Helper
 
     private func jsonObject(of event: String) throws -> [String: Any] {

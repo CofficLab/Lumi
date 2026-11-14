@@ -23,17 +23,20 @@ public struct FileValidator: Sendable {
         // 获取文件属性
         let attributes = try fileManager.attributesOfItem(atPath: path.path)
         let fileSize = attributes[.size] as? Int64 ?? 0
-        
-        // 检查文件是否为空
-        if fileSize == 0 {
-            throw DownloadError.emptyFile(path.path)
+
+        // 大小匹配是权威判据，必须先于任何「空文件」判断：期望 0 字节且实际
+        // 0 字节是合法下载，旧实现先抛 emptyFile 会让 expectedSize == 0 永远无法通过（#159）。
+        if let expectedSize {
+            guard fileSize == expectedSize else {
+                throw DownloadError.sizeMismatch(expected: expectedSize, actual: fileSize)
+            }
+            return true
         }
-        
-        // 检查文件大小是否匹配
-        if let expectedSize, fileSize != expectedSize {
-            throw DownloadError.sizeMismatch(expected: expectedSize, actual: fileSize)
-        }
-        
+
+        // 无期望大小时：validate 仅在 HTTP 200/206 成功返回后调用（非 2xx 与连接
+        // 中断都已在 HTTPClient 上游抛出，替换下载另有 written/Content-Length 校验），
+        // 干净返回的零字节是合法资源（空文本、占位文件、Content-Length: 0），
+        // 不得一律判为 emptyFile 失败（#159）。
         return true
     }
     

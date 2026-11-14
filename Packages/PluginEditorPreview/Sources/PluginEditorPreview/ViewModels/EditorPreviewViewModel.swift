@@ -74,6 +74,7 @@ public final class EditorPreviewViewModel: ObservableObject {
         switch Self.kind(for: normalizedURL) {
         case .markdown:
             state = .loading(normalizedURL)
+            // 初始签名同步采集：这是选中文件时的一次性开销，不是每秒重复的轮询。
             watchedFileSignature = Self.signature(of: normalizedURL)
             startWatching(normalizedURL, generation: generation)
         case .image:
@@ -116,14 +117,30 @@ public final class EditorPreviewViewModel: ObservableObject {
         }.value
     }
 
-    private static func signature(of url: URL) -> FileSignature? {
-        guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else {
+    /// 采集文件元数据签名。
+    ///
+    /// - Important: 必须是 `nonisolated` —— 元数据探测是同步文件系统 IO，
+    ///   在主线程每秒执行一次会造成持续的主线程占用（见 issue #1245）。
+    ///   这里把它放到后台线程执行，只把小的值类型签名带回主线程。
+    ///
+    /// - Important: 用 `FileManager.attributesOfItem` 而不是
+    ///   `URL.resourceValues`。后者会把结果缓存在 URL 实例上，
+    ///   同一个 URL 再次查询会拿到旧值，导致「文件已改但签名没变」的漏检。
+    private nonisolated static func signature(of url: URL) -> FileSignature? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else {
             return nil
         }
         return FileSignature(
-            modificationDate: values.contentModificationDate,
-            fileSize: values.fileSize
+            modificationDate: attributes[.modificationDate] as? Date,
+            fileSize: attributes[.size] as? Int
         )
+    }
+
+    /// 在后台线程采集文件元数据签名。
+    private nonisolated static func signatureInBackground(of url: URL) async -> FileSignature? {
+        await Task.detached(priority: .utility) {
+            signature(of: url)
+        }.value
     }
 
     /// 轮询当前 Markdown 文件，保存或外部写入后静默重读内容。
@@ -132,14 +149,17 @@ public final class EditorPreviewViewModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(for: self?.pollInterval ?? .seconds(1))
                 guard !Task.isCancelled, let self else { return }
-                self.reloadIfChanged(url, generation: generation)
+                await self.reloadIfChanged(url, generation: generation)
             }
         }
     }
 
-    private func reloadIfChanged(_ url: URL, generation: Int) {
+    private func reloadIfChanged(_ url: URL, generation: Int) async {
         guard generation == loadGeneration else { return }
-        let currentSignature = Self.signature(of: url)
+        // 元数据探测在后台线程完成，不占主线程（见 issue #1245）。
+        let currentSignature = await Self.signatureInBackground(of: url)
+        guard !Task.isCancelled else { return }
+        guard generation == loadGeneration else { return }
         guard currentSignature != watchedFileSignature else { return }
         watchedFileSignature = currentSignature
         loadTask?.cancel()

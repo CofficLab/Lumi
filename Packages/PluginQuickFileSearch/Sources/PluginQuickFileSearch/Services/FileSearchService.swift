@@ -272,7 +272,7 @@ public enum FileSearchHelpers {
 
         for case let url as URL in enumerator {
             // 跳过常见的忽略目录
-            if shouldSkipPath(url) {
+            if shouldSkipPath(url, root: rootURL) {
                 enumerator.skipDescendants()
                 continue
             }
@@ -334,8 +334,12 @@ public enum FileSearchHelpers {
         return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 
-    /// 检查是否应该跳过该路径
-    public static func shouldSkipPath(_ url: URL) -> Bool {
+    /// 检查是否应该跳过该路径。
+    ///
+    /// 排除规则只作用于项目根「内部」的相对路径段：先把路径相对 `root` 化再逐段
+    /// 匹配。否则项目恰好位于 `build`/`vendor` 等忽略名祖先目录下时，祖先段会被
+    /// 误匹配，整棵项目的源码全部被排除（#375）。
+    public static func shouldSkipPath(_ url: URL, root: URL) -> Bool {
         let skippedComponents: Set<String> = [
             "build",
             ".build",
@@ -362,7 +366,8 @@ public enum FileSearchHelpers {
             ".xcodeenv",
         ]
 
-        return url.standardizedFileURL.pathComponents
+        let relative = relativePath(for: url, rootPath: root.path)
+        return relative.split(separator: "/")
             .map { $0.lowercased() }
             .contains { skippedComponents.contains($0) }
     }

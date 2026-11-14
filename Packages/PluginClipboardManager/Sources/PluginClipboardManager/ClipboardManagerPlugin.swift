@@ -133,6 +133,15 @@ public final class ClipboardManagerPlugin: SuperPlugin, PluginDataMigrating, Sup
         monitorObserver = nil
     }
 
+    /// 运行时禁用：停止剪贴板采集。
+    ///
+    /// 内核在运行时禁用插件时**不会**调用 `onShutdown`，
+    /// 定时器会继续每 100ms 读一次系统剪贴板并写历史；
+    /// 已经启动的图片编码任务也会继续写 PNG 与数据库（见 issue #423）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        stopClipboardMonitoring()
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         stopClipboardMonitoring()
         historyObserver?.cancel()

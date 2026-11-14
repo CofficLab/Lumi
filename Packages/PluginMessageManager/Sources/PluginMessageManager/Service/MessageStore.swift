@@ -377,22 +377,35 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         )
     }
 
-    /// 返回某会话第一条用户消息，仅物化一条记录，供自动标题等轻量读取使用。
+    /// 返回某会话第一条**非空白**用户消息，供自动标题等轻量读取使用。
+    ///
+    /// 契约与 `MessageManaging.firstUserMessage` 的默认实现一致：跳过正文
+    /// trim 后为空的消息。纯附件消息的正文为空（`""`），若只按 `role == user`
+    /// 取最早一条，最早的纯附件空白消息会挡住其后真正的文本消息，会话因此
+    /// 永远拿不到标题（#838）。
+    ///
+    /// 空正文在 SQL 谓词里排除（不物化纯附件空白行）；纯空白正文（如只输入
+    /// 空格再带附件）SwiftData 谓词无法 trim，故按时间升序取出非空正文后在
+    /// Swift 侧用 `trimmingCharacters` 过滤，取第一条非空白者。
     func fetchFirstUserMessage(conversationId: UUID) -> Message? {
         locked {
             let context = ModelContext(container)
             let conversationIdString = conversationId.uuidString
-            var descriptor = FetchDescriptor<MessageModel>(
+            let descriptor = FetchDescriptor<MessageModel>(
                 predicate: #Predicate<MessageModel> {
-                    $0.conversationId == conversationIdString && $0.role == "user"
+                    $0.conversationId == conversationIdString
+                        && $0.role == "user"
+                        && $0.content != ""
                 },
                 sortBy: [
                     SortDescriptor(\.createdAt, order: .forward),
                     SortDescriptor(\.id, order: .forward),
                 ]
             )
-            descriptor.fetchLimit = 1
-            return (try? context.fetch(descriptor))?.first?.toMessage()
+            let models = (try? context.fetch(descriptor)) ?? []
+            return models.first {
+                !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }?.toMessage()
         }
     }
 

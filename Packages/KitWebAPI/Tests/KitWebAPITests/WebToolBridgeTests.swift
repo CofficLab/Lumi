@@ -15,6 +15,7 @@ private final class StubTool: SuperAgentTool, @unchecked Sendable {
     let name: String
     let resultText: String
     var resultImages: [ImageAttachment] = []
+    var schemaOverride: [String: Any]?
     private(set) var receivedArguments: [String: ToolArgument] = [:]
 
     init(name: String, resultText: String) {
@@ -27,7 +28,7 @@ private final class StubTool: SuperAgentTool, @unchecked Sendable {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        schemaOverride ?? [
             "type": "object",
             "properties": ["value": ["type": "string"]],
             "required": ["value"],
@@ -184,6 +185,107 @@ struct JSONValueTests {
         let restored = value.anyValue as? [String: Any]
         #expect(restored?["a"] as? Double == 1)
         #expect(restored?["b"] as? String == "x")
+    }
+
+    @Test("JSON 解析出的 0/1 保持数字，不被误判为布尔（#1151）")
+    func jsonZeroAndOneStayNumbers() throws {
+        let json = """
+        {
+          "type": "object",
+          "properties": {
+            "count": {"type": "integer", "minimum": 1, "default": 0}
+          },
+          "examples": [0, 1, 2],
+          "enabled": true,
+          "disabled": false
+        }
+        """
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+
+        // JSONSerialization 的数字叶子是 NSNumber，0/1 也能桥接成 Bool；
+        // 只有真正的布尔才应转成 .bool。原生 Swift 字面量复现不了该缺陷。
+        #expect(JSONValue(schema: schema) == .object([
+            "type": .string("object"),
+            "properties": .object([
+                "count": .object([
+                    "type": .string("integer"),
+                    "minimum": .number(1),
+                    "default": .number(0),
+                ]),
+            ]),
+            "examples": .array([.number(0), .number(1), .number(2)]),
+            "enabled": .bool(true),
+            "disabled": .bool(false),
+        ]))
+    }
+
+    @Test("编码输出保留数字 0/1 与真布尔（#1151）")
+    func encodedOutputKeepsNumbersAndBooleans() throws {
+        let json = #"{"minimum": 1, "default": 0, "flag": true}"#
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+        let data = try JSONEncoder().encode(JSONValue(schema: schema))
+        let restored = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+
+        let defaultValue = try #require(restored["default"])
+        #expect(CFGetTypeID(defaultValue as AnyObject) != CFBooleanGetTypeID())
+        #expect(defaultValue as? Double == 0)
+        let minimumValue = try #require(restored["minimum"])
+        #expect(CFGetTypeID(minimumValue as AnyObject) != CFBooleanGetTypeID())
+        #expect(minimumValue as? Double == 1)
+        let flag = try #require(restored["flag"])
+        #expect(CFGetTypeID(flag as AnyObject) == CFBooleanGetTypeID())
+    }
+
+    @Test("原生 Swift 0/1 与 Bool 的转换保持不变")
+    func nativeZeroAndOneUnchanged() {
+        #expect(JSONValue(from: 0) == .number(0))
+        #expect(JSONValue(from: 1) == .number(1))
+        #expect(JSONValue(from: false) == .bool(false))
+        #expect(JSONValue(from: true) == .bool(true))
+    }
+
+    @Test("超出 Double 精确范围的整数解码后无损保留（#1155）")
+    func decodesLargeIntegerLosslessly() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("9007199254740993".utf8))
+        #expect(decoded == .integer(9_007_199_254_740_993))
+        #expect(decoded.anyValue as? Int64 == 9_007_199_254_740_993)
+    }
+
+    @Test("大整数编解码往返保持原始字面量（#1155）")
+    func roundTripsLargeInteger() throws {
+        let original = JSONValue.integer(9_007_199_254_740_993)
+        let data = try JSONEncoder().encode(original)
+        #expect(String(data: data, encoding: .utf8) == "9007199254740993")
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: data)
+        #expect(decoded == original)
+    }
+
+    @Test("schema 中的大整数叶子无损保留（#1155）")
+    func preservesLargeIntegerInSchema() throws {
+        let json = #"{"id": 9007199254740993}"#
+        let schema = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+        #expect(JSONValue(schema: schema) == .object(["id": .integer(9_007_199_254_740_993)]))
+    }
+
+    @Test("负大整数同样无损保留（#1155）")
+    func preservesNegativeLargeInteger() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("-9007199254740993".utf8))
+        #expect(decoded == .integer(-9_007_199_254_740_993))
+    }
+
+    @Test("精确范围内的整数仍归一为 number（#1155）")
+    func safeRangeIntegersStayNumber() throws {
+        let decoded = try JSONDecoder().decode(JSONValue.self, from: Data("42".utf8))
+        #expect(decoded == .number(42))
+        #expect(JSONValue(from: 9_007_199_254_740_992) == .number(9_007_199_254_740_992))
     }
 }
 
@@ -407,6 +509,71 @@ struct WebToolBridgeTests {
         #expect(result.isError == true)
         #expect(result.content == "boom")
     }
+
+    @Test("不存在的会话在授权与执行之前被拒绝（#1153）")
+    func nonexistentConversationRejectedBeforeAuthorization() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let existing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            conversationExists: { id in id == existing }
+        )
+
+        do {
+            _ = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: UUID())
+            Issue.record("不存在的会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 404)
+            #expect(error.code == "not_found")
+            #expect(error.message.contains("Conversation not found"))
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        // 校验先于策略与执行：虚构 UUID 连授权判断都不能触发，
+        // 否则策略层会把它当成 Build 会话放行（#1153 的绕过路径）。
+        #expect(manager.lastAuthorizationConversationID == nil)
+        #expect(manager.lastExecutedCall == nil)
+    }
+
+    @Test("真实存在的会话不受存在性校验影响（#1153）")
+    func existingConversationStillExecutes() async throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let existing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            conversationExists: { id in id == existing }
+        )
+
+        let result = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: existing)
+        #expect(result.isError == false)
+        #expect(manager.lastExecutedConversationID == existing)
+    }
+
+    @Test("缺省解析出的不存在会话同样被拒绝（#1153）")
+    func resolvedMissingConversationRejected() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let missing = UUID()
+        let bridge = WebToolBridge(
+            toolManager: manager,
+            fallbackConversationID: missing,
+            conversationExists: { _ in false }
+        )
+
+        do {
+            _ = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: nil)
+            Issue.record("解析出的不存在会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 404)
+            #expect(error.code == "not_found")
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        #expect(manager.lastAuthorizationConversationID == nil)
+        #expect(manager.lastExecutedCall == nil)
+    }
 }
 
 // MARK: - Route Tests
@@ -452,6 +619,39 @@ struct WebToolRoutesTests {
         #expect(decoded.data.count == 1)
         #expect(decoded.data.first?.name == "read_file")
         #expect(decoded.data.first?.pluginID == "com.test.fs")
+    }
+
+    @Test("工具详情路由保留 schema 中的数字 0/1（#1151）")
+    func detailRoutePreservesNumericSchemaValues() async throws {
+        let manager = StubToolManager()
+        let tool = StubTool(name: "set_level", resultText: "ok")
+        // 用 JSONSerialization 解析构造 schema：数字叶子是 NSNumber，
+        // 与 MCP 工具 schema 经 JSON 传递后的真实形态一致。
+        let schemaJSON = """
+        {"type": "object", "properties": {"level": {"type": "integer", "minimum": 0, "default": 1}}}
+        """
+        tool.schemaOverride = try #require(
+            JSONSerialization.jsonObject(with: Data(schemaJSON.utf8)) as? [String: Any]
+        )
+        manager.add(tool, pluginID: "com.test.misc")
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let detailRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name" })
+
+        let response = try await detailRoute.handler(
+            WebRouteRequest(
+                method: .get,
+                path: "/api/v1/tools/set_level",
+                pathParameters: ["name": "set_level"]
+            )
+        )
+        #expect(response.statusCode == 200)
+
+        let raw = try #require(String(data: response.body, encoding: .utf8))
+        #expect(raw.contains("\"minimum\":0"))
+        #expect(raw.contains("\"default\":1"))
+        #expect(!raw.contains("\"minimum\":false"))
+        #expect(!raw.contains("\"default\":true"))
     }
 
     @Test("查看未知工具抛出 notFound，由服务端映射为 404")
@@ -604,5 +804,29 @@ struct WebToolRoutesTests {
         #expect(image.data == png)
         #expect(image.mimeType == "image/png")
         #expect(image.fileName == "shot.png")
+    }
+
+    @Test("invoke 路由保留大整数参数精度（#1155）")
+    func invokeRoutePreservesLargeIntegerArgument() async throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "echo", resultText: "ok"), pluginID: "com.test.misc")
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let invokeRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name/invoke" })
+
+        let body = Data(#"{"arguments":{"id":9007199254740993},"conversationID":"\#(UUID().uuidString)"}"#.utf8)
+        _ = try await invokeRoute.handler(
+            WebRouteRequest(
+                method: .post,
+                path: "/api/v1/tools/echo/invoke",
+                pathParameters: ["name": "echo"],
+                body: body
+            )
+        )
+
+        // 工具实际收到的参数 JSON 必须保留原始整数，不能被舍入成 ...992。
+        let argumentsJSON = try #require(manager.lastExecutedCall?.arguments)
+        #expect(argumentsJSON.contains("9007199254740993"))
+        #expect(!argumentsJSON.contains("9007199254740992"))
     }
 }

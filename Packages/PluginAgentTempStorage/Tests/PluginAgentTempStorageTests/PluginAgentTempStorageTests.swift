@@ -147,6 +147,48 @@ struct PluginAgentTempStorageTests {
     }
 
     @Test
+    func purgeRemovesExpiredNestedFiles() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let nestedPath = try await service.write(filename: "exports/data.json", content: "old payload")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: nestedPath
+        )
+
+        try await service.purgeExpiredFiles()
+
+        // 写入支持嵌套路径，清理也必须递归：过期嵌套文件不能被 read/list 当作有效内容。
+        await #expect(throws: TempFileStorageError.fileNotFound("exports/data.json")) {
+            _ = try await service.read(filename: "exports/data.json")
+        }
+        #expect(try await service.listFiles().map(\.name).isEmpty)
+    }
+
+    @Test
+    func purgeKeepsFreshNestedFilesWhileRemovingExpiredOnes() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let oldNested = try await service.write(filename: "logs/old.log", content: "old")
+        _ = try await service.write(filename: "logs/fresh.log", content: "fresh")
+        _ = try await service.write(filename: "fresh.md", content: "fresh root")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: oldNested
+        )
+
+        try await service.purgeExpiredFiles()
+
+        let remaining = try await service.listFiles().map(\.name).sorted()
+        #expect(remaining == ["fresh.md", "logs/fresh.log"])
+        #expect(try await service.read(filename: "logs/fresh.log") == "fresh")
+    }
+
+    @Test
     func unreadableSettingsAbortPurgeAndSurfaceError() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -225,6 +267,42 @@ struct PluginAgentTempStorageTests {
         #expect(TempFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
         #expect(TempFileStorageError.settingsUnavailable("boom").errorDescription?.contains("boom") == true)
         #expect(TempFileStorageError.purgeFailed("old.md").errorDescription?.contains("old.md") == true)
+    }
+
+    /// 回归 #327：点文件（如 `.audit.txt`）是合法临时文件，可写可读，
+    /// 列表不得因 `.skipsHiddenFiles` 而把它隐藏，否则用户看不到自己写入的文件。
+    @Test
+    func listsAndReadsRootDotfile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        _ = try await service.write(filename: ".audit.txt", content: "audit")
+
+        #expect(try await service.read(filename: ".audit.txt") == "audit")
+        #expect(try await service.listFiles().map(\.name) == [".audit.txt"])
+    }
+
+    /// 回归 #327：过期点文件必须被清理删除，随后 read 抛 fileNotFound，
+    /// 不得因 `.skipsHiddenFiles` 而永久残留、绕过保留期。
+    @Test
+    func purgeRemovesExpiredRootDotfile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let path = try await service.write(filename: ".audit-old.txt", content: "old")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -40 * 24 * 60 * 60)],
+            ofItemAtPath: path
+        )
+
+        try await service.purgeExpiredFiles()
+
+        await #expect(throws: TempFileStorageError.fileNotFound(".audit-old.txt")) {
+            _ = try await service.read(filename: ".audit-old.txt")
+        }
+        #expect(try await service.listFiles().map(\.name).isEmpty)
     }
 
     private func makeTemporaryDirectory() throws -> URL {

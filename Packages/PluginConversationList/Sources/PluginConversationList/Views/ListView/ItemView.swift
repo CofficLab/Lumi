@@ -19,6 +19,13 @@ struct ItemView: View {
     let needsAttention: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
+    /// 该会话当前是否可以被停止（回合 running / suspended）。
+    ///
+    /// - Important: 这是**闭包**而不是值。菜单内容在右键打开的那一刻才求值，
+    ///   因此判定反映的是用户右键当下的真实回合状态，而不是视图最后一次
+    ///   重绘时的快照。回合开始/结束未必会触发本行重绘，传值会读到过期状态。
+    let canStop: () -> Bool
+    let onStop: () -> Void
 
     var body: some View {
         AppListRow(isSelected: isSelected, action: {
@@ -30,10 +37,21 @@ struct ItemView: View {
         // inside AppListRow's Button label, and the button consumes the
         // right-click before SwiftUI can present the menu on macOS.
         .contextMenu {
+            // - Important: 「停止当前对话」停的是**本行**的会话，不是当前选中会话。
+            //   仅在回合 running / suspended 时出现——空闲时显示一个点了没反应的
+            //   按钮比不显示更糟。
+            if canStop() {
+                Button {
+                    onStop()
+                } label: {
+                    Label(pluginLocalization.string("Stop current conversation"), systemImage: "stop.circle")
+                }
+            }
+
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("删除", systemImage: "trash")
+                Label(pluginLocalization.string("Delete"), systemImage: "trash")
             }
         }
         // Important: 必须合并子元素并显式给出可访问性名称与标识。
@@ -207,7 +225,9 @@ struct ItemView: View {
                 isSelected: false,
                 needsAttention: false,
                 onSelect: {},
-                onDelete: {}
+                onDelete: {},
+                canStop: { false },
+                onStop: {}
             )
         }
     }

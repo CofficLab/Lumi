@@ -11,6 +11,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
 import SwiftUI
+import KitMessageList
 
 /// 简洁（V1 / brief）消息列表插件。
 ///
@@ -75,6 +76,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             chat: chat,
             pluginID: id,
+            order: order,
             expectedVerbosity: .brief,
             makeView: { [weak messageListVM, services] in
                 guard let messageListVM else { return AnyView(EmptyView()) }

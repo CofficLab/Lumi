@@ -340,8 +340,28 @@ final class TitleService: SuperLog {
 
     private nonisolated static let placeholderTitleMaxLength = 40
 
+    /// 取前缀时预留的空白预算。
+    ///
+    /// 折叠空白会**缩短**文本，所以要取足够长的前缀，
+    /// 才能保证折叠后仍然有 `placeholderTitleMaxLength` 个字符。
+    /// 这里的倍数足够宽松：即使前缀里全是空白（每个空白折叠成一个空格），
+    /// 结果也只会被压缩一个数量级，不会改变最终结果。
+    private nonisolated static let placeholderTitlePrefixFactor = 8
+
     nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
-        let collapsed = strippingInjectedReminders(text)
+        let stripped = strippingInjectedReminders(text)
+
+        // - Important: 先取有界前缀，再折叠空白。
+        //   原先对**全量**文本跑一次 ICU 正则（`\s+` → 空格），代价是 O(全文长度)，
+        //   而结果只需要 40 个字符（见 issue #1287）。
+        //
+        //   前缀长度给足空白预算，因此折叠后的结果与「全量折叠再截断」一致。
+        let prefixLimit = placeholderTitleMaxLength * placeholderTitlePrefixFactor
+        let prefix = stripped.count > prefixLimit
+            ? String(stripped.prefix(prefixLimit))
+            : stripped
+
+        let collapsed = prefix
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard collapsed.count > placeholderTitleMaxLength else { return collapsed }
@@ -383,15 +403,39 @@ final class TitleService: SuperLog {
             return ""
         }
 
-        let stripped = firstLine
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "\"'`“”‘’「」『』《》[]()"))
+        let stripped = strippingPairedWrappers(firstLine.trimmingCharacters(in: .whitespacesAndNewlines))
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard stripped.count > 40 else { return stripped }
         let end = stripped.index(stripped.startIndex, offsetBy: 40)
         return String(stripped[..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 标题外层成对包裹符号：仅当首尾恰好构成一对匹配的开/闭符号时才剥离。
+    private nonisolated static let titleWrapperPairs: [(open: Character, close: Character)] = [
+        ("\"", "\""), ("'", "'"), ("`", "`"),
+        ("“", "”"), ("‘", "’"),
+        ("「", "」"), ("『", "』"), ("《", "》"),
+        ("[", "]"), ("(", ")"),
+    ]
+
+    /// 只剥离「包裹整个标题」的成对符号，逐层向内。
+    ///
+    /// 旧实现用 `trimmingCharacters` 把 `[]()` 等当作可从两端独立删除的字符集，
+    /// 标题末尾正常的右括号（如 `Fix array bounds (off-by-one)`）会被单独删掉，
+    /// 留下不配对的左括号、语义受损（#798）。这里只在首字符与尾字符恰好构成一对
+    /// 开/闭符号时才同时删除两端，标题内部的括号一律保留。
+    private nonisolated static func strippingPairedWrappers(_ title: String) -> String {
+        var result = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        while result.count >= 2 {
+            guard let first = result.first, let last = result.last,
+                  titleWrapperPairs.contains(where: { $0.open == first && $0.close == last }) else {
+                break
+            }
+            result = String(result.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return result
     }
 }
 

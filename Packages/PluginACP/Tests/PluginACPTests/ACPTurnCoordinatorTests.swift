@@ -1005,6 +1005,62 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         })
     }
 
+    /// 回归 #481：失败回合跳过最终文本，但已落库的工具结果必须补发
+    /// completed/failed，真正未出结果的才标 cancelled——否则客户端的
+    /// 工具行永久停在 pending。
+    func testFailedTurnPublishesPersistedToolResults() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_ok", name: "read_file")
+        reportToolCall(conversationID: conversationID, id: "call_err")
+        reportToolCall(conversationID: conversationID, id: "call_pending", name: "bash")
+        var callOK = MessageToolCall(id: "call_ok", name: "read_file", arguments: "{}")
+        callOK.result = MessageToolResult(content: "file content")
+        var callErr = MessageToolCall(id: "call_err", name: "write_file", arguments: "{}")
+        callErr.result = MessageToolResult(content: "permission denied", isError: true)
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                toolCalls: [
+                    callOK,
+                    callErr,
+                    MessageToolCall(id: "call_pending", name: "bash", arguments: "{}"),
+                ]
+            )
+        )
+
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "provider exploded"))
+        runner.nextOutcome = .failed("provider exploded")
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        func toolUpdate(id: String) -> ToolCallUpdate? {
+            for message in sent {
+                guard case .notification(_, let params) = message,
+                      let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                      case .toolCallUpdate(let tc) = update.update,
+                      tc.toolCallId == id else { continue }
+                return tc
+            }
+            return nil
+        }
+
+        XCTAssertEqual(toolUpdate(id: "call_ok")?.status, .completed)
+        XCTAssertEqual(toolUpdate(id: "call_err")?.status, .failed)
+        XCTAssertEqual(toolUpdate(id: "call_pending")?.status, .cancelled)
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .refusal)
+    }
+
     func testFailedTurnDefersFinalizeWhileRetryActive() throws {
         let retry = MockRetryLifecycle()
         installRetryLifecycle(retry)
@@ -1166,6 +1222,36 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             ["Debug", "Release"]
         )
         XCTAssertEqual(ACPTurnCoordinator.choiceOptions(from: "not-an-array"), [])
+    }
+
+    // MARK: - #221 重复标签去重（防止 ACP 字典构造陷阱崩溃）
+
+    func testChoiceOptionsDeduplicatesLabels() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["Debug", "Debug", "Release"]),
+            ["Debug", "Release"]
+        )
+    }
+
+    func testChoiceOptionsDedupPreservesFirstOccurrenceOrder() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["B", "A", "B", "C", "A"]),
+            ["B", "A", "C"]
+        )
+    }
+
+    func testChoiceOptionsDedupAcrossStringAndObjectForms() {
+        XCTAssertEqual(
+            ACPTurnCoordinator.choiceOptions(from: ["Debug", ["label": "Debug"], ["label": "Release"]]),
+            ["Debug", "Release"]
+        )
+    }
+
+    func testChoiceOptionsLabelsAreUnique() {
+        let labels = ACPTurnCoordinator.choiceOptions(from: ["Debug", "Debug", "Release", "Release", "Debug"])
+        // labels 同时用作 optionId 与 answersByOptionID 的键；重复会让
+        // Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃，故必须唯一。
+        XCTAssertEqual(labels.count, Set(labels).count)
     }
 }
 

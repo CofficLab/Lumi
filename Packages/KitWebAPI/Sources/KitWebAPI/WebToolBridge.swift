@@ -48,25 +48,47 @@ public enum JSONValue: Codable, Sendable, Equatable {
     case null
     case bool(Bool)
     case number(Double)
+    /// 超出 Double 精确整数范围（±2^53）的整数。
+    ///
+    /// `Double` 无法精确表示 2^53+1 这类 64 位整数（雪花 ID、数据库主键、
+    /// 时间戳）。单独用 `Int64` 保存，避免请求里的合法整数在执行前被悄悄
+    /// 舍入（issue #1155）。范围内的整数仍走 `.number`，保持既有行为。
+    case integer(Int64)
     case string(String)
     case array([JSONValue])
     case object([String: JSONValue])
+
+    /// Double 能精确表示的最大整数绝对值（2^53）。
+    private static let maxExactInteger: Int64 = 9_007_199_254_740_992
+
+    /// 按精度把整数路由到合适的 case：超出 Double 精确范围用 `.integer`。
+    static func number(fromInt64 value: Int64) -> JSONValue {
+        if value > maxExactInteger || value < -maxExactInteger {
+            return .integer(value)
+        }
+        return .number(Double(value))
+    }
+
+    /// NSNumber 是否为整数类型（非 float/double）。布尔已在调用前排除。
+    private static func isIntegerNSNumber(_ value: NSNumber) -> Bool {
+        switch value.objCType.pointee {
+        case 0x66, 0x64: return false // 'f' float, 'd' double
+        default: return true
+        }
+    }
 
     /// 把任意值转换为 JSON 值。
     ///
     /// - Parameter value: 任意值。非 JSON 类型一律降级为 `null`。
     public init(from value: Any) {
         switch value {
-        case let value as Bool:
-            self = .bool(value)
-        case let value as Int:
-            self = .number(Double(value))
-        case let value as Double:
-            self = .number(value)
         case let value as NSNumber:
-            // `NSNumber` 同时匹配 Bool 与数字，需显式区分。
+            // NSNumber(0)/(1) 也能桥接成 Bool；必须先检查原始对象的 CFTypeID，
+            // 否则 JSON 数字 0/1 会被 `as Bool` 误判为布尔（#1151）。
             if CFGetTypeID(value) == CFBooleanGetTypeID() {
                 self = .bool(value.boolValue)
+            } else if Self.isIntegerNSNumber(value) {
+                self = Self.number(fromInt64: value.int64Value)
             } else {
                 self = .number(value.doubleValue)
             }
@@ -92,6 +114,10 @@ public enum JSONValue: Codable, Sendable, Equatable {
             self = .null
         } else if let value = try? container.decode(Bool.self) {
             self = .bool(value)
+        } else if let value = try? container.decode(Int64.self) {
+            // 先按整数解码：超出 Double 精确范围的整数才能无损保留（#1155）。
+            // 范围内的整数仍归一为 `.number`，小数走下面的 Double 分支。
+            self = Self.number(fromInt64: value)
         } else if let value = try? container.decode(Double.self) {
             self = .number(value)
         } else if let value = try? container.decode(String.self) {
@@ -116,6 +142,8 @@ public enum JSONValue: Codable, Sendable, Equatable {
         case .bool(let value):
             try container.encode(value)
         case .number(let value):
+            try container.encode(value)
+        case .integer(let value):
             try container.encode(value)
         case .string(let value):
             try container.encode(value)
@@ -210,21 +238,28 @@ public final class WebToolBridge {
     /// 会话解析器。优先级高于 `fallbackConversationID`。
     private let conversationResolver: (@MainActor @Sendable () -> UUID?)?
 
+    /// 会话存在性校验器。执行前验证会话 ID 真实存在。
+    private let conversationExists: (@MainActor @Sendable (UUID) async -> Bool)?
+
     /// 创建桥接器。
     ///
     /// - Parameters:
     ///   - toolManager: 工具管理器。
     ///   - fallbackConversationID: 缺省会话 ID。
     ///   - conversationResolver: 会话解析器，优先于缺省值。
+    ///   - conversationExists: 会话存在性校验器；提供时，不存在的会话 ID
+    ///     会在授权与执行之前被拒绝（404）。
     public init(
         toolManager: any ToolManagerProviding,
         fallbackConversationID: UUID? = nil,
-        conversationResolver: (@MainActor @Sendable () -> UUID?)? = nil
+        conversationResolver: (@MainActor @Sendable () -> UUID?)? = nil,
+        conversationExists: (@MainActor @Sendable (UUID) async -> Bool)? = nil
     ) {
         self.toolManager = toolManager
         self.pluginIndex = Self.buildPluginIndex(from: toolManager)
         self.fallbackConversationID = fallbackConversationID
         self.conversationResolver = conversationResolver
+        self.conversationExists = conversationExists
     }
 
     /// 从工具管理器构建「工具名 → 插件 ID」索引。
@@ -290,7 +325,8 @@ public final class WebToolBridge {
     ///   - arguments: 工具参数（JSON 兼容的字典）。
     ///   - conversationID: 会话 ID；为 `nil` 时用缺省值或解析器兜底。
     /// - Returns: 执行结果。
-    /// - Throws: `WebAPIError`：工具不存在（404）、缺少会话上下文（400）。
+    /// - Throws: `WebAPIError`：工具不存在（404）、会话不存在（404）、
+    ///   缺少会话上下文（400）。
     public func invoke(
         tool name: String,
         arguments: [String: Any],
@@ -304,6 +340,15 @@ public final class WebToolBridge {
             throw WebAPIError.badRequest(
                 message: "conversationID is required to invoke a tool",
                 field: "conversationID"
+            )
+        }
+
+        // 会话必须真实存在：策略层会把未知 ID 映射成 Build，调用方就能
+        // 用一个虚构 UUID 绕过当前选中会话的 Chat 边界（issue #1153）。
+        // 校验放在授权之前，不存在的会话不触发任何授权或执行。
+        if let conversationExists, !(await conversationExists(resolvedConversationID)) {
+            throw WebAPIError.notFound(
+                message: "Conversation not found: \(resolvedConversationID.uuidString)"
             )
         }
 

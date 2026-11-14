@@ -15,6 +15,14 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     @Published var lastChangeCount: Int
     private let pasteboard = NSPasteboard.general
 
+    /// 生命周期代次。
+    ///
+    /// 每次「停止监控」都会推进代次。已经在处理中的内容（尤其是图片编码，
+    /// 它跑在独立的 detached Task 里，取消定时器并不会让它停下）
+    /// 在写文件与写库之前都会检查代次，代次已变就丢弃结果
+    /// （见 issue #423）。
+    private var lifecycleGeneration = ClipboardLifecycleGeneration()
+
     // Dependencies
     private let storage = ClipboardStorage.shared
 
@@ -27,10 +35,15 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
 
     public func stopMonitoring() {
+        // 让在途处理失效：它们完成后不会再写文件、写库或发通知。
+        lifecycleGeneration.stop()
         if Self.verbose {
             Self.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
         }
     }
+
+    /// 当前生命周期代次。仅供单元测试断言「停止监控会让在途处理失效」。
+    var lifecycleGenerationForTesting: UInt64 { lifecycleGeneration.current }
 
     func poll() {
         checkForChanges()
@@ -44,15 +57,25 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
 
     private func processPasteboardContent() {
+        // 记录启动时的代次：处理期间若发生「停止监控」，代次会变，结果被丢弃。
+        let generation = lifecycleGeneration.begin()
         Task {
             let items = await Self.itemsAsync(
                 from: pasteboard,
-                appName: NSWorkspace.shared.frontmostApplication?.localizedName
+                appName: NSWorkspace.shared.frontmostApplication?.localizedName,
+                isStillActive: { [weak self] in
+                    await MainActor.run { self?.lifecycleGeneration.isCurrent(generation) ?? false }
+                }
             )
 
             for item in items {
+                // 监控已停止：不再写入，也不再通知。
+                guard await MainActor.run(body: { self.lifecycleGeneration.isCurrent(generation) }) else {
+                    return
+                }
                 await storage.add(item: item)
                 await MainActor.run {
+                    guard self.lifecycleGeneration.isCurrent(generation) else { return }
                     ClipboardHistoryChangeCenter.shared.notify()
                 }
 
@@ -71,7 +94,8 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     static func itemsAsync(
         from pasteboard: NSPasteboard,
         appName: String?,
-        imageDirectory: URL = FileManager.default.temporaryDirectory
+        imageDirectory: URL = FileManager.default.temporaryDirectory,
+        isStillActive: (@Sendable () async -> Bool)? = nil
     ) async -> [ClipboardItem] {
         // Handle file URLs first (sync, no I/O)
         if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
@@ -85,6 +109,8 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
 
         // Handle image in background Task
         if let image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage {
+            // 监控已停止：不再写 PNG 文件（见 issue #423）。
+            if let isStillActive, await isStillActive() == false { return [] }
             let imagePath = await saveImageAsync(image, to: imageDirectory)
             if let path = imagePath {
                 return [ClipboardItem(type: .image, content: path, appName: appName)]

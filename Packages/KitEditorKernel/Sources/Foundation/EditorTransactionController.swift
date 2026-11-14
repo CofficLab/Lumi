@@ -256,7 +256,7 @@ public final class EditorTransactionController {
         return EditorTransactionCommitPayload(
             text: result.snapshot.text,
             version: result.snapshot.version,
-            totalLines: result.snapshot.text.filter { $0 == "\n" }.count + 1,
+            totalLines: EditorTextMetrics.totalLineCount(in: result.snapshot.text),
             canonicalSelectionSet: selections.map { EditorSelectionSet(selections: $0) },
             multiCursorSelections: selections?.map {
                 MultiCursorSelection(location: $0.range.location, length: $0.range.length)

@@ -11,6 +11,15 @@ import UniformTypeIdentifiers
 import LumiLoggingKit
 import os
 
+/// 文件加载后需要在后台计算的内容派生信息。
+///
+/// 长行检测与总行数统计都要完整扫描正文，在大文件上是主线程重活，
+/// 因此在后台线程计算后再带回主线程（见 issue #1277）。
+struct DocumentDerivedScan: Sendable {
+    let longestLine: LongestDetectedLine?
+    let totalLines: Int
+}
+
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
@@ -358,6 +367,49 @@ public final class EditorState: ObservableObject, SuperLog {
     public weak var focusedTextView: TextView?
 
     private var fullLoadOverrides: Set<URL> = []
+
+    // MARK: - 行偏移表缓存（issue #1278）
+
+    /// 缓存的行偏移表。
+    ///
+    /// 折叠状态、可见范围判定等路径都需要 `LineOffsetTable`。若每次交互都
+    /// 用 `LineOffsetTable(content:)` 全量重建，会在每次按键与光标移动时
+    /// 完整拷贝正文并扫描所有 unicode scalar（O(n)），大文件下造成输入卡顿。
+    ///
+    /// 这里缓存表，并按编辑类型维护：
+    /// - 已知编辑范围的原生输入 → 用 `LineOffsetTable.update` 增量更新；
+    /// - 无法推导编辑范围的整体替换（打开文件、外部修改、撤销重做）→ 丢弃缓存。
+    ///
+    /// 详见 issue #1278。
+    private var cachedLineTable: LineOffsetTable?
+
+    /// `cachedLineTable` 对应的正文 UTF-16 长度。
+    ///
+    /// 用作兜底校验：长度与当前正文不一致说明缓存已过期，需要重建。
+    private var cachedLineTableLength: Int = -1
+
+    /// 当前正文的总行数。
+    ///
+    /// 原生输入路径每次按键都会重算总行数，全量扫描正文在大文件上是主线程重活
+    /// （见 issue #1329）。这里缓存总行数，让按键路径退化为 O(1) 读取：
+    /// - 已知编辑范围的原生输入 → 按编辑增量修正（换行数变化）；
+    /// - 整体替换 → 缓存失效，下次访问时重扫一次。
+    private var cachedTotalLineCount: Int = 0
+
+    /// 总行数缓存是否需要重新扫描正文。
+    ///
+    /// 整体替换（打开文件、外部修改、撤销重做）后缓存不可用，必须重扫。
+    private var totalLineCountRequiresRescan: Bool = true
+
+    /// 待执行的查找匹配任务。
+    ///
+    /// 内容变化会触发一次全文档正则匹配，而查找面板关闭时这份结果并没有人看，
+    /// 却在每次按键时都要重算一遍（见 issue #1279）。这里用防抖把连续按键
+    /// 合并成一次扫描。
+    private var pendingFindMatchTask: Task<Void, Never>?
+
+    /// 查找匹配的防抖间隔（秒）。
+    private static let findMatchDebounceInterval: Double = 0.2
 
     public var isSyntaxHighlightingEnabledInViewport: Bool {
         Self.isViewportSyntaxFeatureEnabled(
@@ -1178,7 +1230,11 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - File Loading Constants
     
     /// 截断读取字节数（256KB）
-    static let truncationReadBytes: Int = 256 * 1024
+    /// 截断预览的读取字节上限。
+    ///
+    /// - Important: 必须 `nonisolated` —— 该常量会在后台线程的文档加载任务中被读取
+    ///   （见 issue #1277）。
+    nonisolated static let truncationReadBytes: Int = 256 * 1024
     
     // MARK: - Init
     
@@ -1892,11 +1948,25 @@ public final class EditorState: ObservableObject, SuperLog {
 
         Task {
             do {
-                let loadedDocument = try documentController.loadDocument(
-                    from: url,
-                    truncationReadBytes: Self.truncationReadBytes,
-                    forceFullLoad: fullLoadOverrides.contains(loadingURL.standardizedFileURL)
-                )
+                // 文件读取与解码在后台线程完成，避免大文件阻塞主线程（见 issue #1277）。
+                let forceFullLoad = fullLoadOverrides.contains(loadingURL.standardizedFileURL)
+                let loadedDocument = try await Task.detached(priority: .userInitiated) {
+                    try EditorDocumentController.loadDocument(
+                        from: url,
+                        truncationReadBytes: Self.truncationReadBytes,
+                        forceFullLoad: forceFullLoad
+                    )
+                }.value
+
+                // 长行检测与总行数统计都要完整扫描正文，放在后台完成（见 issue #1277）。
+                let derivedScan = await Task.detached(priority: .utility) { () -> DocumentDerivedScan? in
+                    guard case let .text(document) = loadedDocument else { return nil }
+                    let content = document.content
+                    return DocumentDerivedScan(
+                        longestLine: LongLineDetector.findLongestLine(in: content),
+                        totalLines: EditorTextMetrics.totalLineCount(in: content)
+                    )
+                }.value
 
                 await MainActor.run { [weak self] in
                     guard let self else { return }
@@ -1921,10 +1991,12 @@ public final class EditorState: ObservableObject, SuperLog {
                         self.fileLoadErrorMessage = nil
                     case .text(let document):
                         let content = document.content
-                        let longestLine = LongLineDetector.findLongestLine(in: content)
+                        let longestLine = derivedScan?.longestLine
                         self.withoutSessionSync {
                             self.currentFileURL = loadingURL
                             _ = self.documentController.load(text: content)
+                            // 整体替换无法用增量更新推导，丢弃行偏移表缓存（见 issue #1278）。
+                            self.invalidateLineTableCache()
                             self.documentController.markPersistedText(content)
                             self.content = self.documentController.textStorage
                             self.canPreview = true
@@ -1950,7 +2022,9 @@ public final class EditorState: ObservableObject, SuperLog {
                                 self.detectedLanguage = nil
                             }
 
-                            self.totalLines = content.filter { $0 == "\n" }.count + 1
+                            self.totalLines = derivedScan?.totalLines ?? EditorTextMetrics.totalLineCount(in: content)
+                            self.cachedTotalLineCount = self.totalLines
+                            self.totalLineCountRequiresRescan = false
                             self.resetViewportObservation(totalLines: self.totalLines)
                             self.inlayHintProvider.clear()
                             self.codeActionProvider.clear()
@@ -2168,7 +2242,39 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    /// 立即重算查找匹配。
+    ///
+    /// 用于查找面板自身的状态变化（打开面板、改查询词、切换选项）——
+    /// 这些场景用户正等着看结果，必须同步给出。
     func refreshFindMatches() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = nil
+        performFindMatchRefresh()
+    }
+
+    /// 调度一次带防抖的查找匹配。
+    ///
+    /// 用于内容变化（每次按键）：查找面板关闭时这份结果没人看，
+    /// 却要在每次按键时全文档跑一次正则（见 issue #1279）。
+    /// 连续按键只保留最后一次扫描。
+    func scheduleFindMatchRefresh() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(Int(Self.findMatchDebounceInterval * 1000)))
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            self.performFindMatchRefresh()
+        }
+    }
+
+    /// 取消待执行的查找匹配。
+    func cancelPendingFindMatchRefresh() {
+        pendingFindMatchTask?.cancel()
+        pendingFindMatchTask = nil
+    }
+
+    /// 真正执行查找匹配扫描。
+    private func performFindMatchRefresh() {
         guard let text = content?.string else {
             applyFindMatchesResult(
                 EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
@@ -2370,7 +2476,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func collapseCurrentFold() {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+              let lineTable = currentLineTable() else { return }
         if EditorFoldingController.collapseCurrent(
             cursorLine: cursorLine,
             ranges: foldingRangeProvider.ranges,
@@ -2383,7 +2489,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func expandCurrentFold() {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+              let lineTable = currentLineTable() else { return }
         if EditorFoldingController.expandCurrent(
             cursorLine: cursorLine,
             ranges: foldingRangeProvider.ranges,
@@ -2396,7 +2502,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func collapseAllFolds() {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+              let lineTable = currentLineTable() else { return }
         if EditorFoldingController.collapseAll(
             ranges: foldingRangeProvider.ranges,
             textView: textView,
@@ -2408,7 +2514,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func expandAllFolds() {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+              let lineTable = currentLineTable() else { return }
         if EditorFoldingController.expandAll(
             ranges: foldingRangeProvider.ranges,
             textView: textView,
@@ -2420,7 +2526,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func collapseFolds(toLevel level: Int) {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+              let lineTable = currentLineTable() else { return }
         if EditorFoldingController.collapseToLevel(
             level,
             ranges: foldingRangeProvider.ranges,
@@ -2439,6 +2545,8 @@ public final class EditorState: ObservableObject, SuperLog {
             content = nil
             documentController.clear()
             content = documentController.textStorage
+            // 重置后正文为空，行偏移表缓存必须一并丢弃（见 issue #1278）。
+            invalidateLineTableCache()
             activeSession.reset()
             canPreview = false
             isBinaryFile = false
@@ -2528,6 +2636,8 @@ public final class EditorState: ObservableObject, SuperLog {
             documentController.clear()
             documentController.clearPersistedTextSnapshot()
             content = documentController.textStorage
+            // 切换到二进制文件，正文被清空：丢弃行偏移表缓存（见 issue #1278）。
+            invalidateLineTableCache()
             canPreview = false
             isBinaryFile = true
             isEditable = false
@@ -2579,7 +2689,8 @@ public final class EditorState: ObservableObject, SuperLog {
             // 内容与磁盘一致时取消待执行的自动保存
             autoSaveScheduler.cancel()
         }
-        refreshFindMatches()
+        // 内容变化触发的查找匹配走防抖：连续按键只扫描一次（见 issue #1279）。
+        scheduleFindMatchRefresh()
 
         syncActiveSessionState()
         updateBracketMatch()
@@ -2594,8 +2705,10 @@ public final class EditorState: ObservableObject, SuperLog {
             notifyContentChangedAfterSynchronizedEdit(using: text)
         } else {
             let result = documentController.replaceText(text)
+            // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+            invalidateLineTableCache()
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            applyTotalLineCountAfterReplacement(of: result.snapshot.text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -2614,8 +2727,10 @@ public final class EditorState: ObservableObject, SuperLog {
         
         let contentString = textStorage.string
         if let result = documentController.syncBufferFromTextStorageIfNeeded() {
+            // 整体替换：丢弃行偏移表缓存（见 issue #1278）。
+            invalidateLineTableCache()
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            applyTotalLineCountAfterReplacement(of: result.snapshot.text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -2625,8 +2740,11 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func applyNativeTextEdit(range: NSRange, text: String, textViewString: String? = nil) {
         if let result = documentController.applyTextStorageEdit(range: range, text: text) {
+            // 已知编辑范围：增量更新行偏移表，避免全量重建（见 issue #1278）。
+            updateLineTableCache(editRange: range, newText: text)
             content = documentController.textStorage
-            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            // 按键路径：总行数由换行数增量修正，避免全量扫描正文（见 issue #1329）。
+            applyTotalLineCountAfterIncrementalEdit(editRange: range, newText: text)
             if viewportVisibleLineRange.isEmpty {
                 resetViewportObservation(totalLines: totalLines)
             }
@@ -3280,8 +3398,12 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func commitDocumentEditResult(_ result: EditorEditResult, reason: String) {
         let payload = transactionController.commitPayload(from: result)
+        // 事务编辑是整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        // 注意不能依赖长度校验兜底——等长替换（如 "abc" → "xyz"）长度不变，
+        // 陈旧的行偏移表会被当作有效缓存返回，导致行号错位。
+        invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = payload.totalLines
+        applyTotalLineCountAfterReplacement(of: payload.text)
         if let selectionSet = payload.canonicalSelectionSet,
            let selections = payload.multiCursorSelections {
             // Phase 2: 同时更新 canonical selection set 和外部 multiCursorState
@@ -3306,8 +3428,10 @@ public final class EditorState: ObservableObject, SuperLog {
 
         let result = documentController.replaceText(state.text)
         let payload = transactionController.commitPayload(from: result)
+        // 撤销/重做是整体替换：丢弃行偏移表缓存（见 issue #1278）。
+        invalidateLineTableCache()
         content = documentController.textStorage
-        totalLines = payload.totalLines
+        applyTotalLineCountAfterReplacement(of: payload.text)
         canonicalSelectionSet = EditorSelectionSet(selections: state.selections)
         setSelections(canonicalSelectionSet.toMultiCursorSelections())
         pushCanonicalSelectionToView()
@@ -3353,9 +3477,100 @@ public final class EditorState: ObservableObject, SuperLog {
         EditorFindReplaceStateController.apply(state, to: &editorState)
     }
 
+    /// 返回与当前内容一致的行偏移表（带缓存）。
+    ///
+    /// 缓存命中时直接返回；长度不一致时全量重建一次。
+    /// 详见 `cachedLineTable` 的说明（issue #1278）。
+    func currentLineTable() -> LineOffsetTable? {
+        guard let content else { return nil }
+        let currentLength = content.length
+        if let cachedLineTable, cachedLineTableLength == currentLength {
+            return cachedLineTable
+        }
+        let table = LineOffsetTable(content: content.string)
+        cachedLineTable = table
+        cachedLineTableLength = currentLength
+        return table
+    }
+
+    /// 内容发生整体替换时使行偏移表缓存失效。
+    ///
+    /// 全量替换（打开文件、外部修改、撤销重做等）无法用增量更新推导，
+    /// 直接丢弃缓存，下次访问时重建（见 issue #1278）。
+    func invalidateLineTableCache() {
+        cachedLineTable = nil
+        cachedLineTableLength = -1
+        // 行偏移表失效后无法再推导总行数，下一次读取时需要重新扫描正文。
+        totalLineCountRequiresRescan = true
+    }
+
+    /// 整体替换后记录总行数。
+    ///
+    /// 整体替换无法用增量更新推导行偏移表（见 issue #1278），但总行数可以直接给出：
+    /// 用零分配的字节扫描统计换行数，避免 `filter { $0 == "\n" }.count`
+    /// 构造 `Character` 数组再重新拼接字符串的额外开销（见 issue #1329）。
+    func applyTotalLineCountAfterReplacement(of text: String) {
+        let count = EditorTextMetrics.totalLineCount(in: text)
+        cachedTotalLineCount = count
+        totalLineCountRequiresRescan = false
+        totalLines = count
+    }
+
+    /// 按已知编辑范围增量修正总行数。
+    ///
+    /// 原生输入（每次按键）只改动一段已知范围，因此换行数的变化可以增量计算：
+    /// `新文本换行数 - 被替换范围换行数`。被替换范围的换行数来自被删除的旧文本，
+    /// 这里用编辑前后总长度变化与行偏移表的一致性作为兜底。
+    ///
+    /// - Important: 仅在行偏移表缓存可用时使用；缓存不可用时退回整体重扫。
+    /// - Parameters:
+    ///   - range: 被替换的范围（UTF-16 偏移）。
+    ///   - newText: 替换进去的新文本。
+    private func applyTotalLineCountAfterIncrementalEdit(editRange range: NSRange, newText: String) {
+        // 缓存不可用或与当前正文长度不符：退回整体扫描。
+        // （打开文件后的第一次按键会命中这条兜底路径。）
+        let currentLength = documentController.currentText?.utf16.count ?? -1
+        guard !totalLineCountRequiresRescan,
+              let table = cachedLineTable,
+              cachedLineTableLength == currentLength else {
+            if let text = documentController.currentText {
+                applyTotalLineCountAfterReplacement(of: text)
+            }
+            return
+        }
+
+        // 行偏移表的 lineCount 已经是「换行数 + 1」，直接用它即可得到最新总行数。
+        // `updateLineTableCache` 已把编辑增量应用到缓存表上。
+        let count = table.lineCount
+        cachedTotalLineCount = count
+        totalLines = count
+    }
+
+    /// 按已知编辑范围增量更新行偏移表。
+    ///
+    /// - Parameters:
+    ///   - range: 被替换的范围（UTF-16 偏移）。
+    ///   - newText: 替换进去的新文本。
+    private func updateLineTableCache(editRange range: NSRange, newText: String) {
+        let newTextLength = (newText as NSString).length
+        let changeInLength = newTextLength - range.length
+
+        guard var table = cachedLineTable else { return }
+        table = table.update(
+            editRange: range,
+            changeInLength: changeInLength,
+            newContent: newText
+        )
+        cachedLineTable = table
+        cachedLineTableLength = table.totalUTF16Length
+        // 行偏移表已增量更新，总行数同步为表中的行数（O(1)，见 issue #1329）。
+        cachedTotalLineCount = table.lineCount
+        totalLineCountRequiresRescan = false
+    }
+
     private func currentFoldingState() -> EditorFoldingState {
         guard let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              let lineTable = currentLineTable(),
               showFoldingRibbon,
               !largeFileMode.isFoldingDisabled else {
             return activeSession.foldingState
@@ -3371,7 +3586,7 @@ public final class EditorState: ObservableObject, SuperLog {
         guard let pendingFoldingStateRestore,
               !pendingFoldingStateRestore.isEmpty,
               let textView = focusedTextView,
-              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              let lineTable = currentLineTable(),
               showFoldingRibbon,
               !largeFileMode.isFoldingDisabled,
               !foldingRangeProvider.ranges.isEmpty else {

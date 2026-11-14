@@ -43,6 +43,20 @@ enum RAGSQL {
     );
     """
 
+    static let createMetaTable = """
+    CREATE TABLE IF NOT EXISTS rag_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+    """
+
+    static let upsertMeta = """
+    INSERT INTO rag_meta(key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+    """
+
+    static let fetchMeta = "SELECT value FROM rag_meta WHERE key = ?;"
+
     // MARK: - Indexes
 
     static let createChunksProjectIndex = "CREATE INDEX IF NOT EXISTS idx_rag_chunks_project ON rag_chunks(project_path);"

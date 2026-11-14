@@ -4,6 +4,7 @@ import ProviderDeveloperMode
 import ProviderMessage
 import ProviderToolManager
 import Testing
+import KitMessageList
 @testable import PluginMessageListStandard
 
 // MARK: - TurnActivity

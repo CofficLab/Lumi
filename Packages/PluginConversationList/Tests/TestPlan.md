@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 62 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 67 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 62
+测试文件: 14 个，用例总数: 67
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -52,6 +52,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationSortStabilizer**（3 条）：由 `sortTimeStaysAnchoredUntilTheHoldWindowExpires`、`markingViewedAnchorsTheConversationAtTheCurrentTime`、`cleanupKeepsRecentAnchorsAndDropsOldOnes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GetRecentConversationsTool**（5 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationTableEscapesProjectNamesAndKeepsFiveColumns`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RelativeTime**（3 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **PluginLocalizationIntegrity**（5 条）：由 `userFacingKeysAreFullyLocalized`、`pinnedTranslationsMatchCatalog`、`everyCatalogEntryCoversRequiredLanguages`、`placeholdersAreConsistentAcrossLanguages`、`compiledBundlesContainPinnedStrings` 锁定上屏文案进入目录与编译产物，硬编码中文不得回潮（**#1299**）。
 
 ## 测试用例清单
 
@@ -119,16 +120,21 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 60 | ConversationRailTabController | Chat 侧栏标签标题走本地化，tooltip 不再硬编码中文（**#923**） | 同时存在 Chats 与项目标签 | 启动控制器并注入标题解析器 | 两个标签标题均来自解析器，而非中文字面量 | P1 | ✅ 已覆盖 | `railTabTitlesUsePluginLocalization` |
 | 61 | ConversationRailTabController | 标签标题依赖的 Chats/Projects key 具备多语言翻译（**#923**） | 插件编译后的字符串表 | 读取各语言 Localizable.strings | 英文为 Chats/Projects，简中为 对话/项目，繁中为 專案 | P1 | ✅ 已覆盖 | `railTabTitleKeysHaveTranslations` |
 | 62 | ConversationListViewModel | 切到条数更多的新项目后 reload 保持 hasMore 打开（**#896**） | 项目 A 已加载全部 41 条，项目 B 有 81 条 | 切到 B 并 reload，随后 loadNextPage | reload 后显示 80 条且 hasMore 为 true，翻页后补齐 81 条并关闭 hasMore | P1 | ✅ 已覆盖 | `projectSwitchReloadKeepsPagingUntilNewProjectIsExhausted` |
+| 63 | PluginLocalizationIntegrity | #1299 的全部上屏文案都有 4 种规范语言翻译（**#1299**） | 插件 xcstrings 目录 | 读目录逐条检查 9 个上屏 key | 均覆盖 en/zh-Hans/zh-HK/zh-TW | P1 | ✅ 已覆盖 | `userFacingKeysAreFullyLocalized` |
+| 64 | PluginLocalizationIntegrity | 英文原文与简体中文译文与约定文案一致（**#1299**） | 插件 xcstrings 目录 | 逐条核对 8 个 key 的 en 与 zh-Hans | en 为 key 本身，zh-Hans 为约定译文 | P1 | ✅ 已覆盖 | `pinnedTranslationsMatchCatalog` |
+| 65 | PluginLocalizationIntegrity | 所有已登记条目都含 4 种规范语言 | 插件 xcstrings 目录 | 遍历全部条目 | 无缺失语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
+| 66 | PluginLocalizationIntegrity | 带占位符的文案四种语言占位符一致 | 插件 xcstrings 目录 | 统计各语言占位符数量并与 en 对比 | 数量一致 | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
+| 67 | PluginLocalizationIntegrity | 编译产物各语言都含 #1299 文案（**#1299**） | 编译后的 .lproj 字符串表 | 读取 en/zh-Hans/zh-Hant 字符串表 | 8 个 key 均在且译文正确 | P1 | ✅ 已覆盖 | `compiledBundlesContainPinnedStrings` |
 
-> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 46 / 46
+- P1: 已覆盖 51 / 51
 - P2: 已覆盖 11 / 11
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

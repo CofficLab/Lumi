@@ -11,7 +11,7 @@ struct ListEmptyView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text("暂无对话")
+            Text(pluginLocalization.string("No conversations yet"))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }

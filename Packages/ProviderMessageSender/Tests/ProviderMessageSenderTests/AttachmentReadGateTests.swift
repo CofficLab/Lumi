@@ -58,6 +58,41 @@ struct AttachmentReadGateTests {
         #expect(sender.pendingAttachmentReadCount == 0)
     }
 
+    @Test("读取失败时等待返回 false，发送入口据此中止（#1174）")
+    func waitReturnsFalseWhenAttachmentReadFails() async {
+        let sender = makeSender()
+
+        sender.beginAttachmentRead()
+        let waiter = Task { await sender.waitForAttachmentReads() }
+        try? await Task.sleep(for: .milliseconds(50))
+
+        sender.recordAttachmentReadFailure()
+        sender.endAttachmentRead()
+
+        #expect(await waiter.value == false)
+    }
+
+    @Test("失败标记在新读取窗口开始时复位，干净读取仍返回 true（#1174）")
+    func readFailureFlagResetsOnNextReadWindow() async {
+        let sender = makeSender()
+
+        // 第一个窗口读取失败。
+        sender.beginAttachmentRead()
+        let failed = Task { await sender.waitForAttachmentReads() }
+        try? await Task.sleep(for: .milliseconds(50))
+        sender.recordAttachmentReadFailure()
+        sender.endAttachmentRead()
+        #expect(await failed.value == false)
+
+        // 新窗口开始即复位失败标记：这一次没有失败，必须报告成功，
+        // 否则上一次失败会永久毒化后续所有发送。
+        sender.beginAttachmentRead()
+        let succeeded = Task { await sender.waitForAttachmentReads() }
+        try? await Task.sleep(for: .milliseconds(50))
+        sender.endAttachmentRead()
+        #expect(await succeeded.value == true)
+    }
+
     private func makeSender() -> DefaultMessageSender {
         let messages = DefaultMessageManager()
         return DefaultMessageSender(

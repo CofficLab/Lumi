@@ -74,7 +74,7 @@ final class MockMailSession: MailSessionServing, @unchecked Sendable {
 
     func sendMessage(mime: Data) async throws {}
 
-    func appendDraft(mime: Data, folder: String) async throws {}
+    func appendMessage(mime: Data, folder: String, isDraft: Bool) async throws {}
 
     // MARK: - 辅助（测试断言用）
 

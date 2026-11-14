@@ -92,4 +92,50 @@ struct MCPJSONValueTests {
         #expect(args["quiet"]?.boolValue == true)
         #expect(args["targets"]?.arrayValue?.count == 2)
     }
+
+    @Test("JSON 数字 0/1 不得被误判为布尔（回归 #1154）")
+    func jsonZeroAndOneStayNumbers() throws {
+        // 必须走 JSONSerialization：数字叶子是 NSNumber，
+        // 原生 Swift Int 字面量不会触发 0/1 → Bool 的桥接误判。
+        let data = try #require(
+            #"{"count":0,"flag":1,"two":2,"on":true,"off":false,"nested":{"items":[0,1,true],"ratio":0.5}}"#
+                .data(using: .utf8)
+        )
+        let source = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        guard case .object(let object) = MCPJSONValue.fromFoundation(source) else {
+            Issue.record("expected object")
+            return
+        }
+        #expect(object["count"] == .int(0))
+        #expect(object["flag"] == .int(1))
+        #expect(object["two"] == .int(2))
+        #expect(object["on"] == .bool(true))
+        #expect(object["off"] == .bool(false))
+        #expect(
+            object["nested"] == .object([
+                "items": .array([.int(0), .int(1), .bool(true)]),
+                "ratio": .double(0.5),
+            ])
+        )
+    }
+
+    @Test("MCP 调用参数中的 JSON 0/1 以数字送达（回归 #1154）")
+    func mcpArgumentsPreserveJSONZeroAndOne() throws {
+        let data = try #require(#"{"count":0,"mode":1}"#.data(using: .utf8))
+        let source = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        let args = MCPValueCoding.mcpArguments(from: source)
+        #expect(args["count"] == .int(0))
+        #expect(args["mode"] == .int(1))
+    }
+
+    @Test("原生 Swift 布尔与数字的桥接行为不变（回归 #1154）")
+    func nativeSwiftBoolAndNumbersUnchanged() {
+        #expect(MCPJSONValue.fromFoundation(true) == .bool(true))
+        #expect(MCPJSONValue.fromFoundation(false) == .bool(false))
+        #expect(MCPJSONValue.fromFoundation(0) == .int(0))
+        #expect(MCPJSONValue.fromFoundation(1) == .int(1))
+        #expect(MCPJSONValue.object(["count": .int(0)]).jsonString() == #"{"count":0}"#)
+    }
 }

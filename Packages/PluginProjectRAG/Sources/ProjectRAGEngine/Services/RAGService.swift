@@ -99,7 +99,10 @@ public actor RAGService: SuperLog {
         let store = try RAGSQLiteStore(dbURL: dbURL)
         try store.migrate()
         let embeddingProvider = RAGEmbeddingFactory.makeProvider()
-        try store.configureVectorBackend(embeddingDimension: embeddingProvider.dimension)
+        try store.configureVectorBackend(
+            embeddingDimension: embeddingProvider.dimension,
+            embeddingModel: embeddingProvider.modelIdentifierWithVersion
+        )
 
         self.store = store
         self.indexer = RAGIndexer(
@@ -472,7 +475,7 @@ public actor RAGService: SuperLog {
            let normalizedProjectPath,
            !normalizedProjectPath.isEmpty {
             // 索引尚未完成或语义后端没有候选时，先用文件级词法搜索提供证据。
-            results = try RAGLexicalFileSearcher.search(
+            results = try await RAGLexicalFileSearcher.search(
                 query: trimmed,
                 projectPath: normalizedProjectPath,
                 topK: max(topK, 1)

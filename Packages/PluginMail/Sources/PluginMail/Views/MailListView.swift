@@ -50,7 +50,7 @@ public struct MailListView: View {
                 VStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("正在同步…")
+                    Text(pluginLocalization.string("Syncing…"))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -96,7 +96,7 @@ public struct MailListView: View {
             Image(systemName: "magnifyingglass")
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
-            TextField("搜索邮件", text: $searchQuery)
+            TextField(pluginLocalization.string("Search mail"), text: $searchQuery)
                 .textFieldStyle(.plain)
                 .font(.appBody)
             if !searchQuery.isEmpty {

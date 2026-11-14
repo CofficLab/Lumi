@@ -3,6 +3,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
+import KitMessageList
 
 /// V5（ChatGPT）一轮对话的视图外壳。
 ///
