@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 168 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 176 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 168
+测试文件: 17 个，用例总数: 176
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -39,7 +39,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（28 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（30 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
@@ -67,6 +67,8 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
   - **输出路径必须是 read_file 能直接解析的绝对路径**：`WorkspacePathResolver` 对绝对路径直接返回，因此模型只需把通知里的路径原样传给 `read_file`。
   - **取消回合不杀后台任务，删除会话才杀**：前者是后台化的意义所在；后者见「后台任务」小节。
 - **WorkspacePathResolver**（11 条）：由 `relativePathResolvesInsideWorkspaceWithoutTrailingSlash`、`writeFileToolWritesRelativePathInsideWorkspace`、`readFileToolDoesNotReadParentFileForRelativePath` 等用例锁定；改动路径解析或 read/write/edit 工具时优先跑 `WorkspacePathResolverTests`。工作区根必须按目录 URL 解析（`isDirectory: true`），相对路径不得落到项目父目录（**#140**）；绝对路径原样返回，nil/空白根回退到当前目录。注意 `URL(fileURLWithPath:)` 会 stat 已存在的目录从而掩盖该 bug，回归用例须用「磁盘上不存在的根」或父目录同名诱饵。
+
+- **输出尾部缓冲**（6 条）：由 `matchesReferenceImplementation`、`keepsTailWhenOverBudget`、`truncatesOnByteBoundary` 等用例锁定；改动 `ToolExecutionManager.OutputTailBuffer` 时优先跑 `ToolOutputTailBufferTests`。尾部按字节预算截断而非每次重编码整段尾部（#1310）；多字节字符可能落在截断边界中间，解码为 U+FFFD 与参照实现一致。
 
 ## 测试用例清单
 
@@ -241,27 +243,35 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 166 | 工具参数安全 | read_file 大文件分块输出仍受 250 行上限（**#393**） | >10 MiB 文本文件 | offset=1 limit=250 调用 execute | 含第 250 行、不含第 251 行、含续读提示 | P0 | ✅ 已覆盖 | `readFileLargeFileChunkRespectsLineLimit` |
 | 167 | 工具参数安全 | read_file 大文件中段分块读取正确（**#393**） | >10 MiB 文本文件 | offset=100000 limit=2 调用 execute | 含第 100000/100001 行、不含第 100002 行 | P1 | ✅ 已覆盖 | `readFileLargeFileMiddleChunk` |
 | 168 | 综合 | run_command 的 workspace 回退路径首尾空白是合法字符，裁剪后会在错误目录执行（**回归 #499**） | 同时创建 `lumi` 与 `lumi `（带尾空格）两目录，各放不同 marker.txt | 注入返回 `lumi ` 的 workspaceRootProvider，执行 `cat marker.txt` | 读到带尾空格目录的 MARKER_SPACED_DIR，不读无空格目录的 MARKER_PLAIN_DIR | P1 | ✅ 已覆盖 | `shellToolWorkspaceFallbackPreservesPathWhitespace` |
+| 169 | 输出尾部缓冲 | 工具输出尾部缓冲追加后与参照实现一致（**#1310**） | OutputTailBuffer maxBytes=64KiB | 依次 append 多个 chunk | 每步 buffer.string 与「重编码+拼接+取尾」参照实现一致 | P1 | ✅ 已覆盖 | `matchesReferenceImplementation` |
+| 170 | 输出尾部缓冲 | 超出预算时保留尾部（**#1310**） | maxBytes=8 | append 16 字节 0123456789ABCDEF | buffer.string 等于 89ABCDEF | P1 | ✅ 已覆盖 | `keepsTailWhenOverBudget` |
+| 171 | 输出尾部缓冲 | 单块超过预算时只保留该块尾部（**#1310**） | maxBytes=4 | append ABCDEFGH | buffer.string 等于 EFGH | P1 | ✅ 已覆盖 | `singleOversizedChunkKeepsItsTail` |
+| 172 | 输出尾部缓冲 | 初始化内容超出预算时截断（**#1310**） | maxBytes=4，initial=ABCDEFGH | 构造缓冲 | buffer.string 等于 EFGH | P0 | ✅ 已覆盖 | `initialContentIsTruncated` |
+| 173 | 输出尾部缓冲 | 空追加不改变内容（**#1310**） | maxBytes=8 | append abc 后再 append 空 Data | buffer.string 仍为 abc | P2 | ✅ 已覆盖 | `emptyAppendIsNoop` |
+| 174 | 输出尾部缓冲 | 多字节字符按字节截断与参照实现一致（**#1310**） | maxBytes=4 | append 中文（6 字节） | 与参照实现一致，非法序列解码为 U+FFFD | P0 | ✅ 已覆盖 | `truncatesOnByteBoundary` |
+| 175 | 综合 | read_file 用会话项目路径解析相对路径时保留尾部空格字节，裁剪会越界读到无空格目录（**回归 #501**） | 同时创建无空格与带尾空格两目录，各放不同 marker.txt（PLAIN/SPACED） | 注入返回带尾空格路径的 conversationProjectPathProvider，executeResult 读 `marker.txt` | 读到 SPACED 目录内容，不读 PLAIN 目录 | P1 | ✅ 已覆盖 | `readFileUsesConversationProjectWithTrailingSpace` |
+| 176 | 综合 | read_file 会话项目路径无空格时仍正确解析（**回归 #501** 对照组） | 同时创建无空格与带尾空格两目录，各放不同 marker.txt（PLAIN/SPACED） | 注入返回无空格路径的 conversationProjectPathProvider，executeResult 读 `marker.txt` | 读到 PLAIN 目录内容，不读 SPACED 目录 | P1 | ✅ 已覆盖 | `readFileUsesConversationProjectWithoutSpace` |
 
-> 说明：全部 **168 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **176 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 52 / 52
-- P1: 已覆盖 106 / 106
-- P2: 已覆盖 10 / 10
-- **合计: 168 / 168**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 54 / 54
+- P1: 已覆盖 111 / 111
+- P2: 已覆盖 11 / 11
+- **合计: 176 / 176**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
-- **P1**: 其余功能性用例（106 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
+- **P1**: 其余功能性用例（111 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 168 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 176 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
