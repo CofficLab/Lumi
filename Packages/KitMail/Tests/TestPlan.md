@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 34 条用例。
+KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 36 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 34
+测试文件: 7 个，用例总数: 36
 
 核心组件（源码目录）:
 - `Models/`
@@ -34,10 +34,12 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 34 条用�
 
 - **综合**（1 条）：由 `testModuleExportsSessionProtocols` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailModels**（11 条）：由 `testAddressRoundTrip`、`testAddressRFC5322`、`testAddressHashable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailSessionProtocol**（11 条）：由 `testModuleExportsSessionProtocols`、`testMockSessionFullFlow`、`testMockSessionAuthFailure` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailSessionProtocol**（13 条）：由 `testModuleExportsSessionProtocols`、`testMockSessionFullFlow`、`testMockSessionAuthFailure`、`testSentAppendUsesSeenWithoutDraft`、`testDraftAppendUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MimeMessageBuilder**（5 条）：由 `testBuildAndParseRoundTrip`、`testPlainOnlyBuild`、`testReplyHeaders` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailUID**（2 条）：由 `testValidatedAcceptsProtocolRange`、`testValidatedRejectsZeroAndOutOfRange` 等用例锁定；改动 UID 边界时优先跑对应测试文件。
 - **MailCoreCallbackBridge**（4 条）：由 `testVoidOperationSucceedsWithoutValue`、`testValueOperationStillRejectsMissingValue` 等用例锁定；改动回调桥接或错误判定时优先跑对应测试文件。
+
+> **#403 变异验证**（`MailCoreAdapterAppendFlagsTests`）：把适配层标记选择 `isDraft ? .draft : .seen` 改为恒 `.draft`（复现原 bug）→ `testSentAppendUsesSeenWithoutDraft` 失败（记录到 `.draft`=16 而非 `.seen`=1，且含 `\Draft`），`testDraftAppendUsesDraftFlag` 仍 GREEN。该变异锁定「已发送归档不得带 `\Draft`」的适配层不变量； composer 侧调用点的变异见 PluginMail TestPlan。
 
 ## 测试用例清单
 
@@ -77,27 +79,29 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 34 条用�
 | 32 | MailCoreCallbackBridge | Void 操作的回调错误按 MCOErrorCode 映射为 MailError | 回调携带认证错误 | 调用 `performVoid` | 抛出 `.authFailed` | P1 | ✅ 已覆盖 | `testVoidOperationSurfacesMappedError` |
 | 33 | MailCoreCallbackBridge | Void 操作回调超时归为网络错误，且不会二次 resume | 回调永不触发，超时 0.05s | 调用 `performVoid` | 抛出 `.network` | P1 | ✅ 已覆盖 | `testVoidOperationTimesOutWhenCallbackNeverFires` |
 | 34 | MailCoreCallbackBridge | 有返回值操作仍拒绝「无错误且无值」的回调，避免语义混淆 | 回调为 `(nil, nil)` | 调用 `perform` 取 `Data` | 抛出 `.protocolError("empty result")` | P1 | ✅ 已覆盖 | `testValueOperationStillRejectsMissingValue` |
+| 35 | MailSessionProtocol | 回归 #403：已发送归档用 `\Seen`，Sent 副本不得带 `\Draft` | 用记录 APPEND 标记的 MCOIMAPSession 子类替换会话 | 以 `isDraft: false` 调用 `MailCoreAdapter.appendMessageOperation(using:folder:mime:isDraft:)` | 标记为 `.seen` 且不含 `.draft` | P0 | ✅ 已覆盖 | `testSentAppendUsesSeenWithoutDraft` |
+| 36 | MailSessionProtocol | 草稿归档仍用 `\Draft`，与已发送归档区分 | 用记录 APPEND 标记的 MCOIMAPSession 子类替换会话 | 以 `isDraft: true` 调用 `MailCoreAdapter.appendMessageOperation(using:folder:mime:isDraft:)` | 标记为 `.draft` | P1 | ✅ 已覆盖 | `testDraftAppendUsesDraftFlag` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 31 / 31
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 32 / 32
 - P2: 已覆盖 1 / 1
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（31 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（32 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

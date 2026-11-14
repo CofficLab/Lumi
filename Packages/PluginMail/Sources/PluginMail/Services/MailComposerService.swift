@@ -39,7 +39,8 @@ public actor MailComposerService {
         // 归档到已发送：失败降级（不阻断成功态，仅日志记录）。
         do {
             let sentFolder = await sentFolderPath(session: session)
-            try await session.appendDraft(mime: mime, folder: sentFolder)
+            // 已发送副本用 `\Seen`，不得带 `\Draft`（#403）。
+            try await session.appendMessage(mime: mime, folder: sentFolder, isDraft: false)
         } catch {
             // 归档失败不影响发送成功；由调用方日志记录。
         }
@@ -56,7 +57,7 @@ public actor MailComposerService {
         let mime = try MimeMessageBuilder.build(draft)
         let session = try await sessionManager.session(for: account)
         let draftsFolder = await draftsFolderPath(session: session)
-        try await session.appendDraft(mime: mime, folder: draftsFolder)
+        try await session.appendMessage(mime: mime, folder: draftsFolder, isDraft: true)
     }
 
     // MARK: - 已发送/草稿文件夹探测
