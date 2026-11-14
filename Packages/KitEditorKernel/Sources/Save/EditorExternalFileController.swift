@@ -76,8 +76,9 @@ public final class EditorExternalFileController: SuperLog {
         currentModDate: Date,
         hasUnsavedChanges: Bool
     ) -> Bool {
-        if !hasUnsavedChanges,
-           let lastDate = lastKnownModificationDate,
+        // 是否外部改动只取决于磁盘修改时间是否真的变化，与本地 dirty 无关；
+        // 据 dirty 跳过时间比较会把纯本地编辑误报为外部冲突（#397）。
+        if let lastDate = lastKnownModificationDate,
            currentModDate.timeIntervalSince(lastDate) < 0.5 {
             return false
         }

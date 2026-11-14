@@ -625,7 +625,9 @@ struct EditorKernelTests {
 
         controller.recordUnchangedModificationDate(modDate)
         #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: false) == false)
-        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: true) == true)
+        // #397：纯本地 dirty 且磁盘未变，不得误报为外部改动；磁盘真的变了仍须检出。
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: true) == false)
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(1.0), hasUnsavedChanges: true) == true)
     }
 
     @Test
