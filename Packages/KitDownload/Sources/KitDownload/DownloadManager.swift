@@ -66,6 +66,12 @@ public actor DownloadManager {
     private var taskGenerations: [String: Int] = [:]
     private var generationCounter: Int = 0
 
+    /// 并发下载名额（信号量），让 `maxConcurrentDownloads` 真正生效。
+    /// 名额耗尽时后续下载在 `acquireSlot` 挂起排队，直到某个下载到达终态在
+    /// `releaseSlot` 归还名额并唤醒队首等待者（#484）。
+    private var availableSlots: Int
+    private var slotWaiters: [CheckedContinuation<Void, Never>] = []
+
     // MARK: - Initialization
 
     public init(
@@ -73,6 +79,8 @@ public actor DownloadManager {
         httpClient: HTTPClient? = nil
     ) {
         self.configuration = configuration
+        // 至少保留 1 个名额：配置为 0 或负数时不至于让所有下载永久排队。
+        self.availableSlots = max(1, configuration.maxConcurrentDownloads)
 
         // 用户未提供 HTTPClient 时，创建带共享限速器的 DefaultHTTPClient，
         // 使运行时 setMaxBytesPerSecond 能即时生效（下载到一半改限速）。
@@ -215,7 +223,33 @@ public actor DownloadManager {
 
     // MARK: - Private Methods
 
+    /// 取得一个并发名额；名额耗尽时挂起排队，直到 `releaseSlot` 唤醒。
+    private func acquireSlot() async {
+        if availableSlots > 0 {
+            availableSlots -= 1
+            return
+        }
+        await withCheckedContinuation { continuation in
+            slotWaiters.append(continuation)
+        }
+    }
+
+    /// 归还一个并发名额：有排队者时把名额直接转交给队首（不增加可用计数），
+    /// 否则可用名额加一。如此活跃下载数始终不超过 `maxConcurrentDownloads`。
+    private func releaseSlot() {
+        if let next = slotWaiters.first {
+            slotWaiters.removeFirst()
+            next.resume()
+        } else {
+            availableSlots += 1
+        }
+    }
+
     private func performDownload(_ task: DownloadTask, generation: Int) async {
+        // 取得并发名额后才进入实际下载；defer 保证完成/失败/取消/提前返回
+        // 任一终态都归还名额并唤醒排队者，避免名额泄漏导致后续下载永久等待。
+        await acquireSlot()
+        defer { releaseSlot() }
         do {
             // 检查是否已取消
             try Task.checkCancellation()

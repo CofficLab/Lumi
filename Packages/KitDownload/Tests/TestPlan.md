@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 92
+测试文件: 13 个，用例总数: 95
 
 ## 公开 API
 
@@ -27,6 +27,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 - **DefaultHTTPClient**（8 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadConfigurationAndState**（4 条）：由 `defaults`、`customOverrides`、`nonFinal` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadConcurrencyLimit**（3 条）：由 `maxConcurrentDownloadsLimitIsEnforced`、`defaultLimitAllowsThreeConcurrentButNotFour`、`failedDownloadReleasesSlotForQueuedDownload` 锁定 `maxConcurrentDownloads` 必须真正限制并发：名额耗尽时后续下载不得进入 HTTPClient，下载到达任一终态（含失败）必须归还名额并唤醒排队者（**回归 #484**）；改动下载并发调度时优先跑对应测试文件。
 - **DownloadCoverage**（7 条）：由 `convenienceDownload`、`resumeWithoutPartialFile`、`isCompleteMissingFile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadError**（2 条）：由 `errorDescriptionsNotEmpty`、`errorEquality` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadManager**（18 条）：由 `downloadSuccess`、`downloadFailure`、`getTaskState` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -134,27 +135,36 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 90 | ResumeHandler | 源文件缺失且无最终文件时抛错且不创建任何文件 | 源文件与最终文件均不存在 | 调用 `finalizeDownload(from:to:)` | 抛错，不创建最终文件，目录为空 | P1 | ✅ 已覆盖 | `finalizeDownloadMissingSourceThrowsWithoutCreatingDestination` |
 | 91 | ResumeHandler | 原子替换覆盖后只保留最终文件，不残留源或临时文件 | 最终文件与源文件均存在且内容不同 | 调用 `finalizeDownload(from:to:)` | 最终文件为新内容，源文件被消费，目录仅剩最终文件 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwriteLeavesNoResidualFiles` |
 | 92 | DownloadRestartIdentity | 取消后以同 id 重启，旧任务的晚到收尾不得取消或注销新任务（**回归 #157**） | 门控 HTTPClient 挂起 A/B 下载，精确控制取消收尾晚于重启 | 启动 A→取消→同 id 启动 B→放行 A 的取消收尾 | B 状态不被改成 `.cancelled` 且仍在下载，同 id 第三个下载仍被去重拒绝 | P0 | ✅ 已覆盖 | `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` |
+| 93 | DownloadConcurrencyLimit | maxConcurrentDownloads 必须真正限制并发，名额耗尽时后续下载不得进入 HTTPClient（**回归 #484**） | maxConcurrentDownloads=1，门控 HTTPClient 记录进入次数与峰值并发 | 第一个进入占满名额后启动第二个，再放行第一个 | 放行前仅 1 个进入，放行后第二个才进入，峰值并发为 1 | P0 | ✅ 已覆盖 | `maxConcurrentDownloadsLimitIsEnforced` |
+| 94 | DownloadConcurrencyLimit | 默认并发上限 3：四个下载时只有三个进入，第四个排队补位 | 默认配置（maxConcurrentDownloads=3），门控 HTTPClient | 依次启动前三个占满名额，再启动第四个，放行一个 | 第四个放行前不得进入（共 3 个），放行后补位（共 4 个），峰值并发为 3 | P1 | ✅ 已覆盖 | `defaultLimitAllowsThreeConcurrentButNotFour` |
+| 95 | DownloadConcurrencyLimit | 下载失败必须归还名额，排队的后续下载得以进入并完成（**回归 #484**） | maxConcurrentDownloads=1，第一个下载放行后失败 | 第一个占满名额后启动第二个，放行第一个使其失败 | 第二个仍被挡住直到第一个失败归还名额，随后进入并完成，峰值并发为 1 | P0 | ✅ 已覆盖 | `failedDownloadReleasesSlotForQueuedDownload` |
 
-> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> **回归 #484 变异验证**（`DownloadConcurrencyLimitTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 移除 `performDownload` 的 `await acquireSlot()` + `defer { releaseSlot() }`（完全不门控）→ 93/94/95 全 RED（峰值并发 2 / 4，超出配置）。
+> - **M2** `acquireSlot` 容量判断 `> 0` 改成 `>= 0`（多放一个名额）→ 93/94/95 全 RED（峰值并发 2 / 4）。
+> - **M3** `releaseSlot` 只 `availableSlots += 1`、不再唤醒 `slotWaiters` 队首（排队者永久饿死）→ 93/94/95 全 RED（后续下载永不进入，`waitUntilStarted` 超时）。
+> 三处变异各自独立命中并发上限的不同失效面，还原后 95 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 72 / 72
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 73 / 73
 - P2: 已覆盖 7 / 7
-- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（72 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（73 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
