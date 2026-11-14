@@ -21,6 +21,14 @@ protocol NewChatCapability: AnyObject {
     /// 当前选中对话绑定的项目路径。
     var currentProjectPath: String? { get }
 
+    /// 指定对话绑定的项目路径；nil 表示无此对话或未绑定项目。
+    ///
+    /// 用于按「发起工具调用的对话」而非 UI 当前选中对话解析归属（#331）。
+    func projectPath(for conversationID: UUID?) -> String?
+
+    /// 指定对话绑定的模型 ID；nil 表示无此对话或未绑定模型。
+    func modelID(for conversationID: UUID?) -> String?
+
     /// 创建一个顶层对话（会进入侧边栏列表）。
     ///
     /// 等待持久化完成：落库失败会抛错，调用方必须把失败如实反馈给用户，
@@ -53,11 +61,17 @@ final class NewChatCapabilityAdapter: NewChatCapability {
 
     var selectedConversationID: UUID? { conversations?.selectedConversationID }
 
-    var currentModelID: String? { conversations?.modelID(for: selectedConversationID) }
+    var currentModelID: String? { modelID(for: selectedConversationID) }
 
-    var currentProjectPath: String? {
-        guard let id = selectedConversationID else { return nil }
+    var currentProjectPath: String? { projectPath(for: selectedConversationID) }
+
+    func projectPath(for conversationID: UUID?) -> String? {
+        guard let id = conversationID else { return nil }
         return conversations?.conversations.first { $0.id == id }?.projectPath
+    }
+
+    func modelID(for conversationID: UUID?) -> String? {
+        conversations?.modelID(for: conversationID)
     }
 
     /// 创建顶层对话：显式传 `parentConversationID: nil`。

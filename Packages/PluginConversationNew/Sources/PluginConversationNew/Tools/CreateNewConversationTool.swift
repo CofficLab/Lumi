@@ -92,7 +92,23 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog, @unchecked Se
         return "\(pluginLocalization.string("New conversation")): \(subject)"
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(
+            content: try await execute(arguments: arguments, conversationID: context.conversationID)
+        )
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationID: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationID: UUID?
+    ) async throws -> String {
         guard let task = Self.taskArgument(from: arguments) else {
             Self.logger.error("\(Self.t)create_new_conversation called without a non-empty 'task' argument")
             throw ToolExecutionError.executionFailed(
@@ -102,7 +118,7 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog, @unchecked Se
         }
 
         let title = Self.titleArgument(from: arguments) ?? Self.derivedTitle(from: task)
-        return try await prepareAndRender(title: title, task: task)
+        return try await prepareAndRender(title: title, task: task, conversationID: conversationID)
     }
 
     /// 在会话能力所在的 MainActor 上创建对话并渲染结果。
@@ -110,13 +126,25 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog, @unchecked Se
     /// NewChatCapability 是 MainActor 隔离；工具本身是 Sendable，因此把整个
     /// 准备过程放进主线程方法，避免把非 Sendable 的能力对象跨隔离域传递。
     @MainActor
-    private func prepareAndRender(title: String, task: String) async throws -> String {
+    private func prepareAndRender(title: String, task: String, conversationID: UUID?) async throws -> String {
         guard let conversations else {
             Self.logger.error("\(Self.t)create_new_conversation cannot proceed because the conversation capability is unavailable")
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Conversation service is unavailable"
             )
+        }
+
+        // 新对话必须继承「发起调用的对话」的项目与模型，而非执行时 UI 选中对话（#331）。
+        // 后台回合里用户可能已切到别的对话；只有缺少 Context 的旧入口才回退到当前选中态。
+        let projectPath: String?
+        let modelID: String?
+        if let conversationID {
+            projectPath = conversations.projectPath(for: conversationID)
+            modelID = conversations.modelID(for: conversationID)
+        } else {
+            projectPath = conversations.currentProjectPath
+            modelID = conversations.currentModelID
         }
 
         // 记录调用前的选中态：创建顶层对话会把它抢到新对话上。
@@ -126,8 +154,8 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog, @unchecked Se
             // 等待落库：失败会抛错，不能给用户看到「已准备成功」的卡片。
             let newID = try await conversations.createTopLevelConversation(
                 title: title,
-                projectPath: conversations.currentProjectPath,
-                modelID: conversations.currentModelID
+                projectPath: projectPath,
+                modelID: modelID
             )
             // 立刻恢复选中态：用户在当前对话里可能正在输入，不能被甩进空对话。
             conversations.restoreSelection(to: previousSelection)

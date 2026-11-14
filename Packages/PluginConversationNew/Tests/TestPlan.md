@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 22 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 22
+测试文件: 5 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -35,7 +35,8 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationNewPlugin**（1 条）：由 `showsNewChatButtonOnlyForSelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **CreateNewConversationTool**（12 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CreateNewConversationTool**（14 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CreateNewConversationTool 会话归属**（2 条）：由 `createInheritsCallingConversationProjectAndModel`、`callingConversationUnboundDoesNotLeakCurrent` 锁定。`create_new_conversation` 必须经 `executeResult(context:)` 用发起调用的对话（`context.conversationID`）解析项目与模型，不得读执行时 UI 选中对话的 `currentProjectPath/currentModelID`；发起对话未绑定项目/模型时继承 nil，不得泄漏当前对话归属；仅缺少 Context 的旧入口才回退到当前选中态（**回归 #331**）。改动 `CreateNewConversationTool.prepareAndRender` 或 `NewChatCapability.projectPath(for:)/modelID(for:)` 时优先跑对应测试文件。
 - **NewConversationRowRenderer**（6 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NewChatCapabilityAdapter**（3 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；改动该模块时优先跑对应测试文件。
 
@@ -65,8 +66,10 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 20 | NewChatCapabilityAdapter | 恢复 nil 选中态必须取消选择，不得无操作（**回归 #260**） | 创建顶层对话后选中态被抢到新对话 | `adapter.restoreSelection(to: nil)` | 调用 deselectConversation，选中态回到 nil | P0 | ✅ 已覆盖 | `restoreNilSelectionDeselects` |
 | 21 | NewChatCapabilityAdapter | 恢复非 nil 选中态切换到该对话，且不取消选择（**回归 #260**） | — | `adapter.restoreSelection(to: id)` | 切换到该对话，不调用 deselectConversation | P1 | ✅ 已覆盖 | `restoreNonNilSelectionSelects` |
 | 22 | NewChatCapabilityAdapter | 工具经适配器创建对话后不得把用户甩进新建空对话（**回归 #260**） | 用户处于新建会话未选中态（nil） | 经适配器执行 `create_new_conversation` | 创建一个顶层对话后选中态仍为 nil | P0 | ✅ 已覆盖 | `toolPreservesNilSelectionThroughAdapter` |
+| 23 | CreateNewConversationTool 会话归属 | 新对话继承发起调用的对话 A 的项目与模型，而非 UI 当前对话 B（**回归 #331**） | A 绑定 `/tmp/A`+`model-A`，执行时 UI 已切到 B（`/tmp/B`+`model-B`） | 经 `executeResult(context:)` 调用，context.conversationID=A | 新对话项目=`/tmp/A`、模型=`model-A`，UI 选中态仍为 B | P0 | ✅ 已覆盖 | `createInheritsCallingConversationProjectAndModel` |
+| 24 | CreateNewConversationTool 会话归属 | 发起调用的对话未绑定项目/模型时不得泄漏 UI 当前对话归属（**回归 #331**） | A 绑定 nil/nil，UI 当前 B 有项目与模型 | 经 `executeResult(context:)` 调用，context.conversationID=A | 新对话项目=nil、模型=nil，不继承 B | P0 | ✅ 已覆盖 | `callingConversationUnboundDoesNotLeakCurrent` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#260**，`NewChatCapabilityAdapter.restoreSelection`）：
@@ -76,21 +79,21 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 11 / 11
 - P2: 已覆盖 6 / 6
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
