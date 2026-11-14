@@ -208,6 +208,19 @@ public struct CADDesignerView: View {
         await viewModel.loadProject(from: url)
     }
 
+    /// 导出 PNG 的目标路径：文件名含文档 ID，同名文档（如默认 "Untitled Project"）
+    /// 各自写到独立文件，不会互相覆盖；ID 经 fileSafeName 规范化防止路径越界（#433）。
+    static func exportPNGURL(for document: CADDocument?, in directory: URL) -> URL {
+        let base = document?.name.fileSafeName ?? "design"
+        let fileName: String
+        if let id = document?.id, !id.isEmpty {
+            fileName = "\(base)-\(id.fileSafeName).png"
+        } else {
+            fileName = "\(base).png"
+        }
+        return directory.appendingPathComponent(fileName)
+    }
+
     @MainActor
     private func exportPNG() {
         viewModel.isExporting = true
@@ -220,9 +233,11 @@ public struct CADDesignerView: View {
             return
         }
 
-        let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiCADDesigner", isDirectory: true)
-            .appendingPathComponent("\(store.selectedDocument?.name.fileSafeName ?? "design").png")
+        let outputURL = Self.exportPNGURL(
+            for: store.selectedDocument,
+            in: FileManager.default.temporaryDirectory
+                .appendingPathComponent("LumiCADDesigner", isDirectory: true)
+        )
         do {
             try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try ScreenshotExporter().exportPNG(from: found, to: outputURL)

@@ -5,7 +5,7 @@
 KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视口设计 T 型槽铝型材框架，自动生成物料清单（BOM）与切割优化方案。 本包只提供 CAD 引擎能力（模型 / 渲染 / 文档存储 / 视图），由插件 `PluginCADDesigner` 包装为 `SuperPlugin` 并注册 Agent 工具。 ## 功能 - **3D 视口**（SceneKit）：轨道相机、参考网格、XYZ 坐标轴、点击拾取选择组件 - **组件库**：欧标 20/30/40 系列铝型材（12 种规格）+ 连接件（角码、螺栓、滑块螺母、封端条、合页） - **参数化型材建模**：截面轮廓（矩形 + T 槽）+ `SCNShape` 拉伸 - **装配关系图**：组件间连接（rigid / hinge / bolt） - **物料清单（BOM）**：自动聚合相同规格型材与连接件 - **切割优化**：一维 First Fit Decreasing (FFD) 算法，最小化余料 - **项目保存/加载**：`.cadproj`（JSON）格式 - **截图导出**：视口 → PNG / PDF ## 目录结构 ``` Sources/KitCADDesigner/ ├── CADDesignerRuntimeBridge.swift # 数据目录注入 ├── Models/ # Codable 数据模型 ├── Core/ # 组件库、BOM、文档状态 ├── Services/ # 切割优化、保存加载、截图导出、本地化 ├── Renderer/ # S
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 25
+测试文件: 1 个，用例总数: 29
 
 ## 公开 API
 
@@ -30,7 +30,7 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CADDesignerLogic**（25 条）：由 `testTransform3DCodableRoundTrip`、`testCADDocumentCodableRoundTrip`、`testCADDocumentDecodeMissingFields` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CADDesignerLogic**（29 条）：由 `testTransform3DCodableRoundTrip`、`testCADDocumentCodableRoundTrip`、`testCADDocumentDecodeMissingFields` 等用例锁定；改动该模块时优先跑对应测试文件。PNG 导出路径必须以文档 ID 区分同名文档（含规范化后同名），不得静默覆盖；同一文档路径稳定，无文档回退 `design.png`，异常 ID 不得越出暂存目录（**回归 #433**）。
 
 ## 测试用例清单
 
@@ -61,27 +61,43 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 | 23 | CADDesignerLogic | 非项目扩展名被拒绝且不替换当前工作区 | 已选中名为 Keep Me 的文档 | 调用 `openProjectURL` 传入 `.txt` 文件 | 当前项目不变，文档数不变，`lastError` 非空 | P1 | ✅ 已覆盖 | `testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace` |
 | 24 | CADDesignerLogic | 损坏的项目文件报错且不替换当前工作区 | 已选中名为 Keep Me 的文档 | 调用 `openProjectURL` 传入无法解码的 `.cadproj` 文件 | 当前项目不变，文档数不变，`lastError` 非空 | P1 | ✅ 已覆盖 | `testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace` |
 | 25 | CADDesignerLogic | 连接端点不在当前文档时拒绝写入（**回归 #1077**） | 文档含 1 根型材与 1 个连接件 | 分别用两个不存在的 ID、以及「存在 → 不存在」的端点调用 `addConnection` | 抛 `componentNotFound`，连接数保持 0；两端都存在时正常写入并得到 1 条连接 | P0 | ✅ 已覆盖 | `testAddConnectionRejectsUnknownEndpoints` |
+| 26 | CADDesignerLogic | 同名文档的 PNG 导出路径必须不同，不得静默覆盖（**回归 #433**） | 两个同名 "Untitled Project" 文档（不同 ID），及两个规范化后同名（my-design）的不同文档 | 调用 `exportPNGURL(for:in:)` | 两组路径各自不同，均落在暂存目录内，文件名含各自 ID | P0 | ✅ 已覆盖 | `testExportPNGURLDistinctForSameNameDocuments` |
+| 27 | CADDesignerLogic | 同一文档的 PNG 导出路径稳定 | 固定 ID 与名称的文档 | 两次调用 `exportPNGURL(for:in:)` | 两次路径相等，文件名为 `frame-stable-id.png` | P1 | ✅ 已覆盖 | `testExportPNGURLStableForSameDocument` |
+| 28 | CADDesignerLogic | 无文档时导出路径回退为 design.png | document 为 nil | 调用 `exportPNGURL(for:in:)` | 文件名为 `design.png`，仍在暂存目录内 | P2 | ✅ 已覆盖 | `testExportPNGURLFallsBackForNilDocument` |
+| 29 | CADDesignerLogic | 异常文档 ID 不得让导出路径越出暂存目录（**回归 #433**） | 文档 ID 为 `../../evil` | 调用 `exportPNGURL(for:in:)` | 路径父目录仍为暂存目录，文件名不含 `/` 与 `..` | P0 | ✅ 已覆盖 | `testExportPNGURLSanitizesUnsafeDocumentID` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
-> 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 用例名与描述取自 `Tests/` 下的真实测试声明，改动测试时须同步本表。
+
+> 变异验证（#433，`CADDesignerView.exportPNGURL`，逐一单独施加后跑
+> `swift test --filter CADDesignerLogicTests/testExportPNGURL`，确认 RED 再还原）：
+> - M1 去掉文件名中的文档 ID（恒 `fileName = "\(base).png"`）→
+>   `testExportPNGURLDistinctForSameNameDocuments`、`testExportPNGURLStableForSameDocument` RED
+>   （同名文档落到同一路径、稳定路径文件名缺 ID），nil 回退与越界防护仍绿。
+> - M2 文档 ID 不做 `fileSafeName` 规范化（直接 `\(id)`）→
+>   仅 `testExportPNGURLSanitizesUnsafeDocumentID` RED（`../../evil` 原样拼入造成路径越界），
+>   其余三条仍绿（测试用 ID 均为小写安全串），证明越界防护 guard 独立。
+> - M3 把 nil 回退常量 `design` 改成 `export` →
+>   仅 `testExportPNGURLFallsBackForNilDocument` RED，证明回退分支独立。
+> 三处变异各自被独立断言 discriminated，还原后 4 条导出路径用例全绿（全包 29 条）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 21 / 21
-- P2: 已覆盖 1 / 1
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 22 / 22
+- P2: 已覆盖 2 / 2
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（21 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（22 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

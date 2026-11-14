@@ -412,4 +412,58 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertNotNil(store.lastError, "加载失败必须暴露对应文件的错误，而不是静默保留空项目")
     }
+
+    // MARK: - Export PNG path (#433)
+
+    func testExportPNGURLDistinctForSameNameDocuments() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiCADDesigner", isDirectory: true)
+
+        // 两个默认同名文档（不同 ID）：导出路径必须不同，否则后者静默覆盖前者。
+        let first = CADDocument(id: "aaaa1111", name: "Untitled Project")
+        let second = CADDocument(id: "bbbb2222", name: "Untitled Project")
+        let firstURL = CADDesignerView.exportPNGURL(for: first, in: directory)
+        let secondURL = CADDesignerView.exportPNGURL(for: second, in: directory)
+        XCTAssertNotEqual(firstURL, secondURL, "同名不同文档的导出路径必须不同")
+        XCTAssertEqual(firstURL.deletingLastPathComponent(), directory)
+        XCTAssertEqual(secondURL.deletingLastPathComponent(), directory)
+        XCTAssertTrue(firstURL.lastPathComponent.contains("aaaa1111"))
+        XCTAssertTrue(secondURL.lastPathComponent.contains("bbbb2222"))
+
+        // 不同名字但规范化后相同（my-design），ID 不同仍须落到不同路径。
+        let third = CADDocument(id: "id-one", name: "My Design!")
+        let fourth = CADDocument(id: "id-two", name: "My Design?")
+        XCTAssertNotEqual(
+            CADDesignerView.exportPNGURL(for: third, in: directory),
+            CADDesignerView.exportPNGURL(for: fourth, in: directory),
+            "规范化后同名的不同文档导出路径必须不同"
+        )
+    }
+
+    func testExportPNGURLStableForSameDocument() {
+        let directory = FileManager.default.temporaryDirectory
+        let document = CADDocument(id: "stable-id", name: "Frame")
+        let first = CADDesignerView.exportPNGURL(for: document, in: directory)
+        let second = CADDesignerView.exportPNGURL(for: document, in: directory)
+        XCTAssertEqual(first, second, "同一文档的导出路径必须稳定")
+        XCTAssertEqual(first.lastPathComponent, "frame-stable-id.png")
+    }
+
+    func testExportPNGURLFallsBackForNilDocument() {
+        let directory = FileManager.default.temporaryDirectory
+        let url = CADDesignerView.exportPNGURL(for: nil, in: directory)
+        XCTAssertEqual(url.lastPathComponent, "design.png")
+        XCTAssertEqual(url.deletingLastPathComponent(), directory)
+    }
+
+    func testExportPNGURLSanitizesUnsafeDocumentID() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiCADDesigner", isDirectory: true)
+        // 载入文档的 ID 可能含路径分隔符；导出路径不得越出暂存目录。
+        let document = CADDocument(id: "../../evil", name: "Design")
+        let url = CADDesignerView.exportPNGURL(for: document, in: directory)
+        XCTAssertEqual(url.deletingLastPathComponent(), directory, "导出路径必须仍在暂存目录内")
+        XCTAssertFalse(url.lastPathComponent.contains("/"))
+        XCTAssertFalse(url.lastPathComponent.contains(".."))
+    }
 }
