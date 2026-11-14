@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Output truncated": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Output truncated" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "输出已截断" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "輸出已截斷" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "輸出已截斷" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "輸出已截斷" } }
+      }
+    },
+    "Show more": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show more" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示更多" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "顯示更多" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "顯示更多" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "顯示更多" } }
+      }
+    },
     "Background Task": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Background Task" } },
