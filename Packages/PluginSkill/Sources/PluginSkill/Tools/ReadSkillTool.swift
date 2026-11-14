@@ -54,6 +54,17 @@ public struct ReadSkillTool: SuperAgentTool {
             throw SkillCreationError.notFound("<project>/.lumi/skills/\(name)")
         }
 
+        // 正文文件存在却读不出（损坏/非 UTF-8）时必须抛错，不得用 `?? ""`
+        // 伪装成「读到了空正文」；真正的空文件 loadContent 返回 ""，仍正常返回（#527）。
+        let content: String
+        if let loaded = skill.loadContent() {
+            content = loaded
+        } else if FileManager.default.fileExists(atPath: skill.contentPath) {
+            throw SkillCreationError.invalidFile(skill.contentPath)
+        } else {
+            content = ""
+        }
+
         let result: [String: Any] = [
             "success": true,
             "skill": [
@@ -63,7 +74,7 @@ public struct ReadSkillTool: SuperAgentTool {
                 "triggers": skill.triggers,
                 "version": skill.version,
                 "content_path": skill.contentPath,
-                "content": skill.loadContent() ?? "",
+                "content": content,
             ],
         ]
         return try Self.encode(result)
