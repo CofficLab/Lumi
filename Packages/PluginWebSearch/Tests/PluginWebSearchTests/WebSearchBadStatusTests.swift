@@ -1,4 +1,5 @@
 import Foundation
+import KernelCore
 import KitAgentTool
 import ProviderNetwork
 import Testing
@@ -70,6 +71,15 @@ struct WebSearchBadStatusTests {
     </div>
     """.utf8)
 
+    /// DDG 反爬挑战页的实测形态：HTTP 202 + anomaly-modal / challenge-form，不含 result__a。
+    /// 202 落在 2xx 区间，只判 2xx 的实现会把它当成一次合法的空搜索。
+    private let challengePage = Data("""
+    <html><head><title>DuckDuckGo</title></head><body>
+    <div class="anomaly-modal__box"><img class="anomaly-modal__image" src="/anomaly/images/challenge/e3fd839e.jpg">
+    <form class="challenge-form"><input class="challenge-submit" type="submit"></form>
+    </div></body></html>
+    """.utf8)
+
     @Test("a 429 error page must throw badStatus, not masquerade as no results")
     func rateLimitThrowsBadStatus() async throws {
         let network = StubSearchNetwork(statusCode: 429, body: errorPage)
@@ -110,5 +120,39 @@ struct WebSearchBadStatusTests {
         let network = StubSearchNetwork(statusCode: 200, body: errorPage)
         let results = try await WebSearchTool.fetchDuckDuckGoResults(query: "unknown term", network: network)
         #expect(results.isEmpty)
+    }
+
+    @Test("a 202 anti-bot challenge page must throw badStatus, not masquerade as no results")
+    func antiBotChallengeThrowsBadStatus() async throws {
+        let network = StubSearchNetwork(statusCode: 202, body: challengePage)
+        let thrown = try #require(await #expect(throws: WebSearchError.self) {
+            _ = try await WebSearchTool.fetchDuckDuckGoResults(query: "swift actor reentrancy", network: network)
+        })
+        guard case .badStatus(let code) = thrown else {
+            Issue.record("expected badStatus, got \(thrown)")
+            return
+        }
+        #expect(code == 202)
+    }
+
+    @Test("execute surfaces a challenged search as a tool error, not an empty success")
+    func executeSurfacesChallengeAsToolError() async throws {
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider(
+            (any NetworkProviding).self,
+            StubSearchNetwork(statusCode: 202, body: challengePage)
+        )
+        WebSearchRuntime.configure(kernel: kernel)
+        defer { WebSearchRuntime.reset() }
+
+        let thrown = try #require(await #expect(throws: ToolExecutionError.self) {
+            _ = try await WebSearchTool().execute(arguments: ["query": ToolArgument("swift actor reentrancy")])
+        })
+        guard case .executionFailed(_, let reason) = thrown else {
+            Issue.record("expected executionFailed, got \(thrown)")
+            return
+        }
+        #expect(reason.contains("202"))
+        #expect(!reason.contains("No results found"))
     }
 }

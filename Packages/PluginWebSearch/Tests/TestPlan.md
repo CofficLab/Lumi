@@ -24,7 +24,7 @@ PluginWebSearch 的实现包，包含 3 个主要类型；当前测试覆盖 14 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **WebSearchPlugin**（10 条）：由 `pluginMetadata`、`pluginRegistersTool`、`toolSchemaRequiresQuery` 等用例锁定；改动该模块时优先跑对应测试文件。`web_search` 声明 `parallelReadOnly`（#1312）：无共享可变状态，网络请求与 HTML 解析均为每次调用独立；并发查询不得互相污染结果。
-- **WebSearch bad status**（4 条）：由 `rateLimitThrowsBadStatus`、`serverErrorThrowsBadStatus`、`successStillParsesResults`、`successWithNoResultsStaysEmpty` 锁定。覆盖「非 2xx 必须按真实状态码抛出 `WebSearchError.badStatus`，不得把 429/500 错误页伪装成合法空结果（**回归 #332**）」以及「2xx 的正常解析与合法空结果不受影响」；改动 `fetchDuckDuckGoResults` 的状态码判定或 HTML 解析时必须优先跑该文件。
+- **WebSearch bad status**（6 条）：由 `rateLimitThrowsBadStatus`、`serverErrorThrowsBadStatus`、`successStillParsesResults`、`successWithNoResultsStaysEmpty`、`antiBotChallengeThrowsBadStatus`、`executeSurfacesChallengeAsToolError` 锁定。覆盖「非 200 必须按真实状态码抛出 `WebSearchError.badStatus`，不得把 429/500 错误页或 DDG 反爬的 202 挑战页伪装成合法空结果（**回归 #332**）」、「200 的正常解析与合法空结果不受影响」，以及「`execute` 必须把后端失败转成 `ToolExecutionError`，让模型收到 isError 而不是空结果成功文案」；改动 `fetchDuckDuckGoResults` 的状态码判定或 HTML 解析时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -44,27 +44,29 @@ PluginWebSearch 的实现包，包含 3 个主要类型；当前测试覆盖 14 
 | 12 | WebSearch bad status | 500 错误页必须按真实状态码抛出 badStatus（**回归 #332**） | 网络替身返回 500 + 错误页 | 调用 `fetchDuckDuckGoResults` | 抛出 `WebSearchError.badStatus(500)` | P0 | ✅ 已覆盖 | `serverErrorThrowsBadStatus` |
 | 13 | WebSearch bad status | 200 响应仍正常解析真实结果 | 网络替身返回 200 + 含 result__a 的结果页 | 调用 `fetchDuckDuckGoResults` | 解析出标题与 URL | P1 | ✅ 已覆盖 | `successStillParsesResults` |
 | 14 | WebSearch bad status | 200 响应无结果时仍是合法空结果 | 网络替身返回 200 + 不含 result__a 的页面 | 调用 `fetchDuckDuckGoResults` | 返回空数组（不被误判为错误） | P2 | ✅ 已覆盖 | `successWithNoResultsStaysEmpty` |
+| 15 | WebSearch bad status | 202 反爬挑战页必须抛出 badStatus，不得伪装成无结果（**回归 #332**） | 网络替身返回 202 + anomaly-modal/challenge-form 挑战页 | 调用 `fetchDuckDuckGoResults` | 抛出 `WebSearchError.badStatus(202)`，而非空数组 | P0 | ✅ 已覆盖 | `antiBotChallengeThrowsBadStatus` |
+| 16 | WebSearch bad status | execute 必须把被拦截的搜索上报为工具错误 | kernel 注入返回 202 挑战页的网络替身 | 调用 `execute` | 抛出 `ToolExecutionError.executionFailed`，reason 含 202 且不含「No results found」 | P0 | ✅ 已覆盖 | `executeSurfacesChallengeAsToolError` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 5 / 5
 - P1: 已覆盖 8 / 8
 - P2: 已覆盖 3 / 3
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
 - **P1**: 其余功能性用例（8 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

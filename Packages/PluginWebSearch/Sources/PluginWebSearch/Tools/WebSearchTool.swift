@@ -64,7 +64,11 @@ public struct WebSearchTool: SuperAgentTool {
             guard let network = await MainActor.run(body: { WebSearchRuntime.network }) else {
                 throw ToolExecutionError.executionFailed(toolName: name, reason: "Network service is unavailable.")
             }
-            results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
+            do {
+                results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
+            } catch let error as WebSearchError {
+                throw ToolExecutionError.executionFailed(toolName: name, reason: error.localizedDescription)
+            }
         }
 
         if results.isEmpty {
@@ -124,9 +128,9 @@ extension WebSearchTool {
             headers: ["User-Agent": "Lumi/1.0"],
             timeout: 12
         )
-        // 非 2xx（如 429/500 错误页）不含 result__a，直接解析会被当成「无结果」的成功，
-        // 把服务限流/故障伪装成空搜索；必须按真实状态码抛出（#332）。
-        guard (200..<300).contains(response.statusCode) else {
+        // 非 200 的响应（429/500 错误页、DDG 反爬的 202 挑战页）都不含 result__a，
+        // 直接解析会把拦截伪装成「无结果」的成功；202 属于 2xx，故必须精确判 200（#332）。
+        guard response.statusCode == 200 else {
             throw WebSearchError.badStatus(response.statusCode)
         }
         let data = response.body
@@ -259,9 +263,9 @@ public enum WebSearchError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .badStatus(let code):
-            return "HTTP \(code)"
+            return "Search backend returned HTTP \(code) instead of 200; the search did not run. This is a backend failure, not evidence that the web has no such information."
         case .invalidResponse:
-            return "Invalid response"
+            return "Search backend returned an unreadable response; the search did not run."
         }
     }
 }
