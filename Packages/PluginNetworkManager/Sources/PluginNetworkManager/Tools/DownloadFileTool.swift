@@ -42,7 +42,7 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
                 ],
                 "filename": [
                     "type": "string",
-                    "description": "可选，保存的文件名。不提供则使用 URL 中的文件名",
+                    "description": "可选，保存的文件名（只能是单个文件名，不能包含路径分隔符或 ..）。不提供则使用 URL 中的文件名",
                 ],
                 "directory": [
                     "type": "string",
@@ -106,6 +106,23 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
         }
 
         let destination = directory.appendingPathComponent(filename)
+        // 文件名只能是保存目录内的单个分量：标准化后目标必须仍是该目录的直接子路径，
+        // 否则 "../victim"、"sub/x" 或绝对路径会写到目录之外（#448）。
+        let standardizedDirectory = directory.standardizedFileURL
+        let standardizedDestination = destination.standardizedFileURL
+        guard standardizedDestination.deletingLastPathComponent().path == standardizedDirectory.path else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "文件名必须是保存目录内的单个文件名（不能包含路径分隔符或 ..）: \(filename)"
+            )
+        }
+        // 不静默覆盖已有文件，避免无声替换用户数据（#448）。
+        guard !FileManager.default.fileExists(atPath: standardizedDestination.path) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "目标文件已存在，未覆盖: \(standardizedDestination.path)"
+            )
+        }
         let request = URLRequest(url: url)
 
         // 使用 URLSession 下载；成功与失败都必须写入 HTTP exchange，否则

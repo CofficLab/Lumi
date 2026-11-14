@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 114
+测试文件: 20 个，用例总数: 124
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -47,6 +47,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **DownloadFileToolSchemeCase**（2 条）：由 `uppercaseSchemeDownloadsLikeLowercase`、`nonHTTPSchemesAreStillRejected` 锁定 scheme 校验必须大小写不敏感（Foundation 保留 scheme 原样），大写/混合大小写 HTTP/HTTPS 不得被误拒，非 HTTP(S) 协议仍拒绝（**回归 #825**）；改动 `network_download_file` 协议校验时优先跑对应测试文件。
+- **DownloadFileToolPathSafety**（4 条）：由 `escapingOrNestedFilenameIsRejected`、`absoluteFilenameIsRejected`、`existingFileIsNotOverwritten`、`plainFilenameStillDownloads` 锁定（**回归 #448**）：`filename` 标准化后必须仍是保存目录的直接子路径（拒绝 `/`、`..`、嵌套与绝对路径），非法文件名在发起下载前即抛出，已有文件不得被静默覆盖，普通文件名仍正常下载。改动 `network_download_file` 的目标路径拼接或写入逻辑时优先跑对应测试文件。
 - **ProcessMonitorUTF8ChunkBoundary**（3 条）：由 `multibyteNameSplitAcrossChunksSurvives`、`completeASCIIRowInFailedChunkIsNotLost`、`invalidBytesDoNotDiscardValidRows` 锁定 nettop 输出跨 chunk 的多字节 UTF-8 字符必须合并解码，未完成的尾部字节留到下一 chunk，真正非法序列用替换字符兜底，正常进程行绝不丢失（**回归 #824**）；改动 `ProcessMonitorService.processOutput` 解码或缓冲逻辑时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
@@ -175,27 +176,48 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 112 | HTTPExchangeDetailBody | 未请求正文时不输出请求/响应正文（**回归 #311**） | 同上记录 | 分别以 include_body=false 与缺省调用 detail 工具 | 两种情况都不含请求/响应正文 | P1 | ✅ 已覆盖 | `detailOmitsBodiesWhenNotRequested` |
 | 113 | HTTPExchangeDetailBody | 响应正文与请求一样截断到 1000 字符（**回归 #311**） | 响应正文超过 1000 字符，首尾各带标记 | 按 id + include_body=true 调用 detail 工具 | 保留开头标记，超出 1000 的尾部标记不出现 | P0 | ✅ 已覆盖 | `detailResponseBodyHonorsSameLengthLimitAsRequest` |
 | 114 | HTTPExchangeDetailBody | 非 UTF-8 响应正文与请求一样被跳过（**回归 #311**） | 请求/响应正文均为非法 UTF-8 字节 | 按 id + include_body=true 调用 detail 工具 | 输出含 Response 段但无任何正文代码块围栏 | P1 | ✅ 已覆盖 | `detailSkipsNonUTF8ResponseBodyLikeRequest` |
+| 115 | DownloadFileToolPathSafety | 逃出目录或嵌套的文件名被拒绝，且不发起下载（**回归 #448**） | 注入返回 200 + 正文的下载桩与临时 store，保存目录 root/downloads | 分别以 `../victim`、`sub/file.bin`、`..`、`.` 作为 filename 调用 | 均抛出工具错误，store 为空，root/victim 不被写出 | P0 | ✅ 已覆盖 | `escapingOrNestedFilenameIsRejected` |
+| 116 | DownloadFileToolPathSafety | 绝对路径文件名被拒绝（**回归 #448**） | 同上 | filename 传目录外的绝对路径 | 抛出工具错误，不发起下载，目录外文件不被写出 | P0 | ✅ 已覆盖 | `absoluteFilenameIsRejected` |
+| 117 | DownloadFileToolPathSafety | 已有文件不被静默覆盖（**回归 #448**） | 预置 target.bin 内容为 original，下载桩返回 new | 以同名 filename 调用 | 抛出工具错误，target.bin 内容仍为 original，store 为空 | P0 | ✅ 已覆盖 | `existingFileIsNotOverwritten` |
+| 118 | DownloadFileToolPathSafety | 普通文件名仍正常下载，防止过度拒绝（**回归 #448**） | 注入返回 200 + 正文的下载桩 | 以 `ok.bin` 调用 | 下载成功，文件内容为 payload，记录 1 条 exchange | P1 | ✅ 已覆盖 | `plainFilenameStillDownloads` |
+| 119 | Network 图表几何量 | 几何量与逐点计算一致 | 50 个采样点 | 构造 ChartGeometry | downloadValues/uploadValues 与逐点 map 一致 | P1 | ✅ 已覆盖 | `geometryMatchesPointWiseComputation` |
+| 120 | Network 图表几何量 | 最大值取上下行较大值并留 10% 余量 | 上行峰值高于下行 | 构造 ChartGeometry | maxValue 为两者较大值乘 1.1 且不低于下限 | P1 | ✅ 已覆盖 | `maxValueUsesBothSeries` |
+| 121 | Network 图表几何量 | 最大值有最小刻度下限 | 极小速率点 | 构造 ChartGeometry | maxValue 为 1024*10 下限 | P2 | ✅ 已覆盖 | `maxValueHasFloor` |
+| 122 | Network 图表几何量 | 空数据返回空几何量 | 空点数组 | 构造 ChartGeometry | 上下行值为空，timeFractions 为 nil | P2 | ✅ 已覆盖 | `emptyPointsProduceEmptyGeometry` |
+| 123 | Network 图表几何量 | 时间位置与静态 timeFractions 一致 | 20 个采样点 | 构造 ChartGeometry | geometry.timeFractions 与视图静态 helper 一致 | P1 | ✅ 已覆盖 | `timeFractionsMatchStaticHelper` |
+| 124 | Network 图表几何量 | 裁剪结果按范围缓存，缓冲变化后必须失效 | 应用缓冲后取 hour1 两次，再追加新点 | 调用 data(for:) | 缓存命中条数一致；缓冲更新后返回新条数 | P0 | ✅ 已覆盖 | `rangeCacheInvalidatesOnBufferChange` |
 
-> 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
+> （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
+> `verify-testplan.py` 的双向方法核对恢复绿色。
+>
+> **鉴别力验证（#448）**：本轮用三处独立变异确认用例不是「恒绿」——
+> （1）删除标准化包含性守卫后，`../victim` 真的写出目录外文件、
+> `sub/file.bin` 与绝对路径都发起了下载，ID 115/116 失败（5 issues）；
+> （2）把包含性比较 `==` 改成 `!=` 后，普通文件名 `ok.bin` 被误拒，
+> ID 118 失败（6 issues）；
+> （3）删除「不覆盖已有文件」守卫后，`target.bin` 被新内容覆盖，
+> ID 117 失败（3 issues）。三处变异均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 48 / 48
-- P1: 已覆盖 60 / 60
-- P2: 已覆盖 6 / 6
-- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 52 / 52
+- P1: 已覆盖 64 / 64
+- P2: 已覆盖 8 / 8
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
-- **P1**: 其余功能性用例（60 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
+- **P1**: 其余功能性用例（64 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 114 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
