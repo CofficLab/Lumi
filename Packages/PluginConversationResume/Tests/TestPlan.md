@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 51 条用例。
+PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 52 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 51
+测试文件: 5 个，用例总数: 52
 
 核心组件（源码目录）:
 - `Models/`
@@ -33,7 +33,7 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 - **孤儿 tool_call 扫描**（12 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans`、`placeholderLandsBetweenAssistantAndLaterUserMessage` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call；占位消息必须插在所属 assistant（及其已有结果）之后、后续用户消息之前，不得按当前时间追加到历史末尾（**回归 #636**）。
 - **回合记录存储**（14 条）：由 `marksRunning`、`marksFinished`、`survivesProcessRestart`、`corruptedFileFallsBackToEmpty`、`keepsOnlyLatestPerConversation` 等用例锁定——回合开始写「运行中」、结束时写终态，崩溃时最后一条停留在「运行中」，这正是区分用户主动停止与崩溃的唯一可靠依据。重启加载时磁盘上的 `.suspended` 必须按中断处理（**回归 #854**）。
 - **可继续判定**（12 条）：由 `interruptedTurnIsResumable`、`cancelledTurnIsNotResumable`、`runningTurnIsNotResumable`、`finishedReplyIsNotResumable` 等用例锁定——判定必须依赖持久化记录而不是消息形状，用户主动停止与崩溃在消息层面完全无法区分。
-- **协调器端到端**（10 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合。
+- **协调器端到端**（11 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合；修复时必须同时回写 assistant 嵌套工具结果，否则 UI 永久 loading（**回归 #634**）。
 - **恢复按会话隔离**（3 条）：由 `otherConversationCanResumeWhileFirstIsRunning`、`repeatedResumeOfSameConversationIsStillBlocked`、`resumingStateIsReportedPerConversation` 等用例锁定——一个会话的恢复只抑制该会话自己的重复恢复动作，别的会话不受影响（**回归 #888**）。
 
 ## 测试用例清单
@@ -91,27 +91,28 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 | 49 | 孤儿 tool_call 扫描 | 占位插在所属 assistant 的已有工具结果之后 | assistant 两个调用，其一已有结果，后跟 U2 | 为另一个孤儿生成占位 | 占位位于已有结果与 U2 之间 | P1 | ✅ 已覆盖 | `placeholderFollowsExistingToolResultOfSameAssistant` |
 | 50 | 孤儿 tool_call 扫描 | assistant 是最后一条消息时占位按当前时间追加 | 历史以孤儿 assistant 结尾 | 生成占位 | 占位时间戳不早于 assistant，重新扫描无孤儿 | P1 | ✅ 已覆盖 | `placeholderAppendsWhenAssistantIsLast` |
 | 51 | 协调器端到端 | 孤儿调用后已有用户消息时，继续修复的占位插在该用户消息之前（**回归 #636**） | 崩溃记录 + 历史 U1 → assistant(孤儿 call) → U2 | 点击继续 | 排序后角色序列为 user/assistant/tool/user，新回合启动 | P0 | ✅ 已覆盖 | `resumeInsertsPlaceholderBeforeLaterUserMessage` |
+| 52 | 协调器端到端 | 修复后 assistant 嵌套工具结果被回写，不再永久 loading（**回归 #634**） | 崩溃记录 + 历史含孤儿 tool_call 的 assistant | 点击继续 | assistant 嵌套 toolCall.result 非 nil，正文为占位文案且 isError 为 true | P0 | ✅ 已覆盖 | `resumeWritesNestedToolCallResult` |
 
-> 说明：全部 **51 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
+- P0: 已覆盖 24 / 24
 - P1: 已覆盖 26 / 26
 - P2: 已覆盖 2 / 2
-- **合计: 51 / 51**（仅表示清单场景，非源码覆盖率）
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
 - **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 51 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

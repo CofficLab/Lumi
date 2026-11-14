@@ -1,4 +1,5 @@
 import Foundation
+import ProviderMessage
 
 /// 协调「继续」功能的全部流程。
 ///
@@ -265,12 +266,24 @@ final class ResumeCoordinator {
         let orphans = OrphanToolCallScanner.scan(history)
         guard !orphans.isEmpty else { return }
 
-        for placeholder in OrphanToolCallRepair.placeholderMessages(
+        let placeholders = OrphanToolCallRepair.placeholderMessages(
             for: orphans,
             in: history,
             conversationID: conversationID
-        ) {
+        )
+        for (orphan, placeholder) in zip(orphans, placeholders) {
             messages.insertMessage(placeholder, to: conversationID)
+            // 协议消息与展示快照必须一致：只插独立 .tool 消息的话，
+            // 渲染层读到的嵌套 result 仍是 nil，工具行永久 loading（#634）。
+            messages.updateToolCallResult(
+                MessageToolResult(
+                    content: OrphanToolCallRepair.placeholderContent,
+                    isError: true
+                ),
+                toolCallID: orphan.toolCall.id,
+                assistantMessageID: orphan.assistantMessageID,
+                in: conversationID
+            )
         }
     }
 }

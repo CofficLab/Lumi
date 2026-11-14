@@ -96,6 +96,21 @@ struct ResumePerConversationIsolationTests {
             }
         }
 
+        func updateToolCallResult(
+            _ result: MessageToolResult,
+            toolCallID: String,
+            assistantMessageID: UUID,
+            in conversationID: UUID
+        ) {
+            guard var history = stored[conversationID],
+                  let index = history.firstIndex(where: { $0.id == assistantMessageID }),
+                  var toolCalls = history[index].toolCalls,
+                  let callIndex = toolCalls.firstIndex(where: { $0.id == toolCallID }) else { return }
+            toolCalls[callIndex].result = result
+            history[index].toolCalls = toolCalls
+            stored[conversationID] = history
+        }
+
         @discardableResult
         func addObserver(_ callback: @escaping (UUID) -> Void) -> any ResumeMessageObserverHandle {
             let id = UUID()

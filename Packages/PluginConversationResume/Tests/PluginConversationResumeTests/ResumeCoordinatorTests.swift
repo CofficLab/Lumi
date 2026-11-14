@@ -51,6 +51,21 @@ struct ResumeCoordinatorTests {
             }
         }
 
+        func updateToolCallResult(
+            _ result: MessageToolResult,
+            toolCallID: String,
+            assistantMessageID: UUID,
+            in conversationID: UUID
+        ) {
+            guard var history = stored[conversationID],
+                  let index = history.firstIndex(where: { $0.id == assistantMessageID }),
+                  var toolCalls = history[index].toolCalls,
+                  let callIndex = toolCalls.firstIndex(where: { $0.id == toolCallID }) else { return }
+            toolCalls[callIndex].result = result
+            history[index].toolCalls = toolCalls
+            stored[conversationID] = history
+        }
+
         @discardableResult
         func addObserver(_ callback: @escaping (UUID) -> Void) -> any ResumeMessageObserverHandle {
             let id = UUID()
@@ -410,6 +425,46 @@ struct ResumeCoordinatorTests {
         // 新回合被启动。
         #expect(loop.startTurnCount == 1)
         #expect(loop.startedConversationIDs == [conversationID])
+        coordinator.cancel()
+    }
+
+    /// 回归 #634：修复不能只插独立 `.tool` 消息，还要回写 assistant 内
+    /// 嵌套的 toolCall.result。否则渲染层读到 result == nil，工具行与
+    /// 折叠组永久 loading。
+    @Test("修复后 assistant 嵌套工具结果被回写，不再永久 loading")
+    func resumeWritesNestedToolCallResult() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        messages.seed([
+            userMessage(conversationID),
+            assistantWithToolCall(conversationID, turnID: turnID),
+        ], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        await coordinator.resume()
+
+        let history = await messages.messages(for: conversationID)
+        let assistant = history.first { $0.role == .assistant }
+        let nested = assistant?.toolCalls?.first?.result
+        #expect(nested != nil, "嵌套结果必须回写，否则 UI 永久 loading")
+        #expect(nested?.content == OrphanToolCallRepair.placeholderContent)
+        #expect(nested?.isError == true)
         coordinator.cancel()
     }
 
