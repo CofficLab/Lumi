@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 122 条用例。
+PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 123 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 122
+测试文件: 15 个，用例总数: 123
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -51,7 +51,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackToolPairing**（5 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **LLMContextPlugin**（24 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LLMContextPlugin**（25 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StalePrewarmSummaryRetry**（1 条）：由 `hardThresholdRetriesAfterDiscardedPrewarm` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UtilityModelAndAuxiliaryUsage**（10 条）：由 `summaryRoutesToUtilityModel`、`summaryFallsBackToMainWithoutDeclaration`、`summaryInputBoundedByUtilityWindow` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -67,6 +67,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **工具调用参数不得截成非法 JSON**：协议降级路径（compactedHistory 尾部、deterministicFallback）一律走按 token 的 `boundedMessage`，只裁剪正文、绝不裁剪 `toolCalls.arguments`；装得下就原样保留合法 JSON，装不下就整组丢弃。截断参数会让 adapter 构造请求时校验失败（**#562**，`fallbackKeepsFittingArgumentsAsValidJSON`、`fallbackDropsOversizedArgumentsAtomically`）。
 - **降级预算必须折算校准倍率**：`reportContextLimitExceeded` 学到倍率 ≥1.25 后，确定性降级要把可用预算折算回未校准量纲（`inputTokenLimit / factor`）再裁剪，否则估算落在 `limit/factor … limit` 的历史会被原样选中，紧急重试把已确认超限的请求再发一次（**#813**，`emergencyFallbackTrimsWithCalibratedBudget`）。
 - **文本附件必须计入预算并可被降级裁剪**：附件正文存在 metadata、转换阶段才拼进真实请求；估算要覆盖渲染后的附件正文，降级要把文本附件折进正文裁剪并从 metadata 移除，否则超大附件让首次请求与紧急重试都原样超限（**#814**，`estimateIncludesTextAttachment`、`emergencyFallbackTrimsOversizedTextAttachment`）。
+- **压缩去重守卫不得在 MainActor 同步全量读取**：复用压缩上下文的合格请求会反复进入去重守卫；已记录的 sourceLastMessageID 必须 O(1) 内存命中即返回，首次核对走异步快照，既保住跨重启去重保护，又不让每个请求都同步 fetch/解码/排序整段会话（**#1256**，`duplicateGuardAvoidsSynchronousFullRead`）。
 
 ## 测试用例清单
 
@@ -181,40 +182,41 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 107 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
 | 108 | LLMContextPlugin | 超长中文用户消息按 token 裁剪后保留，而不是整条丢弃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedChineseUserMessageIsTruncatedInsteadOfDropped` |
 | 109 | LLMContextPlugin | 系统消息占满预算时仍保留本轮用户请求 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeSystemMessageDoesNotEvictUserRequest` |
-| 110 | LLMContextPlugin | 并发调用时两个调用者都读到迁移后的块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersSeeTheSameMigratedBlock` |
-| 111 | LLMContextPlugin | 并发调用不因重复加载而产生重复的迁移块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersDoNotProduceDuplicateMigratedBlocks` |
-| 112 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
-| 113 | UtilityModelAndAuxiliaryUsage | 摘要路由到供应商声明的轻量模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryRoutesToUtilityModel` |
-| 114 | UtilityModelAndAuxiliaryUsage | 未声明轻量模型时摘要仍走主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFallsBackToMainWithoutDeclaration` |
-| 115 | UtilityModelAndAuxiliaryUsage | 摘要输入受轻量模型窗口约束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryInputBoundedByUtilityWindow` |
-| 116 | UtilityModelAndAuxiliaryUsage | 切换对话主模型不作废轻量模型摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarySurvivesMainModelSwitch` |
-| 117 | UtilityModelAndAuxiliaryUsage | 轻量模型下线后摘要路由变化并重新生成 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `summaryRouteChangeInvalidatesSnapshot` |
-| 118 | UtilityModelAndAuxiliaryUsage | 轻量模型摘要失败时回退主模型重试一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `utilityFailureFallsBackToMain` |
-| 119 | UtilityModelAndAuxiliaryUsage | 压缩用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionUsageRecordedWithServingModel` |
-| 120 | UtilityModelAndAuxiliaryUsage | 供应商未报用量时记估算值且不为零 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingUsageRecordedAsEstimatedNeverZero` |
-| 121 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
-| 122 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
+| 110 | LLMContextPlugin | 复用压缩上下文的重复请求不再同步全量读取会话（#1256） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `duplicateGuardAvoidsSynchronousFullRead` |
+| 111 | LLMContextPlugin | 并发调用时两个调用者都读到迁移后的块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersSeeTheSameMigratedBlock` |
+| 112 | LLMContextPlugin | 并发调用不因重复加载而产生重复的迁移块 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentLoadersDoNotProduceDuplicateMigratedBlocks` |
+| 113 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
+| 114 | UtilityModelAndAuxiliaryUsage | 摘要路由到供应商声明的轻量模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryRoutesToUtilityModel` |
+| 115 | UtilityModelAndAuxiliaryUsage | 未声明轻量模型时摘要仍走主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryFallsBackToMainWithoutDeclaration` |
+| 116 | UtilityModelAndAuxiliaryUsage | 摘要输入受轻量模型窗口约束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summaryInputBoundedByUtilityWindow` |
+| 117 | UtilityModelAndAuxiliaryUsage | 切换对话主模型不作废轻量模型摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarySurvivesMainModelSwitch` |
+| 118 | UtilityModelAndAuxiliaryUsage | 轻量模型下线后摘要路由变化并重新生成 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `summaryRouteChangeInvalidatesSnapshot` |
+| 119 | UtilityModelAndAuxiliaryUsage | 轻量模型摘要失败时回退主模型重试一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `utilityFailureFallsBackToMain` |
+| 120 | UtilityModelAndAuxiliaryUsage | 压缩用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionUsageRecordedWithServingModel` |
+| 121 | UtilityModelAndAuxiliaryUsage | 供应商未报用量时记估算值且不为零 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingUsageRecordedAsEstimatedNeverZero` |
+| 122 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
+| 123 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
 
-> 说明：全部 **122 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **123 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
+- P0: 已覆盖 21 / 21
 - P1: 已覆盖 97 / 97
 - P2: 已覆盖 5 / 5
-- **合计: 122 / 122**（仅表示清单场景，非源码覆盖率）
+- **合计: 123 / 123**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
 - **P1**: 其余功能性用例（97 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 122 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 123 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

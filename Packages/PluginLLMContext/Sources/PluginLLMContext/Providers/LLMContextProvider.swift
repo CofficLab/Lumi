@@ -157,6 +157,12 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     /// 每会话的全部块（含停用块，供血缘回溯）；渲染时由引擎筛 active 并排序。
     private var blocks: [UUID: [CompressionBlock]] = [:]
     private var compactionMeta: [UUID: CompactionMeta] = [:]
+    /// 每会话已记录（或已确认存在）的压缩事件 sourceLastMessageID。
+    ///
+    /// 复用压缩上下文的合格请求会反复进入去重守卫；有了这份内存集合，热点路径
+    /// O(1) 命中即可返回，不必每次都在 MainActor 同步全量读取会话（#1256）。
+    /// 首次遇到某个 source ID 时仍做一次异步权威快照核对，保住跨重启的去重保护。
+    private var recordedCompactionSourceIDs: [UUID: Set<UUID>] = [:]
     /// 每会话的块加载状态。
     ///
     /// - Important: 不能只用「已加载」布尔标记 —— `loadBlocksIfNeeded`
@@ -228,6 +234,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeValue(forKey: conversationID)
         blocks.removeValue(forKey: conversationID)
         compactionMeta.removeValue(forKey: conversationID)
+        recordedCompactionSourceIDs.removeValue(forKey: conversationID)
         blockLoadStates.removeValue(forKey: conversationID)
         lastPreparationRequests.removeValue(forKey: conversationID)
         forcedCompactionIDs.remove(conversationID)
@@ -288,7 +295,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             let compactedEstimate = calibratedEstimate(of: compacted.messages, key: key)
             if compactedEstimate <= limit,
                compactedEstimate < localEstimate {
-                recordActualCompactionIfNeeded(
+                await recordActualCompactionIfNeeded(
                     for: request,
                     originalEstimate: localEstimate,
                     compactedEstimate: compactedEstimate,
@@ -312,7 +319,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         if let compacted = compactedHistory(history, request: request) {
             let compactedEstimate = calibratedEstimate(of: compacted.messages, key: key)
             if compactedEstimate <= limit, compactedEstimate < localEstimate {
-                recordActualCompactionIfNeeded(
+                await recordActualCompactionIfNeeded(
                     for: request,
                     originalEstimate: localEstimate,
                     compactedEstimate: compactedEstimate,
@@ -464,6 +471,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeAll()
         blocks.removeAll()
         compactionMeta.removeAll()
+        recordedCompactionSourceIDs.removeAll()
         blockLoadStates.removeAll()
         lastPreparationRequests.removeAll()
         forcedCompactionIDs.removeAll()
@@ -512,16 +520,28 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         originalEstimate: Int,
         compactedEstimate: Int,
         reason: MessageTimelineEvent.ContextCompactionReason
-    ) {
+    ) async {
         // 预热只准备摘要，不代表某个用户请求实际发送了压缩上下文。
         guard request.mode != .prewarm else { return }
         // 没有折叠记账元数据（例如纯磁盘恢复、未发生新折叠）时不记事件。
         guard let meta = compactionMeta[request.conversationID] else { return }
 
-        let alreadyRecorded = messages.messages(for: request.conversationID).contains {
+        let conversationID = request.conversationID
+        let sourceID = meta.sourceLastMessageID
+        // 热点路径：复用同一份压缩上下文的合格请求 O(1) 命中即返回，
+        // 不再每次都在 MainActor 同步全量读取会话（#1256）。
+        if recordedCompactionSourceIDs[conversationID]?.contains(sourceID) == true {
+            return
+        }
+        // 先认领该 source ID 再让出主 actor：并发请求看到已认领即返回，
+        // 不会各自插入一份重复事件。
+        recordedCompactionSourceIDs[conversationID, default: []].insert(sourceID)
+        // 首次遇到该 source ID：用异步全量快照做权威去重（含时间线事件与
+        // 完整 metadata），把磁盘读取/解码/排序放到后台，并保住跨重启保护。
+        let alreadyRecorded = await messages.messagesSnapshot(in: conversationID).contains {
             MessageTimelineEvent.isActualContextCompaction($0)
                 && $0.metadata[MessageTimelineEvent.contextCompactionSourceLastMessageIDKey]
-                    == meta.sourceLastMessageID.uuidString
+                    == sourceID.uuidString
         }
         guard !alreadyRecorded else { return }
 

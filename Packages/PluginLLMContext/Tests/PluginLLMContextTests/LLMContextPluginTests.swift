@@ -1060,6 +1060,131 @@ struct LLMContextPluginTests {
             mode: .beforeSend
         )
     }
+
+    @Test("复用压缩上下文的重复请求不再同步全量读取会话（#1256）")
+    func duplicateGuardAvoidsSynchronousFullRead() async throws {
+        let messages = CountingMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<60 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "长对话内容 ", count: 600) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 20_000,
+                reservedOutputTokens: 2_000,
+                safetyMarginTokens: 1_000
+            ),
+            mode: .beforeSend
+        )
+
+        // 首次合格请求：折叠并记录一条压缩事件。
+        let first = await provider.prepareContext(for: request)
+        #expect(first.didCompact)
+        #expect(messages.base.messages(for: conversationID).filter {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        }.count == 1)
+
+        // 热点路径：复用同一份压缩上下文再次请求，去重守卫必须 O(1) 命中，
+        // 不再在 MainActor 同步全量读取会话。
+        messages.resetReadCount()
+        let second = await provider.prepareContext(for: request)
+        #expect(second.didCompact)
+        #expect(messages.synchronousFullReads == 0)
+        // 去重保护仍在：压缩事件只有一条。
+        #expect(messages.base.messages(for: conversationID).filter {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        }.count == 1)
+    }
+}
+
+/// 计数 spy：统计 provider 直接发起的同步全量读取 `messages(for:)`。
+/// 异步快照（`messagesSnapshot` / `messagesForLLM`）转发给 base，不计入同步次数，
+/// 以此锁定「去重守卫不得在 MainActor 同步全量读取」这一性能契约（#1256）。
+@MainActor
+private final class CountingMessageManager: MessageManaging {
+    let base = DefaultMessageManager()
+    private(set) var synchronousFullReads = 0
+
+    func resetReadCount() { synchronousFullReads = 0 }
+
+    func messages(for conversationID: UUID) -> [Message] {
+        synchronousFullReads += 1
+        return base.messages(for: conversationID)
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        await base.messagesSnapshot(in: conversationID)
+    }
+
+    func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        await base.messagesForLLM(in: conversationID)
+    }
+
+    func message(id: UUID, in conversationID: UUID) -> Message? {
+        base.message(id: id, in: conversationID)
+    }
+
+    func lastMessage(in conversationID: UUID) -> Message? {
+        base.lastMessage(in: conversationID)
+    }
+
+    func messageCount(for conversationID: UUID) -> Int {
+        base.messageCount(for: conversationID)
+    }
+
+    func insertMessage(_ message: Message, to conversationID: UUID) {
+        base.insertMessage(message, to: conversationID)
+    }
+
+    func updateMessage(id: UUID, in conversationID: UUID, content: String) {
+        base.updateMessage(id: id, in: conversationID, content: content)
+    }
+
+    func deleteMessage(id: UUID, in conversationID: UUID) {
+        base.deleteMessage(id: id, in: conversationID)
+    }
+
+    func clearMessages(in conversationID: UUID) {
+        base.clearMessages(in: conversationID)
+    }
+
+    func updateToolCallResult(
+        _ result: MessageToolResult,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        in conversationID: UUID,
+        authorizationState: String?
+    ) {
+        base.updateToolCallResult(
+            result,
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            in: conversationID,
+            authorizationState: authorizationState
+        )
+    }
 }
 
 @MainActor
