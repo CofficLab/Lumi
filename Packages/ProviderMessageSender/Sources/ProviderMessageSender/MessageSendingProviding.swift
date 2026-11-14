@@ -68,8 +68,17 @@ public protocol MessageSendingProviding: AnyObject {
     /// 结束一次附件读取；全部读取结束时唤醒等待中的发送入口。
     func endAttachmentRead()
 
+    /// 标记当前读取窗口内有一次附件读取失败。
+    ///
+    /// 失败必须与计数分开记录：读取失败同样会 `endAttachmentRead()` 唤醒等待，
+    /// 若发送入口无从得知失败，就会把附件悄悄丢掉、按纯文本提交并清空草稿
+    /// （#1174）。等待结束后据此中止本次发送，保留草稿与错误提示。
+    func recordAttachmentReadFailure()
+
     /// 等待全部在途附件读取结束；没有在途读取时立即返回。
-    func waitForAttachmentReads() async
+    ///
+    /// 返回 `true` 表示窗口内全部读取成功，`false` 表示至少一次失败。
+    func waitForAttachmentReads() async -> Bool
 
     // MARK: - Pending Queue
 
@@ -180,7 +189,9 @@ public extension MessageSendingProviding {
 
     func endAttachmentRead() {}
 
-    func waitForAttachmentReads() async {}
+    func recordAttachmentReadFailure() {}
+
+    func waitForAttachmentReads() async -> Bool { true }
 
     /// 默认空实现，保持自定义发送器向后兼容。
     @discardableResult

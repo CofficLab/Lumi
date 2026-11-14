@@ -281,8 +281,14 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             guard !isWaitingForAttachmentReads else { return }
             isWaitingForAttachmentReads = true
             Task { @MainActor in
-                await capability.waitForAttachmentReads()
+                let succeeded = await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
+                // 读取失败：中止本次发送，保留草稿与错误提示，让用户自行决定
+                // 重试或去掉附件，而不是悄悄降级成纯文本提交（#1174）。
+                guard succeeded else {
+                    refresh()
+                    return
+                }
                 performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return
@@ -460,6 +466,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 capability.addFileAttachment(attachment)
                 capability.isInputFocused = true
             } catch {
+                capability.recordAttachmentReadFailure()
                 capability.errorMessage = error.localizedDescription
                 refresh()
             }
@@ -480,6 +487,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             // 空文件保持静默忽略（见 #520），但非空字节必须能解码才算图片。
             guard let data, !data.isEmpty else { return }
             guard ChatInputEditorRules.isDecodableImageData(data) else {
+                capability.recordAttachmentReadFailure()
                 capability.errorMessage = String(
                     format: pluginLocalization.string("Could not read image: %@"),
                     url.lastPathComponent

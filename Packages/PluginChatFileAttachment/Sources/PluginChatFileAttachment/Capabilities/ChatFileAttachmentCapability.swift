@@ -20,6 +20,9 @@ protocol ChatFileAttachmentCapability: AnyObject {
 
     /// 结束一次在途附件读取。
     func endAttachmentRead()
+
+    /// 标记本次附件读取失败，使等待中的发送中止而非降级为纯文本（#1174）。
+    func recordAttachmentReadFailure()
 }
 
 /// 将内核的消息发送与输入区能力收窄为附件按钮所需的能力。
@@ -50,5 +53,9 @@ final class ChatFileAttachmentCapabilityAdapter: ChatFileAttachmentCapability {
 
     func endAttachmentRead() {
         sender?.endAttachmentRead()
+    }
+
+    func recordAttachmentReadFailure() {
+        sender?.recordAttachmentReadFailure()
     }
 }

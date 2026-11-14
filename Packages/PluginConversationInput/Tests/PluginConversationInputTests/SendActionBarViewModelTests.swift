@@ -574,10 +574,16 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     // MARK: - Attachment reading
 
     private(set) var pendingAttachmentReadCount = 0
-    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+    private var attachmentReadFailed = false
+    private var attachmentReadWaiters: [CheckedContinuation<Bool, Never>] = []
 
     func beginAttachmentRead() {
+        if pendingAttachmentReadCount == 0 { attachmentReadFailed = false }
         pendingAttachmentReadCount += 1
+    }
+
+    func recordAttachmentReadFailure() {
+        attachmentReadFailed = true
     }
 
     func endAttachmentRead() {
@@ -586,12 +592,13 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         guard pendingAttachmentReadCount == 0 else { return }
         let waiters = attachmentReadWaiters
         attachmentReadWaiters = []
-        waiters.forEach { $0.resume() }
+        let succeeded = !attachmentReadFailed
+        waiters.forEach { $0.resume(returning: succeeded) }
     }
 
-    func waitForAttachmentReads() async {
-        guard pendingAttachmentReadCount > 0 else { return }
-        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    func waitForAttachmentReads() async -> Bool {
+        guard pendingAttachmentReadCount > 0 else { return true }
+        return await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Send

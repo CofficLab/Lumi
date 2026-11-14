@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **196 条场景 / 202 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 202 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **198 条场景 / 204 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 204 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -459,12 +459,26 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 195 | 发送 | 回车路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并 `setText("same")` → 放行提交 | 提交落在 A；B 的 `"same"` 在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
 | 196 | 发送 | 按钮路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并改写正文 `"same"` → 放行提交 | 提交落在 A；B 的 `"same"` 保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
 
+### 补充轮次（ID 197–198）：附件读取失败中止延迟发送（回归 #1174）
+
+> 附件读取失败时，旧实现的等待门禁只负责「唤醒」，不区分成功与失败，发送入口
+> 被唤醒后照常提交，于是本该带附件的消息被悄悄降级成纯文本发出，错误提示也被
+> 提交流程清掉。修复让 `waitForAttachmentReads()` 返回 Bool（读取失败为 false），
+> 发送入口据此中止本次发送，保留草稿与错误提示，由用户决定重试或去掉附件。
+> 两条发送入口各锁一条用例；发送器侧的 Bool 门禁与失败标记复位另见
+> `ProviderMessageSender` / `PluginMessageSender` 的附件读取门禁套件。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 197 | 发送 | 回车路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，`canSend` 仍为 true | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSend` |
+| 198 | 发送 | 按钮路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，按钮仍可发送 | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSendFromButton` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 63 / 63
+- P0: 已覆盖 65 / 65
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 196 / 196**（仅表示清单场景，非源码覆盖率）
+- **合计: 198 / 198**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

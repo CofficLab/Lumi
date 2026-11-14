@@ -64,12 +64,19 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
     /// 又滚进下一条消息（#1023）。
     private var attachmentReadCount = 0
-    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+    /// 当前读取窗口内是否出现过失败；窗口开始（计数 0→1）时复位。
+    private var attachmentReadFailed = false
+    private var attachmentReadWaiters: [CheckedContinuation<Bool, Never>] = []
 
     public var pendingAttachmentReadCount: Int { attachmentReadCount }
 
     public func beginAttachmentRead() {
+        if attachmentReadCount == 0 { attachmentReadFailed = false }
         attachmentReadCount += 1
+    }
+
+    public func recordAttachmentReadFailure() {
+        attachmentReadFailed = true
     }
 
     public func endAttachmentRead() {
@@ -78,12 +85,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         guard attachmentReadCount == 0 else { return }
         let waiters = attachmentReadWaiters
         attachmentReadWaiters.removeAll()
-        waiters.forEach { $0.resume() }
+        let succeeded = !attachmentReadFailed
+        waiters.forEach { $0.resume(returning: succeeded) }
     }
 
-    public func waitForAttachmentReads() async {
-        guard attachmentReadCount > 0 else { return }
-        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    public func waitForAttachmentReads() async -> Bool {
+        guard attachmentReadCount > 0 else { return true }
+        return await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Sending State Observation

@@ -110,8 +110,14 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
             guard !isWaitingForAttachmentReads else { return }
             isWaitingForAttachmentReads = true
             Task { @MainActor in
-                await capability.waitForAttachmentReads()
+                let succeeded = await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
+                // 读取失败：中止本次发送，保留草稿与错误提示，让用户自行决定
+                // 重试或去掉附件，而不是悄悄降级成纯文本提交（#1174）。
+                guard succeeded else {
+                    refreshSendState()
+                    return
+                }
                 performSend(content: content, blocks: blocks, conversationID: conversationID)
             }
             return

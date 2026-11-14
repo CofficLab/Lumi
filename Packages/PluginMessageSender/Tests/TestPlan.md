@@ -25,7 +25,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 ### MessageSender（`MessageSendingProviding`）
 - 状态：`isSending`、`pendingImageAttachments`、`pendingFileAttachments`、`pendingQueues`
 - 附件读取门禁：`pendingAttachmentReadCount`、`beginAttachmentRead()`、
-  `endAttachmentRead()`、`waitForAttachmentReads()`
+  `endAttachmentRead()`、`recordAttachmentReadFailure()`、`waitForAttachmentReads() -> Bool`
 - 订阅：`addMessageSenderObserver(_:)`、`addSendingStateObserver(_:)`
 - 提交：`commitUserMessage(_:conversationID:)`、
   `commitUserMessage(_:imageAttachments:fileAttachments:conversationID:)`、
@@ -45,7 +45,9 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **停止语义**：`cancelCurrentRequest()` 取消跟踪任务 + `agentLoop.cancelTurn` +
   广播 `.cancelled`，仅当无任何活动任务时才复位 `isSending = false`
 - **读取门禁**：`beginAttachmentRead()` / `endAttachmentRead()` 维护在途计数，
-  `waitForAttachmentReads()` 只在最后一个读取结束时唤醒，多余的 `end` 不变负（回归 #1023）
+  `waitForAttachmentReads()` 只在最后一个读取结束时唤醒并返回 Bool——读取失败返回
+  false（发送入口据此中止本次发送，保留草稿），新窗口开始即复位失败标记，多余的
+  `end` 不变负（回归 #1023 / #1174）
 
 - **装配**（1 条）：由 `pluginRegistersMessageSendingProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **降级**（1 条）：由 `pluginNoOpsWithoutDependencies` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -116,11 +118,13 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 43 | MessageSender 会话删除失效 | 删除会话立即清空队列并结束跟踪任务（**回归 #167**） | 活动回合 + 排队消息 | 删除会话，再投递迟到终态 | 队列清空、等待任务被唤醒、消息不再落库、不拉起新回合 | P0 | ✅ 已覆盖 | `deletionInvalidatesQueueAndTrackingTask` |
 | 44 | MessageSender 会话删除失效 | 提交后尚未启动的回合在删除后不得再启动（**回归 #167**） | 提交落在 `pendingTurnStarts` 窗口 | 删除会话后再 `startTurn` | 不广播 `.started`、不落库排队消息、`isSending` 为 false | P0 | ✅ 已覆盖 | `deletionBeforeTurnStartPreventsStart` |
 | 45 | MessageSender 会话删除失效 | 删除一个会话不影响其他会话的排队与发送（**回归 #167**） | A、B 各有活动回合与排队消息 | 删除 A | A 的工作失效；B 的队列与发送不受影响，照常排空 | P0 | ✅ 已覆盖 | `deletionDoesNotAffectOtherConversations` |
+| 46 | MessageSender 附件读取门禁 | 读取失败时等待返回 false，发送入口据此中止（#1174） | 一次在途读取 + 等待任务 | 读取窗口内 `recordAttachmentReadFailure()` 后 `endAttachmentRead()` | 等待任务收到 false，发送入口据此中止本次发送 | P0 | ✅ 已覆盖 | `waitReturnsFalseWhenAttachmentReadFails` |
+| 47 | MessageSender 附件读取门禁 | 失败标记在新读取窗口开始时复位，干净读取仍返回 true（#1174） | 先一个失败窗口，再一个干净窗口 | 失败窗口结束后 `beginAttachmentRead()` 开新窗口并正常结束 | 第一个窗口返回 false，新窗口返回 true（失败不毒化后续发送） | P0 | ✅ 已覆盖 | `readFailureFlagResetsOnNextReadWindow` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
 > ID 35–45 为 #165 / #164 / #166 / #167 的回归套件。
-> 本表 45 行覆盖 56 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 47 行覆盖 58 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -132,10 +136,10 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
+- P0: 已覆盖 22 / 22
 - P1: 已覆盖 23 / 23
 - P2: 已覆盖 2 / 2
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
