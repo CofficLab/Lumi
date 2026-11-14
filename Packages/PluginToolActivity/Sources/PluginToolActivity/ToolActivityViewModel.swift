@@ -23,6 +23,11 @@ final class ToolActivityViewModel: ObservableObject {
     private var tickTask: Task<Void, Never>?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var jobObserver: (any ToolJobObserverHandle)?
+    /// id → `jobs` 下标。让高频 output/progress 事件 O(1) 命中既有 Job，
+    /// 不必每条事件都线性扫描整个历史（见 issue #1260）。
+    private var jobIndexByID: [String: Int] = [:]
+    /// 运行中（非终态）Job 数量，随事件增量维护，避免每条事件都过滤全量历史。
+    private var activeJobCount = 0
 
     init(
         conversations: any ConversationManaging,
@@ -74,7 +79,7 @@ final class ToolActivityViewModel: ObservableObject {
             }
     }
 
-    var activeCount: Int { activeJobs.count }
+    var activeCount: Int { activeJobCount }
 
     func refresh() {
         if let conversationID = conversations.selectedConversationID {
@@ -85,6 +90,8 @@ final class ToolActivityViewModel: ObservableObject {
             jobs = []
             erroredCompletedJobIDs = []
         }
+        jobs.sort(by: Self.isOrderedBefore)
+        reindex()
         syncTicking()
     }
 
@@ -113,7 +120,7 @@ final class ToolActivityViewModel: ObservableObject {
 
     /// 只有存在运行中的任务时才启动计时，全部进入终态后立即停止。
     private func syncTicking() {
-        if activeJobs.isEmpty {
+        if activeJobCount == 0 {
             tickTask?.cancel()
             tickTask = nil
         } else if tickTask == nil {
@@ -196,17 +203,55 @@ final class ToolActivityViewModel: ObservableObject {
         }
 
         guard snapshot.conversationID == conversations.selectedConversationID else { return }
-        if let index = jobs.firstIndex(where: { $0.id == snapshot.id }) {
+        if let index = jobIndexByID[snapshot.id] {
+            let previous = jobs[index]
             jobs[index] = snapshot
-        } else {
-            jobs.append(snapshot)
-        }
-        jobs.sort {
-            if $0.createdAt != $1.createdAt {
-                return $0.createdAt < $1.createdAt
+            if previous.status.isTerminal != snapshot.status.isTerminal {
+                activeJobCount += snapshot.status.isTerminal ? -1 : 1
             }
-            return $0.id < $1.id
+            // 排序键 (createdAt, id) 不变时就地更新即可，不必重排整个历史。
+            // createdAt 理论上可变，一旦变化才恢复有序。
+            if previous.createdAt != snapshot.createdAt {
+                jobs.sort(by: Self.isOrderedBefore)
+                reindex()
+            }
+        } else {
+            jobs.insert(snapshot, at: insertionIndex(for: snapshot))
+            reindex()
         }
         syncTicking()
+    }
+
+    /// 重建 id 下标表与运行中计数。仅在列表成员变化（刷新、插入新 Job）时调用，
+    /// 高频的就地更新不走这里。
+    private func reindex() {
+        jobIndexByID = [:]
+        for (offset, job) in jobs.enumerated() {
+            jobIndexByID[job.id] = offset
+        }
+        activeJobCount = jobs.reduce(0) { $0 + ($1.status.isTerminal ? 0 : 1) }
+    }
+
+    /// `jobs` 的稳定排序：先按创建时间升序，再按 id 升序。
+    private static func isOrderedBefore(_ a: ToolJob, _ b: ToolJob) -> Bool {
+        if a.createdAt != b.createdAt {
+            return a.createdAt < b.createdAt
+        }
+        return a.id < b.id
+    }
+
+    /// 在已有序的 `jobs` 中二分查找新 Job 的插入位置，避免追加后全量排序。
+    private func insertionIndex(for job: ToolJob) -> Int {
+        var low = 0
+        var high = jobs.count
+        while low < high {
+            let mid = (low + high) / 2
+            if Self.isOrderedBefore(jobs[mid], job) {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
     }
 }
