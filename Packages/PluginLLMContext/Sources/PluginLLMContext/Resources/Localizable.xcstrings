@@ -70,7 +70,6 @@
       }
     },
     "%lld calls" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -139,7 +138,6 @@
       }
     },
     "~%@ (estimated)" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -208,7 +206,6 @@
       }
     },
     "Background usage" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -243,7 +240,6 @@
       }
     },
     "Compaction summaries" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -584,7 +580,6 @@
       }
     },
     "Conversation titles" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -653,7 +648,6 @@
       }
     },
     "estimated" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -994,7 +988,6 @@
       }
     },
     "net" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1199,7 +1192,6 @@
       }
     },
     "Saved" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1268,7 +1260,6 @@
       }
     },
     "Summaries and titles run outside the conversation turn, so they are not part of the context curve above." : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1303,7 +1294,6 @@
       }
     },
     "summary cost" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1338,7 +1328,6 @@
       }
     },
     "Summary model" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1509,7 +1498,6 @@
       }
     },
     "unavailable" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1646,7 +1634,6 @@
       }
     },
     "Usage unavailable" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
