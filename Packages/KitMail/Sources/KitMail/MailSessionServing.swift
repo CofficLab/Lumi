@@ -37,8 +37,10 @@ public protocol MailSessionServing: Sendable {
     /// 通过 SMTP 发送邮件（`mime` 为完整 RFC 5322 原始字节）。
     func sendMessage(mime: Data) async throws
 
-    /// 追加草稿到服务器端草稿文件夹（失败降级：仅本地记录，不阻断成功态）。
-    func appendDraft(mime: Data, folder: String) async throws
+    /// 追加一封 MIME 邮件到服务器端文件夹。
+    /// - Parameter isDraft: `true` 存为草稿（`\Draft`）；`false` 归档已发送副本（`\Seen`，不得带 `\Draft`）。
+    /// 失败降级：仅本地记录，不阻断成功态。
+    func appendMessage(mime: Data, folder: String, isDraft: Bool) async throws
 }
 
 /// 会话工厂：由账户配置 + 凭据创建会话。

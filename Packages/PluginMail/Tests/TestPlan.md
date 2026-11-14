@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 80 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 81 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 80
+测试文件: 9 个，用例总数: 81
 
 核心组件（源码目录）:
 - `Agent/`
@@ -41,11 +41,16 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 80 条�
 - **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailHTMLContent**（5 条）：由 `testUnauthorizedHTMLBlocksRemoteSubresources`、`testLinkActivatedOpensExternallyEvenWithoutAuthorization` 等用例锁定；改动阅读器远程内容策略时优先跑对应测试文件。
 - **MailWorkspace**（5 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先）时优先跑对应测试文件。
-- **MailComposerService**（11 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailComposerService**（12 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind`、`testAppendDraftUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSyncService**（11 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailPluginRuntime**（2 条）：由 `usesInjectedDirectory`、`refusesFallbackWithoutInjection` 锁定；改动数据目录解析时优先跑对应测试文件。
 - **MailPluginLifecycle**（1 条）：由 `shutdownWithoutBootDoesNotInitializeLazyServices` 锁定；改动插件生命周期/关闭清理时优先跑对应测试文件。
+
+> **#403 变异验证**（composer 调用点，2 个独立变异均 RED）：
+> 1. 把 `send()` 归档到 Sent 的 `isDraft: false` 改为 `true`（复现原 bug）→ `testSendBuildsMIMEAndAppendsToSent` 与 `mail_send_message` 工具链的 `testSendMessageSendsAndAppends` 均失败（Sent 副本被标记为草稿），`testAppendDraftUsesDraftFlag` 仍 GREEN。
+> 2. 把 `appendDraft()` 的 `isDraft: true` 改为 `false` → `testAppendDraftUsesDraftFlag` 失败（草稿丢失 `\Draft`）。
+> 两个变异分别锁定「Sent 归档不得带草稿标记」「草稿必须保留草稿标记」两条调用点不变量；适配层标记选择的变异见 KitMail TestPlan。恢复修复后全部 GREEN。
 
 ## 测试用例清单
 
@@ -131,27 +136,28 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 80 条�
 | 78 | MailPluginLifecycle | 未 boot 即 onShutdown 不初始化 lazy 服务（回归 #137） | 注入尚不存在的兜底目录、未注册 StorageProviding | 未 boot 直接 onShutdown，等待 fire-and-forget Task | 数据目录不被创建（accountStore 未初始化） | P0 | ✅ 已覆盖 | `shutdownWithoutBootDoesNotInitializeLazyServices` |
 | 79 | MailWorkspace | 未注入 sync（生产装配）时点选邮件仍经 session 取正文并置已读，不得永远停在加载态（**回归 #306**） | 缓存有 INBOX 邮件，VM 不传 sync（默认 nil） | 调用 `load()` 后 `selectMessage` | `selectedDetail` 非空且 uid 匹配、正文为 Hello，本地缓存未读计数归零 | P0 | ✅ 已覆盖 | `testSelectMessageFetchesBodyWithoutSyncService` |
 | 80 | MailWorkspace | 缓存按 uid 升序投影时首页必须取最新一页，翻页继续向更旧扩展（**回归 #308**） | 缓存 51 封 INBOX 邮件（uid 1…51），会话离线 | 调用 `load()` 后 `loadMore()` | 首页 50 封为 uid 51…2，翻页后 51 封为 uid 51…1，整体最新优先 | P0 | ✅ 已覆盖 | `testFirstPageKeepsNewestMailsAndPagesTowardOlder` |
+| 81 | MailComposerService | 保存草稿归档到 Drafts 时用 `\Draft`，与已发送归档区分（**回归 #403**） | mock 会话无 drafts 文件夹 | 调用 `composer.appendDraft(draft:account:)` | APPEND 到 Drafts 且 isDraft 为真，不触发 SMTP 发送 | P1 | ✅ 已覆盖 | `testAppendDraftUsesDraftFlag` |
 
-> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 14 / 14
-- P1: 已覆盖 62 / 62
+- P1: 已覆盖 63 / 63
 - P2: 已覆盖 4 / 4
-- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（62 条）
+- **P1**: 其余功能性用例（63 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -31,7 +31,7 @@ final class MailSessionProtocolTests: XCTestCase {
         XCTAssertEqual(uids, [3])
 
         try await session.sendMessage(mime: Data("x".utf8))
-        try await session.appendDraft(mime: Data("d".utf8), folder: "Drafts")
+        try await session.appendMessage(mime: Data("d".utf8), folder: "Drafts", isDraft: true)
     }
 
     func testMockSessionAuthFailure() async {
@@ -139,6 +139,40 @@ private final class FolderOperationSpySession: MCOIMAPSession {
 
     override func fetchSubscribedFoldersOperation() -> MCOIMAPFetchFoldersOperation! {
         subscribedFoldersCallCount += 1
+        return nil
+    }
+}
+
+/// 回归 #403：已发送归档必须用 `\Seen`，草稿用 `\Draft`；Sent 副本不得带 `\Draft`。
+final class MailCoreAdapterAppendFlagsTests: XCTestCase {
+    func testSentAppendUsesSeenWithoutDraft() {
+        let session = AppendOperationSpySession()
+        _ = MailCoreAdapter.appendMessageOperation(
+            using: session, folder: "Sent", mime: Data("m".utf8), isDraft: false
+        )
+        XCTAssertEqual(session.recordedFlags, .seen, "已发送归档应标记为已读")
+        XCTAssertFalse(session.recordedFlags.contains(.draft), "已发送副本不得带 \\Draft")
+    }
+
+    func testDraftAppendUsesDraftFlag() {
+        let session = AppendOperationSpySession()
+        _ = MailCoreAdapter.appendMessageOperation(
+            using: session, folder: "Drafts", mime: Data("m".utf8), isDraft: true
+        )
+        XCTAssertEqual(session.recordedFlags, .draft, "草稿应标记为 \\Draft")
+    }
+}
+
+/// 记录 APPEND 请求的标记；返回 nil 使调用方走既有错误分支。
+private final class AppendOperationSpySession: MCOIMAPSession {
+    private(set) var recordedFlags: MCOMessageFlag = []
+
+    override func appendMessageOperation(
+        withFolder folder: String,
+        messageData: Data,
+        flags: MCOMessageFlag
+    ) -> MCOIMAPAppendMessageOperation! {
+        recordedFlags = flags
         return nil
     }
 }

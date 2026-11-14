@@ -287,12 +287,13 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         }
     }
 
-    public func appendDraft(mime: Data, folder: String) async throws {
+    public func appendMessage(mime: Data, folder: String, isDraft: Bool) async throws {
         try await bridge.performVoid { completion in
-            guard let op = self.imapSession.appendMessageOperation(
-                withFolder: folder,
-                messageData: mime,
-                flags: .draft
+            guard let op = Self.appendMessageOperation(
+                using: self.imapSession,
+                folder: folder,
+                mime: mime,
+                isDraft: isDraft
             ) else {
                 completion(MailError.protocolError("operation creation failed"))
                 return
@@ -301,6 +302,21 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
                 completion(error)
             }
         }
+    }
+
+    /// APPEND 操作的标记选择：草稿用 `\Draft`，已发送归档用 `\Seen`（不得带 `\Draft`）。
+    /// 独立成函数以便测试锁定 Sent 归档不会退回 `.draft`（#403）。
+    static func appendMessageOperation(
+        using session: MCOIMAPSession,
+        folder: String,
+        mime: Data,
+        isDraft: Bool
+    ) -> MCOIMAPAppendMessageOperation? {
+        session.appendMessageOperation(
+            withFolder: folder,
+            messageData: mime,
+            flags: isDraft ? .draft : .seen
+        )
     }
 
     // MARK: - 映射

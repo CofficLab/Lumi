@@ -49,8 +49,8 @@ actor MockMailSession: MailSessionServing {
     private(set) var flagUpdates: [(uid: UInt64, folder: String, isRead: Bool?, isFlagged: Bool?)] = []
     /// 已发送的 MIME 载荷（断言用）。
     private(set) var sentMIMEs: [Data] = []
-    /// 已 APPEND 的草稿（断言用）。
-    private(set) var appendedDrafts: [(mime: Data, folder: String)] = []
+    /// 已 APPEND 的邮件（断言用，含 isDraft 标记）。
+    private(set) var appendedMessages: [(mime: Data, folder: String, isDraft: Bool)] = []
     /// 按文件夹/邮件注入的响应延迟，用于构造「旧任务晚到」场景。
     private var folderFetchDelays: [String: Duration] = [:]
     private var bodyDelays: [UInt64: Duration] = [:]
@@ -139,7 +139,7 @@ actor MockMailSession: MailSessionServing {
         sentMIMEs.append(mime)
     }
 
-    func appendDraft(mime: Data, folder: String) async throws {
-        appendedDrafts.append((mime, folder))
+    func appendMessage(mime: Data, folder: String, isDraft: Bool) async throws {
+        appendedMessages.append((mime, folder, isDraft))
     }
 }
