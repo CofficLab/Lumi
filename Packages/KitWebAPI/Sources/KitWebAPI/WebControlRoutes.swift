@@ -149,7 +149,11 @@ public enum WebControlRoutes {
                 guard let uuid = UUID(uuidString: id) else {
                     throw WebAPIError.badRequest(message: "Invalid conversation id", field: "id")
                 }
-                let all = messages.messages(for: uuid).map { message in
+                // 磁盘读取 + pending 合并放到后台快照（与 messages(for:) 同语义），
+                // 再只对当前页做映射，避免在主 actor 上物化并遍历整段历史（issue #1284）。
+                let snapshot = await messages.messagesSnapshot(in: uuid)
+                let pageMessages = request.pagination.page(of: snapshot)
+                let items = pageMessages.map { message in
                     WebMessageSummary(
                         id: message.id,
                         role: message.role.rawValue,
@@ -159,7 +163,9 @@ public enum WebControlRoutes {
                         turnID: message.turnID
                     )
                 }
-                return try .apiPage(WebPageResult(items: all, pagination: request.pagination))
+                return try .apiPage(
+                    WebPageResult(pageItems: items, total: snapshot.count, pagination: request.pagination)
+                )
             }
             .post("\(prefix)/conversations/:id/select", description: "切换当前选中的会话") { request in
                 guard let conversations = context.conversations else {
