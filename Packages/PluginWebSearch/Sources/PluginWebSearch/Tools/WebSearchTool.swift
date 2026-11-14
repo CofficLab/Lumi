@@ -109,7 +109,7 @@ public struct WebSearchResult: Equatable, Sendable {
 }
 
 extension WebSearchTool {
-    private static func fetchDuckDuckGoResults(
+    static func fetchDuckDuckGoResults(
         query: String,
         network: any NetworkProviding
     ) async throws -> [WebSearchResult] {
@@ -124,6 +124,11 @@ extension WebSearchTool {
             headers: ["User-Agent": "Lumi/1.0"],
             timeout: 12
         )
+        // 非 2xx（如 429/500 错误页）不含 result__a，直接解析会被当成「无结果」的成功，
+        // 把服务限流/故障伪装成空搜索；必须按真实状态码抛出（#332）。
+        guard (200..<300).contains(response.statusCode) else {
+            throw WebSearchError.badStatus(response.statusCode)
+        }
         let data = response.body
 
         guard let html = String(data: data, encoding: .utf8) else {
