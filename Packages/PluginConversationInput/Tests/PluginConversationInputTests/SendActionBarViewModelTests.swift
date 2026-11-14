@@ -318,6 +318,33 @@ struct SendActionBarViewModelTests {
         #expect(capability.text == "first edited")
     }
 
+    @Test("附件读取期间继续编辑时，发送的是按下 Send 时的草稿（#1172）")
+    func deferredSendSubmitsSnapshotTakenAtSendPress() async throws {
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        capability.beginAttachmentRead()
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 按下 Send：正文快照为 "first"，随后挂在附件读取等待上。
+        viewModel.send()
+
+        // 读取期间用户继续编辑，并选中了一个附件。
+        capability.text = "first edited"
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        capability.pendingFileAttachments = [file]
+        capability.endAttachmentRead()
+
+        await waitUntil("延迟发送未走后台提交") { !capability.backgroundCommits.isEmpty }
+        let commit = try #require(capability.backgroundCommits.first)
+        // 提交的是按下 Send 时的 "first"，而不是读取结束后的 "first edited"。
+        #expect(commit.content == "first")
+        #expect(commit.fileAttachments.map(\.id) == [file.id])
+
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+        #expect(capability.text == "first edited")
+    }
+
     @Test("发送前清除旧的错误提示")
     func sendClearsPreviousError() throws {
         let capability = SendActionBarTestCapability()

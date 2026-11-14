@@ -1,6 +1,7 @@
 import Foundation
 import os
 import LumiLoggingKit
+import ProviderMessage
 import ProviderMessageSender
 /// Manages the state and actions for the send/stop action bar.
 ///
@@ -94,7 +95,13 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         // 附件）当成新消息重复提交。标记由两条发送入口共用。
         guard !capability.isCommittingDraft else { return }
 
-        // 附件还在异步读取：等读取结束再快照，否则这条消息会漏掉用户刚选中
+        // 在按下 Send 的瞬间快照正文与折叠块。附件异步读取期间用户可能继续
+        // 编辑，发出去的必须是按下 Send 时的那一份草稿，而不是读取结束后
+        // 输入框里的新内容（#1172）。附件本身仍等读取结束再快照（#1023）。
+        let content = capability.text
+        let blocks = capability.collapsedBlocks
+
+        // 附件还在异步读取：等读取结束再提交，否则这条消息会漏掉用户刚选中
         // 的附件，附件又滚进下一条无关消息（#1023）。
         if capability.pendingAttachmentReadCount > 0 {
             guard !isWaitingForAttachmentReads else { return }
@@ -102,15 +109,19 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
             Task { @MainActor in
                 await capability.waitForAttachmentReads()
                 isWaitingForAttachmentReads = false
-                send()
+                performSend(content: content, blocks: blocks)
             }
             return
         }
 
+        performSend(content: content, blocks: blocks)
+    }
+
+    /// 用按下 Send 时快照的正文与折叠块执行提交。
+    private func performSend(content: String, blocks: [CollapsedContentBlock]) {
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
-        let content = capability.text
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let imageAttachments = capability.pendingImageAttachments
         let fileAttachments = capability.pendingFileAttachments
@@ -118,9 +129,6 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
-        // 发送瞬间的折叠块区间。提交成功后草稿被清空，区间也必须同时作废，
-        // 否则下一次发送会带上上一条消息的区间。
-        let blocks = capability.collapsedBlocks
         capability.errorMessage = nil
 
         if hasAttachments {

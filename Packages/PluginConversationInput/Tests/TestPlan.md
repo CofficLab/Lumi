@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **190 条场景 / 196 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 196 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **192 条场景 / 198 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 198 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -424,12 +424,24 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > `consumePendingBlock` 的 `pendingBlock = pendingBlockQueue.first` 改成 `= nil`，
 > 消费 first 后队首为 nil，第二个断言失败。两处均已还原。
 
+### 补充轮次（ID 191–192）：延迟发送快照保真（回归 #1172）
+
+> 附件异步读取期间用户可能继续编辑草稿。旧实现在等待结束后才递归 `send()`
+> 快照正文，于是发出去的是读取结束后的新草稿，成功清理还会把这份新草稿抹掉。
+> 修复把正文与折叠块的快照提前到**按下 Send 的瞬间**，等待结束后用快照提交；
+> 附件仍等读取结束再入快照（保留 #1023）。两条发送入口各锁一条用例。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 191 | 发送 | 回车路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → `setText("first edited")` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
+| 192 | 发送 | 按钮路径延迟发送提交按下 Send 时的草稿，读取期间的新草稿保留（**回归 #1172**） | 正文 `"first"` + 一次在途附件读取 | `send()` → 改写正文为 `"first edited"` → 附件入池并 `endAttachmentRead()` | 后台提交正文为 `"first"` 且携带该附件；提交成功后 `"first edited"` 不被清空 | P0 | ✅ 已覆盖 | `deferredSendSubmitsSnapshotTakenAtSendPress` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 57 / 57
+- P0: 已覆盖 59 / 59
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 190 / 190**（仅表示清单场景，非源码覆盖率）
+- **合计: 192 / 192**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
