@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 21 条用例。
+PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 32 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 21
+测试文件: 6 个，用例总数: 32
 
 核心组件（源码目录）:
 - `Models/`
@@ -37,6 +37,8 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 21 条
 - **MemoryID 路径穿越防护**（6 条）：由 `fileNameEncodesPathSeparators`、`saveTraversalIDGlobalStaysWithinRoot`、`backslashAndAbsoluteIDStayWithinRoot` 等用例锁定。`fileName(forID:)` 的允许字符集为 `alphanumerics ∪ {-_.}`，`/`、`\` 等一律百分号编码为单一路径分量；含 `../`、反斜杠、绝对路径或纯点号的 id 经 save/load/delete 后，文件标准化路径必须仍落在 Memory 根目录内，不得逃出（**回归 #198**）。改动 `fileName(forID:)`、`allowedIDCharacters` 或存储路径拼接时优先跑对应测试文件。
 - **Project 路径碰撞防护**（2 条）：由 `distinctProjectPathsDoNotCollide`、`projectPathPercentLiteralDoesNotCollide` 锁定。`sanitizeProjectPath` 必须把 project 路径一一映射为目录名（允许字符 `alphanumerics ∪ {-_./}` 原样保留，其余按 UTF-8 百分号编码，`%` 自身编码为 `%25`）；`/tmp/a b` 与 `/tmp/a-b`、以及字面量 `/tmp/a%20b` 不得共用同一记忆目录，保存/召回/列出/删除互不影响（**回归 #197**）。改动 `sanitizeProjectPath` 或 `projectsDirectory(for:)` 时优先跑对应测试文件。
 - **Frontmatter 解析**（3 条）：由 `descriptionWithDashesRoundTrips`、`contentWithHorizontalRuleRoundTrips`、`recallToolRestoresDescriptionWithDashes` 锁定。`MemoryFileStorage.parse` 只能把整行恰为 `---` 的行当作 frontmatter 结构分隔符；description 等字段值内部出现的 `---`（如 `alpha---beta`）不得被当作分隔符，否则描述被截断、正文混入 created/updated 行而无法还原（**回归 #528**）。改动 `parse` 或 frontmatter 序列化时优先跑对应测试文件。
+- **Memory 列表过滤**（6 条）：由 `filtersByType`、`filtersByQueryAcrossFields`、`queryIsCaseInsensitive`、`typeAndQueryCombine`、`noFilterReturnsAllItems`、`noMatchReturnsEmpty` 锁定 `MemoryListFilter` 的类型/查询词过滤口径：查询词跨名称/描述/ID 匹配且大小写不敏感，类型与查询词可叠加，无过滤返回全部、无命中返回空。
+- **Memory Tools Conversation Scope**（5 条）：由 `saveUsesConversationProject`、`recallUsesConversationProject`、`listUsesConversationProject`、`deleteUsesConversationProject`、`fallsBackToCurrentProjectWithoutContext` 锁定。save / recall / list / delete_memory 的项目域必须作用于工具调用所属会话绑定的项目（`context.conversationProjectPath()`），不得读/写/删 UI 当前打开项目的记忆；仅当缺少会话上下文（旧入口）时才回退到当前项目（**回归 #607**）。改动 `MemoryToolSupport.resolveProjectPath` 或四个工具的 Context 入口时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -63,27 +65,38 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 21 条
 | 19 | Frontmatter 解析 | description 含 --- 时保存读取必须完整还原（**回归 #528**） | 空存储 | save(description: `alpha---beta`, content: `BODY`) 后 load | description 与 content 完整还原，不被截断或混入字段行 | P0 | ✅ 已覆盖 | `descriptionWithDashesRoundTrips` |
 | 20 | Frontmatter 解析 | 正文包含整行 --- 时保存读取保持一致 | 空存储 | save(content: `before\n---\nafter`) 后 load | 正文中的整行 --- 不被当作 frontmatter 结束符，内容原样还原 | P1 | ✅ 已覆盖 | `contentWithHorizontalRuleRoundTrips` |
 | 21 | Frontmatter 解析 | save_memory→recall_memory 往返不得截断含 --- 的描述（**回归 #528**） | 空存储 | save_memory(description: `alpha---beta`) 后 recall_memory | 输出含完整描述与正文，不泄漏 created/updated 字段行 | P0 | ✅ 已覆盖 | `recallToolRestoresDescriptionWithDashes` |
+| 22 | Memory 列表过滤 | 按类型过滤 | 多种类型记忆 | 调用 `MemoryListFilter` 按 type 过滤 | 只返回指定类型 | P1 | ✅ 已覆盖 | `filtersByType` |
+| 23 | Memory 列表过滤 | 按查询词匹配名称、描述与 ID | 多条记忆 | 调用 `MemoryListFilter` 传 query | 名称/描述/ID 任一命中即返回 | P1 | ✅ 已覆盖 | `filtersByQueryAcrossFields` |
+| 24 | Memory 列表过滤 | 查询词大小写不敏感 | 含大小写差异的记忆 | 调用 `MemoryListFilter` 传不同大小写 query | 命中结果一致 | P1 | ✅ 已覆盖 | `queryIsCaseInsensitive` |
+| 25 | Memory 列表过滤 | 类型与查询词同时生效 | 多种类型记忆 | 调用 `MemoryListFilter` 同时传 type 与 query | 两个条件叠加过滤 | P1 | ✅ 已覆盖 | `typeAndQueryCombine` |
+| 26 | Memory 列表过滤 | 无过滤条件时返回全部条目 | 多条记忆 | 调用 `MemoryListFilter` 不传过滤 | 返回全部 | P2 | ✅ 已覆盖 | `noFilterReturnsAllItems` |
+| 27 | Memory 列表过滤 | 无命中时返回空数组 | 多条记忆 | 调用 `MemoryListFilter` 传不存在的 query | 返回空数组 | P2 | ✅ 已覆盖 | `noMatchReturnsEmpty` |
+| 28 | Memory Tools Conversation Scope | save_memory 项目域写入会话项目 A，而非 UI 当前项目 B（**回归 #607**） | UI 当前=B，会话绑定 A | 调用 `executeResult(context:arguments:)` scope=project | 记忆落在 A 域，B 域无该记忆 | P0 | ✅ 已覆盖 | `saveUsesConversationProject` |
+| 29 | Memory Tools Conversation Scope | recall_memory 项目域读会话项目 A，而非 UI 当前项目 B（**回归 #607**） | A 域有记忆，UI 当前=B | 调用 `executeResult` scope=project | 读到 A 的记忆；绑定 B 的会话读不到 | P0 | ✅ 已覆盖 | `recallUsesConversationProject` |
+| 30 | Memory Tools Conversation Scope | list_memories 项目域只列会话项目 A，不含 UI 当前项目 B（**回归 #607**） | A/B 各有记忆，UI 当前=B | 调用 `executeResult` scope=project | 只列 A 的记忆 | P0 | ✅ 已覆盖 | `listUsesConversationProject` |
+| 31 | Memory Tools Conversation Scope | delete_memory 项目域删会话项目 A，UI 当前项目 B 不受影响（**回归 #607**） | A/B 各有同 id 记忆，UI 当前=B | 调用 `executeResult` scope=project | A 域记忆被删，B 域保留 | P0 | ✅ 已覆盖 | `deleteUsesConversationProject` |
+| 32 | Memory Tools Conversation Scope | 缺少会话上下文时回退到 UI 当前项目 | UI 当前=B，旧入口无 Context | 调用 `execute(arguments:)` scope=project | 记忆落在当前项目 B 域 | P1 | ✅ 已覆盖 | `fallsBackToCurrentProjectWithoutContext` |
 
-> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 9 / 9
-- P2: 已覆盖 0 / 0
-- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 14 / 14
+- P2: 已覆盖 2 / 2
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（9 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（14 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

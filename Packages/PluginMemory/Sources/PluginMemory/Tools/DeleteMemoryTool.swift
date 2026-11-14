@@ -37,12 +37,32 @@ public struct DeleteMemoryTool: SuperAgentTool, @unchecked Sendable {
         return "删除记忆：\(id)"
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
         guard let id = MemoryToolSupport.string(arguments, "id") else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "id is required")
         }
         let scope = MemoryToolSupport.scope(arguments)
-        let projectPath = await MainActor.run { projectCapability.currentProjectPath }
+        let projectPath = await MemoryToolSupport.resolveProjectPath(
+            conversationProjectPath: conversationProjectPath,
+            capability: projectCapability
+        )
         do {
             try await storage.delete(id: id, scope: scope, projectPath: scope == .project ? projectPath : nil)
         } catch MemoryError.notFound {
