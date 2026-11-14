@@ -977,25 +977,25 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             break
         }
 
-        // 工具结果不能脱离对应的 assistant tool-call；预算不足时宁可一起去掉。
-        // 尾部未被预算截断（tailSourceIndex == 0）时同样要修：旧块的水位可能
-        // 恰好停在 assistant 声明上，逐字尾部以孤儿工具结果开头（#812）。
-        if let first = tail.first, first.role == .tool {
-            let preceding: Message? = tailSourceIndex > 0
-                ? tailSource[tailSourceIndex - 1]
-                : history[coveredIndex]
+        // 工具结果不能脱离对应的 assistant tool-call 声明，必须按整个协议组
+        // 原子处理：要么补上声明完整保留，要么把该组的全部结果一起去掉。
+        // 只删第一条会留下同一 assistant 的其余孤儿结果，OpenAI 兼容服务直接
+        // 400（#349）。尾部未被预算截断（tailSourceIndex == 0）时同样要修：
+        // 旧块的水位可能恰好停在 assistant 声明上（#812）。
+        let preceding: Message? = tailSourceIndex > 0
+            ? tailSource[tailSourceIndex - 1]
+            : history[coveredIndex]
+        while let first = tail.first, first.role == .tool {
             if let preceding,
                preceding.role == .assistant,
                (preceding.toolCalls ?? []).contains(where: { $0.id == first.toolCallID }) {
                 let cost = LLMContextTokenEstimator.estimate(message: preceding)
                 if cost <= remaining {
                     tail.insert(preceding, at: 0)
-                } else {
-                    tail.removeFirst()
+                    break
                 }
-            } else {
-                tail.removeFirst()
             }
+            tail.removeFirst()
         }
 
         compacted.append(contentsOf: tail)

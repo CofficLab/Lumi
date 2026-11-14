@@ -173,4 +173,167 @@ struct CompactionToolPairingTests {
         #expect(!result.messages.contains { $0.role == .tool })
         #expect(result.messages.contains { $0.role == .user && $0.content == "continue" })
     }
+
+    @Test("多工具调用的 assistant 超预算时，其全部工具结果一起丢弃，不留孤儿（#349）")
+    func compactionDropsAllOrphanedResultsOfMultiToolCall() async throws {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+        let messages = DefaultMessageManager()
+
+        let huge = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: String(repeating: "old", count: 20_000),
+            createdAt: base
+        )
+        let watermark = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "covered",
+            createdAt: base.addingTimeInterval(1)
+        )
+        // assistant 声明两个调用，参数超大装不下；两条结果都很短能装下。
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: base.addingTimeInterval(2),
+            toolCalls: [
+                MessageToolCall(id: "call-a", name: "f", arguments: String(repeating: "a", count: 40_000)),
+                MessageToolCall(id: "call-b", name: "g", arguments: String(repeating: "b", count: 40_000))
+            ]
+        )
+        let resultA = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: base.addingTimeInterval(3),
+            toolCallID: "call-a"
+        )
+        let resultB = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: base.addingTimeInterval(4),
+            toolCallID: "call-b"
+        )
+        let user = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "continue",
+            createdAt: base.addingTimeInterval(5)
+        )
+        for message in [huge, watermark, assistant, resultA, resultB, user] {
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        let store = try CompressionBlockStore(directory: makeDirectory())
+        let block = CompressionBlock(
+            conversationID: conversationID,
+            tier: 1,
+            summary: "摘要",
+            sourceMessageIDs: [huge.id, watermark.id],
+            coveredThroughMessageID: watermark.id,
+            estimatedTokens: 10
+        )
+        try await store.save([block])
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: DefaultConversationManager(),
+            llmProvider: DefaultLLMManager(),
+            blockStore: store
+        )
+
+        let result = await provider.prepareContext(for: Self.request(conversationID: conversationID))
+
+        #expect(result.didCompact)
+        assertNoOrphanedToolResults(result.messages)
+        // 声明装不下，两条结果必须一起去掉，而不是只删第一条留下 call-b 孤儿。
+        #expect(!result.messages.contains { $0.role == .tool })
+        #expect(result.messages.contains { $0.role == .user && $0.content == "continue" })
+        #expect(LLMContextTokenEstimator.estimate(messages: result.messages) <= result.inputTokenLimit)
+    }
+
+    @Test("多工具调用整组装得下时，声明与全部结果完整保留（#349）")
+    func compactionKeepsWholeMultiToolGroupWhenAssistantFits() async throws {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+        let messages = DefaultMessageManager()
+
+        let huge = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: String(repeating: "old", count: 20_000),
+            createdAt: base
+        )
+        let watermark = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "covered",
+            createdAt: base.addingTimeInterval(1)
+        )
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: base.addingTimeInterval(2),
+            toolCalls: [
+                MessageToolCall(id: "call-a", name: "f", arguments: "{}"),
+                MessageToolCall(id: "call-b", name: "g", arguments: "{}")
+            ]
+        )
+        let resultA = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: base.addingTimeInterval(3),
+            toolCallID: "call-a"
+        )
+        let resultB = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "ok",
+            createdAt: base.addingTimeInterval(4),
+            toolCallID: "call-b"
+        )
+        let user = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "continue",
+            createdAt: base.addingTimeInterval(5)
+        )
+        for message in [huge, watermark, assistant, resultA, resultB, user] {
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        let store = try CompressionBlockStore(directory: makeDirectory())
+        let block = CompressionBlock(
+            conversationID: conversationID,
+            tier: 1,
+            summary: "摘要",
+            sourceMessageIDs: [huge.id, watermark.id],
+            coveredThroughMessageID: watermark.id,
+            estimatedTokens: 10
+        )
+        try await store.save([block])
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: DefaultConversationManager(),
+            llmProvider: DefaultLLMManager(),
+            blockStore: store
+        )
+
+        let result = await provider.prepareContext(for: Self.request(conversationID: conversationID))
+
+        #expect(result.didCompact)
+        assertNoOrphanedToolResults(result.messages)
+        #expect(result.messages.contains { $0.role == .tool && $0.toolCallID == "call-a" })
+        #expect(result.messages.contains { $0.role == .tool && $0.toolCallID == "call-b" })
+        #expect(result.messages.contains {
+            $0.role == .assistant && ($0.toolCalls ?? []).count == 2
+        })
+        #expect(LLMContextTokenEstimator.estimate(messages: result.messages) <= result.inputTokenLimit)
+    }
 }
