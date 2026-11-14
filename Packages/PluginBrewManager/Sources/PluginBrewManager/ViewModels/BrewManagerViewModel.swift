@@ -75,7 +75,10 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         case upgradeAll
     }
     private var lastFailedOperation: FailedOperation?
-    
+
+    /// 批量更新进行中标志，避免连点 Update All 并发跑同一批包。
+    private var isUpgradingAll = false
+
     init(service: any BrewManagerServicing = LiveBrewManagerService(), autoCheckEnvironment: Bool = true) {
         self.service = service
         if Self.verbose {
@@ -338,6 +341,9 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     }
     
     func upgradeAll() async {
+        guard !isUpgradingAll else { return }
+        isUpgradingAll = true
+        defer { isUpgradingAll = false }
         if Self.verbose {
             if BrewManagerPluginSupport.verbose {
                             BrewManagerPluginSupport.logger.info("\(self.t) 🚀 开始全部更新 (\(self.outdatedPackages.count) 个包)")

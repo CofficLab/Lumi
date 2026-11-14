@@ -5,7 +5,7 @@
 BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a developer tool view for inspecting installed packages, checking updates, searching packages, and running install, uninstall, or upgrade actions through BrewKit.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 25
+测试文件: 4 个，用例总数: 28
 
 核心组件（源码目录）:
 - `Models/`
@@ -34,6 +34,7 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 - **综合**（19 条）：由 `pluginMetadataIsStable`、`decodesHomebrewFormulaAndCaskInstalledValues`、`decodesCaskInstalledStringIntoVersion` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Cask 安装版本**（#212）：Homebrew cask 的 `installed` 是版本字符串（formula 是数组），解码须归一化为 `[InstalledVersion]`，不得丢弃；`listInstalled`/`getOutdated`/`getInfo` 不得用最新 `version` 冒充安装版本，且须保留 `outdated` 标记。
 - **错误重试**（#330，6 条）：错误视图的「重试」必须重跑最近失败的操作（环境检测/刷新/搜索/安装/卸载/更新/批量更新），而不是仅清除 `errorMessage`；重试仍失败时错误须显式保留，不得伪装成正常空列表或「全部已最新」。由 `BrewManagerRetryTests` 锁定。
+- **批量更新单飞**（#409，3 条）：连点 Update All 不得并发跑同一批包，进行中标志须挡住后续点击；唯一一轮结束后 `isLoading` 落下且标志复位，允许再次批量更新。由 `BrewManagerUpgradeAllTests` 锁定。
 
 ## 测试用例清单
 
@@ -64,29 +65,34 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 | 23 | 错误重试 | 刷新重试仍失败时错误必须显式保留 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryKeepsErrorWhenRefreshStillFails` |
 | 24 | 错误重试 | 安装失败后重试针对同一包再次安装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retryRerunsFailedInstallWithSamePackage` |
 | 25 | 错误重试 | 搜索失败后重试重跑搜索并返回结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retryRerunsFailedSearch` |
+| 26 | 批量更新单飞 | 连点 Update All 不得并发重复升级同一批包 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentUpgradeAllRunsSingleFlight` |
+| 27 | 批量更新单飞 | 批量更新须升级每个可更新包 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `upgradeAllUpgradesEveryOutdatedPackage` |
+| 28 | 批量更新单飞 | 上一轮结束后标志复位允许再次批量更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `upgradeAllCanBeRunAgainAfterCompletion` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#330）：M1 将 `retry()` 的 `.environment` 分支改为 `break` → `retryRechecksEnvironmentWhenBrewMissing`、`retryEnvironmentSucceedsAfterBrewInstalled` 转红；M2 将 `.refresh` 分支改为 `break` → `retryRerunsFailedRefresh`、`retryKeepsErrorWhenRefreshStillFails` 转红；M3 删除安装失败处的 `lastFailedOperation = .install(package)` → `retryRerunsFailedInstallWithSamePackage` 转红。三处变异均单独施加并确认转红后还原，最终 25 条全绿。
+>
+> 变异验证（#409）：M1 删除 `upgradeAll()` 开头的 `guard !isUpgradingAll else { return }` → `concurrentUpgradeAllRunsSingleFlight` 转红（连点跑两轮，upgradeCalls=4）；M2 删除 `defer { isUpgradingAll = false }` → `upgradeAllCanBeRunAgainAfterCompletion` 转红（标志不复位，第二轮被挡，upgradeCalls=2）。两处变异均单独施加并确认转红后还原，最终 28 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 16 / 16
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 18 / 18
 - P2: 已覆盖 2 / 2
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
