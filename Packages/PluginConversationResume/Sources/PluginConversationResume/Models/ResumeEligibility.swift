@@ -95,8 +95,8 @@ enum ResumeEligibility {
         //
         // 「跑完」的定义与 `AgentTurnSummaryBuilder.isFinalAssistant` 保持一致：
         // 一条不带工具调用的 assistant 消息 = 最终回复 = 回合跑完了。
-        // 如果最后一条有效消息已经是最终回复，说明这个回合其实干完了
-        // （只是终态记录没写成功），不该再提示继续。
+        // 只看**最后一条消息**：旧回合的正常回复不能挡住新中断回合的
+        // 继续提示（#168）。全量扫描会让第二轮起的崩溃永远无法恢复。
         if hasFinalAssistantReply(input.messages) {
             return .notResumable(reason: "回合已产出最终回复")
         }
@@ -109,18 +109,26 @@ enum ResumeEligibility {
         return .resumable(reason: "上一轮在执行中被中断")
     }
 
-    /// 历史中是否存在「最终回复」（不带工具调用的 assistant 消息）。
+    /// 历史末尾是否已经停在「最终回复」上。
+    ///
+    /// 只检查最后一条消息，而不是全量扫描（#168）：判定对象是**当前
+    /// 中断的回合**，旧回合的正常回复与它无关。末尾是最终回复说明这个
+    /// 回合其实干完了（只是终态记录没写成功），不该再提示继续。
+    static func hasFinalAssistantReply(_ messages: [Message]) -> Bool {
+        guard let last = messages.last else { return false }
+        return isFinalAssistantReply(last)
+    }
+
+    /// 单条消息是否为「最终回复」。
     ///
     /// 与 `PluginMessageListBrief.AgentTurnSummaryBuilder.isFinalAssistant`
     /// 的口径一致：不带工具调用、非错误、且正文非空的 assistant 消息。
-    static func hasFinalAssistantReply(_ messages: [Message]) -> Bool {
-        messages.contains { message in
-            guard message.role == .assistant,
-                  !message.isError,
-                  (message.toolCalls?.isEmpty ?? true) else {
-                return false
-            }
-            return !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    static func isFinalAssistantReply(_ message: Message) -> Bool {
+        guard message.role == .assistant,
+              !message.isError,
+              (message.toolCalls?.isEmpty ?? true) else {
+            return false
         }
+        return !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

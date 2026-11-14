@@ -579,6 +579,61 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #168：第一轮正常完成（留下最终回复），第二轮崩溃在助手
+    /// 产出最终回复之前。重启后「继续」必须出现，旧回合的最终回复
+    /// 不能挡住新回合的恢复入口。
+    @Test("第二轮崩溃后，旧回合最终回复不挡住继续提示")
+    func secondRoundCrashShowsBannerDespiteEarlierFinalReply() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        messages.seed([
+            userMessage(conversationID),
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "第一轮完成",
+                turnID: turn1
+            ),
+            Message(conversationID: conversationID, role: .user, content: "第二轮请求"),
+            assistantWithToolCall(conversationID, turnID: turn2),
+        ], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        // 第一轮正常收尾。
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turn1)
+        )
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turn1,
+                endReason: .completed
+            )
+        )
+        // 第二轮开始但没有终态事件 —— 崩溃。
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turn2)
+        )
+        await coordinator.refreshState(for: conversationID)
+
+        #expect(coordinator.state.isResumable == true)
+        coordinator.cancel()
+    }
+
     /// 回归 #636：孤儿调用之后已存在新用户消息（ACP 先插消息再排回合，
     /// 崩溃可留下该状态）时，占位必须插在 assistant 与该用户消息之间，
     /// 而不是按当前时间追加到历史末尾——否则 Anthropic 顺序非法。

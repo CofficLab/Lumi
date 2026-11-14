@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 59 条用例。
+PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 63 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 59
+测试文件: 5 个，用例总数: 63
 
 核心组件（源码目录）:
 - `Models/`
@@ -32,8 +32,8 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 
 - **孤儿 tool_call 扫描**（15 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans`、`placeholderLandsBetweenAssistantAndLaterUserMessage` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call；占位消息必须插在所属 assistant（及其已有结果）之后、后续用户消息之前，不得按当前时间追加到历史末尾（**回归 #636**）。协议配对只认独立 tool 消息，嵌套展示快照不算；快照里已有真实结果时必须用它重建协议消息，不得丢失或伪造（**回归 #633**）。
 - **回合记录存储**（16 条）：由 `marksRunning`、`marksFinished`、`survivesProcessRestart`、`corruptedFileFallsBackToEmpty`、`keepsOnlyLatestPerConversation` 等用例锁定——回合开始写「运行中」、结束时写终态，崩溃时最后一条停留在「运行中」，这正是区分用户主动停止与崩溃的唯一可靠依据。重启加载时磁盘上的 `.suspended` 必须按中断处理（**回归 #854**）。终态写入必须校验 turnID，旧回合迟到的终态不得覆盖新回合的中断记录（**回归 #635**）。
-- **可继续判定**（12 条）：由 `interruptedTurnIsResumable`、`cancelledTurnIsNotResumable`、`runningTurnIsNotResumable`、`finishedReplyIsNotResumable` 等用例锁定——判定必须依赖持久化记录而不是消息形状，用户主动停止与崩溃在消息层面完全无法区分。
-- **协调器端到端**（13 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合；修复时必须同时回写 assistant 嵌套工具结果，否则 UI 永久 loading（**回归 #634**）；快照已有真实结果时重建协议消息且不得覆盖快照（**回归 #633**）；旧回合迟到终态不得抹掉新回合的继续提示（**回归 #635**）。
+- **可继续判定**（15 条）：由 `interruptedTurnIsResumable`、`cancelledTurnIsNotResumable`、`runningTurnIsNotResumable`、`finishedReplyIsNotResumable` 等用例锁定——判定必须依赖持久化记录而不是消息形状，用户主动停止与崩溃在消息层面完全无法区分。「已产出最终回复」只看历史末尾，旧回合的正常回复不得挡住新中断回合的继续提示（**回归 #168**）。
+- **协调器端到端**（14 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合；修复时必须同时回写 assistant 嵌套工具结果，否则 UI 永久 loading（**回归 #634**）；快照已有真实结果时重建协议消息且不得覆盖快照（**回归 #633**）；旧回合迟到终态不得抹掉新回合的继续提示（**回归 #635**）；第二轮崩溃后旧回合最终回复不挡住继续提示（**回归 #168**）。
 - **恢复按会话隔离**（3 条）：由 `otherConversationCanResumeWhileFirstIsRunning`、`repeatedResumeOfSameConversationIsStillBlocked`、`resumingStateIsReportedPerConversation` 等用例锁定——一个会话的恢复只抑制该会话自己的重复恢复动作，别的会话不受影响（**回归 #888**）。
 
 ## 测试用例清单
@@ -99,27 +99,31 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 | 57 | 回合记录存储 | 旧回合迟到终态不得覆盖新回合的中断记录（**回归 #635**） | markRunning(t1) → markRunning(t2) | markFinished(t1, .completed) 后重开存储 | 记录仍为 t2/.interrupted，可继续，且已落盘 | P0 | ✅ 已覆盖 | `staleFinishDoesNotOverwriteNewTurnRecord` |
 | 58 | 回合记录存储 | 没有运行中记录时终态写入被忽略 | 存储为空 | 直接 markFinished | 不产生任何记录 | P1 | ✅ 已覆盖 | `finishWithoutRunningRecordIsIgnored` |
 | 59 | 协调器端到端 | 旧回合迟到终态不覆盖新回合记录，继续提示仍在（**回归 #635**） | turnStarted(t1) → turnStarted(t2) | 迟到 turnFinished(t1, .completed)，再 turnFinished(t2, .completed) | 前者之后 isResumable 仍为 true；后者之后为 false | P0 | ✅ 已覆盖 | `staleTerminalHookDoesNotHideResumeBanner` |
+| 60 | 可继续判定 | 旧回合的最终回复不得挡住新中断回合的继续（**回归 #168**） | 历史 U1 → A1(最终回复,t1) → U2 → A2(工具调用,t2)，记录 t2 中断 | 执行判定 | resumable | P0 | ✅ 已覆盖 | `olderFinalReplyDoesNotBlockNewTurnResume` |
+| 61 | 可继续判定 | 第二轮尚无助手产出时崩溃，旧最终回复不挡住继续（**回归 #168**） | 历史 U1 → A1(最终回复,t1) → U2，记录 t2 中断 | 执行判定 | resumable | P0 | ✅ 已覆盖 | `crashBeforeAnyAssistantOutputStillResumable` |
+| 62 | 可继续判定 | 末尾是当前回合的最终回复时仍不可继续（**回归 #168 护栏**） | 历史末尾为 t2 的最终回复，记录 t2 中断 | 执行判定 | notResumable（回合已产出最终回复） | P0 | ✅ 已覆盖 | `trailingFinalReplyStillBlocksResume` |
+| 63 | 协调器端到端 | 第二轮崩溃后，旧回合最终回复不挡住继续提示（**回归 #168**） | 第一轮正常收尾，第二轮 turnStarted 后无终态事件 | 刷新状态 | isResumable 为 true | P0 | ✅ 已覆盖 | `secondRoundCrashShowsBannerDespiteEarlierFinalReply` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 30 / 30
+- P0: 已覆盖 34 / 34
 - P1: 已覆盖 27 / 27
 - P2: 已覆盖 2 / 2
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
 - **P1**: 其余功能性用例（27 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
