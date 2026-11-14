@@ -314,6 +314,61 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #854：挂起期间退出 app（未回答），重启后「继续」必须出现。
+    /// 挂起运行时随进程消失，磁盘上的 `.suspended` 记录在新进程里
+    /// 只能按中断处理。
+    @Test("挂起期间退出 app，重启后显示继续提示")
+    func quitDuringSuspensionShowsBannerAfterRestart() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        messages.seed([
+            userMessage(conversationID),
+            assistantWithToolCall(conversationID, turnID: turnID),
+        ], for: conversationID)
+
+        // 第一个进程：回合开始 → ask_user 挂起，记录落盘为 .suspended。
+        let hooks = makeHooks()
+        let firstCoordinator = makeCoordinator(
+            loop: FakeAgentLoop(),
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        firstCoordinator.start(hooks: makeHooksCapability(hooks))
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: .suspended
+            )
+        )
+        await firstCoordinator.refreshState(for: conversationID)
+        #expect(firstCoordinator.state.isResumable == false, "活挂起仍可交互，不该提示继续")
+        firstCoordinator.cancel()
+
+        // 用户未回答就退出 app。重启：新 store 读同一文件，AgentLoop 回到 idle。
+        let restartedStore = ResumableTurnStore(fileURL: url)
+        let restartedCoordinator = makeCoordinator(
+            loop: FakeAgentLoop(),
+            messages: messages,
+            conversations: conversations,
+            store: restartedStore
+        )
+        restartedCoordinator.start(hooks: makeHooksCapability(makeHooks()))
+        await restartedCoordinator.refreshState(for: conversationID)
+
+        #expect(restartedCoordinator.state.isResumable == true)
+        restartedCoordinator.cancel()
+    }
+
     @Test("点击继续会补写占位 tool result 并启动新回合")
     func resumeRepairsOrphansAndStartsTurn() async {
         let (store, url) = makeStore()

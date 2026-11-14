@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 150
+测试文件: 20 个，用例总数: 152
 
 核心组件（源码目录）:
 - `Managers/`
@@ -40,7 +40,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **FailedTurnRetryVisibility**（6 条）：由 `failedTurnKeepsCurrentTurnID`、`failedTurnIsRetryable`、`staleTurnIsNotRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HistoryImageDecoding**（8 条）：由 `nonVisionModeDoesNotDecodeUserImages`、`nonVisionModeDoesNotDecodeToolResultImages`、`visionModeStillDecodesImages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMErrorClassification**（16 条）：由 `toolCallValidationErrorIsRecoverable`、`transportFailuresAreRecoverable`、`configurationFailuresAreNotRecoverable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MultipleSuspensionsResume**（4 条）：由 `resumingOneSuspensionKeepsRemainingActive`、`allSuspensionsMustBeAnsweredBeforeNextLLMRequest`、`singleSuspensionStillContinuesAfterResume` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MultipleSuspensionsResume**（6 条）：由 `resumingOneSuspensionKeepsRemainingActive`、`allSuspensionsMustBeAnsweredBeforeNextLLMRequest`、`singleSuspensionStillContinuesAfterResume`、`resumeFiresTurnStartedHookAgain` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（19 条）：由 `testPluginInitialization`、`testPluginMetadata`、`testMessageFromLLMMessagePreservesToolCalls` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SuspendedInteractionState**（3 条）：由 `askUserSuspensionKeepsNonAuthorizationState`、`permissionSuspensionStillResetsToPending`、`suspensionKindIsDecidedByPayload` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SuspendedToolAuthorizationState**（4 条）：由 `suspensionResetsAuthorizationStateToPending`、`needsUserResponseBranchResetsAuthorizationState`、`suspensionStillPutsTurnIntoAwaitingUser` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -206,27 +206,29 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 148 | ToolSchemaBuilding | 畸形 schema 降级为文本估算而不崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `malformedSchemaFallsBackToTextEstimation` |
 | 149 | ToolSchemaBuilding | schema 数组的组装不在主线程上执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `schemaBuildingRunsOffMainThread` |
 | 150 | ToolSchemaBuilding | 离主线程组装的 schema 与逐个组装完全一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offMainActorSchemasMatchSequentialBuild` |
+| 151 | MultipleSuspensionsResume | 恢复后同一回合再次触发 turnStarted 钩子（回归 #805） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeFiresTurnStartedHookAgain` |
+| 152 | MultipleSuspensionsResume | 恢复后重新挂起时，turnStarted 先于新的 suspended 终态（回归 #805） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeThenResuspendKeepsHookOrder` |
 
-> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **152 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
+- P0: 已覆盖 25 / 25
 - P1: 已覆盖 122 / 122
 - P2: 已覆盖 5 / 5
-- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
+- **合计: 152 / 152**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（25 条）
 - **P1**: 其余功能性用例（122 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 150 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 152 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

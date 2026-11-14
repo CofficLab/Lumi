@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 29 条用例。
+ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 46 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 29
+测试文件: 6 个，用例总数: 46
 
 ## 公开 API
 
@@ -33,6 +33,7 @@ ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 
 - **综合**（13 条）：由 `networkFailureIsRetryable`、`systemTLSFailureIsRetryable`、`classifiesHTTPFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SubagentToolPolicy**（3 条）：由 `childToolsExcludeDelegationToolItself`、`childToolsKeepOnlyParallelReadOnlyInOrder`、`childToolsOfEmptyRegistryIsEmpty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ThinkingDeltaStage**（1 条）：由 `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DefaultAgentLoop 终态钩子与失败详情**（17 条）：由 `completedTurnFiresFinishedHook`、`rateLimitedFailureExposesStructuredDetails`、`failedTurnRetainsCurrentTurnID`、`lateResponseAfterCancelIsNotPersisted`、`lateOldTurnReturnDoesNotOverwriteNewTurn` 等用例锁定——终态钩子恰好一次投递（#219）、失败详情结构化可重试（#230）、失败保留 turnID 供重试（#231）、取消与迟到响应隔离（#233 / #438）、恢复沿用同一 turnID 重新声明运行中（#805）。
 
 ## 测试用例清单
 
@@ -67,27 +68,44 @@ ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 
 | 27 | SubagentToolPolicy | 子会话工具表只保留只读并发工具且保持注册顺序 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `childToolsKeepOnlyParallelReadOnlyInOrder` |
 | 28 | SubagentToolPolicy | 空工具表过滤后仍为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `childToolsOfEmptyRegistryIsEmpty` |
 | 29 | ThinkingDeltaStage | 端到端：思考增量不会让流式阶段翻成 generating | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thinkingDeltaDoesNotFlipStreamingStageEndToEnd` |
+| 30 | DefaultAgentLoop 终态钩子与失败详情 | 完成回合触发 turnFinished，turnID 与 turnStarted 对称（**回归 #219**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `completedTurnFiresFinishedHook` |
+| 31 | DefaultAgentLoop 终态钩子与失败详情 | 失败回合触发 turnFinished(.failed)（**回归 #219**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `failedTurnFiresFinishedHook` |
+| 32 | DefaultAgentLoop 终态钩子与失败详情 | 取消回合恰好触发一次 turnFinished(.cancelled)，迟到的完成不再重复投递（**回归 #219**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledTurnFiresFinishedHookExactlyOnce` |
+| 33 | DefaultAgentLoop 终态钩子与失败详情 | 挂起触发 turnFinished(.suspended)，恢复完成后同 turnID 再投递 .completed（**回归 #219 / #805**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `suspensionThenResumeFiresBothHooks` |
+| 34 | DefaultAgentLoop 终态钩子与失败详情 | 没有活跃回合时取消不触发 turnFinished | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelWithoutActiveTurnDoesNotFire` |
+| 35 | DefaultAgentLoop 终态钩子与失败详情 | 限流失败暴露结构化 lastFailure，含 Retry-After 供自动重试消费（**回归 #230**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rateLimitedFailureExposesStructuredDetails` |
+| 36 | DefaultAgentLoop 终态钩子与失败详情 | 鉴权失败同样落 lastFailure，但标记为不可自动重试（**回归 #230**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `authenticationFailureIsStoredButNotRetryable` |
+| 37 | DefaultAgentLoop 终态钩子与失败详情 | 空终态响应归类为可重试的 emptyResponse 失败（**回归 #230**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyResponseIsRetryableFailure` |
+| 38 | DefaultAgentLoop 终态钩子与失败详情 | 新回合开始时清除上一回合的失败详情 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `newTurnClearsPreviousFailure` |
+| 39 | DefaultAgentLoop 终态钩子与失败详情 | 失败终态保留 currentTurnID，重试按钮可定位失败回合（**回归 #231**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `failedTurnRetainsCurrentTurnID` |
+| 40 | DefaultAgentLoop 终态钩子与失败详情 | retryTurn 校验失败回合身份后重启并完成（**回归 #231**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryTurnRestartsMatchingFailedTurn` |
+| 41 | DefaultAgentLoop 终态钩子与失败详情 | retryTurn 拒绝过期的失败回合身份（**回归 #231**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryTurnRejectsStaleTurnID` |
+| 42 | DefaultAgentLoop 终态钩子与失败详情 | 非失败状态不允许 retryTurn（**回归 #231**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryTurnRequiresFailedState` |
+| 43 | DefaultAgentLoop 终态钩子与失败详情 | 取消后迟到的普通响应不落库，状态保持 cancelled（**回归 #233**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateResponseAfterCancelIsNotPersisted` |
+| 44 | DefaultAgentLoop 终态钩子与失败详情 | 取消后迟到的工具调用不得执行（**回归 #233**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateToolCallsAfterCancelDoNotExecute` |
+| 45 | DefaultAgentLoop 终态钩子与失败详情 | 取消后同一会话的新回合不受旧请求迟到响应影响（**回归 #233**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `newTurnAfterCancelStillWorks` |
+| 46 | DefaultAgentLoop 终态钩子与失败详情 | 旧回合在新回合运行中迟到返回，不得覆盖新回合状态（**回归 #438**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateOldTurnReturnDoesNotOverwriteNewTurn` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
+- P0: 已覆盖 27 / 27
 - P1: 已覆盖 17 / 17
 - P2: 已覆盖 2 / 2
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
 - **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 46 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

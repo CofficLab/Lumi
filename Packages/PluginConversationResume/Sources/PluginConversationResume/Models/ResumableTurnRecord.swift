@@ -91,7 +91,25 @@ actor ResumableTurnStore {
 
     init(fileURL: URL) {
         self.fileURL = fileURL
-        self.records = Self.load(from: fileURL)
+        var loaded = Self.load(from: fileURL)
+        // 新进程不可能有活着的挂起运行时：磁盘上的 `.suspended` 只能意味着
+        // 进程在挂起期间消失（退出 / 强杀 / 崩溃）。按中断处理，重启后
+        // 「继续」才有入口（#854）。进程内的活挂起不受影响——判定器还会
+        // 用 AgentLoop 的实时状态排除它。
+        var converted = false
+        for (conversationID, record) in loaded where record.outcome == .suspended {
+            loaded[conversationID] = ResumableTurnRecord(
+                conversationID: record.conversationID,
+                turnID: record.turnID,
+                outcome: .interrupted,
+                startedAt: record.startedAt,
+                recordedAt: record.recordedAt,
+                lastToolCallID: record.lastToolCallID
+            )
+            converted = true
+        }
+        self.records = loaded
+        if converted { Self.persist(records: loaded, to: fileURL) }
     }
 
     // MARK: - 读写
@@ -172,6 +190,10 @@ actor ResumableTurnStore {
     // MARK: - 持久化
 
     private func persist() {
+        Self.persist(records: records, to: fileURL)
+    }
+
+    private nonisolated static func persist(records: [UUID: ResumableTurnRecord], to fileURL: URL) {
         let payload = Array(records.values)
         guard let data = try? JSONEncoder().encode(payload) else { return }
         let directory = fileURL.deletingLastPathComponent()

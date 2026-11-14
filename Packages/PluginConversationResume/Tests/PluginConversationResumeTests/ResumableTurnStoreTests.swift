@@ -130,6 +130,52 @@ struct ResumableTurnStoreTests {
         #expect(record?.isResumable == false)
     }
 
+    /// 回归 #854：挂起期间退出 app，磁盘记录停留在 `.suspended`。
+    /// 新进程没有活着的挂起运行时，重启后必须按中断处理，
+    /// 否则「继续」永远不出现。
+    @Test("重启后挂起记录按中断处理，可继续")
+    func suspendedRecordBecomesInterruptedOnRestart() async {
+        let (store, url) = makeStore()
+        defer { cleanup(url) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 5_000)
+
+        await store.markRunning(conversationID: conversationID, turnID: turnID, startedAt: startedAt)
+        await store.markToolCall(conversationID: conversationID, turnID: turnID, toolCallID: "call_42")
+        await store.markFinished(conversationID: conversationID, turnID: turnID, outcome: .suspended)
+        #expect(await store.record(for: conversationID)?.outcome == .suspended)
+
+        // 模拟进程重启：新建 store 实例指向同一文件。
+        let reopened = ResumableTurnStore(fileURL: url)
+        let record = await reopened.record(for: conversationID)
+        #expect(record?.outcome == .interrupted)
+        #expect(record?.isResumable == true)
+        #expect(record?.turnID == turnID)
+        #expect(record?.startedAt == startedAt)
+        #expect(record?.lastToolCallID == "call_42", "孤儿 tool_call 定位信息必须保留")
+
+        // 转换必须落盘：再次重启仍然可继续。
+        let reopenedAgain = ResumableTurnStore(fileURL: url)
+        #expect(await reopenedAgain.record(for: conversationID)?.outcome == .interrupted)
+    }
+
+    @Test("重启后用户取消的记录不会被误转成可继续")
+    func cancelledRecordStaysCancelledOnRestart() async {
+        let (store, url) = makeStore()
+        defer { cleanup(url) }
+        let conversationID = UUID()
+        let turnID = UUID()
+
+        await store.markRunning(conversationID: conversationID, turnID: turnID)
+        await store.markFinished(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
+
+        let reopened = ResumableTurnStore(fileURL: url)
+        let record = await reopened.record(for: conversationID)
+        #expect(record?.outcome == .cancelled)
+        #expect(record?.isResumable == false)
+    }
+
     @Test("存储文件损坏时退回空记录而不是崩溃")
     func corruptedFileFallsBackToEmpty() async {
         let directory = FileManager.default.temporaryDirectory
