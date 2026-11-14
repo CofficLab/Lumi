@@ -1195,7 +1195,46 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         // 三字节字符只有字节估算的约三分之一，按字符裁剪后仍会超预算（#1022）。
         var copy = message
         var budget = max(maxTokens - Self.messageOverheadTokens, 1)
-        copy.content = boundedText(copy.content, maxTokens: budget)
+
+        // 文本附件正文会在转换阶段拼进真实请求（#814）。降级必须把它纳入可裁剪
+        // 正文：否则只裁短正文后，转换仍把完整附件拼回去，紧急重试原样超限。
+        let fileAttachments = copy.role == .user
+            ? UserAttachmentMetadata.decodeFileAttachments(from: copy.metadata)
+            : []
+        let textAttachments = fileAttachments.filter { $0.textContent != nil }
+        let binaryAttachments = fileAttachments.filter { $0.textContent == nil }
+
+        // 二进制附件仍留在 metadata，由转换渲染成短路径占位；先扣掉它们的成本。
+        if !binaryAttachments.isEmpty {
+            let binaryRendered = UserAttachmentMetadata.appendingFileAttachments(
+                binaryAttachments,
+                to: "",
+                materializeBinary: false
+            )
+            budget = max(budget - LLMContextTokenEstimator.estimate(text: binaryRendered), 1)
+        }
+
+        if textAttachments.isEmpty {
+            copy.content = boundedText(copy.content, maxTokens: budget)
+        } else {
+            // 把文本附件折进正文再裁剪，并从 metadata 移除，避免转换再次拼回完整正文。
+            let expanded = UserAttachmentMetadata.appendingFileAttachments(
+                textAttachments,
+                to: copy.content,
+                materializeBinary: false
+            )
+            copy.content = boundedText(expanded, maxTokens: budget)
+            var metadata = copy.metadata
+            if binaryAttachments.isEmpty {
+                metadata.removeValue(forKey: UserAttachmentMetadata.fileAttachmentsKey)
+            } else {
+                metadata.merge(
+                    UserAttachmentMetadata.encodeFileAttachments(binaryAttachments)
+                ) { _, new in new }
+            }
+            copy.metadata = metadata
+        }
+
         budget = max(budget - LLMContextTokenEstimator.estimate(text: copy.content), 1)
         if let reasoning = copy.reasoningContent {
             copy.reasoningContent = boundedText(reasoning, maxTokens: budget)

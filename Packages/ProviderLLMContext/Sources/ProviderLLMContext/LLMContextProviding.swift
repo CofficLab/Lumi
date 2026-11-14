@@ -149,7 +149,7 @@ public enum LLMContextTokenEstimator {
     }
 
     public static func estimate(message: Message) -> Int {
-        let content = estimate(text: message.content)
+        let content = estimate(text: effectiveContent(of: message))
         let reasoning = message.reasoningContent.map(estimate(text:)) ?? 0
         let toolCalls = message.toolCalls?.reduce(0) { total, call in
             total + estimate(text: call.name) + estimate(text: call.arguments) + 12
@@ -159,6 +159,20 @@ public enum LLMContextTokenEstimator {
 
     public static func estimate(messages: [Message]) -> Int {
         messages.reduce(0) { $0 + estimate(message: $1) }
+    }
+
+    /// 模型实际收到的正文：user 消息的文件附件会在转换阶段拼进 content（#814）。
+    /// 估算必须覆盖这份真实载荷，否则超大文本附件既不计入预算、也无法被降级裁剪，
+    /// 首次请求与紧急重试都会超限。这里只渲染、不物化二进制快照，避免磁盘副作用。
+    private static func effectiveContent(of message: Message) -> String {
+        guard message.role == .user else { return message.content }
+        let files = UserAttachmentMetadata.decodeFileAttachments(from: message.metadata)
+        guard !files.isEmpty else { return message.content }
+        return UserAttachmentMetadata.appendingFileAttachments(
+            files,
+            to: message.content,
+            materializeBinary: false
+        )
     }
 }
 
