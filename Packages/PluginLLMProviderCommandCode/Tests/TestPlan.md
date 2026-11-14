@@ -5,7 +5,7 @@
 PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan Provider（OpenAI 兼容协议）。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 18
+测试文件: 4 个，用例总数: 28
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -27,6 +27,8 @@ PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan P
 
 - **CommandCodeLocalStore**（9 条）：由 `writesSnapshotToPluginDirectory`、`configureUsesPluginDataDirectory`、`storeEmptyIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CommandCodeProviderPlugin**（9 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersGoatPlanProvider`、`goatPlanModelCatalog`、`longCatUsesCanonicalModelID`、`stepFunFlashUsesRealContextWindow` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **远程上下文窗口**（7 条）：远程 `context_length` 非正或缺失须规范化为「未知窗口」，合并时不得用畸形远程值顶掉有效的静态窗口。由 `CommandCodeRemoteContextWindowTests` 锁定。
+- **远程Vision能力**（#366，3 条）：远程刷新只更新名称/窗口等元数据；远程未提供能力字段时须保留静态 `supportsVision`，不得把静态 Vision 模型清成非 Vision，也不得给非 Vision 模型误报能力。由 `CommandCodeRemoteVisionTests` 锁定。
 
 ## 测试用例清单
 
@@ -50,27 +52,39 @@ PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan P
 | 16 | CommandCodeProviderPlugin | onShutdown 不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onShutdownDoesNotThrow` |
 | 17 | CommandCodeProviderPlugin | Step 3.5 Flash 离线基线保留真实窗口（**回归 #970**） | — | 读取 `stepfun/Step-3.5-Flash` 的 `contextWindowSize` | 返回 262,144 | P1 | ✅ 已覆盖 | `stepFunFlashUsesRealContextWindow` |
 | 18 | CommandCodeProviderPlugin | LongCat 2.0 离线基线使用规范 ID（**回归 #971**） | 静态基线；远程返回规范 ID | 检查基线 ID 并执行 `RemoteModelMerger.merge` | 基线只有 `meituan/LongCat-2.0`，合并后不残留 `:free` 条目 | P1 | ✅ 已覆盖 | `longCatUsesCanonicalModelID` |
+| 19 | 远程上下文窗口 | 正的 context_length 被正常保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `positiveContextLengthIsKept` |
+| 20 | 远程上下文窗口 | context_length 为 0 时规范化为 nil（未知窗口） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `zeroContextLengthBecomesNil` |
+| 21 | 远程上下文窗口 | context_length 为负数时规范化为 nil（未知窗口） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `negativeContextLengthBecomesNil` |
+| 22 | 远程上下文窗口 | camelCase 的 contextLength 同样被校验 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `camelCaseContextLengthIsValidated` |
+| 23 | 远程上下文窗口 | 缺失 context_length 时保持未知窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingContextLengthStaysNil` |
+| 24 | 远程上下文窗口 | 畸形的远程窗口不得顶掉有效的静态基线 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `malformedRemoteDoesNotOverrideValidBaseline` |
+| 25 | 远程上下文窗口 | 远程条目缺失窗口时仍保留静态基线的窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteWithoutWindowKeepsBaselineWindow` |
+| 26 | 远程Vision能力 | 远程刷新不得清掉静态 Vision 能力（**回归 #366**） | 静态 Vision 基线；远程带窗口无能力字段 | 解析远程并执行 `RemoteModelMerger.merge` | 合并后 `supportsVision == true` | P0 | ✅ 已覆盖 | `remoteRefreshPreservesStaticVision` |
+| 27 | 远程Vision能力 | 远程刷新缺窗口时仍保留静态 Vision 能力与窗口（**回归 #366**） | 静态 Vision 基线；远程缺窗口 | 解析远程并执行 `RemoteModelMerger.merge` | `supportsVision == true` 且窗口保留 | P1 | ✅ 已覆盖 | `remoteWithoutWindowPreservesStaticVision` |
+| 28 | 远程Vision能力 | 非 Vision 静态模型合并后不会误报 Vision（**回归 #366**） | 静态非 Vision 基线；远程带窗口 | 解析远程并执行 `RemoteModelMerger.merge` | 合并后 `supportsVision == false` | P1 | ✅ 已覆盖 | `nonVisionModelStaysNonVisionAfterMerge` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#366）：M1 将 `merging` 有效窗口分支的 `supportsVision: remote.supportsVision || base.supportsVision` 改为 `remote.supportsVision` → `remoteRefreshPreservesStaticVision` 转红；M2 将缺窗口分支的同名 OR 合并改为 `remote.supportsVision` → `remoteWithoutWindowPreservesStaticVision` 转红。两处变异均单独施加并确认转红后还原，最终 28 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 2 / 2
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
