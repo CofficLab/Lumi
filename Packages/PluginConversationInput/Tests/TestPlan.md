@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **198 条场景 / 204 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 204 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **202 条场景 / 208 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 208 tests in 31 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -473,12 +473,29 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 197 | 发送 | 回车路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，`canSend` 仍为 true | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSend` |
 | 198 | 发送 | 按钮路径附件读取失败时中止延迟发送，保留草稿与错误提示（**回归 #1174**） | 正文 `"draft with file"` + 一次在途附件读取 | `send()` → `recordAttachmentReadFailure()` + 写入错误 → `endAttachmentRead()` | 不产生任何提交；正文与错误提示保留，按钮仍可发送 | P0 | ✅ 已覆盖 | `failedAttachmentReadAbortsDeferredSendFromButton` |
 
+### 补充轮次（ID 199–202）：编辑器拍平缓存（回归 #1261）
+
+> 带 chip 时，每次按键都会让 `publishCommittedText` 与随后的 `updateNSView`
+> 各把整篇文档拍平一遍，代价是 O(编辑次数 × 文档长度)。修复在 `EditorTextView`
+> 上按文本存储版本（`storageRevision`）缓存拍平结果：版本未变即复用，只有真正
+> 改动存储才重算。版本号由 `NSTextStorage.didProcessEditingNotification` 同步递增，
+> **刻意不用 `didChangeText`**——撤销与外部代码直接改 `textStorage` 都不走后者，
+> 漏掉这些路径会让缓存发 stale，把已删除的 chip 或 U+FFFC 占位符当正文发出去。
+> 本轮重点锁定「版本号覆盖全部改动路径」与「改动后缓存立即失效」。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 199 | 编辑器 | 直接改 textStorage 也递增版本号（append / delete / setAttributedString）（**回归 #1261**） | 空 `EditorTextView` | 依次 `append` / `deleteCharacters` / `setAttributedString` | 每次改动后 `storageRevision` 严格递增（覆盖不走 `didChangeText` 的路径） | P1 | ✅ 已覆盖 | `storageMutationBumpsRevision` |
+| 200 | 编辑器 | 无存储改动时重复发布复用缓存，版本号不变（**回归 #1261**） | 正文 `"summarize "` + chip `"BODY"` | 发布一次 → 不改存储再发布一次 | 草稿为 `"summarize BODY"`；版本号不变，`cachedResolvedContent()` 命中同一份拍平结果 | P0 | ✅ 已覆盖 | `repeatedPublishReusesCacheWithoutMutation` |
+| 201 | 编辑器 | 直接追加文字后发布得到新正文，缓存不发 stale（**回归 #1261**） | chip `"BODY"` 已发布 | 直接 `textStorage.append(" tail")` → 再发布 | 草稿为 `"BODY tail"`，折叠块区间仍指向 chip（缓存按新版本重算） | P0 | ✅ 已覆盖 | `directStorageEditInvalidatesCache` |
+| 202 | 编辑器 | 删除 chip 后缓存失效，正文不再含 chip 原文（**回归 #1261**） | 正文 `"A "` + chip `"BODY"` 已发布 | 直接 `deleteCharacters` 删掉 chip 占位 → 再发布 | 草稿为 `"A "`，折叠块清空，`hasPastePreviewAttachments` 归 false | P0 | ✅ 已覆盖 | `deletingChipInvalidatesCache` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 65 / 65
-- P1: 已覆盖 115 / 115
+- P0: 已覆盖 68 / 68
+- P1: 已覆盖 116 / 116
 - P2: 已覆盖 18 / 18
-- **合计: 198 / 198**（仅表示清单场景，非源码覆盖率）
+- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

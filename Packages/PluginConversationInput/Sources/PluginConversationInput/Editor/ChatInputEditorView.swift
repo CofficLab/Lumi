@@ -335,12 +335,23 @@ public struct ChatInputEditorView: NSViewRepresentable {
             return ResolvedEditorContent(text: textView.string, blocks: [])
         }
 
+        // 存储版本未变就直接复用上一次拍平结果：同一次编辑里
+        // `publishCommittedText` 与随后的 `updateNSView` 不必各拍平一遍，
+        // 纯刷新（光标移动、附件事件）也不再重复整篇枚举（#1261）。
+        if let cached = editorTextView.cachedResolvedContent() {
+            return cached
+        }
+
         let flattened = Self.flattenedContent(from: textStorage)
         editorTextView.hasPastePreviewAttachments = flattened.hasAttachments
-        guard flattened.hasAttachments else {
-            return ResolvedEditorContent(text: textView.string, blocks: [])
+        let resolved: ResolvedEditorContent
+        if flattened.hasAttachments {
+            resolved = ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
+        } else {
+            resolved = ResolvedEditorContent(text: textView.string, blocks: [])
         }
-        return ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
+        editorTextView.storeResolvedContent(resolved)
+        return resolved
     }
 
     /// 带 attachment 的字符在 `string` 中的占位符（U+FFFC）。
@@ -889,6 +900,17 @@ final class ChatInputPlaceholderLabel: NSTextField {
 final class EditorTextView: NSTextView {
     var hasPastePreviewAttachments = false
     private(set) var isIMEComposing = false
+
+    /// 文本存储版本号：任何一次实际改动都 +1（含直接改 `textStorage`、撤销）。
+    ///
+    /// 拍平缓存据此判定能否复用上一次结果。输入框每次按键都会让预览与
+    /// `updateNSView` 重跑，若每次都重新拍平整篇带 chip 的文档，代价是
+    /// O(编辑次数 × 文档长度)（见 issue #1261）。
+    private(set) var storageRevision: UInt64 = 0
+    /// 按存储版本缓存的拍平结果。版本一致即复用，避免同一次编辑里
+    /// `publishCommittedText` 与 `updateNSView` 各拍平一遍。
+    private var resolvedCache: (revision: UInt64, content: ChatInputEditorView.ResolvedEditorContent)?
+
     weak var placeholderLabel: NSTextField?
     var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
@@ -903,16 +925,59 @@ final class EditorTextView: NSTextView {
     override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
         super.init(frame: frameRect, textContainer: container)
         registerForDraggedTypes([.fileURL, .string])
+        observeStorageEdits()
     }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         registerForDraggedTypes([.fileURL, .string])
+        observeStorageEdits()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([.fileURL, .string])
+        observeStorageEdits()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    /// 监听文本存储的「编辑已处理」通知来递增版本号。
+    ///
+    /// - Important: 必须用 `didProcessEditingNotification` 而不是 `didChangeText`：
+    ///   撤销、以及测试/外部代码直接改 `textStorage`（`append` / `deleteCharacters` /
+    ///   `setAttributedString`）都不会触发 `didChangeText`，只有 storage 的
+    ///   `processEditing` 通知能覆盖全部改动路径。漏掉任何一条都会让缓存发 stale，
+    ///   把已删除的 chip 或 U+FFFC 占位符当正文发出去。
+    ///   selector 注册保证回调**同步**执行：存储一改版本号立刻 +1，
+    ///   紧随其后的拍平不会读到旧版本。
+    private func observeStorageEdits() {
+        guard let storage = textStorage else { return }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(storageDidProcessEditing(_:)),
+            name: NSTextStorage.didProcessEditingNotification,
+            object: storage
+        )
+    }
+
+    @objc private func storageDidProcessEditing(_ notification: Notification) {
+        storageRevision &+= 1
+    }
+
+    /// 取当前存储版本下缓存的拍平结果；版本不符返回 nil。
+    func cachedResolvedContent() -> ChatInputEditorView.ResolvedEditorContent? {
+        guard let resolvedCache, resolvedCache.revision == storageRevision else {
+            return nil
+        }
+        return resolvedCache.content
+    }
+
+    /// 以当前存储版本缓存一份拍平结果。
+    func storeResolvedContent(_ content: ChatInputEditorView.ResolvedEditorContent) {
+        resolvedCache = (storageRevision, content)
     }
 
     // MARK: - 粘贴折叠按钮 hover
