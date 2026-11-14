@@ -16,6 +16,11 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     private let readHostsFile: () async throws -> String
     private let writeHostsFile: (String) async throws -> Void
 
+    // 保存按请求顺序串行执行：saveChain 串起每次写入，saveGeneration 标记最新一次，
+    // 只有最新保存能回写 UI，避免旧编辑覆盖最新配置（#254）。
+    private var saveGeneration = 0
+    private var saveChain: Task<Void, Never>?
+
     init(
         readHostsFile: @escaping () async throws -> String = {
             try await HostsFileService.shared.readHosts()
@@ -131,30 +136,49 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     }
 
     public func saveHosts() async {
+        // 在挂起前捕获快照与序号：每次保存写入的是它被请求时的 entries，
+        // 串行链保证按请求顺序落盘，最新一次最后写入（#254）。
+        let content = HostsParser.serialize(entries: entries)
+        saveGeneration += 1
+        let generation = saveGeneration
+        let previous = saveChain
+        let task = Task { @MainActor [weak self] in
+            await previous?.value
+            guard let self else { return }
+            await self.performSave(content: content, generation: generation)
+        }
+        saveChain = task
+        await task.value
+    }
+
+    private func performSave(content: String, generation: Int) async {
         if Self.verbose {
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.info("\(self.t)Saving hosts file")
             }
         }
         isLoading = true
+        defer { isLoading = false }
         errorMessage = nil
         do {
-            let content = HostsParser.serialize(entries: entries)
             try await writeHostsFile(content)
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
                                     HostsManagerPlugin.logger.info("\(self.t)Hosts file saved successfully")
                 }
             }
+            // 旧保存完成后可能有更新的编辑：跳过 reload，避免用过期内容覆盖最新 entries。
+            guard generation == saveGeneration else { return }
             // Reload to reflect changes (and formatting)
             await loadHosts()
         } catch {
+            // 同理，旧保存的失败不应覆盖最新一次的状态。
+            guard generation == saveGeneration else { return }
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to save hosts file: \(error.localizedDescription)")
             }
             errorMessage = "Save failed: \(error.localizedDescription)"
         }
-        isLoading = false
     }
     
     public func toggleEntry(_ entry: HostEntry) {
