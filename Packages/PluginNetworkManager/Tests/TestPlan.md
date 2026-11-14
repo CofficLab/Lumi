@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 21 个，用例总数: 126
+测试文件: 22 个，用例总数: 128
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -46,6 +46,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **NetworkProviderResponseHeaderTimeout**（1 条）：由 `stalledResponseHeaderTimeoutSurvivesRetryClassification` 锁定兜底超时必须带 `NSURLErrorTimedOut`；改动流式响应头超时或错误归一化时优先跑对应测试文件。
 - **NetworkProviderRedirectURL**（1 条）：由 `requestReturnsFinalURLAfterRedirect` 锁定重定向后 `HTTPResponse.url` 为最终响应 URL（#192）；改动 `NetworkProvider.request` 响应构造时优先跑对应测试文件。
 - **NetworkProviderURLErrorCode**（2 条）：由 `requestPreservesURLErrorCode`、`nonStreamingTimeoutRetriesThroughRealRequestPath` 锁定（**回归 #310**）：非流式 `NetworkProvider.request` 捕获传输错误时必须保留 `NSURLErrorDomain` 的底层码（`underlyingCode`），与流式路径一致，否则 `LLMNetworkProviderAdapter` 无法归一化为可重试网络错误，超时/断网/连接丢失退化为 `requestFailed`、重试白名单永不命中。用 URLProtocol 桩驱动真实 `request` 路径（而非直接抛 `HTTPNetworkError` 的桩）。改动 `NetworkProvider.request` 的错误转换时优先跑对应测试文件（串行套件）。
+- **NetworkProviderStreamStatus**（2 条）：由 `streamRejects529BodyWithoutForwardingEvents`、`streaming529RetriesThroughRealStreamPath` 锁定（**回归 #163**）：流式 `NetworkProvider.stream` 收到非 2xx（如 529/5xx）时必须在**转发任何 SSE 事件之前**按状态码拒绝，错误正文只收进 `receivedBody` 供错误上下文、绝不回调 `onChunk`；否则上层 `VendorAPIService` 的 `EventReceipt.hasReceived` 置真，「首个事件前断线才安全重试」的保护拒绝重放，瞬态重试被永久禁止。用 URLProtocol 桩驱动真实 `stream` 路径（返回 529 **且带 SSE 错误正文**，而非直接抛错、不投递 chunk 的桩）。改动 `NetworkProvider.stream` 的状态码检查时机或正文转发时优先跑对应测试文件（串行套件）。
 - **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **DownloadFileToolSchemeCase**（2 条）：由 `uppercaseSchemeDownloadsLikeLowercase`、`nonHTTPSchemesAreStillRejected` 锁定 scheme 校验必须大小写不敏感（Foundation 保留 scheme 原样），大写/混合大小写 HTTP/HTTPS 不得被误拒，非 HTTP(S) 协议仍拒绝（**回归 #825**）；改动 `network_download_file` 协议校验时优先跑对应测试文件。
 - **DownloadFileToolPathSafety**（4 条）：由 `escapingOrNestedFilenameIsRejected`、`absoluteFilenameIsRejected`、`existingFileIsNotOverwritten`、`plainFilenameStillDownloads` 锁定（**回归 #448**）：`filename` 标准化后必须仍是保存目录的直接子路径（拒绝 `/`、`..`、嵌套与绝对路径），非法文件名在发起下载前即抛出，已有文件不得被静默覆盖，普通文件名仍正常下载。改动 `network_download_file` 的目标路径拼接或写入逻辑时优先跑对应测试文件。
@@ -189,8 +190,10 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 124 | Network 图表几何量 | 裁剪结果按范围缓存，缓冲变化后必须失效 | 应用缓冲后取 hour1 两次，再追加新点 | 调用 data(for:) | 缓存命中条数一致；缓冲更新后返回新条数 | P0 | ✅ 已覆盖 | `rangeCacheInvalidatesOnBufferChange` |
 | 125 | NetworkProvider URLError 码 | 非流式 request 必须保留 URLError 底层码（**回归 #310**） | URLProtocol 桩按路径抛 timedOut/offline/connectionLost | 调用真实 NetworkProvider.request | 抛出的 HTTPNetworkError.underlyingCode 等于对应 NSURLError 码 | P0 | ✅ 已覆盖 | `requestPreservesURLErrorCode` |
 | 126 | NetworkProvider URLError 码 | 非流式超时经真实 request 路径触发重试至上限（**回归 #310**） | 计数桩始终超时 | 经 LLMNetworkProviderAdapter+VendorAPIService 发送 | 请求计数为 3（maxAttempts），而非首次即止 | P0 | ✅ 已覆盖 | `nonStreamingTimeoutRetriesThroughRealRequestPath` |
+| 127 | NetworkProviderStreamStatus | 流式 529 带错误正文时 onChunk 一次都不调用且按状态码抛错（**回归 #163**） | URLProtocol 桩返回 529 + SSE 错误正文 | 调用真实 NetworkProvider.stream | onChunk 计数为 0，抛出 HTTPNetworkError.statusCode==529 | P0 | ✅ 已覆盖 | `streamRejects529BodyWithoutForwardingEvents` |
+| 128 | NetworkProviderStreamStatus | 流式 529 经真实 stream 路径触发重试至上限且不转发事件（**回归 #163**） | 计数桩返回 529 + SSE 错误正文 | 经 LLMNetworkProviderAdapter+VendorAPIService 流式发送 | 请求计数为 3（maxAttempts），onEvent 计数为 0 | P0 | ✅ 已覆盖 | `streaming529RetriesThroughRealStreamPath` |
 
-> 说明：全部 **126 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **128 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
@@ -211,25 +214,34 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > 底层码恒 nil，ID 125/126 同样失败，4 issues；
 > （3）域判断正确但把码值写成 `0`（`? 0 : nil`）→ ID 125 码值不符、
 > ID 126 因 0 不在可重试白名单仍只请求 1 次，4 issues。三处变异均已还原。
+>
+> **鉴别力验证（#163）**：对 `NetworkProvider.stream` 的状态码拒绝时机施加三处独立变异，
+> 逐一跑 `swift test --filter NetworkProviderStreamStatusTests` 确认 RED 再还原——
+> （1）在早期拒绝分支里把错误正文 `onChunk(receivedBody)` 转发出去 → ID 127 的 onChunk
+> 计数为 1、ID 128 因 EventReceipt 置真只请求 1 次且 onEvent 计数为 1，3 issues；
+> （2）删除早期分支的 `throw`（只收正文不拒绝）→ ID 127 未抛错（Issue recorded），1 issue
+> （ID 128 仍绿，因适配层 onResponse 元数据后置检查兜底抛 529，证明 ID 127 守的是传输层本身）；
+> （3）整体退回原始顺序（删早期检查、恢复方法末尾检查）→ 错误正文经正常 SSE 路径先转发、
+> 末尾才抛 529，ID 127 onChunk 计数为 1、ID 128 只请求 1 次，3 issues。三处变异均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 54 / 54
+- P0: 已覆盖 56 / 56
 - P1: 已覆盖 64 / 64
 - P2: 已覆盖 8 / 8
-- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
+- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（56 条）
 - **P1**: 其余功能性用例（64 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 126 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -137,6 +137,23 @@ public final class NetworkProvider: NetworkProviding {
                 textEncodingName: httpResponse.textEncodingName
             ))
 
+            // 非 2xx 必须在转发任何 SSE 事件之前按状态码拒绝：错误正文一旦回调
+            // onChunk，上层 EventReceipt 会把 hasReceived 置真，「首个事件前断线
+            // 才安全重试」的保护将拒绝重放，529/5xx 的瞬态重试被永久禁止（#163）。
+            // 这里只把正文收进 receivedBody 供错误上下文，绝不回调 onChunk。
+            if !(200..<300).contains(httpResponse.statusCode) {
+                for try await byte in bytes {
+                    try Task.checkCancellation()
+                    receivedBody.append(byte)
+                }
+                throw HTTPNetworkError(
+                    url: request.url,
+                    statusCode: httpResponse.statusCode,
+                    headers: headers,
+                    body: receivedBody
+                )
+            }
+
             // Check for Content-Encoding
             let contentEncoding = headers["Content-Encoding"]?.lowercased()
             let isCompressed = contentEncoding == "br" || contentEncoding == "gzip" || contentEncoding == "deflate"
@@ -230,14 +247,6 @@ public final class NetworkProvider: NetworkProviding {
                 }
             }
 
-            if !(200..<300).contains(httpResponse.statusCode) {
-                throw HTTPNetworkError(
-                    url: request.url,
-                    statusCode: httpResponse.statusCode,
-                    headers: headers,
-                    body: receivedBody
-                )
-            }
             exchangeStore?.finishRecord(recordID, response: httpResponse, body: receivedBody)
         } catch is CancellationError {
             exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: CancellationError())
