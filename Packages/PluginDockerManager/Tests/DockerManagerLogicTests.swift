@@ -410,7 +410,9 @@ struct DockerManagerViewModelTests {
         #expect(viewModel.selectedImageDetail == nil)
         let removed = await service.removedImages
         #expect(removed.count == 1)
-        #expect(removed.first?.id == image.imageID)
+        // 普通删除按选中的 repository:tag 引用 untag，而不是裸 imageID（#250）。
+        #expect(removed.first?.id == image.name)
+        #expect(removed.first?.force == false)
     }
 
     @Test("删除失败时记录错误信息并保留列表")
@@ -426,6 +428,78 @@ struct DockerManagerViewModelTests {
 
         #expect(viewModel.images.count == 1)
         #expect(viewModel.errorMessage?.contains("nope") == true)
+    }
+
+    @Test("普通删除多标签镜像只 untag 选中引用，保留其它标签（#250）")
+    func ordinaryDeleteUntagsSelectedReferenceAndKeepsOtherTags() async {
+        let latest = Self.image(id: "sha256:a", repository: "alpha", tag: "latest")
+        let dev = Self.image(id: "sha256:a", repository: "alpha", tag: "dev")
+        let service = StubDockerService()
+        await service.setImages([latest, dev])
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.refreshImages()
+
+        await viewModel.deleteImage(dev)
+
+        let removed = await service.removedImages
+        #expect(removed.count == 1)
+        #expect(removed.first?.id == "alpha:dev")
+        #expect(removed.first?.force == false)
+        // 只移除被 untag 的那一行，共享同一 imageID 的 latest 必须保留。
+        #expect(viewModel.images.map(\.tag) == ["latest"])
+        #expect(viewModel.filteredImages.map(\.tag) == ["latest"])
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test("删除同一镜像的另一个标签不得清空当前选中的引用（#250）")
+    func deletingAnotherTagKeepsSelectedReference() async {
+        let latest = Self.image(id: "sha256:a", repository: "alpha", tag: "latest")
+        let dev = Self.image(id: "sha256:a", repository: "alpha", tag: "dev")
+        let service = StubDockerService()
+        await service.setImages([latest, dev])
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.refreshImages()
+        await viewModel.selectImage(latest)
+
+        await viewModel.deleteImage(dev)
+
+        // 选中身份按引用比对，删除 dev 不应误清 latest 的详情。
+        #expect(viewModel.selectedImage?.id == latest.id)
+        let removed = await service.removedImages
+        #expect(removed.first?.id == "alpha:dev")
+    }
+
+    @Test("悬空镜像（<none>）普通删除回退到 imageID（#250）")
+    func ordinaryDeleteOfDanglingImageFallsBackToImageID() async {
+        let dangling = Self.image(id: "sha256:dangling", repository: "<none>", tag: "<none>")
+        let service = StubDockerService()
+        await service.setImages([dangling])
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.refreshImages()
+
+        await viewModel.deleteImage(dangling)
+
+        let removed = await service.removedImages
+        #expect(removed.first?.id == dangling.imageID)
+        #expect(viewModel.images.isEmpty)
+    }
+
+    @Test("强制删除按 imageID 移除整镜像的全部标签（#250）")
+    func forceDeleteRemovesWholeImageByImageID() async {
+        let latest = Self.image(id: "sha256:a", repository: "alpha", tag: "latest")
+        let dev = Self.image(id: "sha256:a", repository: "alpha", tag: "dev")
+        let service = StubDockerService()
+        await service.setImages([latest, dev])
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.refreshImages()
+
+        await viewModel.deleteImage(latest, force: true)
+
+        let removed = await service.removedImages
+        #expect(removed.first?.id == latest.imageID)
+        #expect(removed.first?.force == true)
+        #expect(viewModel.images.isEmpty)
+        #expect(viewModel.filteredImages.isEmpty)
     }
 
     @Test("搜索按仓库、标签与 ID 过滤")
