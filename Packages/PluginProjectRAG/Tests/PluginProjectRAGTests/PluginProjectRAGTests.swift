@@ -244,9 +244,10 @@ struct RAGCodeSearchToolTests {
         let provider = StubProjectRAGProvider()
         let searchMemory = ProjectRAGSearchMemory()
         let hook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
+        let conversationID = UUID()
         let context = WillSendToLLMContext(
             messages: [LLMMessage(role: .user, content: "这个项目的代码怎么实现请求处理")],
-            conversationID: UUID()
+            conversationID: conversationID
         )
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-tool-dedup-\(UUID().uuidString)", isDirectory: true)
@@ -255,10 +256,13 @@ struct RAGCodeSearchToolTests {
         provider.currentProjectPath = projectURL.path
 
         _ = await hook.apply(to: context)
-        let output = try await RAGCodeSearchTool(provider: provider, searchMemory: searchMemory).execute(arguments: [
-            "query": ToolArgument("这个项目的代码怎么实现请求处理"),
-            "project_path": ToolArgument(projectURL.path),
-        ])
+        // 同一对话紧接着的真实 search_code 才消费抑制标记（#467）。
+        let toolContext = ToolExecutionContext(jobID: "job-dedup", conversationID: conversationID)
+        let output = try await RAGCodeSearchTool(provider: provider, searchMemory: searchMemory)
+            .executeResult(context: toolContext, arguments: [
+                "query": ToolArgument("这个项目的代码怎么实现请求处理"),
+                "project_path": ToolArgument(projectURL.path),
+            ]).content
 
         #expect(output.contains("already injected"))
         #expect(provider.searchCallCount == 1)

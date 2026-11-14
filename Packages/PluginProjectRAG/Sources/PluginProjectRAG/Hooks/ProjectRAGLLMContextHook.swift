@@ -142,7 +142,11 @@ final class ProjectRAGLLMContextHook {
                 ),
                 at: anchor
             )
-            searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
+            searchMemory?.recordAutomaticSearch(
+                query: latestUserMessage.content,
+                projectPath: projectPath,
+                conversationID: context.conversationID
+            )
             injectedTurns.record(turnKey, content: systemContent)
             MagicLogger.debug("[ProjectRAG] autoInject injected=true topScore=\(topScore) kind=\(topKind) budget=\(context.injectedContentTokenBudget.map(String.init) ?? "nil") msgLen=\(messageLength)")
             return updated

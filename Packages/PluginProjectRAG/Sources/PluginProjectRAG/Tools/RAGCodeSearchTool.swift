@@ -55,17 +55,19 @@ public struct RAGCodeSearchTool: SuperAgentTool {
     ) async throws -> ToolCallResult {
         ToolCallResult(content: try await execute(
             arguments: arguments,
-            conversationProjectPath: await context.conversationProjectPath()
+            conversationProjectPath: await context.conversationProjectPath(),
+            conversationID: context.conversationID
         ))
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await execute(arguments: arguments, conversationProjectPath: nil)
+        try await execute(arguments: arguments, conversationProjectPath: nil, conversationID: nil)
     }
 
     private func execute(
         arguments: [String: ToolArgument],
-        conversationProjectPath: String?
+        conversationProjectPath: String?,
+        conversationID: UUID?
     ) async throws -> String {
         guard let query = (arguments["query"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
               !query.isEmpty else {
@@ -93,7 +95,11 @@ public struct RAGCodeSearchTool: SuperAgentTool {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Project RAG is not available.")
         }
         if let searchMemory,
-           await searchMemory.consumeRecentAutomaticSearch(query: query, projectPath: projectPath) {
+           await searchMemory.consumeRecentAutomaticSearch(
+               query: query,
+               projectPath: projectPath,
+               conversationID: conversationID
+           ) {
             return "## Code Search\n\nThe matching project evidence was already injected into the current LLM context; no duplicate results were returned."
         }
 
