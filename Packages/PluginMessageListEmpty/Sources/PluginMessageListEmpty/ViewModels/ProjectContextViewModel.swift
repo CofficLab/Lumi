@@ -189,9 +189,10 @@ final class ProjectContextViewModel: ObservableObject {
     ///
     /// - Returns: 会话 ID 列表。项目下没有会话时是空数组（不是 nil）——
     ///   空数组表示「这个范围没有会话」，与「不限会话」必须区分开。
-    public func conversationIDs(forProjectAt path: String, since: Date) async -> [String] {
+    public func conversationIDs(forProjectAt path: String, since: Date, force: Bool = false) async -> [String] {
         let day = Calendar.current.startOfDay(for: since)
-        if let cached = conversationIDsCache, cached.path == path, cached.day == day {
+        // force 必须绕过按天缓存：同一天新建的会话不会改变 path/day 键，否则强制刷新仍漏掉它（#314）。
+        if !force, let cached = conversationIDsCache, cached.path == path, cached.day == day {
             return cached.ids
         }
         let ids = await conversations?.conversationIDs(projectPath: path, updatedSince: since) ?? []

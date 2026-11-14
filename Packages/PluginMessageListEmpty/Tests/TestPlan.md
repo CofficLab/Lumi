@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，单元用例总数: 81（另有 6 条 UI 测试，见「UI 测试」章节）
+测试文件: 13 个，单元用例总数: 82（另有 6 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -55,7 +55,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
 
 - **Project context**（18 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`gitRowFollowsTheWorkingTree`、`gitNavigationEnablesDisabledWorkspace`、`gitRowAvailabilityFollowsEntryAndController` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情、「没有项目就清空」以及跨插件导航（含为默认禁用的 Git Workspace 补启用）等不变量；改动 `ProjectContextViewModel` 或 `ProjectContextNavigator` 时必须优先跑该文件。
-- **Activity scope**（4 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」四条语义；改动活动卡的统计口径时必须优先跑该文件。
+- **Activity scope**（5 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads`、`forcedReloadRefreshesProjectConversationIDs` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」「强制刷新绕过按天会话缓存（**回归 #314**：同一天新建的会话不改变 (path, day) 缓存键，force 必须重取集合）」五条语义；改动活动卡的统计口径或 `conversationIDs(forProjectAt:since:force:)` 缓存时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -145,21 +145,22 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 79 | Project context | 关闭项目后在途的旧加载不得写回旧项目身份（**回归 #889**） | 项目 P 的加载卡在索引状态查询上 | 关闭 P 并触发清空，再放行旧查询 | identity / rows / details 保持为空 | P0 | ✅ 已覆盖 | `closingProjectInvalidatesInFlightLoad` |
 | 80 | Project context | 关闭项目后清空不得留下残留身份（**回归 #889**） | 项目 P 已加载出身份 | 关闭 P 并触发清空 | identity 为 nil，hasProject 为 false | P0 | ✅ 已覆盖 | `clearingAfterCloseLeavesNoStaleIdentity` |
 | 81 | Project context | 没有项目时不得展示残留的项目身份（**回归 #889 护栏**） | 项目 P 已加载出身份 | 关闭 P，读取 `displayIdentity` | 为 nil | P0 | ✅ 已覆盖 | `displayIdentityRequiresCurrentProject` |
+| 82 | Activity scope | 强制刷新必须重新取项目会话集合，当天新建会话也计入（**回归 #314**） | 项目维度已加载会话 A；同一天新建会话 B（缓存键 path/day 不变） | 切到 All 再切回 This project 触发 force 加载 | 查询的会话集合同时含 A 与 B | P0 | ✅ 已覆盖 | `forcedReloadRefreshesProjectConversationIDs` |
 
-> 说明：全部 **81 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
+> 说明：全部 **82 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
+- P0: 已覆盖 17 / 17
 - P1: 已覆盖 58 / 58
 - P2: 已覆盖 7 / 7
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
 - **P1**: 其余功能性用例（58 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 

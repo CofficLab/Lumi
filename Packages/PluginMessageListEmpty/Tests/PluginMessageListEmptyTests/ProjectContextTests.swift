@@ -677,6 +677,52 @@ struct ActivityScopeTests {
         #expect(model.totalMessages == 7)
     }
 
+    /// 回归 #314：项目维度按 (path, startOfDay) 缓存会话集合，同一天新建的会话
+    /// 不会改变缓存键；强制刷新必须绕过该缓存重新取集合，否则新会话的消息漏统计。
+    @Test("强制刷新重新取项目会话集合，当天新建会话也计入")
+    func forcedReloadRefreshesProjectConversationIDs() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-scope-force-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let conversations = DefaultConversationManager()
+        let a = try conversations.createConversation(title: "A", projectPath: root.path, providerID: nil, modelName: nil)
+
+        let manager = ScopedMessageManager()
+        manager.globalSeries = [day(0): 100]
+        manager.scopedSeries = [day(0): 7]
+
+        let context = ProjectContextViewModel(
+            project: provider,
+            conversations: conversations,
+            projectRAG: nil,
+            git: nil
+        )
+        let model = EmptyStateActivityViewModel(
+            messages: manager,
+            projectContext: context,
+            calendar: calendar
+        )
+
+        await model.loadIfNeeded()
+        #expect(manager.queriedConversationIDs.last == [a.uuidString])
+
+        // 同一天新建会话 B：缓存键 (path, day) 不变。
+        let b = try conversations.createConversation(title: "B", projectPath: root.path, providerID: nil, modelName: nil)
+
+        // 切到 All 再切回 This project，触发 force=true 的重新加载。
+        await model.setScope(.all)
+        await model.setScope(.project)
+
+        let queried = try #require(manager.queriedConversationIDs.last ?? nil)
+        #expect(queried.contains(a.uuidString))
+        #expect(queried.contains(b.uuidString), "强制刷新必须计入当天新建的会话 B")
+    }
+
     @Test("file tree navigation restores Chat before selecting Explorer")
     func fileTreeNavigationActivatesChatFirst() {
         let recorder = NavigationRecorder()
