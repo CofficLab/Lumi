@@ -174,6 +174,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     private var eventTasks: [UUID: Task<Void, Never>] = [:]
     private var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var activeToolCalls: [UUID: (assistantID: UUID, calls: [MessageToolCall])] = [:]
+    /// 已投递过终态（completed/failed/cancelled）钩子的回合。
+    ///
+    /// cancelTurn 与迟到的 finishEventTurn 可能对同一回合各投递一次，
+    /// 终态钩子必须恰好一次（#219）。suspended 不算终态：恢复后同一
+    /// turnID 还要投递最终结局。
+    private var terminalFinishedTurns: [UUID: UUID] = [:]
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var toolManagerObserver: (any ToolManagerObserverHandle)?
 
@@ -264,6 +270,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let waiters = completionWaiters.removeValue(forKey: conversationID) ?? []
         waiters.forEach { $0.resume(returning: .cancelled) }
         revision += 1
+        if let turnID {
+            notifyTurnFinishedOnce(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
+        }
         notify(.cancelled(conversationID: conversationID, turnID: turnID))
     }
 
@@ -280,6 +289,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
         let turnID = UUID()
         turnIDs[conversationID] = turnID
+        terminalFinishedTurns.removeValue(forKey: conversationID)
         modelRoutes[conversationID] = resolveModelRoute(for: conversationID)
         states[conversationID] = .running
         revision += 1
@@ -400,6 +410,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             modelRoutes.removeValue(forKey: conversationID)
         }
         revision += 1
+        notifyTurnFinishedOnce(conversationID: conversationID, turnID: turnID, outcome: outcome)
         switch outcome {
         case .completed: notify(.completed(conversationID: conversationID, turnID: turnID))
         case .failed(let reason): notify(.failed(conversationID: conversationID, turnID: turnID, reason: reason))
@@ -411,6 +422,33 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         let waiters = completionWaiters.removeValue(forKey: conversationID) ?? []
         waiters.forEach { $0.resume(returning: outcome) }
+    }
+
+    /// 与 `notifyTurnStarted` 对称的终态钩子投递（#219）。
+    ///
+    /// 同一回合的终态只投递一次：cancelTurn 立即投递后，迟到的
+    /// finishEventTurn 不得再触发钩子（否则 Goal 续跑、完成通知等会重复执行）。
+    /// 去重判定同步完成，广播异步执行，与 AgentLoopManager.finishTurn 同形。
+    private func notifyTurnFinishedOnce(conversationID: UUID, turnID: UUID, outcome: AgentLoopOutcome) {
+        guard let hooks = lifecycleHooks else { return }
+        guard terminalFinishedTurns[conversationID] != turnID else { return }
+        let reason: TurnEndReason
+        switch outcome {
+        case .completed: reason = .completed
+        case .failed: reason = .failed
+        case .cancelled: reason = .cancelled
+        case .suspended: reason = .suspended
+        }
+        if reason != .suspended {
+            terminalFinishedTurns[conversationID] = turnID
+        }
+        Task { @MainActor in
+            await hooks.notifyTurnFinished(TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: reason
+            ))
+        }
     }
 
     private func advanceEventTurn(conversationID: UUID, turnID: UUID) async {
