@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆盖 12 条用例。
+PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆盖 13 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 12
+测试文件: 2 个，用例总数: 13
 
 核心组件（源码目录）:
 - `Managers/`
@@ -23,7 +23,7 @@ PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AgentLoopRetryCoordinator**（3 条）：由 `deletionDuringBackoffCancelsRetry`、`doesNotRetryConversationDeletedDuringBackoff`、`publishesRetryLifecycleEvents` 锁定；退避等待期间删除会话必须取消睡眠任务，启动重试前必须确认会话仍存在，并且每次调度 / 放弃重试都要发布生命周期事件（**#935**）。
+- **AgentLoopRetryCoordinator**（4 条）：由 `deletionDuringBackoffCancelsRetry`、`doesNotRetryConversationDeletedDuringBackoff`、`publishesRetryLifecycleEvents`、`externalTurnDuringBackoffStartsFreshRetryChain` 锁定；退避等待期间删除会话必须取消睡眠任务，启动重试前必须确认会话仍存在，并且每次调度 / 放弃重试都要发布生命周期事件（**#935**）；退避等待期间外部新回合的 `.started` 不得被当成自己的重试，旧链必须取消、新回合预算从 1/N 重新计费（**#508**）。
 - **AgentLoopRetryPlugin**（5 条）：由 `retriesTransientFailureThreeTimes`、`doesNotRetryNonRetryableFailure`、`resetsAfterSuccessfulRetry` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -42,27 +42,28 @@ PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆�
 | 10 | AgentLoopRetryCoordinator | 调度与放弃重试时发布生命周期事件（**#935**） | 可重试失败且预算已耗尽 | 触发失败并让重试再次失败 | 先发布 scheduled，耗尽后发布 gaveUp，`isRetrying` 复位 | P1 | ✅ 已覆盖 | `publishesRetryLifecycleEvents` |
 | 11 | AgentLoopRetryTimeline | 时间线正文经过注入的本地化解析（**回归 #895**） | 可重试失败带 provider/model/HTTP 状态码 | 以标记解析器构造时间线消息 | 正文为 `[Retrying (2/3): 连接被重置]`，元数据保持不变 | P1 | ✅ 已覆盖 | `messageContentUsesInjectedLocalization` |
 | 12 | AgentLoopRetryTimeline | 时间线正文词条在所有规范语言下都有译文（**回归 #895**） | — | 读取编译后 `.lproj/Localizable.strings` | 正文词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `messageContentHasTranslationsInCompiledBundle` |
+| 13 | AgentLoopRetryCoordinator | 退避等待期间用户新发的回合不被当成重试，预算重新计费（**回归 #508**） | 回合 A 以 529 + Retry-After 失败并进入退避 | 等待期间投递外部 `.started`（回合 B），再让 B 失败 | 旧链作废、退避任务被取消、A 不再重试；B 的首次自动重试为 1/3 而非 2/3 | P0 | ✅ 已覆盖 | `externalTurnDuringBackoffStartsFreshRetryChain` |
 
-> 说明：全部 **12 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
+- P0: 已覆盖 6 / 6
 - P1: 已覆盖 7 / 7
 - P2: 已覆盖 0 / 0
-- **合计: 12 / 12**（仅表示清单场景，非源码覆盖率）
+- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（7 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 12 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

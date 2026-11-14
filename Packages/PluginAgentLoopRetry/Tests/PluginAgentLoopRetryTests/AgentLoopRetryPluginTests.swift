@@ -292,6 +292,68 @@ struct AgentLoopRetryPluginTests {
         coordinator.cancel()
     }
 
+    @Test("退避等待期间用户新发的回合不被当成重试，预算重新计费（#508）")
+    func externalTurnDuringBackoffStartsFreshRetryChain() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        agentLoop.emitsTerminalEvent = false
+        let gate = SleepGate()
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 3,
+            sleeper: { _ in
+                await withTaskCancellationHandler {
+                    await gate.wait()
+                } onCancel: {
+                    Task { await gate.markCancelled() }
+                }
+                if await gate.wasCancelled {
+                    throw CancellationError()
+                }
+            }
+        )
+
+        // 回合 A 以 529 + Retry-After 失败，协调器进入退避等待。
+        agentLoop.failure = AgentLoopFailure(
+            kind: .server,
+            message: "服务集群负载较高",
+            httpStatusCode: 529,
+            retryAfterSeconds: 60
+        )
+        let turnA = UUID()
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: turnA, reason: "服务集群负载较高"))
+        #expect(await gate.waitUntilEntered())
+
+        // 等待期间用户主动发送新消息，回合 B 启动。
+        let turnB = UUID()
+        agentLoop.emit(.started(conversationID: conversationID, turnID: turnB))
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(!coordinator.isRetrying(conversationID: conversationID), "外部新回合必须作废旧重试链")
+        #expect(await gate.wasCancelled, "旧回合的退避任务必须被取消")
+        #expect(agentLoop.retryCalls.isEmpty, "旧回合不得再发起重试")
+
+        // 回合 B 也失败：它的第一次自动重试必须是 1/3，而不是继承 A 的 2/3。
+        await gate.reset()
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: turnB, reason: "服务集群负载较高"))
+        #expect(await gate.waitUntilEntered())
+        await gate.release()
+        await yieldUntil { agentLoop.retryCalls.count == 1 }
+
+        let attempts = messages.messages(for: conversationID)
+            .filter(MessageTimelineEvent.isAgentLoopRetry)
+            .compactMap {
+                MessageTimelineEvent.integerMetadata(
+                    MessageTimelineEvent.agentLoopRetryAttemptKey,
+                    from: $0
+                )
+            }
+        #expect(attempts == [1, 1], "A 与 B 各自从第一次重试计费")
+        coordinator.cancel()
+    }
+
     @Test("退避等待期间删除会话会取消延迟重试")
     func deletionDuringBackoffCancelsRetry() async throws {
         let conversations = DefaultConversationManager()
@@ -503,6 +565,12 @@ private actor SleepGate {
 
     func release() {
         resume()
+    }
+
+    func reset() {
+        entered = false
+        wasCancelled = false
+        continuation = nil
     }
 
     func waitUntilEntered(timeout: Duration = .seconds(1)) async -> Bool {
