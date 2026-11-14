@@ -204,4 +204,39 @@ final class MailWorkspaceViewModelTests: XCTestCase {
         let unread = try await cache.unreadCount(accountID: account.id, folder: "INBOX")
         XCTAssertEqual(unread, 0, "点选阅读后应把已读写入缓存")
     }
+
+    /// 回归 #308：缓存按 uid 升序投影，首页必须取最新一页（UID 51…2），
+    /// 而不是最旧的 50 封；翻页继续向更旧扩展，整体最新优先。
+    func testFirstPageKeepsNewestMailsAndPagesTowardOlder() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+        let summaries = (1...51).map {
+            makeCacheSummary(accountID: account.id, uid: UInt64($0), subject: "Mail \($0)")
+        }
+        try await cache.upsertMessages(summaries, accountID: account.id, folder: "INBOX")
+
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(behavior: .init(failConnect: true)),
+            accountStore: store
+        )
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory
+        )
+        await vm.load()
+
+        // 首页 = 最新 50 封（UID 51…2），新邮件 UID 51 必须落在第一页。
+        XCTAssertEqual(vm.messages.count, 50)
+        XCTAssertEqual(vm.messages.first?.uid, 51)
+        XCTAssertEqual(vm.messages.map(\.uid), (2...51).reversed().map(UInt64.init))
+
+        // 翻页向更旧扩展，整体仍最新优先，最旧的 UID 1 最后出现。
+        await vm.loadMore()
+        XCTAssertEqual(vm.messages.count, 51)
+        XCTAssertEqual(vm.messages.map(\.uid), (1...51).reversed().map(UInt64.init))
+        XCTAssertEqual(vm.messages.last?.uid, 1)
+    }
 }

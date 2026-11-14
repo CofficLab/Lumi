@@ -221,7 +221,8 @@ final class MailWorkspaceViewModel: ObservableObject {
             let all = try await cache.messages(accountID: accountID, folder: folder)
             guard currentContext == context else { return }
             loadedCount = reset ? pageSize : loadedCount
-            messages = Array(all.prefix(loadedCount))
+            // 缓存按 uid 升序投影；列表最新优先，首页取最新一页而不是最旧一页（#308）。
+            messages = Array(all.sorted { $0.uid > $1.uid }.prefix(loadedCount))
         } catch {
             guard currentContext == context else { return }
             messages = []
@@ -235,7 +236,7 @@ final class MailWorkspaceViewModel: ObservableObject {
         let all = (try? await cache.messages(accountID: context.accountID, folder: context.folder)) ?? []
         guard currentContext == context else { return }
         loadedCount = targetCount
-        messages = Array(all.prefix(loadedCount))
+        messages = Array(all.sorted { $0.uid > $1.uid }.prefix(loadedCount))
     }
 
     // MARK: - 阅读
