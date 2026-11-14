@@ -351,7 +351,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                     return
                 }
 
-                clearSentDraft(content: content)
+                clearSentDraft(content: content, conversationID: conversationID)
                 refresh()
                 if Self.verbose {
                     Self.logger.info("attachment commit completed queued=\(commit.wasQueued)")
@@ -375,7 +375,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 return
             }
 
-            clearSentDraft(content: content)
+            clearSentDraft(content: content, conversationID: conversationID)
             refresh()
             guard !commit.wasQueued else { return }
 
@@ -394,7 +394,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     ///
     /// - Important: 只清空**本次发送的那一份**草稿。附件编码期间用户可能继续
     ///   输入，此时输入框已经不是发出去的内容，直接清空会吞掉新草稿。
-    private func clearSentDraft(content: String) {
+    ///   还可能切到别的会话并输入**相同文本**：仅凭正文相等会误清新会话的
+    ///   独立草稿，因此必须同时校验当前仍选中发起发送的会话（#1175）。
+    private func clearSentDraft(content: String, conversationID: UUID?) {
+        guard capability.selectedConversationID == conversationID else { return }
         guard capability.text == content else { return }
         capability.text = ""
         capability.collapsedBlocks = []

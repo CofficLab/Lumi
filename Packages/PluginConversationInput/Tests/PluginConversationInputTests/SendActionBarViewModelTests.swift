@@ -374,6 +374,35 @@ struct SendActionBarViewModelTests {
         #expect(capability.backgroundCommits.isEmpty)
     }
 
+    @Test("后台编码期间切到相同文本的新会话，成功提交不清空新会话草稿（#1175）")
+    func backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation() async throws {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        capability.text = "same"
+        capability.pendingFileAttachments = [
+            UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        ]
+        capability.commit = MessageSendCommit(conversationID: a, userMessageID: UUID())
+        capability.holdsBackgroundCommits = true
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+        await waitUntil("后台提交未开始") { !capability.backgroundCommits.isEmpty }
+
+        // 编码期间切到 B，并输入与 A 发送内容**相同文本**的独立草稿。
+        capability.selectedConversationID = b
+        capability.text = "same"
+        capability.releaseBackgroundCommits()
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+
+        // 消息提交到 A；B 的相同文本草稿不能仅凭正文相等就被清理抹掉。
+        let commit = try #require(capability.backgroundCommits.first)
+        #expect(commit.conversationID == a)
+        #expect(capability.text == "same")
+    }
+
     @Test("发送前清除旧的错误提示")
     func sendClearsPreviousError() throws {
         let capability = SendActionBarTestCapability()

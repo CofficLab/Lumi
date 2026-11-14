@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **194 条场景 / 200 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 200 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **196 条场景 / 202 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 202 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -448,12 +448,23 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 193 | 发送 | 回车路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并 `setText("B draft")` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 不被提交也不被清空 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
 | 194 | 发送 | 按钮路径等待读取期间切换会话，发送仍落在发起会话（**回归 #1173**） | 会话 A 正文 `"A draft"` + 一次在途附件读取 | `send()` → 切到 B 并改写正文 `"B draft"` → `endAttachmentRead()` | 同步提交 `conversationID == A`、正文 `"A draft"`；B 的 `"B draft"` 保留，无后台提交 | P0 | ✅ 已覆盖 | `deferredSendStaysBoundToOriginatingConversation` |
 
+### 补充轮次（ID 195–196）：延迟清理的会话身份（回归 #1175）
+
+> 提交成功后的草稿清理只用正文相等做身份判定。A 发起的后台编码提交完成时
+> 用户可能已切到 B 并输入**相同文本**的独立草稿，仅凭正文相等会把 B 的草稿
+> 一并清空。修复让 `clearSentDraft` 先校验当前仍选中发起发送的会话，再比正文。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 195 | 发送 | 回车路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并 `setText("same")` → 放行提交 | 提交落在 A；B 的 `"same"` 在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
+| 196 | 发送 | 按钮路径后台编码期间切到相同文本新会话，成功后不清空新草稿（**回归 #1175**） | A 正文 `"same"` + 文件附件 + 挂起后台提交 | `send()` → 切到 B 并改写正文 `"same"` → 放行提交 | 提交落在 A；B 的 `"same"` 保留 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsIdenticalDraftInOtherConversation` |
+
 ## 覆盖率统计
 
-- P0: 已覆盖 61 / 61
+- P0: 已覆盖 63 / 63
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
+- **合计: 196 / 196**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
