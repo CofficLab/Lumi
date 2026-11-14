@@ -1,5 +1,5 @@
 {
-  "originHash" : "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
+  "originHash" : "fbb9d245157664405af94585acecbc35ff3d2e9133e6958b006b023e0dea9cc9",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
       "state" : {
-        "revision" : "cb2f0450a85aa18772c06f9b442beccd8e44b1a0",
-        "version" : "1.0.2"
+        "revision" : "e07e1c1f1a5d89554152b0fd21a555e116d522bb",
+        "version" : "1.0.1"
       }
     },
     {
@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginRootView.git",
       "state" : {
-        "revision" : "3ff9eeef9bb850f16dec21d42706fefff8768e2f",
-        "version" : "1.3.2"
+        "revision" : "da93b69e855e638f3062d46c6c41cd02244f2d39",
+        "version" : "1.3.1"
       }
     },
     {
