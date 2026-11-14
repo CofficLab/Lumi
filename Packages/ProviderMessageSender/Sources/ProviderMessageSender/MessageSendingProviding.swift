@@ -254,6 +254,13 @@ public struct PendingChatMessage: Identifiable, Equatable, Sendable {
     /// 正文中被折叠成 chip 的区间。队列回放时必须原样带回，否则排队期间
     /// 才折叠的内容会在真正发出时退化成一大段文字。
     public let collapsedBlocks: [CollapsedContentBlock]
+    /// 入队时已在后台编码好的附件 metadata（图片 + 文件）。
+    ///
+    /// 主发送路径把附件编码放在 `Task.detached` 里完成；若队列只存原始附件、
+    /// 丢掉这份编码结果，排空时就得在主 actor 上对整段 Base64 payload 再做一次
+    /// JSON 序列化 + UTF-8 校验（#1323）。保留它，排空直接复用，不再主线程重编码。
+    /// 同步提交路径无预编码结果，此值为 nil，排空时回落到现场编码。
+    public let attachmentMetadata: [String: String]?
 
     public init(
         id: UUID = UUID(),
@@ -261,7 +268,8 @@ public struct PendingChatMessage: Identifiable, Equatable, Sendable {
         content: String,
         imageAttachments: [UserImageAttachment] = [],
         fileAttachments: [UserFileAttachment] = [],
-        collapsedBlocks: [CollapsedContentBlock] = []
+        collapsedBlocks: [CollapsedContentBlock] = [],
+        attachmentMetadata: [String: String]? = nil
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -269,5 +277,6 @@ public struct PendingChatMessage: Identifiable, Equatable, Sendable {
         self.imageAttachments = imageAttachments
         self.fileAttachments = fileAttachments
         self.collapsedBlocks = collapsedBlocks
+        self.attachmentMetadata = attachmentMetadata
     }
 }

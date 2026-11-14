@@ -39,7 +39,9 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 ### 关键行为契约（实现约定，非协议要求）
 - **空内容短路**：`trimmed` 为空且无附件时 `commitUserMessage` 返回 nil，不写库
 - **同会话串行**：发送中再次发送 → 进 `pendingQueues`，当前回合结束后由
-  `drainPendingQueue` 依次发出；**用户消息立即入库**（不等待回合）
+  `drainPendingQueue` 依次发出；**用户消息立即入库**（不等待回合）；后台路径入队时
+  已在 utility task 编码好的附件 metadata 随 `PendingChatMessage.attachmentMetadata`
+  保留，排空直接复用，不在主 actor 重新编码（回归 #1323）
 - **提交与回合分离**：`commit` 阶段同步完成，`startTurn` 才建立回合跟踪任务
 - **迟到事件防护**：`suspended` 事件需同时校验 state / turnID / suspensionID 才生效
 - **停止语义**：`cancelCurrentRequest()` 取消跟踪任务 + `agentLoop.cancelTurn` +
@@ -54,7 +56,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **链路**（1 条）：由 `registeredSenderSendsMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **回归**（1 条）：由 `senderIgnoresStaleSuspensionEvent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **提交**（2 条）：由 `blankContentIsIgnored`（参数化 4 例）`、`attachmentOnlySubmissionIsAccepted` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **队列**（2 条）：由 `consecutiveSendsAreQueuedAndDrained`、`drainingQueueStartsFollowUpTurn`、`cancellingPendingMessageRemovesSingleEntry`、`cancellingLastPendingEntryRemovesQueue` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **队列**（3 条）：由 `consecutiveSendsAreQueuedAndDrained`、`drainingQueueStartsFollowUpTurn`、`queuedBackgroundSendPreservesAttachmentMetadataForDrain`、`cancellingPendingMessageRemovesSingleEntry`、`cancellingLastPendingEntryRemovesQueue` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **附件**（1 条）：由 `attachmentPoolMutationsBroadcastChanges`、`fileAttachmentPoolMutationsBroadcastChanges`、`sendingClearsSentAttachments`、`attachmentsAddedDuringSendSurvive` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **停止**（2 条）：由 `cancelCurrentRequestCancelsActiveTurn`、`cancelClearsPendingTurnStarts`、`cancelWithoutActiveTurnIsNoOp` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **观察**（2 条）：由 `sendingStateObserverFiresOnlyOnRealChanges`、`sendingStateObserverStopsAfterCancel`、`messageSenderObserverStopsAfterCancel` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -120,11 +122,12 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 45 | MessageSender 会话删除失效 | 删除一个会话不影响其他会话的排队与发送（**回归 #167**） | A、B 各有活动回合与排队消息 | 删除 A | A 的工作失效；B 的队列与发送不受影响，照常排空 | P0 | ✅ 已覆盖 | `deletionDoesNotAffectOtherConversations` |
 | 46 | MessageSender 附件读取门禁 | 读取失败时等待返回 false，发送入口据此中止（#1174） | 一次在途读取 + 等待任务 | 读取窗口内 `recordAttachmentReadFailure()` 后 `endAttachmentRead()` | 等待任务收到 false，发送入口据此中止本次发送 | P0 | ✅ 已覆盖 | `waitReturnsFalseWhenAttachmentReadFails` |
 | 47 | MessageSender 附件读取门禁 | 失败标记在新读取窗口开始时复位，干净读取仍返回 true（#1174） | 先一个失败窗口，再一个干净窗口 | 失败窗口结束后 `beginAttachmentRead()` 开新窗口并正常结束 | 第一个窗口返回 false，新窗口返回 true（失败不毒化后续发送） | P0 | ✅ 已覆盖 | `readFailureFlagResetsOnNextReadWindow` |
+| 48 | 队列 | 后台附件发送入队保留预编码 metadata，排空复用不丢附件（#1323） | 活动回合 + 后台路径提交带图片/文件的第二条消息 | `commitUserMessageInBackground` 入队 → 投递 `.completed` → `startTurn` 排空 | 队列条目携带入队时已编码的 `attachmentMetadata`；排空后落库消息的图片/文件附件可完整解码回来（不在主 actor 重新编码） | P0 | ✅ 已覆盖 | `queuedBackgroundSendPreservesAttachmentMetadataForDrain` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
 > ID 35–45 为 #165 / #164 / #166 / #167 的回归套件。
-> 本表 47 行覆盖 58 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 48 行覆盖 59 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -136,10 +139,10 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
+- P0: 已覆盖 23 / 23
 - P1: 已覆盖 23 / 23
 - P2: 已覆盖 2 / 2
-- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
+- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

@@ -181,6 +181,48 @@ struct ProviderMessageSenderTests {
         #expect(blocks.first?.title == "粘贴的文本")
     }
 
+    @Test("后台附件发送入队保留预编码 metadata，排空复用不丢附件（#1323）")
+    func queuedBackgroundSendPreservesAttachmentMetadataForDrain() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "response"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "aW1hZ2U=")
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "hello")
+
+        let firstCommit = try #require(try sender.commitUserMessage("first", conversationID: nil))
+        let conversationID = try #require(conversations.selectedConversationID)
+
+        // 忙时带附件发送：后台编码后入队。
+        let secondCommit = try await sender.commitUserMessageInBackground(
+            "second",
+            imageAttachments: [image],
+            fileAttachments: [file],
+            conversationID: conversationID
+        )
+        #expect(secondCommit?.wasQueued == true)
+
+        // 队列条目带走后台预编码的附件 metadata，供排空复用，而不是只存原始
+        // 附件、等排空时在主 actor 上对整段 Base64 重新编码（#1323）。
+        let entry = try #require(sender.pendingMessages(for: conversationID).first)
+        let preserved = try #require(entry.attachmentMetadata)
+        #expect(UserAttachmentMetadata.decodeImageAttachments(from: preserved) == [image])
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: preserved) == [file])
+
+        // 回合结束 → 排空：附件原样落库，不丢内容。
+        await sender.startTurn(for: firstCommit)
+        let drained = try #require(
+            messages.messages(for: conversationID).first { $0.content == "second" }
+        )
+        #expect(UserAttachmentMetadata.decodeImageAttachments(from: drained.metadata) == [image])
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: drained.metadata) == [file])
+    }
+
     @Test("用户消息提交完成后即可读取，回合执行可随后启动")
     func commitsUserMessageBeforeStartingTurn() async throws {
         let conversations = DefaultConversationManager()

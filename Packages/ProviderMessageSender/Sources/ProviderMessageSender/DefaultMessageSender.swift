@@ -393,7 +393,9 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
                 content: trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
-                collapsedBlocks: resolvedBlocks
+                collapsedBlocks: resolvedBlocks,
+                // 带走后台已编码好的附件 metadata，排空时复用，不在主 actor 重编码（#1323）。
+                attachmentMetadata: metadata
             ))
             notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
@@ -747,9 +749,13 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
         notify(.pendingMessagesChanged(conversationID: conversationID))
 
-        var metadata: [String: String] = [:]
-        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }
-        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(next.fileAttachments)) { _, new in new }
+        // 复用入队时已在后台编码好的附件 metadata，避免排空瞬间在主 actor 上
+        // 对整段 Base64 payload 再做一次 JSON 序列化 + UTF-8 校验（#1323）。
+        // 仅同步提交路径（无预编码结果）才回落到现场编码。
+        var metadata = next.attachmentMetadata ?? Self.encodeAttachmentMetadata(
+            imageAttachments: next.imageAttachments,
+            fileAttachments: next.fileAttachments
+        )
         // 队列条目自带折叠块，回放时必须原样带回，否则排队期间折叠的内容
         // 会在真正发出时退化成一大段文字。
         metadata.merge(
