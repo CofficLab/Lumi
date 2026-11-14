@@ -34,7 +34,7 @@ protocol NewChatCapability: AnyObject {
     /// 切换到指定对话。
     func selectConversation(id: UUID)
 
-    /// 将选中态恢复为 `conversationID`。nil 视为无操作。
+    /// 将选中态恢复为 `conversationID`；nil 表示恢复「未选中」（新建会话）态。
     func restoreSelection(to conversationID: UUID?)
 }
 
@@ -88,7 +88,12 @@ final class NewChatCapabilityAdapter: NewChatCapability {
     }
 
     func restoreSelection(to conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            // nil 表示调用前处于「新建会话」未选中态：创建顶层对话会抢占选中态，
+            // 必须显式取消选择才能恢复空选中，而不是把用户甩进新建的空对话（#260）。
+            conversations?.deselectConversation()
+            return
+        }
         conversations?.selectConversation(id: conversationID)
     }
 }

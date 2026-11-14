@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 19 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 22 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 19
+测试文件: 5 个，用例总数: 22
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -37,6 +37,7 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 - **ConversationNewPlugin**（1 条）：由 `showsNewChatButtonOnlyForSelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CreateNewConversationTool**（12 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NewConversationRowRenderer**（6 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **NewChatCapabilityAdapter**（3 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -61,27 +62,35 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 17 | NewConversationRowRenderer | extractJSONHandlesEdgeCases | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `extractJSONHandlesEdgeCases` |
 | 18 | NewConversationRowRenderer | 解码保留 starter 与标题 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `decodeSuggestionRoundTrips` |
 | 19 | NewConversationRowRenderer | 渲染优先级高于默认工具卡片 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `priorityIsAboveDefault` |
+| 20 | NewChatCapabilityAdapter | 恢复 nil 选中态必须取消选择，不得无操作（**回归 #260**） | 创建顶层对话后选中态被抢到新对话 | `adapter.restoreSelection(to: nil)` | 调用 deselectConversation，选中态回到 nil | P0 | ✅ 已覆盖 | `restoreNilSelectionDeselects` |
+| 21 | NewChatCapabilityAdapter | 恢复非 nil 选中态切换到该对话，且不取消选择（**回归 #260**） | — | `adapter.restoreSelection(to: id)` | 切换到该对话，不调用 deselectConversation | P1 | ✅ 已覆盖 | `restoreNonNilSelectionSelects` |
+| 22 | NewChatCapabilityAdapter | 工具经适配器创建对话后不得把用户甩进新建空对话（**回归 #260**） | 用户处于新建会话未选中态（nil） | 经适配器执行 `create_new_conversation` | 创建一个顶层对话后选中态仍为 nil | P0 | ✅ 已覆盖 | `toolPreservesNilSelectionThroughAdapter` |
 
-> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#260**，`NewChatCapabilityAdapter.restoreSelection`）：
+> - **M1** nil 分支退回无操作（`guard let conversationID else { return }`）→ `restoreNilSelectionDeselects`、`toolPreservesNilSelectionThroughAdapter` 转红（未取消选择，用户被甩进新建空对话），`restoreNonNilSelectionSelects` 仍绿。
+> - **M2** 非 nil 分支也改为取消选择（忽略入参 id）→ `restoreNonNilSelectionSelects` 转红（未切回原对话），两条 nil 用例仍绿。
+> - 还原完整修复（nil → `deselectConversation()`，非 nil → `selectConversation(id:)`）→ 22 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 10 / 10
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 6 / 6
-- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
