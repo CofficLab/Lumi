@@ -225,4 +225,126 @@ struct DeterministicFallbackToolPairingTests {
         #expect(result.messages.contains { $0.role == .user })
         #expect(LLMContextTokenEstimator.estimate(messages: result.messages) <= result.inputTokenLimit)
     }
+
+    /// 任何被保留的 assistant tool-call，其 arguments 必须仍是合法 JSON，
+    /// 不得出现截断标记——截断后的非法 JSON 会让 provider 在构造请求时直接失败（#562）。
+    private func assertRetainedArgumentsAreValidJSON(_ messages: [Message]) {
+        for message in messages where message.role == .assistant {
+            for call in message.toolCalls ?? [] {
+                #expect(!call.arguments.contains("…[truncated]"), "truncated arguments: \(call.id)")
+                let data = Data(call.arguments.utf8)
+                #expect((try? JSONSerialization.jsonObject(with: data)) != nil, "invalid JSON arguments: \(call.id)")
+            }
+        }
+    }
+
+    @Test("降级保留装得下的工具调用时，参数必须原样保持合法 JSON（#562）")
+    func fallbackKeepsFittingArgumentsAsValidJSON() async {
+        let (provider, messages) = Self.makeProvider()
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+        let validArguments = "{\"path\":\"\(String(repeating: "x", count: 300))\"}"
+
+        // 超大旧 user 消息触发降级；最近的 assistant + tool + user 仍装得下。
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "old", count: 20_000),
+                createdAt: base
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "calling",
+                createdAt: base.addingTimeInterval(1),
+                toolCalls: [MessageToolCall(id: "call-1", name: "f", arguments: validArguments)]
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .tool,
+                content: "ok",
+                createdAt: base.addingTimeInterval(2),
+                toolCallID: "call-1"
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "continue",
+                createdAt: base.addingTimeInterval(3)
+            ),
+            to: conversationID
+        )
+
+        let result = await provider.prepareContext(
+            for: Self.fallbackRequest(conversationID: conversationID)
+        )
+
+        #expect(result.didFallback)
+        assertRetainedArgumentsAreValidJSON(result.messages)
+        // 装得下的调用必须原样保留参数，而不是截断。
+        #expect(result.messages.contains {
+            $0.role == .assistant
+                && ($0.toolCalls ?? []).contains { $0.id == "call-1" && $0.arguments == validArguments }
+        })
+    }
+
+    @Test("降级装不下超大参数时整组丢弃，绝不保留被截断的非法 JSON（#562）")
+    func fallbackDropsOversizedArgumentsAtomically() async {
+        let (provider, messages) = Self.makeProvider()
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+        // 合法但超大的 JSON 参数：装不下时应整组丢弃，而不是截成非法 JSON。
+        let oversizedArguments = "{\"data\":\"\(String(repeating: "x", count: 40_000))\"}"
+
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                createdAt: base,
+                toolCalls: [MessageToolCall(id: "call-1", name: "f", arguments: oversizedArguments)]
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .tool,
+                content: "ok",
+                createdAt: base.addingTimeInterval(1),
+                toolCallID: "call-1"
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "continue",
+                createdAt: base.addingTimeInterval(2)
+            ),
+            to: conversationID
+        )
+
+        let result = await provider.prepareContext(
+            for: Self.fallbackRequest(conversationID: conversationID)
+        )
+
+        #expect(result.didFallback)
+        assertRetainedArgumentsAreValidJSON(result.messages)
+        assertNoOrphanedToolResults(result.messages)
+        // 超大调用装不下，连同其结果一起丢弃。
+        #expect(!result.messages.contains { $0.role == .tool })
+        #expect(result.messages.contains { $0.role == .user })
+    }
 }
