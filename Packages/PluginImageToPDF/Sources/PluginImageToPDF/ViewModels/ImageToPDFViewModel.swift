@@ -174,18 +174,37 @@ final class ImageToPDFViewModel: ObservableObject {
             let destination = directoryURL.appendingPathComponent(
                 existingURL.lastPathComponent
             )
+            let tempURL = directoryURL.appendingPathComponent(
+                ".export-\(UUID().uuidString).tmp"
+            )
 
             do {
                 try FileManager.default.createDirectory(
                     at: directoryURL,
                     withIntermediateDirectories: true
                 )
-                if FileManager.default.fileExists(atPath: destination.path) {
-                    try FileManager.default.removeItem(at: destination)
+
+                var isDirectory: ObjCBool = false
+                let exists = FileManager.default.fileExists(
+                    atPath: destination.path,
+                    isDirectory: &isDirectory
+                )
+                // 目标是同名目录时拒绝导出并保留其内容，绝不递归删除。
+                if exists && isDirectory.boolValue {
+                    failed.append(existingURL.lastPathComponent)
+                    continue
                 }
-                try FileManager.default.copyItem(at: existingURL, to: destination)
+
+                // 先复制到临时文件再原子替换，复制失败时不破坏已存在的旧结果。
+                try FileManager.default.copyItem(at: existingURL, to: tempURL)
+                if exists {
+                    _ = try FileManager.default.replaceItemAt(destination, withItemAt: tempURL)
+                } else {
+                    try FileManager.default.moveItem(at: tempURL, to: destination)
+                }
                 written += 1
             } catch {
+                try? FileManager.default.removeItem(at: tempURL)
                 failed.append(existingURL.lastPathComponent)
             }
         }

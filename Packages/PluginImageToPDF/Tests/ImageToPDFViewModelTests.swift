@@ -212,6 +212,126 @@ struct ImageToPDFViewModelTests {
         #expect(!message.contains("0.000000"), "失败汇总出现了无效格式符的产物，实际: \(message)")
     }
 
+    @Test("导出目标是同名目录时拒绝并保留目录内容")
+    func exportRejectsDirectoryConflictAndPreservesContents() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let inputs = root.appendingPathComponent("inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let sourceURL = inputs.appendingPathComponent("photo.png")
+        try #require(Self.onePixelPNGData).write(to: sourceURL)
+
+        ImageToPDFRuntimeBridge.directoryURL = root.appendingPathComponent("staging", isDirectory: true)
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: [sourceURL])
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(model.outputItems.first?.status.outputURL != nil)
+
+        // 回归 #469：导出目录里预先存在同名目录 photo.pdf/keep.txt。
+        let exportDirectory = root.appendingPathComponent("export", isDirectory: true)
+        let conflictDirectory = exportDirectory.appendingPathComponent("photo.pdf", isDirectory: true)
+        try FileManager.default.createDirectory(at: conflictDirectory, withIntermediateDirectories: true)
+        let keepURL = conflictDirectory.appendingPathComponent("keep.txt")
+        try Data("keep me".utf8).write(to: keepURL)
+
+        let written = model.exportAll(to: exportDirectory)
+
+        #expect(written == 0, "文件与目录类型冲突必须拒绝导出")
+        var isDirectory: ObjCBool = false
+        #expect(FileManager.default.fileExists(atPath: conflictDirectory.path, isDirectory: &isDirectory))
+        #expect(isDirectory.boolValue, "同名目录不得被替换成文件")
+        #expect(FileManager.default.fileExists(atPath: keepURL.path), "目录内容不得被递归删除")
+        #expect(try Data(contentsOf: keepURL) == Data("keep me".utf8))
+        #expect(model.lastErrorMessage?.contains("photo.pdf") == true)
+    }
+
+    @Test("导出复制失败时保留目标目录里的旧同名 PDF")
+    func exportFailurePreservesExistingFile() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let inputs = root.appendingPathComponent("inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let sourceURL = inputs.appendingPathComponent("photo.png")
+        try #require(Self.onePixelPNGData).write(to: sourceURL)
+
+        ImageToPDFRuntimeBridge.directoryURL = root.appendingPathComponent("staging", isDirectory: true)
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: [sourceURL])
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let stagedURL = try #require(model.outputItems.first?.status.outputURL)
+
+        let exportDirectory = root.appendingPathComponent("export", isDirectory: true)
+        try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+        let destination = exportDirectory.appendingPathComponent("photo.pdf")
+        try Data("OLD".utf8).write(to: destination)
+
+        // 回归 #469：状态仍是 .done，但暂存源文件已丢失，复制必然失败。
+        try FileManager.default.removeItem(at: stagedURL)
+
+        let written = model.exportAll(to: exportDirectory)
+
+        #expect(written == 0)
+        #expect(FileManager.default.fileExists(atPath: destination.path), "复制失败不得提前删除旧结果")
+        #expect(try Data(contentsOf: destination) == Data("OLD".utf8))
+        #expect(model.lastErrorMessage != nil)
+    }
+
+    @Test("导出覆盖已存在的同名 PDF 文件时成功替换内容")
+    func exportReplacesExistingFileOnSuccess() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let inputs = root.appendingPathComponent("inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let sourceURL = inputs.appendingPathComponent("photo.png")
+        try #require(Self.onePixelPNGData).write(to: sourceURL)
+
+        ImageToPDFRuntimeBridge.directoryURL = root.appendingPathComponent("staging", isDirectory: true)
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: [sourceURL])
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(model.outputItems.first?.status.outputURL != nil)
+
+        let exportDirectory = root.appendingPathComponent("export", isDirectory: true)
+        try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+        let destination = exportDirectory.appendingPathComponent("photo.pdf")
+        try Data("OLD".utf8).write(to: destination)
+
+        let written = model.exportAll(to: exportDirectory)
+
+        #expect(written == 1)
+        var isDirectory: ObjCBool = false
+        #expect(FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory))
+        #expect(!isDirectory.boolValue)
+        let data = try Data(contentsOf: destination)
+        #expect(data != Data("OLD".utf8), "成功导出应替换旧文件内容")
+        #expect(!data.isEmpty)
+        #expect(model.lastErrorMessage == nil)
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: exportDirectory.path)
+            .filter { $0.hasPrefix(".export-") }
+        #expect(leftovers.isEmpty, "临时文件成功后必须被消费，不得残留")
+    }
+
     /// 1×1 PNG，足够让 `NSImage` 解码并产生一页 PDF。
     private static let onePixelPNGData = Data(
         base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
