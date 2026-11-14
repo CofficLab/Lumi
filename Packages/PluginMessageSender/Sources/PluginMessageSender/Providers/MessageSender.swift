@@ -43,6 +43,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 返回后的补偿逻辑。两条路径都可能通知完成并排空队列，必须按回合
     /// 身份去重，否则两条排队消息会被连续发出，破坏串行语义。
     private var terminalNotifiedTurns: [UUID: UUID] = [:]
+    /// 已删除的会话（#167）：排空守卫不得再为它们落库消息或拉起回合。
+    private var deletedConversations: Set<UUID> = []
+    private var conversationObserver: (any ConversationObserverHandle)?
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
     public private(set) var isSending = false {
@@ -115,6 +118,10 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         self.conversations = conversations
         self.messages = messages
         self.agentLoop = agentLoop
+        conversationObserver = conversations.addConversationObserver { [weak self] event in
+            guard case .deleted(let id) = event else { return }
+            self?.invalidateDeletedConversation(id)
+        }
     }
 
     @discardableResult
@@ -420,6 +427,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
 
     public func startTurn(for commit: MessageSendCommit) async {
         guard let userMessageID = commit.userMessageID else { return }
+        // 提交与启动之间可能隔着附件读取等异步窗口，会话若已在窗口内被
+        // 删除，这里不得再为它拉起回合（#167）。
+        guard !deletedConversations.contains(commit.conversationID) else { return }
         let task = beginTurn(
             conversationID: commit.conversationID,
             userMessageID: userMessageID
@@ -761,7 +771,31 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     }
 
     /// 依次发送待发队列（同一会话串行）。
+    /// 会话删除后，它的待发工作必须随之失效（#167）。
+    ///
+    /// 删除通知先于异步清理到达；若不在此刻清掉队列与跟踪任务，取消的
+    /// 终态事件和任务收尾还会把排队消息重新落库、为已删除的会话拉起回合。
+    private func invalidateDeletedConversation(_ conversationID: UUID) {
+        deletedConversations.insert(conversationID)
+        currentTasks[conversationID]?.cancel()
+        currentTasks.removeValue(forKey: conversationID)
+        // 代号一并移除：被取消的跟踪任务收尾时代号不匹配，不会再排空队列。
+        turnGenerations.removeValue(forKey: conversationID)
+        pendingTurnStarts.remove(conversationID)
+        pendingQueues.removeValue(forKey: conversationID)
+        completedOutcomes.removeValue(forKey: conversationID)
+        activeTurnIDs.removeValue(forKey: conversationID)
+        terminalNotifiedTurns.removeValue(forKey: conversationID)
+        // 跟踪任务挂在 continuation 上，取消 Task 不会让它自己返回。
+        let waiters = pendingOutcomes.removeValue(forKey: conversationID) ?? []
+        waiters.forEach { $0.resume(returning: .cancelled) }
+        notify(.pendingMessagesChanged(conversationID: conversationID))
+        isSending = !currentTasks.isEmpty || !pendingTurnStarts.isEmpty
+    }
+
     private func drainPendingQueue(conversationID: UUID) {
+        // 已删除的会话不得再落库消息或拉起回合（#167）。
+        guard !deletedConversations.contains(conversationID) else { return }
         // 在途守卫：排空过程中会 `beginTurn`，其收尾又可能触发排空。
         // 不加守卫会让同一会话并发拉起两个回合。
         guard !drainingConversations.contains(conversationID) else { return }
