@@ -20,7 +20,9 @@ public enum ProjectTypeDetector {
     }
 
     private static let rules: [Rule] = [
-        Rule(fileNames: ["Package.swift"], suffixes: [".xcodeproj"], label: "Swift (Xcode / SPM)", symbolName: "swift"),
+        Rule(fileNames: ["Package.swift"], suffixes: [], label: "Swift (Xcode / SPM)", symbolName: "swift"),
+        // .xcodeproj 只是工程容器，可能纯 Obj-C/C/C++，后缀本身不是 Swift 证据。
+        Rule(fileNames: [], suffixes: [".xcodeproj"], label: "Xcode", symbolName: "hammer"),
         Rule(fileNames: ["package.json"], suffixes: [], label: "Node / JavaScript", symbolName: "cube.box"),
         Rule(fileNames: ["Cargo.toml"], suffixes: [], label: "Rust", symbolName: "gearshape.2"),
         Rule(fileNames: ["pyproject.toml", "requirements.txt"], suffixes: [], label: "Python", symbolName: "chevron.left.forwardslash.chevron.right"),

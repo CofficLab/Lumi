@@ -155,8 +155,8 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
 @Suite("ProjectRAGLLMContextHook")
 @MainActor
 struct ProjectRAGLLMContextHookTests {
-    @Test("injects code context once for one user message")
-    func injectsContextOnce() async {
+    @Test("同一回合后续请求复用缓存证据，不重复检索（回归 #604）")
+    func reinjectsEvidenceForSameTurnWithoutResearching() async {
         let provider = StubProjectRAGProvider()
         let hook = ProjectRAGLLMContextHook(provider: provider)
         let context = WillSendToLLMContext(
@@ -175,8 +175,12 @@ struct ProjectRAGLLMContextHookTests {
         #expect(first.messages.count == context.messages.count + 1)
         #expect(first.messages.first?.role == .system)
         #expect(first.messages.first?.content.contains("Sources/Feature.swift:12-19") == true)
-        #expect(second.messages.count == context.messages.count)
+        // #604：输入历史不含证据时，同一回合的后续请求必须补回缓存证据，而非早退丢弃。
+        #expect(second.messages.count == context.messages.count + 1)
+        #expect(second.messages.first?.content.contains("Sources/Feature.swift:12-19") == true)
         #expect(other.messages.count == otherContext.messages.count + 1)
+        // 复用缓存不触发新检索：仅 first 与 other（不同会话）各检索一次。
+        #expect(provider.searchCallCount == 2)
         #expect(provider.ensureIndexedCallCount == 2)
         #expect(provider.lastEnsureIndexedBackground == false)
     }
@@ -240,9 +244,10 @@ struct RAGCodeSearchToolTests {
         let provider = StubProjectRAGProvider()
         let searchMemory = ProjectRAGSearchMemory()
         let hook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
+        let conversationID = UUID()
         let context = WillSendToLLMContext(
             messages: [LLMMessage(role: .user, content: "这个项目的代码怎么实现请求处理")],
-            conversationID: UUID()
+            conversationID: conversationID
         )
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-tool-dedup-\(UUID().uuidString)", isDirectory: true)
@@ -251,10 +256,13 @@ struct RAGCodeSearchToolTests {
         provider.currentProjectPath = projectURL.path
 
         _ = await hook.apply(to: context)
-        let output = try await RAGCodeSearchTool(provider: provider, searchMemory: searchMemory).execute(arguments: [
-            "query": ToolArgument("这个项目的代码怎么实现请求处理"),
-            "project_path": ToolArgument(projectURL.path),
-        ])
+        // 同一对话紧接着的真实 search_code 才消费抑制标记（#467）。
+        let toolContext = ToolExecutionContext(jobID: "job-dedup", conversationID: conversationID)
+        let output = try await RAGCodeSearchTool(provider: provider, searchMemory: searchMemory)
+            .executeResult(context: toolContext, arguments: [
+                "query": ToolArgument("这个项目的代码怎么实现请求处理"),
+                "project_path": ToolArgument(projectURL.path),
+            ]).content
 
         #expect(output.contains("already injected"))
         #expect(provider.searchCallCount == 1)
@@ -569,5 +577,23 @@ struct RAGInjectionDeduplicationTests {
 
         #expect(dedup.keys.count == 2)
         #expect(dedup.contains(turn))
+    }
+
+    @Test("缓存的注入证据随回合淘汰一起清除（回归 #604）")
+    func evidenceEvictedWithTurn() {
+        var dedup = RAGInjectionDeduplication(capacity: 2)
+        let first = key("first")
+        let second = key("second")
+        let third = key("third")
+
+        dedup.record(first, content: "evidence-1")
+        dedup.record(second, content: "evidence-2")
+        #expect(dedup.content(for: first) == "evidence-1")
+        #expect(dedup.content(for: second) == "evidence-2")
+
+        dedup.record(third, content: "evidence-3")
+        #expect(dedup.content(for: first) == nil, "淘汰回合时其证据也必须清除")
+        #expect(dedup.content(for: second) == "evidence-2")
+        #expect(dedup.content(for: third) == "evidence-3")
     }
 }

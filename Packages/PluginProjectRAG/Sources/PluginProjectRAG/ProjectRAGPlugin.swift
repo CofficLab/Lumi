@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProjectRAGEngine
+import ProviderConversation
 import ProviderProject
 import ProviderIdleTime
 import ProviderStorage
@@ -93,7 +94,14 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         }
 
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
-            let contextHook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
+            // ConversationManagerPlugin(order=7) 已在 onBoot 替换为持久化实现，
+            // 此处(order=70)解析到的是最终实现；钩子据此按对话绑定项目检索（#603）。
+            let conversations = kernel.resolveProvider((any ConversationManaging).self)
+            let contextHook = ProjectRAGLLMContextHook(
+                provider: provider,
+                searchMemory: searchMemory,
+                conversations: conversations
+            )
             self.llmContextHook = contextHook
             llmContextHookHandle = hooks.addWillSendToLLMHook { [weak contextHook] context in
                 guard let contextHook else { return context }

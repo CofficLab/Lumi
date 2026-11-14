@@ -28,6 +28,8 @@ struct RAGInjectionDeduplication {
 
     private(set) var keys: Set<Key> = []
     private var order: [Key] = []
+    /// 每个回合已注入的证据正文，供同一回合的后续请求复用（#604）。
+    private var evidence: [Key: String] = [:]
     private let capacity: Int
 
     init(capacity: Int = RAGInjectionDeduplication.defaultCapacity) {
@@ -38,11 +40,26 @@ struct RAGInjectionDeduplication {
         keys.contains(key)
     }
 
+    /// 返回该回合已缓存的注入证据；nil 表示尚未注入或已被淘汰。
+    func content(for key: Key) -> String? {
+        evidence[key]
+    }
+
     mutating func record(_ key: Key) {
-        guard keys.insert(key).inserted else { return }
+        record(key, content: nil)
+    }
+
+    mutating func record(_ key: Key, content: String?) {
+        guard keys.insert(key).inserted else {
+            if let content { evidence[key] = content }
+            return
+        }
         order.append(key)
+        if let content { evidence[key] = content }
         if order.count > capacity {
-            keys.remove(order.removeFirst())
+            let oldest = order.removeFirst()
+            keys.remove(oldest)
+            evidence.removeValue(forKey: oldest)
         }
     }
 }

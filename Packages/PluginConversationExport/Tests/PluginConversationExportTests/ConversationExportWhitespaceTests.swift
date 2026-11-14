@@ -122,6 +122,7 @@ struct ConversationExportWhitespaceTests {
             projectPath: nil,
             providerID: nil,
             modelName: nil,
+            language: nil,
             messages: [message],
             exportedAt: Date(timeIntervalSince1970: 0)
         )

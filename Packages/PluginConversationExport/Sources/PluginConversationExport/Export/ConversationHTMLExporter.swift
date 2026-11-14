@@ -1,4 +1,5 @@
 import Foundation
+import ProviderConversation
 import ProviderMessage
 
 struct ConversationExportSnapshot: Sendable {
@@ -8,6 +9,7 @@ struct ConversationExportSnapshot: Sendable {
     let projectPath: String?
     let providerID: String?
     let modelName: String?
+    let language: ConversationLanguage?
     let messages: [Message]
     let exportedAt: Date
 }
@@ -41,7 +43,7 @@ enum ConversationHTMLExporter {
         let metadata = renderMetadata(snapshot, messageCount: exportedMessageCount, mode: mode)
         let html = """
         <!doctype html>
-        <html lang="zh-CN">
+        <html lang="\(htmlLanguage(for: snapshot.language))">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -123,6 +125,14 @@ enum ConversationHTMLExporter {
             values.append("<span>Project: \(escape(projectPath))</span>")
         }
         return values.joined()
+    }
+
+    /// 导出文档的 lang 跟随对话回复语言；未设置时沿用中文默认。
+    static func htmlLanguage(for language: ConversationLanguage?) -> String {
+        switch language {
+        case .english: return "en"
+        case .chinese, .none: return "zh-CN"
+        }
     }
 
     private static func renderDetailedMessage(_ message: Message) -> String {

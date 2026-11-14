@@ -54,6 +54,7 @@ struct ConversationExportPluginTests {
             projectPath: "/tmp/<project>",
             providerID: "stepfun-platform",
             modelName: "step-5-preview",
+            language: nil,
             messages: [later, earlier],
             exportedAt: Date(timeIntervalSince1970: 1_700_000_000)
         )
@@ -113,6 +114,7 @@ struct ConversationExportPluginTests {
             projectPath: nil,
             providerID: nil,
             modelName: nil,
+            language: nil,
             messages: [message],
             exportedAt: Date(timeIntervalSince1970: 0)
         )
@@ -200,6 +202,7 @@ struct ConversationExportPluginTests {
             projectPath: "/Users/me/SecretProject",
             providerID: "openai",
             modelName: "gpt-4o",
+            language: nil,
             messages: messages,
             exportedAt: Date(timeIntervalSince1970: 1_700_000_000)
         )

@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
       "state" : {
-        "revision" : "e07e1c1f1a5d89554152b0fd21a555e116d522bb",
-        "version" : "1.0.1"
+        "revision" : "cb2f0450a85aa18772c06f9b442beccd8e44b1a0",
+        "version" : "1.0.2"
       }
     },
     {
@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginRootView.git",
       "state" : {
-        "revision" : "da93b69e855e638f3062d46c6c41cd02244f2d39",
-        "version" : "1.3.1"
+        "revision" : "3ff9eeef9bb850f16dec21d42706fefff8768e2f",
+        "version" : "1.3.2"
       }
     },
     {

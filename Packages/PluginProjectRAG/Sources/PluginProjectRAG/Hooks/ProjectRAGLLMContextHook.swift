@@ -2,6 +2,7 @@ import Foundation
 import KitLLM
 import LumiLoggingKit
 import ProjectRAGEngine
+import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderLLMContext
 import ProviderProjectRAG
@@ -14,17 +15,20 @@ final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
     private let coordinator: CodeNavigationCoordinator
     private let searchMemory: ProjectRAGSearchMemory?
+    private let conversations: (any ConversationManaging)?
     private let defaults: UserDefaults
     private var injectedTurns = RAGInjectionDeduplication()
 
     init(
         provider: any ProjectRAGProviding,
         searchMemory: ProjectRAGSearchMemory? = nil,
+        conversations: (any ConversationManaging)? = nil,
         defaults: UserDefaults = .standard
     ) {
         self.provider = provider
         self.coordinator = CodeNavigationCoordinator(provider: provider)
         self.searchMemory = searchMemory
+        self.conversations = conversations
         self.defaults = defaults
     }
 
@@ -37,9 +41,22 @@ final class ProjectRAGLLMContextHook {
         let userMessages = context.messages.filter { $0.role == .user }
         guard let latestUserMessage = userMessages.last,
               !latestUserMessage.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              RAGIntentAnalyzer.shouldAutoInject(for: latestUserMessage.content),
-              let projectPath = provider.currentProjectPath,
-              !projectPath.isEmpty else {
+              RAGIntentAnalyzer.shouldAutoInject(for: latestUserMessage.content) else {
+            return context
+        }
+
+        // 检索必须作用于「本次请求所属对话」绑定的项目，而非 UI 当前打开的项目：
+        // 外部打开切换全局项目后旧对话仍可能选中，用全局路径会把别的项目代码注入
+        // 旧对话（#603）。无法确定对话项目时不注入，绝不静默回退到可能无关的全局项目。
+        let projectPath: String?
+        if let conversations {
+            projectPath = (await conversations.fetchConversation(id: context.conversationID))?
+                .projectPath?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            projectPath = provider.currentProjectPath
+        }
+        guard let projectPath, !projectPath.isEmpty else {
             return context
         }
 
@@ -58,7 +75,11 @@ final class ProjectRAGLLMContextHook {
             userMessageCount: userMessages.count,
             content: latestUserMessage.content
         )
-        guard !injectedTurns.contains(turnKey) else { return context }
+        // 同一用户回合的后续请求（工具调用后历史重建）复用已检索证据，而不是因
+        // 去重键命中直接丢弃——否则只有首次模型调用能看到代码上下文（#604）。
+        if let cached = injectedTurns.content(for: turnKey) {
+            return Self.reinject(cached, into: context)
+        }
 
         do {
             let response = try await coordinator.search(
@@ -113,21 +134,40 @@ final class ProjectRAGLLMContextHook {
             guard let anchor = updated.messages.lastIndex(where: { $0.role == .user }) else {
                 return context
             }
+            let systemContent = wrapper + prompt
             updated.messages.insert(
                 LLMMessage(
                     role: .system,
-                    content: wrapper + prompt
+                    content: systemContent
                 ),
                 at: anchor
             )
-            searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
-            injectedTurns.record(turnKey)
+            searchMemory?.recordAutomaticSearch(
+                query: latestUserMessage.content,
+                projectPath: projectPath,
+                conversationID: context.conversationID
+            )
+            injectedTurns.record(turnKey, content: systemContent)
             MagicLogger.debug("[ProjectRAG] autoInject injected=true topScore=\(topScore) kind=\(topKind) budget=\(context.injectedContentTokenBudget.map(String.init) ?? "nil") msgLen=\(messageLength)")
             return updated
         } catch {
             // RAG 不可用时不改变原始请求，避免检索故障阻塞正常对话。
             return context
         }
+    }
+
+    /// 把已缓存的证据重新插回当前请求：历史重建会丢掉只存在于上次请求局部副本里的
+    /// 注入消息，这里按相同锚点补回；若历史已持久化该消息则不重复插入（#604）。
+    private static func reinject(_ content: String, into context: WillSendToLLMContext) -> WillSendToLLMContext {
+        guard !context.messages.contains(where: { $0.role == .system && $0.content == content }) else {
+            return context
+        }
+        var updated = context
+        guard let anchor = updated.messages.lastIndex(where: { $0.role == .user }) else {
+            return context
+        }
+        updated.messages.insert(LLMMessage(role: .system, content: content), at: anchor)
+        return updated
     }
 
     private func containsCJK(_ text: String) -> Bool {
