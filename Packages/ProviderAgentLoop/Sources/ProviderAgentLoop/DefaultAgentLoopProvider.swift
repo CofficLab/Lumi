@@ -426,6 +426,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func finishEventTurn(conversationID: UUID, turnID: UUID, outcome: AgentLoopOutcome) {
+        // 迟到的旧回合不得清理新回合的句柄或发布终态（#438）。
+        guard turnIDs[conversationID] == turnID else { return }
         if Self.verbose {
             Self.logger.info("\(Self.t)finish turn conversation=\(conversationID.uuidString.prefix(8)), outcome=\(String(describing: outcome))")
         }
@@ -479,7 +481,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func advanceEventTurn(conversationID: UUID, turnID: UUID) async {
-        defer { eventTasks[conversationID] = nil }
+        // 旧回合的任务收尾不得清掉新回合的 step 句柄（#438）。
+        defer {
+            if turnIDs[conversationID] == turnID {
+                eventTasks[conversationID] = nil
+            }
+        }
         if cancelledConversations.contains(conversationID) {
             finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
             return

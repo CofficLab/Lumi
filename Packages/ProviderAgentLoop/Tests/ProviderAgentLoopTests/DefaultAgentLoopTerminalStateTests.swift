@@ -557,4 +557,40 @@ struct DefaultAgentLoopTerminalStateTests {
         #expect(history.filter { $0.role == .assistant }.map(\.content) == ["fresh"])
         #expect(harness.loop.state(for: harness.conversationID) == .completed)
     }
+
+    @Test("旧回合在新回合运行中迟到返回，不得覆盖新回合状态（#438）")
+    func lateOldTurnReturnDoesNotOverwriteNewTurn() async throws {
+        let oldProvider = GatedLLMProvider()
+        let harness = makeHarness(provider: oldProvider)
+        var startedTurns: [UUID] = []
+        let observer = harness.loop.addAgentLoopObserver { event in
+            if case let .started(_, turn) = event { startedTurns.append(turn) }
+        }
+        defer { observer.cancel() }
+
+        let turnTaskA = Task { try await harness.loop.runTurn(in: harness.conversationID) }
+        #expect(await waitUntil { oldProvider.requestStarted })
+        harness.loop.cancelTurn(in: harness.conversationID)
+        _ = try await turnTaskA.value
+
+        let newProvider = GatedLLMProvider()
+        newProvider.response = LLMResponse(content: "fresh")
+        harness.manager.provider = newProvider
+        let turnTaskB = Task { try await harness.loop.runTurn(in: harness.conversationID) }
+        #expect(await waitUntil { newProvider.requestStarted })
+
+        // A 在 B 运行中迟到返回：不得清掉 B 的句柄、不得发布 A 的终态。
+        oldProvider.release()
+        #expect(await waitUntil { oldProvider.requestFinished })
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(harness.loop.state(for: harness.conversationID) == .running)
+        #expect(harness.loop.isRunning(for: harness.conversationID))
+        #expect(startedTurns.count == 2)
+        #expect(harness.loop.currentTurnID(for: harness.conversationID) == startedTurns.last)
+
+        newProvider.release()
+        #expect(try await turnTaskB.value == .completed)
+        let history = await harness.messages.messagesSnapshot(in: harness.conversationID)
+        #expect(history.filter { $0.role == .assistant }.map(\.content) == ["fresh"])
+    }
 }
