@@ -33,6 +33,9 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 待插入编辑器的折叠块。生产方递交后由编辑器消费（插入 chip），
     /// 消费完成后清空，避免同一个块被重复插入。
     @Published private(set) var pendingBlock: ConversationInputBlockRequest?
+    /// 启动补投会同步连续 enqueue 多个块，单槽 pendingBlock 会让后者覆盖前者。
+    /// 用 FIFO 暂存未消费的块，pendingBlock 始终指向队首，消费一个再推进到下一个（#204）。
+    private var pendingBlockQueue: [ConversationInputBlockRequest] = []
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
@@ -115,13 +118,16 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     ///
     /// 焦点一并打开，用户可以直接在 chip 旁边继续写指令。
     func enqueue(_ block: ConversationInputBlock) {
-        pendingBlock = ConversationInputBlockRequest(
+        let request = ConversationInputBlockRequest(
             id: block.id,
             text: block.text,
             title: block.title,
             systemImage: block.systemImage,
             collapseThreshold: block.collapseThreshold
         )
+        pendingBlockQueue.append(request)
+        // 已有块在等待编辑器消费时只入队、不覆盖，消费后由 consumePendingBlock 推进。
+        if pendingBlock == nil { pendingBlock = pendingBlockQueue.first }
         capability.isInputFocused = true
         revision &+= 1
     }
@@ -138,7 +144,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
     func consumePendingBlock(id: UUID) {
         guard pendingBlock?.id == id else { return }
-        pendingBlock = nil
+        pendingBlockQueue.removeAll { $0.id == id }
+        pendingBlock = pendingBlockQueue.first
     }
 
     /// 对话切换：清空输入与未提交附件。

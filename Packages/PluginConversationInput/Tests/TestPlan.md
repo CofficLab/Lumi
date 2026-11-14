@@ -386,8 +386,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **189 条场景 / 195 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 195 tests in 29 suites，全部通过；早期记录的 6 条 chip 几何
+> 说明：清单 **190 条场景 / 196 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 196 tests in 30 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -407,12 +407,29 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > - **UTF-16 与 Swift 索引是两套坐标系**（ID 51–53）：`NSTextView` 的选区是 UTF-16
 >   偏移，`String.Index` 按 grapheme 计数，emoji 让两者不再相等。
 
+### 补充轮次（ID 190）：折叠块启动补投 FIFO（回归 #204）
+
+> 输入插件可能晚于一次右键发送才装配好。`DefaultConversationInputBlockProvider`
+> 在首个观察者注册前缓冲提交的块，注册时**同步**逐个补投，于是
+> `ConversationInputObserver` 一注册就连续 `enqueue` 多个块。旧实现用单槽
+> `pendingBlock`，后块覆盖前块——补投 A、B 后只剩 B，A 静默丢失。本轮用真实
+> Provider + Adapter + Observer 走完整补投链路，锁住 FIFO 保真。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 190 | 折叠块 | 启动补投的多个块按提交顺序逐个待插入，消费一个推进到下一个（**回归 #204**） | 真实 Provider 缓冲 3 个块后装配 Adapter + Observer | 注册触发同步补投 → 依次消费队首 | 队首始终为最早未消费块（first→second→third→nil），单槽覆盖会丢前块 | P0 | ✅ 已覆盖 | `startupReplayDeliversBlocksInOrder` |
+
+> **鉴别力验证**：两处变异分别确认两道守卫——把 `enqueue` 改成用最新 `request`
+> 覆盖 `pendingBlock`（恢复单槽旧行为），补投后队首变 third，首个断言失败；把
+> `consumePendingBlock` 的 `pendingBlock = pendingBlockQueue.first` 改成 `= nil`，
+> 消费 first 后队首为 nil，第二个断言失败。两处均已还原。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 56 / 56
+- P0: 已覆盖 57 / 57
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 18 / 18
-- **合计: 189 / 189**（仅表示清单场景，非源码覆盖率）
+- **合计: 190 / 190**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
