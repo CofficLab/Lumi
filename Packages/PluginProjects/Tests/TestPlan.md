@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 42 条用例。
+PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 45 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 42
+测试文件: 11 个，用例总数: 45
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,6 +48,7 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 42 
 - **ListProjectsTool**（4 条）：由 `negativeLimitReturnsParameterError`、`zeroLimitReturnsParameterError`、`nonIntegerLimitReturnsParameterError`、`limitDefaultsAndCaps` 锁定；改动 limit 解析时优先跑对应测试文件。
 - **AddProjectNoAutoSelect**（3 条）：由 `addWithoutSelectDoesNotOpenWhenNoCurrentProject`、`addWithoutSelectPreservesExistingCurrentProject`、`addWithSelectStillOpensAddedProject` 锁定 `add(select:false)` 只入列、不得自动打开项目（即使当前无项目），`select:true` 仍打开新增项目（**回归 #475**）；改动 `ProjectsViewModel.add` 时优先跑对应测试文件。
 - **ProjectStorageDetector / ProjectStorageRefresh**（15 条）：由 `internalDiskKind`、`missingDirectoryDiffersFromUnreachableVolume`、`cachedResultIsReused`、`refreshIncrementsRevision` 等用例锁定磁盘类型判定、缓存复用与刷新失效；改动存储探测时优先跑对应测试文件。
+- **ProjectLastUsed**（3 条）：由 `firstSyncPreservesPersistedLastUsed`、`selectionAdvancesLastUsed`、`resyncWithUnchangedCurrentDoesNotAdvance` 锁定启动同步保留持久化 lastUsed、选中推进使用时间、无关同步不反复刷新（**回归 #476**）；改动 `ProjectsViewModel.syncFromProvider` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -95,29 +96,34 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 42 
 | 40 | ProjectStorageRefresh | 刷新会递增存储状态修订号 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshIncrementsRevision` |
 | 41 | ProjectStorageRefresh | 刷新会清空探测缓存 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshInvalidatesDetectorCache` |
 | 42 | ProjectStorageRefresh | 仅不可用状态给出提示文案 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hintOnlyForUnavailableStates` |
+| 43 | ProjectLastUsed | 启动首次同步保留持久化的 lastUsed，不得重置为启动时刻 | 隔离 Store 持久化两个旧时间项目，当前项目为空 | `syncFromProvider(persist:false)` | 各项目 lastUsed 等于持久化旧值 | P0 | ✅ 已覆盖 | `firstSyncPreservesPersistedLastUsed` |
+| 44 | ProjectLastUsed | 选中项目推进其 lastUsed，未选中项目不被刷新 | 隔离 Store + 能力桩，先同步空当前再选中 A | 两次 `syncFromProvider` | A 与当前快照 lastUsed 推进，B 保持旧值 | P0 | ✅ 已覆盖 | `selectionAdvancesLastUsed` |
+| 45 | ProjectLastUsed | 当前项目不变时重复同步不得再次推进 lastUsed | 能力桩当前项目恒为 A | 连续两次 `syncFromProvider` | 两次 lastUsed 相等 | P1 | ✅ 已覆盖 | `resyncWithUnchangedCurrentDoesNotAdvance` |
 
-> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
-> 回归 #475 变异验证：M1 在 `add(select:false)` 分支重新加入「`currentProject == nil` 时自动 `openProject`」→ `addWithoutSelectDoesNotOpenWhenNoCurrentProject` 失败（`openedPaths` 非空、`currentProject` 非 nil，RED）；M2 移除 `select:true` 分支的 `openProject` → `addWithSelectStillOpensAddedProject` 失败（RED）；还原后 42 条全绿。
+> 回归 #475 变异验证：M1 在 `add(select:false)` 分支重新加入「`currentProject == nil` 时自动 `openProject`」→ `addWithoutSelectDoesNotOpenWhenNoCurrentProject` 失败（`openedPaths` 非空、`currentProject` 非 nil，RED）；M2 移除 `select:true` 分支的 `openProject` → `addWithSelectStillOpensAddedProject` 失败（RED）；还原后 45 条全绿。
+>
+> 回归 #476 变异验证：M1 把 `syncFromProvider` 的 `?? persistedLastUsed(for:) ?? Date()` 兜底改回 `?? Date()` → `firstSyncPreservesPersistedLastUsed` 失败（lastUsed 被重置为启动时刻，RED）；M2 移除「当前项目路径变化时推进 lastUsed」整段 → `selectionAdvancesLastUsed` 失败（RED）；M3 去掉 `current.path != previousCurrentPath` 守卫改为每次同步都推进 → `resyncWithUnchangedCurrentDoesNotAdvance` 失败（RED）；还原后 45 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 36 / 36
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 37 / 37
 - P2: 已覆盖 0 / 0
-- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（36 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
