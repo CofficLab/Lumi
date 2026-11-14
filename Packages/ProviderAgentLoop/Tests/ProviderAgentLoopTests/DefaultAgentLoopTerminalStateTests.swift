@@ -334,7 +334,10 @@ struct DefaultAgentLoopTerminalStateTests {
         #expect(resumed == .completed)
         #expect(await waitUntil { finished.count == 2 })
         #expect(finished.map(\.endReason) == [.suspended, .completed])
-        #expect(started.count == 1, "恢复不是新回合，不应再次 turnStarted")
+        // 恢复后同一回合重新进入运行态，必须再次声明 turnStarted，
+        // 持久化记录才能回到「运行中」，崩溃后可被「继续」恢复（#805）。
+        #expect(started.count == 2)
+        #expect(Set(started.map(\.turnID)).count == 1, "恢复沿用同一 turnID，不是新回合")
         #expect(Set(finished.map(\.turnID)).count == 1, "挂起与完成必须沿用同一 turnID")
         #expect(finished.first?.turnID == started.first?.turnID)
     }

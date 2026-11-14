@@ -387,6 +387,13 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             pendingSuspensions.removeValue(forKey: conversationID)
         }
         states[conversationID] = .running
+        // 恢复后同一回合重新进入运行态：与新回合一样触发 turnStarted 钩子，
+        // 让持久化记录回到「运行中」，崩溃后才能被「继续」恢复（#805）。
+        if let lifecycleHooks, let turnID = turnIDs[conversationID] {
+            await lifecycleHooks.notifyTurnStarted(TurnLifecycleContext(
+                conversationID: conversationID, turnID: turnID
+            ))
+        }
         activeToolCalls.removeValue(forKey: conversationID)
         let completedIDs = Set((await messages.messagesSnapshot(in: conversationID)).compactMap {
             $0.role == .tool ? $0.toolCallID : nil

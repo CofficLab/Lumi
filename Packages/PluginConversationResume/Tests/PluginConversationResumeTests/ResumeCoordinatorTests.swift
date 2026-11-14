@@ -258,6 +258,62 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #805：挂起回合被回答后重新执行，同一 turnID 会再次触发
+    /// turnStarted。此刻崩溃，记录必须停在「运行中」而不是 `.suspended`，
+    /// 否则重启后 ResumeEligibility 拒绝恢复，「继续」提示不出现。
+    @Test("挂起回合恢复执行后崩溃，仍显示继续提示")
+    func resumedSuspendedTurnCrashStillShowsBanner() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        messages.seed([
+            userMessage(conversationID),
+            assistantWithToolCall(conversationID, turnID: turnID),
+        ], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        // 回合开始 → ask_user 挂起：记录为 .suspended，不可继续。
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: .suspended
+            )
+        )
+        await coordinator.refreshState(for: conversationID)
+        #expect(coordinator.state.isResumable == false)
+
+        // 用户回答后同一回合恢复执行（再次 turnStarted），随后崩溃——
+        // 没有终态事件。
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        let record = await store.record(for: conversationID)
+        #expect(record?.outcome == .interrupted)
+        #expect(record?.turnID == turnID)
+
+        // 重启后（AgentLoop 回到 idle）应当提示「继续」。
+        loop.state = .idle
+        await coordinator.refreshState(for: conversationID)
+        #expect(coordinator.state.isResumable == true)
+        coordinator.cancel()
+    }
+
     @Test("点击继续会补写占位 tool result 并启动新回合")
     func resumeRepairsOrphansAndStartsTurn() async {
         let (store, url) = makeStore()
