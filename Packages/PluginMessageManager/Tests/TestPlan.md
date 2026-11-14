@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 41 条用例。
+PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 41
+测试文件: 11 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Errors/`
@@ -37,6 +37,9 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 
 - **MessageStore 项目维度日统计**（4 条）：由 `filtersByConversation`、`emptyConversationSetMeansEmpty`、`nilConversationSetMeansUnrestricted`、`chunksLargeConversationSets` 锁定——「本项目近 30 天」这类统计靠一组会话 ID 过滤消息；空集合必须意味着空结果（不得退化成全量），`nil` 意味着不限会话，会话数超过 SQLite 变量上限时按块查询再合并。改动按会话过滤的聚合路径时必须优先跑该文件。
 - **MessageStore 全量物化路径基准**（2 条）：由 `fullPathTakesEverythingWhilePagingTakesOnePage`、`fullPathScalesWithConversationLength` 锁定——全量路径的物化量应随会话长度线性增长，作为「分页必须只取一页」的对照基线。
+- **MessageManager 会话隔离**（9 条）：由 `snapshotIsConversationScoped`、`llmReadIsConversationScoped`、`syncReadIsConversationScoped`、`pendingWindowIsConversationScoped`、`concurrentInsertsDoNotLeak`、`mismatchedConversationIDIsRebuiltToTarget`、`updateIsConversationScoped`、`deleteIsConversationScoped`、`snapshotReflectsAllStreamsWrittenToSameConversation` 锁定——所有读路径（同步/快照/LLM/落盘前 pending 窗口）与写路径（更新/删除/并发插入）都必须按会话隔离，不得跨会话泄漏；`conversationID` 不一致的消息被重建到目标会话。
+- **首条用户消息跳过空白附件**（3 条）：由 `persistedQuerySkipsBlankAttachmentMessage`、`reopenedManagerReadsFirstNonBlankFromDisk`、`persistedQuerySkipsWhitespaceOnlyMessage` 锁定——`fetchFirstUserMessage` / `firstUserMessage` 必须返回第一条**非空白**用户消息（纯附件或纯空白正文的消息要跳过），与默认 Provider 及内存实现口径一致，供自动标题使用（#838）。
+- **LLM 窄读取保留附件 metadata**（1 条）：由 `llmReadKeepsAttachmentMetadata` 锁定——LLM 窄读取在跳过无关 metadata 的同时，必须还原图片/文件附件 metadata。
 
 ## 测试用例清单
 
@@ -83,27 +86,40 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 39 | MessageManager | 最近一页:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | 最近一页读出 B 的正文、工具结果与授权状态 | P1 | ✅ 已覆盖 | `recentPagePrefersPendingVersion` |
 | 40 | MessageManager | 完整快照:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | 完整快照与 `messages(for:)` 读出 B | P1 | ✅ 已覆盖 | `fullSnapshotPrefersPendingVersion` |
 | 41 | MessageManager | LLM 上下文:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | LLM 上下文读出 B 的正文与工具结果 | P1 | ✅ 已覆盖 | `llmSnapshotPrefersPendingVersion` |
+| 42 | MessageManager 会话隔离 | messagesSnapshot 只含目标对话的消息 | 两个对话各有消息 | 执行该用例 | 快照只返回目标对话消息 | P1 | ✅ 已覆盖 | `snapshotIsConversationScoped` |
+| 43 | MessageManager 会话隔离 | messagesForLLM 只含目标对话的消息 | 两个对话各有消息 | 执行该用例 | LLM 读取只返回目标对话消息 | P1 | ✅ 已覆盖 | `llmReadIsConversationScoped` |
+| 44 | MessageManager 会话隔离 | 同步 messages(for:) 只含目标对话的消息 | 两个对话各有消息 | 执行该用例 | 同步读取只返回目标对话消息 | P1 | ✅ 已覆盖 | `syncReadIsConversationScoped` |
+| 45 | MessageManager 会话隔离 | 落盘前的 read-your-writes 窗口仍按对话隔离 | 消息尚在 pending | 执行该用例 | pending 窗口读取不跨对话泄漏 | P1 | ✅ 已覆盖 | `pendingWindowIsConversationScoped` |
+| 46 | MessageManager 会话隔离 | 并发交错写入两个对话不互相泄漏 | 两对话并发插入 | 执行该用例 | 各对话只含自身消息，无竞态泄漏 | P0 | ✅ 已覆盖 | `concurrentInsertsDoNotLeak` |
+| 47 | MessageManager 会话隔离 | conversationID 不一致的消息被重建到目标对话 | 插入消息 conversationID 与目标不符 | 执行该用例 | 消息被重建到目标对话 | P1 | ✅ 已覆盖 | `mismatchedConversationIDIsRebuiltToTarget` |
+| 48 | MessageManager 会话隔离 | 更新只作用于目标对话 | 两个对话各有消息 | 执行该用例 | 更新不影响其他对话 | P1 | ✅ 已覆盖 | `updateIsConversationScoped` |
+| 49 | MessageManager 会话隔离 | 删除只作用于目标对话 | 两个对话各有消息 | 执行该用例 | 删除不影响其他对话 | P1 | ✅ 已覆盖 | `deleteIsConversationScoped` |
+| 50 | MessageManager 会话隔离 | 写入同一对话的两条流都会如实出现在该对话快照里 | 同一对话两条写入流 | 执行该用例 | 快照如实包含两条流的消息 | P1 | ✅ 已覆盖 | `snapshotReflectsAllStreamsWrittenToSameConversation` |
+| 51 | LLM 窄读取保留附件 metadata | 窄读取还原图片/文件附件，仍跳过无关 metadata | 消息带附件与无关 metadata | 执行该用例 | 附件 metadata 还原，无关 metadata 跳过 | P1 | ✅ 已覆盖 | `llmReadKeepsAttachmentMetadata` |
+| 52 | 首条用户消息跳过空白附件 | 持久化查询跳过纯附件空白消息，返回其后第一条文本（#838） | 先插纯附件空白消息 U1，后插文本 U2，等待落盘 | 执行该用例 | `fetchFirstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `persistedQuerySkipsBlankAttachmentMessage` |
+| 53 | 首条用户消息跳过空白附件 | 重启后从磁盘读取首条用户消息仍跳过空白附件消息（#838） | 落盘后重开 manager（纯磁盘路径） | 执行该用例 | `firstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `reopenedManagerReadsFirstNonBlankFromDisk` |
+| 54 | 首条用户消息跳过空白附件 | 纯空白正文的用户消息也被跳过（#838） | 先插纯空白正文消息，后插文本 | 执行该用例 | 跳过空白正文，返回第一条非空白文本 | P1 | ✅ 已覆盖 | `persistedQuerySkipsWhitespaceOnlyMessage` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 30 / 30
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 0 / 0
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（30 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
