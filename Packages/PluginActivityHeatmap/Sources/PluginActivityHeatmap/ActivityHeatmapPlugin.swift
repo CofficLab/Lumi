@@ -117,7 +117,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         if let messages {
             insertionObserver = MessageObserver(messages: messages) { [weak self] in
                 Task { @MainActor in
-                    await self?.viewModel?.reload()
+                    self?.viewModel?.scheduleReload()
                 }
             }
         }
@@ -271,7 +271,12 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         await reloadNow()
     }
 
-    private func scheduleReload() {
+    /// Debounced entry point for change-driven refreshes (e.g. message insertion).
+    ///
+    /// A burst of insertions cancels and restarts a single retained task, so only
+    /// the latest reload runs once the window settles. This avoids launching one
+    /// overlapping reload pipeline per inserted message (see issue #1262).
+    public func scheduleReload() {
         reloadTask?.cancel()
         reloadTask = Task(priority: .utility) { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(250))
@@ -305,6 +310,7 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         let historicalDates = (0..<(heatmapDayCount - 1)).compactMap {
             calendar.date(byAdding: .day, value: $0, to: start)
         }
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
         let cached = await cache?.counts(for: historicalDates) ?? [:]
         guard !Task.isCancelled, generation == reloadGeneration else { return }
         let missingDates = historicalDates.filter { cached[$0] == nil }
