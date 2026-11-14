@@ -57,6 +57,7 @@ final class ConversationExportViewModel: ObservableObject {
                 projectPath: summary?.projectPath,
                 providerID: summary?.providerID,
                 modelName: summary?.modelName,
+                language: summary?.language,
                 messages: snapshotMessages,
                 exportedAt: Date()
             )
