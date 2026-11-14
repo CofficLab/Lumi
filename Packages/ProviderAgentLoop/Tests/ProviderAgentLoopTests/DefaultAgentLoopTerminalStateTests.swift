@@ -22,7 +22,7 @@ import ProviderToolManager
 /// 生产装配由 PluginAgentLoop 替换成 AgentLoopManager，但本实现仍是
 /// 工厂默认产出与公开 API，终态钩子必须与 turnStarted 对称，且同一回合
 /// 的终态恰好投递一次（cancelTurn 与迟到的 finishEventTurn 不得重复触发）。
-@Suite("DefaultAgentLoop 终态钩子与失败详情（#219, #230, #231）")
+@Suite("DefaultAgentLoop 终态钩子与失败详情（#219, #230, #231, #233）")
 @MainActor
 struct DefaultAgentLoopTerminalStateTests {
 
@@ -56,13 +56,14 @@ struct DefaultAgentLoopTerminalStateTests {
         nonisolated let providerInfo = LLMProviderInfo(id: "gated", displayName: "Gated", defaultModel: "", models: [], isLocal: true)
         private(set) var requestStarted = false
         private(set) var requestFinished = false
+        var response = LLMResponse(content: "late response")
         private var gate: CheckedContinuation<Void, Never>?
 
         func complete(_ request: LLMRequest) async throws -> LLMResponse {
             requestStarted = true
             await withCheckedContinuation { gate = $0 }
             requestFinished = true
-            return LLMResponse(content: "late response")
+            return response
         }
 
         func release() {
@@ -97,6 +98,7 @@ struct DefaultAgentLoopTerminalStateTests {
     private final class ScriptedTool: SuperAgentTool, @unchecked Sendable {
         let name: String
         let risk: CommandRiskLevel
+        private(set) var executionCount = 0
         init(name: String, risk: CommandRiskLevel) {
             self.name = name
             self.risk = risk
@@ -105,7 +107,10 @@ struct DefaultAgentLoopTerminalStateTests {
         func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
         func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { risk }
         func displayDescription(for arguments: [String: ToolArgument]) -> String { "执行 \(name)" }
-        func execute(arguments: [String: ToolArgument]) async throws -> String { "ok" }
+        func execute(arguments: [String: ToolArgument]) async throws -> String {
+            executionCount += 1
+            return "ok"
+        }
     }
 
     @MainActor
@@ -210,20 +215,21 @@ struct DefaultAgentLoopTerminalStateTests {
     private func makeHarness(
         provider: any SuperLLMProvider,
         toolManager: TestToolManager = TestToolManager()
-    ) -> (loop: DefaultAgentLoopProvider, messages: DefaultMessageManager, hooks: DefaultLifecycleHooksProvider, conversationID: UUID) {
+    ) -> (loop: DefaultAgentLoopProvider, manager: ScriptedLLMManager, messages: DefaultMessageManager, hooks: DefaultLifecycleHooksProvider, conversationID: UUID) {
         let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
+        let manager = ScriptedLLMManager(provider: provider)
         let loop = DefaultAgentLoopProvider(
             messages: messages,
-            llmManager: ScriptedLLMManager(provider: provider),
+            llmManager: manager,
             toolManager: toolManager,
             streaming: DefaultMessageStreamingProviding(),
             conversations: TestConversationManager()
         )
         let hooks = DefaultLifecycleHooksProvider()
         loop.setLifecycleHooks(hooks)
-        return (loop, messages, hooks, conversationID)
+        return (loop, manager, messages, hooks, conversationID)
     }
 
     /// 钩子广播走异步 Task，轮询等待期望的投递数量。
@@ -477,5 +483,78 @@ struct DefaultAgentLoopTerminalStateTests {
         await #expect(throws: AgentLoopError.invalidRetryRequest) {
             _ = try await harness.loop.retryTurn(in: harness.conversationID, after: turnID)
         }
+    }
+
+    // MARK: - 取消后迟到的响应（#233）
+
+    @Test("取消后迟到的普通响应不落库，状态保持 cancelled")
+    func lateResponseAfterCancelIsNotPersisted() async throws {
+        let provider = GatedLLMProvider()
+        let harness = makeHarness(provider: provider)
+
+        let turnTask = Task { try await harness.loop.runTurn(in: harness.conversationID) }
+        #expect(await waitUntil { provider.requestStarted }, "LLM 请求未发起")
+        harness.loop.cancelTurn(in: harness.conversationID)
+        #expect(try await turnTask.value == .cancelled)
+
+        provider.release()
+        #expect(await waitUntil { provider.requestFinished }, "迟到的请求未收尾")
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        let history = await harness.messages.messagesSnapshot(in: harness.conversationID)
+        #expect(!history.contains { $0.role == .assistant }, "迟到响应不得写入会话")
+        #expect(harness.loop.state(for: harness.conversationID) == .cancelled)
+    }
+
+    @Test("取消后迟到的工具调用不得执行")
+    func lateToolCallsAfterCancelDoNotExecute() async throws {
+        let tool = ScriptedTool(name: "fetch_weather", risk: .safe)
+        let toolManager = TestToolManager()
+        toolManager.add(tool, pluginID: "test")
+        let provider = GatedLLMProvider()
+        provider.response = LLMResponse(
+            content: "",
+            toolCalls: [LLMToolCall(id: "call-1", name: "fetch_weather", arguments: "{}")]
+        )
+        let harness = makeHarness(provider: provider, toolManager: toolManager)
+
+        let turnTask = Task { try await harness.loop.runTurn(in: harness.conversationID) }
+        #expect(await waitUntil { provider.requestStarted }, "LLM 请求未发起")
+        harness.loop.cancelTurn(in: harness.conversationID)
+        #expect(try await turnTask.value == .cancelled)
+
+        provider.release()
+        #expect(await waitUntil { provider.requestFinished }, "迟到的请求未收尾")
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(tool.executionCount == 0, "取消后不得执行工具")
+        let history = await harness.messages.messagesSnapshot(in: harness.conversationID)
+        #expect(!history.contains { $0.role == .assistant || $0.role == .tool }, "迟到响应与工具结果不得落库")
+        #expect(harness.loop.state(for: harness.conversationID) == .cancelled)
+    }
+
+    @Test("取消后同一会话的新回合不受旧请求迟到响应影响")
+    func newTurnAfterCancelStillWorks() async throws {
+        let provider = GatedLLMProvider()
+        let harness = makeHarness(provider: provider)
+
+        let turnTask = Task { try await harness.loop.runTurn(in: harness.conversationID) }
+        #expect(await waitUntil { provider.requestStarted })
+        harness.loop.cancelTurn(in: harness.conversationID)
+        _ = try await turnTask.value
+
+        // 旧请求还挂在门闩上时就开始新回合；旧响应随后迟到，
+        // 必须按 turnID 丢弃，不得污染新回合的历史。
+        harness.manager.provider = ScriptedLLMProvider(responses: [LLMResponse(content: "fresh")])
+        let outcome = try await harness.loop.runTurn(in: harness.conversationID)
+        #expect(outcome == .completed)
+
+        provider.release()
+        #expect(await waitUntil { provider.requestFinished })
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        let history = await harness.messages.messagesSnapshot(in: harness.conversationID)
+        #expect(history.filter { $0.role == .assistant }.map(\.content) == ["fresh"])
+        #expect(harness.loop.state(for: harness.conversationID) == .completed)
     }
 }

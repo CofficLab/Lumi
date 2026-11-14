@@ -503,6 +503,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 toolCalls: toolCalls
             ))
         } catch {
+            // 取消后迟到的响应：cancelTurn 已终态化回合，直接丢弃，
+            // 不覆盖 .cancelled 状态、不重复发事件（#233）。
+            guard !cancelledConversations.contains(conversationID),
+                  turnIDs[conversationID] == turnID else { return }
             states[conversationID] = .failed
             // finishEventTurn 会清掉 modelRoutes，先取路由再归一化失败。
             let route = modelRoutes[conversationID]
@@ -590,9 +594,16 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 response = try await llmManager.complete(request)
             }
             try response.validateToolCallArguments()
+            // 取消或换回合后迟到的响应不得落库、不得触发工具（#233）。
+            guard !cancelledConversations.contains(conversationID),
+                  turnIDs[conversationID] == turnID else {
+                throw CancellationError()
+            }
         } catch {
             streaming.end(conversationID: conversationID)
-            await appendError(in: conversationID, error: error, turnID: turnID)
+            if !cancelledConversations.contains(conversationID), turnIDs[conversationID] == turnID {
+                await appendError(in: conversationID, error: error, turnID: turnID)
+            }
             throw error
         }
         // 空终态响应（无工具调用且无正文）视为请求失败：不落库空 assistant
@@ -634,6 +645,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
     private func handleToolManagerEvent(_ event: ToolManagerEvent) async {
         guard case .batchCompleted(let conversationID, let eventTurnID, let calls, let results) = event,
+              !cancelledConversations.contains(conversationID),
               let turnID = turnIDs[conversationID], eventTurnID == nil || eventTurnID == turnID,
               let active = activeToolCalls[conversationID] else { return }
         if Self.verbose {
@@ -699,6 +711,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let calls = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
         Task { @MainActor [weak self] in
             guard let self else { return }
+            // 事件入队到 Task 执行之间可能已取消或换回合（#233）。
+            guard !self.cancelledConversations.contains(conversationID),
+                  self.turnIDs[conversationID] == turnID else { return }
             _ = await self.toolManager.executeBatch(
                 calls,
                 policy: self.toolExecutionPolicy(for: conversationID),
