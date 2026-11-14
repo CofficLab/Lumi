@@ -145,8 +145,14 @@ public actor DownloadManager {
 
         activeTasks[task.id] = downloadTask
 
-        // 等待任务完成
-        await downloadTask.value
+        // 等待任务完成。downloadTask 是非结构化 Task，不继承调用方的取消；
+        // 工具 Job / turn / 会话被取消时必须显式转发，否则内部 HTTP 请求与文件
+        // 写入会一直跑到自然结束，Job 卡在 cancelling（#471）。
+        await withTaskCancellationHandler {
+            await downloadTask.value
+        } onCancel: {
+            downloadTask.cancel()
+        }
 
         // 本次调用已被同 id 的新任务取代：不得读取或清理新任务的状态与注册，
         // 否则会把新任务误标为 cancelled 并注销其 activeTasks/progressHandlers。
