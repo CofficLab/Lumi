@@ -79,12 +79,14 @@ enum OrphanToolCallRepair {
     /// 为一个孤儿 tool_call 生成占位 tool result 消息。
     static func placeholderMessage(
         for orphan: OrphanToolCall,
-        conversationID: UUID
+        conversationID: UUID,
+        createdAt: Date = Date()
     ) -> Message {
         Message(
             conversationID: conversationID,
             role: .tool,
             content: placeholderContent,
+            createdAt: createdAt,
             turnID: orphan.turnID,
             isError: true,
             toolCallID: orphan.toolCall.id
@@ -92,10 +94,52 @@ enum OrphanToolCallRepair {
     }
 
     /// 为所有孤儿 tool_call 生成占位消息。
+    ///
+    /// 占位消息的时间戳锚定在所属 assistant 消息（及其已有工具结果）之后、
+    /// 下一条消息之前，而不是按当前时间追加到历史末尾（#636）。否则
+    /// `assistant(tool_use) → user → tool_result` 的顺序会被 Anthropic
+    /// 端点以 400 拒绝——tool_result 必须紧跟它的 tool_use。
     static func placeholderMessages(
         for orphans: [OrphanToolCall],
+        in history: [Message],
         conversationID: UUID
     ) -> [Message] {
-        orphans.map { placeholderMessage(for: $0, conversationID: conversationID) }
+        orphans.map { orphan in
+            placeholderMessage(
+                for: orphan,
+                conversationID: conversationID,
+                createdAt: insertionDate(for: orphan, in: history)
+            )
+        }
+    }
+
+    /// 计算占位消息的插入时间：取「锚点消息」与「下一条消息」的中点。
+    ///
+    /// 锚点是所属 assistant 消息本身，或紧随其后、属于同一 assistant 的
+    /// 最后一条已有 tool result。历史末尾没有下一条消息时按当前时间追加。
+    private static func insertionDate(
+        for orphan: OrphanToolCall,
+        in history: [Message]
+    ) -> Date {
+        guard let assistantIndex = history.firstIndex(where: { $0.id == orphan.assistantMessageID }) else {
+            return Date()
+        }
+        let assistant = history[assistantIndex]
+        let ownCallIDs = Set(assistant.toolCalls?.map(\.id) ?? [])
+        var anchorIndex = assistantIndex
+        var scanIndex = assistantIndex + 1
+        while scanIndex < history.count,
+              history[scanIndex].role == .tool,
+              history[scanIndex].turnID == assistant.turnID,
+              let toolCallID = history[scanIndex].toolCallID,
+              ownCallIDs.contains(toolCallID) {
+            anchorIndex = scanIndex
+            scanIndex += 1
+        }
+        let anchor = history[anchorIndex].createdAt
+        guard scanIndex < history.count else { return Date() }
+        let next = history[scanIndex].createdAt
+        guard next > anchor else { return anchor }
+        return anchor.addingTimeInterval(next.timeIntervalSince(anchor) / 2)
     }
 }

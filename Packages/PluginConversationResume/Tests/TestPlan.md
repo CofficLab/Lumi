@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 47 条用例。
+PluginConversationResume 的实现包，提供对话异常中断后的「继续」能力；当前测试覆盖 51 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 47
+测试文件: 5 个，用例总数: 51
 
 核心组件（源码目录）:
 - `Models/`
@@ -30,10 +30,10 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **孤儿 tool_call 扫描**（9 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call。
+- **孤儿 tool_call 扫描**（12 条）：由 `noToolCallsNoOrphans`、`missingResultIsOrphan`、`crossTurnResultDoesNotPair`、`repairRemovesOrphans`、`placeholderLandsBetweenAssistantAndLaterUserMessage` 等用例锁定——工具调用缺少配对的 tool result 才算孤儿，跨回合的 tool result 不能配对另一个回合的 tool_call；占位消息必须插在所属 assistant（及其已有结果）之后、后续用户消息之前，不得按当前时间追加到历史末尾（**回归 #636**）。
 - **回合记录存储**（14 条）：由 `marksRunning`、`marksFinished`、`survivesProcessRestart`、`corruptedFileFallsBackToEmpty`、`keepsOnlyLatestPerConversation` 等用例锁定——回合开始写「运行中」、结束时写终态，崩溃时最后一条停留在「运行中」，这正是区分用户主动停止与崩溃的唯一可靠依据。重启加载时磁盘上的 `.suspended` 必须按中断处理（**回归 #854**）。
 - **可继续判定**（12 条）：由 `interruptedTurnIsResumable`、`cancelledTurnIsNotResumable`、`runningTurnIsNotResumable`、`finishedReplyIsNotResumable` 等用例锁定——判定必须依赖持久化记录而不是消息形状，用户主动停止与崩溃在消息层面完全无法区分。
-- **协调器端到端**（9 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合。
+- **协调器端到端**（10 条）：由 `completedTurnShowsNoBanner`、`crashedTurnShowsBanner`、`resumeRepairsOrphansAndStartsTurn`、`switchingConversationRefreshesState` 等用例锁定——回合正常完成后不显示提示，点击继续会补写占位 tool result 并启动新回合。
 - **恢复按会话隔离**（3 条）：由 `otherConversationCanResumeWhileFirstIsRunning`、`repeatedResumeOfSameConversationIsStillBlocked`、`resumingStateIsReportedPerConversation` 等用例锁定——一个会话的恢复只抑制该会话自己的重复恢复动作，别的会话不受影响（**回归 #888**）。
 
 ## 测试用例清单
@@ -87,27 +87,31 @@ PluginConversationResume 的实现包，提供对话异常中断后的「继续�
 | 45 | 回合记录存储 | 重启后挂起记录按中断处理，可继续（**回归 #854**） | 记录以 `.suspended` 落盘 | 新建 store 实例读同一文件，再重开一次 | outcome 转为 `.interrupted` 且已落盘；turnID / startedAt / lastToolCallID 保留 | P0 | ✅ 已覆盖 | `suspendedRecordBecomesInterruptedOnRestart` |
 | 46 | 回合记录存储 | 重启后用户取消的记录不会被误转成可继续（**回归 #854 护栏**） | 记录以 `.cancelled` 落盘 | 新建 store 实例读同一文件 | outcome 仍为 `.cancelled`，不可继续 | P0 | ✅ 已覆盖 | `cancelledRecordStaysCancelledOnRestart` |
 | 47 | 协调器端到端 | 挂起期间退出 app，重启后显示继续提示（**回归 #854**） | 第一进程落盘 `.suspended` 后退出 | 新 store + 新协调器读同一文件，AgentLoop 为 idle | 活挂起时不提示；重启后 `isResumable` 为 true | P0 | ✅ 已覆盖 | `quitDuringSuspensionShowsBannerAfterRestart` |
+| 48 | 孤儿 tool_call 扫描 | 孤儿调用后已有用户消息时，占位必须插在该用户消息之前（**回归 #636**） | 历史为 U1 → assistant(孤儿 call) → U2 | 生成占位并按时间排序 | 顺序为 U1 → assistant → 占位 → U2，占位时间戳在两者之间 | P0 | ✅ 已覆盖 | `placeholderLandsBetweenAssistantAndLaterUserMessage` |
+| 49 | 孤儿 tool_call 扫描 | 占位插在所属 assistant 的已有工具结果之后 | assistant 两个调用，其一已有结果，后跟 U2 | 为另一个孤儿生成占位 | 占位位于已有结果与 U2 之间 | P1 | ✅ 已覆盖 | `placeholderFollowsExistingToolResultOfSameAssistant` |
+| 50 | 孤儿 tool_call 扫描 | assistant 是最后一条消息时占位按当前时间追加 | 历史以孤儿 assistant 结尾 | 生成占位 | 占位时间戳不早于 assistant，重新扫描无孤儿 | P1 | ✅ 已覆盖 | `placeholderAppendsWhenAssistantIsLast` |
+| 51 | 协调器端到端 | 孤儿调用后已有用户消息时，继续修复的占位插在该用户消息之前（**回归 #636**） | 崩溃记录 + 历史 U1 → assistant(孤儿 call) → U2 | 点击继续 | 排序后角色序列为 user/assistant/tool/user，新回合启动 | P0 | ✅ 已覆盖 | `resumeInsertsPlaceholderBeforeLaterUserMessage` |
 
-> 说明：全部 **47 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **51 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
-- P1: 已覆盖 24 / 24
+- P0: 已覆盖 23 / 23
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 2 / 2
-- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
+- **合计: 51 / 51**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
-- **P1**: 其余功能性用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 47 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 51 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

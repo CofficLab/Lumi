@@ -413,6 +413,61 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #636：孤儿调用之后已存在新用户消息（ACP 先插消息再排回合，
+    /// 崩溃可留下该状态）时，占位必须插在 assistant 与该用户消息之间，
+    /// 而不是按当前时间追加到历史末尾——否则 Anthropic 顺序非法。
+    @Test("孤儿调用后已有用户消息时，占位插在该用户消息之前")
+    func resumeInsertsPlaceholderBeforeLaterUserMessage() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turnID = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        let user1 = Message(
+            conversationID: conversationID, role: .user, content: "U1",
+            createdAt: Date(timeIntervalSince1970: 1_000)
+        )
+        let assistant = Message(
+            conversationID: conversationID, role: .assistant, content: "",
+            createdAt: Date(timeIntervalSince1970: 2_000),
+            turnID: turnID,
+            toolCalls: [MessageToolCall(id: "call_1", name: "read_file", arguments: "{}")]
+        )
+        let user2 = Message(
+            conversationID: conversationID, role: .user, content: "continue",
+            createdAt: Date(timeIntervalSince1970: 3_000)
+        )
+        messages.seed([user1, assistant, user2], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+        await coordinator.refreshState(for: conversationID)
+        #expect(coordinator.state.isResumable == true)
+
+        await coordinator.resume()
+
+        // 真实 MessageManager 按 createdAt 排序快照，这里同样排序后断言。
+        let history = (await messages.messages(for: conversationID))
+            .sorted { $0.createdAt < $1.createdAt }
+        #expect(history.map(\.role) == [.user, .assistant, .tool, .user])
+        #expect(history[2].toolCallID == "call_1")
+        #expect(history[3].id == user2.id)
+        #expect(loop.startTurnCount == 1)
+        coordinator.cancel()
+    }
+
     @Test("恢复后历史不再有孤儿 tool_call")
     func resumeLeavesNoOrphans() async {
         let (store, url) = makeStore()

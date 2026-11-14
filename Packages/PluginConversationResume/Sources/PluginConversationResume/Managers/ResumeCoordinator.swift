@@ -267,6 +267,7 @@ final class ResumeCoordinator {
 
         for placeholder in OrphanToolCallRepair.placeholderMessages(
             for: orphans,
+            in: history,
             conversationID: conversationID
         ) {
             messages.insertMessage(placeholder, to: conversationID)
