@@ -12,14 +12,20 @@ public final class GitRepositoryWatchProvider: GitRepositoryWatching {
     private var workingTreeWatcher: WorkingTreeWatcher?
     private var gitDebounceTask: Task<Void, Never>?
     private var workingTreeDebounceTask: Task<Void, Never>?
+    private var workingTreeTrailingTask: Task<Void, Never>?
     private var lastWorkingTreeChangeDate: Date?
     /// 弱引用持有订阅令牌：外部释放令牌后，其 deinit 即视为自动注销，
     /// 下次广播时清理已失效的弱引用（与 `DefaultProjectProvider` 一致）。
     private var observers: [WeakObserver] = []
 
-    private static let workingTreeChangeThrottle: TimeInterval = 2
+    private let workingTreeChangeThrottle: TimeInterval
 
-    public init() {}
+    public init() { self.workingTreeChangeThrottle = 2 }
+
+    /// 测试可注入较短的节流窗口，避免回归用例等待真实的 2 秒。
+    init(workingTreeChangeThrottle: TimeInterval) {
+        self.workingTreeChangeThrottle = workingTreeChangeThrottle
+    }
 
     public func addObserver(
         _ callback: @escaping (GitRepositoryWatchingEvent) -> Void
@@ -71,6 +77,8 @@ public final class GitRepositoryWatchProvider: GitRepositoryWatching {
         gitDebounceTask = nil
         workingTreeDebounceTask?.cancel()
         workingTreeDebounceTask = nil
+        workingTreeTrailingTask?.cancel()
+        workingTreeTrailingTask = nil
         gitWatcher?.stop()
         gitWatcher = nil
         workingTreeWatcher?.stop()
@@ -122,14 +130,30 @@ public final class GitRepositoryWatchProvider: GitRepositoryWatching {
         }
     }
 
-    private func broadcastWorkingTreeChangeIfAllowed() {
+    func broadcastWorkingTreeChangeIfAllowed() {
         let now = Date()
         if let lastWorkingTreeChangeDate,
-           now.timeIntervalSince(lastWorkingTreeChangeDate) < Self.workingTreeChangeThrottle {
+           now.timeIntervalSince(lastWorkingTreeChangeDate) < workingTreeChangeThrottle {
+            // 节流窗口内不立即广播，但安排一次尾随广播：窗口结束后补发最终状态。
+            // 否则窗口内的最后一次变更被直接丢弃，Changes 面板长期停在旧状态（#357）。
+            let remaining = workingTreeChangeThrottle - now.timeIntervalSince(lastWorkingTreeChangeDate)
+            scheduleWorkingTreeTrailingBroadcast(after: remaining)
             return
         }
+        workingTreeTrailingTask?.cancel()
+        workingTreeTrailingTask = nil
         lastWorkingTreeChangeDate = now
         broadcast(.workingTreeChanged)
+    }
+
+    /// 窗口结束后补发一次最终状态；重复安排时取消上一个，把窗口内的多次变更合并成一次尾随广播。
+    private func scheduleWorkingTreeTrailingBroadcast(after delay: TimeInterval) {
+        workingTreeTrailingTask?.cancel()
+        workingTreeTrailingTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(max(0, delay) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.broadcastWorkingTreeChangeIfAllowed()
+        }
     }
 
     private func broadcast(_ event: GitRepositoryWatchingEvent) {

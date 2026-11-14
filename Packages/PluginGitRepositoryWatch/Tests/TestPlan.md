@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 40 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 44 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 40
+测试文件: 4 个，用例总数: 44
 
 核心组件（源码目录）:
 - `Providers/`
@@ -28,6 +28,7 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 - **Git目录解析**（7 条）：由 `resolvesGitDirectory`、`resolvesAbsoluteGitFile`、`picksGitDirLineFromMultiLineFile` 等用例锁定。
 - **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
 - **Git仓库监听Provider**（9 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
+- **Git工作区节流尾随广播**（4 条）：由 `throttledChangeBroadcastsTrailingEdge`、`rapidChangesCoalesceIntoSingleTrailingBroadcast`、`trailingBroadcastResetsWindow`、`stopWatchingCancelsPendingTrailingBroadcast` 锁定工作区变更节流窗口内的最后一次变更必须在窗口结束后补发一次尾随广播（多次变更合并成一次），停止监听时取消待发的尾随任务，否则 Changes 面板长期停在旧状态（**回归 #357**）；改动工作区节流/防抖广播时优先跑对应测试文件。
 - **HEAD符号引用**（5 条）：由 `snapshotDistinguishesBranchesAtSameCommit`、`broadcastsHeadChangedOnBranchSwitchAtSameCommit`、`readHeadRefReturnsSymbolicTarget` 等用例锁定。
 - **LinkedWorktree**（8 条）：由 `headResolvesFromCommonDir`、`commitInCommonDirChangesHead`、`refsFingerprintTracksCommonRefs` 等用例锁定。
 - **订阅令牌生命周期**：Provider 弱引用持有订阅令牌，释放令牌即注销（下次广播清理失效注册）；面板销毁后不得残留回调（#921）。
@@ -80,27 +81,37 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 | 38 | LinkedWorktree | 普通仓库没有 commondir，common dir 即自身 | 无 commondir 文件 | 调用 commonDirectory | 返回自身 | P1 | ✅ 已覆盖 | `normalRepoCommonDirIsSelf` |
 | 39 | LinkedWorktree | 相对 commondir 相对 private dir 解析 | commondir 为 ../.. | 调用 commonDirectory | 解析到 common dir | P1 | ✅ 已覆盖 | `relativeCommonDirResolves` |
 | 40 | LinkedWorktree | 绝对 commondir 原样解析 | commondir 为绝对路径 | 调用 commonDirectory | 解析到该绝对路径 | P2 | ✅ 已覆盖 | `absoluteCommonDirResolves` |
+| 41 | Git工作区节流尾随广播 | 节流窗口内的变更必须在窗口结束后补发尾随广播（回归 #357） | 短节流窗口 Provider，已广播一次 | 窗口内再触发一次变更，等待窗口结束 | 窗口内不立即广播，窗口结束后补发一次，共 2 次 workingTreeChanged | P0 | ✅ 已覆盖 | `throttledChangeBroadcastsTrailingEdge` |
+| 42 | Git工作区节流尾随广播 | 窗口内多次变更只合并成一次尾随广播（回归 #357） | 短节流窗口 Provider，已广播一次 | 窗口内连续触发 10 次变更，等待窗口结束 | 仅补发一次尾随广播，共 2 次，不得每次各发一次 | P0 | ✅ 已覆盖 | `rapidChangesCoalesceIntoSingleTrailingBroadcast` |
+| 43 | Git工作区节流尾随广播 | 尾随广播后窗口重置，后续变更仍能补发（回归 #357） | 短节流窗口 Provider | 第一轮补发后，第二个窗口内再触发变更 | 第二个窗口结束仍补发，共 3 次 workingTreeChanged | P1 | ✅ 已覆盖 | `trailingBroadcastResetsWindow` |
+| 44 | Git工作区节流尾随广播 | 停止监听后不再补发尾随广播（回归 #357） | 真实仓库，已广播一次并在窗口内安排尾随 | 停止监听后等待越过窗口 | 待发的尾随任务被取消，不再产生 workingTreeChanged | P0 | ✅ 已覆盖 | `stopWatchingCancelsPendingTrailingBroadcast` |
 
-> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> **回归 #357 变异验证**（`GitWorkingTreeThrottleTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 节流窗口内直接 `return`、不安排尾随广播（回到缺陷原状）→ 41/42/43 RED（最后一次变更被永久丢弃，无尾随补发）。
+> - **M2** `scheduleWorkingTreeTrailingBroadcast` 不取消上一个尾随任务（每次变更各排一个）→ 42 RED（窗口内 10 次变更补发 10 次而非合并成 1 次）。
+> - **M3** `teardown` 不取消 `workingTreeTrailingTask`（停止监听后仍补发）→ 44 RED（stopWatching 后越过窗口仍收到 workingTreeChanged）。
+> 三处变异各自独立命中尾沿补发、合并、停止取消三个不同失效面，还原后 44 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 28 / 28
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 29 / 29
 - P2: 已覆盖 6 / 6
-- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（28 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（29 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
