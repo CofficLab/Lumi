@@ -20,6 +20,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderProjectRAG"),
         .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../ProviderConversation"),
     ],
     targets: [
         .target(
@@ -62,6 +63,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 "ProjectRAGEngine",
             ],
         ),

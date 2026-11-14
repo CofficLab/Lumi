@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 233 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 236 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 37 个，用例总数: 233
+测试文件: 38 个，用例总数: 236
 
 核心组件（源码目录）:
 - PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
@@ -36,6 +36,7 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 - **综合**（12 条）：由 `retainsStableIdentifiers`、`registersProvider`、`reinjectsEvidenceForSameTurnWithoutResearching` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectRAGLLMContextHookEvidenceReuse**（3 条）：由 `evidenceReusedAfterToolCallRebuild`、`evidenceNotDuplicatedWhenAlreadyPersisted`、`newUserMessageTriggersFreshSearch` 锁定。自动注入的证据只插进单次请求的局部消息副本，工具调用后历史重建、去重键（会话 + 用户消息数 + 最新用户正文）不变；同一用户回合的后续请求必须复用缓存证据补回注入，不得因去重键命中早退导致证据消失，也不得重复检索或重复插入；新用户消息（键变化）才触发新检索（**回归 #604**）。改动 `ProjectRAGLLMContextHook.apply` 或 `RAGInjectionDeduplication` 的证据缓存时优先跑对应测试文件。
+- **ProjectRAGLLMContextHookConversationProject**（3 条）：由 `usesConversationProjectNotGlobalCurrent`、`skipsWhenConversationUnboundEvenIfGlobalSet`、`trimsConversationProjectPath` 锁定。自动注入必须按 `context.conversationID` 经 `ConversationManaging.fetchConversation` 解析对话绑定的项目路径（裁剪空白）后检索，不得读全局 `provider.currentProjectPath`；外部打开切换全局项目后旧对话仍选中时，不得把别的项目代码注入旧对话；对话未绑定项目时不注入，绝不静默回退到全局项目（**回归 #603**）。改动 `ProjectRAGLLMContextHook` 的项目解析或 `ProjectRAGPlugin` 的 ConversationManaging 接线时优先跑对应测试文件。
 - **ProjectRAGPlugin 启动调度**（1 条）：由 `startsIdleSchedulerWithoutCurrentProject` 锁定；启动时没有当前项目也必须启动 idle 调度，否则整轮会话的后台索引都会被跳过。
 - **RAGServiceEnsureOutcome**（2 条）：由 `ensureIndexedReportsDistinctOutcomes`、`onlyIndexedAndFreshConfirmProgress` 锁定。`ensureIndexed` 必须区分 `indexed` / `fresh` / `throttled` / `paused`；只有前两者算调度进展，节流或暂停跳过不得清除失败退避，也必须等待下一个轮询间隔，否则失败索引后 scheduler 会把节流跳过记成成功并空转（**回归 #1116**）。
 - **RAGServiceCancellation**（2 条）：由 `staleTokenCannotRestartBackgroundIndexing`、`foregroundIndexingIgnoresBackgroundCancellation` 锁定。后台索引令牌必须在派发前捕获；`cancelBackgroundIndexing()` 后同一令牌永久失效，迟到切片不得再打开后台索引或写入索引状态；前台索引不受后台令牌影响（**回归 #1117**）。
@@ -292,8 +293,11 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 | 231 | ProjectRAGLLMContextHookEvidenceReuse | 历史已持久化证据时复用不得重复插入（**回归 #604**） | 输入历史已含上次注入的系统消息 | 再次 apply | 证据仍只有 1 条，不被重复插入 | P0 | ✅ 已覆盖 | `evidenceNotDuplicatedWhenAlreadyPersisted` |
 | 232 | ProjectRAGLLMContextHookEvidenceReuse | 新用户消息触发新检索，不复用旧回合证据（**回归 #604**） | 首次 apply 已注入 | 追加一条新的代码问题用户消息后 apply | searchCallCount 增至 2，新请求含 1 条证据 | P1 | ✅ 已覆盖 | `newUserMessageTriggersFreshSearch` |
 | 233 | RAGInjectionDeduplication | 缓存的注入证据随回合淘汰一起清除（**回归 #604**） | 容量为 2 的去重窗口 | 记录三个回合各带证据 | 最旧回合的证据被清除，其余保留 | P1 | ✅ 已覆盖 | `evidenceEvictedWithTurn` |
+| 234 | ProjectRAGLLMContextHookConversationProject | 检索使用对话绑定的项目 A，而非全局当前项目 B（**回归 #603**） | 对话绑定 `/tmp/A`，全局 currentProjectPath=`/tmp/B` | 对该对话 apply | 检索路径为 `/tmp/A`，注入代码上下文 | P0 | ✅ 已覆盖 | `usesConversationProjectNotGlobalCurrent` |
+| 235 | ProjectRAGLLMContextHookConversationProject | 对话未绑定项目时不注入，也不回退到全局项目（**回归 #603**） | 对话 projectPath=nil，全局=`/tmp/B` | 对该对话 apply | 消息不变，searchCallCount=0 | P0 | ✅ 已覆盖 | `skipsWhenConversationUnboundEvenIfGlobalSet` |
+| 236 | ProjectRAGLLMContextHookConversationProject | 对话项目路径两侧空白被裁剪后再检索（**回归 #603**） | 对话绑定 `  /tmp/A  ` | 对该对话 apply | 检索路径为裁剪后的 `/tmp/A` | P1 | ✅ 已覆盖 | `trimsConversationProjectPath` |
 
-> 说明：全部 **233 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **236 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
@@ -303,21 +307,21 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 56 / 56
-- P1: 已覆盖 163 / 163
+- P0: 已覆盖 58 / 58
+- P1: 已覆盖 164 / 164
 - P2: 已覆盖 14 / 14
-- **合计: 233 / 233**（仅表示清单场景，非源码覆盖率）
+- **合计: 236 / 236**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（56 条）
-- **P1**: 其余功能性用例（163 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
+- **P1**: 其余功能性用例（164 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 233 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 236 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -2,6 +2,7 @@ import Foundation
 import KitLLM
 import LumiLoggingKit
 import ProjectRAGEngine
+import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderLLMContext
 import ProviderProjectRAG
@@ -14,17 +15,20 @@ final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
     private let coordinator: CodeNavigationCoordinator
     private let searchMemory: ProjectRAGSearchMemory?
+    private let conversations: (any ConversationManaging)?
     private let defaults: UserDefaults
     private var injectedTurns = RAGInjectionDeduplication()
 
     init(
         provider: any ProjectRAGProviding,
         searchMemory: ProjectRAGSearchMemory? = nil,
+        conversations: (any ConversationManaging)? = nil,
         defaults: UserDefaults = .standard
     ) {
         self.provider = provider
         self.coordinator = CodeNavigationCoordinator(provider: provider)
         self.searchMemory = searchMemory
+        self.conversations = conversations
         self.defaults = defaults
     }
 
@@ -37,9 +41,22 @@ final class ProjectRAGLLMContextHook {
         let userMessages = context.messages.filter { $0.role == .user }
         guard let latestUserMessage = userMessages.last,
               !latestUserMessage.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              RAGIntentAnalyzer.shouldAutoInject(for: latestUserMessage.content),
-              let projectPath = provider.currentProjectPath,
-              !projectPath.isEmpty else {
+              RAGIntentAnalyzer.shouldAutoInject(for: latestUserMessage.content) else {
+            return context
+        }
+
+        // 检索必须作用于「本次请求所属对话」绑定的项目，而非 UI 当前打开的项目：
+        // 外部打开切换全局项目后旧对话仍可能选中，用全局路径会把别的项目代码注入
+        // 旧对话（#603）。无法确定对话项目时不注入，绝不静默回退到可能无关的全局项目。
+        let projectPath: String?
+        if let conversations {
+            projectPath = (await conversations.fetchConversation(id: context.conversationID))?
+                .projectPath?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            projectPath = provider.currentProjectPath
+        }
+        guard let projectPath, !projectPath.isEmpty else {
             return context
         }
 
