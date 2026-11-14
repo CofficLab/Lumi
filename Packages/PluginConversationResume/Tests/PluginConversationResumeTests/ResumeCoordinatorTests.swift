@@ -518,6 +518,67 @@ struct ResumeCoordinatorTests {
         coordinator.cancel()
     }
 
+    /// 回归 #635：旧回合的终态钩子被串行 await，可能在新回合已经开始
+    /// （markRunning 落盘）之后才到达。迟到的旧终态不得把新回合的中断
+    /// 记录抹掉，否则崩溃重启后「继续」提示不出现。
+    @Test("旧回合迟到终态不覆盖新回合记录，继续提示仍在")
+    func staleTerminalHookDoesNotHideResumeBanner() async {
+        let (store, url) = makeStore()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+        let loop = FakeAgentLoop()
+        let messages = FakeMessages()
+        let conversations = FakeConversations()
+        conversations.selectedConversationID = conversationID
+        messages.seed([
+            userMessage(conversationID),
+            assistantWithToolCall(conversationID, turnID: turn2),
+        ], for: conversationID)
+        let hooks = makeHooks()
+        let coordinator = makeCoordinator(
+            loop: loop,
+            messages: messages,
+            conversations: conversations,
+            store: store
+        )
+        coordinator.start(hooks: makeHooksCapability(hooks))
+
+        // 新回合先开始，旧回合的终态随后才迟到。
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turn1)
+        )
+        await hooks.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turn2)
+        )
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turn1,
+                endReason: .completed
+            )
+        )
+        await coordinator.refreshState(for: conversationID)
+
+        let record = await store.record(for: conversationID)
+        #expect(record?.turnID == turn2)
+        #expect(record?.outcome == .interrupted)
+        #expect(coordinator.state.isResumable == true)
+
+        // 当前回合自己的终态仍然正常生效。
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turn2,
+                endReason: .completed
+            )
+        )
+        await coordinator.refreshState(for: conversationID)
+        #expect(coordinator.state.isResumable == false)
+        coordinator.cancel()
+    }
+
     /// 回归 #636：孤儿调用之后已存在新用户消息（ACP 先插消息再排回合，
     /// 崩溃可留下该状态）时，占位必须插在 assistant 与该用户消息之间，
     /// 而不是按当前时间追加到历史末尾——否则 Anthropic 顺序非法。

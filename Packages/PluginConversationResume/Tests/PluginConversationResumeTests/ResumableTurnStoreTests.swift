@@ -244,6 +244,54 @@ struct ResumableTurnStoreTests {
         #expect(record?.lastToolCallID == nil)
     }
 
+    // MARK: - 迟到终态身份校验（#635）
+
+    /// 回归 #635：旧回合的终态钩子可能在新回合 markRunning 之后才到达
+    /// （钩子被串行 await，GoalTask 等钩子有异步延迟窗口）。迟到的旧终态
+    /// 不得覆盖新回合的中断记录，否则重启后真正中断的回合无法继续。
+    @Test("旧回合迟到终态不得覆盖新回合的中断记录")
+    func staleFinishDoesNotOverwriteNewTurnRecord() async {
+        let (store, url) = makeStore()
+        defer { cleanup(url) }
+        let conversationID = UUID()
+        let turn1 = UUID()
+        let turn2 = UUID()
+
+        await store.markRunning(conversationID: conversationID, turnID: turn1)
+        await store.markRunning(conversationID: conversationID, turnID: turn2)
+        await store.markFinished(
+            conversationID: conversationID,
+            turnID: turn1,
+            outcome: .completed
+        )
+
+        let record = await store.record(for: conversationID)
+        #expect(record?.turnID == turn2)
+        #expect(record?.outcome == .interrupted)
+        #expect(record?.isResumable == true)
+
+        // 忽略必须发生在落盘之前：重启后新回合的中断记录仍在。
+        let reopened = ResumableTurnStore(fileURL: url)
+        let persisted = await reopened.record(for: conversationID)
+        #expect(persisted?.turnID == turn2)
+        #expect(persisted?.outcome == .interrupted)
+    }
+
+    @Test("没有运行中记录时终态写入被忽略")
+    func finishWithoutRunningRecordIsIgnored() async {
+        let (store, url) = makeStore()
+        defer { cleanup(url) }
+        let conversationID = UUID()
+
+        await store.markFinished(
+            conversationID: conversationID,
+            turnID: UUID(),
+            outcome: .completed
+        )
+
+        #expect(await store.record(for: conversationID) == nil)
+    }
+
     // MARK: - 清理
 
     @Test("清除会话记录后不再可继续")
