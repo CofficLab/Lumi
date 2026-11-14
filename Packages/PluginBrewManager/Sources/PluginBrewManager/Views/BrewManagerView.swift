@@ -71,7 +71,7 @@ struct BrewManagerView: View {
                     BrewManagerErrorView(
                         message: errorMessage,
                         onDismiss: { viewModel.errorMessage = nil },
-                        onRetry: { viewModel.errorMessage = nil }
+                        onRetry: { viewModel.retry() }
                     )
                     .transition(.opacity)
                     .accessibilityAddTraits(.isModal)

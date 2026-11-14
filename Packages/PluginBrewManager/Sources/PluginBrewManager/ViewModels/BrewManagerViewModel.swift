@@ -63,6 +63,18 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     // 搜索防抖
     private var searchCancellable: AnyCancellable?
     private let service: any BrewManagerServicing
+
+    /// 最近一次失败的操作，供「重试」原样重跑。
+    private enum FailedOperation {
+        case environment
+        case refresh
+        case search
+        case install(BrewPackage)
+        case uninstall(BrewPackage)
+        case upgrade(BrewPackage)
+        case upgradeAll
+    }
+    private var lastFailedOperation: FailedOperation?
     
     init(service: any BrewManagerServicing = LiveBrewManagerService(), autoCheckEnvironment: Bool = true) {
         self.service = service
@@ -97,11 +109,37 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                             BrewManagerPluginSupport.logger.error("\(self.t) ❌ Homebrew not detected")
                     }
                 }
+                lastFailedOperation = .environment
                 errorMessage = pluginLocalization.string("Homebrew not detected, please install Homebrew first.")
             }
         }
     }
     
+    /// 重跑最近一次失败的操作；没有失败记录时仅清除错误。
+    func retry() {
+        guard let operation = lastFailedOperation else {
+            errorMessage = nil
+            return
+        }
+        errorMessage = nil
+        switch operation {
+        case .environment:
+            checkEnvironment()
+        case .refresh:
+            Task { await refresh() }
+        case .search:
+            performSearch()
+        case .install(let package):
+            Task { await install(package: package) }
+        case .uninstall(let package):
+            Task { await uninstall(package: package) }
+        case .upgrade(let package):
+            Task { await upgrade(package: package) }
+        case .upgradeAll:
+            Task { await upgradeAll() }
+        }
+    }
+
     func refresh() async {
         if Self.verbose {
             if BrewManagerPluginSupport.verbose {
@@ -110,7 +148,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         }
         isLoading = true
         errorMessage = nil
-        
+        lastFailedOperation = nil
+
         do {
             async let installed = service.listInstalled()
             async let outdated = service.getOutdated()
@@ -132,6 +171,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
                 }
             }
+            self.lastFailedOperation = .refresh
             self.errorMessage = pluginLocalization.string("Refresh failed: \(error.localizedDescription)")
         }
         
@@ -175,7 +215,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         }
         isLoading = true
         errorMessage = nil
-        
+        lastFailedOperation = nil
+
         searchCancellable = Task { [service, query] in
             do {
                 // 延迟 0.5s 防抖
@@ -207,6 +248,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                         }
                     }
+                    self.lastFailedOperation = .search
                     self.errorMessage = pluginLocalization.string("Search failed: \(error.localizedDescription)")
                     self.isLoading = false
                 }
@@ -235,6 +277,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
                 }
             }
+            lastFailedOperation = .install(package)
             errorMessage = pluginLocalization.string("Installation failed: \(error.localizedDescription)")
         }
         isLoading = false
@@ -261,6 +304,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
                 }
             }
+            lastFailedOperation = .uninstall(package)
             errorMessage = pluginLocalization.string("Uninstallation failed: \(error.localizedDescription)")
         }
         isLoading = false
@@ -287,6 +331,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
                 }
             }
+            lastFailedOperation = .upgrade(package)
             errorMessage = pluginLocalization.string("Update failed: \(error.localizedDescription)")
         }
         isLoading = false
@@ -321,6 +366,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPluginSupport.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
                 }
             }
+            lastFailedOperation = .upgradeAll
             errorMessage = pluginLocalization.string("Batch update failed: \(error.localizedDescription)")
         }
         isLoading = false
