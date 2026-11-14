@@ -50,8 +50,28 @@ public struct ListSkillsTool: SuperAgentTool {
         .safe
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let projectPath = await SkillToolSupport.resolveProjectPath(arguments)
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        let projectPath = await SkillToolSupport.resolveProjectPath(
+            arguments,
+            conversationProjectPath: conversationProjectPath
+        )
         let includeBase = (arguments["include_base"]?.value as? Bool) ?? true
         let includeContent = (arguments["include_content"]?.value as? Bool) ?? false
 

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 73 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 70
+测试文件: 11 个，用例总数: 73
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -49,6 +49,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条
 - **ReadSkillUndecodableBody**（3 条）：由 `readUndecodableBodyThrows`、`readValidBodyReturnsContent`、`readEmptyBodySucceeds` 锁定 read_skill 在正文文件存在却读不出（损坏/非 UTF-8）时必须抛 `SkillCreationError`，不得用 `?? ""` 伪装成空正文；合法正文与真正的空文件仍正常返回（**回归 #527**）；改动 `ReadSkillTool.execute` 的正文读取分支时优先跑对应测试文件。
 - **SkillSettingsRefresh**（3 条）：由 `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion`、`refreshWithoutSelectionClearsSkills` 锁定设置页显式刷新必须先使选中项目的 `SkillService` 缓存失效再重扫磁盘，30s TTL 内外部增删改立即可见；无选中项目时刷新清空且不崩溃（**回归 #642**）；改动 `SkillSettingsViewModel.refresh` 或缓存失效路径时优先跑对应测试文件。
 - **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
+- **Skill Tools Conversation Scope**（3 条）：由 `resolveProjectPathConversationPriority`、`readExplicitPathBeatsConversationProject`、`toolsRouteThroughConversationProject` 锁定；list / read / update / delete_skill 的项目路径回退链必须是「显式 `project_path` → 会话绑定项目 → UI 当前项目」，会话绑定项目优先于 UI 当前项目（**回归 #789**）。「UI 当前=B、会话=A」的确定性回归并入 `projectPathFallback`（唯一 `.serialized` 单例用例），避免跨套件并行踩踏 `SkillRuntime`。
 
 ## 测试用例清单
 
@@ -62,7 +63,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条
 | 6 | CreateSkillTool | 正文已带一级标题时不再追加 title，只保留一个 H1 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsExistingH1WithoutDuplicatingTitle` |
 | 7 | CreateSkillTool | makeSkillMarkdown 边界情况：空白、空正文、无空格 #、多个 H1 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `makeSkillMarkdownEdgeCases` |
 | 8 | CreateSkillTool | 创建后使技能缓存失效，新技能立即可见 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidatesCacheAfterCreation` |
-| 9 | CreateSkillTool | project_path 回退到当前项目；无当前项目时抛错；空白等同省略（**#890**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectPathFallback` |
+| 9 | CreateSkillTool | project_path 回退到当前项目；无当前项目时抛错；空白等同省略；UI 当前=B 时四个 CRUD 工具仍作用于会话项目 A（**#890 / #789**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectPathFallback` |
 | 10 | CreateSkillTool | 风险等级为 medium，展示描述包含技能名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `metadata` |
 | 11 | CreateSkillTool | 空白 project_path 回退到会话绑定项目（**#890**） | 会话绑定项目 A | 显式传空白 `project_path` | 技能写入项目 A | P0 | ✅ 已覆盖 | `blankProjectPathFallsBackToConversationProject` |
 | 12 | 综合 | PromptBuilder 构造技能列表 prompt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `promptBuilder` |
@@ -126,8 +127,11 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条
 | 68 | SkillSettingsRefresh | 设置页刷新使缓存失效，外部新增技能立即可见 | 已选中项目并缓存 [alpha]，扫描器改为 [alpha, beta] | TTL 内调用 `refresh()` | 重扫磁盘，projectSkills 为 [alpha, beta]（**回归** #642） | P0 | ✅ 已覆盖 | `refreshRescansAfterExternalChange` |
 | 69 | SkillSettingsRefresh | 设置页刷新使缓存失效，外部删除技能立即消失 | 已缓存 [alpha, beta]，扫描器改为 [alpha] | TTL 内调用 `refresh()` | projectSkills 为 [alpha] | P1 | ✅ 已覆盖 | `refreshReflectsExternalDeletion` |
 | 70 | SkillSettingsRefresh | 无选中项目时刷新清空技能且不崩溃 | 未 updateProjects，selectedProjectPath 为 nil | 调用 `refresh()` | selectedProjectPath 仍 nil，projectSkills 为空 | P2 | ✅ 已覆盖 | `refreshWithoutSelectionClearsSkills` |
+| 71 | Skill Tools Conversation Scope | resolveProjectPath 会话项目优先于当前项目，显式路径最优先 | 提供会话项目 / 显式路径 / 空白显式路径 | 调用 `SkillToolSupport.resolveProjectPath` | 回退链为 显式 → 会话 → 当前，空白显式等同省略（**回归 #789**） | P1 | ✅ 已覆盖 | `resolveProjectPathConversationPriority` |
+| 72 | Skill Tools Conversation Scope | read_skill 显式 project_path 仍优先于会话绑定项目 | 会话绑定 A，显式传 B，技能仅在 B | 调用 `executeResult(context:arguments:)` | 读到 B 的技能，误用 A 会抛 notFound | P1 | ✅ 已覆盖 | `readExplicitPathBeatsConversationProject` |
+| 73 | Skill Tools Conversation Scope | 未传路径时四个工具都经 Context 落到会话绑定项目 | 会话绑定 A，技能仅在 A | 依次调用 list/read/update/delete 的 `executeResult` | 四个工具均作用于 A，不得读/写/删 UI 当前项目（**回归 #789**） | P0 | ✅ 已覆盖 | `toolsRouteThroughConversationProject` |
 
-> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #525 变异验证：M1 移除 `deleteSkill` 的 isDirectory 守卫（回到只凭 fileExists 删除）→ `deleteOrdinaryFileIsRejected` 失败（普通文件被删、未抛错，RED）；M2 把定位改用 `locateValidSkillDirectory`（要求完整技能目录）→ `deleteIncompleteDirectoryStillSucceeds` 失败（残缺目录删不掉，RED）；还原后 64 条全绿。
@@ -138,21 +142,21 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 70 条
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 45 / 45
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 47 / 47
 - P2: 已覆盖 7 / 7
-- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
+- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（45 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
