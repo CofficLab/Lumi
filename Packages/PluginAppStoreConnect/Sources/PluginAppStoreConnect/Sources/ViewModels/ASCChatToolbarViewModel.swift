@@ -143,7 +143,7 @@ final class ASCChatToolbarViewModel: ObservableObject, SuperLog {
             }
 
             app = resolvedApp
-            let loadedVersions = try await clientCapability.listVersions(appID: resolvedApp.id)
+            let loadedVersions = try await clientCapability.listVersions(appID: resolvedApp.id, forceRefresh: forceRefresh)
             guard generation == loadGeneration else { return }
             versions = loadedVersions
             isLoading = false
@@ -164,14 +164,14 @@ final class ASCChatToolbarViewModel: ObservableObject, SuperLog {
         forceRefresh: Bool
     ) async throws -> AppStoreApp? {
         if let appID = binding.appID {
-            return try await clientCapability.readApp(id: appID)
+            return try await clientCapability.readApp(id: appID, forceRefresh: forceRefresh)
         }
 
         guard let bundleID = binding.bundleID else { return nil }
         if !forceRefresh, let cached = resolvedAppsByBundleID[bundleID] {
             return cached
         }
-        let found = try await clientCapability.findApp(bundleID: bundleID)
+        let found = try await clientCapability.findApp(bundleID: bundleID, forceRefresh: forceRefresh)
         if let found {
             resolvedAppsByBundleID[bundleID] = found
         }

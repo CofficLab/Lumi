@@ -18,12 +18,12 @@ struct ASCChatToolbarViewModelTests {
         var readAppCallCount = 0
         var listVersionsCallCount = 0
 
-        func findApp(bundleID: String) async throws -> AppStoreApp? {
+        func findApp(bundleID: String, forceRefresh: Bool) async throws -> AppStoreApp? {
             findAppCallCount += 1
             return appsByBundleID[bundleID]
         }
 
-        func readApp(id: String) async throws -> AppStoreApp {
+        func readApp(id: String, forceRefresh: Bool) async throws -> AppStoreApp {
             readAppCallCount += 1
             guard let app = appsByID[id] else {
                 throw ASCChatClientError.unavailable
@@ -31,7 +31,7 @@ struct ASCChatToolbarViewModelTests {
             return app
         }
 
-        func listVersions(appID: String) async throws -> [AppStoreVersion] {
+        func listVersions(appID: String, forceRefresh: Bool) async throws -> [AppStoreVersion] {
             listVersionsCallCount += 1
             return versionsByAppID[appID] ?? []
         }

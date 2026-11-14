@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 89
+测试文件: 19 个，用例总数: 95
 
 核心组件（源码目录）:
 - `Sources/`
@@ -39,6 +39,8 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ConnectCacheInvalidator**（14 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
 - **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
 - **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
+- **ASC Chat Toolbar 刷新**（3 条）：由 `refreshForcesNetworkOnAppIDBinding`、`refreshForcesNetworkOnBundleIDBinding`、`initialLoadUsesCacheFirst` 锁定；手动刷新必须把 forceRefresh 传到 App 解析与版本列表，首次加载仍缓存优先（**回归 #320**），改动聊天工具栏刷新的 forceRefresh 传播时优先跑对应测试文件。
+- **ConnectClient 刷新绕过缓存**（3 条）：由 `forceRefreshBypassesVersionListCache`、`defaultVersionListReusesCache`、`forceRefreshBypassesAppReadCache` 锁定；forceRefresh 必须以 networkOnly 绕过未过期 GET 缓存，默认调用仍复用缓存（**回归 #320**），改动 listVersions/readApp/findApp 的缓存策略时优先跑对应测试文件。
 - **VMBusy**（3 条）：由 `nestedRunBusyIsReentrant`、`fastOperationSkipsOverlay`、`slowOperationShowsOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VM App 切换**（4 条）：由 `loadingAnotherAppIsNotSkipped`、`lateVersionsFromPreviousAppAreDiscarded`、`currentVersionsAreApplied`、`lateAppsFromPreviousAccountAreDiscarded` 等用例锁定；改动 App 选择、账号切换、版本加载或代次校验时优先跑对应测试文件。
 - **SetAppStoreConnectAgeRatingTool**（4 条）：由 `schemaExposesMissingAttributes`、`explicitFalseIsSent`、`absentAttributesAreOmitted`、`decodesNewAttributes` 锁定；改动年龄分级参数或 Apple 字段映射时优先跑对应测试文件。
@@ -143,27 +145,35 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 87 | 工具前置条件失败 | 更新版本时没有任何可更新字段属于失败 | 只传 versionID | 调用更新版本工具 | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `updateVersionRequiresAtLeastOneField` |
 | 88 | 工具前置条件失败 | 更新本地化时没有任何可更新字段属于失败 | 只传 localizationID | 调用更新本地化工具 | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `updateLocalizationRequiresAtLeastOneField` |
 | 89 | 工具前置条件失败 | 前置条件失败的原因不是「凭据缺失」 | 只传 versionID | 调用更新版本工具并检查原因 | 原因含 copyright，不含 credential 与 Network service | P1 | ✅ 已覆盖 | `preconditionFailureIsNotMaskedByCredentialError` |
+| 90 | ASC Chat Toolbar 刷新 | appID 绑定时刷新强制 App 读取与版本列表都走网络 | appID 绑定已加载 | 调用 `refresh()` | readApp 与 listVersions 均收到 forceRefresh=true（**回归 #320**） | P0 | ✅ 已覆盖 | `refreshForcesNetworkOnAppIDBinding` |
+| 91 | ASC Chat Toolbar 刷新 | bundleID 绑定时刷新强制 App 查询与版本列表都走网络 | bundleID 绑定已加载 | 调用 `refresh()` | findApp 与 listVersions 均收到 forceRefresh=true（**回归 #320**） | P0 | ✅ 已覆盖 | `refreshForcesNetworkOnBundleIDBinding` |
+| 92 | ASC Chat Toolbar 刷新 | 首次加载沿用缓存优先，不强制走网络 | appID 绑定 | `updateProjectPath` | readApp/listVersions 均 forceRefresh=false | P1 | ✅ 已覆盖 | `initialLoadUsesCacheFirst` |
+| 93 | ConnectClient 刷新绕过缓存 | forceRefresh 绕过版本列表缓存，重新走网络 | 版本列表已缓存 | `listVersions(forceRefresh: true)` | 命中网络返回新内容，请求数 +1（**回归 #320**） | P0 | ✅ 已覆盖 | `forceRefreshBypassesVersionListCache` |
+| 94 | ConnectClient 刷新绕过缓存 | 默认版本列表请求复用未过期缓存 | 版本列表已缓存 | 再次 `listVersions()` | 复用缓存，请求数不变 | P1 | ✅ 已覆盖 | `defaultVersionListReusesCache` |
+| 95 | ConnectClient 刷新绕过缓存 | forceRefresh 绕过 App 读取缓存，重新走网络 | App 已缓存 | `readApp(forceRefresh: true)` | 命中网络返回新内容，请求数 +1（**回归 #320**） | P1 | ✅ 已覆盖 | `forceRefreshBypassesAppReadCache` |
 
-> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 回归 #320 变异验证：M1 把 ViewModel `loadVersions` 的 `listVersions(forceRefresh:)` 写死为 false（不再传播刷新标志）→ `refreshForcesNetworkOnAppIDBinding`/`refreshForcesNetworkOnBundleIDBinding` 失败（listVersions 仍收到 false，RED）；M2 把 `ConnectClient.listVersions` 的 `cachePolicy` 写死为 nil（忽略 forceRefresh）→ `forceRefreshBypassesVersionListCache` 失败（刷新仍命中旧缓存、请求数不增，RED）；还原后 95 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 62 / 62
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 65 / 65
 - P2: 已覆盖 8 / 8
-- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（62 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（65 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
