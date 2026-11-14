@@ -36,6 +36,10 @@ public struct ConversationSummarizer: @unchecked Sendable {
     /// 参与摘要的最大消息条数（取最近 N 条）。
     public static let maxMessages = 60
 
+    /// 附件 metadata 实际解码次数；仅供测试断言「解码被限定在保留窗口内」
+    /// 这一性能不变式（issue #1324）。生产代码不读取它。
+    nonisolated(unsafe) static var attachmentDecodeCount = 0
+
     public struct Outcome: Sendable, Equatable {
         public let summary: String
         public let usedFallback: Bool
@@ -62,7 +66,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     @MainActor
     public func summarize(conversationID: UUID) async -> Outcome {
-        let history = Self.filteredMessages(await messages.messagesSnapshot(in: conversationID))
+        let history = await Self.filteredMessagesOffMainActor(await messages.messagesSnapshot(in: conversationID))
         guard !history.isEmpty else {
             return Outcome(summary: fallbackSummary(from: history), usedFallback: true)
         }
@@ -94,26 +98,45 @@ public struct ConversationSummarizer: @unchecked Sendable {
     // MARK: - Private
 
     static func filteredMessages(_ history: [Message]) -> [Message] {
+        // 工具名映射只需读 toolCalls 的 id/name，不涉及附件 base64，
+        // 仍按整段历史构建：窗口内的工具结果可能引用更早的调用。
         let toolNames = toolNamesByCallID(history)
-        let visible = history
-            .filter { $0.role == .user || $0.role == .assistant || $0.role == .tool }
-            .compactMap { message -> Message? in
-                guard var text = summaryText(for: message, toolNames: toolNames) else { return nil }
-                // 工具结果单独限流：一次命令输出可能远大于普通正文。
-                let limit = message.role == .tool ? Self.maxToolResultChars : Self.maxCharsPerMessage
-                guard text.count > limit else {
-                    guard text != message.content else { return message }
-                    var copy = message
-                    copy.content = text
-                    return copy
-                }
-                let head = text.prefix(limit)
-                text = "\(head)…[truncated]"
+        let roleFiltered = history.filter {
+            $0.role == .user || $0.role == .assistant || $0.role == .tool
+        }
+        // 从尾部反向收集最多 maxMessages 条「可用」消息：附件解码只发生在
+        // 被保留的尾部窗口上，不再对整段历史逐条解析 base64 后再 suffix(60)
+        // 丢弃（issue #1324）。结果与「全部可用消息取最近 60 条」完全一致。
+        var retained: [Message] = []
+        retained.reserveCapacity(Self.maxMessages)
+        for message in roleFiltered.reversed() {
+            guard var text = summaryText(for: message, toolNames: toolNames) else { continue }
+            // 工具结果单独限流：一次命令输出可能远大于普通正文。
+            let limit = message.role == .tool ? Self.maxToolResultChars : Self.maxCharsPerMessage
+            if text.count > limit {
+                text = "\(text.prefix(limit))…[truncated]"
+            }
+            if text != message.content {
                 var copy = message
                 copy.content = text
-                return copy
+                retained.append(copy)
+            } else {
+                retained.append(message)
             }
-        return Array(visible.suffix(Self.maxMessages))
+            if retained.count >= Self.maxMessages { break }
+        }
+        return retained.reversed()
+    }
+
+    /// 在后台线程执行 `filteredMessages`，避免附件 metadata 解码阻塞主 actor。
+    ///
+    /// `filteredMessages` 是作用于不可变 `[Message]` 快照的纯函数，可安全离线执行；
+    /// 调用方（preview / fork / summarize）都在主 actor 上，直接同步调用会让
+    /// 打开弹窗与确认分叉卡住 UI（issue #1324）。
+    nonisolated static func filteredMessagesOffMainActor(_ history: [Message]) async -> [Message] {
+        await Task.detached(priority: .userInitiated) {
+            filteredMessages(history)
+        }.value
     }
 
     /// 工具调用 ID 到工具名的映射，用于给工具结果标注来源。
@@ -170,6 +193,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
     /// 把消息 metadata 中的附件渲染成摘要可用的文字。
     static func attachmentDescriptions(from metadata: [String: String]) -> [String] {
         guard !metadata.isEmpty else { return [] }
+        Self.attachmentDecodeCount += 1
 
         var descriptions: [String] = []
         for image in UserAttachmentMetadata.decodeImageAttachments(from: metadata) {
