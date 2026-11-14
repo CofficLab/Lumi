@@ -114,6 +114,69 @@ private func assistantMessage(
     #expect(history.samples[0].hitRate == 0.5)
 }
 
+// MARK: - 旧 DeepSeek 混合表示（回归 #782）
+
+@Test func historyUsesMetadataTotalInsteadOfUncachedInputTokenCount() {
+    // 旧版 DeepSeek：强类型 inputTokenCount=68 是「未命中缓存的输入」，
+    // metadata 里 cacheTotalInputTokens=580 才是完整总输入，cached=512。
+    let messages = [
+        assistantMessage(
+            cached: nil,
+            total: nil,
+            inputTokens: 68,
+            metadata: ["cachedInputTokens": "512", "cacheTotalInputTokens": "580"]
+        ),
+    ]
+
+    let history = CacheHitRateHistory.build(from: messages)
+
+    #expect(history.samples.count == 1)
+    #expect(history.samples[0].totalTokens == 580)
+    #expect(history.samples[0].cachedTokens == 512)
+    // 512/580 ≈ 88.3%，而不是被掩盖成 68/68 = 100%。
+    #expect(abs(history.samples[0].hitRate - 512.0 / 580.0) < 1e-9)
+    #expect(history.samples[0].hitRate < 1.0)
+}
+
+@Test func historyPrefersStrongCachedTotalOverMetadata() {
+    // 强类型 cacheTotalInputTokenCount 存在时优先于 metadata。
+    let messages = [
+        assistantMessage(
+            cached: 40,
+            total: 200,
+            inputTokens: 68,
+            metadata: ["cacheTotalInputTokens": "580"]
+        ),
+    ]
+
+    let history = CacheHitRateHistory.build(from: messages)
+
+    #expect(history.samples[0].totalTokens == 200)
+    #expect(history.samples[0].hitRate == 0.2)
+}
+
+@Test func historyCumulativeNotInflatedByLegacyMixedRepresentation() {
+    let conversationID = UUID()
+    let base = Date(timeIntervalSince1970: 0)
+    let messages = [
+        assistantMessage(
+            cached: nil, total: nil, inputTokens: 68,
+            conversationID: conversationID, createdAt: base,
+            metadata: ["cachedInputTokens": "512", "cacheTotalInputTokens": "580"]
+        ),
+        assistantMessage(
+            cached: 100, total: 200,
+            conversationID: conversationID, createdAt: base.addingTimeInterval(1)
+        ),
+    ]
+
+    let history = CacheHitRateHistory.build(from: messages)
+
+    // 累计 (512+100)/(580+200) = 612/780，而非被钳成 (68+100)/(68+200)。
+    #expect(history.latestCumulativeHitRate != nil)
+    #expect(abs(history.latestCumulativeHitRate! - 612.0 / 780.0) < 1e-9)
+}
+
 @Test func historySkipsNonAssistantAndInvalidSamples() {
     let conversationID = UUID()
     let messages = [
