@@ -27,7 +27,10 @@ final class AppIconDesignerViewModel: ObservableObject {
         self.store = store
         syncFromStore()
         cancellable = store.objectWillChange.sink { [weak self] _ in
-            self?.syncFromStore()
+            // objectWillChange 在新值安装前触发，同步读 store 会镜像旧值；延到下一个 main actor tick 再读（#293）。
+            Task { @MainActor in
+                self?.syncFromStore()
+            }
         }
     }
 
