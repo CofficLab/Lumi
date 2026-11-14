@@ -12,12 +12,52 @@
         }
       }
     },
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
     "Collapse": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Collapse"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起"
           }
         },
         "zh-Hans": {
@@ -27,12 +67,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "收起"
@@ -54,6 +88,12 @@
             "value": "Continue in a new conversation"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新對話中繼續"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -61,12 +101,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在新對話中繼續"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "在新對話中繼續"
@@ -80,12 +114,86 @@
         }
       }
     },
+    "Description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描述"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描述"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描述"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描述"
+          }
+        }
+      }
+    },
+    "Edit goal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit goal"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯目標"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑目标"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯目標"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯目標"
+          }
+        }
+      }
+    },
     "Expand": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expand"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展開"
           }
         },
         "zh-Hans": {
@@ -95,12 +203,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "展開"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "展開"
@@ -122,6 +224,12 @@
             "value": "Goal"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目標"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -129,12 +237,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目標"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "目標"
@@ -156,6 +258,12 @@
             "value": "Goal & Tasks"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目標與任務"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -163,12 +271,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目標與任務"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "目標與任務"
@@ -190,6 +292,12 @@
             "value": "Goal and task management for multi-step objectives."
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "面向多步驟目標的目標與任務管理。"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -202,12 +310,6 @@
             "value": "面向多步驟目標的目標與任務管理。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "面向多步驟目標的目標與任務管理。"
-          }
-        },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
@@ -216,36 +318,36 @@
         }
       }
     },
-    "Goal description": {
+    "Goal details": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Goal description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目标描述"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目標描述"
+            "value": "Goal details"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "目標描述"
+            "value": "目標詳情"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目標詳情"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "目標描述"
+            "value": "目標詳情"
           }
         }
       }
@@ -258,6 +360,12 @@
             "value": "GoalTask"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标任务"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -265,12 +373,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目标任务"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "目标任务"
@@ -292,6 +394,12 @@
             "value": "Goals"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目標"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -299,12 +407,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目標"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "目標"
@@ -326,6 +428,12 @@
             "value": "No goals yet"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無目標"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -333,12 +441,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暫無目標"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "暫無目標"
@@ -360,6 +462,12 @@
             "value": "Outstanding tasks"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未完成的任務"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -367,12 +475,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未完成的任務"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "未完成的任務"
@@ -386,9 +488,117 @@
         }
       }
     },
+    "Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        }
+      }
+    },
+    "Success criteria": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success criteria"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功標準"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功标准"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功標準"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功標準"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標題"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標題"
+          }
+        }
+      }
+    },
     "[%@]": {
       "localizations": {
         "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@]"
+          }
+        },
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "[%@]"
@@ -401,12 +611,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "[%@]"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "[%@]"
@@ -428,6 +632,12 @@
             "value": "⚠️ %@"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ %@"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -435,12 +645,6 @@
           }
         },
         "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚠️ %@"
-          }
-        },
-        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "⚠️ %@"

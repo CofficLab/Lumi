@@ -103,6 +103,33 @@ public enum GoalAccessibility {
     /// 描述弹窗里的正文。
     public static let descriptionText = "lumi.goal.description-text"
 
+    /// 详情弹窗只读模式里的目标标题。
+    public static let detailTitle = "lumi.goal.detail-title"
+
+    /// 详情弹窗只读模式里的成功标准正文。
+    public static let criteriaText = "lumi.goal.criteria-text"
+
+    /// 详情弹窗头部的「编辑目标」按钮（终态 Goal 不渲染）。
+    public static let descriptionEditButton = "lumi.goal.description-edit"
+
+    /// 编辑模式的标题输入框。
+    public static let editTitleField = "lumi.goal.edit-title"
+
+    /// 编辑模式的描述输入框。
+    public static let editDescriptionField = "lumi.goal.edit-description"
+
+    /// 编辑模式的成功标准输入框。
+    public static let editCriteriaField = "lumi.goal.edit-criteria"
+
+    /// 编辑模式底部的保存按钮。
+    public static let editSave = "lumi.goal.edit-save"
+
+    /// 编辑模式底部的取消按钮。
+    public static let editCancel = "lumi.goal.edit-cancel"
+
+    /// 编辑模式底部的保存失败原因。
+    public static let editError = "lumi.goal.edit-error"
+
     // MARK: - 「在新对话中继续」确认弹窗
 
     /// 确认弹窗顶部的目标标题。

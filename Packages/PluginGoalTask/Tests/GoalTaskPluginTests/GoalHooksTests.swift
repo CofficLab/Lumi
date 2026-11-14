@@ -403,6 +403,115 @@ extension SharedManagerSuite {
             #expect(systems.contains { $0.contains("Automatic Continuation") } == false)
         }
 
+        // MARK: - 用户编辑提示（#1332）
+
+        @Test("用户编辑后下一轮注入新文本与一次性提示，提示只出现一次")
+        func testUserEditInjectsNewContentAndOneShotNotice() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            let created = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Original goal",
+                description: "original description",
+                successCriteria: "original criteria",
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalContent(
+                id: created.goal.id,
+                title: "Revised goal",
+                description: "revised description",
+                successCriteria: "revised criteria"
+            )
+
+            let hook = GoalPromptInjectionHook()
+            let first = await hook.apply(to: context(conversationID))
+            let systems = systemTexts(first)
+
+            // 契约 + 进度 + 编辑提示；静态契约仍在最前且内容不变
+            #expect(systems.count == 3, "实际注入 \(systems.count) 段")
+            guard systems.count == 3 else { return }
+            #expect(systems[0].contains("Autonomous Execution Contract"))
+            #expect(systems[1].contains("**Title:** Revised goal"))
+            #expect(systems[1].contains("**Description:** revised description"))
+            #expect(systems[1].contains("**Success Criteria:** revised criteria"))
+            #expect(systems[2].contains("## ✏️ Goal Edited by User"))
+            #expect(systems[2].contains(created.goal.id))
+            #expect(systems[2].contains("Re-evaluate every remaining task"))
+            // 动态内容仍锚定在最新 user 之前
+            #expect(first.messages.last?.content == "hello")
+
+            // 第二次请求：新文本仍在，一次性提示已被消费
+            let second = await hook.apply(to: context(conversationID))
+            let secondSystems = systemTexts(second)
+            #expect(secondSystems.count == 2)
+            #expect(secondSystems.contains { $0.contains("Goal Edited by User") } == false)
+            #expect(secondSystems[1].contains("**Description:** revised description"))
+        }
+
+        @Test("没有用户编辑时不注入编辑提示")
+        func testNoEditNoticeWithoutUserEdit() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Untouched goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+
+            let result = await GoalPromptInjectionHook().apply(to: context(conversationID))
+            let systems = systemTexts(result)
+
+            #expect(systems.count == 2)
+            #expect(systems.contains { $0.contains("Goal Edited by User") } == false)
+        }
+
+        @Test("blocked 期间编辑不消费提示标记，重新活跃后才注入")
+        func testEditNoticeDeferredWhileBlocked() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            let created = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Blocked goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalStatus(
+                id: created.goal.id, status: .blocked, blockedReason: "missing credentials"
+            )
+            _ = try await manager.updateGoalContent(
+                id: created.goal.id, title: "Edited while blocked", description: nil, successCriteria: nil
+            )
+
+            let hook = GoalPromptInjectionHook()
+            let blockedResult = await hook.apply(to: context(conversationID))
+            let blockedSystems = systemTexts(blockedResult)
+            #expect(blockedSystems.count == 1)
+            #expect(blockedSystems[0].contains("Goal Blocked"))
+            #expect(blockedSystems.contains { $0.contains("Goal Edited by User") } == false)
+
+            _ = try await manager.updateGoalStatus(id: created.goal.id, status: .inProgress)
+
+            let activeResult = await hook.apply(to: context(conversationID))
+            let activeSystems = systemTexts(activeResult)
+            #expect(activeSystems.contains { $0.contains("Goal Edited by User") })
+            #expect(activeSystems.contains { $0.contains("**Title:** Edited while blocked") })
+        }
+
         // MARK: - 注入位置（保前缀缓存）
 
         @Test("动态进度锚定在最新 user 之前，稳定历史前缀逐字节不变")

@@ -63,7 +63,10 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         var delivered = 0
         // 慢恢复场景整体放慢：首轮发问、恢复后的收尾都逐段投递，
         // 让「回合中」与「恢复回合中」两个窗口都长于 XCUITest 的轮询周期。
-        let isSlowStream = scenario == .slow || scenario == .verySlow || scenario == .askUserYesNoSlow
+        // goalEdit 同样放慢：保活轮每轮追加一条任务，而单 goal 任务上限是
+        // 50（GoalStateManager.maxTasksPerGoal）；不放慢的话几十秒的测试窗口
+        // 就会撞上限，工具报错后续跑预算耗尽，目标又会被标成终态。
+        let isSlowStream = scenario == .slow || scenario == .verySlow || scenario == .askUserYesNoSlow || scenario == .goalEdit
         for event in try Self.sseEvents(for: scenario, alreadyAnswered: alreadyAnswered) {
             if isSlowStream {
                 try await Task.sleep(nanoseconds: UInt64(UITestFixtures.slowChunkDelay * 1_000_000_000))
@@ -187,9 +190,23 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                     ],
                 ]]
             }
-        case .goal:
+        case .goal, .goalEdit:
             if alreadyAnswered {
-                content = UITestFixtures.goalFollowUpResponse
+                if scenario == .goalEdit {
+                    // 保活轮：追加工具调用而非收尾文本，重置续跑预算，
+                    // 让目标停留在非终态，编辑入口持续可用。
+                    content = ""
+                    toolCalls = [[
+                        "id": UITestFixtures.goalKeepaliveToolCallID,
+                        "type": "function",
+                        "function": [
+                            "name": UITestFixtures.goalKeepaliveToolName,
+                            "arguments": UITestFixtures.goalKeepaliveArguments,
+                        ],
+                    ]]
+                } else {
+                    content = UITestFixtures.goalFollowUpResponse
+                }
             } else {
                 content = ""
                 toolCalls = [[
@@ -208,7 +225,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             message["tool_calls"] = toolCalls
         }
 
-        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered) || (scenario.isApproval && !alreadyAnswered) || (scenario.isGoal && !alreadyAnswered))
+        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered) || (scenario.isApproval && !alreadyAnswered) || (scenario.isGoal && (!alreadyAnswered || scenario == .goalEdit)))
             ? ["prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40]
             : ["prompt_tokens": 12, "completion_tokens": 6, "total_tokens": 18]
 
@@ -254,7 +271,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             return try askUserEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         case .approval:
             return try approvalEvents(for: scenario, alreadyAnswered: alreadyAnswered)
-        case .goal:
+        case .goal, .goalEdit:
             return try goalEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         }
     }
@@ -382,10 +399,11 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
     /// goal 场景的两段式响应。
     ///
     /// - 未执行：发出 `create_goal` 工具调用 → 目标被真正创建 → goal 侧边栏出现。
-    /// - 已执行：普通文本 → 回合完成。
+    /// - 已执行：`.goal` 发普通文本收尾；`.goalEdit` 发 `add_tasks_to_goal`
+    ///   保活调用（重置续跑预算，目标不进入终态，编辑入口持续可用）。
     ///
     /// 判据与 ask_user / approval 场景一致：请求体里出现 `role=tool` 消息
-    /// （即 `create_goal` 已执行并回传结果）时才收尾。
+    /// （即 `create_goal` 已执行并回传结果）时才进入后续轮。
     private static func goalEvents(
         for scenario: UITestScenario,
         alreadyAnswered: Bool
@@ -393,6 +411,9 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         let model = scenario.rawValue
 
         guard !alreadyAnswered else {
+            if scenario == .goalEdit {
+                return try keepaliveEvents(model: model)
+            }
             return [
                 try sse(delta: ["content": UITestFixtures.goalFollowUpResponse], model: model),
                 try sse(usage: usage(prompt: 30, completion: 10), model: model),
@@ -415,6 +436,39 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                 "type": "function",
                 "function": [
                     "name": UITestFixtures.goalToolName,
+                    "arguments": head,
+                ],
+            ]]], model: model),
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "function": ["arguments": tail],
+            ]]], model: model),
+            try sse(delta: [:], model: model, finishReason: "tool_calls"),
+            try sse(usage: usage(prompt: 30, completion: 10), model: model),
+            doneEvent(),
+        ]
+    }
+
+    /// goalEdit 场景的保活轮：`add_tasks_to_goal` 工具调用，arguments 分两片。
+    ///
+    /// 每轮执行都会重置续跑预算，目标因此不会在自动续跑耗尽后被标成
+    /// `.failed`，编辑入口（仅非终态可见）在整个测试窗口内稳定可用。
+    private static func keepaliveEvents(model: String) throws -> [String] {
+        let arguments = UITestFixtures.goalKeepaliveArguments
+        let split = arguments.index(
+            arguments.startIndex,
+            offsetBy: min(16, arguments.count)
+        )
+        let head = String(arguments[arguments.startIndex..<split])
+        let tail = String(arguments[split...])
+
+        return [
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "id": UITestFixtures.goalKeepaliveToolCallID,
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.goalKeepaliveToolName,
                     "arguments": head,
                 ],
             ]]], model: model),

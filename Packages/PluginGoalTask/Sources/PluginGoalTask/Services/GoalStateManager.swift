@@ -52,6 +52,14 @@ public actor GoalStateManager: SuperLog {
     /// 与续跑预算相互独立：一次代答恢复的是**当前**回合，不会额外消耗
     /// 无感续聊的机会。任务推进时（`resetContinuationCount`）一并归零。
     private var askUserAnswerCountsByConversationID: [String: Int] = [:]
+
+    /// 内存态（非持久化）：标记被用户手动编辑过内容的 Goal。
+    ///
+    /// 由 `updateGoalContent` 置位，由 `GoalPromptInjectionHook` 在注入该
+    /// Goal 的进度提示时消费，消费即清除。按会话 keyed，随
+    /// `clearRuntimeBudget` 一并清理。重启后标记丢失是可接受的：
+    /// 编辑后的文本本身每轮都会注入。
+    private var userEditedGoalIDsByConversation: [String: Set<String>] = [:]
     
     // MARK: - Initialization
     
@@ -464,10 +472,64 @@ public actor GoalStateManager: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)手动更新 Goal \(id) 状态为 \(status.rawValue)")
         }
-        
+
         return goal
     }
-    
+
+    /// 更新 Goal 内容（用户在 UI 手动编辑）。
+    ///
+    /// 只改 title / goalDescription / successCriteria，不触碰状态与任务；
+    /// blocked 的解除仍走 `updateGoalStatus`。终态 Goal 不再注入 LLM 上下文，
+    /// 编辑没有意义，直接拒绝。
+    @discardableResult
+    func updateGoalContent(
+        id: String,
+        title: String,
+        description: String?,
+        successCriteria: String?
+    ) throws -> Goal {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else {
+            throw GoalStateError.emptyGoalTitle
+        }
+
+        let context = ModelContext(container)
+
+        guard let goal = fetchGoal(id: id, context: context) else {
+            throw GoalStateError.goalNotFound(id: id)
+        }
+        guard !goal.isTerminal else {
+            throw GoalStateError.goalIsTerminal(id: id)
+        }
+
+        goal.title = trimmedTitle
+        goal.goalDescription = Self.normalizedContent(description)
+        goal.successCriteria = Self.normalizedContent(successCriteria)
+        goal.updatedAt = Date().timeIntervalSince1970
+
+        try context.save()
+
+        // 用户改目标是一条新的工作序列：给足续跑预算（与 createGoal 同一理由），
+        // 并让下一轮注入告知模型「目标被用户改过，重估剩余任务」。
+        resetContinuationCount(conversationId: goal.conversationId)
+        userEditedGoalIDsByConversation[goal.conversationId, default: []].insert(goal.id)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)用户编辑 Goal \(id) 内容")
+        }
+
+        return goal
+    }
+
+    /// trim 后为空的内容按 nil 存储，与 create_goal 的可选字段语义一致。
+    private static func normalizedContent(_ text: String?) -> String? {
+        guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
     /// 根据 Tasks 状态推导 Goal 状态
     private func deriveGoalStatus(goalId: String, context: ModelContext) -> Goal.GoalStatus {
         let tasks = fetchAllTasks(goalId: goalId, context: context)
@@ -580,6 +642,23 @@ public actor GoalStateManager: SuperLog {
     func consumeContinuation(conversationId: String) -> Bool {
         pendingContinuationConversationIDs.remove(conversationId) != nil
     }
+
+    /// 消费「用户编辑过该 Goal」的一次性标记，消费即清除。
+    ///
+    /// 只有真正注入进度提示时才消费：blocked 期间编辑的标记会保留到
+    /// Goal 重新活跃，避免提示被静默吞掉。
+    func consumeUserEditNotice(goalId: String, conversationId: String) -> Bool {
+        guard var ids = userEditedGoalIDsByConversation[conversationId],
+              ids.remove(goalId) != nil else {
+            return false
+        }
+        if ids.isEmpty {
+            userEditedGoalIDsByConversation.removeValue(forKey: conversationId)
+        } else {
+            userEditedGoalIDsByConversation[conversationId] = ids
+        }
+        return true
+    }
     
     /// 递增并返回该会话连续自动续聊的次数。
     ///
@@ -619,6 +698,7 @@ public actor GoalStateManager: SuperLog {
         continuationCountsByConversationID[conversationId] = 0
         askUserAnswerCountsByConversationID[conversationId] = 0
         pendingContinuationConversationIDs.remove(conversationId)
+        userEditedGoalIDsByConversation.removeValue(forKey: conversationId)
     }
     
     // MARK: - Delete
@@ -653,13 +733,16 @@ public actor GoalStateManager: SuperLog {
 // MARK: - Errors
 
 /// GoalStateManager 错误类型
-public enum GoalStateError: LocalizedError {
+public enum GoalStateError: LocalizedError, Equatable {
     case tooManyGoals(max: Int)
     case tooManyTasks(max: Int)
     case goalNotFound(id: String)
     case taskNotFound(id: String)
     case activeGoalAlreadyExists(title: String, goalId: String)
-    
+    case goalIsTerminal(id: String)
+    case emptyGoalTitle
+    case managerUnavailable
+
     public var errorDescription: String? {
         switch self {
         case .tooManyGoals(let max):
@@ -672,6 +755,12 @@ public enum GoalStateError: LocalizedError {
             return "Task not found: \(id)"
         case .activeGoalAlreadyExists(let title, let goalId):
             return "This conversation already has an unfinished goal: \(title) (\(goalId))"
+        case .goalIsTerminal(let id):
+            return "Goal is already finished and cannot be edited: \(id)"
+        case .emptyGoalTitle:
+            return "Goal title must not be empty"
+        case .managerUnavailable:
+            return "Goal manager is not available"
         }
     }
 }

@@ -57,6 +57,12 @@ final class GoalPromptInjectionHook {
         for goal in activeGoals {
             let tasks = await manager.fetchTasks(goalId: goal.id)
             dynamic.append(Self.progressPrompt(goal: goal, tasks: tasks))
+            // 用户编辑过内容时追加一次性提示：进度文本虽然每轮最新，但历史里
+            // 还留着按旧目标拆的计划，需要显式让模型重估。blocked 分支不在
+            // 这里消费标记，编辑提示保留到 Goal 重新活跃。
+            if await manager.consumeUserEditNotice(goalId: goal.id, conversationId: conversationId) {
+                dynamic.append(Self.userEditPrompt(goal))
+            }
         }
         if await manager.consumeContinuation(conversationId: conversationId) {
             dynamic.append(Self.continuationPrompt)
@@ -156,6 +162,19 @@ final class GoalPromptInjectionHook {
     - Call `update_task_status` as soon as a task finishes; never batch status updates
       at the end.
     """
+
+    /// 用户手动编辑目标后的一次性提示，消费即清除（见 `consumeUserEditNotice`）。
+    private static func userEditPrompt(_ goal: Goal) -> String {
+        """
+        ## ✏️ Goal Edited by User
+
+        The user manually edited goal `\(goal.id)` (**\(goal.title)**). The title, description, and success criteria above are the current, authoritative version.
+
+        - Re-evaluate every remaining task against the updated goal.
+        - Adjust the plan with `add_tasks_to_goal` / `update_task_status`: skip tasks that no longer fit, add tasks the new objective requires.
+        - Do NOT ask the user to confirm the changes; apply them and continue.
+        """
+    }
 
     /// 单个 goal 的进度视图，含任务表与当前焦点。
     private static func progressPrompt(goal: Goal, tasks: [GoalTask]) -> String {

@@ -409,4 +409,150 @@ struct GoalStateManagerTests {
         #expect(updated.goal.status == .failed)
         #expect(updated.goal.isTerminal == true)
     }
+
+    // MARK: - updateGoalContent（#1332）
+
+    @Test("User edit updates content fields and bumps updatedAt without touching status")
+    func testUpdateGoalContent() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        let created = try await manager.createGoal(
+            conversationId: "edit-content",
+            title: "Original",
+            description: "Original description",
+            successCriteria: "Original criteria",
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        let originalUpdatedAt = created.goal.updatedAt
+
+        let updated = try await manager.updateGoalContent(
+            id: created.goal.id,
+            title: "  Revised  ",
+            description: "Revised description",
+            successCriteria: "Revised criteria"
+        )
+
+        #expect(updated.title == "Revised")
+        #expect(updated.goalDescription == "Revised description")
+        #expect(updated.successCriteria == "Revised criteria")
+        #expect(updated.status == created.goal.status)
+        #expect(updated.updatedAt >= originalUpdatedAt)
+
+        let fetched = await manager.fetchGoal(id: created.goal.id)
+        #expect(fetched?.title == "Revised")
+        #expect(fetched?.goalDescription == "Revised description")
+    }
+
+    @Test("User edit rejects unknown and terminal goals")
+    func testUpdateGoalContentRejectsUnknownAndTerminal() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        await #expect(throws: GoalStateError.goalNotFound(id: "missing")) {
+            try await manager.updateGoalContent(
+                id: "missing", title: "T", description: nil, successCriteria: nil
+            )
+        }
+
+        let created = try await manager.createGoal(
+            conversationId: "edit-terminal",
+            title: "Done goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        _ = try await manager.updateGoalStatus(id: created.goal.id, status: .completed)
+
+        await #expect(throws: GoalStateError.goalIsTerminal(id: created.goal.id)) {
+            try await manager.updateGoalContent(
+                id: created.goal.id, title: "T", description: nil, successCriteria: nil
+            )
+        }
+    }
+
+    @Test("User edit rejects blank title and normalizes empty content to nil")
+    func testUpdateGoalContentValidation() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        let created = try await manager.createGoal(
+            conversationId: "edit-validation",
+            title: "Goal",
+            description: "Has description",
+            successCriteria: "Has criteria",
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        await #expect(throws: GoalStateError.emptyGoalTitle) {
+            try await manager.updateGoalContent(
+                id: created.goal.id, title: "   ", description: nil, successCriteria: nil
+            )
+        }
+
+        let updated = try await manager.updateGoalContent(
+            id: created.goal.id,
+            title: "Goal",
+            description: "  ",
+            successCriteria: ""
+        )
+        #expect(updated.goalDescription == nil)
+        #expect(updated.successCriteria == nil)
+    }
+
+    @Test("User edit sets a one-shot notice consumed exactly once")
+    func testUserEditNoticeConsumedOnce() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+        let cid = "edit-notice"
+
+        let created = try await manager.createGoal(
+            conversationId: cid,
+            title: "Goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        #expect(await manager.consumeUserEditNotice(goalId: created.goal.id, conversationId: cid) == false)
+
+        _ = try await manager.updateGoalContent(
+            id: created.goal.id, title: "Edited", description: nil, successCriteria: nil
+        )
+
+        #expect(await manager.consumeUserEditNotice(goalId: created.goal.id, conversationId: cid) == true)
+        #expect(await manager.consumeUserEditNotice(goalId: created.goal.id, conversationId: cid) == false)
+    }
+
+    @Test("User edit resets continuation budgets; deleting goals clears pending notices")
+    func testUserEditBudgetResetAndNoticeCleanup() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+        let cid = "edit-budget"
+
+        let created = try await manager.createGoal(
+            conversationId: cid,
+            title: "Goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+            _ = await manager.incrementContinuationCount(conversationId: cid)
+        }
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == nil)
+
+        _ = try await manager.updateGoalContent(
+            id: created.goal.id, title: "Edited", description: nil, successCriteria: nil
+        )
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == 1)
+
+        try await manager.deleteAllGoals(conversationId: cid)
+        #expect(await manager.consumeUserEditNotice(goalId: created.goal.id, conversationId: cid) == false)
+    }
 }

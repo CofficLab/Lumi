@@ -20,6 +20,9 @@ struct SidebarHeader: View {
     /// 当前活跃 Goal 的任务,用于 fork 弹窗预览未完成项。
     let tasks: [GoalTaskDisplayItem]
 
+    /// 保存 Goal 内容编辑：(goalID, title, description, successCriteria)。
+    let onSaveGoal: @MainActor (String, String, String?, String?) async throws -> Void
+
     let onToggleCollapsed: () -> Void
 
     /// 仅活跃 Goal 可继续推进;终态 Goal 没有未完成的上下文。
@@ -76,10 +79,11 @@ struct SidebarHeader: View {
         }
     }
 
+    /// Goal 详情入口：只要有 Goal 就显示（弹窗兼任详情与编辑，#1332），
+    /// 不再要求描述非空——没有描述的目标恰恰最需要编辑入口。
     @ViewBuilder
     private var descriptionButton: some View {
-        if let description = activeGoal?.goalDescription,
-           !description.isEmpty {
+        if let goal = activeGoal {
             Button {
                 showDescriptionPopover.toggle()
             } label: {
@@ -95,11 +99,16 @@ struct SidebarHeader: View {
                     )
             }
             .buttonStyle(.plain)
-            .help(pluginLocalization.string("Goal description"))
-            .accessibilityLabel(pluginLocalization.string("Goal description"))
+            .help(pluginLocalization.string("Goal details"))
+            .accessibilityLabel(pluginLocalization.string("Goal details"))
             .accessibilityIdentifier(GoalAccessibility.descriptionButton)
             .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
-                GoalDescriptionPopoverContent(text: description)
+                GoalDescriptionPopoverContent(
+                    goal: goal,
+                    onSave: { title, description, criteria in
+                        try await onSaveGoal(goal.id, title, description, criteria)
+                    }
+                )
             }
         }
     }
