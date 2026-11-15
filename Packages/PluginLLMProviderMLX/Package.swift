@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderLLMManager"),

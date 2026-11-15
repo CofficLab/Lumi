@@ -9,11 +9,11 @@ let package = Package(
         .library(name: "PluginAgentTurnNotification", targets: ["PluginAgentTurnNotification"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
     ],
     targets: [
@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "ProviderAgentLoop",
-                "ProviderConversation",
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderLifecycleHooks",
             ],
             path: "Sources/PluginAgentTurnNotification",
@@ -35,7 +35,7 @@ let package = Package(
             dependencies: [
                 "PluginAgentTurnNotification",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginAgentTurnNotificationTests"

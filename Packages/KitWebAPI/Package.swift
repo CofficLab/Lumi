@@ -21,9 +21,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderWebServer"),
@@ -33,7 +32,7 @@ let package = Package(
             name: "KitWebAPI",
             dependencies: [
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderWebServer", package: "ProviderWebServer"),

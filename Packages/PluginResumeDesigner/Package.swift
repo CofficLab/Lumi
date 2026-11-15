@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(path: "../KitHTMLPreview"),
@@ -17,7 +17,6 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../KitResume"),
-        .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
@@ -33,7 +32,7 @@ let package = Package(
                 "KitResume",
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                "ProviderChatSection",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),

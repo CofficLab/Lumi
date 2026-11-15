@@ -12,9 +12,8 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
-        .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
@@ -25,7 +24,7 @@ let package = Package(
                 "LumiUI",
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                "ProviderChatSection",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
@@ -39,7 +38,7 @@ let package = Package(
             dependencies: [
                 "PluginHostsManager",
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),

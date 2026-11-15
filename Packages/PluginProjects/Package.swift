@@ -9,12 +9,11 @@ let package = Package(
         .library(name: "PluginProjects", targets: ["PluginProjects"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../ProviderProjectRAG"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
@@ -31,7 +30,7 @@ let package = Package(
                 "KitLLM",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
-                "ProviderConversation",
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 "ProviderProjectRAG",
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
@@ -51,7 +50,7 @@ let package = Package(
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
             ]
         ),
     ]

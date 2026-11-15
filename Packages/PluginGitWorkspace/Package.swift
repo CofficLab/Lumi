@@ -19,8 +19,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
-        .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(path: "../PluginRootView")
     ],
     targets: [
@@ -32,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
@@ -48,7 +47,7 @@ let package = Package(
                 "PluginGitWorkspace",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
-                "ProviderChatSection",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),

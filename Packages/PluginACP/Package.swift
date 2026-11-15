@@ -9,10 +9,10 @@ let package = Package(
         .library(name: "PluginACP", targets: ["PluginACP"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageStreaming"),
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderACP", package: "ProviderACP"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
@@ -45,7 +45,7 @@ let package = Package(
             dependencies: [
                 "PluginACP",
                 .product(name: "ProviderACP", package: "ProviderACP"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Tests/PluginACPTests"

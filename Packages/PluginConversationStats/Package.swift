@@ -9,10 +9,9 @@ let package = Package(
         .library(name: "PluginConversationStats", targets: ["PluginConversationStats"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
@@ -23,8 +22,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderAgentLoop",
                 "LumiUI",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),

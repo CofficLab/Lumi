@@ -9,10 +9,9 @@ let package = Package(
         .library(name: "PluginConversationFork", targets: ["PluginConversationFork"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderLLMManager"),
@@ -27,8 +26,8 @@ let package = Package(
             name: "PluginConversationFork",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageSender",
                 "ProviderLLMManager",
@@ -43,8 +42,8 @@ let package = Package(
             name: "PluginConversationForkTests",
             dependencies: [
                 "PluginConversationFork",
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),

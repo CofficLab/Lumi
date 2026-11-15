@@ -13,8 +13,6 @@ let package = Package(
         .package(path: "../KitMessageList"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
@@ -22,7 +20,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(name: "PluginMessageListStandard", dependencies: [
@@ -32,8 +30,8 @@ let package = Package(
             .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-            .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderChatSection", package: "LumiProviders"),
+            .product(name: "ProviderConversation", package: "LumiProviders"),
             .product(name: "ProviderConversationState", package: "ProviderConversationState"),
             .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
             .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
@@ -51,9 +49,9 @@ let package = Package(
             .product(name: "KitMessageList", package: "KitMessageList"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             .product(name: "ProviderMessage", package: "ProviderMessage"),
-            .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderConversation", package: "LumiProviders"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            .product(name: "ProviderChatSection", package: "LumiProviders"),
             .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
             .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),

@@ -9,8 +9,6 @@ let package = Package(
         .library(name: "PluginSubagent", targets: ["PluginSubagent"]),
     ],
     dependencies: [
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderAgentLoop"),
@@ -19,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../PluginConversationManager"),
@@ -29,8 +27,8 @@ let package = Package(
         .target(
             name: "PluginSubagent",
             dependencies: [
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageRendering",
                 "ProviderAgentLoop",
@@ -49,7 +47,7 @@ let package = Package(
             dependencies: [
                 "PluginSubagent",
                 "PluginConversationManager",
-                "ProviderConversation",
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderAgentLoop",
                 "ProviderLifecycleHooks",

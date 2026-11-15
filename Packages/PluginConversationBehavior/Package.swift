@@ -12,22 +12,20 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
             name: "PluginConversationBehavior",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderLifecycleHooks",
                 "ProviderLLMManager",
                 .product(name: "ProviderToast", package: "LumiProviders"),

@@ -13,10 +13,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
@@ -28,8 +26,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -48,7 +46,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                "ProviderConversation",
+                .product(name: "ProviderConversation", package: "LumiProviders"),
             ],
             path: "Tests/PluginLLMProviderMiniMaxTests"
         ),

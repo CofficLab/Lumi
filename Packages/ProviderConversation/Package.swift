@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "ProviderConversation",
+    name: .product(name: "ProviderConversation", package: "LumiProviders"),
     defaultLocalization: "en",
     platforms: [
         .macOS("14.0"),
@@ -10,18 +10,19 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "ProviderConversation",
+            name: .product(name: "ProviderConversation", package: "LumiProviders"),
             targets: ["ProviderConversation"]
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(
-            name: "ProviderConversation",
+            name: .product(name: "ProviderConversation", package: "LumiProviders"),
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitLLM", package: "KitLLM"),

@@ -8,13 +8,13 @@ let package = Package(
         .library(name: "ProviderAgentLoop", targets: ["ProviderAgentLoop"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderLLMManager"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
     ],
     targets: [
@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Sources/ProviderAgentLoop"

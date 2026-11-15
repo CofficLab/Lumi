@@ -18,13 +18,11 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
@@ -34,9 +32,9 @@ let package = Package(
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),

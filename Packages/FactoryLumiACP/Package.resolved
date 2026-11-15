@@ -1,5 +1,5 @@
 {
-  "originHash" : "1238bc365d11cb0466399fb1a5eed7cb73f657f3d0b54266364d7318dcda53f9",
+  "originHash" : "f2b040acae2a600e3e17cd5c747424c4ab2ca4102eb66c550424bfef7cd400f9",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
-        "version" : "1.23.0"
+        "revision" : "c1435fad0327d0881cd01697c55e9dac01b1d7ba",
+        "version" : "1.24.0"
       }
     },
     {
