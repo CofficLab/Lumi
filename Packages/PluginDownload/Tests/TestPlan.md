@@ -5,7 +5,7 @@
 DownloadPlugin Lumi plugin: Download file management.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 15
+测试文件: 2 个，用例总数: 22
 
 核心组件（源码目录）:
 - `Services/`
@@ -23,6 +23,7 @@ DownloadPlugin Lumi plugin: Download file management.
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **DownloadPlugin**（15 条）：由 `testPluginInfo`、`testDefaultDownloadDirectory`、`testExtractFilenameFromURL`、`testValidatedDestinationAcceptsSafeFilenames`、`testValidatedDestinationRejectsUnsafeFilenames`、`testDownloadFileRejectsTraversalFilenameWithoutWriting`、`testDownloadFileRejectsTraversalFromURLQuery` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **批量目标去重**（#158，7 条）：由 `testSameNameFromDifferentSourcesGetsDistinctPaths`、`testThreeSameNamesGetSequentialSuffixes`、`testExplicitSuffixCollisionIsAvoided`、`testBatchToolAssignsDistinctNamesToSameNamedURLs` 等用例锁定；不同来源的同名文件必须分配互不冲突的目标名（`file.bin`、`file-2.bin`…），不得落到同一路径互相覆盖/续传；批量文件名同样走 #470 安全校验；改动 `uniquedBatchFilenames`/`planBatchDestinations`/`DownloadBatchV2Tool` 时优先跑 `BatchDestinationCollisionTests`。
 
 ## 测试用例清单
 
@@ -43,8 +44,15 @@ DownloadPlugin Lumi plugin: Download file management.
 | 13 | DownloadPlugin | 校验拒绝非法文件名（路径穿越、分隔符、空字节） | 目录 `/tmp/lumi-downloads` | 对 `../victim`、`a/b`、`..`、`.`、空串、`/etc/passwd`、`victim/`、反斜杠名、含空字节名调用 `validatedDestination` | 全部返回 nil | P0 | ✅ 已覆盖 | `testValidatedDestinationRejectsUnsafeFilenames` |
 | 14 | DownloadPlugin | download_file 拒绝穿越文件名且不写入目录外 | 临时目录 `downloads`，filename 为 `../victim` | 调用 `DownloadFileV2Tool` 传 url+filename+directory | 抛 `ToolExecutionError`，目录外无 `victim`，`downloads` 为空 | P0 | ✅ 已覆盖 | `testDownloadFileRejectsTraversalFilenameWithoutWriting` |
 | 15 | DownloadPlugin | download_file 拒绝来自 URL 查询参数的穿越文件名 | 临时目录 `downloads`，url 查询 `?filename=../victim` | 不传 filename 调用 `DownloadFileV2Tool` | 抛 `ToolExecutionError`，目录外无 `victim` | P0 | ✅ 已覆盖 | `testDownloadFileRejectsTraversalFromURLQuery` |
+| 16 | 批量目标去重 | 不同来源的同名文件不得落到同一路径（**回归 #158**） | 两个不同 host 的同名 `file.bin` | 调用 `planBatchDestinations` | 目标分别为 `file.bin`、`file-2.bin`，互不相同 | P0 | ✅ 已覆盖 | `testSameNameFromDifferentSourcesGetsDistinctPaths` |
+| 17 | 批量目标去重 | 三个同名条目按顺序获得 -2/-3 后缀 | 三个不同 host 的同名 `file.bin` | 调用 `planBatchDestinations` | 目标名为 `file.bin`、`file-2.bin`、`file-3.bin` 且互不相同 | P1 | ✅ 已覆盖 | `testThreeSameNamesGetSequentialSuffixes` |
+| 18 | 批量目标去重 | 去重后缀避开批次中已显式存在的 `file-2.bin` | 批次含 `file.bin`、`file-2.bin`、`file.bin` | 调用 `planBatchDestinations` | 第三个条目得到 `file-3.bin`，不与显式名冲突 | P1 | ✅ 已覆盖 | `testExplicitSuffixCollisionIsAvoided` |
+| 19 | 批量目标去重 | 无效项与不同名条目保持原顺序透传 | 混合有效/无效 URL 与重复名 | 调用 `planBatchDestinations` | 无效项为 `.invalidURL`，不同名不变，重复名去重 | P1 | ✅ 已覆盖 | `testInvalidItemsAndDistinctNamesArePreserved` |
+| 20 | 批量目标去重 | 无扩展名与多扩展名名的后缀插在最后一个扩展名前 | `README`×2、`archive.tar.gz`×2、nil | 调用 `uniquedBatchFilenames` | `README-2`、`archive.tar-2.gz`，nil 透传 | P1 | ✅ 已覆盖 | `testUniquedFilenamesHandlesExtensionlessAndMultiDotNames` |
+| 21 | 批量目标去重 | 来自查询参数的穿越文件名在批量中必须被拒绝（**回归 #158/#470**） | url 查询 `?filename=../victim` | 调用 `planBatchDestinations` | 返回 `.invalidFilename("../victim")`，不产生目标路径 | P0 | ✅ 已覆盖 | `testTraversalNameFromQueryIsRejectedInBatch` |
+| 22 | 批量目标去重 | 批量工具实际使用去重后的目标名（**回归 #158**） | 两个同名 URL 指向无监听端口，临时目录 | 调用 `DownloadBatchV2Tool` | 结果含 `file.bin` 与 `file-2.bin` 两个名字，目录无残留文件 | P0 | ✅ 已覆盖 | `testBatchToolAssignsDistinctNamesToSameNamedURLs` |
 
-> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 回归 #470（download_file 文件名路径穿越）变异验证：
@@ -53,23 +61,29 @@ DownloadPlugin Lumi plugin: Download file management.
 > - M3 仅移除分隔符黑名单（斜杠与反斜杠）→ 用例 13 RED（`a/b` 等被接受），用例 14、15 仍 GREEN（`../victim` 被标准化包含检查拦截）。
 > 三处变异各自命中对应守卫，恢复后全部 GREEN。
 
+> 回归 #158（批量同名目标冲突）变异验证：
+> - B-M1 关闭 `uniquedBatchFilenames` 的去重循环 → 用例 16–20、22 RED（同名条目落回同一路径）。
+> - B-M2 移除 `planBatchDestinations` 的 `validatedDestination` 守卫 → 用例 21 RED（穿越名被接受）。
+> - B-M3 让 `DownloadBatchV2Tool` 绕过规划结果、直接用原始文件名拼路径 → 用例 22 RED（工具未走去重目标名）。
+> 三处变异各自命中对应机制，恢复后全部 GREEN。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 1 / 1
-- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
