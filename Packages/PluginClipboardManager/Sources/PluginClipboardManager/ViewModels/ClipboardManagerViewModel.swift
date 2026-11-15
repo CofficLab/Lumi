@@ -20,6 +20,9 @@ public class ClipboardManagerViewModel: ObservableObject {
     /// 待执行的合并刷新任务：一次剪贴板变化突发只触发一次全量刷新。
     private var refreshTask: Task<Void, Never>?
 
+    /// 复制代次：图片异步加载晚到时，若用户已发起更新的复制则丢弃旧结果。
+    private var copyGeneration = 0
+
     /// 注入存储层。生产环境使用共享单例；单元测试注入临时数据库实例。
     public init(storage: ClipboardStorage = ClipboardStorage.shared) {
         self.storage = storage
@@ -146,19 +149,53 @@ public class ClipboardManagerViewModel: ObservableObject {
         }
     }
     
-    public func copyToClipboard(_ item: ClipboardHistoryItem) {
+    public func copyToClipboard(_ item: ClipboardHistoryItem) async {
+        copyGeneration &+= 1
+        let generation = copyGeneration
+
+        if ClipboardItemType(rawValue: item.type) == .image {
+            let path = item.content
+            let box = await Task.detached(priority: .userInitiated) {
+                Self.loadImageBox(atPath: path)
+            }.value
+            // 加载期间用户可能已复制更新的内容：旧结果不得覆盖新剪贴板。
+            guard copyGeneration == generation else { return }
+            // 缺失/损坏的图片不清空剪贴板（#243）。
+            guard let box else { return }
+            Self.write(item, to: .general, preloadedImage: box.image)
+            return
+        }
+
         Self.write(item, to: .general)
     }
 
+    /// 在后台线程加载图片；NSImage 非 Sendable，装箱后跨线程传递。
+    nonisolated static func loadImageBox(atPath path: String) -> ImageBox? {
+        guard let image = NSImage(contentsOfFile: path) else { return nil }
+        return ImageBox(image: image)
+    }
+
+    struct ImageBox: @unchecked Sendable {
+        let image: NSImage
+    }
+
     @discardableResult
-    public static func write(_ item: ClipboardHistoryItem, to pasteboard: NSPasteboard) -> Bool {
+    public static func write(
+        _ item: ClipboardHistoryItem,
+        to pasteboard: NSPasteboard,
+        preloadedImage: NSImage? = nil
+    ) -> Bool {
         let type = ClipboardItemType(rawValue: item.type)
 
         // 图片须先成功加载再清空剪贴板，否则缺失/损坏的 PNG 会清掉用户原有内容却写不进去（#243）。
         var image: NSImage?
         if type == .image {
-            guard let loaded = NSImage(contentsOfFile: item.content) else { return false }
-            image = loaded
+            if let preloadedImage {
+                image = preloadedImage
+            } else {
+                guard let loaded = NSImage(contentsOfFile: item.content) else { return false }
+                image = loaded
+            }
         }
 
         pasteboard.clearContents()

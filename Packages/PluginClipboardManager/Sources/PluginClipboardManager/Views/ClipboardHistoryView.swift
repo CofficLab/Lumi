@@ -50,7 +50,7 @@ public struct ClipboardHistoryView: View {
                             .tag(item.id)
                             .contextMenu {
                                 Button(pluginLocalization.string("Copy")) {
-                                    viewModel.copyToClipboard(item)
+                                    Task { await viewModel.copyToClipboard(item) }
                                 }
                                 Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
@@ -61,7 +61,7 @@ public struct ClipboardHistoryView: View {
                                 }
                             }
                             .onTapGesture(count: 2) {
-                                viewModel.copyToClipboard(item)
+                                Task { await viewModel.copyToClipboard(item) }
                             }
                     }
                 }
