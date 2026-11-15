@@ -208,6 +208,10 @@ extension TextView: NSTextInputClient {
         // 输入法可能给出超出文档范围的 proposedRange；先与文档求交，避免 NSRangeException
         let documentRange = NSRange(location: 0, length: (textStorage.string as NSString).length)
         let clamped = NSIntersectionRange(range, documentRange)
+        // 请求与文档完全不相交时返回 nil，避免把 {0,0} 交集扩成首字符。
+        if range.length > 0 && clamped.length == 0 {
+            return nil
+        }
         let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequences(for: clamped)
         actualRange?.pointee = realRange
         return textStorage.attributedSubstring(from: realRange)
