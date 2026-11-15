@@ -155,11 +155,14 @@ public actor SystemBenchmarkRunner {
 
         let readStart = DispatchTime.now().uptimeNanoseconds
         var checksum: UInt64 = 0
+        // read 按 64 字节跨步、每次只 load 8 字节；吞吐须按实际采样量而非整缓冲区计。
+        var sampledBytes = 0
         for _ in 0..<passes {
             try Task.checkCancellation()
             let lastReadableOffset = size - MemoryLayout<UInt64>.size + 1
             for offset in stride(from: 0, to: lastReadableOffset, by: 64) {
                 checksum &+= source.load(fromByteOffset: offset, as: UInt64.self)
+                sampledBytes += MemoryLayout<UInt64>.size
             }
         }
         let readMilliseconds = elapsedMilliseconds(since: readStart)
@@ -168,7 +171,7 @@ public actor SystemBenchmarkRunner {
         return [
             memoryMeasurement(label: "write", bytes: size * passes, milliseconds: writeMilliseconds, detail: "\(size / (1024 * 1024)) MiB buffer"),
             memoryMeasurement(label: "copy", bytes: size * passes, milliseconds: copyMilliseconds, detail: "\(size / (1024 * 1024)) MiB buffer"),
-            memoryMeasurement(label: "read", bytes: size * passes, milliseconds: readMilliseconds, detail: "\(size / (1024 * 1024)) MiB buffer"),
+            memoryMeasurement(label: "read", bytes: sampledBytes, milliseconds: readMilliseconds, detail: "\(size / (1024 * 1024)) MiB buffer"),
         ]
     }
 
