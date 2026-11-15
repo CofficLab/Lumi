@@ -162,8 +162,9 @@ public actor BrewService {
         let formulaNames = try await searchNames(["search", "--formula", query])
         let caskNames = try await searchNames(["search", "--cask", query])
 
+        // 每类各自限额；共享配额会在 Formula 满 10 个时把 Cask 配额挤成 0，整类应用被丢弃。
         let formulaLimit = Array(formulaNames.prefix(10))
-        let caskLimit = Array(caskNames.prefix(max(0, 10 - formulaLimit.count)))
+        let caskLimit = Array(caskNames.prefix(10))
 
         async let formulaInfo = getInfo(names: formulaLimit, isCask: false)
         async let caskInfo = getInfo(names: caskLimit, isCask: true)
