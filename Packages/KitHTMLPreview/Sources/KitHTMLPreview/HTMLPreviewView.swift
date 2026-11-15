@@ -183,24 +183,23 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         let didReload = context.coordinator.lastLoadKey != loadKey
         context.coordinator.lastLoadKey = loadKey
 
-        switch HTMLPreviewLoadPlanner().loadRequest(
+        // 加载键未变化时不会触发新加载，跳过 planner 的整文件磁盘读取与比较，
+        // 避免每次 SwiftUI 更新（含每帧 resize）都在主线程做无用 I/O（见 issue #1280）。
+        if let request = HTMLPreviewLoadPlanner().loadRequestIfNeeded(
+            didReload: didReload,
             html: html,
             fileURL: fileURL,
             readAccessRootURL: readAccessRootURL
         ) {
-        case .file(let fileURL, let readAccessURL):
-            // 仅在内容变化时触发新加载；导航完成后 coordinator 会在 didFinish 重新注入 JS。
-            if didReload {
+            switch request {
+            case .file(let fileURL, let readAccessURL):
+                // 仅在内容变化时触发新加载；导航完成后 coordinator 会在 didFinish 重新注入 JS。
                 webView.loadFileURL(fileURL, allowingReadAccessTo: readAccessURL)
-            }
-        case .html(let html, let baseURL):
-            if didReload {
+            case .html(let html, let baseURL):
                 webView.loadHTMLString(html, baseURL: baseURL)
             }
-        }
-
-        // 即使不重载（首次已由 didFinish 处理），也兜底确保 JS 至少注入一次。
-        if !didReload {
+        } else {
+            // 即使不重载（首次已由 didFinish 处理），也兜底确保 JS 至少注入一次。
             context.coordinator.injectEnabledScripts(into: webView)
         }
     }

@@ -195,6 +195,52 @@ struct HTMLPreviewLoadPlannerTests {
         #expect(!HTMLPreviewView.hasNoContent(htmlText: "<p>hi</p>", fileURL: fileURL))
     }
 
+    @Test("加载键未变化时跳过整文件读取（#1280）")
+    func unchangedLoadKeySkipsFileRead() {
+        final class ReadCounter { var count = 0 }
+        let counter = ReadCounter()
+        let fileURL = makeFileURL(fileName: "index.html")
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in
+            counter.count += 1
+            return Data("<html></html>".utf8)
+        })
+
+        let request = planner.loadRequestIfNeeded(didReload: false, html: "<html></html>", fileURL: fileURL)
+
+        #expect(request == nil)
+        #expect(counter.count == 0, "加载键未变化时不应读盘")
+    }
+
+    @Test("加载键变化时正常规划加载（#1280）")
+    func changedLoadKeyPlansLoad() {
+        final class ReadCounter { var count = 0 }
+        let counter = ReadCounter()
+        let fileURL = makeFileURL(fileName: "index.html")
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in
+            counter.count += 1
+            return Data("<html></html>".utf8)
+        })
+
+        let request = planner.loadRequestIfNeeded(didReload: true, html: "<html></html>", fileURL: fileURL)
+
+        #expect(request == .file(fileURL: fileURL, readAccessURL: fileURL.deletingLastPathComponent()))
+        #expect(counter.count == 1)
+    }
+
+    @Test("加载键未变化时 Canvas 回退也不读盘（#1280）")
+    func unchangedCanvasFallbackSkipsFileRead() {
+        final class ReadCounter { var count = 0 }
+        let counter = ReadCounter()
+        let fileURL = makeFileURL(fileName: "canvas.html")
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in
+            counter.count += 1
+            return Data("<html>canvas</html>".utf8)
+        })
+
+        #expect(planner.loadRequestIfNeeded(didReload: false, html: "", fileURL: fileURL) == nil)
+        #expect(counter.count == 0)
+    }
+
     private func makeFileURL(fileName: String) -> URL {
         URL(fileURLWithPath: "/tmp/KitHTMLPreview Tests/Nested/\(fileName)")
     }
