@@ -38,9 +38,12 @@ public struct PreviewIconTool: SuperAgentTool {
 
             let requestedSize = IconToolSupport.double(arguments, "pixelSize", default: 1024)
             let pixelSize = Int(min(max(requestedSize, 64), 2048))
-            let pngData = try await MainActor.run {
-                try AppIconExportService().renderPreviewPNG(document: document, pixelSize: pixelSize)
+            // ImageRenderer 只能在主 actor 栅格化；PNG 压缩留在当前 off-main
+            // 工具 body 里执行，避免整条管线占用主线程（见 issue #1289）。
+            let cgImage = try await MainActor.run {
+                try AppIconExportService().renderPreviewCGImage(document: document, pixelSize: pixelSize)
             }
+            let pngData = try AppIconExportService.encodePNG(cgImage: cgImage)
 
             let content = IconToolSupport.localized(
                 language,
