@@ -78,6 +78,10 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
 
     private var pollInFlight = false
 
+    /// stop 已发起但仍在等待在途轮询结果落盘（#472）。
+    private var isStopping = false
+    private var stopWaitSemaphore: DispatchSemaphore?
+
     /// 读取 OSLog 的实现；测试可替换为假数据，避免依赖真实 logd。
     var logRecordReader: (String, Date) -> [LogRecord]? = { subsystem, sinceDate in
         FileLogCoordinator.readLogRecords(subsystem: subsystem, since: sinceDate)
@@ -130,7 +134,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     /// 启动磁盘日志收集
     func start() {
         queue.async { [self] in
-            guard !isRunning else { return }
+            guard !isRunning, !isStopping else { return }
             isRunning = true
             isFileLoggingDisabled = false
             // 起点取「当前时刻 - writeDelay」：writeDelay 只用于让刚写入的日志
@@ -155,11 +159,21 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         }
     }
 
-    /// 同步停止日志收集，用于卸载前确保文件句柄已经关闭。
+    /// 同步停止日志收集，用于卸载/关闭前确保剩余条目落盘且文件句柄已经关闭。
+    ///
+    /// 在途轮询的结果也要等落盘后才返回（#472），因此不能在 `queue` 上
+    /// 同步等待回调——用信号量在调用线程上等收尾完成。
     func stopAndWait() {
-        queue.sync { [self] in
-            stopOnQueue()
+        let semaphore = DispatchSemaphore(value: 0)
+        queue.async { [self] in
+            guard self.isRunning else {
+                semaphore.signal()
+                return
+            }
+            self.stopWaitSemaphore = semaphore
+            self.stopOnQueue()
         }
+        semaphore.wait()
     }
 
     private func stopOnQueue() {
@@ -167,9 +181,26 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         isRunning = false
         pollTimer?.cancel()
         pollTimer = nil
+        if pollInFlight {
+            // 在途读取的结果必须落盘后再关文件，交由轮询回调收尾（#472）。
+            isStopping = true
+            return
+        }
+        finalizeStopOnQueue()
+    }
+
+    /// 停止收尾：补最后一次 OSLog 读取，把「已产生但还没等到下一轮轮询」
+    /// 的窗口也纳入，再 flush 并关闭文件（#472）。运行在 `queue` 上。
+    private func finalizeStopOnQueue() {
+        isStopping = false
+        drainLogRecordsOnQueue()
         writePendingRecords(upTo: .distantFuture)
         flushCurrentFile()
         closeCurrentFile()
+        if let semaphore = stopWaitSemaphore {
+            stopWaitSemaphore = nil
+            semaphore.signal()
+        }
     }
 
     // MARK: - Log Rotation
@@ -281,6 +312,14 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
             self?.queue.async { [weak self] in
                 guard let self else { return }
                 self.pollInFlight = false
+                if self.isStopping {
+                    // 停止时仍在途的读取结果不能丢（#472）：先落盘再收尾。
+                    if let records, !self.isFileLoggingDisabled {
+                        _ = self.ingest(records, upTo: .distantFuture)
+                    }
+                    self.finalizeStopOnQueue()
+                    return
+                }
                 guard self.isRunning, !self.isFileLoggingDisabled else { return }
                 guard let records else { return }
 
@@ -622,6 +661,13 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     /// 去重集合与日期高水位共同保证不会重复写入。
     private func drainLogRecordsBeforeExport() {
         guard isRunning, !isFileLoggingDisabled else { return }
+        drainLogRecordsOnQueue()
+    }
+
+    /// 同步补一次 OSLog 读取并落盘。运行在 `queue` 上；停止收尾时
+    /// `isRunning` 已为 false，故这里只检查写盘是否被禁用。
+    private func drainLogRecordsOnQueue() {
+        guard !isFileLoggingDisabled else { return }
         guard let records = logRecordReader(subsystem, lastPolledDate) else { return }
         _ = ingest(records, upTo: .distantFuture)
     }
