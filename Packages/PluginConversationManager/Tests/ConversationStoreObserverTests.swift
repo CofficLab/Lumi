@@ -92,7 +92,7 @@ struct ConversationStoreObserverTests {
         let selected = ConversationSummary(title: "selected")
         manager.conversations = [selected]
         manager.selectedConversationID = selected.id
-        let capability = ConversationStoreCapabilityAdapter(manager: manager, messageManager: nil)
+        let capability = ConversationStoreCapabilityAdapter(manager: manager)
 
         #expect(capability.selectedConversationID == selected.id)
         #expect(await capability.fetchConversationPage(

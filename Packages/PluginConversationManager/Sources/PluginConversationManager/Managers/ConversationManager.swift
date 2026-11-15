@@ -73,10 +73,24 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public let dataDirectory: URL
     let project: (any ProjectProviding)?
     let llmProviderManager: (any LLMManaging)?
-    let messageManager: (any MessageManaging)?
     let toolManager: (any ToolManagerProviding)?
-    let agentTurn: (any AgentLoopProviding)?
     let eventBus: KernelCoreEventBus?
+
+    /// 创建时捕获的默认 Provider，仅在没有解析器时兜底。
+    private let capturedMessageManager: (any MessageManaging)?
+    private let capturedAgentTurn: (any AgentLoopProviding)?
+    /// 动态解析当前生产 Provider。order 7 创建本管理器时解析到的默认
+    /// Message/AgentLoop 会被 order 8 插件替换，删除/统计必须作用于替换后的
+    /// 生产实例，否则取消回合/清消息落在无人使用的默认实例上（#640）。
+    private let messageManagerResolver: (@MainActor () -> (any MessageManaging)?)?
+    private let agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)?
+
+    var messageManager: (any MessageManaging)? {
+        messageManagerResolver?() ?? capturedMessageManager
+    }
+    var agentTurn: (any AgentLoopProviding)? {
+        agentTurnResolver?() ?? capturedAgentTurn
+    }
 
     /// 项目切换观察者：监听当前项目变化，清空对话选择。
     private var projectObserver: (any ProjectProvidingObserverHandle)?
@@ -91,16 +105,20 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         messageManager: (any MessageManaging)? = nil,
         toolManager: (any ToolManagerProviding)? = nil,
         agentTurn: (any AgentLoopProviding)? = nil,
-        eventBus: KernelCoreEventBus? = nil
+        eventBus: KernelCoreEventBus? = nil,
+        messageManagerResolver: (@MainActor () -> (any MessageManaging)?)? = nil,
+        agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)? = nil
     ) {
         self.store = store
         self.dataDirectory = dataDirectory
         self.project = project
         self.llmProviderManager = llmProviderManager
-        self.messageManager = messageManager
+        self.capturedMessageManager = messageManager
         self.toolManager = toolManager
-        self.agentTurn = agentTurn
+        self.capturedAgentTurn = agentTurn
         self.eventBus = eventBus
+        self.messageManagerResolver = messageManagerResolver
+        self.agentTurnResolver = agentTurnResolver
 
         // 监听项目切换，在用户主动切换或外部打开时清空对话选择
         projectObserver = project?.addObserver { [weak self] event in

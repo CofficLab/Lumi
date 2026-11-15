@@ -44,11 +44,13 @@ protocol ConversationStoreCapability: AnyObject {
 @MainActor
 final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
     private let manager: ConversationManager
-    private let messageManager: (any MessageManaging)?
 
-    init(manager: ConversationManager, messageManager: (any MessageManaging)?) {
+    /// 统计/快照须读取当前生产 MessageManaging，而非创建时捕获的默认实例。
+    /// 委托给 manager 的动态解析，避免 order 8 替换后统计落在旧默认实例上（#640）。
+    private var messageManager: (any MessageManaging)? { manager.messageManager }
+
+    init(manager: ConversationManager) {
         self.manager = manager
-        self.messageManager = messageManager
     }
 
     var selectedConversationID: UUID? { manager.selectedConversationID }

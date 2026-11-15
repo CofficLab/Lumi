@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 104 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 108 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 104
+测试文件: 14 个，用例总数: 108
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -53,6 +53,8 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStore**（14 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity`、`updateChatGPTVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
+
+- **ConversationProviderReplacement**（4 条，#640）：由 `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager`、`managerFallsBackToCapturedProvidersWithoutResolver` 锁定——`ConversationManager` 在 order 7 创建时捕获的默认 Message/AgentLoop 会被 order 8 插件替换；删除（单条/批量）的 `cancelTurn`/`clearMessages` 与设置页 Capability 的 count/snapshot 必须经解析器动态读取当前生产 Provider，不得停留在创建时的默认实例；无解析器时回退捕获值。改动 Provider 注入或删除/统计链路时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -162,27 +164,33 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 102 | ConversationGlobalDefaultsIsolation | 有选中会话时重启不得用会话配置反写全局默认（**回归 #786**） | 全局 brief/chat/english，选中会话 A 改为 detailed/autonomous/chinese 并落盘 | 新建 Manager 并 `loadConversations()` | 全局默认仍为 brief/chat/english，A 的会话级配置保持不变 | P0 | ✅ 已覆盖 | `restartWithSelectedConversationKeepsIndependentGlobalDefaults` |
 | 103 | ConversationGlobalDefaultsIsolation | 重启后新建会话继承全局默认而非选中会话配置（**回归 #786**） | 全局 brief/chat/english，选中会话 A 为 detailed/autonomous/chinese | 重启后 `createConversationAndWait` 创建 B | B 的详细度/自动化/语言为 brief/chat/english，不继承 A | P0 | ✅ 已覆盖 | `newConversationAfterRestartInheritsGlobalDefaultsNotSelectedConversation` |
 | 104 | ConversationGlobalDefaultsIsolation | 运行期改会话级详细度不得反写全局默认（**回归 #786** 护栏） | 全局 brief，会话 A 初始 brief | `setVerbosity(.detailed, for: A)` | 全局仍 brief，A 变为 detailed | P1 | ✅ 已覆盖 | `changingConversationVerbosityDoesNotRewriteGlobalDefault` |
+| 105 | ConversationProviderReplacement | 单条删除必须取消并清理替换后的生产 Provider（**回归 #640**） | 解析器初始指向默认替身，随后模拟 order 8 替换为生产替身 | `deleteConversation(id:)` 并等后台清理 | 生产 AgentLoop 收到 `cancelTurn`、生产 MessageManager 收到 `clearMessages`；默认替身两者皆空 | P0 | ✅ 已覆盖 | `singleDeletionCancelsAndClearsCurrentProductionProviders` |
+| 106 | ConversationProviderReplacement | 批量清理必须作用于替换后的生产 Provider（**回归 #640**） | 过期会话已落库，解析器模拟 order 8 替换 | `deleteConversations(createdBefore:)` | 返回命中 ID，生产替身收到 `cancelTurn`/`clearMessages`，默认替身皆空 | P0 | ✅ 已覆盖 | `batchDeletionCancelsAndClearsCurrentProductionProviders` |
+| 107 | ConversationProviderReplacement | 设置页统计读取替换后的生产 MessageManager（**回归 #640**） | Capability 由动态解析的 Manager 构造，默认计数 0、生产计数 7 | 替换后读取 `messageCount`/`messagesSnapshot` | 计数为 7、快照来自生产替身，而非空默认 | P1 | ✅ 已覆盖 | `capabilityStatisticsReadCurrentProductionMessageManager` |
+| 108 | ConversationProviderReplacement | 无解析器时回退创建时捕获的 Provider（**回归 #640** 护栏） | 直接注入捕获替身、不提供解析器 | `deleteConversation(id:)` 并等后台清理 | 捕获替身收到 `cancelTurn`/`clearMessages`，旧调用方不被破坏 | P1 | ✅ 已覆盖 | `managerFallsBackToCapturedProvidersWithoutResolver` |
 
-> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **108 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 79 / 79
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 81 / 81
 - P2: 已覆盖 8 / 8
-- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
+- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（79 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（81 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 108 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
