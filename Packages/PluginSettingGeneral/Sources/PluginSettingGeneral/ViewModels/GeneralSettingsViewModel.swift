@@ -154,7 +154,14 @@ final class GeneralSettingsViewModel: ObservableObject {
 
             do {
                 let archive = try await diagnosticsCapability.makeDiagnosticsArchive()
-                defer { try? FileManager.default.removeItem(at: archive.url) }
+                // 记录最终保存位置：若用户把位置选成 archive 本身，该文件就是导出
+                // 成果，defer 不能再把它当临时文件清理掉（#416）。
+                var exportDestination: URL?
+                defer {
+                    if Self.shouldCleanUpTemporaryArchive(at: archive.url, exportedTo: exportDestination) {
+                        try? FileManager.default.removeItem(at: archive.url)
+                    }
+                }
                 let panel = NSSavePanel()
                 panel.allowedContentTypes = [.zip]
                 panel.canCreateDirectories = true
@@ -163,6 +170,14 @@ final class GeneralSettingsViewModel: ObservableObject {
 
                 guard panel.runModal() == .OK, let destination = panel.url else {
                     diagnosticsFeedback = "已取消导出。"
+                    return
+                }
+                exportDestination = destination
+
+                // 保存位置就是本轮生成的 archive：文件已在目标位置，跳过复制，
+                // 直接视为成功并保留该文件（不清理，否则刚导出的文件会被删除）。
+                if Self.isSameArchiveLocation(destination, as: archive.url) {
+                    diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
                     return
                 }
 
@@ -205,6 +220,25 @@ final class GeneralSettingsViewModel: ObservableObject {
             throw error
         }
         try? fileManager.removeItem(at: backup)
+    }
+
+    /// 用户选择的保存位置是否就是本轮生成的临时 archive 本身。
+    ///
+    /// 用解析符号链接 + 标准化后的路径比较，兼容 `/tmp` 与 `/private/tmp`、
+    /// 尾随斜杠、`..` 等等价写法，避免把同一文件误判成两个位置。
+    nonisolated static func isSameArchiveLocation(_ destination: URL, as archiveURL: URL) -> Bool {
+        destination.resolvingSymlinksInPath().standardizedFileURL.path
+            == archiveURL.resolvingSymlinksInPath().standardizedFileURL.path
+    }
+
+    /// 导出结束后是否需要清理临时 archive。
+    ///
+    /// 取消导出（`destination == nil`）或已复制到别处时清理临时文件；若用户把
+    /// 保存位置选成 archive 本身，则该文件就是导出成果，必须保留——否则 defer
+    /// 会删掉用户刚导出的文件（#416）。
+    nonisolated static func shouldCleanUpTemporaryArchive(at archiveURL: URL, exportedTo destination: URL?) -> Bool {
+        guard let destination else { return true }
+        return !isSameArchiveLocation(destination, as: archiveURL)
     }
 
     func beginUninstall() {
