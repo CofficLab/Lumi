@@ -5,7 +5,7 @@
 PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆盖 37 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 37
+测试文件: 2 个，用例总数: 39
 
 核心组件（源码目录）:
 - `Services/`
@@ -73,8 +73,10 @@ PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆
 | 35 | 综合 | listFiles 目录无法枚举时必须抛错（**回归 #510**） | 计划目录被普通文件替换（路径存在但不可枚举） | 调用 `listFiles()` | 抛出 `listFailed(目录路径)`，不返回空列表 | P0 | ✅ 已覆盖 | `listFilesThrowsWhenDirectoryCannotBeEnumerated` |
 | 36 | 综合 | listFiles 可读空目录返回空列表 | 新建空计划目录 | 调用 `listFiles()` | 返回 `[]` 且不抛错 | P2 | ✅ 已覆盖 | `listFilesReturnsEmptyForReadableEmptyDirectory` |
 | 37 | AgentPlanStorageTools | list_plans 目录无法枚举时不得报告空目录（**回归 #510**） | 计划目录被普通文件替换 | 调用 `list_plans` | 抛出 `listFailed`，不返回 "No plan files." | P0 | ✅ 已覆盖 | `listPlansPropagatesEnumerationFailure` |
+| 38 | 综合 | listFiles 排除解析后越界的符号链接，read/delete 仍拒绝（**回归 #856**） | 根目录内 alias.md 指向根目录外文件，另有 plan.md | 调用 `listFiles()`，再 read/delete alias.md | 列表仅含 plan.md；read/delete 仍抛 `pathTraversal`，越界目标不被误删 | P0 | ✅ 已覆盖 | `listFilesExcludesSymlinksEscapingRoot` |
+| 39 | 综合 | listFiles 仍包含解析后留在根目录内的符号链接（**回归 #856**） | real.md 与指向它的内部链接 alias.md | 调用 `listFiles()` | 两条目录项均保留（count==2），内部链接不被误过滤 | P1 | ✅ 已覆盖 | `listFilesStillIncludesInternalSymlink` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > **回归 #510 变异验证**（逐条单独施加后跑、确认 RED 再还原）：
@@ -86,21 +88,21 @@ PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 25 / 25
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 5 / 5
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

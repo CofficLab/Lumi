@@ -153,10 +153,18 @@ public actor PlanFileStorageService {
             throw PlanFileStorageError.listFailed(plansDirectory.path)
         }
 
+        let resolvedRoot = plansDirectory.resolvingSymlinksInPath().standardizedFileURL.path
+        let rootPrefix = resolvedRoot.hasSuffix("/") ? resolvedRoot : resolvedRoot + "/"
         let files = enumerator.compactMap { item -> RegularFile? in
             guard let url = item as? URL,
                   let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey]),
                   values.isDirectory != true else {
+                return nil
+            }
+            // 与 resolveSafeURL 同一边界：解析后越出根目录的符号链接不计入列表，
+            // 否则 list 会展示 read/delete 必然以 pathTraversal 拒绝的条目（#856）。
+            let resolved = url.resolvingSymlinksInPath().standardizedFileURL.path
+            guard resolved == resolvedRoot || resolved.hasPrefix(rootPrefix) else {
                 return nil
             }
             return RegularFile(

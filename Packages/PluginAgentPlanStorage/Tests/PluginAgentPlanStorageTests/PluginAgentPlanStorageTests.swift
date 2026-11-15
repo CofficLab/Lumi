@@ -124,6 +124,55 @@ struct PluginAgentPlanStorageTests {
     }
 
     @Test
+    func listFilesExcludesSymlinksEscapingRoot() async throws {
+        let root = try makeTemporaryDirectory()
+        let outsideRoot = try makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: outsideRoot)
+        }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        _ = try await service.write(filename: "plan.md", content: "inside")
+        let outside = outsideRoot.appendingPathComponent("outside.md")
+        try "secret".write(to: outside, atomically: true, encoding: .utf8)
+        let alias = root.appendingPathComponent("alias.md")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: outside)
+
+        // 列表不得展示 read/delete 必然拒绝的越界链接（#856）。
+        #expect(try await service.listFiles().map(\.name) == ["plan.md"])
+
+        // 安全边界不被放松：read/delete 仍以 pathTraversal 拒绝越界链接。
+        await #expect(throws: PlanFileStorageError.pathTraversal) {
+            _ = try await service.read(filename: "alias.md")
+        }
+        await #expect(throws: PlanFileStorageError.pathTraversal) {
+            try await service.delete(filename: "alias.md")
+        }
+        // 越界目标本身不被误删。
+        #expect(FileManager.default.fileExists(atPath: outside.path))
+    }
+
+    @Test
+    func listFilesStillIncludesInternalSymlink() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        _ = try await service.write(filename: "real.md", content: "important")
+        let alias = root.appendingPathComponent("alias.md")
+        try FileManager.default.createSymbolicLink(
+            at: alias,
+            withDestinationURL: root.appendingPathComponent("real.md")
+        )
+
+        // 解析后仍在根目录内的链接不得被误过滤（#856 边界）。
+        let names = try await service.listFiles().map(\.name)
+        #expect(names.count == 2)
+        #expect(names.contains("real.md"))
+    }
+
+    @Test
     func emptyOrWhitespaceFilenamesAreInvalid() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
