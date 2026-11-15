@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
     ],
     targets: [

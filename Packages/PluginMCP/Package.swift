@@ -18,14 +18,14 @@ let package = Package(
         // 工具 schema 的规范化文本契约（`NormalizedSchemaProviding`）：
         // MCP 工具在注册时就解析好了 schema，把它交给 AgentLoop 的 token
         // 估算即可省掉每个请求的「解析→再序列化」往返（Issue #1275）。
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderMCP"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         // 测试 target 需要直接构造 mock MCP Server（与 KitMCP 同版本，保证类型一致）。
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", exact: "0.12.1"),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(

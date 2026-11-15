@@ -159,7 +159,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../PluginLLMProviderAiRouter"),
         .package(path: "../PluginLLMManager"),

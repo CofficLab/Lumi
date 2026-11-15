@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1"),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(

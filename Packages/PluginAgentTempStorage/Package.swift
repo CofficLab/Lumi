@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .testTarget(

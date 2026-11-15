@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
     ],
     targets: [
         .target(

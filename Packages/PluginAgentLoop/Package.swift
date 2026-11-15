@@ -13,7 +13,7 @@ let package = Package(
         .package(name: "ProviderAgentLoop", path: "../ProviderAgentLoop"),
         .package(name: "ProviderMessage", path: "../ProviderMessage"),
         .package(name: "ProviderMessageSender", path: "../ProviderMessageSender"),
-        .package(name: "KitLLM", path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
         .package(name: "ProviderLLMManager", path: "../ProviderLLMManager"),
         .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
         .package(name: "ProviderMessageStreaming", path: "../ProviderMessageStreaming"),

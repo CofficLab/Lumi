@@ -26,7 +26,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../KitKeychain"),
+        .package(url: "https://github.com/lumi-softworks/KitKeychain.git", from: "1.0.0"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.3"),
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.33.3"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.0"),
