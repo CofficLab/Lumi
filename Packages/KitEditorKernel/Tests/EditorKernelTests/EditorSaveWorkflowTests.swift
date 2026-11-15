@@ -126,7 +126,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { nil }
+            currentFileURL: { nil },
+            currentContent: { nil }
         )
 
         #expect(infos.count == 1)
@@ -166,7 +167,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: { clearScheduled = true },
             notifyDidSave: { notified.append($0) },
             setHasUnsavedChanges: { unsavedFlags.append($0) },
-            currentFileURL: { fileURL }
+            currentFileURL: { fileURL },
+            currentContent: { "new content" }
         )
 
         #expect(await waitUntil { states.count >= 2 })
@@ -210,7 +212,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { fileURL }
+            currentFileURL: { fileURL },
+            currentContent: { "new content" }
         )
 
         #expect(await waitUntil { states.contains(.saved) })
@@ -246,7 +249,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: { clearScheduled = true },
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { missing }
+            currentFileURL: { missing },
+            currentContent: { "text" }
         )
 
         // `setSaveState(.saving)` 会立即发生，必须等错误回调到达。
@@ -286,7 +290,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { directoryURL }
+            currentFileURL: { directoryURL },
+            currentContent: { "text" }
         )
 
         #expect(await waitUntil { !errors.isEmpty })
@@ -365,7 +370,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { notified.append($0) },
             setHasUnsavedChanges: { unsavedFlags.append($0) },
-            currentFileURL: { currentFile }
+            currentFileURL: { currentFile },
+            currentContent: { nil }
         )
         // 写盘完成前切到 B：performSave 同步返回后 Task 尚未运行，
         // 因此 A 的成功回调到达时当前文件已确定为 B。
@@ -415,7 +421,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { currentFile }
+            currentFileURL: { currentFile },
+            currentContent: { nil }
         )
         currentFile = fileB
 
@@ -453,7 +460,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
             setHasUnsavedChanges: { _ in },
-            currentFileURL: { currentFile }
+            currentFileURL: { currentFile },
+            currentContent: { nil }
         )
         currentFile = fileB
 
@@ -461,6 +469,125 @@ struct EditorSaveWorkflowControllerExtraTests {
 
         #expect(states == [.saving])
         #expect(errors.isEmpty)
+    }
+
+    @Test("写盘期间继续编辑：旧成功回调不得把新内容标记为已保存（#338）")
+    func staleSaveSuccessKeepsNewerEditsDirty() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fileURL = root.appendingPathComponent("main.swift")
+        try "v0".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let controller = EditorSaveWorkflowController()
+        // 发起保存时文档是 v1；写盘期间用户继续编辑到 v2。
+        var currentDocument = "v1"
+        var states: [EditorSaveState] = []
+        var persisted: [String] = []
+        var notified: [String] = []
+        var unsavedFlags: [Bool] = []
+        var conflictCleared = false
+        var synced = false
+
+        controller.performSave(
+            content: "v1",
+            url: fileURL,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { _ in },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { persisted.append($0) },
+            clearConflict: { conflictCleared = true },
+            syncSession: { synced = true },
+            scheduleSuccessClear: {},
+            notifyDidSave: { notified.append($0) },
+            setHasUnsavedChanges: { unsavedFlags.append($0) },
+            currentFileURL: { fileURL },
+            currentContent: { currentDocument }
+        )
+        // performSave 同步返回后写盘 Task 尚未运行：此刻把文档推进到 v2，
+        // 保证旧成功回调到达时当前内容已是 v2（同一文件，文件守卫不拦截）。
+        currentDocument = "v2"
+
+        // v1 仍应被正确写盘（写入本身不受内容守卫影响）。
+        #expect(await waitUntil { (try? String(contentsOf: fileURL, encoding: .utf8)) == "v1" })
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // 旧回调不得把 v2 标记为已保存：不落旧快照、不清脏标记、不通知 LSP。
+        #expect(persisted.isEmpty, "不得用旧内容 v1 覆盖持久化快照")
+        #expect(notified.isEmpty, "不得用旧内容 v1 通知 LSP 已保存")
+        #expect(unsavedFlags.isEmpty, "不得清除脏标记，v2 仍未落盘")
+        #expect(conflictCleared == false)
+        #expect(synced == false)
+        #expect(states.contains(.saved) == false, "文档已前进，绝不能进入 saved")
+        #expect(states.last == .editing, "应保持 editing/dirty，让 v2 可再次保存")
+    }
+
+    @Test("旧回调保持脏后，新内容仍可再次保存并落盘（#338）")
+    func newerEditsRemainSaveableAfterStaleCallback() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fileURL = root.appendingPathComponent("main.swift")
+        try "v0".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let controller = EditorSaveWorkflowController()
+        var currentDocument = "v1"
+        var states: [EditorSaveState] = []
+        var persisted: [String] = []
+        var unsavedFlags: [Bool] = []
+
+        // 第一轮：保存 v1，写盘期间编辑到 v2 → 旧回调保持脏。
+        controller.performSave(
+            content: "v1",
+            url: fileURL,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { _ in },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { persisted.append($0) },
+            clearConflict: {},
+            syncSession: {},
+            scheduleSuccessClear: {},
+            notifyDidSave: { _ in },
+            setHasUnsavedChanges: { unsavedFlags.append($0) },
+            currentFileURL: { fileURL },
+            currentContent: { currentDocument }
+        )
+        currentDocument = "v2"
+        #expect(await waitUntil { (try? String(contentsOf: fileURL, encoding: .utf8)) == "v1" })
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(unsavedFlags.isEmpty, "第一轮旧回调不得清脏")
+        #expect(states.last == .editing)
+
+        // 第二轮：保存当前文档 v2，内容不再变化 → 正常落盘并清脏。
+        controller.performSave(
+            content: "v2",
+            url: fileURL,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { _ in },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { persisted.append($0) },
+            clearConflict: {},
+            syncSession: {},
+            scheduleSuccessClear: {},
+            notifyDidSave: { _ in },
+            setHasUnsavedChanges: { unsavedFlags.append($0) },
+            currentFileURL: { fileURL },
+            currentContent: { currentDocument }
+        )
+        #expect(await waitUntil { (try? String(contentsOf: fileURL, encoding: .utf8)) == "v2" })
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(try String(contentsOf: fileURL, encoding: .utf8) == "v2", "v2 必须最终落盘")
+        #expect(persisted == ["v2"], "只有第二轮匹配内容才落快照")
+        #expect(unsavedFlags == [false], "第二轮才清脏标记")
+        #expect(states.last == .saved)
     }
 }
 

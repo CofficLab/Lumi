@@ -88,7 +88,10 @@ extension EditorState {
                     self?.autoSaveScheduler.cancel()
                 }
             },
-            currentFileURL: { [weak self] in self?.currentFileURL }
+            currentFileURL: { [weak self] in self?.currentFileURL },
+            // 写盘期间文档可能已被继续编辑：成功回调据此复核保存的内容是否仍等于
+            // 当前文档，避免旧回调把新编辑标记为已保存而绕过关闭保护（#338）。
+            currentContent: { [weak self] in self?.documentController.currentText }
         )
     }
 
