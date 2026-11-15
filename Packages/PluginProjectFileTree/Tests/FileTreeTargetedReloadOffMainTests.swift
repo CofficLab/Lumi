@@ -8,8 +8,10 @@ import Testing
 /// 并且每个目录都提交一次列表，K 个目录就是 K 次全量 diff。
 ///
 /// 期望：枚举全部在后台线程、嵌套/重复路径合并、K 个结果只提交一次列表。
+///
+/// 门闩会阻塞协作线程池里的线程，必须串行执行，否则多个用例同时阻塞会把池耗尽。
 @MainActor
-@Suite("精准刷新后台扫描")
+@Suite("精准刷新后台扫描", .serialized)
 struct FileTreeTargetedReloadOffMainTests {
 
     @Test("目录枚举与节点构造都不在主线程执行")

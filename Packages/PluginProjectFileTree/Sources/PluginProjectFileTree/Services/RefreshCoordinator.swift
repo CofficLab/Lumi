@@ -17,6 +17,28 @@ import os
 /// 2. NodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
 /// 3. coordinator 自动更新 watcher 的监控列表
 /// 4. 文件系统变化时 coordinator 递增刷新令牌并刷新 Git 状态
+/// 构造监听列表所需的磁盘探测能力，测试可注入记录型替身。
+public protocol WatchDirectoryProbing: Sendable {
+    /// 路径存在且确实是目录。
+    func isDirectory(atPath path: String) -> Bool
+    /// 需要监听的包清单文件（`.xcodeproj/project.pbxproj`、`Package.resolved` 等）。
+    func manifestURLs(projectRootURL: URL) -> [URL]
+}
+
+/// 默认实现：FileManager 探测 + 包清单解析。
+public struct DefaultWatchDirectoryProbe: WatchDirectoryProbing {
+    public init() {}
+
+    public func isDirectory(atPath path: String) -> Bool {
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
+    }
+
+    public func manifestURLs(projectRootURL: URL) -> [URL] {
+        PackageDependencyResolver.watchedManifestURLs(projectRootURL: projectRootURL)
+    }
+}
+
 public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
@@ -91,11 +113,31 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 是否为 Git 仓库（缓存，避免每次都调用 LibGit2）
     private var isGitRepo: Bool = false
 
+    /// 是否刷新 Git 状态。测试注入 false，避免真实 Git 采集占满共享串行队列。
+    private let gitStatusEnabled: Bool
+
+    /// 监听目录所需的磁盘探测能力，测试可注入记录型替身。
+    private let probe: any WatchDirectoryProbing
+
+    /// 监听列表重建的版本号：只有最新一次请求的结果才会应用到 watcher。
+    private var watcherGeneration: Int = 0
+
+    /// 在途的监听列表重建任务（主线程提交）。
+    private var watcherUpdateTask: Task<Void, Never>?
+
+    /// 在途的后台探测任务，取消时一并停掉，避免过期遍历继续跑。
+    private var watcherProbeTask: Task<Set<URL>, Never>?
+
     public nonisolated static let logger = ProjectFileTreePlugin.logger
 
     // MARK: - Init
 
-    public init() {
+    public init(
+        probe: any WatchDirectoryProbing = DefaultWatchDirectoryProbe(),
+        gitStatusEnabled: Bool = ProjectFileTreePlugin.gitStatusEnabled
+    ) {
+        self.probe = probe
+        self.gitStatusEnabled = gitStatusEnabled
     }
 
     func attach(observer: any FileTreeWatching) {
@@ -107,6 +149,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         targetedDebounceTask?.cancel()
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
+        watcherUpdateTask?.cancel()
+        watcherProbeTask?.cancel()
     }
 
     // MARK: - Public - Lifecycle
@@ -144,7 +188,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             // `captureSnapshot` 在后台线程内判定（非仓库时返回 `.empty`）。
             // 这里避免在主线程同步执行 `LibGit2.isGitRepository`（经 `performSync` =
             // `queue.sync`）造成切换项目瞬间的主线程阻塞。
-            isGitRepo = ProjectFileTreePlugin.gitStatusEnabled
+            isGitRepo = gitStatusEnabled
             if isGitRepo {
                 refreshGitStatus()
             }
@@ -164,6 +208,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 停止所有监听（视图消失时调用）
     public func stop() {
+        // 在途的探测结果不能再应用到 watcher，否则视图已消失却又重新挂载了监听。
+        cancelWatcherUpdate()
         observer?.stopWatching()
         fullRefreshDebounceTask?.cancel()
         targetedDebounceTask?.cancel()
@@ -209,13 +255,70 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     // MARK: - Private - File System Watcher
 
-    /// 将已展开的相对路径列表转换为绝对 URL 并更新 watcher
+    /// 将已展开的相对路径列表转换为绝对 URL 并更新 watcher。
+    ///
+    /// 构造监听列表需要 E 次展开目录探测、一次项目根枚举（包清单）以及 `.git`
+    /// 元数据探测，全是磁盘 I/O。这条链路由 SwiftUI 的 `onAppear` / `onChange`
+    /// 直接触发，同步执行会把 Explorer 出现与项目切换卡在 UI 线程上（issue #1243）。
+    /// 这里只快照输入，探测下放到后台线程，主线程仅应用最新一次结果。
     private func updateWatcher() {
         guard !projectRootPath.isEmpty else {
+            cancelWatcherUpdate()
             observer?.stopWatching()
             return
         }
 
+        watcherGeneration += 1
+        let generation = watcherGeneration
+        let rootPath = projectRootPath
+        let snapshotExpandedPaths = expandedPaths
+        let probe = self.probe
+
+        // 新请求取代旧请求：过期的探测结果不再应用，后台遍历也一并取消。
+        watcherUpdateTask?.cancel()
+        watcherProbeTask?.cancel()
+        watcherUpdateTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
+            let worker = Task.detached(priority: .userInitiated) {
+                Self.watchedDirectories(
+                    projectRootPath: rootPath,
+                    expandedPaths: snapshotExpandedPaths,
+                    probe: probe
+                )
+            }
+            self?.watcherProbeTask = worker
+            let directoryURLs = await worker.value
+
+            guard let self, !Task.isCancelled,
+                  self.watcherGeneration == generation,
+                  self.projectRootPath == rootPath else { return }
+
+            self.observer?.updateWatchedDirectories(directoryURLs)
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
+            }
+        }
+    }
+
+    /// 取消在途的监听列表重建，并作废其结果。
+    private func cancelWatcherUpdate() {
+        watcherUpdateTask?.cancel()
+        watcherProbeTask?.cancel()
+        watcherUpdateTask = nil
+        watcherProbeTask = nil
+        watcherGeneration += 1
+    }
+
+    /// 计算需要监听的目录集合。
+    ///
+    /// `nonisolated`：只依赖入参快照与 Sendable 的探测替身，可在后台线程执行。
+    /// 循环中检查取消，避免过期的重建继续把剩余目录探测完。
+    nonisolated static func watchedDirectories(
+        projectRootPath: String,
+        expandedPaths: Set<String>,
+        probe: any WatchDirectoryProbing
+    ) -> Set<URL> {
         var directoryURLs: Set<URL> = []
         let rootURL = URL(fileURLWithPath: projectRootPath).standardizedFileURL
 
@@ -224,6 +327,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
         // 监控所有已展开的目录
         for relativePath in expandedPaths {
+            guard !Task.isCancelled else { break }
             let fullPath: String
             if relativePath.isEmpty || relativePath == "/" {
                 fullPath = projectRootPath
@@ -235,16 +339,15 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             let url = URL(fileURLWithPath: fullPath).standardizedFileURL
 
             // 确保路径存在且确实是目录
-            var isDir: ObjCBool = false
-            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+            if probe.isDirectory(atPath: url.path) {
                 directoryURLs.insert(url)
             }
         }
 
-        for manifestURL in PackageDependencyResolver.watchedManifestURLs(projectRootURL: rootURL) {
+        for manifestURL in probe.manifestURLs(projectRootURL: rootURL) {
+            guard !Task.isCancelled else { break }
             let directoryURL = manifestURL.deletingLastPathComponent().standardizedFileURL
-            var isDir: ObjCBool = false
-            if FileManager.default.fileExists(atPath: directoryURL.path, isDirectory: &isDir), isDir.boolValue {
+            if probe.isDirectory(atPath: directoryURL.path) {
                 directoryURLs.insert(directoryURL)
             }
         }
@@ -252,15 +355,13 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         // 监控 .git 元数据目录：git commit/reset、分支切换（写 HEAD/refs/heads）、
         // merge/rebase（写 MERGE_HEAD、rebase-merge/）等操作可能只改 .git 内部而不触动工作区，
         // 必须主动监听才能让文件树的 Git 状态标记及时刷新。
-        for gitDir in Self.gitMetadataWatchURLs(projectRootURL: rootURL) {
-            directoryURLs.insert(gitDir)
+        if !Task.isCancelled {
+            for gitDir in gitMetadataWatchURLs(projectRootURL: rootURL, probe: probe) {
+                directoryURLs.insert(gitDir)
+            }
         }
 
-        observer?.updateWatchedDirectories(directoryURLs)
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
-        }
+        return directoryURLs
     }
 
     /// 需要监听的 `.git` 内部目录集合。
@@ -268,33 +369,31 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 监听范围：
     /// - `.git/HEAD`：捕获 commit、reset、分支切换等改变 HEAD 指向的操作
     /// - `.git/refs`：捕获 refs/heads（分支切换）、refs/tags 等引用变更
-    /// 
+    ///
     /// 不监听整个 `.git` 目录，避免 `.git/objects/` 频繁写入导致无效刷新。
     /// 只监听真正影响 Git 状态的关键位置。
     /// 仅返回实际存在的目录，避免对非 Git 仓库空跑。
-    static func gitMetadataWatchURLs(projectRootURL: URL) -> [URL] {
+    nonisolated static func gitMetadataWatchURLs(
+        projectRootURL: URL,
+        probe: any WatchDirectoryProbing
+    ) -> [URL] {
         let gitURL = projectRootURL.appendingPathComponent(".git").standardizedFileURL
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: gitURL.path, isDirectory: &isDir), isDir.boolValue else {
-            return []
-        }
-        
+        guard probe.isDirectory(atPath: gitURL.path) else { return [] }
+
         var urls: [URL] = []
-        
+
         // 只监听 refs 目录（分支切换、tag 变更）
         let refsURL = gitURL.appendingPathComponent("refs").standardizedFileURL
-        var refsIsDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: refsURL.path, isDirectory: &refsIsDir), refsIsDir.boolValue {
+        if probe.isDirectory(atPath: refsURL.path) {
             urls.append(refsURL)
         }
-        
+
         // 可选：监听 logs/refs 目录（reflog 变更）
         let logsRefsURL = gitURL.appendingPathComponent("logs/refs").standardizedFileURL
-        var logsIsDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: logsRefsURL.path, isDirectory: &logsIsDir), logsIsDir.boolValue {
+        if probe.isDirectory(atPath: logsRefsURL.path) {
             urls.append(logsRefsURL)
         }
-        
+
         return urls
     }
 
