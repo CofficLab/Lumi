@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 98
+测试文件: 14 个，用例总数: 100
 
 ## 公开 API
 
@@ -25,7 +25,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DefaultHTTPClient**（8 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DefaultHTTPClient**（14 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest`、`resumeRejectsContentRangeStartBehindLocalPrefix` 等用例锁定；206 续传时 Content-Range 起始偏移必须等于本地续传起点，不一致必须拒绝拼接而非报告成功（**回归 #486**）；改动该模块时优先跑对应测试文件。
 - **DownloadConfigurationAndState**（4 条）：由 `defaults`、`customOverrides`、`nonFinal` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadCancellationPropagation**（3 条）：由 `cancellingCallerCancelsInternalDownload`、`cancelledCallerReportsCancelledStateAndStopsWrite`、`uncancelledDownloadStillCompletes` 锁定调用方（工具 Job / turn / 会话）取消必须经 `withTaskCancellationHandler` 转发到内部非结构化下载 Task，立即停掉 HTTP 请求与文件写入并进入 `.cancelled`；未取消的正常下载不得被误伤（**回归 #471**）；改动下载取消转发或任务等待时优先跑对应测试文件。
 - **DownloadConcurrencyLimit**（3 条）：由 `maxConcurrentDownloadsLimitIsEnforced`、`defaultLimitAllowsThreeConcurrentButNotFour`、`failedDownloadReleasesSlotForQueuedDownload` 锁定 `maxConcurrentDownloads` 必须真正限制并发：名额耗尽时后续下载不得进入 HTTPClient，下载到达任一终态（含失败）必须归还名额并唤醒排队者（**回归 #484**）；改动下载并发调度时优先跑对应测试文件。
@@ -142,8 +142,10 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 96 | DownloadCancellationPropagation | 取消调用方任务必须把取消转发到内部下载（**回归 #471**） | 取消探针 HTTPClient 进入后挂起轮询 Task.isCancelled | 启动下载待其进入后取消调用方 Task | 内部下载观察到取消并抛 CancellationError，调用方抛错 | P0 | ✅ 已覆盖 | `cancellingCallerCancelsInternalDownload` |
 | 97 | DownloadCancellationPropagation | 取消调用方后任务进入 cancelled 态且不再写文件（**回归 #471**） | 同上 | 取消调用方后等待内部取消并读取任务状态 | 状态为 `.cancelled`，目标文件未被写出，调用方抛 DownloadError | P0 | ✅ 已覆盖 | `cancelledCallerReportsCancelledStateAndStopsWrite` |
 | 98 | DownloadCancellationPropagation | 未取消的下载仍正常完成，取消转发不得误伤正常路径 | 取消探针 HTTPClient，不放行取消只放行完成 | 启动下载待其进入后放行 | 返回目标路径，状态 `.completed`，未观察到取消，文件已写出 | P1 | ✅ 已覆盖 | `uncancelledDownloadStillCompletes` |
+| 99 | DefaultHTTPClient | 206 的 Content-Range 起始偏移落后于本地续传起点时必须拒绝拼接（**回归 #486**） | 本地已有 4 字节 AAAA 与 validator，请求 Range: bytes=4- | 服务器返回 206 Content-Range: bytes 0-3/4 + BBBB | 抛错，文件仍为 AAAA，未被拼成 AAAABBBB | P0 | ✅ 已覆盖 | `resumeRejectsContentRangeStartBehindLocalPrefix` |
+| 100 | DefaultHTTPClient | 206 的 Content-Range 起始偏移超前于本地续传起点时必须拒绝拼接（**回归 #486**） | 本地已有 400 字节与 validator | 服务器返回 206 Content-Range: bytes 500-999/1000 | 抛错，文件内容不变 | P0 | ✅ 已覆盖 | `resumeRejectsContentRangeStartAheadOfLocalPrefix` |
 
-> 说明：全部 **98 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **100 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > **回归 #484 变异验证**（`DownloadConcurrencyLimitTests`，逐条单独施加后跑、确认 RED 再还原）：
@@ -157,23 +159,29 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 > - **M2** 在等待前无条件 `downloadTask.cancel()`（误伤正常下载）→ 96/97/98 全 RED（任务在进入探针前即被 `checkCancellation` 拦截，正常下载也被取消）。
 > 两处变异分别命中「取消未转发」与「过度取消」两个失效面，还原后 98 条全绿。
 
+> **回归 #486 变异验证**（`DefaultHTTPClientTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 删除 `performDownload` 中 206 的 Content-Range 起始偏移校验块（完全不校验）→ 99/100 RED（错误区间被追加，文件损坏且未抛错）。
+> - **M2** `parseContentRangeStart` 改为解析 total 而非 start（比错字段）→ 99 RED（bytes 0-3/4 的 total=4 恰等于 existingBytes 被放行），且合法续传 `resumeAppendsWithRangeRequest`/`interruptedDownload…` RED（total≠existingBytes 被误拒）。
+> - **M3** 校验比较 `start != existingBytes` 反转为 `start == existingBytes`（方向反了）→ 99/100 RED（错误区间被放行），合法续传 RED（正确区间被误拒）。
+> 三处变异分别命中「校验缺失」「比错字段」「比较方向反转」三个失效面，还原后 100 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
+- P0: 已覆盖 19 / 19
 - P1: 已覆盖 74 / 74
 - P2: 已覆盖 7 / 7
-- **合计: 98 / 98**（仅表示清单场景，非源码覆盖率）
+- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（73 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 100 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

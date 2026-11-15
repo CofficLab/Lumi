@@ -408,6 +408,60 @@ struct DefaultHTTPClientTests {
         #expect(totals.value.allSatisfy { $0 == 1000 })
         #expect(try Data(contentsOf: dest).count == 1000)
     }
+
+    // 回归 #486：206 的 Content-Range 起始偏移与本地续传起点不一致时必须拒绝，
+    // 不能把本地前缀与错误区间拼成损坏文件并报告成功。
+    @Test func resumeRejectsContentRangeStartBehindLocalPrefix() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        // 本地已有 4 字节 AAAA，续传请求 Range: bytes=4-。
+        let prefix = Data("AAAA".utf8)
+        try prefix.write(to: dest)
+        ResumeValidatorStore.save(ResumeValidator(etag: "\"v1\"", lastModified: nil), for: dest, url: url)
+        // 不守规矩的服务器：206 却回 bytes 0-3/4（起始 0 ≠ 4）+ BBBB。
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(
+                status: 206,
+                headers: ["Content-Range": "bytes 0-3/4", "ETag": "\"v1\""],
+                body: Data("BBBB".utf8)
+            )
+        }
+
+        await #expect(throws: (any Error).self) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: 4, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        // 文件必须仍是原始 AAAA，而不是被拼接成 AAAABBBB。
+        #expect(try Data(contentsOf: dest) == prefix)
+    }
+
+    @Test func resumeRejectsContentRangeStartAheadOfLocalPrefix() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        let prefix = Data(repeating: 0xAA, count: 400)
+        try prefix.write(to: dest)
+        ResumeValidatorStore.save(ResumeValidator(etag: "\"v1\"", lastModified: nil), for: dest, url: url)
+        // 206 起始偏移 500 > 本地 400：区间不连续，追加会错位。
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(
+                status: 206,
+                headers: ["Content-Range": "bytes 500-999/1000", "ETag": "\"v1\""],
+                body: Data(repeating: 0xBB, count: 500)
+            )
+        }
+
+        await #expect(throws: (any Error).self) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        #expect(try Data(contentsOf: dest) == prefix)
+    }
 }
 
 /// 仅实现无请求头要求的极简 conformer：验证协议扩展对 download(...:headers:) 的
