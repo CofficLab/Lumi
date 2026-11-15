@@ -1887,12 +1887,17 @@ public final class EditorState: ObservableObject, SuperLog {
                 multiCursorState: session.multiCursorState,
                 panelState: session.panelState,
                 isDirty: session.isDirty,
+                dirtyBody: session.dirtyBody,
                 findReplaceState: session.findReplaceState,
                 scrollState: session.scrollState,
                 viewState: session.viewState,
                 foldingState: session.foldingState
             )
         }
+        // 目标会话的未保存正文（#396）：加载完成后用它替代磁盘内容，
+        // 否则 Auto Save 关闭时切回文件会静默丢掉未保存的编辑。
+        // 在 Task 外捕获为值类型，避免跨隔离域读 MainActor 会话。
+        let restoredDirtyBody = restoringSession?.dirtyBody
 
         // 清理旧状态
         referencesRequestGeneration.invalidate()
@@ -1961,7 +1966,8 @@ public final class EditorState: ObservableObject, SuperLog {
                 // 长行检测与总行数统计都要完整扫描正文，放在后台完成（见 issue #1277）。
                 let derivedScan = await Task.detached(priority: .utility) { () -> DocumentDerivedScan? in
                     guard case let .text(document) = loadedDocument else { return nil }
-                    let content = document.content
+                    // 会话里有未保存正文时按它统计，保证行数/长行与最终载入的内容一致（#396）。
+                    let content = restoredDirtyBody ?? document.content
                     return DocumentDerivedScan(
                         longestLine: LongLineDetector.findLongestLine(in: content),
                         totalLines: EditorTextMetrics.totalLineCount(in: content)
@@ -1990,14 +1996,18 @@ public final class EditorState: ObservableObject, SuperLog {
                         self.isFileLoadInProgress = false
                         self.fileLoadErrorMessage = nil
                     case .text(let document):
-                        let content = document.content
+                        let diskContent = document.content
+                        // 会话保存的未保存正文优先于磁盘内容（#396）；与磁盘一致则视为干净。
+                        let dirtyBody = restoredDirtyBody.flatMap { $0 != diskContent ? $0 : nil }
+                        let content = dirtyBody ?? diskContent
                         let longestLine = derivedScan?.longestLine
                         self.withoutSessionSync {
                             self.currentFileURL = loadingURL
                             _ = self.documentController.load(text: content)
                             // 整体替换无法用增量更新推导，丢弃行偏移表缓存（见 issue #1278）。
                             self.invalidateLineTableCache()
-                            self.documentController.markPersistedText(content)
+                            // 持久化基线始终是磁盘内容，脏正文的差异才能被保存流程识别。
+                            self.documentController.markPersistedText(diskContent)
                             self.content = self.documentController.textStorage
                             self.canPreview = true
                             self.isBinaryFile = false
@@ -2008,8 +2018,8 @@ public final class EditorState: ObservableObject, SuperLog {
                             self.fileExtension = document.fileExtension
                             self.fileName = document.fileName
                             self.originalFileEncoding = document.encoding
-                            self.hasUnsavedChanges = false
-                            self.saveState = .idle
+                            self.hasUnsavedChanges = dirtyBody != nil
+                            self.saveState = dirtyBody != nil ? .editing : .idle
                             self.autoSaveScheduler.cancel()
 
                             self.detectedLanguage = LanguageRegistry.shared.detectLanguage(
@@ -3472,6 +3482,9 @@ public final class EditorState: ObservableObject, SuperLog {
             multiCursorState: multiCursorState,
             panelState: panelController.sessionState,
             isDirty: hasUnsavedChanges,
+            // 脏正文随会话同步持续落快照：Auto Save 关闭时切走文件，
+            // 未保存的编辑必须能从会话恢复，而不是被磁盘内容覆盖（#396）。
+            dirtyBody: hasUnsavedChanges ? (documentController.currentText ?? content?.string) : nil,
             bridgeState: bridgeState,
             scrollState: scrollState,
             foldingState: foldingState,

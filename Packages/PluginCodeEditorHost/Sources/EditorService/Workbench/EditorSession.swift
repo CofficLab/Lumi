@@ -10,6 +10,10 @@ public final class EditorSession: ObservableObject, Identifiable {
     @Published var multiCursorState: MultiCursorState
     @Published private var storedPanelState: EditorPanelSessionState
     @Published var isDirty: Bool
+    /// 未保存的正文快照（Auto Save 关闭时切换文件不得丢编辑，#396）。
+    /// 随会话同步持续更新：脏时存当前正文，保存/还原磁盘后置 nil。
+    /// 不用 @Published：tab 的脏标记由 isDirty 驱动，正文无需逐键广播。
+    var dirtyBody: String?
     @Published public var findReplaceState: EditorFindReplaceState
     @Published var scrollState: EditorScrollState
     @Published var viewState: EditorViewState
@@ -37,6 +41,7 @@ public final class EditorSession: ObservableObject, Identifiable {
         multiCursorState: MultiCursorState = MultiCursorState(),
         panelState: EditorPanelSessionState = EditorPanelSessionState(),
         isDirty: Bool = false,
+        dirtyBody: String? = nil,
         findReplaceState: EditorFindReplaceState = EditorFindReplaceState(),
         scrollState: EditorScrollState = EditorScrollState(),
         viewState: EditorViewState = EditorViewState(),
@@ -47,6 +52,7 @@ public final class EditorSession: ObservableObject, Identifiable {
         self.multiCursorState = multiCursorState
         self.storedPanelState = panelState
         self.isDirty = isDirty
+        self.dirtyBody = dirtyBody
         self.findReplaceState = findReplaceState
         self.scrollState = scrollState
         self.viewState = viewState
@@ -60,6 +66,7 @@ public final class EditorSession: ObservableObject, Identifiable {
             multiCursorState: snapshot.multiCursorState,
             panelState: snapshot.panelState,
             isDirty: snapshot.isDirty,
+            dirtyBody: snapshot.dirtyBody,
             findReplaceState: snapshot.findReplaceState,
             scrollState: snapshot.scrollState,
             viewState: snapshot.viewState,
@@ -72,6 +79,7 @@ public final class EditorSession: ObservableObject, Identifiable {
         multiCursorState = snapshot.multiCursorState
         panelState = snapshot.panelState
         isDirty = snapshot.isDirty
+        dirtyBody = snapshot.dirtyBody
         findReplaceState = snapshot.findReplaceState
         scrollState = snapshot.scrollState
         viewState = snapshot.viewState
@@ -83,6 +91,7 @@ public final class EditorSession: ObservableObject, Identifiable {
         multiCursorState = MultiCursorState()
         panelState = .init()
         isDirty = false
+        dirtyBody = nil
         findReplaceState = EditorFindReplaceState()
         scrollState = EditorScrollState()
         viewState = .initial

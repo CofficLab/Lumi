@@ -75,6 +75,7 @@ final class EditorSessionController {
         multiCursorState: MultiCursorState,
         panelState: EditorPanelSessionState,
         isDirty: Bool,
+        dirtyBody: String?,
         bridgeState: EditorBridgeState,
         scrollState: EditorScrollState,
         foldingState: EditorFoldingState,
@@ -86,6 +87,7 @@ final class EditorSessionController {
             multiCursorState: multiCursorState,
             panelState: panelState,
             isDirty: isDirty,
+            dirtyBody: dirtyBody,
             bridgeState: bridgeState,
             scrollState: scrollState,
             foldingState: foldingState
@@ -130,6 +132,7 @@ final class EditorSessionController {
         current.multiCursorState != snapshot.multiCursorState ||
         current.panelState != snapshot.panelState ||
         current.isDirty != snapshot.isDirty ||
+        current.dirtyBody != snapshot.dirtyBody ||
         current.findReplaceState != snapshot.findReplaceState ||
         current.scrollState != snapshot.scrollState ||
         current.viewState != snapshot.viewState ||
