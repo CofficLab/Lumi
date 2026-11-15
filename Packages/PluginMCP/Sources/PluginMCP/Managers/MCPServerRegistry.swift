@@ -24,6 +24,9 @@ public final class MCPServerRegistry: ObservableObject {
     private let deletedTemplatesFileURL: URL
     /// 用户删除的服务器墓碑（command + arguments）；阻止内置模板重启后被重新 seed（#295）。
     private var deletedTemplates: [MCPServerConfig] = []
+    /// 加载失败标记：配置文件存在但读不出/解不开时置位。
+    /// 此后禁止任何 `persist()` 覆盖原文件，避免 seed/CRUD 把用户配置冲掉（#531）。
+    private(set) var loadFailed = false
 
     // MARK: - Init
 
@@ -39,18 +42,30 @@ public final class MCPServerRegistry: ObservableObject {
     private func load() {
         deletedTemplates = (try? Data(contentsOf: deletedTemplatesFileURL))
             .flatMap { try? JSONDecoder().decode([MCPServerConfig].self, from: $0) } ?? []
-        guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
-        else {
+
+        // 文件不存在 = 首次运行：内存置空，允许后续 seed 落库。
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
             servers = []
             return
         }
-        // 数据自愈：按 id 去重。历史版本编辑服务器会追加同 id 条目，
-        // 重复 id 会让 SwiftUI ForEach 渲染错乱（列表出现空白行）。去重后写回。
-        let rawCount = decoded.count
-        servers = deduplicated(decoded)
-        if servers.count != rawCount {
-            persist()
+
+        // 文件存在但读不出/解不开：绝不能当成「用户没配置」而清空写回，
+        // 否则一次解码失败就会用 seed 模板原子覆盖掉用户的全部配置（#531）。
+        // 保留原文件、置 loadFailed、内存置空，后续 persist 一律拒绝。
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decoded = try JSONDecoder().decode([MCPServerConfig].self, from: data)
+            // 数据自愈：按 id 去重。历史版本编辑服务器会追加同 id 条目，
+            // 重复 id 会让 SwiftUI ForEach 渲染错乱（列表出现空白行）。去重后写回。
+            let rawCount = decoded.count
+            servers = deduplicated(decoded)
+            if servers.count != rawCount {
+                persist()
+            }
+        } catch {
+            servers = []
+            loadFailed = true
+            print("[MCPServerRegistry] load failed, preserving original file: \(error)")
         }
     }
 
@@ -128,6 +143,12 @@ public final class MCPServerRegistry: ObservableObject {
     // MARK: - Persistence
 
     private func persist() {
+        // 加载失败时拒绝写回：原文件可能是用户的全部配置，
+        // 不能用内存里的空列表/seed 模板原子覆盖它（#531）。
+        guard !loadFailed else {
+            print("[MCPServerRegistry] skip persist: load failed, refusing to overwrite original file")
+            return
+        }
         do {
             let data = try JSONEncoder().encode(servers)
             try data.write(to: fileURL, options: .atomic)
