@@ -44,6 +44,8 @@ final class ConversationStatsViewModel: ObservableObject {
 
     private let capability: any ConversationStatsCapability
     private var isLoadingSeries = false
+    /// 清理会使在途加载失效：加载发布前必须确认代次未被清理推进（#1169）。
+    private var statsGeneration: UInt64 = 0
 
     init(capability: any ConversationStatsCapability, projectPath: String?) {
         self.capability = capability
@@ -81,6 +83,7 @@ final class ConversationStatsViewModel: ObservableObject {
         guard !isLoadingSeries else { return }
         isLoadingSeries = true
         isLoading = true
+        let generation = statsGeneration
         defer {
             isLoadingSeries = false
             isLoading = false
@@ -91,15 +94,17 @@ final class ConversationStatsViewModel: ObservableObject {
             projectPath: projectPath,
             includingChildConversations: false
         )
+        guard statsGeneration == generation else { return }
         dailyCountSeries = series
-        await loadDeletableCounts()
+        await loadDeletableCounts(generation: generation)
     }
 
     /// 查询各清理窗口的待删除条数。
-    private func loadDeletableCounts() async {
+    private func loadDeletableCounts(generation: UInt64) async {
         var counts: [Int: Int] = [:]
         for window in RetentionWindow.allCases {
             counts[window.dayCount] = await deletableCount(for: window)
+            guard statsGeneration == generation else { return }
         }
         deletableCounts = counts
     }
@@ -109,6 +114,8 @@ final class ConversationStatsViewModel: ObservableObject {
     func cleanUp(olderThan window: RetentionWindow) async -> Int {
         guard !isCleaning else { return 0 }
         isCleaning = true
+        // 使清理开始前就在途的加载失效，其旧快照不得覆盖清理后的结果。
+        statsGeneration &+= 1
         defer { isCleaning = false }
 
         let deleted = await capability.deleteConversations(
@@ -116,14 +123,18 @@ final class ConversationStatsViewModel: ObservableObject {
             projectPath: projectPath,
             includingChildConversations: false
         )
+        // 删除期间新发起的加载同样可能拿到删除前的快照，一并失效。
+        statsGeneration &+= 1
+        let generation = statsGeneration
         // 清理后立即刷新折线图与待删除条数，让用户看到结果。
         let series = await capability.fetchDailyCountSeries(
             days: Self.chartDays,
             projectPath: projectPath,
             includingChildConversations: false
         )
+        guard statsGeneration == generation else { return deleted.count }
         dailyCountSeries = series
-        await loadDeletableCounts()
+        await loadDeletableCounts(generation: generation)
         return deleted.count
     }
 

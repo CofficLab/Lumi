@@ -126,6 +126,42 @@ struct ConversationStatsViewModelTests {
 
         #expect(capability.deletedCount == 1)
     }
+
+    /// #1169：初始加载挂起期间完成清理后，晚到的旧快照不得覆盖清理后的统计。
+    @Test("清理后晚到的初始加载不得覆盖新统计")
+    func staleLoadDoesNotOverwritePostCleanupStats() async {
+        let capability = StubStatsCapability()
+        let oldSeries = ConversationDailyCountSeries(points: [
+            ConversationDailyCountPoint(day: Date(timeIntervalSince1970: 0), count: 5),
+        ])
+        let newSeries = ConversationDailyCountSeries(points: [
+            ConversationDailyCountPoint(day: Date(timeIntervalSince1970: 0), count: 1),
+        ])
+        capability.series = oldSeries
+        capability.deletableCount = 9
+        capability.gateNextSeriesFetch = true
+        let viewModel = ConversationStatsViewModel(capability: capability, projectPath: nil)
+
+        let load = Task { await viewModel.loadSeriesIfNeeded() }
+        while capability.seriesFetchGate == nil { await Task.yield() }
+
+        capability.series = newSeries
+        capability.deletableCount = 0
+        let deleted = await viewModel.cleanUp(olderThan: .sevenDays)
+        #expect(deleted == 0)
+        #expect(viewModel.dailyCountSeries.points == newSeries.points)
+        #expect(viewModel.deletableCounts[7] == 0)
+        #expect(viewModel.deletableCounts[30] == 0)
+
+        capability.seriesFetchGate?.resume()
+        capability.seriesFetchGate = nil
+        await load.value
+
+        #expect(viewModel.dailyCountSeries.points == newSeries.points, "旧序列不得覆盖清理后的图表")
+        #expect(viewModel.deletableCounts[7] == 0, "旧待删除条数不得覆盖清理后的计数")
+        #expect(viewModel.deletableCounts[30] == 0)
+        #expect(!viewModel.isLoading)
+    }
 }
 
 /// `ConversationStatsCapability` 的测试替身。
@@ -134,6 +170,9 @@ private final class StubStatsCapability: ConversationStatsCapability {
     var series = ConversationDailyCountSeries(points: [])
     var deletedIDs: [UUID] = []
     var deletableCount = 0
+    /// 置 true 时下一次序列查询会挂起，直到 `seriesFetchGate` 被 resume。
+    var gateNextSeriesFetch = false
+    var seriesFetchGate: CheckedContinuation<Void, Never>?
 
     private(set) var requestedDays: Int?
     private(set) var requestedProjectPath: String?
@@ -152,7 +191,13 @@ private final class StubStatsCapability: ConversationStatsCapability {
         requestedDays = days
         requestedProjectPath = projectPath
         requestedIncludingChildConversations = includingChildConversations
-        return series
+        // 请求发起时就锁定快照，模拟存储层返回的是查询时刻的数据。
+        let snapshot = series
+        if gateNextSeriesFetch {
+            gateNextSeriesFetch = false
+            await withCheckedContinuation { seriesFetchGate = $0 }
+        }
+        return snapshot
     }
 
     func deleteConversations(
