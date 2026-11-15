@@ -22,7 +22,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiPluginActivityBar.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginDevice.git", from: "1.0.0"),
         .package(path: "../PluginDeviceChat"),
-        .package(path: "../PluginDiskManager"),
+        .package(url: "https://github.com/lumi-softworks/PluginDiskManager.git", from: "1.0.0"),
         .package(path: "../PluginNetworkManager"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginCaffeinate.git", from: "1.1.4"),
         .package(path: "../PluginHostsManager"),

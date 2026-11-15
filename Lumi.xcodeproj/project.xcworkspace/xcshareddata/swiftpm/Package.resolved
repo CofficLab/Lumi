@@ -389,6 +389,15 @@
       }
     },
     {
+      "identity" : "plugindiskmanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/PluginDiskManager.git",
+      "state" : {
+        "revision" : "cf1c297b7b94a98a4fd0640d40edd787967189c8",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "postgres-nio",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/postgres-nio",
