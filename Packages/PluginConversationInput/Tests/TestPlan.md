@@ -77,10 +77,14 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - **输入框必须悬浮**：输入框是一张浮起的卡片（圆角表面 + 描边 + 投影 + 与四周的
   间距），不是贴在聊天区上的一条扁平色带。卡片几何写死在
   `ComposerSurfaceTests` 里，动 `ComposerLayout` 的间距必须同步改测试
+- **切换清空必须等落定**：`handleConversationSwitched` 把清空判定延迟到下一
+  主 actor 轮次，选中态落定到草稿归属对话之外才清空；`create_new_conversation`
+  的瞬时选中往返不得清空未发送草稿与附件（#781）
 
 - **附件预览区拖放**（10 条）：由 `fileURLProviderResolvesToLocalURL`、`plainTextProviderResolvesToLocalURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **附件预览区拖放类型声明**（4 条）：由 `previewDeclaresFileURLOnly`、`swiftUIKeepsFileURLForImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **批次拖放顺序**（6 条）：由 `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads`、`batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` 等用例锁定（**回归 #804**）：同一批拖入的多个附件需要并发读取但按原始 URL 顺序入池，不得随 I/O 完成时序乱序；改动 `attach(droppedURLs:)` / `readAttachmentsInOrder` 时优先跑 `ConversationInputDropOrderTests.swift`。
+- **对话切换草稿保留**（4 条）：由 `transientRoundTripPreservesDraft`、`realSwitchStillClearsDraft` 等用例锁定（**回归 #781**）：切换清空判定延迟到下一主 actor 轮次，选中态落定到草稿归属对话之外的对话才清空；`create_new_conversation` 的瞬时选中往返不得清空未发送草稿与附件；改动 `handleConversationSwitched` 时优先跑 `ConversationSwitchDraftRetentionTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -135,7 +139,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 42 | 编辑器 | 回车在发送前先上报当前已提交文本 | 装配 Coordinator | 置文本「你」→ 触发 `insertNewline` | draft 为「你」且 `onSubmit` 被调用 1 次 | P0 | ✅ 已覆盖 | `returnPublishesDraftBeforeSubmit` |
 | 43 | 拖放 | 常见图片文件被识别为聊天图片 | — | 校验 PNG / HEIC / PDF | 前两者为 true、PDF 为 false | P1 | ✅ 已覆盖 | `imageDropRuleRecognizesCommonImages` |
 | 44 | 拖放 | 目录与文件分开识别 | 临时目录 + 目录内文件 | 校验 `isDirectoryURL` | 目录为 true、其内文件为 false | P1 | ✅ 已覆盖 | `directoryDropRuleRecognizesDirectories` |
-| 45 | 会话 | 切换会话清空未提交的文本与附件 | 真实 Conversation / Message / Sender | 写入草稿 + 图片 + 文件附件后切换会话 | 文本与两个附件池全部清空 | P0 | ✅ 已覆盖 | `switchingConversationsClearsAttachments` |
+| 45 | 会话 | 切换会话清空未提交的文本与附件 | 真实 Conversation / Message / Sender | 写入草稿 + 图片 + 文件附件后切换会话，等清空判定落定 | 文本与两个附件池全部清空 | P0 | ✅ 已覆盖 | `switchingConversationsClearsAttachments` |
 | 46 | 观察 | 输入错误状态通过 typed observer 同步并支持取消 | 仅 Input Provider | 写 `errorMessage` → `cancel()` → 再写 nil | 同步到 ViewModel；cancel 后不再同步 | P1 | ✅ 已覆盖 | `inputObserverTracksErrorState` |
 | 47 | 折叠块 | 折叠块按阈值决定 chip 还是纯文本插入 | 短 / 长 / 纯空白三种内容 | 校验 `shouldCollapse` | 短与纯空白为 false、长内容为 true | P1 | ✅ 已覆盖 | `pendingBlockCollapsesOnlyAboveThreshold` |
 | 48 | 折叠块 | 递交折叠块后待插入、消费后清空 | 仅 Input Provider | `enqueue` → 消费无关 ID → 消费正确 ID | 待插入项与 ID / 标题就位并自动聚焦；无关 ID 不误清；正确 ID 消费后清空 | P1 | ✅ 已覆盖 | `enqueueThenConsumePendingBlock` |
@@ -199,7 +203,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 89 | 附件✕ | 关闭最后一张图片后预览行整体消失 | 单张图片附件 | 移除它 | `hasAttachments == false`（`AttachmentPreviewView` 整行不渲染） | P0 | ✅ 已覆盖 | `closingLastImageHidesPreviewRow` |
 | 90 | 附件✕ | 关闭图片不影响文件附件 | 图片 + 文件各一 | 移除图片 | 文件保留，`hasAttachments` 仍为真 | P1 | ✅ 已覆盖 | `closingImageKeepsFileAttachments` |
 | 91 | 附件✕ | 连点同一个 ✕ 幂等，不误删其他图片 | 两个图片附件 | 同一 ID 连移除两次 | 另一个不受影响，无越界删除 | P1 | ✅ 已覆盖 | `closingSameImageTwiceIsIdempotent` |
-| 92 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先 `handleConversationSwitched()` 清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
+| 92 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先切走选中态并 `handleConversationSwitched()`，等落定清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
 | 93 | 附件✕ | 关闭图片后发送按钮状态随之回落 | 仅一张图片、正文为空 | 移除它 | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `closingLastImageDisablesSend` |
 | 94 | 附件✕ | 点文件 chip 的 ✕ 后立即移除 | 两个文件附件 | 移除其一 | 列表与 Sender 池同步为剩余项 | P1 | ✅ 已覆盖 | `closingFileChipUpdatesPreview` |
 | 95 | 附件✕ | Observer 退订后 ✕ 仍移除附件，但预览不再刷新（**回归**） | 装配 Observer 后 `cancel()` | 移除其一 | Sender 池已删；ViewModel 停在旧状态（锁住「句柄必须显式 cancel」） | P2 | ✅ 已覆盖 | `removalAfterObserverCancelStopsRefreshingPreview` |
@@ -543,12 +547,36 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 209 / 211 均 RED（池内顺序颠倒），ID 210（整批丢弃）与 212（单附件池）不受影响仍 GREEN。
 > 变异锁定「按原始批次索引收集后再入池」这一顺序契约。
 
+### 补充轮次（ID 213–216）：对话切换草稿保留（#781）
+
+> `create_new_conversation` 的契约是「回合内只备料、不切换」，但内核创建顶层
+> 对话即抢占选中态，工具随后恢复原选中态。两次选中通知在同一主 actor 连续段里
+> 发出（创建落库后同步通知 B，工具紧接着同步恢复 A，中间无挂起），旧实现把
+> 每次通知都当成「会话切换了，草稿必须清空」，于是用户留在 A 却丢了正在编辑
+> 的正文与未发送附件。修复把清空判定延迟到下一主 actor 轮次：届时选中态已
+> 落定，仍停在草稿归属对话（`draftConversationID`，构造时快照）则不清空；
+> 真正切走才清空并更新归属。连续多次通知只保留最后一次判定（取消前一任务）。
+> 工具的 `restoreSelection` 保留为防御性兜底，不受本修复影响。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 213 | 会话 | 瞬时选中往返 A→B→A 不得清空草稿与附件（**回归 #781**） | 选中 A + 草稿正文 + 图片/文件附件各一 + 生产同款观察者 | 同一连续段内连发 B、A 两次选中通知，等判定落定 | 正文与两类附件原样保留，`clearInput` 零调用，ViewModel 状态不变 | P0 | ✅ 已覆盖 | `transientRoundTripPreservesDraft` |
+| 214 | 会话 | 真实切换到另一对话仍必须清空草稿与附件（**回归 #781**） | 同上 | 只发 B 的选中通知，等判定落定 | 正文与两类附件全部清空，ViewModel 同步为空 | P0 | ✅ 已覆盖 | `realSwitchStillClearsDraft` |
+| 215 | 会话 | 新建会话未选中态的瞬时往返 nil→B→nil 不得清空草稿（**回归 #781**） | 未选中态 + 草稿正文 + 两类附件 | 同一连续段内连发 B、nil 两次通知，等判定落定 | 草稿与附件保留，`clearInput` 零调用 | P0 | ✅ 已覆盖 | `transientRoundTripFromNilPreservesDraft` |
+| 216 | 会话 | 往返保留草稿后，再真实切走仍要清空（**回归 #781**） | 选中 A + 草稿 | 先 B→A 往返并落定，再发 C 的通知并落定 | 往返后草稿保留；切到 C 后正文与附件清空 | P1 | ✅ 已覆盖 | `laterRealSwitchAfterRoundTripClears` |
+
+> **#781 变异验证**（恢复后 GREEN）：把 `handleConversationSwitched` 还原为
+> 旧的同步清空实现 → ID 213 / 215 RED（往返后草稿与附件被清掉，
+> `clearInputCount != 0`），ID 214 仍 GREEN（真实切换本就应清空）。
+> 变异锁定「延迟判定 + 草稿归属比对」是保留草稿的充要守卫。
+> 既有 ID 45 / 92 两条用例同步改为「等判定落定再断言」，语义不变。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 73 / 73
-- P1: 已覆盖 121 / 121
+- P0: 已覆盖 76 / 76
+- P1: 已覆盖 122 / 122
 - P2: 已覆盖 18 / 18
-- **合计: 212 / 212**（仅表示清单场景，非源码覆盖率）
+- **合计: 216 / 216**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

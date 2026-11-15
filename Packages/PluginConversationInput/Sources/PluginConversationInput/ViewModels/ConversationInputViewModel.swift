@@ -41,6 +41,11 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
     private var isWaitingForAttachmentReads = false
 
+    /// 当前草稿归属的对话；nil 表示「新建会话」未选中态。
+    /// 切换判定延迟到下一主 actor 轮次时，用它识别瞬时的选中往返（#781）。
+    private var draftConversationID: UUID?
+    private var conversationSwitchTask: Task<Void, Never>?
+
     /// 待发送图片附件的位图解码缓存。
     ///
     /// 预览挂在输入框上方，输入框每次按键都会让本 ViewModel 发出失效广播，
@@ -58,6 +63,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     init(capability: any ConversationInputCapability) {
         self.capability = capability
+        self.draftConversationID = capability.selectedConversationID
         refresh()
     }
 
@@ -149,10 +155,22 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     }
 
     /// 对话切换：清空输入与未提交附件。
+    ///
+    /// 判定延迟到下一主 actor 轮次：`create_new_conversation` 会在同一主 actor
+    /// 连续段里做「创建即选中 B → 恢复 A」的瞬时往返，发出两次切换通知（#781）。
+    /// 只有选中态真正落定到别的对话时才清空草稿；回到草稿归属对话则保留
+    /// 未发送内容。连续多次切换只保留最后一次判定。
     func handleConversationSwitched() {
-        capability.clearInput()
-        capability.clearAttachments()
-        refresh()
+        conversationSwitchTask?.cancel()
+        conversationSwitchTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let current = self.capability.selectedConversationID
+            guard current != self.draftConversationID else { return }
+            self.draftConversationID = current
+            self.capability.clearInput()
+            self.capability.clearAttachments()
+            self.refresh()
+        }
     }
 
     // MARK: - 输入绑定（写 Provider，由 Observer 回读）
