@@ -10,6 +10,7 @@ struct MindMapCanvas: View {
 
     @ObservedObject private var store: MindMapStore
     @State private var dragOffset: CGSize = .zero
+    @State private var gestureBase = CanvasGestureTransform()
 
     private let padding: CGFloat = 48
 
@@ -82,6 +83,7 @@ struct MindMapCanvas: View {
             editingNodeId = nil
             scale = 1.0
             dragOffset = .zero
+            gestureBase = CanvasGestureTransform()
         }
     }
 
@@ -155,13 +157,20 @@ struct MindMapCanvas: View {
     private var magnification: some Gesture {
         MagnificationGesture()
             .onChanged { value in
-                scale = max(0.3, min(3.0, value))
+                scale = gestureBase.scale(magnification: value)
+            }
+            .onEnded { _ in
+                gestureBase.baseScale = scale
             }
     }
 
     private var drag: some Gesture {
         DragGesture()
-            .onChanged { value in dragOffset = value.translation }
-            .onEnded { _ in }
+            .onChanged { value in
+                dragOffset = gestureBase.offset(translation: value.translation)
+            }
+            .onEnded { _ in
+                gestureBase.baseOffset = dragOffset
+            }
     }
 }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 37 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 37
+测试文件: 6 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
 - **MindMapStore 保存失败**（2 条）：由 `failedSavePropagatesAndKeepsStateUnchanged`、`successfulSaveUpdatesMemoryAndDisk` 用例锁定；`updateMap` 必须先落盘再提交内存，目录不可写导致保存失败时把错误抛给工具并写入 `lastError`，内存与磁盘都保持旧值，不得误报成功（#429）。
+- **MindMap 画布手势基线**（6 条）：由 `scaleAccumulatesOnBaseline`、`offsetAccumulatesOnBaseline`、`consecutiveDragsStayContinuous` 等用例锁定；连续拖拽/缩放须在上一手势结束保存的基线上累加增量并钳到上下限，不得每次从零覆盖导致第二次手势跳变（#326）。
 
 ## 测试用例清单
 
@@ -85,8 +86,14 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 35 | MindMapMarkdownCodec 健壮性 | 仅含根节点时往返仍保留独立根文本 | 标题 `Project`、根文本 `Central Problem`、无子节点 | 编码后再解码 | 标题为 `Project`，根文本为 `Central Problem`，仅一个节点 | P1 | ✅ 已覆盖 | `roundTripPreservesDistinctRootTextWithoutChildren` |
 | 36 | MindMapStore 保存失败 | 保存失败时抛错、保留错误状态且内存与磁盘不变（**回归 #429**） | 已创建一张导图，存储目录设为只读 | 调用 `updateNode` 改根文本后再 reload | 抛错，`lastError` 非空，内存与磁盘根文本仍为旧值，重载后不变 | P0 | ✅ 已覆盖 | `failedSavePropagatesAndKeepsStateUnchanged` |
 | 37 | MindMapStore 保存失败 | 可写时保存成功并同步内存与磁盘 | 已创建一张导图，存储目录可写 | 调用 `updateNode` 改根文本 | 不抛错，`lastError` 为空，内存与磁盘根文本均为新值 | P1 | ✅ 已覆盖 | `successfulSaveUpdatesMemoryAndDisk` |
+| 38 | MindMap 画布手势基线 | 缩放在基线上累加而非覆盖（**回归 #326**） | 基线缩放已提交为 2.0 | 第二次手势放大 1.5 | 结果为 3.0，而非被覆盖成 1.5 | P1 | ✅ 已覆盖 | `scaleAccumulatesOnBaseline` |
+| 39 | MindMap 画布手势基线 | 缩放钳到上下限 | 基线缩放为 2.0 | 分别放大 10.0、缩小 0.01 | 结果钳到 maxScale / minScale | P1 | ✅ 已覆盖 | `scaleIsClamped` |
+| 40 | MindMap 画布手势基线 | 平移在基线上累加而非覆盖（**回归 #326**） | 基线平移已提交为 (100, 50) | 第二次拖拽 (30, 20) | 结果为 (130, 70)，而非被覆盖成 (30, 20) | P1 | ✅ 已覆盖 | `offsetAccumulatesOnBaseline` |
+| 41 | MindMap 画布手势基线 | 连续两次拖拽保持连续不跳回原点（**回归 #326**） | 手势 1 拖到 (80, 40) 并结束 | 手势 2 起始 translation=0，再拖 (10, -5) | 起始停在 (80, 40)，继续累加到 (90, 35) | P1 | ✅ 已覆盖 | `consecutiveDragsStayContinuous` |
+| 42 | MindMap 画布手势基线 | 连续两次缩放保持连续不跳回 1（**回归 #326**） | 手势 1 放大到 1.8 并结束 | 手势 2 起始 magnification=1，再放大 1.2 | 起始停在 1.8，继续累加到 1.8×1.2 | P1 | ✅ 已覆盖 | `consecutiveMagnificationsStayContinuous` |
+| 43 | MindMap 画布手势基线 | 默认基线为单位变换 | 新建手势基线 | 读取默认基线并施加单位增量 | baseScale=1.0、baseOffset=.zero，单位增量不改变结果 | P2 | ✅ 已覆盖 | `defaultBaselineIsIdentity` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -100,20 +107,20 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 ## 覆盖率统计
 
 - P0: 已覆盖 12 / 12
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 0 / 0
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 30 / 30
+- P2: 已覆盖 1 / 1
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P1**: 其余功能性用例（30 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
