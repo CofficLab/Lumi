@@ -78,30 +78,45 @@ public enum PrototypeHTMLExporter {
             )
         }
 
-        let pixelWidth = device.pixelWidth
-        let pixelHeight = device.pixelHeight
-        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              let context = CGContext(
-                data: nil,
-                width: pixelWidth,
-                height: pixelHeight,
-                bitsPerComponent: 8,
-                bytesPerRow: 0,
-                space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              ) else {
+        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw PrototypeExportError.pngEncodingFailed
         }
-        // WKWebView 的 PDF 捕获会产生 Retina 后备表示，而它的 CSS 视口已经是
-        // 精确的逻辑尺寸。这里按「一个输出像素对应一个 CSS 像素 × scale」重绘，
-        // 既不改变布局，又让文件尺寸落在目标像素上。
+        let box = ExportableCGImage(cgImage: sourceImage)
+        let pixelWidth = device.pixelWidth
+        let pixelHeight = device.pixelHeight
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.encodePNG(sourceImage: box.cgImage, width: pixelWidth, height: pixelHeight)
+        }.value
+    }
+
+    /// 在后台线程把快照归一化到目标像素尺寸并编码为 PNG。
+    ///
+    /// WKWebView 的 PDF 捕获会产生 Retina 后备表示，而它的 CSS 视口已经是
+    /// 精确的逻辑尺寸。这里按「一个输出像素对应一个 CSS 像素 × scale」重绘，
+    /// 既不改变布局，又让文件尺寸落在目标像素上。
+    nonisolated static func encodePNG(sourceImage: CGImage, width: Int, height: Int) throws -> Data {
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            throw PrototypeExportError.pngEncodingFailed
+        }
         context.interpolationQuality = .high
-        context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+        context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let normalizedImage = context.makeImage(),
               let data = NSBitmapImageRep(cgImage: normalizedImage).representation(using: .png, properties: [:]) else {
             throw PrototypeExportError.pngEncodingFailed
         }
         return data
+    }
+
+    private struct ExportableCGImage: @unchecked Sendable {
+        let cgImage: CGImage
     }
 
     // MARK: - 私有
