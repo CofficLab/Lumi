@@ -5,7 +5,7 @@
 StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**: story picker dropdown + chapter tree - **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata) - **AI assistance**: via a dedicated ChatSection flow (configured separately) - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 31
+测试文件: 7 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Models/`
@@ -42,6 +42,7 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 - **StoryWriterPlugin**（4 条）：由 `v2PluginPreservesWorkspaceAndToolCatalog`、`activationScopesRailView`、`documentationEntriesAreRemovedWhenPluginUnregisters` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryWriterTool**（6 条）：由 `publicToolsExposeConsistentSchemasDescriptionsAndRisks`、`deletingMissingStoryOrChapterReportsNotFound`、`listingChaptersDistinguishesMissingStoryFromEmptyStory`、`toolsValidateArgumentsAndSupportStoryChapterLifecycle`、`toolsReportUnavailableStorage`、`validationFailuresThrowThroughExecuteResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryWriterViewModel**（4 条）：由 `selectionCrudAndMarkdownFlowsStayInSyncWithStore`、`reloadPreservesExistingSelectionAndFallsBackAfterDeletion`、`reloadKeepsSelectedChapterAndRefreshesItsContent`、`changeObserverBroadcastsAndCancellationIsIdempotent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **StoryEditorIdentity**（3 条）：由 `storyEditorIdentityFollowsSelectedStory`、`storyEditorIdentityIsStableAcrossRendersForSameStory`、`reMaterializedEditorDraftBindsToNewStory` 用例锁定；改动 `StoryWriterView` 故事分支或 `StoryEditorView` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -78,27 +79,32 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 | 29 | StoryExport | 写入失败抛出错误供 UI 提示而非静默吞掉（**回归 #1248**） | 不存在的父目录 | 在 detached 任务中向缺失目录写入 | 抛出错误而非静默成功 | P1 | ✅ 已覆盖 | `writeFailureThrows` |
 | 30 | StoryWriterViewModel | 内存应用即时生效，持久化不得回写覆盖更新的内存内容 | 已创建故事与章节 | applyChapterInMemory 后再 persistChapter 旧版本 | 内存保留新内容；磁盘落盘旧内容 | P0 | ✅ 已覆盖 | `inMemoryApplyIsImmediateAndPersistDoesNotWriteBack` |
 | 31 | StoryWriterTool | 创建章节时显式 status 覆盖正文默认值，非法 status 必须抛错（**回归 #820**） | 有效存储目录与故事 | create_chapter / import_markdown_as_chapter 传 done/draft/缺省/非法 status | 显式状态生效；缺省保持正文推导默认；非法抛 ToolExecutionError | P0 | ✅ 已覆盖 | `chapterCreationHonorsExplicitStatusArgument` |
+| 32 | StoryEditorIdentity | 切换故事后编辑器 identity 必须换成新故事，不得复用旧草稿误写/误删原文档（**回归 #289**） | 故事 A、B 均已创建 | 选中 A 求值 body 取编辑器 identity，再切到 B 求值 | identity 分别为 A.id、B.id 且互不相同（Mirror 查找包裹 StoryEditorView 的 IDView.id） | P0 | ✅ 已覆盖 | `storyEditorIdentityFollowsSelectedStory` |
+| 33 | StoryEditorIdentity | 同一故事多次渲染编辑器 identity 保持稳定，不清空用户草稿（**回归 #289**） | 已选中故事 A 并创建章节 | 求值 body 取 identity，更新章节后再求值 | 两次 identity 均等于 A.id（防止 .id(UUID()) 之类不稳定标识） | P1 | ✅ 已覆盖 | `storyEditorIdentityIsStableAcrossRendersForSameStory` |
+| 34 | StoryEditorIdentity | 切换故事重建的草稿必须绑定新故事，不得继承旧故事未保存简介或误写旧故事（**回归 #289**） | A 草稿有未保存简介，B 为另一故事 | 以 B 全新初始化 StoryEditorDraft（.id 强制重建）后 storyToSave | 草稿基线/简介为 B、无未保存标记，落盘 id==B.id 且 !=A.id | P0 | ✅ 已覆盖 | `reMaterializedEditorDraftBindsToNewStory` |
 
-> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#289）：`StoryWriterView` 的 `.story` 分支原先直接渲染 `StoryEditorView(viewModel:story:)` 而无 `.id(story.id)`（相邻 `.chapter` 分支已正确加 `.id(chapter.id)`）。切换故事时 SwiftUI 复用同一编辑器 identity，`@State draft` 不重新初始化，简介更新/标题保存经 `draft.storyToSave()` 仍带旧故事 id，误写原文档；导出正文来自 ViewModel 新选择而文件名取自旧故事。修复为给 `.story` 分支补 `.id(story.id)`，切换故事即重新物化编辑器。M1 移除该 `.id(story.id)`（还原裸 `StoryEditorView`）→ `storyEditorIdentityFollowsSelectedStory`（identity 查找返回 nil，3 处断言）、`storyEditorIdentityIsStableAcrossRendersForSameStory`（2 处断言）转红，`reMaterializedEditorDraftBindsToNewStory` 仍绿（草稿 init 契约未变）。变异施加并确认转红后还原，最终 34 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 26 / 26
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 27 / 27
 - P2: 已覆盖 0 / 0
-- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（26 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（27 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
