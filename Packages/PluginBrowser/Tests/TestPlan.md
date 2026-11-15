@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 61
+测试文件: 17 个，用例总数: 69
 
 核心组件（源码目录）:
 - `Models/`
@@ -57,6 +57,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 - **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
 - **Browser ref 分配与唯一性**（3 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。
+- **Browser DNS 根点归一化**（8 条）：由 `trailingRootDotLocalHostsAreStillLocal`、`openAndNavigateToolsRequireApprovalForTrailingDot`、`openWithoutApprovalIsBlocked`、`approvedHostKeyIsNormalized` 锁定；`localhost.` 与 `localhost` 解析到同一个回环地址，分类与审批键都必须先去掉 DNS 根点，否则等价 host 就能绕过本地访问审批（issue #830）。
 - **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
 
 ## 测试用例清单
@@ -124,16 +125,24 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 59 | Browser 脚本重复执行 | 交互脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 滚动脚本 | 均无 SyntaxError，ok=true | P0 | ✅ 已覆盖 | `interactionScriptRunsRepeatedly` |
 | 60 | Browser 脚本重复执行 | 先快照后交互不重复声明全局 | 同一 JS 全局环境 | 先快照再交互 | 两者均成功，无 __OPTS 重复声明 | P0 | ✅ 已覆盖 | `snapshotThenInteractionSharePage` |
 | 61 | Browser 脚本重复执行 | find 脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript find 脚本 | 均无 SyntaxError，total=0 | P1 | ✅ 已覆盖 | `findScriptRunsRepeatedly` |
+| 62 | Browser DNS 根点归一化 | 带 DNS 根点的本地主机必须仍判为内网（**回归 #830**） | — | 对 `localhost.`/`printer.local.`/`127.0.0.1.` 等调用 `isLocalHost` 与 `requiresLocalAccessApproval` | 均返回 true，本地访问审批不被绕过 | P0 | ✅ 已覆盖 | `trailingRootDotLocalHostsAreStillLocal` |
+| 63 | Browser DNS 根点归一化 | 带根点的公网域名不得被误判为内网 | — | 对 `example.com.`/`8.8.8.8.`/`fdic.gov.` 调用分类器 | 均返回 false，不触发多余的本地网络审批 | P0 | ✅ 已覆盖 | `trailingRootDotKeepsPublicHostsPublic` |
+| 64 | Browser DNS 根点归一化 | 多个根点同样归一化，方向偏保守 | — | 对 `localhost..`/`localhost...` 调用分类器与 `normalizedHost` | 判为内网，归一化结果为 `localhost` | P1 | ✅ 已覆盖 | `repeatedRootDotsAreNormalized` |
+| 65 | Browser DNS 根点归一化 | 既有归一化行为保持不变 | — | 对 `[::1]`/`LOCALHOST`/空串调用 `normalizedHost`，并复核既有本地与公网分类 | 方括号与大小写归一化不变，既有分类结果不变 | P1 | ✅ 已覆盖 | `existingNormalizationIsPreserved` |
+| 66 | Browser DNS 根点归一化 | 带根点的回环地址在打开与导航工具上必须是高风险（**回归 #830**） | — | 对 `http://localhost.:3000` 等调用 `browser_open` / `browser_navigate(goto)` 的 `permissionRiskLevel` | 均为 `.high`；`https://example.com.` 仍为 `.low` | P0 | ✅ 已覆盖 | `openAndNavigateToolsRequireApprovalForTrailingDot` |
+| 67 | Browser DNS 根点归一化 | 未获批准时带根点的回环地址必须被拦下，且不创建会话（**回归 #830**） | localAccessApproved=false | 调用 `BrowserSessionManager.open("http://localhost.:3000")` | 抛出 `blockedLocalNavigation`，且 `hasSession` 为 false | P0 | ✅ 已覆盖 | `openWithoutApprovalIsBlocked` |
+| 68 | Browser DNS 根点归一化 | 审批键按归一化主机记录，未批准时不留键 | — | 对 `http://localhost.:3000`/`http://[::1]:8080/`/`http://PRINTER.LOCAL./` 调用 `approvedHostKey` | 分别得到 `localhost`/`::1`/`printer.local`；未批准时为 nil | P1 | ✅ 已覆盖 | `approvedHostKeyIsNormalized` |
+| 69 | Browser DNS 根点归一化 | 批准 localhost 后等价写法都算已批准，无关主机不算 | 会话已批准 localhost | 对 `localhost.`/`LOCALHOST.`/`localhost..` 与 `evil.com`/`localhost.evil.com` 调用 `hasApprovedLocalHost` | 等价写法为 true，无关主机为 false；无审批记录时全为 false | P1 | ✅ 已覆盖 | `approvedLocalHostCoversEquivalentForms` |
 
 > 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 46 / 46
 - P2: 已覆盖 13 / 13
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 69 / 69**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -146,14 +155,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（46 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 69 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

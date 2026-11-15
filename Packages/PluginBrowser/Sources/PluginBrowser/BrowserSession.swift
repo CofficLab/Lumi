@@ -74,7 +74,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     private var navigationContinuation: CheckedContinuation<Void, Error>?
     private var navigationTimeoutTask: Task<Void, Never>?
     private var navigationToken: UUID?
-    private var approvedLocalHost: String?
+    /// 已获批准的本地主机键（归一化）。内部可见以便测试直接布置审批状态。
+    var approvedLocalHost: String?
     private var urlObservation: NSKeyValueObservation?
     /// ref 登记簿：记录已见过的元素特征，用于诊断失效 ref。
     private let refStore = BrowserElementRefStore()
@@ -133,7 +134,10 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
 
         let token = UUID()
         navigationToken = token
-        approvedLocalHost = localAccessApproved ? url.host?.lowercased() : nil
+        approvedLocalHost = BrowserSessionManager.approvedHostKey(
+            for: url,
+            localAccessApproved: localAccessApproved
+        )
         isLoading = true
         try await withCheckedThrowingContinuation { continuation in
             navigationContinuation = continuation
@@ -367,7 +371,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let host = navigationAction.request.url?.host,
               BrowserSessionManager.isLocalHost(host),
-              host.lowercased() != approvedLocalHost else {
+              BrowserSessionManager.normalizedHost(host) != approvedLocalHost else {
             return .allow
         }
         finishNavigation(.failure(SessionError.blockedLocalNavigation), token: navigationToken)
@@ -381,13 +385,13 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         canGoForward = webView.canGoForward
     }
 
-    /// 本次会话中已获批准访问的本地主机（小写）。
+    /// 本次会话中已获批准访问的本地主机（归一化：小写、去 IPv6 方括号与 DNS 根点）。
     var approvedLocalHostName: String? { approvedLocalHost }
 
     /// 某个本地主机是否已获批准。
     func hasApprovedLocalHost(_ host: String) -> Bool {
         guard let approved = approvedLocalHost else { return false }
-        return approved == host.lowercased()
+        return approved == BrowserSessionManager.normalizedHost(host)
     }
 
     func waitForInteractionNavigation() async {
@@ -499,7 +503,7 @@ public final class BrowserSessionManager: ObservableObject {
         // 不能因为「用户已经批准了这次点击」就一并放行本地地址。
         // 否则用户批准一次普通点击，就能被页面静默重定向到内网服务。
         if let destination = result.navigationTarget {
-            let host = destination.host?.lowercased() ?? ""
+            let host = destination.host.map { BrowserSessionManager.normalizedHost($0) } ?? ""
             let isLocal = BrowserSessionManager.isLocalHost(host)
 
             // 用户批准的是「点击这个元素」，不是「访问内网地址」。
@@ -639,8 +643,31 @@ public final class BrowserSessionManager: ObservableObject {
         return isLocalHost(url.host ?? "")
     }
 
+    /// 主机名归一化：小写、去掉 IPv6 字面量的方括号、去掉 FQDN 末尾的 DNS 根点。
+    ///
+    /// `localhost.` 与 `localhost` 在 macOS 上解析到同一个回环地址，但字符串
+    /// 不同。分类与审批比对都必须用归一化后的形式，否则一个等价 host 就能
+    /// 绕过本地访问审批（#830）。
+    nonisolated static func normalizedHost(_ rawHost: String) -> String {
+        var host = rawHost.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        while host.hasSuffix(".") {
+            host.removeLast()
+        }
+        return host
+    }
+
+    /// 本次导航获批准时记下的主机键；未批准则为 nil。
+    ///
+    /// 与 `isLocalHost` 共用同一套归一化，`localhost.` 与 `localhost` 才算
+    /// 同一个已批准主机——否则批准过 localhost 的会话会在站内链接指向
+    /// `localhost.` 时被误拦（#830）。
+    nonisolated static func approvedHostKey(for url: URL, localAccessApproved: Bool) -> String? {
+        guard localAccessApproved else { return nil }
+        return url.host.map { normalizedHost($0) }
+    }
+
     nonisolated static func isLocalHost(_ rawHost: String) -> Bool {
-        let host = rawHost.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        let host = normalizedHost(rawHost)
         if ["localhost", "::1"].contains(host)
             || [".localhost", ".local", ".internal", ".lan"].contains(where: host.hasSuffix) {
             return true
