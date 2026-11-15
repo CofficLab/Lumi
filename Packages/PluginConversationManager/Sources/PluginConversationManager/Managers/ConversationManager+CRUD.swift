@@ -253,7 +253,9 @@ extension ConversationManager {
             verbosity: globalVerbosity,
             reasoningEffort: globalReasoningEffort,
             automationLevel: globalAutomationLevel,
-            language: language(for: selectedConversationID),
+            // 新会话继承独立的全局默认语言，而不是当前选中会话的语言，
+            // 否则新建会话会带上上一个会话的语言（issue #786）。
+            language: globalLanguage,
             parentConversationID: parentConversationID
         )
     }

@@ -153,27 +153,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
-                // New Chat 的默认语言独立于选中会话，必须跨重启保留；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                // New Chat 的全局默认值独立于选中会话，只能从单独落盘的全局值恢复。
+                // 不能用选中会话的配置反写全局默认，否则新建会话会继承上一个会话的
+                // 设置，并跨重启持续污染（issue #786）。
                 if let persistedLanguage = persistedState?.globalLanguage {
                     self.globalLanguage = persistedLanguage
                 }
-                // New Chat 的默认详细度同样独立于选中会话，必须先恢复；有选中会话时
-                // 下面的会话级复制仍会覆盖它。
                 if let persistedVerbosity = persistedState?.globalVerbosity {
                     self.globalVerbosity = persistedVerbosity
                 }
-                // New Chat 的默认自动化级别同样独立于选中会话，必须先恢复；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
                 if let persistedAutomation = persistedState?.globalAutomationLevel {
                     self.globalAutomationLevel = persistedAutomation
-                }
-                if self.selectedConversationID != nil {
-                    // 初始化全局详细程度为当前选中对话的详细程度
-                    self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
-                    self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
-                    self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
-                    self.globalLanguage = self.language(for: self.selectedConversationID)
                 }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
