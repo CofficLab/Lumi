@@ -63,7 +63,8 @@ struct AssistantMessageView: View {
     }
 }
 
-private struct AssistantMessageBody: View {
+// 内部可见以便测试直接求值 body（图片解码次数契约，Issue #1185）。
+struct AssistantMessageBody: View {
     @LumiTheme private var theme
     @State private var isReasoningExpanded = false
 
@@ -93,9 +94,9 @@ private struct AssistantMessageBody: View {
         return reasoning
     }
 
-    /// 助手消息附带的生成图片（解码自 `imageAttachments`）。
+    /// 助手消息附带的生成图片（解码自 `imageAttachments`，命中进程级解码缓存）。
     private var generatedImageData: [Data] {
-        message.imageAttachments.compactMap { Data(base64Encoded: $0.data) }
+        MessageImageDecoding.imageData(from: message.imageAttachments)
     }
 
     /// 内容是否含可见字符。
@@ -108,7 +109,9 @@ private struct AssistantMessageBody: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // 单次取用：判定与网格共用同一份解码结果，不在 body 里解码两遍。
+        let imageData = generatedImageData
+        return VStack(alignment: .leading, spacing: 10) {
             if let reasoningContent, contentVerbosity == .detailed {
                 reasoningBlock(reasoningContent)
             }
@@ -126,8 +129,8 @@ private struct AssistantMessageBody: View {
             // 图像生成模型产出的图片。
             //
             // 图片独立于正文渲染：这类响应的正文往往为空，只有图片。
-            if !generatedImageData.isEmpty {
-                AppImagePreviewGrid(imageDataList: generatedImageData)
+            if !imageData.isEmpty {
+                AppImagePreviewGrid(imageDataList: imageData)
             }
 
             if let toolCalls = message.toolCalls,

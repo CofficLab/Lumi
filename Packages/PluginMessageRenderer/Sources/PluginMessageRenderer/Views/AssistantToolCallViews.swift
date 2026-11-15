@@ -736,7 +736,8 @@ private struct ToolCallArgumentsView: View {
 
 // MARK: - ToolCallResultView
 
-private struct ToolCallResultView: View {
+// 内部可见以便测试直接求值 body（图片解码次数契约，Issue #1185）。
+struct ToolCallResultView: View {
     let result: MessageToolResult?
     let isLoading: Bool
     let visualState: ToolCallResultVisualState
@@ -745,6 +746,8 @@ private struct ToolCallResultView: View {
         if isLoading {
             LoadingToolSectionView()
         } else if let result {
+            // 单次取用：判定、网格与空输出分支共用同一份解码结果。
+            let imageData = resultImageData
             VStack(alignment: .leading, spacing: 8) {
                 // 执行耗时整合在此:行内不再单独显示,打开结果 popover 即可看到。
                 if let duration = result.duration {
@@ -756,12 +759,12 @@ private struct ToolCallResultView: View {
                 }
 
                 // 工具返回的图片附件(如截图/抓图工具),在文本之前以网格展示
-                if !resultImageData.isEmpty {
-                    AppImagePreviewGrid(imageDataList: resultImageData)
+                if !imageData.isEmpty {
+                    AppImagePreviewGrid(imageDataList: imageData)
                 }
 
                 if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    if resultImageData.isEmpty {
+                    if imageData.isEmpty {
                         ToolResultEmptyStateView(
                             systemImage: "info.circle",
                             text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
@@ -780,8 +783,9 @@ private struct ToolCallResultView: View {
     }
 
     /// 把工具结果的图片附件解码为 `[Data]`,供 `AppImagePreviewGrid` 展示。
+    /// 命中进程级解码缓存,重复打开弹层不再重付 base64 解码。
     private var resultImageData: [Data] {
-        result?.imageAttachments.compactMap { Data(base64Encoded: $0.data) } ?? []
+        MessageImageDecoding.imageData(from: result?.imageAttachments ?? [])
     }
 }
 

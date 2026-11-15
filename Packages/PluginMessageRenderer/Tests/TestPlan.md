@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 311 条用例。
+PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 326 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 31 个，用例总数: 311
+测试文件: 32 个，用例总数: 326
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -54,6 +54,8 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - **ChatGPTUserMessageView**（8 条）：由 `routesOnlyChatGPTVerbosity`、`bubbleWidthHugsShortTextAndConstrainsLongText`、`longURLWrapsWithoutLegacyCollapse` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageContextMenuStop**（15 条）：由 `canStopWhileRunning`、`canStopWhileSuspended`、`cannotStopWhenNoActiveTurn` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageHeaderVisibility**（3 条）：由 `richModesShowHeader`、`briefAndStandardNoHeaderHideHeader`、`explicitFalseWins` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageImageDecoding**（8 条）：由 `singlePassVisitsEachAttachmentOnce`、`repeatedAccessReusesDecodedBytes`、`replacedPayloadIsDecodedAgain` 等用例锁定；改动图片附件解码入口时优先跑对应测试文件。
+- **MessageImageBodyDecoding**（7 条）：由 `legacyAssistantBodyDecodesOnce`、`zcodeAssistantBodyDecodesOnce`、`toolResultWithEmptyTextDecodesOnce` 等用例锁定；改动助手正文或工具结果 body 的图片分支时优先跑对应测试文件。
 - **MessageRendererPlugin**（15 条）：由 `assistantContentVerbosity`、`v1DoesNotUseCustomToolRenderers`、`formatsToolCallArguments` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ModelSwitchSummary**（9 条）：由 `sameModelAcrossProvidersKeepsProviders`、`labelsPrefixProvidersOnlyWhenDisambiguating`、`differentModelsStayCompact` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RetryTurnButton**（6 条）：由 `retryableWhenTurnMatches`、`notRetryableAfterTurnSuperseded`、`notRetryableWithoutTurnID` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -389,27 +391,42 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 309 | ZCodeUserMessageView | 附件列最大宽度是 576、底间距 8 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachmentColumnMetrics` |
 | 310 | ZCodeUserMessageView | 展开收起动画是 300ms ease-out | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `collapseAnimationDuration` |
 | 311 | ZCodeUserMessageView | reduceMotion 下没有动画 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reducedMotionDisablesAnimation` |
+| 312 | MessageImageDecoding | 一次取用对每张图只进入解码路径一次（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `singlePassVisitsEachAttachmentOnce` |
+| 313 | MessageImageDecoding | 解码结果与原始字节一致（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `decodedBytesMatchOriginal` |
+| 314 | MessageImageDecoding | 重复取用命中缓存，不再重复解码（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessReusesDecodedBytes` |
+| 315 | MessageImageDecoding | 默认走进程级共享解码缓存 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultDecoderIsTheSharedCache` |
+| 316 | MessageImageDecoding | 替换载荷后重新解码，不得返回旧图片（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `replacedPayloadIsDecodedAgain` |
+| 317 | MessageImageDecoding | 流式追加只解码新增的那张图（回归 #1185） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appendedPayloadOnlyDecodesTheNewImage` |
+| 318 | MessageImageDecoding | 空串与非法 base64 的丢弃语义不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `invalidAndEmptyPayloadsAreDropped` |
+| 319 | MessageImageDecoding | 没有附件时不进入解码路径 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyAttachmentsDoNotDecode` |
+| 320 | MessageImageBodyDecoding | V1–V3 助手正文每次求值只解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `legacyAssistantBodyDecodesOnce` |
+| 321 | MessageImageBodyDecoding | V4 助手正文每次求值只解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zcodeAssistantBodyDecodesOnce` |
+| 322 | MessageImageBodyDecoding | V5 助手正文每次求值只解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `chatGPTAssistantBodyDecodesOnce` |
+| 323 | MessageImageBodyDecoding | 工具结果有正文时每次求值只解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolResultWithTextDecodesOnce` |
+| 324 | MessageImageBodyDecoding | 工具结果空输出分支不得多解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolResultWithEmptyTextDecodesOnce` |
+| 325 | MessageImageBodyDecoding | 没有图片的工具结果不进入解码路径 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolResultWithoutImagesDoesNotDecode` |
+| 326 | MessageImageBodyDecoding | 加载中不触碰图片字节 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadingToolResultDoesNotDecode` |
 
 > 说明：全部 **311 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 39 / 39
-- P1: 已覆盖 232 / 232
-- P2: 已覆盖 40 / 40
-- **合计: 311 / 311**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 48 / 48
+- P1: 已覆盖 236 / 236
+- P2: 已覆盖 42 / 42
+- **合计: 326 / 326**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（39 条）
-- **P1**: 其余功能性用例（232 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（40 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
+- **P1**: 其余功能性用例（236 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（42 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 311 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 326 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
