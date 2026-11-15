@@ -13,22 +13,17 @@ Lumi 是一款面向 macOS 的 AI 驱动个人桌面助理应用。它将 LLM �
 
 ## 功能特性
 
-- **多供应商 LLM 对话** — 内置 20+ 个供应商集成，包括 OpenAI、Anthropic、DeepSeek、智谱、MiniMax、Kimi Code、阿里云、阶跃星辰、小米、OpenRouter、Codex，以及通过 MLX 运行的本地模型。部分集成会提供多个 Provider 实现。
+- **多供应商 LLM 对话** — 内置多个供应商集成，包括 OpenAI、Anthropic、DeepSeek、智谱、MiniMax、Kimi Code、阿里云、阶跃星辰、小米、OpenRouter、Codex，以及通过 MLX 运行的本地模型。
 - **带工具调用的 Agent** — 读取和编辑文件、执行 Shell 命令、抓取和搜索网页、使用浏览器与电脑控制工具、读取图片，并可在任务中途向用户提问。
 - **内置代码编辑器** — 项目文件树、语法高亮、模糊文件搜索、大纲、引用查找、调用层级、问题面板、语言服务与 Markdown 预览。
 - **开发者工具** — 原生终端、Git/GitHub 集成、SQLite/MySQL/PostgreSQL/Redis 数据库工具、Docker、Homebrew、端口与 hosts 管理，以及项目诊断。
 - **系统实用工具** — 剪贴板历史、磁盘与网络监控、屏幕录制、OCR、显示器控制、防休眠、下载等。
 - **项目智能化** — 按项目配置的 Agent 规则、技能、记忆、项目文件搜索，以及面向代码问题的本地向量 RAG。
-- **主题与定制** — 100+ 个默认插件，支持运行时启用/禁用插件，并内置 22 个主题。
-- **本地 HTTP API** — 内置 Web Server 仅监听本机回环地址，并聚合已启用插件贡献的路由。
-
-> 当前默认应用尚未提供 MCP 客户端支持。仓库中只有少量 MCP 兼容性注释，还没有 MCP 包或 stdio/SSE 传输实现。
+- **主题与定制** — 支持运行时启用/禁用插件，并内置 22 个主题。
 
 ## 下载
 
-从 [Releases](https://github.com/CofficLab/Lumi/releases) 页面下载最新 DMG。发布流程会生成架构独立的 `arm64` 和 `x86_64` DMG。直营分发版本通过 [Sparkle](https://sparkle-project.org) 更新；Debug 构建会关闭应用更新。
-
-Mac App Store 分发版本与直营分发版本在 entitlements 和更新集成方面可能不同，请以对应版本的发布说明为准。
+从 [Releases](https://github.com/CofficLab/Lumi/releases) 页面下载最新 DMG。
 
 ## 架构设计
 
@@ -101,8 +96,7 @@ sequenceDiagram
 ## 系统要求
 
 - macOS 14.0 或更高版本
-- Xcode 27.0 或更高版本。工程使用 Xcode 的 JSON 工程格式（`project.xcproj`），
-  Xcode 26 无法打开。发布流程运行在 `xcode-27` runner 上，使用 Xcode 27.0。
+- Xcode 26 或更高版本。工程使用 Xcode 的 JSON 工程格式（`project.xcproj`）。
 - Swift 6.0 或更高版本
 
 部分功能需要额外的 macOS 权限。例如 Computer Use 和屏幕捕获需要相应的辅助功能、自动化或屏幕录制权限。
@@ -145,7 +139,7 @@ swift test --package-path Packages/PluginAgentLoop
 
 ## 参与贡献
 
-欢迎在 [CofficLab/Lumi](https://github.com/CofficLab/Lumi) 提交 Issue 与 Pull Request。新功能通常实现为 `Plugin*` 包，并在 [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift) 中完成装配。建议从 [`SuperPlugin`](https://github.com/lumi-softworks/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift)、现有插件以及对应的 `Provider*` 契约开始了解。
+欢迎在 [CofficLab/Lumi](https://github.com/CofficLab/Lumi) 提交 Issue 与 Pull Request。
 
 ## 许可证
 
