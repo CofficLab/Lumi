@@ -18,12 +18,20 @@ enum TextActionsSettings {
         TextActionsPluginLocalStore.shared.isEnabled
     }
 
+    /// 选区监听的启停目标。
+    ///
+    /// - Important: 注入点而非写死 `TextSelectionManager.shared`。回归 #303
+    ///   要求「设置开关与插件生命周期统一持有并清理同一个监听」，单测据此
+    ///   注入替身断言关闭开关确实停止监听，而不必注册真实全局监听。生产
+    ///   默认仍是单例，与插件的 `selectionMonitor` 指向同一对象。
+    @MainActor static var selectionMonitor: any TextSelectionMonitoring = TextSelectionManager.shared
+
     @MainActor static func setEnabled(_ enabled: Bool) {
         TextActionsPluginLocalStore.shared.setEnabled(enabled)
         if enabled {
-            TextSelectionManager.shared.startMonitoring()
+            selectionMonitor.startMonitoring()
         } else {
-            TextSelectionManager.shared.stopMonitoring()
+            selectionMonitor.stopMonitoring()
         }
     }
 }

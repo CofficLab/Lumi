@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 102 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 124 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 102
+测试文件: 9 个，用例总数: 124
 
 核心组件（源码目录）:
 - `Views/`
@@ -33,11 +33,13 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **TextActionsPlugin**（16 条）：由 `pluginMetadata`、`localStorePersistsEnabledFlagInBinaryPlist`、`localStoreWritesNoUserDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionsCore**（31 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionsCore**（38 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor`、`dragBeyondThresholdIsSelection`、`copyAndCutShortcutsNeverEvaluate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionMenuPanel**（13 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionMenuPanel**（14 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`closeForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextSelectionSuppression**（7 条）：键盘消失后的一次性抑制语义——只压制让菜单消失的那一次按键随后的同文本 keyUp（命中即消费），键码变化或选区清空立即解除；改动该逻辑时优先跑对应测试文件（issue #1058）。
+- **划词监听清理**（2 条）：由 `toggleOffStopsSelectionMonitoring`、`pluginDisableStopsMonitorStartedByToggle` 锁定——设置开关与插件生命周期统一持有并清理同一个选区监听，关闭功能或停用插件后不得再读选区/弹浮层；改动 `TextActionsSettings.setEnabled` 或插件 `onDisable`/`onShutdown` 时优先跑对应测试文件（回归 #303）。
+- **TextActionsTrigger**（12 条）：由 `plainClickDoesNotReadSelection`、`dragReadsSelection`、`rightClickNeverTriggers`、`copyKeyUpDoesNotReadSelection` 等用例锁定——触发必须是「刚完成一次选择手势」，普通单击/右键/复制剪切快捷键不得触发选区读取；改动 `TextSelectionManager.handleSelectionTrigger` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -145,27 +147,51 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 100 | TextActionsCore | 落在浮层窗口内的事件不算外部事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `eventInsidePanelIsIgnored` |
 | 101 | TextActionsCore | 落在其他窗口的事件会关闭浮层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `eventInOtherWindowIsDismissed` |
 | 102 | TextActionsCore | 窗口号未知时不能误判为浮层内 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownWindowNumberNeverMatches` |
+| 103 | 划词监听清理 | 关闭设置开关后不得继续监听选区（**回归 #303**） | 注入监听替身与临时存储目录 | `setEnabled(true)` 后再 `setEnabled(false)` | 监听停止，stopCount 为 1 | P0 | ✅ 已覆盖 | `toggleOffStopsSelectionMonitoring` |
+| 104 | 划词监听清理 | 停用插件不得残留设置开关启动的监听（**回归 #303**） | 开关与插件注入同一个监听替身 | `setEnabled(true)` 后调用 `onDisable` | 监听停止，stopCount 为 1 | P0 | ✅ 已覆盖 | `pluginDisableStopsMonitorStartedByToggle` |
+| 105 | TextActionsCore | 拖拽超过阈值算选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dragBeyondThresholdIsSelection` |
+| 106 | TextActionsCore | 阈值内的抖动单击不算选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clickWithJitterIsNotSelection` |
+| 107 | TextActionsCore | 双击/三击无位移也算选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multiClickIsSelection` |
+| 108 | TextActionsCore | Shift+单击扩选算选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shiftClickIsSelection` |
+| 109 | TextActionsCore | 没有按下位置时单击不算选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingPressLocationIsNotSelection` |
+| 110 | TextActionsCore | 拖拽阈值常量固定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `dragThresholdIsStable` |
+| 111 | TextActionsCore | 复制/剪切快捷键的 keyUp 永不触发重读 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `copyAndCutShortcutsNeverEvaluate` |
+| 112 | TextActionMenuPanel | close 转发给注入的处理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `closeForwardsToHandler` |
+| 113 | TextActionsTrigger | 普通单击不读取选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `plainClickDoesNotReadSelection` |
+| 114 | TextActionsTrigger | 拖拽划选读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dragReadsSelection` |
+| 115 | TextActionsTrigger | 双击选词读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doubleClickReadsSelection` |
+| 116 | TextActionsTrigger | Shift+单击扩选读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shiftClickReadsSelection` |
+| 117 | TextActionsTrigger | 单击之后重新拖拽仍能触发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dragAfterPlainClickStillTriggers` |
+| 118 | TextActionsTrigger | 没有按下位置时单击不触发 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `mouseUpWithoutPressDoesNotTrigger` |
+| 119 | TextActionsTrigger | 右键事件不触发读取，掩码不含右键 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rightClickNeverTriggers` |
+| 120 | TextActionsTrigger | 菜单不可见时 Cmd+C 的 keyUp 不读取选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `copyKeyUpDoesNotReadSelection` |
+| 121 | TextActionsTrigger | 菜单不可见时 Cmd+X 的 keyUp 不读取选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cutKeyUpDoesNotReadSelection` |
+| 122 | TextActionsTrigger | 非选择快捷键的 keyUp 不读取选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonSelectionShortcutKeyUpDoesNotReadSelection` |
+| 123 | TextActionsTrigger | Shift+方向键的 keyUp 读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shiftArrowKeyUpReadsSelection` |
+| 124 | TextActionsTrigger | Cmd+A 的 keyUp 读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectAllKeyUpReadsSelection` |
 
-> 说明：全部 **102 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> **回归 #303 变异验证**：U-M1 把 `TextActionsSettings.setEnabled` 的关闭分支改成不停止监听，`toggleOffStopsSelectionMonitoring` 必须变红（路径 B 用例保持绿）；U-M2 把插件 `onDisable` 改成空操作，`pluginDisableStopsMonitorStartedByToggle` 必须变红（路径 A 用例保持绿）。两处还原后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 87 / 87
-- P2: 已覆盖 10 / 10
-- **合计: 102 / 102**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 99 / 99
+- P2: 已覆盖 11 / 11
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（87 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（99 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 102 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
