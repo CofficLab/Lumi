@@ -24,6 +24,8 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
     public let policy: MCPPermissionPolicy
     /// 用户单工具风险覆盖。
     public let riskOverride: CommandRiskLevel?
+    /// 会话是否来自 Xcode 原生 mcpbridge（决定是否套用 Xcode 精确规则表，#530）。
+    public let isXcodeNativeServer: Bool
 
     public init(
         serverID: String,
@@ -31,7 +33,8 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
         descriptor: MCPToolDescriptor,
         session: any MCPServerServing,
         policy: MCPPermissionPolicy,
-        riskOverride: CommandRiskLevel? = nil
+        riskOverride: CommandRiskLevel? = nil,
+        isXcodeNativeServer: Bool = false
     ) {
         self.serverID = serverID
         self.serverName = serverName
@@ -39,6 +42,7 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
         self.session = session
         self.policy = policy
         self.riskOverride = riskOverride
+        self.isXcodeNativeServer = isXcodeNativeServer
         self.name = "\(serverID).\(descriptor.name)"
     }
 
@@ -71,12 +75,12 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        policy.level(for: descriptor, override: riskOverride)
+        policy.level(for: descriptor, override: riskOverride, isXcodeNativeServer: isXcodeNativeServer)
     }
 
     /// 只读工具（注解 readOnlyHint 且策略判定为 safe/low）可并行；其余串行。
     public var executionCapability: ToolExecutionCapability {
-        let level = policy.level(for: descriptor, override: riskOverride)
+        let level = policy.level(for: descriptor, override: riskOverride, isXcodeNativeServer: isXcodeNativeServer)
         if descriptor.readOnlyHint == true, level == .safe || level == .low {
             return .parallelReadOnly
         }
