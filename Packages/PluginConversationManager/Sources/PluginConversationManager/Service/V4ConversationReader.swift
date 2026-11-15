@@ -159,6 +159,10 @@ public actor V4ConversationReader: SuperLog {
             preview: entity.preview,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
+            // v4 没有独立的最后消息时间字段，updatedAt 是唯一可用的活跃时间。
+            // 与 ConversationSummary 解码器的回退一致；缺省会落到 createdAt，
+            // 使迁移后的会话排序与活跃时间显示错误（#836）。
+            lastMessageAt: entity.updatedAt,
             verbosity: entity.verbosity.flatMap { ResponseVerbosity(rawValue: $0) },
             language: entity.languagePreference.flatMap { ConversationLanguage(rawValue: $0) },
             // v4 的 chatMode 即 v5 的 automationLevel（均为 a1/a2/a3 编码）

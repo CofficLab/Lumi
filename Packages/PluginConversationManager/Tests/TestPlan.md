@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 93 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 101 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 93
+测试文件: 12 个，用例总数: 101
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -158,27 +158,28 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 98 | ConversationStoreSettingsViewModel | 未跟踪会话不计数（**回归 #1311**） | 设置页可见，已加载列表 | 对不在列表里的会话投递 `.persisted` | 不查库，计数字典不含该会话 | P1 | ✅ 已覆盖 | `untrackedConversationIsNotCounted` |
 | 99 | ConversationStoreSettingsViewModel | 计数未变不重新发布（**回归 #1311**） | 设置页可见，两个会话已加载 | 对非选中会话投递计数不变的 `.persisted` | 不触发 `objectWillChange`，计数保持原值 | P1 | ✅ 已覆盖 | `unchangedCountDoesNotRepublish` |
 | 100 | ConversationStoreSettingsViewModel | 重新打开补齐落后计数（**回归 #1311**） | 关闭期间计数变化被忽略 | 重新打开设置页 | 计数刷新为最新值 | P1 | ✅ 已覆盖 | `reopeningRefreshesStaleCounts` |
+| 101 | ConversationLegacyMigration | v4 迁移必须把 lastMessageAt 映射为 updatedAt，不得回退 createdAt（**回归 #836**） | 旧库含 A（创建 day1/活跃 day10）与 B（创建 day5/活跃 day5） | 读取迁移摘要并按 lastMessageAt 降序排序 | A.lastMessageAt=day10≠createdAt，B=day5，排序为 A、B | P0 | ✅ 已覆盖 | `readerMapsLastMessageAtToUpdatedAtForActivitySorting` |
 
-> 说明：全部 **100 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
+- P0: 已覆盖 15 / 15
 - P1: 已覆盖 78 / 78
 - P2: 已覆盖 8 / 8
-- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
+- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
 - **P1**: 其余功能性用例（78 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 100 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
