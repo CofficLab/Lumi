@@ -213,6 +213,11 @@ public final class ACPTurnCoordinator {
             guard let self else { return }
             guard let turn = self.activeTurns[sessionID], !turn.finalized else { return }
             guard !turn.hasLLMProgress else { return }
+            // 只发 refusal 不取消底层回合的话，模型晚回包后工具仍会照常执行，
+            // 产生客户端既不能停止也观察不到的副作用（#222）。先取消再收尾，
+            // 与 session/cancel 路径一致；finalize 的 finalized 标志保证随后
+            // 到达的 cancelled 事件不会重复响应。
+            self.agentLoop.cancelTurn(in: turn.conversationID)
             await self.finalize(
                 conversationID: turn.conversationID,
                 cancelled: false,

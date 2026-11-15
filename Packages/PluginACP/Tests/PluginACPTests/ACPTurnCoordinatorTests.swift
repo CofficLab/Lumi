@@ -872,6 +872,74 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(decoded?.stopReason, .endTurn)
     }
 
+    func testWatchdogTimeoutCancelsUnderlyingTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let shortCoordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/wd-cancel")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+
+        // 超时拒绝必须同时取消底层回合，否则模型晚回包后工具仍会执行（#222）。
+        XCTAssertEqual(runner.cancelCalls, [conversationID])
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望 watchdog 超时响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
+
+        // 取消产生的 cancelled 事件晚到：不得重复响应，也不得把 refusal 改成 cancelled。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let only = responses.first, case .response(_, let result) = only else {
+            return XCTFail("期望唯一响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
+    }
+
+    func testWatchdogTimeoutIgnoresLateToolCalls() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let shortCoordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/wd-late")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertFalse(runner.cancelCalls.isEmpty)
+
+        // 模型在超时拒绝之后才回包带工具调用：不得再向客户端上报任何副作用。
+        let countBefore = box.messages.count
+        runner.emit(.toolCallsReceived(
+            conversationID: conversationID,
+            turnID: UUID(),
+            assistantMessageID: UUID(),
+            toolCalls: [MessageToolCall(id: "late", name: "bash", arguments: #"{}"#)]
+        ))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertEqual(box.messages.count, countBefore)
+    }
+
     // MARK: - 流式输出
 
     /// 可手动推进的流式 store mock。
