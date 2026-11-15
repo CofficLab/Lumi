@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
     ],
     targets: [
@@ -31,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

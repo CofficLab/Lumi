@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiThemePack.git", from: "1.0.13"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginActivityBar.git", from: "1.0.5"),
@@ -32,7 +32,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -40,7 +40,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiThemePack", package: "LumiThemePack"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "PluginActivityBar", package: "LumiPluginActivityBar"),
@@ -73,7 +73,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderTheme", package: "LumiProviders"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),

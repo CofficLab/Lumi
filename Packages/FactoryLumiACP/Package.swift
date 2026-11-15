@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
@@ -27,7 +27,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../ProviderACP"),
         .package(path: "../PluginACP"),
@@ -89,7 +89,7 @@ let package = Package(
             name: "FactoryLumiACP",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
@@ -124,7 +124,7 @@ let package = Package(
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToast", package: "LumiProviders"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderWebServer", package: "ProviderWebServer"),
                 .product(name: "ProviderDeveloperMode", package: "LumiProviders"),

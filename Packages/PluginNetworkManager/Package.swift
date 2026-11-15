@@ -10,14 +10,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(path: "../KitHttp"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(path: "../KitShell"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
@@ -26,10 +26,10 @@ let package = Package(
         .target(
             name: "PluginNetworkManager",
             dependencies: [
-                "KitAgentTool",
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 "KitHttp",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitLLM",
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
@@ -39,7 +39,7 @@ let package = Package(
                 .product(name: "ProviderNetwork", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                "ProviderToolManager",
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 "KitShell",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
@@ -49,11 +49,11 @@ let package = Package(
             name: "PluginNetworkManagerTests",
             dependencies: [
                 "PluginNetworkManager",
-                "KitAgentTool",
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderMenuBar", package: "LumiProviders"),
-                "ProviderToolManager",
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),
     ]

@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageSender"),
     ],
     targets: [
@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ],
             path: "Sources/PluginConversationState"

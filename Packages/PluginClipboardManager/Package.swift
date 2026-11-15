@@ -18,7 +18,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
 .target(
@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/PluginClipboardManager",
             resources: [
@@ -48,8 +48,8 @@ let package = Package(
             name: "ClipboardManagerPluginTests",
             dependencies: [
                 .target(name: "ClipboardManagerPlugin"),
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Tests"

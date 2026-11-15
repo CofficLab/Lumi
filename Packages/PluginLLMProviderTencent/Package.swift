@@ -13,7 +13,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -21,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
             ],
             path: "Sources/PluginLLMProviderTencent"
         ),

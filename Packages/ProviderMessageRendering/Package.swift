@@ -9,14 +9,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [
         .target(
             name: "ProviderMessageRendering",
             dependencies: [
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],

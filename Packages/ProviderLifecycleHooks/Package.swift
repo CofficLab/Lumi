@@ -8,14 +8,14 @@ let package = Package(
         .library(name: "ProviderLifecycleHooks", targets: ["ProviderLifecycleHooks"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [
         .target(
             name: "ProviderLifecycleHooks",
             dependencies: [
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Sources/ProviderLifecycleHooks"

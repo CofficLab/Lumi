@@ -16,7 +16,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderLLMManager",
                 "ProviderMessage",
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                "KitLLM",
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

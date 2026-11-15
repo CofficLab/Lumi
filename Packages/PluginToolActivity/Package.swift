@@ -13,9 +13,9 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/KitLLM.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                "ProviderToolManager",
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ],
             path: "Sources/PluginToolActivity",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -36,9 +36,9 @@ let package = Package(
             dependencies: [
                 "PluginToolActivity",
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                "ProviderToolManager",
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
             ],
             path: "Tests/PluginToolActivityTests"
         ),

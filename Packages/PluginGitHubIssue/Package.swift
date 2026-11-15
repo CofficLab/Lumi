@@ -11,18 +11,18 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "PluginGitHubIssue",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ],
             path: "Sources/PluginGitHubIssue"
         ),
@@ -30,8 +30,8 @@ let package = Package(
             name: "PluginGitHubIssueTests",
             dependencies: [
                 "PluginGitHubIssue",
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
             ],
             path: "Tests/PluginGitHubIssueTests"
         ),

@@ -16,8 +16,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitMCP"),
@@ -29,8 +29,8 @@ let package = Package(
             name: "BrowserPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),

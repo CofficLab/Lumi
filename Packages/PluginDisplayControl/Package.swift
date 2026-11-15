@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
 .target(
@@ -35,7 +35,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/PluginDisplayControl",
             resources: [
@@ -46,8 +46,8 @@ let package = Package(
             name: "DisplayControlPluginTests",
             dependencies: [
                 .target(name: "DisplayControlPlugin"),
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Tests"

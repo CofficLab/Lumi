@@ -17,8 +17,8 @@ let package = Package(
         .package(path: "../KitWebServer"),
         .package(path: "../KitWebAPI"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
@@ -33,7 +33,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 "ProviderWebServer",
                 "KitWebServer",
                 "KitWebAPI",
@@ -50,8 +50,8 @@ let package = Package(
                 "ProviderWebServer",
                 "KitWebServer",
                 "KitWebAPI",
-                "ProviderToolManager",
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
             ]
         ),
     ]

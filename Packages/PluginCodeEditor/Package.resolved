@@ -20,15 +20,6 @@
       }
     },
     {
-      "identity" : "kitagenttool",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
-      "state" : {
-        "revision" : "cb2f0450a85aa18772c06f9b442beccd8e44b1a0",
-        "version" : "1.0.2"
-      }
-    },
-    {
       "identity" : "languageclient",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/LanguageClient",
@@ -56,6 +47,15 @@
       }
     },
     {
+      "identity" : "lumikitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
+      "state" : {
+        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
+        "version" : "1.0.3"
+      }
+    },
+    {
       "identity" : "lumilocalization",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiLocalization.git",
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
-        "version" : "1.23.0"
+        "revision" : "218327a2a2268a759d0c064bbbcd4b46c400a9d4",
+        "version" : "1.24.1"
       }
     },
     {

@@ -8,22 +8,22 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(path: "../KitCADDesigner"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "PluginCADDesigner",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitAgentTool",
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "KitCADDesigner", package: "KitCADDesigner"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                "ProviderToolManager",
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),
         .testTarget(
@@ -31,7 +31,7 @@ let package = Package(
             dependencies: [
                 "PluginCADDesigner",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitAgentTool",
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "KitCADDesigner", package: "KitCADDesigner"),

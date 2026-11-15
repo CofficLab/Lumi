@@ -17,24 +17,24 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),        .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitShell"),
         .package(path: "../KitProjectDetect"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "ProjectOverviewPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "KitProjectDetect", package: "KitProjectDetect"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
             ],
             path: "Sources/PluginProjectOverview",
@@ -49,7 +49,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ],
             path: "Tests"
         )

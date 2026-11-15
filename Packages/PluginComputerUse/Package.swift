@@ -11,8 +11,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
@@ -22,15 +22,15 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/KitTestSupport.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "ComputerUsePlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
@@ -42,7 +42,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/ComputerUsePlugin",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -51,7 +51,7 @@ let package = Package(
             name: "ComputerUsePluginTests",
             dependencies: [
                 "ComputerUsePlugin",
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
             ],
             path: "Tests/ComputerUsePluginTests"
         ),
