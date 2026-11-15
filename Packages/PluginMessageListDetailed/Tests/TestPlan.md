@@ -187,27 +187,36 @@ PluginMessageListDetailed Lumi 消息列表 **V3（详细）** 实现包。工�
 | 126 | ListV3HistoryFingerprint | 工具结果等长文本替换后历史行必须更新，不得保留旧输出（#147） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `equalLengthToolResultTextRebuildsRows` |
 | 127 | ListV3HistoryFingerprint | 工具结果 isError 翻转后历史行随之更新（#147） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultErrorFlagChangeRebuildsRows` |
 | 128 | ListV3HistoryFingerprint | 工具结果 interactionState 变化后历史行随之更新（#147） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolResultInteractionStateChangeRebuildsRows` |
+| 129 | MessageListScrollCoordinator | 锚点恢复会取消已排程的底部跟随，并全程持有恢复标记（#1330） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pinToAnchorCancelsScheduledBottomFollow` |
+| 130 | MessageListScrollCoordinator | 锚点恢复在文档高度稳定前持续重试钉回锚点（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToAnchorRetriesUntilDocumentStable` |
+| 131 | MessageListScrollCoordinator | 新的底部意图会打断进行中的锚点恢复并解除抑制（#1330） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bottomFollowInvalidatesAnchorRestore` |
+| 132 | MessageListScrollCoordinator | cancelPendingTasks 会解除锚点恢复的抑制标记（#1330） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelPendingTasksClearsAnchorRestoreFlag` |
+| 133 | PrependAnchorRestore | 锚点恢复期间：prepend 式文档增长不得把视口钉到新底部（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `growthDuringAnchorRestoreDoesNotPinToBottom` |
+| 134 | PrependAnchorRestore | 锚点恢复结束后：簿记已更新，后续增长不得用陈旧几何误判钉底（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `growthAfterAnchorRestoreUsesFreshBookkeeping` |
+| 135 | PrependAnchorRestore | 绑定新的滚动视图时：锚点恢复标记必须被重置（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `attachResetsAnchorRestoreFlag` |
+| 136 | HistoryWindowChange | prepend（只有头部变化）不算新尾部内容（#1330） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `prependIsNotNewTail` |
+| 137 | HistoryWindowChange | append / 首屏加载 / 会话切换都算新尾部内容（#1330） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tailGrowthIsNewTail` |
 
-> 说明：全部 **128 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **137 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
-- P1: 已覆盖 76 / 76
+- P0: 已覆盖 41 / 41
+- P1: 已覆盖 81 / 81
 - P2: 已覆盖 15 / 15
-- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
+- **合计: 137 / 137**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
-- **P1**: 其余功能性用例（76 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（41 条）
+- **P1**: 其余功能性用例（81 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 137 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

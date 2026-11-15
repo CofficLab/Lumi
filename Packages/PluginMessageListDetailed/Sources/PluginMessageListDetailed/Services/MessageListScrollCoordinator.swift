@@ -43,6 +43,10 @@ final class MessageListScrollCoordinator {
     private var pendingBottomScrollTask: Task<Void, Never>?
     private var preparationSequence: UInt64 = 0
     private var scrollGeneration: UInt64 = 0
+    /// 锚点恢复的代次：新的恢复或任何底部意图都会让它失效（#1330）。
+    private var anchorGeneration: UInt64 = 0
+    /// 正在执行锚点恢复的目标；用于在底部意图到来时解除 tracker 抑制。
+    private weak var anchorRestoreTarget: (any MessageListScrollingTarget)?
 
     deinit {
         pendingBottomScrollTask?.cancel()
@@ -57,6 +61,18 @@ final class MessageListScrollCoordinator {
         pendingBottomScrollTask = nil
         preparationSequence &+= 1
         scrollGeneration &+= 1
+        invalidateAnchorRestore()
+    }
+
+    /// 打断进行中的锚点恢复并解除 tracker 抑制（#1330）。
+    ///
+    /// 任何「滚到底」意图（新消息、首屏定位、会话切换）都优先于锚点恢复：
+    /// 恢复循环在下一个检查点自行退出，抑制标记必须在这里立即清除，
+    /// 否则后续的底部跟随会被 tracker 的增长钉底抑制卡住。
+    private func invalidateAnchorRestore() {
+        anchorGeneration &+= 1
+        anchorRestoreTarget?.setAnchorRestoring(false)
+        anchorRestoreTarget = nil
     }
 
     /// 在首次显示消息列表前完成布局并定位到底部。
@@ -75,6 +91,7 @@ final class MessageListScrollCoordinator {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
         preparationSequence &+= 1
+        invalidateAnchorRestore()
         let sequence = preparationSequence
 
         guard !messages.isEmpty else { return true }
@@ -122,6 +139,7 @@ final class MessageListScrollCoordinator {
     ) {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
+        invalidateAnchorRestore()
         guard !messages.isEmpty, condition() else { return }
         target.scrollToBottom(animated: animated)
         // macOS 14 首次布局未完成时 scrollTo 会静默丢失，补一次重试。
@@ -151,7 +169,7 @@ final class MessageListScrollCoordinator {
         var stableFrames = 0
 
         for _ in 0..<Self.bottomSettleMaxAttempts {
-            guard !Task.isCancelled, condition() else { return }
+            guard !Task.isCancelled, anchorRestoreTarget == nil, condition() else { return }
             guard let current = target.pinToBottom() else { return }
 
             if let previous,
@@ -190,6 +208,7 @@ final class MessageListScrollCoordinator {
         // Debouncing by cancellation here starves the scroll during a steady
         // stream (each update arrives before the 30ms delay expires).
         guard pendingBottomScrollTask == nil else { return }
+        invalidateAnchorRestore()
 
         let generation = scrollGeneration
         pendingBottomScrollTask = Task { @MainActor [weak self] in
@@ -229,10 +248,53 @@ final class MessageListScrollCoordinator {
     }
 
     /// 等待 `postPrependDelayNs` 让 prepend 的新行完成布局，再把指定 id 钉回视口顶部。
+    ///
+    /// 互斥（#1330）：prepend 与「跟随滚到底」是两种互斥意图。进入时先取消
+    /// 已排程的底部滚动、作废在途的钉底收敛循环，并通知底部追踪器在恢复期间
+    /// 抑制「文档长高 → 钉底」——否则 tracker 会把 prepend 的高度增长当成
+    /// 新消息，把用户拽到新的底部。
+    ///
+    /// 重试：大 prepend 之后懒加载行高会持续修正，单次 `scrollTo` 可能落在
+    /// 错误偏移；仿照 `settleBottom` 重试到文档高度稳定为止。
     func pinToAnchor(target: any MessageListScrollingTarget, anchorID: UUID) async {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = nil
+        scrollGeneration &+= 1
         let generation = scrollGeneration
+        anchorGeneration &+= 1
+        let anchorSequence = anchorGeneration
+        anchorRestoreTarget = target
+        target.setAnchorRestoring(true)
+        defer {
+            if anchorSequence == anchorGeneration {
+                target.setAnchorRestoring(false)
+                anchorRestoreTarget = nil
+            }
+        }
+
         try? await Task.sleep(nanoseconds: Self.postPrependDelayNs)
-        guard !Task.isCancelled, generation == scrollGeneration else { return }
+        guard !Task.isCancelled,
+              generation == scrollGeneration,
+              anchorSequence == anchorGeneration else { return }
         target.scrollToAnchorTop(anchorID)
+
+        var previousHeight: CGFloat?
+        var stableFrames = 0
+        for _ in 0..<Self.bottomSettleMaxAttempts {
+            try? await Task.sleep(nanoseconds: Self.bottomSettleDelayNs)
+            guard !Task.isCancelled,
+                  generation == scrollGeneration,
+                  anchorSequence == anchorGeneration else { return }
+            guard let height = target.documentHeight() else { return }
+
+            if let previousHeight, abs(height - previousHeight) < 0.5 {
+                stableFrames += 1
+                if stableFrames >= Self.bottomSettleStableFrames { return }
+            } else {
+                stableFrames = 0
+            }
+            previousHeight = height
+            target.scrollToAnchorTop(anchorID)
+        }
     }
 }

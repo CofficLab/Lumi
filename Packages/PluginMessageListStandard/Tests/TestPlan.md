@@ -186,27 +186,30 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 127 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
 | 128 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
 | 129 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
+| 130 | PrependAnchorRestore | 锚点恢复期间：prepend 式文档增长不得把视口钉到新底部（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `growthDuringAnchorRestoreDoesNotPinToBottom` |
+| 131 | PrependAnchorRestore | 锚点恢复结束后：簿记已更新，后续增长不得用陈旧几何误判钉底（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `growthAfterAnchorRestoreUsesFreshBookkeeping` |
+| 132 | PrependAnchorRestore | 绑定新的滚动视图时：锚点恢复标记必须被重置（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `attachResetsAnchorRestoreFlag` |
 
-> 说明：全部 **129 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **132 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 42 / 42
+- P0: 已覆盖 45 / 45
 - P1: 已覆盖 74 / 74
 - P2: 已覆盖 13 / 13
-- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
+- **合计: 132 / 132**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（45 条）
 - **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 129 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 132 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
