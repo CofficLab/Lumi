@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 162
+测试文件: 16 个，用例总数: 178
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -222,27 +222,43 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 160 | GoalTaskV2 | 精确 goal_id 在本会话内仍可解析（含终态 Goal） | 本会话创建 Goal 并取得 goal_id | 调用 `get_goal_progress`，标记 completed 后再查 | 两次均 isError==false，完成后可读到 completed（**回归** #189） | P1 | ✅ 已覆盖 | `testPreciseGoalIdResolvesWithinSameConversation` |
 | 161 | GoalTaskV2 | update_task_status 不得跨会话改写任务 | 会话 A 有 Goal+任务，从会话 B 上下文传 A 的 task_id | 调用 `update_task_status`（status=completed） | 抛 task not found；A 的任务/Goal 状态不变，续跑计数不被清零（**回归** #190） | P0 | ✅ 已覆盖 | `testUpdateTaskStatusCannotCrossConversations` |
 | 162 | GoalTaskV2 | update_task_status 在本会话内仍可更新任务 | 本会话创建 Goal+任务并取得 task_id | 调用 `update_task_status`（status=completed） | isError==false，任务状态变为 completed（**回归** #190） | P1 | ✅ 已覆盖 | `testUpdateTaskStatusResolvesWithinSameConversation` |
+| 163 | GoalHooks | 用户编辑后下一轮注入新文本与一次性提示，提示只出现一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUserEditInjectsNewContentAndOneShotNotice` |
+| 164 | GoalHooks | 没有用户编辑时不注入编辑提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testNoEditNoticeWithoutUserEdit` |
+| 165 | GoalHooks | blocked 期间编辑不消费提示标记，重新活跃后才注入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testEditNoticeDeferredWhileBlocked` |
+| 166 | GoalDisplayAndVM | 保存编辑写库并经 GoalChangeCenter 通知当前会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUpdateGoalContentNotifiesAndPersists` |
+| 167 | GoalDisplayAndVM | 旧会话的迟到保存不通知新会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testStaleSaveDoesNotNotifyAfterConversationSwitch` |
+| 168 | GoalDisplayAndVM | 写入失败时原样抛出且不通知 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testUpdateGoalContentRethrowsWithoutNotify` |
+| 169 | GoalDisplayAndVM | manager 不可用时保存抛出 managerUnavailable | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testUpdateGoalContentWithoutManagerThrows` |
+| 170 | GoalStateManager | 用户编辑更新内容字段并刷新 updatedAt，不改状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUpdateGoalContent` |
+| 171 | GoalStateManager | 用户编辑拒绝未知与终态 Goal | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testUpdateGoalContentRejectsUnknownAndTerminal` |
+| 172 | GoalStateManager | 用户编辑拒绝空标题并把空内容归一为 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testUpdateGoalContentValidation` |
+| 173 | GoalStateManager | 用户编辑设置一次性提示，恰好消费一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUserEditNoticeConsumedOnce` |
+| 174 | GoalStateManager | 用户编辑重置续跑预算；删除 Goal 清理待注入提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUserEditBudgetResetAndNoticeCleanup` |
+| 175 | GoalTaskTools | update_goal_status blocked 时回显 suggested_actions（#857） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateGoalStatusBlockedSurfacesSuggestedActions` |
+| 176 | GoalTaskTools | update_goal_status blocked 但无建议时不输出建议列表（#857） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateGoalStatusBlockedWithoutSuggestionsHasNoList` |
+| 177 | GoalTaskTools | update_goal_status 非 blocked 状态不输出建议列表（#857） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateGoalStatusNonBlockedDoesNotSurfaceSuggestions` |
+| 178 | GoalTaskTools | stringList 逐项 trim、丢弃空串与非字符串项，兼容 [Any]（#857） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testStringListParsing` |
 
-> 说明：全部 **162 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **178 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 128 / 128
-- P2: 已覆盖 15 / 15
-- **合计: 162 / 162**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 138 / 138
+- P2: 已覆盖 16 / 16
+- **合计: 178 / 178**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（128 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（138 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（16 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 162 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 178 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
