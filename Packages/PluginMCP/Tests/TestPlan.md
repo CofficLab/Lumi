@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 9 个，用例总数: 48
+测试文件: 9 个，用例总数: 50
 
 核心组件（源码目录）:
 - `Managers/`
@@ -38,7 +38,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPPluginShutdown**（1 条）：由 `shutdownDisconnectsSessions` 用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（13 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回）；改动该模块时优先跑对应测试文件。
-- **MCPToolAdapter**（10 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPToolAdapter**（12 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定（含 #178 取消透传）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -92,27 +92,30 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 46 | MCPServerRegistry | 解码失败后 CRUD 也不覆盖原文件（回归 #531） | mcp-servers.json 为截断/损坏字节 | 加载后执行 add/update/remove | loadFailed 置位，原文件字节不变 | P0 | ✅ 已覆盖 | `corruptFileSurvivesCRUD` |
 | 47 | MCPServerRegistry | 文件缺失视为首次运行，允许 seed 落库 | 数据目录无 mcp-servers.json | 贡献 Xcode 模板后构建注册表 | loadFailed 不置位，seed 落库且重启后仍在 | P1 | ✅ 已覆盖 | `missingFileAllowsSeed` |
 | 48 | MCPServerRegistry | 合法文件加载不置 loadFailed | 已写入合法配置 | 同目录重建注册表 | loadFailed 不置位，配置完整恢复 | P1 | ✅ 已覆盖 | `validFileDoesNotSetLoadFailed` |
+| 49 | MCPToolAdapter | CancellationError 必须原样透传，不得包装为执行失败（**#178**） | 会话替身抛 CancellationError | 调用 executeResult | 抛出 CancellationError 而非 ToolExecutionError | P0 | ✅ 已覆盖 | `cancellationErrorPassesThrough` |
+| 50 | MCPToolAdapter | 调用返回后任务已取消时不得产出成功结果（**#178**） | 任务先取消再进入 executeResult，会话替身正常回包 | 等待任务结果 | 抛出 CancellationError，不落成功结果 | P0 | ✅ 已覆盖 | `cancelledAfterCallReturnsThrowsCancellation` |
 
-> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
+- P0: 已覆盖 14 / 14
 - P1: 已覆盖 32 / 32
 - P2: 已覆盖 4 / 4
-- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
+- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
 - **P1**: 其余功能性用例（32 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

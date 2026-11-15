@@ -111,6 +111,7 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
 
         do {
             let result = try await session.callTool(name: descriptor.name, arguments: mcpArguments)
+            try Task.checkCancellation()
             var mapped = MCPToolAdapter.mapResult(result)
             if result.isError, let hint = MCPToolAdapter.friendlyHint(for: result.text) {
                 mapped = ToolCallResult(
@@ -120,6 +121,9 @@ public struct MCPToolAdapter: SuperAgentTool, NormalizedSchemaProviding {
                 )
             }
             return mapped
+        } catch is CancellationError {
+            // 取消不是执行失败：原样透传，让调度层把 Job 收敛到 cancelled（#178）。
+            throw CancellationError()
         } catch let error as MCPClientError {
             throw Self.failure(error, toolName: name)
         } catch {
