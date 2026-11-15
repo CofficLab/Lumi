@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 155
+测试文件: 17 个，用例总数: 157
 
 核心组件（源码目录）:
 - `Agent/`
@@ -62,6 +62,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **主键行标识唯一性**（#555，5 条）：`TableChangeManager.rowKey` 必须对每个主键列做「列名 UTF-8 长度前缀 + 值类型标签 + 值 UTF-8 长度前缀」的规范编码，保证不同主键值产生唯一且可逆的 key；不得直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接（含 `|`/`=` 的字符串会错位碰撞、同长度 BLOB 都描述成 "N bytes"、数字与同形字符串无法区分），否则两行的 `updatesByRow`/`deletedRowKeys` 相互覆盖，最终 UPDATE/DELETE 作用到错误主键。由 `TableChangeManagerRowKeyTests` 锁定；改动 `rowKey`/`rowKeyComponent` 时优先跑对应测试文件。
 - **Redis TLS 传输安全**（#273，7 条）：`RedisDriver.connect` 必须把 `config.sslOption` 传给 `RedisConnection`，`RedisConnection.init` 必须按 `RedisTransportPlan.make` 的决策用 `RedisTransportSecurity.makeParameters` 构造 `NWParameters`，不得恒用 `.tcp`。校验强度须与 `TLSSupport.makeTLSConfiguration` 一致：disable/nil 明文；prefer TLS+不校验+可回退；require TLS+不校验+**绝不回退**；verifyCA TLS+仅校验 CA+绝不回退；verifyFull TLS+校验 CA/主机名+绝不回退。否则用户选择 TLS 后仍明文发送 AUTH，泄露凭据。由 `RedisTransportSecurityTests` 锁定；改动 Redis 连接传输层或 SSL 映射时优先跑对应测试文件。
 - **字符串字面量的方言转义**（#582，6 条）：`sqlLiteral(for:dialect:)` 生成内联字符串字面量时必须按方言转义——MySQL 默认开启反斜杠转义（NO_BACKSLASH_ESCAPES 关闭），须先把 `\` 翻倍再转义单引号，否则用户输入的 `\n`/`\t`/`\0` 被静默改写成控制字符、保存后内容与编辑器所见不一致；SQLite/PostgreSQL 标准串里反斜杠是普通字符，只转义单引号。UPDATE/INSERT/DELETE 三处生成路径都须传入当前 `DatabaseType`。由 `TableChangeManagerStringEscapeTests` 锁定；改动 `sqlLiteral`/`escapeSQLString` 或语句生成时优先跑对应测试文件。
+- **后台行数 COUNT 的表身份校验**（#565，2 条）：`refreshTableRowCount` 在 `await` 之后写回共享 `tableRowCount` 前必须比对 `openTableObject?.id == table.id` 与连接代次，否则打开表 A 后快速切到 B，A 的慢 `SELECT COUNT(*)` 晚到会覆盖 B 的行数，分页 bar 据此算出错误的总页数与 Next 可用性；`openObject` 切换时把 `tableRowCount` 重置为 nil，保证新表自行发起 COUNT。由 `DatabaseViewModelRowCountRaceTests` 用门闩构造「旧表 COUNT 晚到」锁定；改动 `refreshTableRowCount`/`loadTablePage` 的行数写回或 `openObject` 重置时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -299,7 +300,14 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 154 | BLOB 主键字面量 | BLOB 主键行的 UPDATE 在真实 SQLite 上命中并修改该行 | 临时 SQLite，files(id BLOB PK, name)，插入 (x'01','before') | 暂存 name→after，执行生成的 UPDATE | 影响 1 行，name 变为 after | P0 | ✅ 已覆盖 | `blobPrimaryKeyUpdateActuallyModifiesRow` |
 | 155 | BLOB 主键字面量 | BLOB 主键行的 DELETE 在真实 SQLite 上命中并删除该行 | 同上 | 标记删除该行，执行生成的 DELETE | 影响 1 行，count 为 0 | P0 | ✅ 已覆盖 | `blobPrimaryKeyDeleteActuallyRemovesRow` |
 
-> 说明：全部 **155 条场景**已在本包 `swift test` 中实跑通过。
+### 后台行数 COUNT 的表身份校验（回归 #565）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|--------|------|----------|
+| 156 | 后台行数 COUNT 竞态 | 旧表的慢 COUNT 晚到时不得覆盖新表的行数（回归 #565） | 假连接按表名返回计数 A=999/B=20，挂起 A 的 COUNT | 打开 A 并挂起其 COUNT，切到 B 完成 B 的 COUNT，再放行 A 的晚到 COUNT | B 的 tableRowCount 仍为 20，不被 A 的 999 污染 | P0 | ✅ 已覆盖 | `staleCountFromPreviousTableDoesNotPolluteNewTable` |
+| 157 | 后台行数 COUNT 竞态 | 当前表自己的 COUNT 正常写回行数 | 假连接 B=20，openTableObject=B | `refreshTableRowCount()` | tableRowCount 等于 20 | P1 | ✅ 已覆盖 | `currentTableCountIsWritten` |
+
+> 说明：全部 **157 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -317,24 +325,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#568）：UPDATE/DELETE 的 WHERE 原先对每个主键值都生成 `pk = 字面量`，NULL 主键变成 `pk = NULL`（SQL 里永不成立），命中 0 行却报保存成功并清空暂存。修复为 `primaryKeyCondition`：NULL 用 `IS NULL`、非 NULL 用 `=`；并在 `saveChanges` 校验行级写入（`isRowTargetingWrite`）的影响行数，命中 0 行回滚报错。M1 把 NULL 分支还原为 `= sqlLiteral(...)`（原 bug）→ `nullPrimaryKeyUpdateUsesIsNull`、`nullPrimaryKeyDeleteUsesIsNull`、`compositePrimaryKeyMixesNullAndEquals`、`nullPrimaryKeyUpdateActuallyModifiesRow`、`nullPrimaryKeyDeleteActuallyRemovesRow` 转红（端到端实测影响 0 行），非 NULL/守卫/判定用例仍绿；M2 删除 `saveChanges` 的影响行数守卫（还原 `_ = try await tx.execute`）→ `saveRollsBackWhenRowWriteAffectsNoRows` 转红（errorMessage 为空、暂存被清空、事务提交而非回滚），其余 8 条仍绿。两处变异均单独施加并确认转红后还原，最终 148 条全绿。
 >
 > 变异验证（#567）：`sqlLiteral(for:dialect:)` 的 `.data` 分支原先恒返回 `"NULL"`，BLOB 主键行的 UPDATE/DELETE 生成 `WHERE pk = NULL`（SQL 里永不成立），命中 0 行，编辑/删除静默失败。修复为按方言内联二进制字面量：SQLite/MySQL `X'…'`、PostgreSQL `decode('…','hex')`（BLOB 单元格编辑本身仍只读，见 #281）。M1 把 `.data` 分支还原为 `return "NULL"`（原 bug）→ 全部 7 条 BLOB 主键用例转红（端到端实测影响 0 行），#281 只读（2 条）与 #555 行标识（1 条）用例仍绿。变异施加并确认转红后还原，最终 155 条全绿。
+>
+> 变异验证（#565）：`refreshTableRowCount` 写回前校验 `openTableObject?.id == table.id` 与连接代次的修复已在 dev（commit edb8edfec），但此前没有 COUNT 竞态回归用例。补充 2 条用门闩构造「旧表 COUNT 晚到」的用例锁定该不变量。M1 删除写回前的 `openTableObject?.id == table.id` 校验（仅留连接代次）→ `staleCountFromPreviousTableDoesNotPolluteNewTable` 转红（A 的 999 覆盖 B 的 20），`currentTableCountIsWritten` 仍绿。变异施加并确认转红后还原，最终 157 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 78 / 78
-- P1: 已覆盖 76 / 76
+- P0: 已覆盖 79 / 79
+- P1: 已覆盖 77 / 77
 - P2: 已覆盖 1 / 1
-- **合计: 155 / 155**（仅表示清单场景，非源码覆盖率）
+- **合计: 157 / 157**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（78 条）
-- **P1**: 其余功能性用例（76 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（79 条）
+- **P1**: 其余功能性用例（77 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 155 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 157 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
