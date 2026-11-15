@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 224 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 234 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 26 个，用例总数: 231
+测试文件: 26 个，用例总数: 234
 
 核心组件（源码目录）:
 - `Editor/`
@@ -58,7 +58,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorKeybindingStore**（4 条）：由 `testBindingsFileUsesDefaultRootWithoutForceUnwrappingApplicationSupport`、`testBindingsFileUsesHostPersistenceRootWhenProvided`、`testCorruptBindingsFileIsQuarantinedAndRecovered` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorOpenItemCommand**（1 条）：由 `testCallHierarchyItemCommandAcceptsUnescapedFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorProjectContextLSPRefresh**（24 条）：由 `testBuildServerPathChangeRequiresServerRestart`、`testLegacyReuseLogicIgnoredBuildServerPathChange`、`testBuildServerKindExtractsInitializationOption` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorProvidingV2AdapterCapability**（15 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testOpenDocumentInBackgroundDoesNotActivate`、`testDiagnosticsSnapshotMapsSeverityMessageAndDocumentURI` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorProvidingV2AdapterCapability**（24 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testAcceptReplacementHunkPreservesFollowingNewline`、`testAcceptPureAdditionInsertsAtActualPosition` 等用例锁定文档打开与 diff 逐块接受（替换补回末行换行、纯新增跳过前导上下文）；改动该模块时优先跑对应测试文件。
 - **EditorSelectionSet**（11 条）：由 `testInitialSelection`、`testEmptySelectionsFallbackToInitial`、`testMultipleSelectionsAreSortedByLocation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorServiceFacade**（13 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorNavigationHistory**（2 条）：由 `testRemoveDropsEveryEntryForClosedSession`、`testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` 锁定关闭标签后历史清理与索引维护；改动导航历史时优先跑对应测试文件。
@@ -304,27 +304,30 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 229 | EditorProvidingV2AdapterCapability | 接受末行（无尾换行）替换不新增多余换行（**回归 #586**） | 文档 a\nb | computeDiff 到 a\nB 后 accept | 缓冲为 a\nB，无多余尾换行 | P1 | ✅ 已覆盖 | `testAcceptReplacementOfLastLineWithoutTrailingNewline` |
 | 230 | EditorProvidingV2AdapterCapability | 接受纯删除 hunk 干净移除整行不留空行（**回归 #586**） | 文档 a\nb\nc\n | computeDiff 到 a\nc\n 后 accept | 缓冲为 a\nc\n，无残留空行 | P1 | ✅ 已覆盖 | `testAcceptPureDeletionRemovesLineCleanly` |
 | 231 | EditorProvidingV2AdapterCapability | 接受替换为空行的 hunk 保留空行（**回归 #586**） | 文档 a\nb\nc\n | computeDiff 到 a\n\nc\n 后 accept | 缓冲为 a\n\nc\n，空行保留 | P1 | ✅ 已覆盖 | `testAcceptReplacementWithEmptyLineKeepsBlankLine` |
+| 232 | EditorProvidingV2AdapterCapability | 接受纯新增 hunk 不得插在上下文开头而须落在真实插入点（**回归 #587**） | 文档 a\nb\n | computeDiff 到 a\nX\nb\n 后 accept 该纯新增 hunk | 缓冲为 a\nX\nb\n，X 在 a 之后 b 之前 | P0 | ✅ 已覆盖 | `testAcceptPureAdditionInsertsAtActualPosition` |
+| 233 | EditorProvidingV2AdapterCapability | 接受文档开头的纯新增 hunk 插在最前（**回归 #587**） | 文档 a\nb\n | computeDiff 到 X\na\nb\n 后 accept | 缓冲为 X\na\nb\n | P1 | ✅ 已覆盖 | `testAcceptPureAdditionAtStart` |
+| 234 | EditorProvidingV2AdapterCapability | 接受文档末尾的纯新增 hunk 插在末行之后（**回归 #587**） | 文档 a\nb\n | computeDiff 到 a\nb\nX\n 后 accept | 缓冲为 a\nb\nX\n | P1 | ✅ 已覆盖 | `testAcceptPureAdditionAtEnd` |
 
-> 说明：全部 **231 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **234 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 193 / 193
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 195 / 195
 - P2: 已覆盖 19 / 19
-- **合计: 231 / 231**（仅表示清单场景，非源码覆盖率）
+- **合计: 234 / 234**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（193 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（195 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 231 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 234 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

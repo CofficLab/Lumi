@@ -523,4 +523,38 @@ extension EditorProvidingV2AdapterCapabilityTests {
         await flushAsync()
         XCTAssertEqual(service.state.content?.string, "a\n\nc\n")
     }
+
+    // 回归 #587：纯新增 hunk 须跳过前导上下文，插在真实插入点而非上下文开头。
+    func testAcceptPureAdditionInsertsAtActualPosition() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nX\nb\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nX\nb\n")
+    }
+
+    func testAcceptPureAdditionAtStart() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "X\na\nb\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "X\na\nb\n")
+    }
+
+    func testAcceptPureAdditionAtEnd() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nb\nX\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nb\nX\n")
+    }
 }

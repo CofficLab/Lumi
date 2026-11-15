@@ -1616,10 +1616,11 @@ private final class DiffCapability: EditorDiffProviding {
             if hunk.addedContents.isEmpty {
                 return nil
             }
-            // 纯新增：插在 oldStart（1-based）前一行的行尾之后 = 该行行首位置。
+            // 纯新增：oldStart 含前导上下文行，跳过它们才是真实插入点（#587）。
+            let leadingContext = hunk.lines.prefix { $0.kind == .unchanged }.count
             return EditorTextEdit(
                 range: EditorV2Range(
-                    at: EditorPosition(line: max(0, hunk.oldStart - 1), character: 0)
+                    at: EditorPosition(line: max(0, hunk.oldStart - 1 + leadingContext), character: 0)
                 ),
                 newText: replacement + "\n"
             )
