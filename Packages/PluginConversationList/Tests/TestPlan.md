@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 67 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 74 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 67
+测试文件: 15 个，用例总数: 74
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -44,12 +44,13 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationListContext**（3 条）：由 `contextPublishesSelectionChangesOnceAndConversationRefreshes`、`contextTracksTheCurrentProjectNameAndPath`、`contextObserverRefreshesForStructureAndStateButIgnoresVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListToolbarViewModel**（3 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist`、`toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationListViewModel**（9 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`reloadFailurePreservesConversationsAndPagination`、`reloadKeepsPagesAppendedWhileItRuns` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationListViewModel**（10 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`reloadFailurePreservesConversationsAndPagination`、`reloadKeepsPagesAppendedWhileItRuns`、`sameCountReloadInvalidatesStaleNextPage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRailTabController**（6 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile`、`railTabTitlesUsePluginLocalization`、`railTabTitleKeysHaveTranslations` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRowAccessibility**（4 条）：由 `rowAccessibilityLabelAlwaysStartsWithTitle`、`rowAccessibilityLabelIncludesAutomationLevel`、`rowAccessibilityLabelFallsBackWhenTitleMissing`、`rowAccessibilityLabelSkipsEmptyProviderAndModel` 锁定行朗读文案的组成与回退规则。
 - **ConversationRowEmptyTitle**（4 条）：由 `rowLabelFallsBackForEmptyStringTitle`、`rowLabelFallsBackForWhitespaceOnlyTitle`、`emptyStringAndNilTitlesConverge`、`nonEmptyTitleIsPreserved` 锁定空标题回退文案的一致性。
 - **ConversationStatsViewModel**（8 条）：由 `loadsDailySeries`、`scopesToCurrentProject`、`cleansUpOlderConversations`、`ignoresConcurrentCleanup` 等用例锁定统计区间、清理边界与并发守卫。
 - **ConversationSortStabilizer**（3 条）：由 `sortTimeStaysAnchoredUntilTheHoldWindowExpires`、`markingViewedAnchorsTheConversationAtTheCurrentTime`、`cleanupKeepsRecentAnchorsAndDropsOldOnes` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationStopCapability**（6 条）：由 `canStopForRunningAndSuspended`、`cannotStopForTerminalStates`、`noAgentLoopMeansNoStop`、`stopCancelsTheGivenConversation`、`stopTargetsTheGivenConversation`、`noCapabilityMeansNotStoppable` 锁定会话行右键停止的可停止判定与目标会话接线；改动该模块时优先跑对应测试文件。
 - **GetRecentConversationsTool**（5 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationTableEscapesProjectNamesAndKeepsFiveColumns`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RelativeTime**（3 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PluginLocalizationIntegrity**（5 条）：由 `userFacingKeysAreFullyLocalized`、`pinnedTranslationsMatchCatalog`、`everyCatalogEntryCoversRequiredLanguages`、`placeholdersAreConsistentAcrossLanguages`、`compiledBundlesContainPinnedStrings` 锁定上屏文案进入目录与编译产物，硬编码中文不得回潮（**#1299**）。
@@ -125,16 +126,23 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 65 | PluginLocalizationIntegrity | 所有已登记条目都含 4 种规范语言 | 插件 xcstrings 目录 | 遍历全部条目 | 无缺失语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
 | 66 | PluginLocalizationIntegrity | 带占位符的文案四种语言占位符一致 | 插件 xcstrings 目录 | 统计各语言占位符数量并与 en 对比 | 数量一致 | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
 | 67 | PluginLocalizationIntegrity | 编译产物各语言都含 #1299 文案（**#1299**） | 编译后的 .lproj 字符串表 | 读取 en/zh-Hans/zh-Hant 字符串表 | 8 个 key 均在且译文正确 | P1 | ✅ 已覆盖 | `compiledBundlesContainPinnedStrings` |
+| 68 | ConversationListViewModel | 同条数 reload 替换首屏后旧翻页不得追加（**#1168**） | 已加载 40 条，下一页延迟 300ms 返回 | 翻页途中新增会话并 reload，等待旧页返回 | 列表保持 40 条且首条为新会话，hasMore 仍为 true | P0 | ✅ 已覆盖 | `sameCountReloadInvalidatesStaleNextPage` |
+| 69 | ConversationStopCapability | running 与 suspended 都判定为可停止 | 存根 AgentLoop 可设置回合状态 | 分别置为 running 与 suspended 后查询 canStop | 两种状态均返回 true | P1 | ✅ 已覆盖 | `canStopForRunningAndSuspended` |
+| 70 | ConversationStopCapability | 其余回合状态都判定为不可停止 | 遍历 idle/completed/failed/cancelled | 逐状态查询 canStop | 均返回 false | P1 | ✅ 已覆盖 | `cannotStopForTerminalStates` |
+| 71 | ConversationStopCapability | 缺少 AgentLoop 时不可停止且停止是安全空操作 | 适配器注入 nil AgentLoop | 查询 canStop 并调用 stop | canStop 为 false，stop 不崩溃 | P1 | ✅ 已覆盖 | `noAgentLoopMeansNoStop` |
+| 72 | ConversationStopCapability | 停止动作只取消指定会话的回合 | 目标会话 running，另有其它会话 | 调用 stop(conversationID:) | 只有目标会话被取消 | P1 | ✅ 已覆盖 | `stopCancelsTheGivenConversation` |
+| 73 | ConversationStopCapability | ViewModel 停止的是被操作会话而非选中会话 | 选中 Selected、目标 Target 在运行 | 查询 canStop 并调用 stopConversation | 仅 Target 可停止且仅 Target 被取消 | P1 | ✅ 已覆盖 | `stopTargetsTheGivenConversation` |
+| 74 | ConversationStopCapability | 未接入停止能力时不误报可停止 | 上下文无 AgentLoop 与停止能力 | 查询 canStopConversation | 返回 false | P1 | ✅ 已覆盖 | `noCapabilityMeansNotStoppable` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 51 / 51
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 57 / 57
 - P2: 已覆盖 11 / 11
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

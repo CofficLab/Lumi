@@ -422,6 +422,49 @@ private func englishTableLocalizedString(_ key: String) -> String {
     #expect(await waitUntil { viewModel.conversations.map(\.id) == [other.id] })
 }
 
+/// #1168：同项目 reload 替换了首屏但条数不变时，旧翻页请求不得追加。
+@Test @MainActor func sameCountReloadInvalidatesStaleNextPage() async throws {
+    let base = Date()
+    let many = (0..<60).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "C\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: nil
+        )
+    }
+    let conversations = DelayedConversationManager(summaries: many)
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+    #expect(viewModel.conversations.count == 40)
+    #expect(viewModel.hasMore)
+
+    // 下一页 300ms 返回；刷新首屏 50ms 返回。
+    conversations.setPageDelays(firstPage: .milliseconds(50), nextPage: .milliseconds(300))
+    let nextPage = Task { await viewModel.loadNextPage() }
+    #expect(await waitUntil { conversations.pageRequestCount == 2 })
+
+    // 插入一条更新的对话，使 reload 的首屏内容变化但条数仍为 40。
+    _ = try conversations.createConversation(
+        title: "New", projectPath: nil, providerID: nil, modelName: nil
+    )
+    let refresh = Task { await viewModel.reload() }
+    await refresh.value
+
+    // 旧翻页请求返回后必须被丢弃，不得追加到已替换的列表上。
+    await nextPage.value
+    #expect(viewModel.conversations.count == 40, "旧页不得追加到同条数的新快照上")
+    #expect(viewModel.hasMore, "丢弃旧页后仍应保留分页能力")
+    #expect(viewModel.conversations.first?.title == "New")
+    viewModel.cancel()
+}
+
 /// #896：切到条数更多的新项目后，reload 不能拿旧列表条数给新项目判「没有下一页」。
 @Test @MainActor func projectSwitchReloadKeepsPagingUntilNewProjectIsExhausted() async throws {
     let project = DefaultProjectProvider()
