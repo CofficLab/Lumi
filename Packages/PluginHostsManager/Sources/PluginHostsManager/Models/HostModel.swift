@@ -1,14 +1,14 @@
 import Darwin
 import Foundation
 
-public enum HostEntryType: Equatable, Hashable {
+public enum HostEntryType: Equatable, Hashable, Sendable {
     case entry(ip: String, domains: [String], isEnabled: Bool, comment: String?)
     case comment(String)
     case empty
     case groupHeader(String) // Special comment: # GROUP: Name
 }
 
-public struct HostEntry: Identifiable, Hashable, Equatable {
+public struct HostEntry: Identifiable, Hashable, Equatable, Sendable {
     public let id = UUID()
     public var type: HostEntryType
     

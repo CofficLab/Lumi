@@ -21,6 +21,9 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     private var saveGeneration = 0
     private var saveChain: Task<Void, Never>?
 
+    /// 加载代次：解析移到后台后，晚到的旧加载不得覆盖更新一次的 entries（#1205）。
+    private var loadGeneration = 0
+
     init(
         readHostsFile: @escaping () async throws -> String = {
             try await HostsFileService.shared.readHosts()
@@ -114,9 +117,16 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         }
         isLoading = true
         errorMessage = nil
+        loadGeneration += 1
+        let generation = loadGeneration
         do {
             let content = try await readHostsFile()
-            self.entries = HostsParser.parse(content: content)
+            // 解析整份 hosts 随文件大小增长，移到后台线程（#1205）。
+            let parsed = await Task.detached(priority: .userInitiated) {
+                HostsParser.parse(content: content)
+            }.value
+            guard generation == loadGeneration else { return }
+            self.entries = parsed
             // 导入/外部刷新后分组集合可能变化：旧分组若已不存在，继续用它过滤会让全部条目隐藏。
             if let selectedGroup, !groups.contains(selectedGroup) {
                 self.selectedGroup = nil
@@ -127,6 +137,8 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            // 旧加载的失败同样不得覆盖最新一次的状态。
+            guard generation == loadGeneration else { return }
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to load hosts file: \(error.localizedDescription)")
             }
@@ -138,20 +150,20 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     public func saveHosts() async {
         // 在挂起前捕获快照与序号：每次保存写入的是它被请求时的 entries，
         // 串行链保证按请求顺序落盘，最新一次最后写入（#254）。
-        let content = HostsParser.serialize(entries: entries)
+        let snapshot = entries
         saveGeneration += 1
         let generation = saveGeneration
         let previous = saveChain
         let task = Task { @MainActor [weak self] in
             await previous?.value
             guard let self else { return }
-            await self.performSave(content: content, generation: generation)
+            await self.performSave(entries: snapshot, generation: generation)
         }
         saveChain = task
         await task.value
     }
 
-    private func performSave(content: String, generation: Int) async {
+    private func performSave(entries snapshot: [HostEntry], generation: Int) async {
         if Self.verbose {
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.info("\(self.t)Saving hosts file")
@@ -161,6 +173,11 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         defer { isLoading = false }
         errorMessage = nil
         do {
+            // 序列化整份 hosts 随条目数增长，移到后台线程（#1205）。
+            // 用的是请求时的快照，串行链仍保证按请求顺序落盘（#254）。
+            let content = await Task.detached(priority: .userInitiated) {
+                HostsParser.serialize(entries: snapshot)
+            }.value
             try await writeHostsFile(content)
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
