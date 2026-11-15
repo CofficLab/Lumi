@@ -4,7 +4,9 @@ import Combine
 /// 把一个 ``DatabaseValue`` 转成 SQL 字面量（内联、已转义）。
 ///
 /// 采用内联而非参数绑定，是为了在 SQLite/MySQL/PostgreSQL 三种方言下统一生成
-/// 可直接 `execute(sql, params: nil)` 的语句。BLOB 暂不支持内联（v1 视为只读）。
+/// 可直接 `execute(sql, params: nil)` 的语句。BLOB 内联为各方言的二进制字面量
+/// （SQLite/MySQL `X'…'`、PostgreSQL `decode('…','hex')`），供 BLOB 主键定位行（#567）；
+/// BLOB 单元格的编辑本身仍只读（#281）。
 public func sqlLiteral(for value: DatabaseValue, dialect: DatabaseType) -> String {
     switch value {
     case .null:
@@ -17,9 +19,16 @@ public func sqlLiteral(for value: DatabaseValue, dialect: DatabaseType) -> Strin
         return b ? "TRUE" : "FALSE"
     case .string(let s):
         return "'" + escapeSQLString(s, dialect: dialect) + "'"
-    case .data:
-        // BLOB 编辑在 v1 不支持；生成 NULL 避免破坏语句结构。
-        return "NULL"
+    case .data(let data):
+        // BLOB 单元格编辑仍只读（#281），但 BLOB 主键值必须内联成正确的二进制字面量，
+        // 否则 WHERE pk = NULL 永不匹配，编辑/删除命中 0 行（#567）。
+        let hex = data.map { String(format: "%02x", $0) }.joined()
+        switch dialect {
+        case .postgresql:
+            return "decode('\(hex)', 'hex')"
+        case .sqlite, .mysql, .redis:
+            return "X'\(hex)'"
+        }
     }
 }
 

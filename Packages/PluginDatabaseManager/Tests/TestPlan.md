@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 148
+测试文件: 16 个，用例总数: 155
 
 核心组件（源码目录）:
 - `Agent/`
@@ -287,7 +287,19 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 147 | 可空主键 NULL 比较 | 行级写入命中 0 行时回滚并报错，不清空暂存（回归 #568） | 假事务影响行数=0，暂存一处更新 | `saveChanges()` | errorMessage 非空，hasChanges 仍 true，事务回滚未提交 | P0 | ✅ 已覆盖 | `saveRollsBackWhenRowWriteAffectsNoRows` |
 | 148 | 可空主键 NULL 比较 | 行级写入命中 1 行时正常提交并清空暂存 | 假事务影响行数=1，暂存一处更新 | `saveChanges()` | errorMessage 为空，hasChanges 为 false，事务提交未回滚 | P1 | ✅ 已覆盖 | `saveSucceedsWhenRowWriteAffectsOneRow` |
 
-> 说明：全部 **148 条场景**已在本包 `swift test` 中实跑通过。
+### BLOB 主键的二进制字面量（回归 #567）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 149 | BLOB 主键字面量 | SQLite/MySQL 的 BLOB 字面量为 X'十六进制'（回归 #567） | — | `sqlLiteral(for: .data(0x0102), dialect: .sqlite/.mysql)` | 均等于 `X'0102'` | P0 | ✅ 已覆盖 | `blobLiteralUsesHexForSQLiteAndMySQL` |
+| 150 | BLOB 主键字面量 | PostgreSQL 的 BLOB 字面量为 decode('十六进制','hex') | — | `sqlLiteral(for: .data(0x0102), dialect: .postgresql)` | 等于 `decode('0102', 'hex')` | P1 | ✅ 已覆盖 | `blobLiteralUsesDecodeForPostgreSQL` |
+| 151 | BLOB 主键字面量 | 空 BLOB 生成合法的空二进制字面量 | — | 对 `.data(Data())` 调用 sqlite/postgresql 字面量 | 分别为 `X''`、`decode('', 'hex')` | P1 | ✅ 已覆盖 | `emptyBlobLiteralIsValid` |
+| 152 | BLOB 主键字面量 | BLOB 主键行的 UPDATE 用二进制字面量而非 NULL（回归 #567） | 表 files(id BLOB PK, name TEXT)，行 id=X'01' | 暂存 name→after 后生成 sqlite/mysql UPDATE | WHERE 为 `"id" = X'01'`（mysql 用反引号），非 NULL | P0 | ✅ 已覆盖 | `blobPrimaryKeyUpdateUsesHexLiteral` |
+| 153 | BLOB 主键字面量 | BLOB 主键行的 DELETE 用二进制字面量而非 NULL（回归 #567） | 同上 | 标记删除该行后 `generatedDeleteStatements(for: .sqlite)` | 等于 `DELETE FROM "files" WHERE "id" = X'01';` | P0 | ✅ 已覆盖 | `blobPrimaryKeyDeleteUsesHexLiteral` |
+| 154 | BLOB 主键字面量 | BLOB 主键行的 UPDATE 在真实 SQLite 上命中并修改该行 | 临时 SQLite，files(id BLOB PK, name)，插入 (x'01','before') | 暂存 name→after，执行生成的 UPDATE | 影响 1 行，name 变为 after | P0 | ✅ 已覆盖 | `blobPrimaryKeyUpdateActuallyModifiesRow` |
+| 155 | BLOB 主键字面量 | BLOB 主键行的 DELETE 在真实 SQLite 上命中并删除该行 | 同上 | 标记删除该行，执行生成的 DELETE | 影响 1 行，count 为 0 | P0 | ✅ 已覆盖 | `blobPrimaryKeyDeleteActuallyRemovesRow` |
+
+> 说明：全部 **155 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -303,24 +315,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#554）：`parseEditedCellValue` 原先对所有列统一 trim、把空串/`NULL` 映射成 SQL NULL、并推断 Int/Double/Bool，TEXT 列的合法内容被静默改写。修复为按列声明类型分流：文本类列（`isTextColumnType`）原样返回 `.string(text)`，其余列沿用推断；编辑提交入口改调 `TableChangeManager.parseEditedValue(_:column:)` 从 schema 取类型。M1 禁用文本分支（`if false && isTextColumnType(columnType)`）→ `textColumnPreservesPaddedWhitespace`、`textColumnPreservesLiteralNULL`、`textColumnPreservesLeadingZeros`、`textColumnPreservesEmptyString`、`textColumnUpdateGeneratesStringLiteral`、`textTypeVariantsPreserveRawString` 转红，`numericAndBooleanColumnsStillInferTypes`、`unknownColumnTypeFallsBackToInference` 仍绿。变异施加并确认转红后还原，最终 139 条全绿。
 >
 > 变异验证（#568）：UPDATE/DELETE 的 WHERE 原先对每个主键值都生成 `pk = 字面量`，NULL 主键变成 `pk = NULL`（SQL 里永不成立），命中 0 行却报保存成功并清空暂存。修复为 `primaryKeyCondition`：NULL 用 `IS NULL`、非 NULL 用 `=`；并在 `saveChanges` 校验行级写入（`isRowTargetingWrite`）的影响行数，命中 0 行回滚报错。M1 把 NULL 分支还原为 `= sqlLiteral(...)`（原 bug）→ `nullPrimaryKeyUpdateUsesIsNull`、`nullPrimaryKeyDeleteUsesIsNull`、`compositePrimaryKeyMixesNullAndEquals`、`nullPrimaryKeyUpdateActuallyModifiesRow`、`nullPrimaryKeyDeleteActuallyRemovesRow` 转红（端到端实测影响 0 行），非 NULL/守卫/判定用例仍绿；M2 删除 `saveChanges` 的影响行数守卫（还原 `_ = try await tx.execute`）→ `saveRollsBackWhenRowWriteAffectsNoRows` 转红（errorMessage 为空、暂存被清空、事务提交而非回滚），其余 8 条仍绿。两处变异均单独施加并确认转红后还原，最终 148 条全绿。
+>
+> 变异验证（#567）：`sqlLiteral(for:dialect:)` 的 `.data` 分支原先恒返回 `"NULL"`，BLOB 主键行的 UPDATE/DELETE 生成 `WHERE pk = NULL`（SQL 里永不成立），命中 0 行，编辑/删除静默失败。修复为按方言内联二进制字面量：SQLite/MySQL `X'…'`、PostgreSQL `decode('…','hex')`（BLOB 单元格编辑本身仍只读，见 #281）。M1 把 `.data` 分支还原为 `return "NULL"`（原 bug）→ 全部 7 条 BLOB 主键用例转红（端到端实测影响 0 行），#281 只读（2 条）与 #555 行标识（1 条）用例仍绿。变异施加并确认转红后还原，最终 155 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 73 / 73
-- P1: 已覆盖 74 / 74
+- P0: 已覆盖 78 / 78
+- P1: 已覆盖 76 / 76
 - P2: 已覆盖 1 / 1
-- **合计: 148 / 148**（仅表示清单场景，非源码覆盖率）
+- **合计: 155 / 155**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（73 条）
-- **P1**: 其余功能性用例（74 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（78 条）
+- **P1**: 其余功能性用例（76 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 148 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 155 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
