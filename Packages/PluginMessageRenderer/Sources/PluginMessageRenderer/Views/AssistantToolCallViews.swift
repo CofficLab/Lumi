@@ -718,19 +718,52 @@ private struct ToolDetailPopoverView<Content: View>: View {
 
 // MARK: - ToolCallArgumentsView
 
-private struct ToolCallArgumentsView: View {
+// 内部可见以便测试直接求值 body（参数格式化不得发生在 body，Issue #1186）。
+struct ToolCallArgumentsView: View {
     let toolCall: MessageToolCall
 
-    var body: some View {
-        if let formattedArguments {
-            ToolTextSectionView(content: formattedArguments)
-        } else {
-            EmptyToolSectionView(systemImage: "info.circle", text: "没有可显示的调用参数")
-        }
+    /// 已准备好的展示文本；`arguments` 是它对应的参数版本。
+    @State private var prepared: PreparedArguments?
+
+    struct PreparedArguments {
+        let arguments: String
+        let formatted: String?
     }
 
-    private var formattedArguments: String? {
-        MessageViewHelpers.formatToolCallArguments(toolCall.arguments)
+    init(toolCall: MessageToolCall, prepared: PreparedArguments? = nil) {
+        self.toolCall = toolCall
+        _prepared = State(initialValue: prepared)
+    }
+
+    var body: some View {
+        content
+            // 参数版本变化（流式追加）时重新准备；同一次呈现内 body 反复
+            // 求值只读已准备好的值，不再解析/序列化 payload。
+            .task(id: toolCall.arguments) {
+                let id = toolCall.id
+                let arguments = toolCall.arguments
+                let outcome = await ToolCallArgumentsFormatting.prepare(
+                    id: id,
+                    arguments: arguments
+                ) {
+                    toolCall.id == id && toolCall.arguments == arguments
+                }
+                guard case .ready(let formatted) = outcome else { return }
+                prepared = PreparedArguments(arguments: arguments, formatted: formatted)
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let prepared, prepared.arguments == toolCall.arguments {
+            if let formatted = prepared.formatted {
+                ToolTextSectionView(content: formatted)
+            } else {
+                EmptyToolSectionView(systemImage: "info.circle", text: "没有可显示的调用参数")
+            }
+        } else {
+            LoadingToolSectionView()
+        }
     }
 }
 

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 326 条用例。
+PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 335 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 32 个，用例总数: 326
+测试文件: 33 个，用例总数: 335
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -63,6 +63,7 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - **ToolApprovalCancellation**（9 条）：由 `cancelledTurnClearsPendingApproval`、`terminalEventsClearPendingApproval`、`staleTerminalEventKeepsNewerTurnApproval` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolApprovalMisclaim**（4 条）：由 `askUserSuspensionIsNotClaimedByApprovalRenderer`、`misclaimedToolCallCannotBuildRequest`、`realPermissionRequestIsStillClaimed` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolApprovalVisibilityAfterResolution**（4 条）：由 `showsApprovalWhilePending`、`hidesApprovalAfterUserApproved`、`hidesApprovalAfterUserRejected` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolCallArgumentsFormatting**（9 条）：由 `formattingRunsOffTheMainActor`、`repeatedPreparationHitsCache`、`staleOutcomeIsNotWrittenBack` 等用例锁定；改动「调用参数」弹层或参数格式化入口时优先跑对应测试文件。
 - **ToolCallGroupCollapsePolicy**（15 条）：由 `singleCallIsNotCollapsed`、`emptyGroupIsNotCollapsed`、`multipleCompletedCallsAreCollapsed` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolCallRendererDispatchDecoding**（10 条）：由 `matchingBridgeDoesNotDecodeImages`、`matchingBridgeKeepsMatchingInformation`、`matchingBridgeMatchesFullBridgeOnMatchingDimensions` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobSummary**（5 条）：由 `mapsAllStatuses`、`projectsLiveJob`、`terminalJobIsNotStale` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -406,27 +407,36 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 324 | MessageImageBodyDecoding | 工具结果空输出分支不得多解码一遍（回归 #1185） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolResultWithEmptyTextDecodesOnce` |
 | 325 | MessageImageBodyDecoding | 没有图片的工具结果不进入解码路径 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolResultWithoutImagesDoesNotDecode` |
 | 326 | MessageImageBodyDecoding | 加载中不触碰图片字节 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadingToolResultDoesNotDecode` |
+| 327 | ToolCallArgumentsFormatting | 参数格式化在后台执行，不占用主 actor（回归 #1186） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `formattingRunsOffTheMainActor` |
+| 328 | ToolCallArgumentsFormatting | 同一参数版本只格式化一次（回归 #1186） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedPreparationHitsCache` |
+| 329 | ToolCallArgumentsFormatting | 参数版本变化后重新格式化，不得复用旧结果（回归 #1186） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `changedArgumentsReformat` |
+| 330 | ToolCallArgumentsFormatting | 空参数返回 ready(nil)，仍然只格式化一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyPayloadIsReadyNil` |
+| 331 | ToolCallArgumentsFormatting | 旧请求晚到时丢弃结果，不写缓存也不写回（回归 #1186） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleOutcomeIsNotWrittenBack` |
+| 332 | ToolCallArgumentsFormatting | 缓存按参数版本校验，版本不同不命中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheRejectsDifferentRevision` |
+| 333 | ToolCallArgumentsFormatting | 缓存有界，超出上限淘汰最早条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheIsBounded` |
+| 334 | ToolCallArgumentsFormatting | 同一 id 覆盖写入不重复占用淘汰名额 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `replacingEntryDoesNotGrowOrder` |
+| 335 | ToolCallArgumentsFormatting | body 求值不解析也不序列化参数（回归 #1186） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bodyDoesNotFormatArguments` |
 
 > 说明：全部 **311 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 48 / 48
-- P1: 已覆盖 236 / 236
-- P2: 已覆盖 42 / 42
-- **合计: 326 / 326**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 53 / 53
+- P1: 已覆盖 239 / 239
+- P2: 已覆盖 43 / 43
+- **合计: 335 / 335**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（48 条）
-- **P1**: 其余功能性用例（236 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（53 条）
+- **P1**: 其余功能性用例（239 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（43 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 326 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 335 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
