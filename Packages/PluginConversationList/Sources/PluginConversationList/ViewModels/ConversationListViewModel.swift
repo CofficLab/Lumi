@@ -78,6 +78,8 @@ final class ConversationListViewModel: ObservableObject {
                 self?.immediateSelectionID = id
             case let .conversationAutomationChanged(id):
                 self?.updateAutomationLevel(for: id)
+            case let .conversationStateChanged(id):
+                self?.refreshConversationState(for: id)
             case .conversationsChanged:
                 self?.scheduleReload()
             }
@@ -328,6 +330,13 @@ final class ConversationListViewModel: ObservableObject {
         var updated = conversations[index]
         updated.automationLevel = context.conversations.automationLevel(for: conversationID)
         conversations[index] = updated
+    }
+
+    /// 运行时状态变化只让对应可见行重新读取 `conversationState(for:)`，
+    /// 不触碰分页摘要数据，也不为隐藏/未初始化的列表启动任何加载（#1258）。
+    private func refreshConversationState(for conversationID: UUID) {
+        guard conversations.contains(where: { $0.id == conversationID }) else { return }
+        objectWillChange.send()
     }
 
     private func fetchPage(
