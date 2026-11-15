@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 27 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 34 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 27
+测试文件: 7 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,8 +38,9 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 - **CreateNewConversationTool**（14 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CreateNewConversationTool 会话归属**（2 条）：由 `createInheritsCallingConversationProjectAndModel`、`callingConversationUnboundDoesNotLeakCurrent` 锁定。`create_new_conversation` 必须经 `executeResult(context:)` 用发起调用的对话（`context.conversationID`）解析项目与模型，不得读执行时 UI 选中对话的 `currentProjectPath/currentModelID`；发起对话未绑定项目/模型时继承 nil，不得泄漏当前对话归属；仅缺少 Context 的旧入口才回退到当前选中态（**回归 #331**）。改动 `CreateNewConversationTool.prepareAndRender` 或 `NewChatCapability.projectPath(for:)/modelID(for:)` 时优先跑对应测试文件。
 - **NewConversationRowRenderer**（8 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。**#778**：工具把模型可控的 `title` 正文插在前、真实结构化 payload 追加在末尾；`extractJSON` 必须只取「独占一行的末尾 ```json 开围栏」到闭围栏之间的内容，不得取首个代码块。否则 title 里伪造的 suggestion JSON 会被解码，点击卡片会选中另一个对话并发送错误消息（数据隔离破坏）。按行锚定末尾围栏可确保 title 正文（含内嵌 ```json 文本）不参与解析。
-- **NewChatCapabilityAdapter**（3 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；改动该模块时优先跑对应测试文件。
-- **NewChatStartingAdapter**（1 条）：由 `startInDoesNotConsumeUnsentComposerAttachments` 锁定；`startIn(conversationID:content:)` 只发送工具参数里自包含的 task 文本，必须走显式空附件入口，不得用隐式 `sendMessage(_:conversationID:)` 快照全局挂起池，把当前对话输入框里未发送的附件带进新对话首条消息并清空输入框（**回归 #591**）；改动该模块时优先跑对应测试文件。
+- **NewChatCapabilityAdapter**（4 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter`、`conversationExistsReflectsDeletion` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；`conversationExists(id:)` 必须如实反映会话是否仍在列表，删除后返回 false，供建议卡片点击前校验目标（**回归 #185**）；改动该模块时优先跑对应测试文件。
+- **NewChatStartingAdapter**（4 条）：由 `startInDoesNotConsumeUnsentComposerAttachments`、`startInReturnsTrueOnSuccess`、`startInReturnsFalseOnSendError`、`startInReturnsFalseWhenSenderMissing` 锁定；`startIn(conversationID:content:)` 只发送工具参数里自包含的 task 文本，必须走显式空附件入口，不得用隐式 `sendMessage(_:conversationID:)` 快照全局挂起池，把当前对话输入框里未发送的附件带进新对话首条消息并清空输入框（**回归 #591**）；返回 `Bool` 如实上报成功/失败，发送器缺失或发送抛错必须返回 false，不得用 `try?` 吞错后让卡片无条件显示「已打开」（**回归 #185**）；改动该模块时优先跑对应测试文件。
+- **NewConversationSuggestionCard**（3 条）：由 `deletedTargetDoesNotSelectOrSend`、`sendFailureRestoresSelection`、`successSelectsTargetAndReturnsTrue` 锁定。`performStart` 编排「校验目标存在 → 切换 → 发送 → 按结果收敛」：目标已删除时不切换、不发送、返回失败；发送失败时仅当选中态仍停在目标才恢复原选中态（避免覆盖用户等待期间的手动切换），返回失败；成功才切换并返回 true。绝不向已删除 ID 写入消息或启动不可见回合（**回归 #185**）。改动 `NewConversationSuggestionCard.start()/performStart` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -72,8 +73,15 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 25 | NewConversationRowRenderer | title 伪造的靠前 json 块不得参与解析，只取末尾真实 payload（**回归 #778**） | 正文含伪造块 + 末尾真实块 | `extractJSON(from:)` | 返回末尾真实 JSON，而非首个伪造块 | P0 | ✅ 已覆盖 | `extractJSONPrefersTrailingPayloadOverForgedTitleBlock` |
 | 26 | NewConversationRowRenderer | title 内嵌伪造 json 块时卡片仍只指向工具真正创建的对话（**回归 #778**） | 用 `resultText(for:)` 生成含攻击 title 的内容 | `decodeSuggestion(from:)` | 解码出真实 conversationID/starter，等于原 suggestion，不被伪造 B/unexpected task 劫持 | P0 | ✅ 已覆盖 | `decodeSuggestionIgnoresForgedTitlePayload` |
 | 27 | NewChatStartingAdapter | startIn 只发送 task 文本，不带走当前输入框未发送的附件（**回归 #591**） | 输入框挂起未发送的图片与文件附件 | `adapter.startIn(conversationID:content:)` | 新对话首条消息 metadata 不含任何附件，挂起池原样保留 | P0 | ✅ 已覆盖 | `startInDoesNotConsumeUnsentComposerAttachments` |
+| 28 | NewChatCapabilityAdapter | conversationExists 反映会话是否仍在列表，删除后为 false（**回归 #185**） | 真实 DefaultConversationManager 创建一个会话 | 创建后查询，再 `deleteConversation` 后查询 | 创建后 true，删除后 false | P1 | ✅ 已覆盖 | `conversationExistsReflectsDeletion` |
+| 29 | NewConversationSuggestionCard | 目标已删除时不切换不发送，返回失败（**回归 #185**） | 目标 ID 不在存在集合，当前选中源会话 | `performStart(suggestion:conversations:sender:)` | 返回 false，不发送、不切换，选中态仍为源会话 | P0 | ✅ 已覆盖 | `deletedTargetDoesNotSelectOrSend` |
+| 30 | NewConversationSuggestionCard | 发送失败时必须恢复原选中态并返回失败（**回归 #185**） | 目标存在，sender 返回失败 | `performStart(...)` | 返回 false，选中态恢复为源会话 | P0 | ✅ 已覆盖 | `sendFailureRestoresSelection` |
+| 31 | NewConversationSuggestionCard | 目标存在且发送成功时切换并返回成功 | 目标存在，sender 返回成功 | `performStart(...)` | 返回 true，切换到目标并发送一次 | P1 | ✅ 已覆盖 | `successSelectsTargetAndReturnsTrue` |
+| 32 | NewChatStartingAdapter | startIn 发送成功返回 true，且走显式空附件入口 | 记录型 sender 替身 | `adapter.startIn(conversationID:content:)` | 返回 true，显式重载收到目标 ID 与空附件 | P1 | ✅ 已覆盖 | `startInReturnsTrueOnSuccess` |
+| 33 | NewChatStartingAdapter | startIn 发送抛错时返回 false，不得吞错（**回归 #185**） | sender 替身配置抛错 | `adapter.startIn(conversationID:content:)` | 返回 false，不得显示已打开 | P0 | ✅ 已覆盖 | `startInReturnsFalseOnSendError` |
+| 34 | NewChatStartingAdapter | startIn 发送器缺失时返回 false | adapter sender 为 nil | `adapter.startIn(conversationID:content:)` | 返回 false | P1 | ✅ 已覆盖 | `startInReturnsFalseWhenSenderMissing` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#591**，`NewChatStartingAdapter.startIn`）：
@@ -89,23 +97,29 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 > - **M2** 非 nil 分支也改为取消选择（忽略入参 id）→ `restoreNonNilSelectionSelects` 转红（未切回原对话），两条 nil 用例仍绿。
 > - 还原完整修复（nil → `deselectConversation()`，非 nil → `selectConversation(id:)`）→ 22 条全绿。
 
+> 变异验证（**#185**，`NewConversationSuggestionCard.performStart` / `NewChatStartingAdapter.startIn`）：
+> - **M1** 移除 `performStart` 切换/发送前的 `conversationExists` 守卫（复现原 bug）→ `deletedTargetDoesNotSelectOrSend` 转红（opened==true、向已删除目标发送并切换，4 处断言失败）；其余 6 条仍绿。
+> - **M2** `startIn` 退回 `try?` 吞错并无条件 `return true`（复现原 bug）→ `startInReturnsFalseOnSendError` 转红（succeeded==true，错误被吞）；其余 6 条仍绿。
+> - **M3** `performStart` 失败分支移除选中态恢复（复现残留切换）→ `sendFailureRestoresSelection` 转红（选中态停在目标而非源会话）；其余 6 条仍绿。
+> - 还原完整修复（存在性守卫 + do/catch 如实上报 + 失败按身份恢复选中态）→ 34 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 6 / 6
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

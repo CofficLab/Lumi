@@ -42,6 +42,12 @@ protocol NewChatCapability: AnyObject {
     /// 切换到指定对话。
     func selectConversation(id: UUID)
 
+    /// 指定对话是否仍存在于会话列表。
+    ///
+    /// 建议卡片点击前必须据此校验目标：用户可能已删除工具创建的对话，
+    /// 向已删除 ID 切换/发送会启动不可见回合（#185）。
+    func conversationExists(id: UUID) -> Bool
+
     /// 将选中态恢复为 `conversationID`；nil 表示恢复「未选中」（新建会话）态。
     func restoreSelection(to conversationID: UUID?)
 }
@@ -99,6 +105,10 @@ final class NewChatCapabilityAdapter: NewChatCapability {
 
     func selectConversation(id: UUID) {
         conversations?.selectConversation(id: id)
+    }
+
+    func conversationExists(id: UUID) -> Bool {
+        conversations?.conversations.contains { $0.id == id } == true
     }
 
     func restoreSelection(to conversationID: UUID?) {
