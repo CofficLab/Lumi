@@ -47,6 +47,9 @@ struct MailComposeView: View {
                 onClose()
             }
         }
+        .onDisappear {
+            viewModel.flushDraftSaveOnClose()
+        }
     }
 
     // MARK: - 头部
@@ -98,14 +101,14 @@ struct MailComposeView: View {
                             .fill(theme.appListRowBackground)
                     )
                     .onChange(of: viewModel.body) { _ in
-                        viewModel.saveDraftNow()
+                        viewModel.scheduleDraftSave()
                     }
             }
             .padding(16)
         }
-        .onChange(of: viewModel.to) { _ in viewModel.saveDraftNow() }
-        .onChange(of: viewModel.cc) { _ in viewModel.saveDraftNow() }
-        .onChange(of: viewModel.subject) { _ in viewModel.saveDraftNow() }
+        .onChange(of: viewModel.to) { _ in viewModel.scheduleDraftSave() }
+        .onChange(of: viewModel.cc) { _ in viewModel.scheduleDraftSave() }
+        .onChange(of: viewModel.subject) { _ in viewModel.scheduleDraftSave() }
     }
 
     private func fieldRow(

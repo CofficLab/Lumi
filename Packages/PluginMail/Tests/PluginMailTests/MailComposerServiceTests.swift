@@ -249,7 +249,7 @@ final class MailComposeViewModelTests: XCTestCase {
         XCTAssertTrue(vm.body.contains("Please review the plan."))
     }
 
-    func testDraftRestoreRestoresAllFields() {
+    func testDraftRestoreRestoresAllFields() async {
         let account = makeAccount()
         let vm = makeVM(mode: .new, account: account)
         vm.to = "lisi@example.com"
@@ -257,6 +257,7 @@ final class MailComposeViewModelTests: XCTestCase {
         vm.subject = "Quarterly"
         vm.body = "Draft body"
         vm.addAttachment(Data("pdf-bytes".utf8), filename: "plan.pdf")
+        await vm.saveDraftNow()
         XCTAssertNotNil(vm.draftSavedAt, "编辑后应写入本地草稿")
 
         let reopened = makeVM(mode: .new, account: account)
@@ -291,7 +292,7 @@ final class MailComposeViewModelTests: XCTestCase {
         let vm = makeVM(mode: .new, session: session, account: account)
         vm.to = "lisi@example.com"
         vm.body = "Body"
-        vm.saveDraftNow()
+        await vm.saveDraftNow()
 
         vm.send()
         await waitForPhaseSettle(vm)
