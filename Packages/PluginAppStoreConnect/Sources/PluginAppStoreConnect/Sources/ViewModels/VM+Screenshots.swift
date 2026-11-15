@@ -39,34 +39,38 @@ extension VM {
         }
     }
 
-    func addScreenshotFiles(_ urls: [URL]) {
+    func addScreenshotFiles(_ urls: [URL]) async {
         guard !isReadOnlyVersion else { return }
-        var newItems: [PendingScreenshot] = []
-        for url in urls {
-            guard let image = NSImage(contentsOf: url),
-                  let representation = image.representations.first else {
-                newItems.append(PendingScreenshot(
-                    url: url,
-                    width: 0,
-                    height: 0,
-                    displayType: selectedScreenshotDisplayType,
-                    status: .invalid(AppStoreConnectLocalization.string("Not a readable image"))
-                ))
-                continue
-            }
+        let displayType = selectedScreenshotDisplayType
+        let items = await Task.detached(priority: .userInitiated) {
+            urls.map { Self.readScreenshotItem(url: $0, displayType: displayType) }
+        }.value
+        // 后台读取期间可能切到只读版本；写回前重新校验，避免旧请求污染新状态。
+        guard !isReadOnlyVersion else { return }
+        pendingScreenshots.append(contentsOf: items)
+    }
 
-            let width = representation.pixelsWide
-            let height = representation.pixelsHigh
-            let status = validateScreenshot(width: width, height: height)
-            newItems.append(PendingScreenshot(
+    /// 在后台线程打开图片并校验像素尺寸，组装待上传条目。
+    nonisolated static func readScreenshotItem(url: URL, displayType: String) -> PendingScreenshot {
+        guard let image = NSImage(contentsOf: url),
+              let representation = image.representations.first else {
+            return PendingScreenshot(
                 url: url,
-                width: width,
-                height: height,
-                displayType: selectedScreenshotDisplayType,
-                status: status
-            ))
+                width: 0,
+                height: 0,
+                displayType: displayType,
+                status: .invalid(AppStoreConnectLocalization.string("Not a readable image"))
+            )
         }
-        pendingScreenshots.append(contentsOf: newItems)
+        let width = representation.pixelsWide
+        let height = representation.pixelsHigh
+        return PendingScreenshot(
+            url: url,
+            width: width,
+            height: height,
+            displayType: displayType,
+            status: validateScreenshot(width: width, height: height)
+        )
     }
 
     func removeScreenshot(_ screenshot: PendingScreenshot) {
@@ -135,7 +139,7 @@ extension VM {
         selectedScreenshotDisplayType = first.screenshotDisplayType
     }
 
-    func validateScreenshot(width: Int, height: Int) -> PendingScreenshot.Status {
+    nonisolated static func validateScreenshot(width: Int, height: Int) -> PendingScreenshot.Status {
         guard width > 0, height > 0 else {
             return .invalid(AppStoreConnectLocalization.string("Image has no pixel size"))
         }
