@@ -117,17 +117,19 @@ public struct HostsManagerView: View, SuperLog {
 
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                do {
-                    try HostsFileService.shared.backupHosts(to: url)
-                    viewModel.errorMessage = nil
-                } catch {
-                    if HostsManagerPlugin.verbose {
-                        HostsManagerPlugin.logger.error("\(Self.t)Export failed: \(error)")
+                Task { @MainActor in
+                    do {
+                        try await HostsFileService.shared.backupHosts(to: url)
+                        viewModel.errorMessage = nil
+                    } catch {
+                        if HostsManagerPlugin.verbose {
+                            HostsManagerPlugin.logger.error("\(Self.t)Export failed: \(error)")
+                        }
+                        viewModel.errorMessage = String(
+                            format: pluginLocalization.string("Export failed: %@"),
+                            error.localizedDescription
+                        )
                     }
-                    viewModel.errorMessage = String(
-                        format: pluginLocalization.string("Export failed: %@"),
-                        error.localizedDescription
-                    )
                 }
             }
         }

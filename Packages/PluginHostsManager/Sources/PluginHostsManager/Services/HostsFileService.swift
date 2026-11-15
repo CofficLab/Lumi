@@ -84,13 +84,23 @@ public class HostsFileService: SuperLog {
         try await install(tempURL)
     }
 
-    public func backupHosts(to url: URL) throws {
+    public func backupHosts(to url: URL) async throws {
         if Self.verbose {
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.info("\(self.t)Backing up hosts file to: \(url.path)")
             }
         }
-        let content = try Self.readTextFile(at: URL(fileURLWithPath: hostsPath))
+        // 源文件读取、UTF 解码与目标原子写入都是随文件大小增长的阻塞 IO，
+        // 移到后台线程，主线程只发起任务（#1208）。
+        let hostsPath = self.hostsPath
+        try await Task.detached(priority: .userInitiated) {
+            try Self.backupSync(hostsPath: hostsPath, to: url)
+        }.value
+    }
+
+    /// 在后台线程读取 hosts 源文件并原子写入备份目标。
+    nonisolated static func backupSync(hostsPath: String, to url: URL) throws {
+        let content = try readTextFile(at: URL(fileURLWithPath: hostsPath))
         try content.write(to: url, atomically: true, encoding: .utf8)
     }
 
@@ -100,7 +110,11 @@ public class HostsFileService: SuperLog {
                             HostsManagerPlugin.logger.info("\(self.t)Importing hosts from file: \(url.path)")
             }
         }
-        let content = try Self.readTextFile(at: url)
+        // 导入接受任意文本/数据文件，读取与解码可能很大；先在后台线程读出内容，
+        // 再回到主线程走既有特权保存流程（#1208）。
+        let content = try await Task.detached(priority: .userInitiated) {
+            try Self.readTextFile(at: url)
+        }.value
         try await saveHosts(content: content)
     }
 
