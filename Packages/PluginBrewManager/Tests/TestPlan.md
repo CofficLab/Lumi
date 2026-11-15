@@ -5,7 +5,7 @@
 BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a developer tool view for inspecting installed packages, checking updates, searching packages, and running install, uninstall, or upgrade actions through BrewKit.
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 44
+测试文件: 8 个，用例总数: 48
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,6 +38,7 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 - **搜索配额**（#654，4 条）：`search` 的 Formula 与 Cask 须各自独立限额（各 10 个），不得用共享配额 `10 - formulaLimit.count` 让 Formula 满额时把 Cask 挤成 0、整类应用被丢弃；仅一类匹配时另一类为空仍须正常返回。由 `BrewSearchCaskQuotaTests` 锁定。
 - **Formula 全名**（#655，5 条）：`listInstalled`/`getOutdated`/`getInfo` 构造 Formula 须用 `full_name ?? name` 作为身份，不得丢弃 Homebrew 已返回的 `full_name`；Tap 与 Core 同名时两者 `id` 不得碰撞，安装/更新/卸载命令须落在用户选中的 Tap 包；无 `full_name` 时回退短 `name`。由 `BrewFormulaFullNameTests` 锁定。
 - **输出截断**（#408，7 条）：brew 的 JSON 输出可能远超 KitShell 默认 64 KiB 上限；`runBrewCommand` 须把上限提到 16 MiB 容纳完整文档并捕获 `stdoutTruncated`，`execute` 在 exitCode==0 但 stdout 被截断时必须抛 `outputTruncated`，绝不能把残缺尾部当成功解析；未截断的完整 JSON 仍正常解析，非零退出码优先报 `commandFailed`。由 `BrewOutputTruncationTests` 锁定。
+- **卸载确认**（#656，4 条）：卸载是破坏性操作，内置手册要求先确认并警告可能影响依赖包。行内 Uninstall 按钮只能调用 `requestUninstall(package:)` 登记 `packagePendingUninstall`，不得直接执行卸载；视图须用 `confirmationDialog` 展示目标包名与依赖警告，仅「卸载」确认按钮调用 `confirmUninstall(package:)` 才真正执行，取消调用 `cancelUninstall()` 清空待确认包。由 `BrewManagerUninstallConfirmationTests` 锁定；改动卸载入口或确认流程时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -88,7 +89,16 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 | 43 | 输出截断 | runBrewCommand 保留超过旧 64 KiB 上限的完整输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runBrewCommandRetainsOutputAboveLegacyLimit` |
 | 44 | 输出截断 | runBrewCommand 对超过新上限的输出标记截断 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runBrewCommandFlagsTruncationAboveLimit` |
 
-> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
+### 卸载确认（回归 #656）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 45 | 卸载确认 | 单击 Uninstall 只登记待确认包，不得立即执行卸载（回归 #656） | 假服务记录卸载调用 | `requestUninstall(package:)` 后让出主线程 | `packagePendingUninstall == package`，`uninstallCalls == 0` | P0 | ✅ 已覆盖 | `requestUninstallDoesNotExecuteUninstall` |
+| 46 | 卸载确认 | 确认后才执行一次卸载并清空待确认包（回归 #656） | 同上 | `requestUninstall` 后 `confirmUninstall(package:)` | `uninstallCalls == 1`、`uninstalledNames == ["node"]`、待确认包为 nil | P0 | ✅ 已覆盖 | `confirmUninstallExecutesOnceAndClearsPending` |
+| 47 | 卸载确认 | 取消确认不执行卸载并清空待确认包（回归 #656） | 同上 | `requestUninstall` 后 `cancelUninstall()` | 待确认包为 nil，`uninstallCalls == 0` | P0 | ✅ 已覆盖 | `cancelUninstallDoesNotExecuteUninstall` |
+| 48 | 卸载确认 | 连续请求不同包时待确认包替换为最后一个，仍未执行卸载 | 同上 | 先后 `requestUninstall(node)`、`requestUninstall(wget)` | 待确认包为 wget，`uninstallCalls == 0` | P1 | ✅ 已覆盖 | `requestUninstallReplacesPendingPackage` |
+
+> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#330）：M1 将 `retry()` 的 `.environment` 分支改为 `break` → `retryRechecksEnvironmentWhenBrewMissing`、`retryEnvironmentSucceedsAfterBrewInstalled` 转红；M2 将 `.refresh` 分支改为 `break` → `retryRerunsFailedRefresh`、`retryKeepsErrorWhenRefreshStillFails` 转红；M3 删除安装失败处的 `lastFailedOperation = .install(package)` → `retryRerunsFailedInstallWithSamePackage` 转红。三处变异均单独施加并确认转红后还原，最终 25 条全绿。
@@ -100,24 +110,26 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 > 变异验证（#655）：M1 将 `getInfo` 的 Formula 构造还原为 `f.name` → `getInfoFormulaKeepsFullName`、`getInfoDistinguishesTapAndCoreIds` 转红（full_name 丢失、id 碰撞）；M2 将 `listInstalled` 还原为 `f.name` → `listInstalledFormulaKeepsFullName` 转红；M3 将 `getOutdated` 还原为 `f.name` → `getOutdatedFormulaKeepsFullName` 转红。三处变异均单独施加并确认转红后还原，最终 37 条全绿。
 >
 > 变异验证（#408）：M1 删除 `execute` 中 `if result.stdoutTruncated { throw .outputTruncated }` 守卫 → `listInstalledThrowsWhenStdoutTruncated` 转红（残缺尾部被当 JSON 解析，抛 parsingError 而非 outputTruncated）；M2 将 `maxOutputBytes` 还原为 `64 * 1024` → `runBrewCommandRetainsOutputAboveLegacyLimit` 转红（200 KiB 输出被截成 64 KiB 尾部）；M3 将守卫改为 `if true` → `listInstalledParsesCompleteJSONWhenNotTruncated` 转红（完整 JSON 也被误判截断）；M4 将 `runBrewCommand` 的 `stdoutTruncated: result.stdoutTruncated` 改为 `false` → `runBrewCommandFlagsTruncationAboveLimit` 转红（超 16 MiB 仍不标记截断）。四处变异均单独施加并确认转红后还原，最终 44 条全绿。
+>
+> 变异验证（#656）：行内 Uninstall 原先直接 `Task { await viewModel.uninstall(package:) }`，单击即执行破坏性卸载。修复为 `requestUninstall` 只登记 `packagePendingUninstall`，视图经 `confirmationDialog` 确认后由 `confirmUninstall(package:)` 才调用服务。M1 让 `requestUninstall` 重新派发 `Task { await uninstall(package:) }`（原 bug）→ `requestUninstallDoesNotExecuteUninstall` 转红（让出主线程后 uninstallCalls≠0）、`confirmUninstallExecutesOnceAndClearsPending` 转红（请求与确认各卸载一次，共 2 次）。变异施加并确认转红后还原，最终 48 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 25 / 25
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 3 / 3
-- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
+- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
