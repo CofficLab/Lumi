@@ -36,6 +36,10 @@ public actor DockerService: SuperLog {
         return nil
     }
     
+    /// docker images / history / trivy 报告可能远超默认 64KiB；放宽捕获上限，
+    /// 避免正常结果被截断（#258）。
+    static let maxOutputBytes = 16 * 1024 * 1024
+
     /// Execute a Docker command with error handling
     private func runDockerCommand(_ args: [String]) async throws -> String {
         guard let dockerPath = dockerPath else {
@@ -45,12 +49,21 @@ public actor DockerService: SuperLog {
         let result = try await Shell.execute(
             executable: dockerPath,
             arguments: args,
-            options: ShellOptions(throwsOnError: false)
+            options: ShellOptions(throwsOnError: false, maxOutputBytes: Self.maxOutputBytes)
         )
-        if result.exitCode == 0 {
-            return result.stdout
+        return try Self.interpretCommandOutput(result)
+    }
+
+    /// 把命令结果解释为完整 stdout：非零退出抛 commandFailed，输出被截断抛
+    /// outputTruncated，绝不能把 KitShell 保留的尾部当成完整列表/报告（#258）。
+    static func interpretCommandOutput(_ result: ShellResult) throws -> String {
+        guard result.exitCode == 0 else {
+            throw DockerError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
         }
-        throw DockerError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
+        if result.stdoutTruncated {
+            throw DockerError.outputTruncated
+        }
+        return result.stdout
     }
     
     // MARK: - Image Operations
@@ -201,12 +214,9 @@ public actor DockerService: SuperLog {
         let result = try await Shell.execute(
             executable: trivy,
             arguments: ["image", "--format", "table", id],
-            options: ShellOptions(throwsOnError: false)
+            options: ShellOptions(throwsOnError: false, maxOutputBytes: Self.maxOutputBytes)
         )
-        if result.exitCode == 0 {
-            return result.stdout
-        }
-        throw DockerError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
+        return try Self.interpretCommandOutput(result)
     }
     
     // MARK: - Private Helpers

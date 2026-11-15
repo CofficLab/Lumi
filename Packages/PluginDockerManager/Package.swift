@@ -39,6 +39,7 @@ let package = Package(
             name: "DockerManagerPluginTests",
             dependencies: [
                 .target(name: "DockerManagerPlugin"),
+                .product(name: "KitShell", package: "KitShell"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),

@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 71
+测试文件: 5 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Models/`
@@ -33,6 +33,7 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 - **DockerManagerPluginLifecycle**（9 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootRegistersActivityBarItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`selectingAnotherImageIgnoresStaleDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Docker history decoding**（5 条）：由 `decodesRealHistoryLine`、`decodesMultiLayerHistory`、`allInvalidHistoryLinesThrow` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **输出截断**（#258，4 条）：由 `commandOutputThrowsWhenTruncated`、`commandOutputReturnsStdoutWhenComplete`、`commandOutputThrowsCommandFailedOnNonZeroExit`、`commandFailedFallsBackToStdoutWhenStderrEmpty` 锁定；docker images/history/trivy 输出被 KitShell 截断（stdoutTruncated）时必须抛 outputTruncated，不得把保留的尾部当完整列表/报告；改动 `DockerService.runDockerCommand`/`scanImage`/`interpretCommandOutput` 时优先跑 `DockerOutputTruncationTests`。
 
 ## 测试用例清单
 
@@ -109,27 +110,32 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 69 | DockerManagerLogic | 删除同一镜像的另一个标签不得清空当前选中的引用 | 选中 alpha:latest，存在同 ID 的 alpha:dev | 普通删除 alpha:dev | `selectedImage` 仍为 alpha:latest，下发 `rmi alpha:dev` | P0 | ✅ 已覆盖 | `deletingAnotherTagKeepsSelectedReference` |
 | 70 | DockerManagerLogic | 悬空镜像（<none>）普通删除回退到 imageID | repository/tag 均为 <none> | 普通删除该镜像 | 下发 `rmi <imageID>`，列表清空 | P1 | ✅ 已覆盖 | `ordinaryDeleteOfDanglingImageFallsBackToImageID` |
 | 71 | DockerManagerLogic | 强制删除按 imageID 移除整镜像的全部标签 | 同一 imageID 的两个标签 | `deleteImage(force: true)` | 下发 `rmi <imageID>`（force=true），两个标签行全部移除 | P1 | ✅ 已覆盖 | `forceDeleteRemovesWholeImageByImageID` |
+| 72 | 输出截断 | 退出码 0 但 stdout 被截断时抛 outputTruncated，不得把截尾当完整列表/报告（**回归 #258**） | 构造 stdoutTruncated=true 的结果 | 调用 interpretCommandOutput | 抛 DockerError.outputTruncated | P0 | ✅ 已覆盖 | `commandOutputThrowsWhenTruncated` |
+| 73 | 输出截断 | 退出码 0 且未截断时原样返回 stdout | 构造 stdoutTruncated=false 的结果 | 调用 interpretCommandOutput | 返回完整 stdout | P1 | ✅ 已覆盖 | `commandOutputReturnsStdoutWhenComplete` |
+| 74 | 输出截断 | 非零退出抛 commandFailed 并透传 stderr | 构造 exitCode=1、stderr=boom | 调用 interpretCommandOutput | 抛 commandFailed，message=boom | P1 | ✅ 已覆盖 | `commandOutputThrowsCommandFailedOnNonZeroExit` |
+| 75 | 输出截断 | 非零退出且 stderr 为空时回退到 stdout | 构造 exitCode=2、stderr 空、stdout 非空 | 调用 interpretCommandOutput | 抛 commandFailed，message=stdout | P1 | ✅ 已覆盖 | `commandFailedFallsBackToStdoutWhenStderrEmpty` |
 
-> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证（#258）：D-M1 删除 interpretCommandOutput 截断守卫 → `commandOutputThrowsWhenTruncated` 红；D-M2 守卫改判 stderrTruncated → `commandOutputThrowsWhenTruncated` 红；D-M3 删除 exitCode 守卫 → `commandOutputThrowsCommandFailedOnNonZeroExit` 红；D-M4 commandFailed 去掉 stdout 回退 → `commandFailedFallsBackToStdoutWhenStderrEmpty` 红。均恢复后复绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
-- P1: 已覆盖 47 / 47
+- P0: 已覆盖 21 / 21
+- P1: 已覆盖 50 / 50
 - P2: 已覆盖 4 / 4
-- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
-- **P1**: 其余功能性用例（47 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P1**: 其余功能性用例（50 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
