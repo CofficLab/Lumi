@@ -202,6 +202,24 @@ public final class RecordingSessionManager {
         }
     }
 
+    /// 插件关闭：停止并落盘活动录制，失败时回退取消以释放采集资源。
+    /// 单例不随插件生命周期结束，若不显式停止，禁用后采集仍会继续，
+    /// 而 stop 工具已被移除，用户既不能停止也观察不到（#223）。
+    public func shutdown() async {
+        if hasActiveSession {
+            do {
+                _ = try await stop()
+            } catch {
+                await cancel()
+            }
+        } else {
+            cancelTimers()
+            await recorder?.cancel()
+            recorder = nil
+            resolvedWindow = nil
+        }
+    }
+
     // MARK: - Target resolution
 
     private func resolveTarget(for config: RecordingConfig) async throws -> (filter: SCContentFilter, description: String, window: RecordableWindow?) {

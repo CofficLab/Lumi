@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 31 条用例。
+PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 34 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 31
+测试文件: 7 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,7 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 - **RecordingResolution**（8 条）：由 `heightOneIsRejected`、`nonPositiveHeightsAreRejected`、`outputSizeIsNeverZero` 等用例锁定高度 1 对齐后为 0 的拒绝路径（#866）；改动该模块时优先跑对应测试文件。
 - **ScreenRecorderPlugin**（9 条）：由 `modelsInitialize`、`frameRateClamping`、`resolutionHeightAndDurationClamping` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RecordingSessionManagerConcurrency**（3 条）：由 `secondStartDuringTargetResolutionIsRejected`、`secondStartDuringMicrophonePermissionIsRejected`、`activeSessionRejectsSecondStartWithoutOverwrite` 锁定 start 的启动互斥必须从进入流程持有到会话建立（**#224**）；改动该模块时优先跑对应测试文件。
+- **ScreenRecorderPluginShutdown**（3 条）：由 `shutdownStopsAndFinalizesActiveRecording`、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 锁定插件关闭必须停止并落盘活动录制、隐藏指示器（**#223**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -79,8 +80,11 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 | 29 | RecordingSessionManagerConcurrency | 目标解析期间的第二个 start 必须被拒绝 alreadyRecording，不得覆盖先到者（**回归 #224**） | 注入权限放行与门闩式目标解析，第一个 start 停在解析 await | 并发发起第二个 start，随后放行门闩 | 第二个抛 alreadyRecording；第一个按自己的路径收尾；失败后互斥释放可再次 start | P0 | ✅ 已覆盖 | `secondStartDuringTargetResolutionIsRejected` |
 | 30 | RecordingSessionManagerConcurrency | 麦克风权限等待期间的第二个 start 必须被拒绝 alreadyRecording，不得重复触发权限弹窗（**回归 #224**） | 注入屏幕权限放行、麦克风未授权与挂起的权限请求，第一个 start 停在权限 await | 并发发起第二个 start，随后以拒绝收尾权限请求 | 第二个抛 alreadyRecording 且权限请求只触发一次；第一个以 microphonePermissionDenied 收尾 | P0 | ✅ 已覆盖 | `secondStartDuringMicrophonePermissionIsRejected` |
 | 31 | RecordingSessionManagerConcurrency | 已建立的会话拒绝第二个 start 且不被覆盖（**回归 #224**） | 注入空操作引擎桩建立活动会话 | 再次调用 start | 抛 alreadyRecording，会话 id 与活跃状态不变 | P0 | ✅ 已覆盖 | `activeSessionRejectsSecondStartWithoutOverwrite` |
+| 32 | ScreenRecorderPluginShutdown | 关闭时必须停止并落盘活动录制，隐藏指示器（**回归 #223**） | 注入可落盘引擎桩建立活动录制并显示指示器 | 调用 plugin.onShutdown 并等待异步清理 | 会话 finished、输出 mp4 落盘、指示器隐藏 | P0 | ✅ 已覆盖 | `shutdownStopsAndFinalizesActiveRecording` |
+| 33 | ScreenRecorderPluginShutdown | 关闭时 stop 失败必须回退取消，会话不得残留活跃态（**回归 #223**） | 注入 stop 必失败的引擎桩建立活动录制 | 调用 plugin.onShutdown 并等待异步清理 | 会话 error、不再活跃、指示器隐藏 | P0 | ✅ 已覆盖 | `shutdownFallsBackToCancelWhenStopFails` |
+| 34 | ScreenRecorderPluginShutdown | 无活动录制时关闭也必须隐藏指示器（**回归 #223**） | 无活动录制，指示器处于显示态 | 调用 plugin.onShutdown | 指示器同步隐藏，无活跃会话 | P0 | ✅ 已覆盖 | `shutdownWithoutRecordingHidesIndicator` |
 
-> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#224**，`RecordingSessionManager.start` 启动互斥）：
@@ -88,23 +92,27 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 > - **M2** 把互斥占有移回权限 await 之后（保留 isStarting）→ `secondStartDuringMicrophonePermissionIsRejected` 转红（第二个请求再次进入麦克风权限等待），目标解析用例仍绿。
 > - 还原完整修复（任何 await 之前占有 isStarting，defer 释放，权限/解析/引擎经注入点可测）→ 31 条全绿。
 
+> 变异验证（**#223**，`ScreenRecorderPlugin.onShutdown` 停止活动录制）：
+> - **M1** 还原旧关闭路径（只注销工具/观察者/设置页，不调度 `manager.shutdown()`、不隐藏指示器）→ `shutdownStopsAndFinalizesActiveRecording`（会话仍活跃、无落盘、指示器仍显示）、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 三条全部转红。
+> - 还原完整修复（fire-and-forget 调度 shutdown：活动录制 stop 落盘、失败回退 cancel；同步隐藏指示器）→ 34 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
+- P0: 已覆盖 11 / 11
 - P1: 已覆盖 20 / 20
 - P2: 已覆盖 3 / 3
-- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
 - **P1**: 其余功能性用例（20 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
