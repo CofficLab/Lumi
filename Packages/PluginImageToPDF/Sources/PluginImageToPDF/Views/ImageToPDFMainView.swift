@@ -90,7 +90,7 @@ struct ImageToPDFMainView: View {
                         .lineLimit(1)
                 }
                 Button {
-                    viewModel.chooseDirectoryAndExport()
+                    Task { await viewModel.chooseDirectoryAndExport() }
                 } label: {
                     Label(
                         ImageToPDFLocalization.string("Export to…"),

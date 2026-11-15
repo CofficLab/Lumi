@@ -166,7 +166,10 @@ final class GeneralSettingsViewModel: ObservableObject {
                     return
                 }
 
-                try Self.installDiagnosticsArchive(from: archive.url, to: destination)
+                let sourceURL = archive.url
+                try await Task.detached(priority: .userInitiated) {
+                    try Self.installDiagnosticsArchive(from: sourceURL, to: destination)
+                }.value
                 diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
             } catch {
                 diagnosticsFeedback = "导出失败：\(error.localizedDescription)"
@@ -179,7 +182,7 @@ final class GeneralSettingsViewModel: ObservableObject {
     /// 先在同目录复制出临时文件，确认写入成功后才替换目标。复制阶段（空间不足、
     /// I/O 错误）失败时目标文件完全没被触碰；替换阶段失败则把原文件移回原位。
     /// 不能先 `removeItem(destination)` 再 copy——那会在失败时直接丢掉用户数据（#997）。
-    static func installDiagnosticsArchive(from source: URL, to destination: URL) throws {
+    nonisolated static func installDiagnosticsArchive(from source: URL, to destination: URL) throws {
         let fileManager = FileManager.default
         let directory = destination.deletingLastPathComponent()
         let staging = directory.appendingPathComponent(".lumi-diagnostics-\(UUID().uuidString).zip")
