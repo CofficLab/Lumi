@@ -719,6 +719,23 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         guard let config = selectedConfig,
               let manager = schemaChangeManager,
               manager.hasChanges else { return }
+        // 结构变更若重命名/删除了仍有未保存数据编辑的列，数据变更管理器持有的旧 schema
+        // 快照会生成引用已不存在列名的 SQL（如 UPDATE ... SET "name"），保存必然失败。
+        // 明确阻止并要求用户先保存/放弃数据编辑，绝不静默用旧 schema 生成必失败的 SQL（#583）。
+        if let dataChanges = changeManager, dataChanges.hasChanges {
+            let invalidatedColumns = Set(manager.changes.flatMap { change -> [String] in
+                switch change {
+                case .renameColumn(_, let oldName, _): return [oldName]
+                case .dropColumn(_, let column): return [column.name]
+                case .addColumn, .addIndex, .dropIndex: return []
+                }
+            })
+            let conflict = invalidatedColumns.intersection(dataChanges.referencedColumnNames)
+            if !conflict.isEmpty {
+                tableSchemaError = "结构变更会改动仍有未保存数据编辑的列（\(conflict.sorted().joined(separator: ", "))）。请先保存或放弃这些数据编辑，再应用结构变更。"
+                return
+            }
+        }
         guard let connection = await self.manager.getConnection(for: config.id) else {
             tableSchemaError = "Not connected to database"
             return

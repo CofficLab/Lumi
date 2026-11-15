@@ -146,6 +146,23 @@ public final class TableChangeManager: ObservableObject {
         changedCellCount + pendingInsertCount + pendingDeleteCount
     }
 
+    /// 暂存数据编辑所引用的全部列名：UPDATE 的 SET 列与主键 WHERE 列、INSERT 的列、DELETE 的主键列。
+    /// 结构变更若重命名/删除其中任一列，这些编辑基于旧 schema 快照生成的 SQL 必然失效（#583）。
+    public var referencedColumnNames: Set<String> {
+        var names: Set<String> = []
+        for update in updatesByRow.values {
+            names.formUnion(update.columnUpdates.keys)
+            for pk in update.primaryKeyValues { names.insert(pk.column) }
+        }
+        for insert in pendingInserts {
+            names.formUnion(insert.columnValues.keys)
+        }
+        for pkValues in deletedPKValues.values {
+            for pk in pkValues { names.insert(pk.column) }
+        }
+        return names
+    }
+
     public var canUndo: Bool { !undoStack.isEmpty }
     public var canRedo: Bool { !redoStack.isEmpty }
 
