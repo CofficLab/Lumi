@@ -100,8 +100,9 @@ struct AttachmentPreviewView: View {
 
     /// 处理落到预览区上的拖放。
     ///
-    /// 与输入框共用 `ConversationInputViewModel.attach(droppedURL:)` 的分流规则，
-    /// 因此同一个文件拖到输入框与拖到预览区会得到相同的结果。
+    /// 与输入框共用 `ConversationInputViewModel.attach(droppedURLs:)` 的分流规则，
+    /// 因此同一个文件拖到输入框与拖到预览区会得到相同的结果，且整批保持
+    /// 原始拖放顺序入池（#804）。
     private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
         ConversationInputViewModel.logger.info(
             "\(Self.logPrefix)drop reached preview, providers=\(providers.count)"
@@ -110,9 +111,7 @@ struct AttachmentPreviewView: View {
             ConversationInputViewModel.logger.info(
                 "\(Self.logPrefix)resolved \(urls.count) url(s): \(urls.map(\.lastPathComponent).joined(separator: ","))"
             )
-            for url in urls {
-                viewModel.attach(droppedURL: url)
-            }
+            viewModel.attach(droppedURLs: urls)
         }
         return true
     }

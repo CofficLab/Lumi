@@ -80,6 +80,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 - **附件预览区拖放**（10 条）：由 `fileURLProviderResolvesToLocalURL`、`plainTextProviderResolvesToLocalURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **附件预览区拖放类型声明**（4 条）：由 `previewDeclaresFileURLOnly`、`swiftUIKeepsFileURLForImage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **批次拖放顺序**（6 条）：由 `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads`、`batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` 等用例锁定（**回归 #804**）：同一批拖入的多个附件需要并发读取但按原始 URL 顺序入池，不得随 I/O 完成时序乱序；改动 `attach(droppedURLs:)` / `readAttachmentsInOrder` 时优先跑 `ConversationInputDropOrderTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -515,12 +516,39 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 3. 删除 `attachImage` switch 前的会话守卫 → ID 204 与 206 均失败（B 图片池非空 / 收到错误提示）。
 > 三个变异分别锁定「文件成功入池」「文件失败报错」「图片入池与报错」三条写回路径都必须校验会话身份。
 
+### 补充轮次（ID 207–212）：批次拖放按原始顺序入池（#804）
+
+> 两条拖放链（输入框 AppKit `performDragOperation` / 预览区 SwiftUI `.onDrop`）都先
+> 拿到有序 URL 数组，旧实现却逐个 URL 起独立 `Task` 读取、读完即 `add*Attachment`，
+> 文件大小与 I/O 时长决定最终顺序：用户拖 A、B 可能得到 B、A，且该乱序被直接编码进
+> 消息 metadata。修复新增整批入口 `attach(droppedURLs:)`：目录同步按序插入文本，
+> 图片/文件并发读取但**按批次索引收集**后再入池（`readAttachmentsInOrder` 先全部启动
+> 后台任务再按序 await）。整批同步登记 `beginAttachmentRead`（#1023），读取结束统一
+> 校验会话身份（#780），单项失败只跳过该项并报错、其余仍按序入池。
+> 用例用可注入的 `batchAttachmentReader` + 门闩（`AsyncLatch`）确定性构造「后拖入的
+> 先读完」：A 挂门闩、B 立即返回并放行信号，测试等 B 完成后才放行 A，乱序必现而非
+> 依赖真实 I/O 时序。套件 `.serialized`，避免并发用例互相覆盖注入的读取器。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 207 | 批次拖放顺序 | 同一批文件按原始拖放顺序入池，而非读取完成顺序（**回归 #804**） | 注入读取器：A 挂门闩、B 立即返回 | `attach(droppedURLs: [A, B])` → 等 B 完成 → 放行 A → 等读取收尾 | 文件池为 `["A.txt", "B.txt"]`，读取窗口内计数为 2，已聚焦 | P0 | ✅ 已覆盖 | `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads` |
+| 208 | 批次拖放顺序 | 同一批图片按原始拖放顺序入池，而非读取完成顺序（**回归 #804**） | 注入读取器：A 挂门闩、B 立即返回 | `attach(droppedURLs: [A, B])` → 等 B 完成 → 放行 A → 等读取收尾 | 图片池为 `["A.png", "B.png"]`，已聚焦 | P0 | ✅ 已覆盖 | `batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` |
+| 209 | 批次拖放顺序 | 图片与文件混拖时各自池内仍保持原始相对顺序（**回归 #804**） | 批次 [文件A, 图片B, 文件C]，A 最后完成 | `attach(droppedURLs:)` → 等 B 完成 → 放行 A → 等读取收尾 | 文件池 `["A.txt", "C.txt"]`、图片池 `["B.png"]` | P1 | ✅ 已覆盖 | `batchMixedDropsKeepPerPoolOrder` |
+| 210 | 批次拖放顺序 | 批次读取期间切换会话，整批旧附件不落入新会话（**回归 #780**） | 选中 A + 注入立即返回的读取器 | `attach(droppedURLs: [u1, u2])` → 同步切到 B → 等读取收尾 | B 的文件池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleBatchDropDoesNotLeakIntoNewConversation` |
+| 211 | 批次拖放顺序 | 批次中一个文件读取失败：报错但其余成功附件仍按序入池（**回归 #804**） | 注入读取器：A 返回错误、B/C 成功 | `attach(droppedURLs: [A, B, C])` → 等读取收尾 | 文件池 `["B.txt", "C.txt"]`，`errorMessage == "boom A"` | P1 | ✅ 已覆盖 | `batchFileReadFailureSurfacesErrorAndKeepsSuccessfulOrder` |
+| 212 | 批次拖放顺序 | 批次中的目录按原始顺序排队插入文本，附件按序入池（**回归 #804**） | 真实临时目录 A/C + 注入文件 B 读取器 | `attach(droppedURLs: [dirA, fileB, dirC])` → 等读取收尾 | 文本块按 A→C 排队（消费首块后露出第二块），文件池只有 B | P1 | ✅ 已覆盖 | `batchDirectoriesKeepInsertOrder` |
+
+> **#804 变异验证**（恢复后 GREEN）：把批次入池循环 `for outcome in outcomes` 改成
+> `for outcome in outcomes.reversed()`（等价于按完成顺序入池的原始缺陷）→ ID 207 / 208 /
+> 209 / 211 均 RED（池内顺序颠倒），ID 210（整批丢弃）与 212（单附件池）不受影响仍 GREEN。
+> 变异锁定「按原始批次索引收集后再入池」这一顺序契约。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 70 / 70
-- P1: 已覆盖 118 / 118
+- P0: 已覆盖 73 / 73
+- P1: 已覆盖 121 / 121
 - P2: 已覆盖 18 / 18
-- **合计: 206 / 206**（仅表示清单场景，非源码覆盖率）
+- **合计: 212 / 212**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

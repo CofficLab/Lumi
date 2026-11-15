@@ -436,6 +436,47 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 把同一批拖入的多个文件按类型分流，并**保持原始拖放顺序**入池（#804）。
+    ///
+    /// 输入框与附件预览两条拖放链都先拿到有序 URL 数组，再整批调用本方法。
+    /// 单个 URL 仍走 `attach(droppedURL:)` 的既有路径；多个 URL 时并发读取，
+    /// 但结果按原始批次顺序收集后再入池——否则文件大小与 I/O 时长会决定最终
+    /// 顺序，用户拖 A、B 却可能得到 B、A，且该乱序会被直接编码进消息 metadata。
+    func attach(droppedURLs urls: [URL]) {
+        // 只有本地文件才进入附件链（#882）。
+        let fileURLs = urls.filter { ChatInputEditorRules.isFileAttachmentURL($0) }
+        guard !fileURLs.isEmpty else { return }
+        if fileURLs.count == 1 {
+            attach(droppedURL: fileURLs[0])
+            return
+        }
+
+        // 目录路径同步按序插入编辑器文本通道；图片/文件并发读取后按序入池。
+        var attachmentURLs: [URL] = []
+        for url in fileURLs {
+            if ChatInputEditorRules.isDirectoryURL(url) {
+                insertDirectoryPath(url)
+            } else {
+                attachmentURLs.append(url)
+            }
+        }
+        guard !attachmentURLs.isEmpty else { return }
+
+        // 挂起池是发送器级全局数组，读取期间切换会话后整批旧结果都不能落入新会话（#780）。
+        let conversationID = capability.selectedConversationID
+        // 为整批同步登记读取：读取窗口内触发的发送会等全部结束（#1023）。
+        for _ in attachmentURLs { capability.beginAttachmentRead() }
+        Task { @MainActor in
+            defer { for _ in attachmentURLs { capability.endAttachmentRead() } }
+            // 先全部启动后台读取，再按索引顺序 await：并发读取，但按原始顺序收集（#804）。
+            let outcomes = await Self.readAttachmentsInOrder(attachmentURLs)
+            guard capability.selectedConversationID == conversationID else { return }
+            for outcome in outcomes {
+                applyAttachmentOutcome(outcome)
+            }
+        }
+    }
+
     /// 将拖入目录的路径作为文本插入输入框。
     ///
     /// 不能直接改写 `capability.text`：binding 是拍平后的正文，编辑器发现
@@ -532,6 +573,84 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             base64Data: data.base64EncodedString(),
             fileName: fileName
         ))
+    }
+
+    /// 批次附件读取结果（跨 actor 传回主线程，按原始顺序入池）。
+    enum AttachmentReadOutcome: Sendable {
+        case image(UserImageAttachment)
+        case file(UserFileAttachment)
+        /// 空图片：静默忽略（#520）。
+        case emptyImage
+        case undecodableImage(fileName: String)
+        case fileError(message: String)
+    }
+
+    /// 批次附件读取入口（可注入）。
+    ///
+    /// 生产实现按 URL 类型分流到图片/文件加载器；测试注入带门闩的读取器，
+    /// 确定性构造「后拖入的先读完」，验证入池仍按原始批次顺序（#804）。
+    nonisolated(unsafe) static var batchAttachmentReader: @Sendable (URL) async -> AttachmentReadOutcome = { url in
+        if ChatInputEditorRules.isChatImageFileURL(url) {
+            let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+            let fileName = url.lastPathComponent
+            switch loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName) {
+            case .empty: return .emptyImage
+            case .undecodable: return .undecodableImage(fileName: fileName)
+            case .loaded(let attachment): return .image(attachment)
+            }
+        }
+        return loadFileAttachment(from: url)
+    }
+
+    /// 并发读取整批附件，但**按索引顺序**收集结果（#804）。
+    ///
+    /// 先把每个 URL 的后台读取任务全部启动，再按原始顺序逐个 await：读取是
+    /// 并发的，收集顺序却与拖放顺序一致，不受 I/O 完成时序影响。
+    nonisolated private static func readAttachmentsInOrder(_ urls: [URL]) async -> [AttachmentReadOutcome] {
+        let reader = batchAttachmentReader
+        let tasks = urls.map { url in
+            Task.detached(priority: .userInitiated) { await reader(url) }
+        }
+        var outcomes: [AttachmentReadOutcome] = []
+        outcomes.reserveCapacity(tasks.count)
+        for task in tasks {
+            outcomes.append(await task.value)
+        }
+        return outcomes
+    }
+
+    /// 在后台 worker 读取文件字节并构造附件；失败时带回本地化错误文案。
+    nonisolated private static func loadFileAttachment(from url: URL) -> AttachmentReadOutcome {
+        do {
+            return .file(try UserFileAttachmentLoader.load(from: url))
+        } catch {
+            return .fileError(message: error.localizedDescription)
+        }
+    }
+
+    /// 把一个读取结果落到能力层（入池 / 报错 / 聚焦），批次按序逐个调用。
+    private func applyAttachmentOutcome(_ outcome: AttachmentReadOutcome) {
+        switch outcome {
+        case .image(let attachment):
+            capability.addImageAttachment(attachment)
+            capability.isInputFocused = true
+        case .file(let attachment):
+            capability.addFileAttachment(attachment)
+            capability.isInputFocused = true
+        case .emptyImage:
+            break
+        case .undecodableImage(let fileName):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = String(
+                format: pluginLocalization.string("Could not read image: %@"),
+                fileName
+            )
+            refresh()
+        case .fileError(let message):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = message
+            refresh()
+        }
     }
 
     func removeImageAttachment(id: UUID) {
