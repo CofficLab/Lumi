@@ -114,6 +114,22 @@ final class FileTreeDataSource: SuperLog {
     /// 重建期间收到、尚未应用的精准刷新目录。
     private var pendingReloadsDuringRebuild: Set<URL> = []
 
+    /// 等待扫描的精准刷新目录。worker 在途时新到的目录累积在这里，
+    /// 提交后再统一扫描，避免取消在途任务丢掉先前目录的刷新。
+    private var pendingTargetedReloads: Set<URL> = []
+
+    /// worker 正在扫描的目录；重建/切换项目时退回待处理集合。
+    private var inFlightTargetedReloads: Set<URL> = []
+
+    /// 是否有精准刷新 worker 在途。
+    private var isTargetedReloading: Bool = false
+
+    /// 精准刷新的版本号，用于丢弃过期的扫描结果。
+    private var targetedReloadGeneration: Int = 0
+
+    private var targetedReloadTask: Task<Void, Never>?
+    private var targetedReloadWorkerTask: Task<[TargetedReloadResult], Never>?
+
     /// 使用默认依赖的初始化（保持向后兼容）
     init() {
         self.fileSystemReader = DefaultFileSystemReader()
@@ -134,6 +150,7 @@ final class FileTreeDataSource: SuperLog {
         projectRootPath = path
         expandedPaths = expandedPathStore.expandedPaths(for: path)
         isPackageExpanded = FileTreeSettings.shared.isPackageDependencySectionExpanded(for: path)
+        cancelTargetedReload(requeue: false)
         pendingReloadsDuringRebuild.removeAll()
         // 切换项目时立即清空，避免短暂显示上一个项目的文件树残留。
         rebuildItems(clearImmediately: true)
@@ -175,6 +192,7 @@ final class FileTreeDataSource: SuperLog {
         guard !projectRootPath.isEmpty else {
             rebuildTask?.cancel()
             rebuildWorkerTask?.cancel()
+            cancelTargetedReload(requeue: false)
             isRebuilding = false
             pendingReloadsDuringRebuild.removeAll()
             items = []
@@ -186,6 +204,9 @@ final class FileTreeDataSource: SuperLog {
             items = []
             onItemsChanged?(items)
         }
+
+        // 在途的精准刷新提交的是旧快照，会被重建结果覆盖；退回队列等重建后重放。
+        cancelTargetedReload(requeue: true)
 
         // 递增版本号，使任何在途的后台遍历结果作废。
         rebuildGeneration += 1
@@ -238,9 +259,7 @@ final class FileTreeDataSource: SuperLog {
         guard !pendingReloadsDuringRebuild.isEmpty else { return }
         let urls = pendingReloadsDuringRebuild
         pendingReloadsDuringRebuild.removeAll()
-        for url in urls {
-            reloadDirectory(at: url)
-        }
+        reloadDirectories(at: Array(urls))
     }
 
     /// 仅重建软件包依赖部分（不重新扫描文件系统）
@@ -373,51 +392,175 @@ final class FileTreeDataSource: SuperLog {
 
     /// 精准刷新：仅重载指定目录的子节点
     func reloadDirectory(at url: URL) {
+        reloadDirectories(at: [url])
+    }
+
+    /// 批量精准刷新：合并嵌套/重复目录，一次后台扫描、一次列表提交。
+    ///
+    /// 目录枚举（`expandDirectory`）与节点构造（含 `Package.swift` 探测）都是磁盘 I/O，
+    /// 逐个目录在主线程同步执行会让 watcher 的一次批量变化卡住 UI（issue #1235）。
+    /// 这里只在主线程做索引定位与最终提交，扫描全部下放到后台线程。
+    func reloadDirectories(at urls: [URL]) {
+        guard !urls.isEmpty else { return }
         // 重建期间的 items 是清空或旧快照，直接 reload 会被随后提交的遍历结果覆盖，
         // 甚至因空树 guard 静默返回；先记下，等重建提交后重放（回归 #1103）。
         guard !isRebuilding else {
-            pendingReloadsDuringRebuild.insert(url)
+            pendingReloadsDuringRebuild.formUnion(urls)
             return
         }
-        reloadDirectoryNow(at: url)
+        pendingTargetedReloads.formUnion(urls)
+        startTargetedReloadIfNeeded()
     }
 
-    private func reloadDirectoryNow(at url: URL) {
-        // 找到对应的 file 节点
-        guard let index = items.firstIndex(where: {
-            if case .file(let fileItem) = $0 { return fileItem.url == url }
-            return false
-        }), case .file(let fileItem) = items[index] else { return }
+    /// 启动一轮精准刷新扫描；已有 worker 在途时只累积目标，等它提交后再扫下一轮。
+    private func startTargetedReloadIfNeeded() {
+        guard !isTargetedReloading, !pendingTargetedReloads.isEmpty else { return }
 
-        var endIndex = index + 1
-        scan: while endIndex < items.count {
-            switch items[endIndex] {
-            case .file(let f) where f.depth > fileItem.depth:
-                endIndex += 1
-            default:
-                // 遇到第一个同级（或更浅）节点即停止：替换范围只覆盖目标目录
-                // 及其子树，不能延伸到列表末尾而删掉后续兄弟节点（#182）。
-                break scan
+        let candidates = Array(pendingTargetedReloads)
+        pendingTargetedReloads.removeAll()
+
+        // 一次建索引，替代每个目录一趟线性查找；只保留树中真实存在的目录，
+        // 再剔除被其它目标包含的子路径，避免同一棵子树被扫两遍。
+        let indices = fileItemIndices()
+        let presentURLs = candidates.filter { indices[$0] != nil }
+        let requests = PathFormatter.topLevelURLs(from: presentURLs).compactMap { url -> TargetedReloadRequest? in
+            guard let index = indices[url], case .file(let fileItem) = items[index] else { return nil }
+            return TargetedReloadRequest(url: url, depth: fileItem.depth, isExpanded: fileItem.isExpanded)
+        }
+        guard !requests.isEmpty else { return }
+
+        inFlightTargetedReloads = Set(requests.map(\.url))
+        isTargetedReloading = true
+        targetedReloadGeneration += 1
+        let generation = targetedReloadGeneration
+        let rootPath = projectRootPath
+        let snapshotExpandedPaths = expandedPaths
+        let reader = fileSystemReader
+
+        targetedReloadTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
+            let worker = Task.detached(priority: .userInitiated) {
+                Self.enumerateTargetedReloads(
+                    requests,
+                    projectRootPath: rootPath,
+                    expandedPaths: snapshotExpandedPaths,
+                    fileSystemReader: reader
+                )
+            }
+            self?.targetedReloadWorkerTask = worker
+            let results = await worker.value
+
+            guard let self, !Task.isCancelled,
+                  self.targetedReloadGeneration == generation,
+                  self.projectRootPath == rootPath else { return }
+
+            self.isTargetedReloading = false
+            self.inFlightTargetedReloads.removeAll()
+            self.commitTargetedReloads(results)
+            self.startTargetedReloadIfNeeded()
+        }
+    }
+
+    /// 取消在途的精准刷新。
+    /// - Parameter requeue: 为 true 时把目标并入重建后的重放队列（重建会覆盖旧快照）；
+    ///   切换项目时传 false，旧项目的目录不再有意义。
+    private func cancelTargetedReload(requeue: Bool) {
+        targetedReloadTask?.cancel()
+        targetedReloadWorkerTask?.cancel()
+        targetedReloadTask = nil
+        targetedReloadWorkerTask = nil
+        targetedReloadGeneration += 1
+        isTargetedReloading = false
+        if requeue {
+            pendingReloadsDuringRebuild.formUnion(inFlightTargetedReloads)
+            pendingReloadsDuringRebuild.formUnion(pendingTargetedReloads)
+        }
+        inFlightTargetedReloads.removeAll()
+        pendingTargetedReloads.removeAll()
+    }
+
+    /// 文件节点 URL → 扁平列表下标。
+    private func fileItemIndices() -> [URL: Int] {
+        var indices: [URL: Int] = [:]
+        for (index, item) in items.enumerated() {
+            if case .file(let fileItem) = item {
+                indices[fileItem.url] = index
             }
         }
+        return indices
+    }
 
-        if fileItem.isExpanded {
-            let newChildren = Self.expandDirectory(
-                url, depth: fileItem.depth,
-                projectRootPath: projectRootPath,
-                expandedPaths: expandedPaths,
-                fileSystemReader: fileSystemReader
+    /// 后台扫描一批目录，产出可直接替换进扁平列表的节点。
+    ///
+    /// `nonisolated`：只依赖入参快照与 Sendable 的 reader，不触碰 `self` 的可变状态。
+    private nonisolated static func enumerateTargetedReloads(
+        _ requests: [TargetedReloadRequest],
+        projectRootPath: String,
+        expandedPaths: Set<String>,
+        fileSystemReader: FileSystemReading
+    ) -> [TargetedReloadResult] {
+        requests.map { request in
+            let nodes: [FileTreeNodeItem]
+            if request.isExpanded {
+                nodes = expandDirectory(
+                    request.url, depth: request.depth,
+                    projectRootPath: projectRootPath,
+                    expandedPaths: expandedPaths,
+                    fileSystemReader: fileSystemReader
+                )
+            } else {
+                nodes = [FileTreeNodeItem(
+                    url: request.url, depth: request.depth, isDirectory: true,
+                    isExpanded: false, projectRootPath: projectRootPath,
+                    fileSystemReader: fileSystemReader
+                )]
+            }
+            return TargetedReloadResult(
+                url: request.url,
+                depth: request.depth,
+                isExpanded: request.isExpanded,
+                nodes: nodes
             )
-            let newItems: [CollectionItem] = newChildren.map { .file($0) }
-            items.replaceSubrange(index..<endIndex, with: newItems)
-        } else {
-            let updatedItem = FileTreeNodeItem(
-                url: url, depth: fileItem.depth, isDirectory: true,
-                isExpanded: false, projectRootPath: projectRootPath,
-                fileSystemReader: fileSystemReader
-            )
-            items[index] = .file(updatedItem)
         }
+    }
+
+    /// 一次遍历提交全部扫描结果：只替换命中目录及其子树，只通知一次视图。
+    private func commitTargetedReloads(_ results: [TargetedReloadResult]) {
+        guard !results.isEmpty else { return }
+        let resultsByURL = Dictionary(results.map { ($0.url, $0) }, uniquingKeysWith: { _, last in last })
+
+        var newItems: [CollectionItem] = []
+        var didChange = false
+        var index = 0
+        while index < items.count {
+            // 深度或展开态在扫描期间变了（用户折叠/展开了祖先），结果已不适用，保留原节点。
+            guard case .file(let fileItem) = items[index],
+                  let result = resultsByURL[fileItem.url],
+                  result.depth == fileItem.depth,
+                  result.isExpanded == fileItem.isExpanded else {
+                newItems.append(items[index])
+                index += 1
+                continue
+            }
+
+            var endIndex = index + 1
+            scan: while endIndex < items.count {
+                switch items[endIndex] {
+                case .file(let child) where child.depth > fileItem.depth:
+                    endIndex += 1
+                default:
+                    // 遇到第一个同级（或更浅）节点即停止：替换范围只覆盖目标目录
+                    // 及其子树，不能延伸到列表末尾而删掉后续兄弟节点（#182）。
+                    break scan
+                }
+            }
+            newItems.append(contentsOf: result.nodes.map { .file($0) })
+            didChange = true
+            index = endIndex
+        }
+
+        guard didChange, newItems != items else { return }
+        items = newItems
         onItemsChanged?(items)
     }
 
@@ -425,4 +568,19 @@ final class FileTreeDataSource: SuperLog {
     func fullRefresh() {
         rebuildItems()
     }
+}
+
+/// 一次精准刷新扫描的输入：目标目录及其提交时的深度/展开态快照。
+private struct TargetedReloadRequest: Sendable {
+    let url: URL
+    let depth: Int
+    let isExpanded: Bool
+}
+
+/// 一次精准刷新扫描的输出：可直接替换进扁平列表的节点（含目标目录自身）。
+private struct TargetedReloadResult: Sendable {
+    let url: URL
+    let depth: Int
+    let isExpanded: Bool
+    let nodes: [FileTreeNodeItem]
 }
