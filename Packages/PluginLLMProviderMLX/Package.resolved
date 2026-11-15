@@ -1,5 +1,5 @@
 {
-  "originHash" : "939421361e21182ce2261fdbd71490996163ad99f416f0c1184028274a8bf44d",
+  "originHash" : "afb9e050ba776571829ffec1a7af68c85b9c8b062300e87aee23c25749d39a04",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -17,6 +17,33 @@
       "state" : {
         "revision" : "cb2f0450a85aa18772c06f9b442beccd8e44b1a0",
         "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "kitkeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitKeychain.git",
+      "state" : {
+        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "kitllm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitLLM.git",
+      "state" : {
+        "revision" : "383e8d7742ed0605f1e0f6f7b10f967b6aa9e8b8",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "kittestsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/KitTestSupport.git",
+      "state" : {
+        "revision" : "642e760676d7a9372429042a6316b382b80f6b42",
+        "version" : "1.0.0"
       }
     },
     {
@@ -51,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
-        "version" : "1.23.0"
+        "revision" : "c1435fad0327d0881cd01697c55e9dac01b1d7ba",
+        "version" : "1.24.0"
       }
     },
     {
