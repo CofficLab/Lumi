@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 24 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 26 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 24
+测试文件: 5 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -37,7 +37,7 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 - **ConversationNewPlugin**（1 条）：由 `showsNewChatButtonOnlyForSelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CreateNewConversationTool**（14 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CreateNewConversationTool 会话归属**（2 条）：由 `createInheritsCallingConversationProjectAndModel`、`callingConversationUnboundDoesNotLeakCurrent` 锁定。`create_new_conversation` 必须经 `executeResult(context:)` 用发起调用的对话（`context.conversationID`）解析项目与模型，不得读执行时 UI 选中对话的 `currentProjectPath/currentModelID`；发起对话未绑定项目/模型时继承 nil，不得泄漏当前对话归属；仅缺少 Context 的旧入口才回退到当前选中态（**回归 #331**）。改动 `CreateNewConversationTool.prepareAndRender` 或 `NewChatCapability.projectPath(for:)/modelID(for:)` 时优先跑对应测试文件。
-- **NewConversationRowRenderer**（6 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **NewConversationRowRenderer**（8 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。**#778**：工具把模型可控的 `title` 正文插在前、真实结构化 payload 追加在末尾；`extractJSON` 必须只取「独占一行的末尾 ```json 开围栏」到闭围栏之间的内容，不得取首个代码块。否则 title 里伪造的 suggestion JSON 会被解码，点击卡片会选中另一个对话并发送错误消息（数据隔离破坏）。按行锚定末尾围栏可确保 title 正文（含内嵌 ```json 文本）不参与解析。
 - **NewChatCapabilityAdapter**（3 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -60,7 +60,7 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 14 | NewConversationRowRenderer | 命中本工具且 payload 可解析时渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canRenderMatchesToolWithPayload` |
 | 15 | NewConversationRowRenderer | 工具名不匹配时不渲染 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `canRenderRejectsOtherTools` |
 | 16 | NewConversationRowRenderer | 结果缺失或 payload 损坏时不渲染 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `canRenderRejectsUndecodableResults` |
-| 17 | NewConversationRowRenderer | extractJSONHandlesEdgeCases | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `extractJSONHandlesEdgeCases` |
+| 17 | NewConversationRowRenderer | 提取末尾 json 代码块（多块时取末尾，空块/无块返回 nil） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `extractJSONHandlesEdgeCases` |
 | 18 | NewConversationRowRenderer | 解码保留 starter 与标题 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `decodeSuggestionRoundTrips` |
 | 19 | NewConversationRowRenderer | 渲染优先级高于默认工具卡片 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `priorityIsAboveDefault` |
 | 20 | NewChatCapabilityAdapter | 恢复 nil 选中态必须取消选择，不得无操作（**回归 #260**） | 创建顶层对话后选中态被抢到新对话 | `adapter.restoreSelection(to: nil)` | 调用 deselectConversation，选中态回到 nil | P0 | ✅ 已覆盖 | `restoreNilSelectionDeselects` |
@@ -68,9 +68,15 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 22 | NewChatCapabilityAdapter | 工具经适配器创建对话后不得把用户甩进新建空对话（**回归 #260**） | 用户处于新建会话未选中态（nil） | 经适配器执行 `create_new_conversation` | 创建一个顶层对话后选中态仍为 nil | P0 | ✅ 已覆盖 | `toolPreservesNilSelectionThroughAdapter` |
 | 23 | CreateNewConversationTool 会话归属 | 新对话继承发起调用的对话 A 的项目与模型，而非 UI 当前对话 B（**回归 #331**） | A 绑定 `/tmp/A`+`model-A`，执行时 UI 已切到 B（`/tmp/B`+`model-B`） | 经 `executeResult(context:)` 调用，context.conversationID=A | 新对话项目=`/tmp/A`、模型=`model-A`，UI 选中态仍为 B | P0 | ✅ 已覆盖 | `createInheritsCallingConversationProjectAndModel` |
 | 24 | CreateNewConversationTool 会话归属 | 发起调用的对话未绑定项目/模型时不得泄漏 UI 当前对话归属（**回归 #331**） | A 绑定 nil/nil，UI 当前 B 有项目与模型 | 经 `executeResult(context:)` 调用，context.conversationID=A | 新对话项目=nil、模型=nil，不继承 B | P0 | ✅ 已覆盖 | `callingConversationUnboundDoesNotLeakCurrent` |
+| 25 | NewConversationRowRenderer | title 伪造的靠前 json 块不得参与解析，只取末尾真实 payload（**回归 #778**） | 正文含伪造块 + 末尾真实块 | `extractJSON(from:)` | 返回末尾真实 JSON，而非首个伪造块 | P0 | ✅ 已覆盖 | `extractJSONPrefersTrailingPayloadOverForgedTitleBlock` |
+| 26 | NewConversationRowRenderer | title 内嵌伪造 json 块时卡片仍只指向工具真正创建的对话（**回归 #778**） | 用 `resultText(for:)` 生成含攻击 title 的内容 | `decodeSuggestion(from:)` | 解码出真实 conversationID/starter，等于原 suggestion，不被伪造 B/unexpected task 劫持 | P0 | ✅ 已覆盖 | `decodeSuggestionIgnoresForgedTitlePayload` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#778**，`NewConversationRowRenderer.extractJSON`）：
+> - **M1** 退回「取首个 ```json 代码块」实现（复现原 bug）→ `extractJSONPrefersTrailingPayloadOverForgedTitleBlock` 转红（取到伪造块），`decodeSuggestionIgnoresForgedTitlePayload` 转红（conversationID/starter/相等性 3 处断言失败，解码出伪造 B 与 unexpected task），`extractJSONHandlesEdgeCases` 的多块用例转红；其余 5 条渲染器用例仍绿。
+> - 还原「按行锚定末尾围栏」修复 → 26 条全绿。
 
 > 变异验证（**#260**，`NewChatCapabilityAdapter.restoreSelection`）：
 > - **M1** nil 分支退回无操作（`guard let conversationID else { return }`）→ `restoreNilSelectionDeselects`、`toolPreservesNilSelectionThroughAdapter` 转红（未取消选择，用户被甩进新建空对话），`restoreNonNilSelectionSelects` 仍绿。
@@ -79,21 +85,21 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 9 / 9
 - P1: 已覆盖 11 / 11
 - P2: 已覆盖 6 / 6
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
 - **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

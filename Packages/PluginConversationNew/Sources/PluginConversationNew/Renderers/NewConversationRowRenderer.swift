@@ -68,13 +68,27 @@ public struct NewConversationRowRenderer: ToolCallRowRenderer {
         return try? JSONDecoder().decode(NewConversationSuggestion.self, from: data)
     }
 
-    /// 从工具返回内容中提取第一个 ```json ... ``` 代码块的内容。
+    /// 从工具返回内容中提取**末尾** ```json ... ``` 代码块的内容。
+    ///
+    /// 真实 payload 由工具追加在正文末尾，开/闭围栏各独占一行；模型可控的 title
+    /// 正文可能伪造靠前的代码块，甚至在 title 里嵌入 ```json 文本。只认「独占一行
+    /// 的末尾开围栏」可确保 title 正文不参与结构化解析，点击卡片始终作用于工具
+    /// 真正创建的对话（#778）。
     static func extractJSON(from content: String) -> String? {
-        let marker = "```json"
-        guard let start = content.range(of: marker)?.upperBound else { return nil }
-        let rest = content[start...]
-        guard let end = rest.range(of: "```")?.lowerBound else { return nil }
-        let json = rest[..<end].trimmingCharacters(in: .whitespacesAndNewlines)
-        return json.isEmpty ? nil : json
+        let lines = content.components(separatedBy: .newlines)
+        guard let openIndex = lines.lastIndex(where: {
+            $0.trimmingCharacters(in: .whitespaces) == "```json"
+        }) else { return nil }
+
+        var jsonLines: [String] = []
+        for line in lines[(openIndex + 1)...] {
+            if line.trimmingCharacters(in: .whitespaces) == "```" {
+                let json = jsonLines.joined(separator: "\n")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                return json.isEmpty ? nil : json
+            }
+            jsonLines.append(line)
+        }
+        return nil
     }
 }
