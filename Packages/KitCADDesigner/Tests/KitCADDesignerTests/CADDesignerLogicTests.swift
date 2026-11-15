@@ -466,4 +466,62 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertFalse(url.lastPathComponent.contains("/"))
         XCTAssertFalse(url.lastPathComponent.contains(".."))
     }
+
+    // MARK: - Incremental Scene Sync (#1308)
+
+    @MainActor
+    func testTransformEditUpdatesNodeInPlaceWithoutRebuildingAssembly() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Incremental Transform")
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        let spec = library.profileSpec(id: "profile-40x40-eu")!
+
+        let first = viewModel.placeProfile(spec: spec, length: 500)
+        _ = viewModel.placeProfile(spec: spec, length: 500)
+        let assembly = viewModel.sceneController.assemblyNode
+        let nodesBefore = assembly.childNodes
+        XCTAssertEqual(nodesBefore.count, 2)
+
+        store.selectedComponentId = first!.id
+        viewModel.updateSelectedComponentTransform(Transform3D(positionX: 123, positionY: 45, positionZ: 67))
+
+        let nodesAfter = assembly.childNodes
+        XCTAssertEqual(nodesAfter.count, 2)
+        // 变换编辑不得重建任何节点几何体：节点对象保持同一引用。
+        XCTAssertTrue(nodesAfter[0] === nodesBefore[0])
+        XCTAssertTrue(nodesAfter[1] === nodesBefore[1])
+        XCTAssertEqual(nodesAfter[0].position.x, 123, accuracy: 0.001)
+        XCTAssertEqual(nodesAfter[0].position.y, 45, accuracy: 0.001)
+        XCTAssertEqual(nodesAfter[0].position.z, 67, accuracy: 0.001)
+        // 未编辑的节点不受影响。
+        XCTAssertEqual(nodesAfter[1].position.x, nodesBefore[1].position.x, accuracy: 0.001)
+    }
+
+    @MainActor
+    func testLengthEditRebuildsOnlyAffectedProfile() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Incremental Length")
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        let spec = library.profileSpec(id: "profile-40x40-eu")!
+
+        let first = viewModel.placeProfile(spec: spec, length: 500)
+        let second = viewModel.placeProfile(spec: spec, length: 500)
+        let assembly = viewModel.sceneController.assemblyNode
+        XCTAssertEqual(assembly.childNodes.count, 2)
+        let firstBefore = assembly.childNodes.first { $0.name == first!.id }
+        let secondBefore = assembly.childNodes.first { $0.name == second!.id }
+
+        store.selectedComponentId = first!.id
+        viewModel.updateSelectedProfileLength(1000)
+
+        XCTAssertEqual(assembly.childNodes.count, 2)
+        let firstAfter = assembly.childNodes.first { $0.name == first!.id }
+        let secondAfter = assembly.childNodes.first { $0.name == second!.id }
+        // 长度变化需要重新拉伸截面：仅受影响节点被替换。
+        XCTAssertFalse(firstAfter === firstBefore)
+        // 其余节点必须保持同一引用，不被全量重建。
+        XCTAssertTrue(secondAfter === secondBefore)
+    }
 }
