@@ -26,6 +26,7 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageSender",
@@ -38,6 +39,7 @@ let package = Package(
                 "PluginChatFileAttachment",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
+                "ProviderMessage",
             ]
         ),
     ]

@@ -37,9 +37,11 @@ struct ChatFileAttachmentButton: View {
         }
     }
 
-    private func handle(_ result: Result<[URL], Error>) {
+    func handle(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
+            // 挂起池是发送器级全局数组，读取期间切换会话后旧结果不能落入新会话（#161）。
+            let conversationID = capability.selectedConversationID
             for url in urls {
                 let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
                 // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
@@ -56,8 +58,10 @@ struct ChatFileAttachmentButton: View {
                         let attachment = try await Task.detached(priority: .userInitiated) {
                             try UserFileAttachmentLoader.load(from: url)
                         }.value
+                        guard capability.selectedConversationID == conversationID else { return }
                         capability.addFileAttachment(attachment)
                     } catch {
+                        guard capability.selectedConversationID == conversationID else { return }
                         capability.recordAttachmentReadFailure()
                         capability.presentLoadError(error.localizedDescription)
                     }
