@@ -50,6 +50,14 @@ enum EditorConfigStore {
 
     // MARK: - Load / Save
 
+    /// 一次性加载并解码整份配置字典。
+    ///
+    /// 恢复配置时逐键 `load*` 会重复完整的读盘 + plist 解码；先取整份字典，
+    /// 再在内存里读各键，把 N 次加载合并为一次（见 issue #1250）。
+    static func loadAll() -> [String: Any] {
+        store.loadDict()
+    }
+
     static func loadDouble(forKey key: String) -> Double? {
         store.loadingValue(forKey: key)
     }
@@ -72,6 +80,11 @@ enum EditorConfigStore {
 
     static func saveValue(_ value: Any, forKey key: String) {
         store.savingValue(value, forKey: key)
+    }
+
+    /// 一次性持久化多个键：只加载/编码/原子写一次（见 issue #1250）。
+    static func saveValues(_ values: [String: Any]) {
+        store.savingValues(values)
     }
 
     static func removeValue(forKey key: String) {
