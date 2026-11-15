@@ -5,7 +5,7 @@
 KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditApp 的 [EditorCodeEditTextView](https://github.com/CodeEditApp/EditorCodeEditTextView)）。提供自研 `TextView`（`NSView`），用于替代部分场景下的 `NSTextView`，支持快速布局与大文档编辑。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ↑ 本 Kit package ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 渲染基础层 | | **职责** | 高性能 `NSView` 文本渲染、布局、输入处理；大文档编辑性能优化 | | **上游依赖** | `TextStory`、`swift-collections` | | **下游消费者** | `EditorSource`（核心文
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 93
+测试文件: 15 个，用例总数: 96
 
 核心组件（源码目录）:
 - `NSRange+/`
@@ -50,6 +50,7 @@ KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditAp
 - **IME proposedRange 越界**（#574，5 条）：`TextView.attributedSubstring(forProposedRange:actualRange:)` 对完全落在文档之外的非空请求必须返回 nil，不得把 `{0,0}` 交集扩成首字符；部分相交返回交集并设置 actualRange，文档内零长度请求仍返回光标处字符（非 nil），保持既有行为。由 `EditorTextViewProposedRangeTests` 锁定。
 - **词级移动 UTF-16 长度**（#575，4 条）：`TextSelectionManager.rangeOfSelection(...destination: .word)` 累加范围必须用 UTF-16 长度 `(substring as NSString).length`，不得用 `substring.count`，否则 emoji 代理对被劈开；前向/后向词级移动跨越 emoji 时返回完整 UTF-16 范围。由 `EditorTextViewWordUTF16Tests` 锁定。
 - **IME selectedRange 映射**（#576，4 条）：`TextView.setMarkedText(_:selectedRange:replacementRange:)` 必须把输入法给出的 `selectedRange`（相对插入串起点）映射为绝对选区 `markedRange.location + selectedRange.location`，不得一律跳到组合末尾；`selectedRange.location == NSNotFound` 时回退到 `markedRange.max`，保持既有行为。由 `EditorTextViewMarkedTextSelectionTests` 锁定。
+- **IME 组合撤销抑制**（#577，3 条）：`CEUndoManager.registerMutation` 在 `isDisabled` 期间必须直接返回，不得把未提交的 IME 组合中间态记入撤销历史；`disable()`/`enable()` 须与 `undo()`/`redo()` 一样生效，提交后撤销只回退提交本身、不得还原组合态，正常插入仍可撤销。由 `EditorTextViewUndoCompositionTests` 锁定。
 
 ## 测试用例清单
 
@@ -164,7 +165,15 @@ KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditAp
 | 92 | IME selectedRange 映射 | selectedRange 为 NSNotFound 时回退到组合末尾，保持既有行为（回归 #576） | TextView(string: "")，光标 {0,0} | `setMarkedText("abc", selectedRange: .notFound, replacementRange: .notFound)` | string=="abc"，selections==[{3,0}] | P1 | ✅ 已覆盖 | `test_setMarkedTextNotFoundSelectedRangeFallsBackToEnd` |
 | 93 | IME selectedRange 映射 | 替换已有组合文本时 selectedRange 仍相对新标记起点映射（回归 #576） | TextView(string: "")，先 setMarkedText("abc",{3,0}) | `setMarkedText("abcd", selectedRange: {2,1}, replacementRange: .notFound)` | string=="abcd"，selections==[{2,1}] | P1 | ✅ 已覆盖 | `test_setMarkedTextSelectedRangeMapsOntoExistingMarkedText` |
 
-> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
+### IME 组合撤销抑制（回归 #577）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 94 | IME 组合撤销抑制 | IME 组合中间态不得进入撤销历史，disable 期间 registerMutation 必须直接返回（回归 #577） | TextView(string: "")，光标 {0,0} | `setMarkedText("n", .notFound)` 再 `setMarkedText("ni", .notFound)` | string=="ni"，undoCount==0 | P0 | ✅ 已覆盖 | `test_compositionDoesNotRegisterUndoMutations` |
+| 95 | IME 组合撤销抑制 | 提交后连续两次撤销不得还原未提交组合态（回归 #577） | TextView(string: "")，组合 "n"→"ni" 后 insertText("ni") 提交 | `undo()` 两次 | string=="ni"→""→""，提交后 undoCount==1 | P0 | ✅ 已覆盖 | `test_undoAfterCommitDoesNotRestoreComposition` |
+| 96 | IME 组合撤销抑制 | enable 后正常插入仍须登记撤销，守卫不得误伤正常路径（回归 #577） | TextView(string: "")，光标 {0,0} | `insertText("hello", .notFound)` 后 `undo()` | undoCount==1，撤销后 string=="" | P1 | ✅ 已覆盖 | `test_normalInsertStillRegistersUndo` |
+
+> 说明：全部 **96 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#574）：M1 删除越界守卫 → 用例 81/82 失败（完全越界请求返回首字符 "a"）；M2 守卫放宽为 `clamped.length == 0` → 用例 85 失败（文档内零长度请求误返回 nil）；M3 守卫放宽为 `range.length > 0` → 用例 83/84 失败（部分相交/完全内含请求误返回 nil）。三处变异各自命中独立守卫，恢复后 85 条全绿。
@@ -172,24 +181,26 @@ KitEditorTextView 面向代码文档的高性能文本视图（源自 CodeEditAp
 > 变异验证（#575）：M1 把长度累加改回 `substring.count` → 用例 86/87/88/89 全部失败（范围长度少计 emoji 的 UTF-16 单元）；M2 把后向 location 递减改回 `substring.count` → 用例 86/88 失败（后向范围起点落在代理对中间），前向用例 87/89 不受影响。两处变异各自命中长度/位置独立守卫，恢复后 89 条全绿。
 >
 > 变异验证（#576）：M1 把选区映射改回一律 `NSRange(location: markedRange.max, length: 0)` → 用例 90/91/93 失败（选区跳到组合末尾而非输入法指定位置），用例 92（NSNotFound 回退）不受影响；M2 把 NSNotFound 回退分支改成 `markedRange.location` → 用例 92 失败（回退落到组合开头而非末尾），用例 90/91/93 不受影响。两处变异各自命中映射/回退独立守卫，恢复后 93 条全绿。
+>
+> 变异验证（#577）：M1 删除注册守卫中的 `!isDisabled` → 用例 94/95 失败（组合中间态进入撤销历史），用例 96 仍绿；M2 把 `!isDisabled` 反转为 `isDisabled` → 用例 96 由绿转红（正常插入被误抑制、无法撤销），94/95 亦红。M1 证明「必须检查 disabled」，M2 证明「必须按否定方向检查」，恢复后 96 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 80 / 80
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 81 / 81
 - P2: 已覆盖 4 / 4
-- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
+- **合计: 96 / 96**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（80 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（81 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 93 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 96 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
