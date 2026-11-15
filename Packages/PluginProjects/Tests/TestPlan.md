@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 45 条用例。
+PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 55 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 45
+测试文件: 13 个，用例总数: 55
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,7 +42,9 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 45 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ConversationProjectSyncObserver**（7 条）：由 `selectingConversationWithProjectOpensProject`、`selectingConversationWithoutProjectDoesNotOpen`、`deselectDoesNotOpenProject` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationProjectSyncObserver**（9 条）：由 `selectingConversationWithProjectOpensProject`、`selectingConversationWithoutProjectDoesNotOpen`、`deselectDoesNotOpenProject`、`externalOpenSurvivesLateConversationSync`、`userSelectedAfterExternalOpenReenablesSync` 等用例锁定；改动该模块时优先跑对应测试文件。外部打开（`.externalOpen`）优先级高于对话联动，晚到的选中对话不得覆盖外部打开的项目（**回归 #131**）。
+- **ProjectsAppRestore**（3 条）：由 `appRestoreYieldsToExternalOpen`、`appRestoreTaskRechecksAfterExternalOpen`、`appRestoreOpensStoredProjectWhenEmpty` 锁定启动恢复（`.appRestore`）必须在写入前重新校验 `currentProject == nil`，外部打开已设置项目时让位（**回归 #131**）；改动 `ProjectsPlugin.restoreCurrentProjectIfNeeded` 时优先跑对应测试文件。
+- **ProjectsOpenedFilesWriteOrder**（5 条）：由 `writeRunsOffMainThread`、`staleWriteDoesNotOverwriteNewerSnapshot`、`continuousNavigationCoalescesWrites`、`rapidSavesLeaveLatestSnapshotOnDisk`、`cacheUpdatesBeforeWriteCompletes` 锁定打开文件快照后台串行合并写入、晚到旧快照不覆盖新状态（**回归 #1238**）；改动 `ProjectsStore.saveOpenedFiles` 时优先跑对应测试文件。
 - **综合**（5 条）：由 `projectsPersistenceRoundTrip`、`openedFilesPersistenceRoundTrip`、`restoresAndPersistsOpenedFilesThroughProjectProviding` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectPathInjectionHook**（2 条）：由 `injectsConversationProject`、`skipsUnboundConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListProjectsTool**（4 条）：由 `negativeLimitReturnsParameterError`、`zeroLimitReturnsParameterError`、`nonIntegerLimitReturnsParameterError`、`limitDefaultsAndCaps` 锁定；改动 limit 解析时优先跑对应测试文件。
@@ -99,31 +101,43 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 45 
 | 43 | ProjectLastUsed | 启动首次同步保留持久化的 lastUsed，不得重置为启动时刻 | 隔离 Store 持久化两个旧时间项目，当前项目为空 | `syncFromProvider(persist:false)` | 各项目 lastUsed 等于持久化旧值 | P0 | ✅ 已覆盖 | `firstSyncPreservesPersistedLastUsed` |
 | 44 | ProjectLastUsed | 选中项目推进其 lastUsed，未选中项目不被刷新 | 隔离 Store + 能力桩，先同步空当前再选中 A | 两次 `syncFromProvider` | A 与当前快照 lastUsed 推进，B 保持旧值 | P0 | ✅ 已覆盖 | `selectionAdvancesLastUsed` |
 | 45 | ProjectLastUsed | 当前项目不变时重复同步不得再次推进 lastUsed | 能力桩当前项目恒为 A | 连续两次 `syncFromProvider` | 两次 lastUsed 相等 | P1 | ✅ 已覆盖 | `resyncWithUnchangedCurrentDoesNotAdvance` |
+| 46 | ConversationProjectSyncObserver | 外部打开的项目不会被随后到达的对话联动覆盖（**回归 #131**） | 绑定 cofficlab 的对话 + 记录用 Provider | 先 `.externalOpen` 打开 gitok，再取消并重新选中绑定对话 | 当前项目仍为 gitok，联动让位不打开 cofficlab | P0 | ✅ 已覆盖 | `externalOpenSurvivesLateConversationSync` |
+| 47 | ConversationProjectSyncObserver | 外部打开后用户主动选择项目会恢复对话联动（**回归 #131**） | 绑定 cofficlab 的对话 + 记录用 Provider | `.externalOpen` 后再 `.userSelected` 打开 manual，再选中绑定对话 | 联动恢复，当前项目切到 cofficlab | P1 | ✅ 已覆盖 | `userSelectedAfterExternalOpenReenablesSync` |
+| 48 | ProjectsAppRestore | 外部打开已设置项目时启动恢复直接让位不覆盖（**回归 #131**） | DefaultProjectProvider 已 `.externalOpen` 打开 gitok | 调用 `restoreCurrentProjectIfNeeded` 恢复 cofficlab | 当前项目仍为 gitok | P0 | ✅ 已覆盖 | `appRestoreYieldsToExternalOpen` |
+| 49 | ProjectsAppRestore | 恢复 Task 排队期间外部打开抢先执行，Task 内部重新校验后让位（**回归 #131**） | 当前项目为空时调度恢复 Task | 恢复 Task 执行前先 `.externalOpen` 打开 gitok，再 await Task | 晚到的恢复 Task 不覆盖 gitok | P0 | ✅ 已覆盖 | `appRestoreTaskRechecksAfterExternalOpen` |
+| 50 | ProjectsAppRestore | 仍无当前项目时启动恢复照常打开持久化项目（**回归 #131**） | DefaultProjectProvider 当前项目为空 | 调用 `restoreCurrentProjectIfNeeded` 恢复 cofficlab | 当前项目变为 cofficlab | P1 | ✅ 已覆盖 | `appRestoreOpensStoredProjectWhenEmpty` |
+| 51 | ProjectsOpenedFilesWriteOrder | 编码与写入不在主线程执行（**回归 #1238**） | 隔离 Store + 记录用 writer | `saveOpenedFiles` 后检查落盘线程 | 写入不在主线程，磁盘内容为该快照 | P1 | ✅ 已覆盖 | `writeRunsOffMainThread` |
+| 52 | ProjectsOpenedFilesWriteOrder | 晚到的旧快照不覆盖新快照（**回归 #1238**） | 门闩卡住第一份写入 | 旧快照写入挂起时提交新快照，再释放门闩 | 最后一次落盘为新快照，磁盘内容为新快照 | P0 | ✅ 已覆盖 | `staleWriteDoesNotOverwriteNewerSnapshot` |
+| 53 | ProjectsOpenedFilesWriteOrder | 连续导航合并成一次写入（**回归 #1238**） | 门闩卡住首份写入 | 连续提交 6 份快照后释放门闩 | 仅 2 次落盘，磁盘内容为最新 step-5 | P1 | ✅ 已覆盖 | `continuousNavigationCoalescesWrites` |
+| 54 | ProjectsOpenedFilesWriteOrder | 真实写入路径下最终磁盘内容是最新快照（**回归 #1238**） | 隔离 Store | 连续 30 次 `saveOpenedFiles` 后 await 最后一个 | 磁盘为 file-29，无 .tmp 残留 | P0 | ✅ 已覆盖 | `rapidSavesLeaveLatestSnapshotOnDisk` |
+| 55 | ProjectsOpenedFilesWriteOrder | 内存缓存立即更新不等磁盘写入（**回归 #1238**） | 门闩卡住写入 | 写入挂起时读取缓存与修订号 | 缓存已为 pending 快照，修订号为 1 | P1 | ✅ 已覆盖 | `cacheUpdatesBeforeWriteCompletes` |
 
-> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #475 变异验证：M1 在 `add(select:false)` 分支重新加入「`currentProject == nil` 时自动 `openProject`」→ `addWithoutSelectDoesNotOpenWhenNoCurrentProject` 失败（`openedPaths` 非空、`currentProject` 非 nil，RED）；M2 移除 `select:true` 分支的 `openProject` → `addWithSelectStillOpensAddedProject` 失败（RED）；还原后 45 条全绿。
 >
 > 回归 #476 变异验证：M1 把 `syncFromProvider` 的 `?? persistedLastUsed(for:) ?? Date()` 兜底改回 `?? Date()` → `firstSyncPreservesPersistedLastUsed` 失败（lastUsed 被重置为启动时刻，RED）；M2 移除「当前项目路径变化时推进 lastUsed」整段 → `selectionAdvancesLastUsed` 失败（RED）；M3 去掉 `current.path != previousCurrentPath` 守卫改为每次同步都推进 → `resyncWithUnchangedCurrentDoesNotAdvance` 失败（RED）；还原后 45 条全绿。
+>
+> 回归 #131 变异验证：M1 移除 `restoreCurrentProjectIfNeeded` 内的 `guard currentProject == nil` → `appRestoreYieldsToExternalOpen` 与 `appRestoreTaskRechecksAfterExternalOpen` 失败（外部打开的 gitok 被 cofficlab 覆盖，RED），`appRestoreOpensStoredProjectWhenEmpty` 仍绿；M2 移除 `ConversationProjectSyncObserver` 的 `guard lastProjectChangeReason != .externalOpen` → `externalOpenSurvivesLateConversationSync` 失败（联动打开 cofficlab 覆盖 gitok，RED），`userSelectedAfterExternalOpenReenablesSync` 仍绿；还原后 55 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 0 / 0
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

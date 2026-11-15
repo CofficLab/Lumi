@@ -10,6 +10,9 @@ import Testing
 struct ConversationProjectSyncObserverTests {
 
     /// 记录 openProject 调用并持有当前项目的轻量替身。
+    ///
+    /// 与 `DefaultProjectProvider` 一致：当前项目实际变化时发出
+    /// `currentProjectChanged(_, reason:)`，供观察者追踪变更原因（#131）。
     private final class RecordingProjectProvider: ProjectProviding {
         var currentProject: ProjectInfo?
         var projects: [ProjectInfo] = []
@@ -19,6 +22,7 @@ struct ConversationProjectSyncObserverTests {
         private var pausedPath: String?
         private var pausedOpenStarted: CheckedContinuation<Void, Never>?
         private var resumePausedOpen: CheckedContinuation<Void, Never>?
+        private var observers: [Observer] = []
 
         func pauseOpen(at path: String) {
             pausedPath = path
@@ -44,15 +48,49 @@ struct ConversationProjectSyncObserverTests {
                     pausedOpenStarted = nil
                 }
             }
-            currentProject = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
+            let info = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
+            let changed = currentProject?.path != info.path
+            currentProject = info
+            if changed {
+                notify(.currentProjectChanged(info, reason: reason))
+            }
         }
 
-        func closeProject(reason: ProjectChangeReason) async { currentProject = nil }
+        func closeProject(reason: ProjectChangeReason) async {
+            guard currentProject != nil else { return }
+            currentProject = nil
+            notify(.currentProjectChanged(nil, reason: reason))
+        }
         func refreshProjects() async throws {}
         func updateCurrentFile(_ fileURL: URL?) { currentFileURL = fileURL }
         func updateOpenFiles(_ fileURLs: [URL]) { openFileURLs = fileURLs }
         func closeFile(_ fileURL: URL) { openFileURLs.removeAll { $0 == fileURL } }
         func synchronizeProjects(_ projects: [ProjectInfo]) {}
+
+        @discardableResult
+        func addObserver(_ callback: @escaping (ProjectProvidingEvent) -> Void) -> any ProjectProvidingObserverHandle {
+            let observer = Observer(callback: callback)
+            observers.append(observer)
+            return observer
+        }
+
+        private func notify(_ event: ProjectProvidingEvent) {
+            observers.removeAll { $0.isCancelled }
+            for observer in observers {
+                observer.invoke(event)
+            }
+        }
+
+        private final class Observer: ProjectProvidingObserverHandle {
+            private let callback: (ProjectProvidingEvent) -> Void
+            fileprivate var isCancelled = false
+            init(callback: @escaping (ProjectProvidingEvent) -> Void) { self.callback = callback }
+            func cancel() { isCancelled = true }
+            func invoke(_ event: ProjectProvidingEvent) {
+                guard !isCancelled else { return }
+                callback(event)
+            }
+        }
     }
 
     private func makeObserver(
@@ -236,5 +274,60 @@ struct ConversationProjectSyncObserverTests {
         try await Task.sleep(for: .milliseconds(100))
 
         #expect(project.openedPaths.isEmpty)
+    }
+
+    @Test("外部打开的项目不会被随后到达的对话联动覆盖（#131）")
+    func externalOpenSurvivesLateConversationSync() async throws {
+        let conversations = DefaultConversationManager()
+        let project = RecordingProjectProvider()
+        // 绑定 cofficlab 的对话模拟「启动恢复的持久化选中对话」。
+        let boundID = try conversations.createConversation(
+            title: "Bound",
+            projectPath: "/tmp/cofficlab",
+            providerID: nil,
+            modelName: nil
+        )
+        let observer = makeObserver(conversations: conversations, project: project)
+        defer { observer.cancel() }
+
+        // 外部打开 GitOK：当前项目变为 GitOK，reason=.externalOpen。
+        try await project.openProject(at: "/tmp/gitok", reason: .externalOpen)
+        project.openedPaths.removeAll()
+
+        // 对话联动晚到：先取消再重新选中绑定对话，触发 conversationSwitch。
+        conversations.deselectConversation()
+        try await Task.sleep(for: .milliseconds(50))
+        conversations.selectConversation(id: boundID)
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(project.currentProject?.path == "/tmp/gitok", "外部打开的项目必须保留")
+        #expect(project.openedPaths.isEmpty, "对话联动应让位，不得打开 cofficlab")
+    }
+
+    @Test("外部打开后用户主动选择项目会恢复对话联动（#131）")
+    func userSelectedAfterExternalOpenReenablesSync() async throws {
+        let conversations = DefaultConversationManager()
+        let project = RecordingProjectProvider()
+        let boundID = try conversations.createConversation(
+            title: "Bound",
+            projectPath: "/tmp/cofficlab",
+            providerID: nil,
+            modelName: nil
+        )
+        let observer = makeObserver(conversations: conversations, project: project)
+        defer { observer.cancel() }
+
+        try await project.openProject(at: "/tmp/gitok", reason: .externalOpen)
+        // 用户主动打开项目（.userSelected）清除 externalOpen 让位状态。
+        try await project.openProject(at: "/tmp/manual", reason: .userSelected)
+        project.openedPaths.removeAll()
+
+        conversations.deselectConversation()
+        try await Task.sleep(for: .milliseconds(50))
+        conversations.selectConversation(id: boundID)
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(project.currentProject?.path == "/tmp/cofficlab", "用户主动选择后联动应恢复")
+        #expect(project.openedPaths == ["/tmp/cofficlab"])
     }
 }
