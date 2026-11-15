@@ -22,6 +22,18 @@ final class ConversationSpeedViewModel: ObservableObject {
     /// 会话内的 LLM 请求次数（assistant 消息数）。
     @Published private(set) var requestCount: Int = 0
 
+    /// 刷新代次（#1156）：每次选择变化 / 消息插入事件发生时同步递增。
+    /// 异步快照在排程时记录代次，写回前再次比对；期间出现过更新的事件
+    /// 就说明快照已过时，必须丢弃，否则旧选择快照会覆盖新插入的统计。
+    private(set) var refreshGeneration: UInt64 = 0
+
+    /// 记录一次新的刷新事件，返回供异步任务比对的代次。
+    @discardableResult
+    func beginRefresh() -> UInt64 {
+        refreshGeneration &+= 1
+        return refreshGeneration
+    }
+
     func selectConversation(_ conversationID: UUID?, messages: [Message]) {
         if selectedConversationID != conversationID {
             resetDisplayState()

@@ -60,27 +60,36 @@ PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试�
 | 21 | SpeedModels | 强类型计时优先于 metadata | 强类型与 metadata 同时存在 | 读取时长与 TTFT | 取强类型值 | P1 | ✅ 已覆盖 | `typedTimingTakesPrecedenceOverLegacyMetadata` |
 | 22 | SpeedModels | 生成速度不得把 TTFT 算进分母（streaming 与 latency 同时有效时只用生成时长，**#237**） | outputTokens 100、streaming 8000、latency 10000、TTFT 2000 | 读取 `speedDurationMs` / `speedTokensPerSecond` | 8000 ms、12.5 tokens/s | P0 | ✅ 已覆盖 | `streamingSpeedExcludesTimeToFirstToken` |
 | 23 | SpeedModels | 历史平均速度同样用生成时长而非完整延迟（**#237**） | 两条 assistant：100/8000 与 60/2000，均带更大 latency | 读取 `averageTokensPerSecond` | 21.25 tokens/s | P1 | ✅ 已覆盖 | `averageSpeedUsesStreamingDurationWhenBothPresent` |
+| 24 | SpeedStaleSnapshot | 旧选择快照不得覆盖新插入的统计；丢弃后后续插入仍照常刷新（**#1156**） | 选择快照被门闩挂起，插入快照先行写回 TPS 20 | 释放旧快照，静默 300ms，再插入第二条 | TPS 保持 20、请求数 1 → 2 | P0 | ✅ 已覆盖 | `staleSelectionSnapshotMustNotOverwriteNewerInsertionStats` |
+| 25 | SpeedStaleSnapshot | 无更新事件时挂起的选择快照释放后必须正常写回（**#1156**） | 选择快照被门闩挂起，期间无插入 | 释放门闩 | TPS 20、请求数 1 | P0 | ✅ 已覆盖 | `gatedSelectionSnapshotStillCommitsWhenNoNewerEvent` |
+| 26 | SpeedChartGeometry | 点集与逐点计算一致 | 多样本序列 | 对比 `points` 与逐点计算 | 完全一致 | P1 | ✅ 已覆盖 | `pointsMatchPointWiseComputation` |
+| 27 | SpeedChartGeometry | 单点坐标与点集中的对应项一致 | 多样本序列 | 对比单点接口与点集对应项 | 坐标一致 | P1 | ✅ 已覆盖 | `singlePointMatchesPointsArray` |
+| 28 | SpeedChartGeometry | 值域至少为 1，避免除零 | 全零/恒定样本 | 读取值域 | ≥ 1 | P1 | ✅ 已覆盖 | `valueRangeHasFloor` |
+| 29 | SpeedChartGeometry | 空样本不崩溃 | 空样本数组 | 计算点集与值域 | 不崩溃 | P0 | ✅ 已覆盖 | `emptySamplesAreSafe` |
+| 30 | SpeedChartGeometry | 单个样本落在水平中点 | 单样本 | 读取坐标 | x 为中点 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
+| 31 | SpeedExportOffMain | writePNG 在后台线程编码并写出可解码的 PNG | 有效图表样本 | 调用 writePNG 后解码文件 | 非主线程编码、PNG 可解码 | P1 | ✅ 已覆盖 | `writesOffMain` |
+| 32 | SpeedExportOffMain | 目标目录不存在时 writePNG 抛出错误而非静默失败 | 不存在的目标目录 | 调用 writePNG | 抛出错误 | P1 | ✅ 已覆盖 | `writeFailureThrows` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 18 / 18
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 0 / 0
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（18 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
