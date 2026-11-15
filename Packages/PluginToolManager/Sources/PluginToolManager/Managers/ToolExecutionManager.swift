@@ -466,6 +466,7 @@ final class ToolExecutionManager {
     ) -> ToolJob {
         let now = Date()
         let job = ToolJob(
+            id: UUID().uuidString,
             conversationID: conversationID,
             turnID: turnID,
             toolCall: toolCall,

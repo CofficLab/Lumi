@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 82
+测试文件: 18 个，用例总数: 86
 
 核心组件（源码目录）:
 - `Models/`
@@ -62,6 +62,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **browser_wait 取消行为**（4 条）：由 `cancellationThrowsImmediately`、`cancellationStopsPolling`、`timeoutReturnsFalse` 锁定；取消必须立刻向上传播并停止轮询，否则 load / navigation 分支会在主线程忙轮询到超时（issue #418）。
 - **Browser DNS 根点归一化**（8 条）：由 `trailingRootDotLocalHostsAreStillLocal`、`openAndNavigateToolsRequireApprovalForTrailingDot`、`openWithoutApprovalIsBlocked`、`approvedHostKeyIsNormalized` 锁定；`localhost.` 与 `localhost` 解析到同一个回环地址，分类与审批键都必须先去掉 DNS 根点，否则等价 host 就能绕过本地访问审批（issue #830）。
 - **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
+- **back/forward/reload 导航失败传播**（4 条）：由 `backNavigationCancellationPropagates`、`reloadNavigationFailurePropagates`、`successfulNavigationReturns`、`blockedLocalNavigationPropagates` 锁定；back/forward/reload 必须通过 continuation 等待导航结果，WebKit 报错或策略取消时必须抛出错误，不得静默返回成功（issue #833）。
 
 ## 测试用例清单
 
@@ -149,16 +150,20 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 80 | browser_wait 取消行为 | 取消后不得继续轮询（**回归 #418**） | 等待循环运行中 | 取消后再等 400 ms，比较 actor 计数器的轮询次数 | 计数停止增长 | P0 | ✅ 已覆盖 | `cancellationStopsPolling` |
 | 81 | browser_wait 取消行为 | 条件成立时正常返回 true | — | 以 `isSatisfied: { true }` 运行等待循环 | 返回 true | P1 | ✅ 已覆盖 | `satisfiedConditionReturns` |
 | 82 | browser_wait 取消行为 | 超时返回 false 而不是抛错 | deadline 为 50 ms 后 | 以 `isSatisfied: { false }` 运行等待循环 | 返回 false | P0 | ✅ 已覆盖 | `timeoutReturnsFalse` |
+| 83 | 导航失败传播 | back 导航被策略取消时抛出错误而非返回成功（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFailProvisionalNavigation` 回调 | 抛出 WebKit 错误，不静默返回成功 | P0 | ✅ 已覆盖 | `backNavigationCancellationPropagates` |
+| 84 | 导航失败传播 | reload 导航失败时抛出错误而非返回成功（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFail` 回调 | 抛出 WebKit 错误，不静默返回成功 | P0 | ✅ 已覆盖 | `reloadNavigationFailurePropagates` |
+| 85 | 导航失败传播 | 导航成功时正常返回 | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFinish` 回调 | 正常返回，不抛错 | P1 | ✅ 已覆盖 | `successfulNavigationReturns` |
+| 86 | 导航失败传播 | 本地审批策略取消导航时抛出 blockedLocalNavigation（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFailProvisionalNavigation` 带 `blockedLocalNavigation` | 抛出 `blockedLocalNavigation` 错误 | P0 | ✅ 已覆盖 | `blockedLocalNavigationPropagates` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 53 / 53
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 54 / 54
 - P2: 已覆盖 14 / 14
-- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
+- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -171,14 +176,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（53 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（54 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 82 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

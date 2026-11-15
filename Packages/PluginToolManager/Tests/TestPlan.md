@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 176 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 191 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 176
+测试文件: 18 个，用例总数: 191
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -251,27 +251,42 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 174 | 输出尾部缓冲 | 多字节字符按字节截断与参照实现一致（**#1310**） | maxBytes=4 | append 中文（6 字节） | 与参照实现一致，非法序列解码为 U+FFFD | P0 | ✅ 已覆盖 | `truncatesOnByteBoundary` |
 | 175 | 综合 | read_file 用会话项目路径解析相对路径时保留尾部空格字节，裁剪会越界读到无空格目录（**回归 #501**） | 同时创建无空格与带尾空格两目录，各放不同 marker.txt（PLAIN/SPACED） | 注入返回带尾空格路径的 conversationProjectPathProvider，executeResult 读 `marker.txt` | 读到 SPACED 目录内容，不读 PLAIN 目录 | P1 | ✅ 已覆盖 | `readFileUsesConversationProjectWithTrailingSpace` |
 | 176 | 综合 | read_file 会话项目路径无空格时仍正确解析（**回归 #501** 对照组） | 同时创建无空格与带尾空格两目录，各放不同 marker.txt（PLAIN/SPACED） | 注入返回无空格路径的 conversationProjectPathProvider，executeResult 读 `marker.txt` | 读到 PLAIN 目录内容，不读 SPACED 目录 | P1 | ✅ 已覆盖 | `readFileUsesConversationProjectWithoutSpace` |
+| 177 | Job 身份 | 不同回合复用同一协议 ID 的未知工具调用产生独立 Job（**#1165**） | 无注册工具，conversationID 固定 | 分别以 turnA/turnB 提交 ToolCall(id:"call_0", name:"missing") | 两个 Job.id 互不相同且均≠"call_0"，各自可按 ID 查到正确 turnID | P0 | ✅ 已覆盖 | `unknownToolSameProtocolIDDifferentTurns` |
+| 178 | Job 身份 | 不同会话复用同一协议 ID 的未知工具调用产生独立 Job（**#1165**） | 无注册工具 | 分别以 convA/convB 提交 ToolCall(id:"call_0", name:"missing") | 两个 Job.id 不同，各自 conversationID 正确 | P0 | ✅ 已覆盖 | `unknownToolSameProtocolIDDifferentConversations` |
+| 179 | Job 身份 | 不同回合复用同一协议 ID 的畸形参数调用产生独立 Job（**#1165**） | 注册 echo 工具 | 分别以 turnA/turnB 提交 ToolCall(id:"call_0", name:"echo", arguments:"not-json") | 两个 Job.id 互不相同且均≠"call_0"，status 均为 failed | P0 | ✅ 已覆盖 | `malformedArgumentsSameProtocolIDDifferentTurns` |
+| 180 | Job 身份 | 立即失败的 Job 持久化后按独立 ID 各自可恢复（**#1165**） | 配置 ToolJobRecordStore | 不同回合提交同一协议 ID 的未知工具调用 | 两条 record 各自存在，id/turnID 互不覆盖 | P0 | ✅ 已覆盖 | `immediateFailuresPersistIndependently` |
+| 181 | Job 身份 | 同回合内相同协议 ID 仍去重返回已有 Job（**#1165** 对照） | 无注册工具 | 同回合连续两次提交 ToolCall(id:"call_0", name:"missing") | 两次返回同一 Job.id | P1 | ✅ 已覆盖 | `sameTurnDedupStillWorks` |
+| 182 | 载荷预览 | 短于上限的载荷完整渲染且不标记截断（**#1303**） | limit=100 | make("hello", limit:100) | text=="hello"，isTruncated==false | P1 | ✅ 已覆盖 | `shortValueIsNotTruncated` |
+| 183 | 载荷预览 | 恰好等于上限的载荷完整渲染且不标记截断（**#1303**） | limit=100 | make(100×"a", limit:100) | text 完整，isTruncated==false | P1 | ✅ 已覆盖 | `exactLimitIsNotTruncated` |
+| 184 | 载荷预览 | 超过上限的载荷只渲染前缀并标记截断（**#1303**） | limit=100 | make(10000×"a", limit:100) | text.count==100，isTruncated==true | P0 | ✅ 已覆盖 | `longValueIsTruncatedToPrefix` |
+| 185 | 载荷预览 | 空载荷渲染为空且不标记截断（**#1303**） | limit=100 | make("", limit:100) | text.isEmpty，isTruncated==false | P2 | ✅ 已覆盖 | `emptyValueIsNotTruncated` |
+| 186 | 载荷预览 | 上限为 0 时非空载荷渲染为空但标记截断（**#1303**） | limit=0 | make("abc", limit:0) | text.isEmpty，isTruncated==true | P1 | ✅ 已覆盖 | `zeroLimitTruncatesNonEmpty` |
+| 187 | 载荷预览 | 负上限被钳制为 0 不会崩溃（**#1303**） | limit=-5 | make("abc", limit:-5) | text.isEmpty，isTruncated==true | P0 | ✅ 已覆盖 | `negativeLimitIsClamped` |
+| 188 | 载荷预览 | 按字素簇截断，多字节与 emoji 不被切碎（**#1303**） | limit=10 | make(50×"👍🏽", limit:10) | text.count==10，完整 emoji | P0 | ✅ 已覆盖 | `truncationCountsGraphemeClusters` |
+| 189 | 载荷预览 | 默认上限与增量是正数且增量大于上限（**#1303**） | 无 | 读取 initialLimit/increment | 均>0，increment>initialLimit | P2 | ✅ 已覆盖 | `limitsAreSane` |
+| 190 | 统计 ViewModel | 统计跨多页聚合结果正确，不驻留整段历史（**#1302**） | 1200 条记录，页大小 500 | reloadStats 翻 3 页逐页归约 | 聚合结果与一次性计算一致 | P1 | ✅ 已覆盖 | `statsAggregateAcrossPages` |
+| 191 | 统计 ViewModel | 统计加载中重叠触发被重入守卫挡住（**#1302**） | 600 条，页延迟 150ms | 并发两次 reloadStats | 第二次被丢弃，不重复拉取 | P0 | ✅ 已覆盖 | `statsReentryGuardDropsOverlappingReload` |
 
-> 说明：全部 **176 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **191 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 54 / 54
-- P1: 已覆盖 111 / 111
-- P2: 已覆盖 11 / 11
-- **合计: 176 / 176**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 62 / 62
+- P1: 已覆盖 116 / 116
+- P2: 已覆盖 13 / 13
+- **合计: 191 / 191**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
-- **P1**: 其余功能性用例（111 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（62 条）
+- **P1**: 其余功能性用例（116 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 176 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 191 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
