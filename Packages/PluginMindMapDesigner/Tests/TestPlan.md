@@ -5,7 +5,7 @@
 PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 50
+测试文件: 8 个，用例总数: 58
 
 核心组件（源码目录）:
 - `Models/`
@@ -99,8 +99,16 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 48 | MindMap 导出 | 导出格式扩展名常量 | — | 读取两种 Format 的 fileExtension | markdown=md、json=json | P2 | ✅ 已覆盖 | `exporterFormatFileExtensions` |
 | 49 | MindMap 导出 | Markdown 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.markdown)` | 读回字节等于 codec 输出，不依赖主线程 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesMarkdown` |
 | 50 | MindMap 导出 | JSON 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.json)` | 读回解码后 nodes/title 一致 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesJSON` |
+| 51 | MindMap 布局缓存与查找 | 地图不变时复用缓存布局，视口变换不重算（**回归 #1191**） | 注入计数 compute 的缓存 | 对同一 map 连续调用 `layout(for:)` 两次 | compute 仅 1 次，两次结果一致 | P0 | ✅ 已覆盖 | `layoutCacheReusesResultForUnchangedMap` |
+| 52 | MindMap 布局缓存与查找 | 节点文本变化触发重算 | 缓存已布局某图 | 改根文本后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenNodeTextChanges` |
+| 53 | MindMap 布局缓存与查找 | 结构变化（新增节点）触发重算 | 缓存已布局某图 | 新增子节点后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenStructureChanges` |
+| 54 | MindMap 布局缓存与查找 | 折叠状态变化触发重算 | 缓存已布局某图 | 折叠根节点后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenCollapsedChanges` |
+| 55 | MindMap 布局缓存与查找 | 布局方向变化触发重算 | 缓存已布局 right | 改为 down 后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenLayoutDirectionChanges` |
+| 56 | MindMap 布局缓存与查找 | 字典化查找后边收集完整且正确（**回归 #1191**） | 根+A/B+A1 的 right 树 | 调用 `MindMapLayoutEngine.layout` | 边集恰为 r->a/r->b/a->a1 | P1 | ✅ 已覆盖 | `layoutCollectsAllVisibleEdges` |
+| 57 | MindMap 布局缓存与查找 | 折叠子树不得产生边也不得布局其子节点（**回归 #1191**） | 折叠节点 a 含子 a1 | 调用 `layout` | 边仅 r->a，nodes 无 a1 | P0 | ✅ 已覆盖 | `layoutSkipsCollapsedSubtreeEdges` |
+| 58 | MindMap 布局缓存与查找 | 布局查找必须 O(N)，大图不得卡顿（**回归 #1191**） | 1 万节点宽树 | 计时调用 `layout` | 节点数=count、边数=count-1 且耗时 < 3s | P0 | ✅ 已覆盖 | `layoutHandlesLargeMapLinearly` |
 
-> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -113,21 +121,21 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 33 / 33
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 38 / 38
 - P2: 已覆盖 2 / 2
-- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（33 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

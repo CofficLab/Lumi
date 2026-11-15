@@ -72,9 +72,17 @@ public enum MindMapLayoutEngine {
 
         let sizes = measureAll(map, config: config)
         let childrenMap = buildChildrenMap(map)
+        // 一次性建立 id→node 字典：visibleChildren 与 collectEdges 原先对每个访问
+        // 节点都调用 map.node(id:) / map.children(of:) 全量扫描 nodes（O(N²)）。
+        // 用字典做 O(1) 查找，整轮布局降为 O(N)（#1191）。
+        var nodesById: [String: MindMapNode] = [:]
+        nodesById.reserveCapacity(map.nodes.count)
+        for node in map.nodes {
+            nodesById[node.id] = node
+        }
 
         func visibleChildren(of id: String) -> [String] {
-            guard let node = map.node(id: id), !node.collapsed else { return [] }
+            guard let node = nodesById[id], !node.collapsed else { return [] }
             return childrenMap[id] ?? []
         }
 
@@ -90,7 +98,7 @@ public enum MindMapLayoutEngine {
         }
 
         let bounds = computeBounds(positions: positions)
-        let edges = collectEdges(rootId: root.id, map: map, positions: positions)
+        let edges = collectEdges(rootId: root.id, nodesById: nodesById, childrenMap: childrenMap, positions: positions)
 
         return Result(nodes: positions, edges: edges, bounds: bounds)
     }
@@ -416,15 +424,21 @@ public enum MindMapLayoutEngine {
     }
 
     /// 收集所有可见的父子边（跳过折叠节点隐藏的子树）。
-    private static func collectEdges(rootId: String, map: MindMap, positions: [String: MindMapNodeLayout]) -> [(String, String)] {
+    /// 使用 id→node 与 parent→children 字典做 O(1) 查找，避免逐节点全量扫描（#1191）。
+    private static func collectEdges(
+        rootId: String,
+        nodesById: [String: MindMapNode],
+        childrenMap: [String: [String]],
+        positions: [String: MindMapNodeLayout]
+    ) -> [(String, String)] {
         var edges: [(String, String)] = []
         var stack: [String] = [rootId]
         while let id = stack.popLast() {
-            guard let node = map.node(id: id) else { continue }
+            guard let node = nodesById[id] else { continue }
             if !node.collapsed {
-                for child in map.children(of: id) where positions[child.id] != nil {
-                    edges.append((id, child.id))
-                    stack.append(child.id)
+                for childId in childrenMap[id] ?? [] where positions[childId] != nil {
+                    edges.append((id, childId))
+                    stack.append(childId)
                 }
             }
         }
