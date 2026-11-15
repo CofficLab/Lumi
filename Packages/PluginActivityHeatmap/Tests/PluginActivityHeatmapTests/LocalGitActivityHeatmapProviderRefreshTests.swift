@@ -100,17 +100,26 @@ struct LocalGitActivityHeatmapProviderRefreshTests {
     }
 
     @Test("ignores malformed commit dates and standardizes repository paths")
-    func snapshotIgnoresMalformedDatesAndStandardizesPath() {
+    func snapshotIgnoresMalformedDatesAndStandardizesPath() async throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let day = date("2025-08-01T12:00:00Z")
+        //  malformed 日期在加载阶段就被丢弃，聚合阶段拿到的已是解析好的 Date。
+        let dates = try await LocalGitActivityHeatmapProvider.loadRecentCommitDates(
+            repositoryPath: "/tmp/project",
+            now: day,
+            calendar: calendar,
+            loadCommits: { _, _, _ in
+                [
+                    makeCommit(hash: "valid-1", date: dateString(day)),
+                    makeCommit(hash: "valid-2", date: "not a date"),
+                    makeCommit(hash: "valid-3", date: "2025-08-01 12:00:00 +0000"),
+                ]
+            }
+        )
         let snapshot = LocalGitActivityHeatmapProvider.makeSnapshot(
             repositoryPath: "/tmp/project/../project",
-            commits: [
-                makeCommit(hash: "valid-1", date: dateString(day)),
-                makeCommit(hash: "valid-2", date: "not a date"),
-                makeCommit(hash: "valid-3", date: "2025-08-01 12:00:00 +0000"),
-            ],
+            commitDates: dates,
             calendar: calendar,
             now: day
         )
@@ -127,11 +136,11 @@ struct LocalGitActivityHeatmapProviderRefreshTests {
         ISO8601DateFormatter().date(from: value)!
     }
 
-    private func dateString(_ value: Date) -> String {
+    nonisolated private func dateString(_ value: Date) -> String {
         ISO8601DateFormatter().string(from: value)
     }
 
-    private func makeCommit(hash: String, date: String) -> GitCommitLog {
+    nonisolated private func makeCommit(hash: String, date: String) -> GitCommitLog {
         let data = "{\"hash\":\"\(hash)\",\"author\":\"A\",\"email\":\"a@example.com\",\"date\":\"\(date)\",\"message\":\"commit\"}".data(using: .utf8)!
         return try! JSONDecoder().decode(GitCommitLog.self, from: data)
     }
