@@ -42,7 +42,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PortManagerPluginTests",
-            dependencies: [.target(name: "PortManagerPlugin")],
+            dependencies: [
+                .target(name: "PortManagerPlugin"),
+                .product(name: "KitShell", package: "KitShell"),
+            ],
             path: "Tests"
         )
     ]

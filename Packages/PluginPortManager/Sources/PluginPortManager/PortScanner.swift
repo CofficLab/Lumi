@@ -17,11 +17,14 @@ public struct PortInfo: Identifiable, Hashable, SuperLog {
 
 public enum PortScannerError: LocalizedError, Sendable {
     case scanFailed(String)
+    case outputTruncated
 
     public var errorDescription: String? {
         switch self {
         case .scanFailed(let message):
             return message
+        case .outputTruncated:
+            return "lsof output was truncated and is incomplete."
         }
     }
 }
@@ -32,6 +35,9 @@ public final class PortScanner: Sendable, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.port-manager", category: "PortScanner")
     public static let shared = PortScanner()
 
+    /// lsof 监听列表可能很大；放宽捕获上限，避免正常结果被默认 64KiB 截断（#258）。
+    static let maxOutputBytes = 16 * 1024 * 1024
+
     private init() {}
 
     public func scanPorts() async throws -> [PortInfo] {
@@ -39,10 +45,9 @@ public final class PortScanner: Sendable, SuperLog {
             let result = try await Shell.execute(
                 executable: "/usr/sbin/lsof",
                 arguments: ["-iTCP", "-sTCP:LISTEN", "-n", "-P"],
-                options: ShellOptions(throwsOnError: false)
+                options: ShellOptions(throwsOnError: false, maxOutputBytes: Self.maxOutputBytes)
             )
-            try Self.ensureScanSucceeded(exitCode: result.exitCode, stderr: result.stderr)
-            return parseLsofOutput(result.stdout)
+            return try interpretScanResult(result)
         } catch {
             if Self.verbose {
                 if Self.verbose {
@@ -64,6 +69,16 @@ public final class PortScanner: Sendable, SuperLog {
         throw PortScannerError.scanFailed(
             message.isEmpty ? "lsof 扫描异常退出（退出码 \(exitCode)）" : message
         )
+    }
+
+    /// 把 lsof 结果解释为监听列表：退出码异常或输出被截断都必须抛错，
+    /// 不能把 KitShell 保留的尾部当成完整列表而静默丢端口（#258）。
+    func interpretScanResult(_ result: ShellResult) throws -> [PortInfo] {
+        try Self.ensureScanSucceeded(exitCode: result.exitCode, stderr: result.stderr)
+        if result.stdoutTruncated {
+            throw PortScannerError.outputTruncated
+        }
+        return parseLsofOutput(result.stdout)
     }
 
     func parseLsofOutput(_ output: String) -> [PortInfo] {
