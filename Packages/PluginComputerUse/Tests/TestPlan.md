@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 113 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 113
+测试文件: 15 个，用例总数: 119
 
 核心组件（源码目录）:
 - `Models/`
@@ -48,6 +48,7 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **NativeControl**（6 条）：由 `revokedInputLeaseCannotBeRestarted`、`expiredLeaseRejectsFurtherInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 目标窗口提示遮罩**（12 条）：由 `quartzRectConvertsToAppKitUsingHostingScreen`、`degenerateRectanglesAreRejected` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 会话作用域授权**（5 条）：由 `grantIsNotConsumedWithinTheSession`、`emptyIdentifierIsIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Computer Use 会话授权不跨重启**（6 条）：由 `sessionGrantSurvivesReopenWithoutStartupClear`、`startupClearRemovesPersistedSessionGrants`、`startupClearPreservesNativeAuthorization`、`checkerRequiresReauthorizationAfterRestart`、`grantsAfterStartupClearStillWorkWithinSession`、`startupClearOnEmptyStoreIsSafe` 锁定——「Allow for This Task」只在本会话内有效、**不跨重启**；授权带 4 小时 TTL 写进 plist，插件启动（与退出）时必须 `revokeAllSessionAccess()` 清空上一轮遗留的会话授权，使重启后判定器对同一会话重新要求授权，同时保留按设计跨重启延续的原生控制授权（#405）。变异验证：把 `revokeAllSessionAccess()` 改成 no-op，`startupClearRemovesPersistedSessionGrants`、`startupClearPreservesNativeAuthorization`、`checkerRequiresReauthorizationAfterRestart` 三条转红，其余三条（缺陷前提 / 本轮新授权 / 空存储）保持绿。
 - **Computer Use 授权决策解析**（7 条）：由 `allowMessageStatesScope`、`denialMessageNamesTheApplication` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 工具授权挂起**（4 条）：由 `authorizationRequiredBecomesSuspension`、`forbiddenDoesNotSuspend` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 授权决策落地**（2 条）：由 `denyGrantsNothing`、`allowForTaskGrantsSessionScopedAccess` 用例锁定；改动该模块时优先跑对应测试文件。
@@ -182,27 +183,33 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 111 | Computer Use 授权恢复 | denyTokenRejectsWithMessage | 卡片回传 computer_use.deny 与说明 | 解析恢复回答 | 以说明文案失败结束，动作是 reject | P1 | ✅ 已覆盖 | `denyTokenRejectsWithMessage` |
 | 112 | Computer Use 授权恢复 | unknownAnswerReturnsText | 无法识别的恢复回答 | 解析恢复回答 | 保持 returnAnswer，把回答当结果 | P2 | ✅ 已覆盖 | `unknownAnswerReturnsText` |
 | 113 | Computer Use 授权恢复 | toolsDeclareResumeActionThroughExistential | 四个挂起工具通过 any SuperAgentTool 调用 | 分别传入允许、拒绝与普通回答 | 允许为 reexecute、拒绝为 reject、普通为 returnAnswer，动态分派不被默认实现吞掉 | P1 | ✅ 已覆盖 | `toolsDeclareResumeActionThroughExistential` |
+| 114 | Computer Use 会话授权不跨重启 | 不做启动清理时，会话授权会随 plist 跨重启存活（#405） | 授予会话授权后同一目录重开 store 实例 | 重开实例查询授权 | 授权仍在（缺陷前提，证明 plist 单独会跨重启） | P1 | ✅ 已覆盖 | `sessionGrantSurvivesReopenWithoutStartupClear` |
+| 115 | Computer Use 会话授权不跨重启 | 启动清理清空所有会话的授权，且清理结果落盘（#405） | 两个会话各有授权，重开实例模拟重启 | 调用 revokeAllSessionAccess | 所有会话授权消失，再开实例同样读不到 | P0 | ✅ 已覆盖 | `startupClearRemovesPersistedSessionGrants` |
+| 116 | Computer Use 会话授权不跨重启 | 启动清理保留原生控制授权（按设计跨重启延续）（#405） | 同时有原生授权与会话授权 | 调用 revokeAllSessionAccess | 会话授权清掉，原生授权保留且落盘 | P1 | ✅ 已覆盖 | `startupClearPreservesNativeAuthorization` |
+| 117 | Computer Use 会话授权不跨重启 | 重启并启动清理后，判定器对同一会话重新要求授权（#405） | A2 会话已授权，重开实例模拟重启 | 启动清理后用判定器判定同一会话 | 清理前放行（缺陷），清理后返回 needsAuthorization | P0 | ✅ 已覆盖 | `checkerRequiresReauthorizationAfterRestart` |
+| 118 | Computer Use 会话授权不跨重启 | 启动清理后本轮新授予的会话授权仍正常放行（#405） | 先启动清理再在本轮授予新授权 | 用判定器判定该会话 | 返回 allowed，清理不破坏本轮授权 | P1 | ✅ 已覆盖 | `grantsAfterStartupClearStillWorkWithinSession` |
+| 119 | Computer Use 会话授权不跨重启 | 空存储上的启动清理是安全的空操作（#405） | 仅有原生授权的空会话存储 | 连续两次 revokeAllSessionAccess | 不崩溃，无会话授权，原生授权保留 | P2 | ✅ 已覆盖 | `startupClearOnEmptyStoreIsSafe` |
 
-> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **119 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 90 / 90
-- P2: 已覆盖 12 / 12
-- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 93 / 93
+- P2: 已覆盖 13 / 13
+- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（90 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（93 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 113 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
