@@ -32,8 +32,19 @@ enum ConversationHTMLExporter {
         let exportedMessageCount: Int
         switch mode {
         case .debug:
-            exportedMessageCount = orderedMessages.count
-            renderedMessages = orderedMessages.map(renderDetailedMessage).joined(separator: "\n")
+            // 同一条工具结果会被生产流程同时写入嵌套 toolCalls 与独立 .tool 消息；按 toolCallID 去重避免导出重复（#580）。
+            let coveredToolCallIDs = Set(
+                orderedMessages
+                    .flatMap { $0.toolCalls ?? [] }
+                    .filter { $0.result != nil }
+                    .map(\.id)
+            )
+            let deduplicatedMessages = orderedMessages.filter { message in
+                guard message.role == .tool, let toolCallID = message.toolCallID else { return true }
+                return !coveredToolCallIDs.contains(toolCallID)
+            }
+            exportedMessageCount = deduplicatedMessages.count
+            renderedMessages = deduplicatedMessages.map(renderDetailedMessage).joined(separator: "\n")
         case .share:
             let shareableMessages = orderedMessages.compactMap(renderSharedMessage)
             exportedMessageCount = shareableMessages.count
