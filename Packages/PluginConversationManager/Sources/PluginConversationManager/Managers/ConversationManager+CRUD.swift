@@ -390,13 +390,21 @@ extension ConversationManager {
 
         // 不再要求缓存命中：分页展示的历史会话可能不在内存窗口里，
         // 但删除必须以持久化记录为准（issue #965）。
+        // 乐观移除前先捕获状态：落库失败时按身份还原，避免内存与数据库分叉（#801）。
+        let removedIndex = conversations.firstIndex { $0.id == id }
+        let removedSummary = removedIndex.map { conversations[$0] }
+        let removedLanguage = languageOverrides[id]
+        let removedReasoning = reasoningEffortOverrides[id]
+        let selectionBeforeDelete = selectedConversationID
+
         conversations.removeAll { $0.id == id }
         languageOverrides[id] = nil
         reasoningEffortOverrides[id] = nil
         notifyConversationObservers(.deleted(id))
 
+        let fallbackSelection = conversations.first?.id
         if selectedConversationID == id {
-            selectedConversationID = conversations.first?.id
+            selectedConversationID = fallbackSelection
             updateCurrentTitle()
             persistSelectedConversationID()
             notifySelectedConversationChanged()
@@ -407,6 +415,24 @@ extension ConversationManager {
         // persistent cleanup so a reload cannot resurrect the row.
         Task {
             let ids = await store?.conversationIDsToDelete(id: id) ?? [id]
+            // 先落库删除，成功后才清理消息/工具调用并确认内存移除；失败时还原
+            // 乐观移除，绝不把「未删掉」当成成功，也不提前销毁消息（#801）。
+            // 无 store 时没有持久化层，内存移除即最终结果，视为成功。
+            let deleted = await store?.deleteConversations(ids: ids) ?? true
+            guard deleted else {
+                self.restoreOptimisticDeletion(
+                    id: id,
+                    summary: removedSummary,
+                    index: removedIndex,
+                    language: removedLanguage,
+                    reasoning: removedReasoning,
+                    selectionBeforeDelete: selectionBeforeDelete,
+                    fallbackSelection: fallbackSelection
+                )
+                Self.logger.error("\(Self.t)删除对话 \(id.uuidString.prefix(8)) 落库失败，已还原内存列表")
+                self.notifyConversationsChanged()
+                return
+            }
             for conversationID in ids {
                 agentTurn?.cancelTurn(in: conversationID)
                 messageManager?.clearMessages(in: conversationID)
@@ -417,8 +443,34 @@ extension ConversationManager {
                     notifyConversationObservers(.deleted(conversationID))
                 }
             }
-            _ = await store?.deleteConversations(ids: ids)
             self.notifyConversationsChanged()
+        }
+    }
+
+    /// 落库删除失败时还原单条删除的乐观移除（#801）。
+    ///
+    /// 只还原本次删除真正改动的部分，并按身份比对选中项：删除窗口内用户若已
+    /// 主动切到别的会话，就不能用旧选择覆盖它（仓库异步写回约定）。
+    private func restoreOptimisticDeletion(
+        id: UUID,
+        summary: ConversationSummary?,
+        index: Int?,
+        language: ConversationLanguage?,
+        reasoning: ReasoningEffort?,
+        selectionBeforeDelete: UUID?,
+        fallbackSelection: UUID?
+    ) {
+        if let summary, !conversations.contains(where: { $0.id == id }) {
+            conversations.insert(summary, at: min(index ?? conversations.count, conversations.count))
+        }
+        if let language { languageOverrides[id] = language }
+        if let reasoning { reasoningEffortOverrides[id] = reasoning }
+        // 仅当本次删除把选中项从 id 切到回退项、且当前仍停在该回退项时才还原。
+        if selectionBeforeDelete == id, selectedConversationID == fallbackSelection {
+            selectedConversationID = id
+            updateCurrentTitle()
+            persistSelectedConversationID()
+            notifySelectedConversationChanged()
         }
     }
 
@@ -452,7 +504,13 @@ extension ConversationManager {
             messageManager?.clearMessages(in: conversationID)
             await toolManager?.deleteToolCalls(for: conversationID)
         }
-        _ = await store?.deleteConversations(ids: Array(allIDs))
+
+        // 落库删除是成功与否的唯一判据：失败时不动内存、不发删除通知、返回空
+        // 数组，让统计面板显示「无可清理」而不是虚假的「已清理 N 条」（#801）。
+        guard await store?.deleteConversations(ids: Array(allIDs)) == true else {
+            Self.logger.error("\(Self.t)批量删除 \(allIDs.count) 个过期对话落库失败，保留内存列表")
+            return []
+        }
 
         // 同步内存缓存，保证列表与徽标立即反映清理结果。
         conversations.removeAll { allIDs.contains($0.id) }

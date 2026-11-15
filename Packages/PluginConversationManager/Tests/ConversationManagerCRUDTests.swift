@@ -1,5 +1,7 @@
 import Foundation
+import KitAgentTool
 import ProviderConversation
+import ProviderToolManager
 import Testing
 @testable import PluginConversationManager
 
@@ -289,4 +291,96 @@ struct ConversationManagerCRUDTests {
         )
         #expect(remaining == [recent])
     }
+
+    /// 回归 #801：单条删除落库失败时，乐观移除必须还原，内存不得与数据库分叉，
+    /// 选中项与标题也要回到删除前的状态（与 #950 的落盘失败模拟一致）。
+    @Test func singleDeletionRestoresMemoryWhenPersistFails() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationSingleDeleteFailure-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        let id = try await manager.createConversationAndWait(
+            title: "Doomed",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+        // 绕过管理器删掉库行，使 store.deleteConversations  fetch 不到模型而返回 false。
+        #expect(await store.deleteConversations(ids: [id]))
+        #expect(manager.conversations.contains { $0.id == id })
+        #expect(manager.selectedConversationID == id)
+
+        manager.deleteConversation(id: id)
+        // 乐观移除立即生效。
+        #expect(!manager.conversations.contains { $0.id == id })
+
+        // 等后台 Task 落库失败并还原。
+        for _ in 0..<100 where !manager.conversations.contains(where: { $0.id == id }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(manager.conversations.contains { $0.id == id })
+        #expect(manager.selectedConversationID == id)
+        #expect(manager.currentTitle == "Doomed")
+    }
+
+    /// 回归 #801：批量清理落库失败时返回空数组、保留内存列表，
+    /// 绝不报告虚假的「已清理 N 条」。工具管理器替身在清理阶段
+    /// （落库删除之前）绕过管理器删掉库行，确定性地构造「查询命中、
+    /// 删除返回 false」——save 失败与行被并发删除走同一条 false 分支。
+    @Test func bulkDeletionReturnsEmptyAndKeepsMemoryWhenPersistFails() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationBulkDeleteFailure-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let now = Date()
+        let old = UUID()
+        try await store.createConversation(
+            id: old, title: "old", createdAt: now.addingTimeInterval(-86_400 * 10)
+        )
+        let toolManager = RowDeletingToolManager(store: store)
+        let manager = ConversationManager(
+            store: store, dataDirectory: directory, toolManager: toolManager
+        )
+        manager.conversations = [ConversationSummary(id: old, title: "old")]
+
+        let deleted = await manager.deleteConversations(
+            createdBefore: now.addingTimeInterval(-86_400),
+            projectPath: nil,
+            includingChildConversations: false
+        )
+
+        // 落库失败：不报告任何已删除 ID，内存列表原样保留。
+        #expect(deleted.isEmpty)
+        #expect(manager.conversations.map(\.id) == [old])
+    }
+}
+
+/// #801 批量删除失败回归替身：在清理阶段的 `deleteToolCalls`（落库删除之前）
+/// 绕过管理器删掉库行，让随后的 `store.deleteConversations` fetch 不到模型而返回 false。
+@MainActor
+private final class RowDeletingToolManager: ToolManagerProviding {
+    private let store: ConversationStore
+    init(store: ConversationStore) { self.store = store }
+
+    func deleteToolCalls(for conversationID: UUID) async {
+        _ = await store.deleteConversations(ids: [conversationID])
+    }
+
+    func allTools() -> [any SuperAgentTool] { [] }
+    func add(_ tool: any SuperAgentTool, pluginID: String) {}
+    func remove(id: String) {}
+    func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] { [] }
+    func tool(named name: String) -> (any SuperAgentTool)? { nil }
+    func displayDescription(for toolCall: ToolCall) -> String? { nil }
+    func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel? { nil }
+    func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
+        ToolCallResult(content: "", isError: false)
+    }
+    func toolCalls(for turnID: UUID) async -> [ToolCallRecord] { [] }
+    func toolCallResult(for toolCallID: String) async -> ToolCallResult? { nil }
 }
