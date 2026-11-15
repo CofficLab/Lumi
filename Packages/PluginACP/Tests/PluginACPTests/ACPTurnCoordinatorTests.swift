@@ -107,14 +107,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     @MainActor
     private final class MockConversationFactory: ACPSessionCreating {
-        var nextID = UUID()
         func createConversation(
             title: String?,
             projectPath: String?,
             providerID: String?,
             modelName: String?
         ) throws -> UUID {
-            nextID
+            // 每个会话映射到独立会话 ID，才能构造多会话并发的隔离回归。
+            UUID()
         }
     }
 
@@ -1252,6 +1252,101 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // labels 同时用作 optionId 与 answersByOptionID 的键；重复会让
         // Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃，故必须唯一。
         XCTAssertEqual(labels.count, Set(labels).count)
+    }
+
+    // MARK: - #353 工具授权元数据按会话隔离
+
+    /// 两个会话上报相同 toolCallId 时，A 的授权弹窗必须展示 A 自己的入参/类别，
+    /// 不能被后上报的 B 覆盖（裸 ID 键会让 B 覆盖 A）。
+    func testToolPermissionMetadataIsolatedPerSession() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        XCTAssertNotEqual(convA, convB)
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convA, id: "call_shared", name: "write_file", arguments: #"{"path":"/tmp/A.swift"}"#)
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"rm -rf B"}"#)
+
+        runner.emit(.suspended(conversationID: convA, turnID: UUID(), suspension: AgentLoopSuspension(
+            suspensionID: "userInput:call_shared",
+            conversationID: convA,
+            toolCallID: "call_shared",
+            kind: "userInput",
+            payload: #"{"kind":"permission","question":"允许吗?"}"#
+        )))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        let params = try XCTUnwrap(try permissionParams())
+        XCTAssertEqual(params.sessionId, sessionA)
+        XCTAssertEqual(params.toolCall.toolCallId, "call_shared")
+        XCTAssertEqual(params.toolCall.kind, .edit)
+        XCTAssertEqual(params.toolCall.rawInput, ACPTurnCoordinator.json(from: #"{"path":"/tmp/A.swift"}"#))
+    }
+
+    /// A 未登记某 toolCallId、只有 B 登记时，A 的授权不得借用 B 的入参/类别，
+    /// 应回退到问题文本（裸 ID 查询会命中 B 的元数据造成跨会话泄漏）。
+    func testToolPermissionDoesNotLeakOtherSessionMetadata() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"rm -rf B"}"#)
+
+        runner.emit(.suspended(conversationID: convA, turnID: UUID(), suspension: AgentLoopSuspension(
+            suspensionID: "userInput:call_shared",
+            conversationID: convA,
+            toolCallID: "call_shared",
+            kind: "userInput",
+            payload: #"{"kind":"permission","question":"允许吗?"}"#
+        )))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        let params = try XCTUnwrap(try permissionParams())
+        XCTAssertEqual(params.sessionId, sessionA)
+        XCTAssertNil(params.toolCall.rawInput)
+        XCTAssertNil(params.toolCall.kind)
+        XCTAssertEqual(params.toolCall.title, "允许吗?")
+    }
+
+    /// 取消 A 时，只把 A 的未决工具标记 cancelled；B 的同名工具不受影响，
+    /// 且 A 的未决工具必须真的被收尾（裸 ID 键会让 B 覆盖 A，导致 A 漏发 cancelled）。
+    func testCancelledToolCallsIsolatedPerSession() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convA, id: "call_shared", name: "bash", arguments: #"{"cmd":"a"}"#)
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"b"}"#)
+
+        coordinator.cancel(sessionID: sessionA)
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let u = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  u.sessionId == sessionA,
+                  case .toolCallUpdate(let tc) = u.update else { return false }
+            return tc.toolCallId == "call_shared" && tc.status == .cancelled
+        })
+        XCTAssertFalse(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let u = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  u.sessionId == sessionB,
+                  case .toolCallUpdate(let tc) = u.update else { return false }
+            return tc.toolCallId == "call_shared" && tc.status == .cancelled
+        })
     }
 }
 

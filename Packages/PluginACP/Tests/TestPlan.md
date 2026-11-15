@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条用例。
+PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 89 条用例。
 
 平台: macOS 14+
-测试文件: 6 个，用例总数: 86
+测试文件: 6 个，用例总数: 89
 
 核心组件（源码目录）:
 - `Views/`
@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条�
 - **ACPFileClient**（13 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；路径越权判定必须解析符号链接，workspace 内指向外部的 symlink 读写不得放行，workspace 内及经符号链接到达的 root 下的合法文件不得误拒（**回归 #356**）；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（39 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。
+- **ACPTurnCoordinator**（42 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。
 
 ## 测试用例清单
 
@@ -129,9 +129,16 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条�
 | 84 | ACPFileClient | 指向 workspace 外的符号链接写入必须被拒绝（**回归 #356**） | 真实临时 workspace，project/link 指向同级 outside | `writeTextFile(link/secret.txt)` | 抛 pathOutsideWorkspace，且不发起 fs 请求 | P0 | ✅ 已覆盖 | `testSymlinkEscapeWriteRejected` |
 | 85 | ACPFileClient | workspace 内的符号链接正常放行（**回归 #356**） | project/inner 指向 workspace 内的 realdir | `readTextFile(inner/file.txt)` | 正常返回内容并发起 fs 请求，不误拒 | P1 | ✅ 已覆盖 | `testSymlinkInsideWorkspaceStillAllowed` |
 | 86 | ACPFileClient | cwd 经符号链接到达时解析 root 后合法文件不误拒（**回归 #356**） | 会话 cwd 为指向 project 的 alias 符号链接 | `readTextFile(alias/file.txt)` | root 与 candidate 均解析后判定包含，正常放行 | P1 | ✅ 已覆盖 | `testRootSymlinkResolvedForContainment` |
+| 87 | ACPTurnCoordinator | 两会话同名 toolCallId 时授权弹窗展示本会话入参/类别（**回归 #353**） | 两个独立会话各上报相同 toolCallId、不同工具与入参 | A 进入工具授权 | 弹窗 rawInput/kind 为 A 自己的，不被后上报的 B 覆盖 | P0 | ✅ 已覆盖 | `testToolPermissionMetadataIsolatedPerSession` |
+| 88 | ACPTurnCoordinator | 本会话未登记该调用时不得借用其它会话元数据（**回归 #353**） | 仅 B 上报某 toolCallId，A 未上报 | A 以该 id 进入授权 | 回退到问题文本，rawInput/kind 为 nil，不泄漏 B 的入参 | P0 | ✅ 已覆盖 | `testToolPermissionDoesNotLeakOtherSessionMetadata` |
+| 89 | ACPTurnCoordinator | 取消会话只收尾本会话未决工具，同名工具不跨会话串扰（**回归 #353**） | 两会话各上报相同 toolCallId 的未决工具 | 取消 A | A 收到 cancelled，B 的同名工具不受影响 | P1 | ✅ 已覆盖 | `testCancelledToolCallsIsolatedPerSession` |
 
-> 说明：全部 **86 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#353**，`ACPTurnCoordinator.toolCallMetadata` 按 `(sessionID, toolCallID)` 隔离）：
+> - **M1** 还原为裸 `String` 键（`toolCallMetadata[call.id]`，元数据带 `sessionID`，授权按裸 ID 查询、收尾按 `value.sessionID` 过滤）→ `testToolPermissionMetadataIsolatedPerSession`、`testToolPermissionDoesNotLeakOtherSessionMetadata`、`testCancelledToolCallsIsolatedPerSession` 三条全部转红（B 覆盖 A：弹窗展示 B 的入参/类别、A 借用 B 的元数据、取消 A 时 A 的未决工具漏发 cancelled）。
+> - 还原完整修复（复合键 `ToolCallKey`，授权按 `(sessionID, toolCallID)` 查询、收尾按 `key.sessionID` 过滤）→ 89 条全绿。
 
 > 变异验证（**#356**，`ACPFileClient.resolvedPath`）：
 > - **M1** 去掉符号链接解析（直接按 `standardizedFileURL` 词法路径判定包含）→ `testSymlinkEscapeReadRejected`、`testSymlinkEscapeWriteRejected` 转红（越权 symlink 被放行），`testSymlinkInsideWorkspaceStillAllowed` 仍绿。
@@ -140,21 +147,21 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 63 / 63
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 64 / 64
 - P2: 已覆盖 1 / 1
-- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
+- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（63 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（64 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
