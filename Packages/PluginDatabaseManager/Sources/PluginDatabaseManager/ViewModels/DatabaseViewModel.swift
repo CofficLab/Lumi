@@ -1,5 +1,6 @@
 import ProviderEditor
 import Foundation
+import KitKeychain
 import LumiLoggingKit
 import Combine
 
@@ -72,6 +73,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     private let manager: DatabaseManagerCore
+    /// 连接凭据的 Keychain 存储；可注入以便测试模拟写入失败。
+    private let keychain: KeychainStore
 
     /// 宿主注入的嵌入式编辑器能力（语法高亮）；nil 时 View 退回 TextEditor。
     @Published public var embeddedEditorProvider: (any EditorEmbeddedEditorProviding)?
@@ -91,8 +94,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 测试专用初始化：`loadSavedConfigs == false` 时跳过从 UserDefaults 读取已存配置，
     /// 始终使用一份独立的内存 demo 连接，避免并行测试共享进程级 UserDefaults 串扰。
     /// `manager` 可注入，用于构造可控延迟的驱动复现连接竞态。
-    public init(loadSavedConfigs: Bool, manager: DatabaseManagerCore = .shared) {
+    public init(loadSavedConfigs: Bool, manager: DatabaseManagerCore = .shared, keychain: KeychainStore? = nil) {
         self.manager = manager
+        self.keychain = keychain ?? DatabaseConnectionStore.keychain
         Task {
             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         }
@@ -124,9 +128,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         }
     }
 
-    public func addConfig(_ config: DatabaseConfig) {
-        configs.append(config)
-        DatabaseConnectionStore.saveConfigs(configs)
+    public func addConfig(_ config: DatabaseConfig) throws {
+        var updated = configs
+        updated.append(config)
+        // 先持久化成功再更新内存列表：Keychain 写入失败时抛出，
+        // 配置不会出现在列表里，表单据此保留用户输入并报错（#569）。
+        try DatabaseConnectionStore.saveConfigs(updated, keychain: keychain)
+        configs = updated
         Task {
             await DatabaseAgentConnectionRegistry.shared.upsert(config)
         }
@@ -134,15 +142,18 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 编辑已存在的连接配置（保留 id）。若表单里密码留空，沿用已存密码，避免误清空。
     /// 若当前正连着该连接，则用新配置断开重连。
-    public func updateConfig(_ config: DatabaseConfig) {
+    public func updateConfig(_ config: DatabaseConfig) throws {
         guard let index = configs.firstIndex(where: { $0.id == config.id }) else { return }
         var updated = config
         if (updated.password?.isEmpty ?? true) {
             updated.password = configs[index].password
         }
         let wasConnected = (selectedConfig?.id == config.id && isConnected)
-        configs[index] = updated
-        DatabaseConnectionStore.saveConfigs(configs)
+        var newConfigs = configs
+        newConfigs[index] = updated
+        // 持久化成功才提交内存改动，失败时抛出并保留原配置（#569）。
+        try DatabaseConnectionStore.saveConfigs(newConfigs, keychain: keychain)
+        configs = newConfigs
         Task { await DatabaseAgentConnectionRegistry.shared.upsert(updated) }
 
         if wasConnected {
@@ -157,13 +168,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     /// 移除一个已保存的连接。如果删除的是当前连接，先断开再删除。
-    public func removeConfig(_ config: DatabaseConfig) {
+    public func removeConfig(_ config: DatabaseConfig) throws {
         if selectedConfig?.id == config.id {
             Task { await disconnect() }
         }
-        configs.removeAll { $0.id == config.id }
-        DatabaseConnectionStore.deletePassword(for: config.id)
-        DatabaseConnectionStore.saveConfigs(configs)
+        var newConfigs = configs
+        newConfigs.removeAll { $0.id == config.id }
+        DatabaseConnectionStore.deletePassword(for: config.id, keychain: keychain)
+        try DatabaseConnectionStore.saveConfigs(newConfigs, keychain: keychain)
+        configs = newConfigs
         Task {
             await DatabaseAgentConnectionRegistry.shared.remove(id: config.id)
         }

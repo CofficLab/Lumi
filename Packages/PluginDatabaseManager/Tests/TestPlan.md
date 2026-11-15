@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 162
+测试文件: 19 个，用例总数: 169
 
 核心组件（源码目录）:
 - `Agent/`
@@ -64,6 +64,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **字符串字面量的方言转义**（#582，6 条）：`sqlLiteral(for:dialect:)` 生成内联字符串字面量时必须按方言转义——MySQL 默认开启反斜杠转义（NO_BACKSLASH_ESCAPES 关闭），须先把 `\` 翻倍再转义单引号，否则用户输入的 `\n`/`\t`/`\0` 被静默改写成控制字符、保存后内容与编辑器所见不一致；SQLite/PostgreSQL 标准串里反斜杠是普通字符，只转义单引号。UPDATE/INSERT/DELETE 三处生成路径都须传入当前 `DatabaseType`。由 `TableChangeManagerStringEscapeTests` 锁定；改动 `sqlLiteral`/`escapeSQLString` 或语句生成时优先跑对应测试文件。
 - **后台行数 COUNT 的表身份校验**（#565，2 条）：`refreshTableRowCount` 在 `await` 之后写回共享 `tableRowCount` 前必须比对 `openTableObject?.id == table.id` 与连接代次，否则打开表 A 后快速切到 B，A 的慢 `SELECT COUNT(*)` 晚到会覆盖 B 的行数，分页 bar 据此算出错误的总页数与 Next 可用性；`openObject` 切换时把 `tableRowCount` 重置为 nil，保证新表自行发起 COUNT。由 `DatabaseViewModelRowCountRaceTests` 用门闩构造「旧表 COUNT 晚到」锁定；改动 `refreshTableRowCount`/`loadTablePage` 的行数写回或 `openObject` 重置时优先跑对应测试文件。
 - **结构变更与未保存数据编辑的冲突**（#583，5 条）：`saveSchemaChanges` 应用 DDL 前必须检查暂存的结构变更（`renameColumn` 的旧列名、`dropColumn` 的列名）是否与未保存数据编辑引用的列（`TableChangeManager.referencedColumnNames`：UPDATE 的 SET 列与主键 WHERE 列、INSERT 的列、DELETE 的主键列）相交；相交则明确报错并阻止，不得静默执行 DDL——否则数据变更管理器持有的旧 schema 快照会生成引用已不存在列名的 SQL（如 `UPDATE ... SET "name"`），保存必失败。不相交（重命名未被编辑引用的列）或无数据编辑时照常应用，且保留无关数据编辑。由 `DatabaseViewModelSchemaChangeConflictTests` 锁定；改动 `saveSchemaChanges` 的冲突守卫或 `referencedColumnNames` 时优先跑对应测试文件。
+- **连接凭据持久化的失败传播**（#569，7 条）：`DatabaseConnectionStore.saveConfigs` 必须先完成全部密码的 Keychain 写入（`setReportingErrors`，失败抛出 `KeychainStoreError`），最后才把脱敏配置写入 `UserDefaults`；不得用吞错的 `set` 无论成败都落盘——否则 Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，界面把「密码已丢失」的配置呈现为保存成功，重启后 `loadConfigs` 无法恢复凭据。`DatabaseViewModel.addConfig`/`updateConfig`/`removeConfig` 改为 `throws` 且持久化成功才更新内存 `configs`，表单据此保留输入并报错；`KeychainStore` 可注入以便测试替换后端。由 `DatabaseConnectionCredentialPersistenceTests` 锁定；改动 `saveConfigs` 的落盘时机或视图模型的凭据保存链路时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -318,7 +319,19 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 161 | 结构变更冲突 | 重命名未被编辑引用的列照常应用，且保留无关数据编辑 | 同上 | 暂存 body→y 的数据编辑，再 stageRenameColumn name→title，saveSchemaChanges | tableSchemaError 为空，结构变更已应用，数据编辑保留，探针 SELECT title 为 Alice | P1 | ✅ 已覆盖 | `renameOfUnreferencedColumnProceedsAndPreservesEdit` |
 | 162 | 结构变更冲突 | 没有未保存数据编辑时重命名照常应用 | 同上，无数据编辑 | stageRenameColumn name→title，saveSchemaChanges | tableSchemaError 为空，结构变更已应用，探针 SELECT title 为 Alice | P1 | ✅ 已覆盖 | `renameWithNoPendingDataEditProceeds` |
 
-> 说明：全部 **162 条场景**已在本包 `swift test` 中实跑通过。
+### 连接凭据持久化的失败传播（回归 #569）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|--------|------|----------|
+| 163 | 凭据持久化失败传播 | Keychain 写入失败时 saveConfigs 抛出且不落盘配置（回归 #569） | 注入返回 errSecInteractionNotAllowed 的假后端，隔离 configsKey | `saveConfigs([带密码配置], keychain: 失败store)` | 抛出 KeychainStoreError，UserDefaults 配置键仍为 nil | P0 | ✅ 已覆盖 | `saveConfigsPropagatesKeychainWriteFailureAndDoesNotPersist` |
+| 164 | 凭据持久化失败传播 | Keychain 写入失败时保留此前已保存的配置（回归 #569） | 先用正常 store 保存 existing，再用失败 store 保存 [existing, added] | `saveConfigs([existing, added], keychain: 失败store)` | 抛出 KeychainStoreError，落盘配置仍为 1 条且 id==existing.id，added 未加入 | P0 | ✅ 已覆盖 | `saveConfigsFailureKeepsPreviouslySavedConfigs` |
+| 165 | 凭据持久化失败传播 | 保存成功时配置脱敏落盘且密码写入 Keychain | 注入正常假后端 | `saveConfigs([带密码配置], keychain: store)` | 落盘配置 password 为 nil，假后端按 connection.<id> 存到密码原文 | P1 | ✅ 已覆盖 | `saveConfigsSuccessSanitizesPasswordAndStoresInKeychain` |
+| 166 | 凭据持久化失败传播 | loadConfigs 从 Keychain 回填密码 | 注入正常假后端并保存带密码配置 | `loadConfigs(keychain: store)` | 返回配置 id 一致且 password 恢复为原文 | P1 | ✅ 已覆盖 | `loadConfigsRestoresPasswordFromKeychain` |
+| 167 | 凭据持久化失败传播 | addConfig 在 Keychain 失败时抛出且配置列表不变（回归 #569） | 注入失败 store 的视图模型，记录 before 列表 | `addConfig(带密码配置)` | 抛出 KeychainStoreError，configs 的 id 列表与 before 一致且不含新配置，UserDefaults 配置键为 nil | P0 | ✅ 已覆盖 | `addConfigPropagatesKeychainFailureAndKeepsConfigsUnchanged` |
+| 168 | 凭据持久化失败传播 | updateConfig 在 Keychain 失败时抛出且保留原配置（回归 #569） | 注入失败 store 的视图模型，configs=[existing] | 改名+改密码后 `updateConfig(edited)` | 抛出 KeychainStoreError，configs 首项 password/name 仍为原值，UserDefaults 配置键为 nil | P0 | ✅ 已覆盖 | `updateConfigPropagatesKeychainFailureAndKeepsOriginal` |
+| 169 | 凭据持久化失败传播 | addConfig 成功时追加配置并脱敏持久化 | 注入正常 store 的视图模型 | `addConfig(带密码配置)` | configs 含新配置，落盘配置含新 id 且 password 为 nil，假后端存到密码原文 | P1 | ✅ 已覆盖 | `addConfigSuccessAppendsAndPersists` |
+
+> 说明：全部 **169 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -340,24 +353,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#565）：`refreshTableRowCount` 写回前校验 `openTableObject?.id == table.id` 与连接代次的修复已在 dev（commit edb8edfec），但此前没有 COUNT 竞态回归用例。补充 2 条用门闩构造「旧表 COUNT 晚到」的用例锁定该不变量。M1 删除写回前的 `openTableObject?.id == table.id` 校验（仅留连接代次）→ `staleCountFromPreviousTableDoesNotPolluteNewTable` 转红（A 的 999 覆盖 B 的 20），`currentTableCountIsWritten` 仍绿。变异施加并确认转红后还原，最终 157 条全绿。
 >
 > 变异验证（#583）：`saveSchemaChanges` 原先应用 DDL 后因 `changeManager?.hasChanges == true` 跳过重建数据变更管理器，使其继续持有旧列快照，重命名/删除被编辑引用的列后保存数据编辑生成 `UPDATE ... SET "name"` 报 `no such column`。修复为应用 DDL 前用 `referencedColumnNames` 与暂存结构变更的受影响列求交，相交则报错阻止。M1 删除该冲突守卫（直接进入 getConnection 执行 DDL）→ `renameOfColumnWithPendingEditIsBlocked`、`dropOfColumnWithPendingEditIsBlocked` 转红（tableSchemaError 为空、结构变更被应用、探针报 no such column: name），`referencedColumnNamesCollectsUpdateInsertDeleteColumns`、`renameOfUnreferencedColumnProceedsAndPreservesEdit`、`renameWithNoPendingDataEditProceeds` 仍绿。变异施加并确认转红后还原，最终 162 条全绿。
+>
+> 变异验证（#569）：`DatabaseConnectionStore.saveConfigs` 原先调用吞错的 `keychain.set`，无论密码是否写入成功都把脱敏配置落盘，表单随后无条件关闭；Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，重启后凭据无法恢复且界面无提示。修复为先完成全部 `setReportingErrors` 写入（失败抛出 `KeychainStoreError`）、最后才写 `UserDefaults`，并把 `addConfig`/`updateConfig`/`removeConfig` 改为 `throws`、持久化成功才更新内存列表。M1 把 `try keychain.setReportingErrors(...)` 还原为吞错的 `keychain.set(...)`（原 bug）→ `saveConfigsPropagatesKeychainWriteFailureAndDoesNotPersist`、`saveConfigsFailureKeepsPreviouslySavedConfigs`、`addConfigPropagatesKeychainFailureAndKeepsConfigsUnchanged`、`updateConfigPropagatesKeychainFailureAndKeepsOriginal` 转红（不抛错且配置被落盘/内存列表被更新），`saveConfigsSuccessSanitizesPasswordAndStoresInKeychain`、`loadConfigsRestoresPasswordFromKeychain`、`addConfigSuccessAppendsAndPersists` 仍绿。变异施加并确认转红后还原，最终 169 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 81 / 81
-- P1: 已覆盖 80 / 80
+- P0: 已覆盖 85 / 85
+- P1: 已覆盖 83 / 83
 - P2: 已覆盖 1 / 1
-- **合计: 162 / 162**（仅表示清单场景，非源码覆盖率）
+- **合计: 169 / 169**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（81 条）
-- **P1**: 其余功能性用例（80 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（85 条）
+- **P1**: 其余功能性用例（83 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 162 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 169 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

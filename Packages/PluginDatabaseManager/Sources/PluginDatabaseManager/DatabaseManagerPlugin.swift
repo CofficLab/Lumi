@@ -191,7 +191,7 @@ public final class DatabaseManagerPlugin: SuperPlugin, SuperLog {
         let config = viewModel.configs.first(where: { $0.type == .sqlite && $0.database == path })
             ?? DatabaseConfig(name: url.deletingPathExtension().lastPathComponent, type: .sqlite, database: path)
         if !viewModel.configs.contains(where: { $0.id == config.id }) {
-            viewModel.addConfig(config)
+            try? viewModel.addConfig(config)
         }
         Task { await viewModel.connect(config: config) }
         return true
