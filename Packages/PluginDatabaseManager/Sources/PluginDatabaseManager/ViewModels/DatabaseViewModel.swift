@@ -920,7 +920,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             let tx = try await connection.beginTransaction()
             do {
                 for sql in statements {
-                    _ = try await tx.execute(sql, params: nil)
+                    let affected = try await tx.execute(sql, params: nil)
+                    // 按主键定位单行的 UPDATE/DELETE 命中 0 行，说明 WHERE 没匹配到目标行
+                    // （如可空主键曾用 = NULL）。必须回滚并报错，不能当成保存成功清空暂存（#568）。
+                    if affected == 0, Self.isRowTargetingWrite(sql) {
+                        throw DatabaseError.transactionFailed("写入未命中任何行，已回滚：\(sql)")
+                    }
                 }
                 try await tx.commit()
             } catch {
@@ -934,6 +939,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             errorMessage = error.localizedDescription
         }
         isLoading = false
+    }
+
+    /// 是否为按主键定位单行的写入（UPDATE/DELETE）。这类语句命中 0 行即未匹配到目标行，
+    /// 保存不能报成功（#568）。INSERT 总会新增行，不参与该判定。
+    public nonisolated static func isRowTargetingWrite(_ sql: String) -> Bool {
+        let head = sql.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return head.hasPrefix("UPDATE ") || head.hasPrefix("DELETE ")
     }
 
     /// 按方言引用单个标识符（SQLite/PG 用双引号，MySQL 用反引号）。

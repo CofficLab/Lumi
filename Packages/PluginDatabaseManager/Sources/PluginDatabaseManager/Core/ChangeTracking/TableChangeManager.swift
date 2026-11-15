@@ -305,6 +305,21 @@ public final class TableChangeManager: ObservableObject {
         generatedDeleteStatements(for: type) + generatedInsertStatements(for: type) + generatedUpdateStatements(for: type)
     }
 
+    /// 主键 WHERE 条件：NULL 用 `IS NULL`，非 NULL 用 `= 字面量`。
+    /// SQL 里 `= NULL` 永远不成立，可空主键（如未声明 NOT NULL 的 TEXT PRIMARY KEY）
+    /// 的行会因此命中 0 行，保存却报成功并清空暂存，编辑/删除静默失效（#568）。
+    private func primaryKeyCondition(
+        column: String,
+        value: DatabaseValue,
+        dialect: DatabaseType,
+        quote: (String) -> String
+    ) -> String {
+        if case .null = value {
+            return "\(quote(column)) IS NULL"
+        }
+        return "\(quote(column)) = \(sqlLiteral(for: value, dialect: dialect))"
+    }
+
     public func generatedUpdateStatements(for type: DatabaseType) -> [String] {
         let tableExpr = DatabaseViewModel.qualifiedName(for: table, type: type)
         func q(_ name: String) -> String { DatabaseViewModel.quoteIdentifier(name, for: type) }
@@ -313,7 +328,7 @@ public final class TableChangeManager: ObservableObject {
             let setClause = row.columnUpdates.map { "\(q($0.key)) = \(sqlLiteral(for: $0.value, dialect: type))" }
                 .joined(separator: ", ")
             let whereClause = row.primaryKeyValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value, dialect: type))" }
+                .map { primaryKeyCondition(column: $0.column, value: $0.value, dialect: type, quote: q) }
                 .joined(separator: " AND ")
             return "UPDATE \(tableExpr) SET \(setClause) WHERE \(whereClause);"
         }
@@ -353,7 +368,7 @@ public final class TableChangeManager: ObservableObject {
         return deletedRowKeys.compactMap { key -> String? in
             guard let pkValues = deletedPKValues[key] else { return nil }
             let whereClause = pkValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value, dialect: type))" }
+                .map { primaryKeyCondition(column: $0.column, value: $0.value, dialect: type, quote: q) }
                 .joined(separator: " AND ")
             return "DELETE FROM \(tableExpr) WHERE \(whereClause);"
         }

@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 139
+测试文件: 15 个，用例总数: 148
 
 核心组件（源码目录）:
 - `Agent/`
@@ -273,7 +273,21 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 138 | 文本编辑保值 | 各方言文本类型变体都保留原始字符串，数值/布尔类型不算文本 | — | 对 TEXT/VARCHAR/NVARCHAR/CHAR/CLOB/JSON/UUID/ENUM 调用 `parseEditedCellValue(_:columnType:)`，并检查 `isTextColumnType` | 文本变体保留 `00123`/`NULL` 原文；INTEGER/BOOLEAN/DOUBLE PRECISION/BLOB 不算文本 | P1 | ✅ 已覆盖 | `textTypeVariantsPreserveRawString` |
 | 139 | 文本编辑保值 | 未知/缺省列类型沿用既有推断，不破坏无 schema 的调用方（无回归） | — | 不传 columnType 调用 `parseEditedCellValue` | `123`→integer、`  x  `→string("x")、`NULL`→null | P1 | ✅ 已覆盖 | `unknownColumnTypeFallsBackToInference` |
 
-> 说明：全部 **139 条场景**已在本包 `swift test` 中实跑通过。
+### 可空主键的 NULL 比较（回归 #568）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 140 | 可空主键 NULL 比较 | NULL 主键的 UPDATE 用 IS NULL 而非 = NULL（回归 #568） | 表 notes(id TEXT PK 可空, body TEXT)，行 id=NULL | 暂存 body→after 后 `generatedUpdateStatements(for: .sqlite)` | 等于 `UPDATE "notes" SET "body" = 'after' WHERE "id" IS NULL;` | P0 | ✅ 已覆盖 | `nullPrimaryKeyUpdateUsesIsNull` |
+| 141 | 可空主键 NULL 比较 | NULL 主键的 DELETE 用 IS NULL 而非 = NULL（回归 #568） | 同上 | 标记删除该行后 `generatedDeleteStatements(for: .sqlite)` | 等于 `DELETE FROM "notes" WHERE "id" IS NULL;` | P0 | ✅ 已覆盖 | `nullPrimaryKeyDeleteUsesIsNull` |
+| 142 | 可空主键 NULL 比较 | 非 NULL 主键仍用 = 字面量，不被改成 IS NULL | 行 id='k1' 与 id='k2' | 暂存 k1 行更新、k2 行删除后生成 UPDATE/DELETE | WHERE 分别为 `"id" = 'k1'`、`"id" = 'k2'`，不含 IS NULL | P1 | ✅ 已覆盖 | `nonNullPrimaryKeyStillUsesEquals` |
+| 143 | 可空主键 NULL 比较 | 复合主键按值混用 IS NULL 与 =，方言引号正确 | 复合主键 (a,b)，行 a=NULL/b='x' | 暂存 val→new 后生成 sqlite/mysql UPDATE | WHERE 为 `"a" IS NULL AND "b" = 'x'`（mysql 用反引号） | P1 | ✅ 已覆盖 | `compositePrimaryKeyMixesNullAndEquals` |
+| 144 | 可空主键 NULL 比较 | 行级写入判定只认 UPDATE/DELETE，INSERT/SELECT 不算 | — | 对 UPDATE/DELETE/INSERT/SELECT 调用 `isRowTargetingWrite` | UPDATE/DELETE（含小写/前导空格）为 true，INSERT/SELECT 为 false | P1 | ✅ 已覆盖 | `isRowTargetingWriteDetectsUpdateAndDelete` |
+| 145 | 可空主键 NULL 比较 | NULL 主键行的 UPDATE 在真实 SQLite 上命中并修改该行 | 临时 SQLite，notes(id TEXT PK, body)，插入 (NULL,'before') | 暂存 body→after，执行生成的 UPDATE | 影响 1 行，body 变为 after | P0 | ✅ 已覆盖 | `nullPrimaryKeyUpdateActuallyModifiesRow` |
+| 146 | 可空主键 NULL 比较 | NULL 主键行的 DELETE 在真实 SQLite 上命中并删除该行 | 同上 | 标记删除该行，执行生成的 DELETE | 影响 1 行，count 为 0 | P0 | ✅ 已覆盖 | `nullPrimaryKeyDeleteActuallyRemovesRow` |
+| 147 | 可空主键 NULL 比较 | 行级写入命中 0 行时回滚并报错，不清空暂存（回归 #568） | 假事务影响行数=0，暂存一处更新 | `saveChanges()` | errorMessage 非空，hasChanges 仍 true，事务回滚未提交 | P0 | ✅ 已覆盖 | `saveRollsBackWhenRowWriteAffectsNoRows` |
+| 148 | 可空主键 NULL 比较 | 行级写入命中 1 行时正常提交并清空暂存 | 假事务影响行数=1，暂存一处更新 | `saveChanges()` | errorMessage 为空，hasChanges 为 false，事务提交未回滚 | P1 | ✅ 已覆盖 | `saveSucceedsWhenRowWriteAffectsOneRow` |
+
+> 说明：全部 **148 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -287,24 +301,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#582）：`sqlLiteral` 原先对字符串只把 `'` 替换成 `''`，MySQL 默认开启反斜杠转义，用户输入的 `\n`/`\t` 被静默改写成控制字符。修复为按方言转义：MySQL 先把 `\` 翻倍再转义单引号，SQLite/PostgreSQL 保持只转义单引号。M1 禁用 MySQL 反斜杠转义分支（`if dialect == .mysql && false`）→ `mysqlStringEscapesBackslash`、`mysqlStringEscapesQuoteAndBackslash`、`mysqlUpdateEscapesBackslash`、`mysqlInsertEscapesBackslash`、`mysqlDeleteEscapesBackslashInPrimaryKey` 转红，`standardDialectsKeepBackslashLiteral` 仍绿。变异施加并确认转红后还原，最终 131 条全绿。
 >
 > 变异验证（#554）：`parseEditedCellValue` 原先对所有列统一 trim、把空串/`NULL` 映射成 SQL NULL、并推断 Int/Double/Bool，TEXT 列的合法内容被静默改写。修复为按列声明类型分流：文本类列（`isTextColumnType`）原样返回 `.string(text)`，其余列沿用推断；编辑提交入口改调 `TableChangeManager.parseEditedValue(_:column:)` 从 schema 取类型。M1 禁用文本分支（`if false && isTextColumnType(columnType)`）→ `textColumnPreservesPaddedWhitespace`、`textColumnPreservesLiteralNULL`、`textColumnPreservesLeadingZeros`、`textColumnPreservesEmptyString`、`textColumnUpdateGeneratesStringLiteral`、`textTypeVariantsPreserveRawString` 转红，`numericAndBooleanColumnsStillInferTypes`、`unknownColumnTypeFallsBackToInference` 仍绿。变异施加并确认转红后还原，最终 139 条全绿。
+>
+> 变异验证（#568）：UPDATE/DELETE 的 WHERE 原先对每个主键值都生成 `pk = 字面量`，NULL 主键变成 `pk = NULL`（SQL 里永不成立），命中 0 行却报保存成功并清空暂存。修复为 `primaryKeyCondition`：NULL 用 `IS NULL`、非 NULL 用 `=`；并在 `saveChanges` 校验行级写入（`isRowTargetingWrite`）的影响行数，命中 0 行回滚报错。M1 把 NULL 分支还原为 `= sqlLiteral(...)`（原 bug）→ `nullPrimaryKeyUpdateUsesIsNull`、`nullPrimaryKeyDeleteUsesIsNull`、`compositePrimaryKeyMixesNullAndEquals`、`nullPrimaryKeyUpdateActuallyModifiesRow`、`nullPrimaryKeyDeleteActuallyRemovesRow` 转红（端到端实测影响 0 行），非 NULL/守卫/判定用例仍绿；M2 删除 `saveChanges` 的影响行数守卫（还原 `_ = try await tx.execute`）→ `saveRollsBackWhenRowWriteAffectsNoRows` 转红（errorMessage 为空、暂存被清空、事务提交而非回滚），其余 8 条仍绿。两处变异均单独施加并确认转红后还原，最终 148 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 68 / 68
-- P1: 已覆盖 70 / 70
+- P0: 已覆盖 73 / 73
+- P1: 已覆盖 74 / 74
 - P2: 已覆盖 1 / 1
-- **合计: 139 / 139**（仅表示清单场景，非源码覆盖率）
+- **合计: 148 / 148**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（68 条）
-- **P1**: 其余功能性用例（70 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（73 条）
+- **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 139 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 148 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
