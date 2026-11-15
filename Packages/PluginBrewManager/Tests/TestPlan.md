@@ -5,7 +5,7 @@
 BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a developer tool view for inspecting installed packages, checking updates, searching packages, and running install, uninstall, or upgrade actions through BrewKit.
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 37
+测试文件: 7 个，用例总数: 44
 
 核心组件（源码目录）:
 - `Models/`
@@ -37,6 +37,7 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 - **批量更新单飞**（#409，3 条）：连点 Update All 不得并发跑同一批包，进行中标志须挡住后续点击；唯一一轮结束后 `isLoading` 落下且标志复位，允许再次批量更新。由 `BrewManagerUpgradeAllTests` 锁定。
 - **搜索配额**（#654，4 条）：`search` 的 Formula 与 Cask 须各自独立限额（各 10 个），不得用共享配额 `10 - formulaLimit.count` 让 Formula 满额时把 Cask 挤成 0、整类应用被丢弃；仅一类匹配时另一类为空仍须正常返回。由 `BrewSearchCaskQuotaTests` 锁定。
 - **Formula 全名**（#655，5 条）：`listInstalled`/`getOutdated`/`getInfo` 构造 Formula 须用 `full_name ?? name` 作为身份，不得丢弃 Homebrew 已返回的 `full_name`；Tap 与 Core 同名时两者 `id` 不得碰撞，安装/更新/卸载命令须落在用户选中的 Tap 包；无 `full_name` 时回退短 `name`。由 `BrewFormulaFullNameTests` 锁定。
+- **输出截断**（#408，7 条）：brew 的 JSON 输出可能远超 KitShell 默认 64 KiB 上限；`runBrewCommand` 须把上限提到 16 MiB 容纳完整文档并捕获 `stdoutTruncated`，`execute` 在 exitCode==0 但 stdout 被截断时必须抛 `outputTruncated`，绝不能把残缺尾部当成功解析；未截断的完整 JSON 仍正常解析，非零退出码优先报 `commandFailed`。由 `BrewOutputTruncationTests` 锁定。
 
 ## 测试用例清单
 
@@ -79,8 +80,15 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 | 35 | Formula 全名 | listInstalled 的 Formula 保留 full_name | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listInstalledFormulaKeepsFullName` |
 | 36 | Formula 全名 | getOutdated 的 Formula 保留 full_name | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getOutdatedFormulaKeepsFullName` |
 | 37 | Formula 全名 | 没有 full_name 的 Formula 回退到短 name（无回归） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `formulaWithoutFullNameFallsBackToName` |
+| 38 | 输出截断 | listInstalled 遇到截断的 stdout 必须抛 outputTruncated | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listInstalledThrowsWhenStdoutTruncated` |
+| 39 | 输出截断 | getInfo 遇到截断的 stdout 必须抛 outputTruncated | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `getInfoThrowsWhenStdoutTruncated` |
+| 40 | 输出截断 | 未截断的完整 JSON 仍正常解析 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listInstalledParsesCompleteJSONWhenNotTruncated` |
+| 41 | 输出截断 | 非零退出码优先报 commandFailed，而不是截断错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonZeroExitWithTruncationThrowsCommandFailed` |
+| 42 | 输出截断 | outputTruncated 暴露错误描述 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `outputTruncatedErrorHasDescription` |
+| 43 | 输出截断 | runBrewCommand 保留超过旧 64 KiB 上限的完整输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runBrewCommandRetainsOutputAboveLegacyLimit` |
+| 44 | 输出截断 | runBrewCommand 对超过新上限的输出标记截断 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runBrewCommandFlagsTruncationAboveLimit` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#330）：M1 将 `retry()` 的 `.environment` 分支改为 `break` → `retryRechecksEnvironmentWhenBrewMissing`、`retryEnvironmentSucceedsAfterBrewInstalled` 转红；M2 将 `.refresh` 分支改为 `break` → `retryRerunsFailedRefresh`、`retryKeepsErrorWhenRefreshStillFails` 转红；M3 删除安装失败处的 `lastFailedOperation = .install(package)` → `retryRerunsFailedInstallWithSamePackage` 转红。三处变异均单独施加并确认转红后还原，最终 25 条全绿。
@@ -90,24 +98,26 @@ BrewManagerPlugin Homebrew package management plugin for Lumi. Provides a develo
 > 变异验证（#654）：M1 将 Cask 配额还原为共享 `caskNames.prefix(max(0, 10 - formulaLimit.count))` → `casksSurviveWhenFormulaeFillQuota`、`eachCategoryIsCappedIndependently` 转红（Formula 满 10 时 Cask 归零）；M2 将 Cask 限额改为 `prefix(5)` → `eachCategoryIsCappedIndependently` 转红（Cask 仅 5 个）；M3 将 Formula 限额改为 `prefix(20)` → `eachCategoryIsCappedIndependently`、`formulaOnlySearchReturnsFormulae`、`casksSurviveWhenFormulaeFillQuota` 转红（Formula 超过 10）。三处变异均单独施加并确认转红后还原，最终 32 条全绿。
 >
 > 变异验证（#655）：M1 将 `getInfo` 的 Formula 构造还原为 `f.name` → `getInfoFormulaKeepsFullName`、`getInfoDistinguishesTapAndCoreIds` 转红（full_name 丢失、id 碰撞）；M2 将 `listInstalled` 还原为 `f.name` → `listInstalledFormulaKeepsFullName` 转红；M3 将 `getOutdated` 还原为 `f.name` → `getOutdatedFormulaKeepsFullName` 转红。三处变异均单独施加并确认转红后还原，最终 37 条全绿。
+>
+> 变异验证（#408）：M1 删除 `execute` 中 `if result.stdoutTruncated { throw .outputTruncated }` 守卫 → `listInstalledThrowsWhenStdoutTruncated` 转红（残缺尾部被当 JSON 解析，抛 parsingError 而非 outputTruncated）；M2 将 `maxOutputBytes` 还原为 `64 * 1024` → `runBrewCommandRetainsOutputAboveLegacyLimit` 转红（200 KiB 输出被截成 64 KiB 尾部）；M3 将守卫改为 `if true` → `listInstalledParsesCompleteJSONWhenNotTruncated` 转红（完整 JSON 也被误判截断）；M4 将 `runBrewCommand` 的 `stdoutTruncated: result.stdoutTruncated` 改为 `false` → `runBrewCommandFlagsTruncationAboveLimit` 转红（超 16 MiB 仍不标记截断）。四处变异均单独施加并确认转红后还原，最终 44 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 24 / 24
-- P2: 已覆盖 2 / 2
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 25 / 25
+- P2: 已覆盖 3 / 3
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（24 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（25 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

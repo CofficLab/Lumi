@@ -6,6 +6,7 @@ public enum BrewError: Error, Sendable, Equatable, LocalizedError {
     case commandFailed(String)
     case parsingError(Error)
     case notFound
+    case outputTruncated
 
     public var errorDescription: String? {
         switch self {
@@ -18,6 +19,8 @@ public enum BrewError: Error, Sendable, Equatable, LocalizedError {
             return "Failed to parse Homebrew output: \(error.localizedDescription)"
         case .notFound:
             return "The requested package was not found."
+        case .outputTruncated:
+            return "Homebrew output was truncated and is incomplete."
         }
     }
 
@@ -32,6 +35,8 @@ public enum BrewError: Error, Sendable, Equatable, LocalizedError {
             return true
         case (.notFound, .notFound):
             return true
+        case (.outputTruncated, .outputTruncated):
+            return true
         default:
             return false
         }
@@ -43,6 +48,10 @@ public actor BrewService {
 
     private var brewPath: String?
     private let commandRunner: BrewCommandRunner
+
+    /// brew 的 JSON 输出（如 info --json=v2 --installed）可能远超 KitShell 默认的
+    /// 64 KiB；上限提到 16 MiB 容纳完整文档，仍被截断时由 execute 报错（#408）。
+    static let maxOutputBytes = 16 * 1024 * 1024
 
     public init() {
         self.brewPath = BrewService.findBrewPathStatic()
@@ -264,6 +273,10 @@ public actor BrewService {
         )
 
         if result.exitCode == 0 {
+            // 截断后只剩尾部，绝不是完整 JSON；宁可报错也不能当成功解析（#408）。
+            if result.stdoutTruncated {
+                throw BrewError.outputTruncated
+            }
             return result.stdout
         }
         throw BrewError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
@@ -277,7 +290,7 @@ public actor BrewService {
             .filter { !$0.isEmpty }
     }
 
-    private static func runBrewCommand(
+    static func runBrewCommand(
         executable: String,
         arguments: [String],
         environment: [String: String]
@@ -287,13 +300,15 @@ public actor BrewService {
             arguments: arguments,
             options: ShellOptions(
                 environment: environment,
-                throwsOnError: false
+                throwsOnError: false,
+                maxOutputBytes: maxOutputBytes
             )
         )
         return BrewCommandResult(
             exitCode: result.exitCode,
             stdout: result.stdout,
-            stderr: result.stderr
+            stderr: result.stderr,
+            stdoutTruncated: result.stdoutTruncated
         )
     }
 }
@@ -302,6 +317,14 @@ struct BrewCommandResult: Sendable {
     let exitCode: Int32
     let stdout: String
     let stderr: String
+    let stdoutTruncated: Bool
+
+    init(exitCode: Int32, stdout: String, stderr: String, stdoutTruncated: Bool = false) {
+        self.exitCode = exitCode
+        self.stdout = stdout
+        self.stderr = stderr
+        self.stdoutTruncated = stdoutTruncated
+    }
 }
 
 typealias BrewCommandRunner = @Sendable (
