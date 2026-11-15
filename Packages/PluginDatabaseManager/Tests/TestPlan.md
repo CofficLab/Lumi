@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 113
+测试文件: 11 个，用例总数: 118
 
 核心组件（源码目录）:
 - `Agent/`
@@ -59,6 +59,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **Schema 缓存目标**（#559，4 条）：`SchemaCacheService.loadSchemas` 必须把结果写入 `schemasByConfig`，不得写进 `databasesByConfig`；加载 schema 不得覆盖数据库列表缓存，数据库与 schema 各维护自己的缓存，数据库缓存命中后不得重新查询。由 `SchemaCacheTargetTests` 锁定。
 - **结构变更暂存幂等**（#560 / #561，6 条）：`SchemaChangeManager.stageDropIndex` 与 `stageRename` 必须先按名 `removeAll` 旧条目再追加，使同一索引的重复删除、同一原列的连续重命名收敛为单条 DDL（重命名折叠为 old→final），不得生成两条都从原对象出发的语句导致保存时第二条找不到对象、整个事务回滚；不同对象的变更各自保留，受保护索引仍拒绝删除。由 `SchemaChangeStagingIdempotencyTests` 锁定；改动暂存去重或 `statements(for:)` 时优先跑对应测试文件。
 - **切换连接的缓存失效目标**（#558，4 条）：`DatabaseViewModel.connect` 切换连接时必须把「旧连接」`previousConfigId` 传给 `schemaCache.invalidate`，不得传新 `config.id`——否则新连接刚预加载的缓存被清、旧连接的 objects/databases/schemas/tableSchema 缓存残留，编辑旧连接后重连仍命中过期元数据；新连接缓存由 `refreshSidebarObjects`（refresh:true）重建并保留，首次连接（无旧连接）与重连同一配置（previousConfigId==config.id）的行为须保持。由 `SchemaCacheConnectionSwitchTests` 锁定；改动 `connect` 的缓存失效或 `SchemaCacheService.invalidate` 时优先跑对应测试文件。
+- **主键行标识唯一性**（#555，5 条）：`TableChangeManager.rowKey` 必须对每个主键列做「列名 UTF-8 长度前缀 + 值类型标签 + 值 UTF-8 长度前缀」的规范编码，保证不同主键值产生唯一且可逆的 key；不得直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接（含 `|`/`=` 的字符串会错位碰撞、同长度 BLOB 都描述成 "N bytes"、数字与同形字符串无法区分），否则两行的 `updatesByRow`/`deletedRowKeys` 相互覆盖，最终 UPDATE/DELETE 作用到错误主键。由 `TableChangeManagerRowKeyTests` 锁定；改动 `rowKey`/`rowKeyComponent` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -224,7 +225,17 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 112 | 缓存失效目标 | 首次连接没有旧连接，新连接缓存照常建立 | 假 PG 连接，配置 A | connect(A) | objectsByKey 含 configId==A 的键 | P1 | ✅ 已覆盖 | `firstConnectKeepsNewObjectCache` |
 | 113 | 缓存失效目标 | 重连同一配置仍清掉其旧缓存，避免编辑后命中过期元数据 | 假 PG 连接，A 已填充 databases | connect(A) → loadDatabases(A) → connect(A) | databasesByConfig[A] 为 nil（previousConfigId==config.id 仍失效） | P1 | ✅ 已覆盖 | `reconnectSameConfigRefreshesCache` |
 
-> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
+### 主键行标识唯一性（回归 #555）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 114 | 主键行标识 | 复合主键含分隔符的两行编辑互不覆盖（回归 #555） | 复合主键 (a,b)，row1 a="x\|b=y"/b="z"，row2 a="x"/b="y\|b=z"（旧编码同 key） | 分别暂存两行 value 编辑 | changedCellCount=2，两条 UPDATE 各自命中自己的主键 | P0 | ✅ 已覆盖 | `compositePrimaryKeySeparatorCollisionKeepsBothEdits` |
+| 115 | 主键行标识 | 复合主键含分隔符的两行删除都被保留（回归 #555） | 同 114 | 分别 toggleRowDeletion 两行 | pendingDeleteCount=2，两行均 isRowDeleted，两条 DELETE 各自主键 | P0 | ✅ 已覆盖 | `compositePrimaryKeyCollisionKeepsBothDeletions` |
+| 116 | 主键行标识 | 同长度但内容不同的 BLOB 主键保持区分（回归 #555） | BLOB 主键，两行分别为 0x0102 与 0x0304（旧编码均 "2 bytes"） | 分别暂存两行 value 编辑 | changedCellCount=2，两条 UPDATE | P1 | ✅ 已覆盖 | `sameLengthBlobPrimaryKeysStayDistinct` |
+| 117 | 主键行标识 | 不同字符串主键各自生成独立的 UPDATE（回归 #555） | 文本主键 id='a=b' 与 id='a' | 分别暂存两行 value 编辑 | 两条 UPDATE，WHERE 分别为 id='a=b' 与 id='a' | P1 | ✅ 已覆盖 | `distinctStringPrimaryKeysGenerateSeparateUpdates` |
+| 118 | 主键行标识 | rowKey 对含分隔符/同形异值的主键给出不同标识（回归 #555） | 文本主键 | 比较 'a=b'/'a'、integer(1)/string("1")、'x\|y'/'x'、null/string("NULL") 的 rowKey | 各组 key 互不相同 | P1 | ✅ 已覆盖 | `rowKeyDistinguishesSeparatorLadenAndHomographValues` |
+
+> 说明：全部 **118 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -235,21 +246,21 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 ## 覆盖率统计
 
-- P0: 已覆盖 56 / 56
-- P1: 已覆盖 56 / 56
+- P0: 已覆盖 58 / 58
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 1 / 1
-- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
+- **合计: 118 / 118**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（56 条）
-- **P1**: 其余功能性用例（56 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
+- **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 113 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 118 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

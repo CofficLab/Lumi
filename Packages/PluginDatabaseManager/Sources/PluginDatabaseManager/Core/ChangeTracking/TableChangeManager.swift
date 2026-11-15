@@ -115,8 +115,28 @@ public final class TableChangeManager: ObservableObject {
         guard !pkColumns.isEmpty else { return nil }
         return pkColumns.map { pk -> String in
             let value = value(of: pk, in: rowValues, columns: columns)
-            return "\(pk)=\(value.description)"
+            return Self.rowKeyComponent(column: pk, value: value)
         }.joined(separator: "|")
+    }
+
+    /// 主键行标识的规范编码：列名与值都带 UTF-8 字节长度前缀，值再带类型标签。
+    ///
+    /// 直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接会让不同主键碰撞
+    /// （如 `id='a=b'` 与 `id='a'`、含 `|` 的字符串、同长度 BLOB、数字与同形字符串），
+    /// 使两行的编辑/删除状态相互覆盖，最终 UPDATE/DELETE 作用到错误的主键（#555）。
+    /// 长度前缀 + 类型标签保证编码唯一且可逆。
+    private static func rowKeyComponent(column: String, value: DatabaseValue) -> String {
+        let tag: String
+        let payload: String
+        switch value {
+        case .null: tag = "n"; payload = ""
+        case .integer(let i): tag = "i"; payload = String(i)
+        case .double(let d): tag = "d"; payload = String(d)
+        case .bool(let b): tag = "b"; payload = b ? "1" : "0"
+        case .string(let s): tag = "s"; payload = s
+        case .data(let data): tag = "x"; payload = data.base64EncodedString()
+        }
+        return "\(column.utf8.count):\(column)=\(tag)\(payload.utf8.count):\(payload)"
     }
 
     public func isRowDeleted(rowValues: [DatabaseValue], columns: [String]) -> Bool {
