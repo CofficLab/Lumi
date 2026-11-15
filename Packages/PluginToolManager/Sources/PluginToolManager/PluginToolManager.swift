@@ -163,6 +163,9 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
             }
         }
         backgroundTaskNotificationCoordinator = nil
+        // 退出前把 ToolJob 的有序持久化链落盘：终态快照若不等待就释放，
+        // 快速重启会把已成功的 Job 恢复成 failed，丢掉结果（#1164）。
+        service?.toolExecutionManager.drainPersistenceOnShutdown()
         service = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider。
     }

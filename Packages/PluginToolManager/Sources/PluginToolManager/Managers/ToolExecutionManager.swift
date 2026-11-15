@@ -39,6 +39,8 @@ final class ToolExecutionManager {
     private var runningJobIDs: Set<String> = []
     private var jobRecordStore: ToolJobRecordStore?
     private var persistenceTask: Task<Void, Never>?
+    /// 退出流程已开始：不再接收新 Job，也不再 enqueue 新的持久化写入。
+    private var isShuttingDown = false
     private var cancelRequestedJobIDs: Set<String> = []
 
     /// Attaches the durable Job store and safely settles Jobs left over from a
@@ -72,6 +74,7 @@ final class ToolExecutionManager {
         toolResolver: @escaping (String) -> (any SuperAgentTool)?,
         conversationProjectPathProvider: @escaping @MainActor @Sendable () async -> String? = { nil }
     ) -> [ToolJob] {
+        guard !isShuttingDown else { return [] }
         guard policy == .autoExecute else { return [] }
 
         return toolCalls.map { toolCall in
@@ -630,7 +633,7 @@ final class ToolExecutionManager {
     }
 
     private func persist(_ job: ToolJob, result: ToolCallResult? = nil) {
-        guard let store = jobRecordStore else { return }
+        guard let store = jobRecordStore, !isShuttingDown else { return }
         let argumentsJSON = job.toolCall.arguments
         let record = ToolJobRecord(
             id: job.id,
@@ -655,11 +658,32 @@ final class ToolExecutionManager {
 
         // Preserve lifecycle ordering even though each database write is
         // asynchronous from the MainActor control plane.
+        //
+        // 链以 detached Task 运行：只等待前序写入与 store actor，绝不回跳
+        // MainActor。这样退出时才能在 MainActor 上同步阻塞等待整条链落盘
+        // 而不死锁（#1164）。
         let previous = persistenceTask
-        persistenceTask = Task {
+        persistenceTask = Task.detached {
             await previous?.value
             await store.upsert(record)
         }
+    }
+
+    /// 退出前停止接收新 Job，并同步等待有序持久化链全部落盘。
+    ///
+    /// 终态快照经 `persist` 排在链尾。若释放 manager 前不等待这条链，快速
+    /// 重启会把仍为 `running` 的旧快照恢复成 `failed`，丢掉已成功的结果
+    /// （#1164）。链运行在 detached Task / store actor 上，永不占用 MainActor，
+    /// 故此处阻塞等待不会死锁；与 MessageManager 的退出 flush 同一思路（#152）。
+    func drainPersistenceOnShutdown() {
+        isShuttingDown = true
+        guard let task = persistenceTask else { return }
+        let semaphore = DispatchSemaphore(value: 0)
+        Task.detached {
+            await task.value
+            semaphore.signal()
+        }
+        semaphore.wait()
     }
 
     private func restore(_ records: [ToolJobRecord]) {

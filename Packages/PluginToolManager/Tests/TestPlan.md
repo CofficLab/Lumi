@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 191 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 194 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 191
+测试文件: 19 个，用例总数: 194
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,6 +44,10 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **ToolExecutionScheduling**（11 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。混合批次中前序读并行、副作用屏障等齐前序读、后续读在屏障后重新并行且不超上限 4；取消单个并行读不牵连兄弟，取消排队中的读立即终态且不执行，整回合取消必须让每个 Job 都拿到终态结果（#1312）。
 - **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolJob 关闭落盘**（3 条，**#1164**）：由 `shutdownDrainPersistsTerminalStateBeforeRestart`、`shutdownRejectsNewJobSubmission`、`drainWithNoPendingWritesIsSafe` 锁定；改动 `ToolExecutionManager` 的持久化链或 `PluginToolManager.onShutdown` 时优先跑 `ToolJobShutdownDrainTests`。两条易错约定：
+  - **退出前必须等待有序持久化链落盘**：终态快照经 `persistenceTask`（detached 串行链）异步写库；`onShutdown` 若在链未排空时就释放 manager，快速重启会把已成功的 Job 恢复成 failed，丢掉结果。`drainPersistenceOnShutdown()` 用 detached + 信号量同步等待链尾，且该链不回跳 MainActor，故无死锁。
+  - **关闭期间拒收新 Job**：`isShuttingDown` 置位后 `submit` 直接返回 `[]`、`persist` 直接 return，避免退出竞态里再排入永不落盘的写入。
+  - **变异验证**：M1 把 `drainPersistenceOnShutdown` 改为不等待（no-op）→ `shutdownDrainPersistsTerminalStateBeforeRestart` 变红；M2 去掉 `submit` 的 `isShuttingDown` 守卫 → `shutdownRejectsNewJobSubmission` 变红。
 - **后台任务**（12 条）：由 `taskFinishesExactlyOnceOnProcessExit`、`explicitStopTerminatesProcessAndEmitsOnce`、`deletingConversationStopsItsBackgroundTasks` 等用例锁定；改动 `BackgroundTaskRegistry` 时优先跑 `BackgroundTaskRegistryTests`。进程内任务（#1313 后台子代理）经 `adoptInProcess`/`appendOutput`/`finishInProcess` 复用同一套恰好一次守卫。三条易错约定：
   - **后台任务不走 ToolJob 事件通道**：ToolJob 是回合作用域的，回合取消后迟到事件必须丢弃（见 #536）。后台任务的生命周期**跨越回合**——取消当前回合时后台进程必须继续跑，因此它由独立的 actor 管理，绝不能回流到 ToolJob 事件路径。
   - **完成事件恰好一次**：状态迁移都在 actor 内完成，`finished` 只在状态首次从 `.running` 变为终态时发出。进程退出与用户显式停止并发时也只发一次。
@@ -266,27 +270,30 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 189 | 载荷预览 | 默认上限与增量是正数且增量大于上限（**#1303**） | 无 | 读取 initialLimit/increment | 均>0，increment>initialLimit | P2 | ✅ 已覆盖 | `limitsAreSane` |
 | 190 | 统计 ViewModel | 统计跨多页聚合结果正确，不驻留整段历史（**#1302**） | 1200 条记录，页大小 500 | reloadStats 翻 3 页逐页归约 | 聚合结果与一次性计算一致 | P1 | ✅ 已覆盖 | `statsAggregateAcrossPages` |
 | 191 | 统计 ViewModel | 统计加载中重叠触发被重入守卫挡住（**#1302**） | 600 条，页延迟 150ms | 并发两次 reloadStats | 第二次被丢弃，不重复拉取 | P0 | ✅ 已覆盖 | `statsReentryGuardDropsOverlappingReload` |
+| 192 | ToolJob 关闭落盘 | 关闭排空持久化链后终态快照立即落盘且重启恢复为同一终态（**#1164**） | 配置 ToolJobRecordStore，注册 burst_output（400 chunk） | submit→waitForJobResult→drainPersistenceOnShutdown→立即 fetchRecord→重启 manager 恢复 | record.status==completed 且 result=="done"，重启恢复 completed、errorMessage 为 nil | P0 | ✅ 已覆盖 | `shutdownDrainPersistsTerminalStateBeforeRestart` |
+| 193 | ToolJob 关闭落盘 | 关闭排空后拒收新 Job 提交（**#1164**） | 已 drain 的 manager | 再次 submit 一个 ToolCall | 返回空数组，不排入新写入 | P1 | ✅ 已覆盖 | `shutdownRejectsNewJobSubmission` |
+| 194 | ToolJob 关闭落盘 | 无待写入时排空安全无副作用（**#1164**） | 全新 manager，未提交任何 Job | drainPersistenceOnShutdown | 不崩溃，fetchAllJobs 为空 | P2 | ✅ 已覆盖 | `drainWithNoPendingWritesIsSafe` |
 
-> 说明：全部 **191 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **194 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 62 / 62
-- P1: 已覆盖 116 / 116
-- P2: 已覆盖 13 / 13
-- **合计: 191 / 191**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 63 / 63
+- P1: 已覆盖 117 / 117
+- P2: 已覆盖 14 / 14
+- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（62 条）
-- **P1**: 其余功能性用例（116 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（63 条）
+- **P1**: 其余功能性用例（117 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 191 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 194 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
