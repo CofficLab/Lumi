@@ -32,7 +32,9 @@ enum ScreenshotFlowRunner {
             captureFrame: result.frame
         ) { [weak kernel] cropped in
             guard let kernel, let cropped else { return }
-            insert(kernel: kernel, image: cropped)
+            Task { @MainActor in
+                await insert(kernel: kernel, image: cropped)
+            }
         }
     }
 
@@ -40,15 +42,19 @@ enum ScreenshotFlowRunner {
 
     /// 将裁剪结果编码为图片附件，加入发送器挂起池供输入框预览。
     ///
+    /// 缩放 / JPEG / Base64 是 CPU 与分配密集 work，放到后台 worker 执行，
+    /// 完成后再回到主 actor 发布附件（见 issue #1265）。
     /// 可见性放宽到 internal 仅为便于单元测试覆盖「编码 → 挂起池」这条链路。
-    internal static func insert(kernel: KernelCoreContainer, image: CGImage) {
-        guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
-            logger.error("Failed to resolve MessageSendingProviding from kernel")
-            return
-        }
-
+    internal static func insert(kernel: KernelCoreContainer, image: CGImage) async {
         do {
-            let attachment = try ScreenshotFileWriter.makeAttachment(image)
+            let attachment = try await Task.detached(priority: .userInitiated) {
+                try ScreenshotFileWriter.makeAttachment(image)
+            }.value
+            // 编码完成后再解析发送器，避免把附件写进编码期间已被替换的旧发送器。
+            guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+                logger.error("Failed to resolve MessageSendingProviding from kernel")
+                return
+            }
             sender.addImageAttachment(attachment)
             logger.info("截图完成 ➡️ 已加入图片预览: \(attachment.fileName ?? "screenshot", privacy: .public)")
         } catch {
