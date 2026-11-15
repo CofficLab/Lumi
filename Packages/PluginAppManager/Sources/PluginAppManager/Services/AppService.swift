@@ -239,9 +239,10 @@ final class AppService: @unchecked Sendable, SuperLog {
                         // 或空名称把候选路径折叠成 Application Support 根目录本身。
                         if AppService.isContained(path: candidatePath2, in: fullPath),
                            fileManager.fileExists(atPath: candidatePath2) {
-                            // 简单匹配
+                            // 仅凭同名无法证明归属：不同厂商可能共用 CFBundleName。
+                            // 标记为未确认，卸载时不得默认勾选（#647）。
                             let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath2))
-                            return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath))
+                            return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath), ownershipVerified: false)
                         }
                     }
 

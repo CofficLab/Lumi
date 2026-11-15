@@ -1986,6 +1986,41 @@
           }
         }
       }
+    },
+    "Ownership unverified — not selected by default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ownership unverified — not selected by default"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确认归属——默认不勾选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確認歸屬——預設不勾選"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確認歸屬——預設不剔選"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確認歸屬——預設不勾選"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

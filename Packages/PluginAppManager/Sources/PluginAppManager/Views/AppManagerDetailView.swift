@@ -78,6 +78,13 @@ struct AppManagerDetailView: View {
                                             .foregroundColor(theme.textPrimary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
+
+                                        if !file.ownershipVerified {
+                                            Text(PluginAppManagerLocalization.string("Ownership unverified — not selected by default"))
+                                                .font(.appMicro)
+                                                .foregroundColor(theme.textSecondary)
+                                                .lineLimit(2)
+                                        }
                                     }
 
                                     Spacer()

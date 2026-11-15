@@ -319,6 +319,137 @@ struct PluginAppManagerTests {
         #expect(paths.contains(stateDir.standardizedFileURL.path))
     }
 
+    // MARK: - 卸载归属保护（回归 #647）
+
+    @Test
+    func nameOnlySupportMatchIsNotOwnershipVerified() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-ownership-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        // 厂商 B 的数据目录，仅与厂商 A 的 CFBundleName 同名。
+        let vendorBData = support.appendingPathComponent("Notes", isDirectory: true)
+        try FileManager.default.createDirectory(at: vendorBData, withIntermediateDirectories: true)
+        try "vendor-b-secret".write(to: vendorBData.appendingPathComponent("data.txt"), atomically: true, encoding: .utf8)
+
+        // 厂商 A：Bundle ID 精确目录不存在，只有同名目录可匹配。
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Notes",
+            bundleName: "Notes",
+            bundleIdentifier: "com.vendor-a.notes"
+        )
+        let app = AppModel(bundleURL: appURL)
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        // 同名目录仍被列出（供用户手动选择），但归属未确认。
+        let nameMatch = try #require(files.first { $0.path == vendorBData.path })
+        #expect(nameMatch.ownershipVerified == false)
+        // App 本体归属始终确认。
+        let appEntry = try #require(files.first { $0.type == .app })
+        #expect(appEntry.ownershipVerified == true)
+    }
+
+    @Test
+    func bundleIdSupportMatchIsOwnershipVerified() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-ownership-id-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let preciseDir = support.appendingPathComponent("com.vendor-b.notes", isDirectory: true)
+        let nameOnlyDir = support.appendingPathComponent("Notes", isDirectory: true)
+        try FileManager.default.createDirectory(at: preciseDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: nameOnlyDir, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Notes",
+            bundleName: "Notes",
+            bundleIdentifier: "com.vendor-b.notes"
+        )
+        let app = AppModel(bundleURL: appURL)
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        // 精确 Bundle ID 命中归属确认；同名目录不得再被当作关联文件。
+        let precise = try #require(files.first { $0.path == preciseDir.path })
+        #expect(precise.ownershipVerified == true)
+        #expect(!files.contains { $0.path == nameOnlyDir.path })
+    }
+
+    @Test
+    func defaultSelectionExcludesUnverifiedNameOnlyMatch() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-ownership-select-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let vendorBData = support.appendingPathComponent("Notes", isDirectory: true)
+        try FileManager.default.createDirectory(at: vendorBData, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Notes",
+            bundleName: "Notes",
+            bundleIdentifier: "com.vendor-a.notes"
+        )
+        let app = AppModel(bundleURL: appURL)
+
+        let viewModel = AppManagerViewModel(appService: AppService(homeDirectory: home.path))
+        viewModel.selectedApp = app
+        viewModel.scanRelatedFiles(for: app)
+        try await Self.waitForScan(viewModel)
+
+        let nameMatch = try #require(viewModel.relatedFiles.first { $0.path == vendorBData.path })
+        let appEntry = try #require(viewModel.relatedFiles.first { $0.type == .app })
+        // 默认勾选不得包含未确认归属的同名目录，但应包含 App 本体。
+        #expect(!viewModel.selectedFileIds.contains(nameMatch.id))
+        #expect(viewModel.selectedFileIds.contains(appEntry.id))
+    }
+
+    @Test
+    func defaultSelectionIncludesVerifiedBundleIdMatch() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-ownership-select-id-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let preciseDir = support.appendingPathComponent("com.vendor-b.notes", isDirectory: true)
+        try FileManager.default.createDirectory(at: preciseDir, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Notes",
+            bundleName: "Notes",
+            bundleIdentifier: "com.vendor-b.notes"
+        )
+        let app = AppModel(bundleURL: appURL)
+
+        let viewModel = AppManagerViewModel(appService: AppService(homeDirectory: home.path))
+        viewModel.selectedApp = app
+        viewModel.scanRelatedFiles(for: app)
+        try await Self.waitForScan(viewModel)
+
+        let precise = try #require(viewModel.relatedFiles.first { $0.path == preciseDir.path })
+        // 归属确认的精确匹配仍须默认勾选，过滤不能误伤合法关联文件。
+        #expect(viewModel.selectedFileIds.contains(precise.id))
+    }
+
+    private static func waitForScan(_ viewModel: AppManagerViewModel) async throws {
+        for _ in 0..<200 {
+            if !viewModel.isScanningFiles { return }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(!viewModel.isScanningFiles)
+    }
+
     private static func makeApp(
         in directory: URL,
         name: String,
