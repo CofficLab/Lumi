@@ -71,6 +71,23 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 SwiftData MessageManager，数据库路径：\(databaseRootURL.path)")
         }
+
+        // 4. 后台启动 v4 历史消息迁移（#394，不 await，onBoot 立即返回）。
+        //    会话摘要由 ConversationManagerPlugin 迁移，但消息实体不在其 schema 内；
+        //    不迁消息则升级后旧会话打开是空列表。marker 独立于会话迁移，
+        //    已完成会话迁移的用户重启后仍会补迁消息。
+        let migration = MessageLegacyMigration(
+            reader: V4MessageReader(
+                v4DataRootDirectory: V4MessageDataDirectoryLocator.locate(
+                    currentDataRootDirectory: storage?.dataRootDirectory ?? databaseRootURL
+                )
+            ),
+            store: store,
+            destinationRootURL: databaseRootURL
+        )
+        Task.detached(priority: .utility) {
+            await migration.run()
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

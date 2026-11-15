@@ -197,6 +197,39 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    // MARK: - Migration Import (#394)
+
+    /// 迁移去重快照：返回库中全部消息 id（只物化 id 列，不读正文）。
+    func existingMessageIDs() -> Set<UUID> {
+        locked {
+            let context = ModelContext(container)
+            var descriptor = FetchDescriptor<MessageModel>()
+            descriptor.propertiesToFetch = [\.id]
+            let models = (try? context.fetch(descriptor)) ?? []
+            return Set(models.compactMap { UUID(uuidString: $0.id) })
+        }
+    }
+
+    /// 批量导入 v4 迁移消息：跳过 `existingIDs` 中已存在的 id，单事务保存。
+    ///
+    /// 返回实际插入的数量与 id，供调用方更新去重快照；重复迁移不产生重复数据。
+    func importMessages(
+        _ messages: [Message],
+        existingIDs: Set<UUID>
+    ) throws -> (inserted: Int, insertedIDs: [UUID]) {
+        try locked {
+            let context = ModelContext(container)
+            var insertedIDs: [UUID] = []
+            for message in messages where !existingIDs.contains(message.id) {
+                context.insert(MessageModel.from(message: message))
+                insertedIDs.append(message.id)
+            }
+            guard !insertedIDs.isEmpty else { return (0, []) }
+            try context.save()
+            return (insertedIDs.count, insertedIDs)
+        }
+    }
+
     // MARK: - Read
 
     /// 返回某会话全部消息（按 createdAt 升序）。
