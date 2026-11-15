@@ -24,13 +24,21 @@ public enum MindMapMarkdownCodec {
         if !root.text.isEmpty && root.text != map.title {
             lines.append(root.text)
         }
-        encode(node: root, map: map, indent: 0, into: &lines, isRoot: true)
+        // 一次性建立 parent→children 索引：原先每个节点都调用 children(of:) 全量
+        // 扫描 nodes，N 个节点即 N 次 O(N) 扫描（O(N²)）。索引按 nodes 原序追加，
+        // 与 filter 的相对顺序一致，输出不变（#1202）。
+        var childrenByParent: [String: [MindMapNode]] = [:]
+        for node in map.nodes {
+            guard let parentId = node.parentId else { continue }
+            childrenByParent[parentId, default: []].append(node)
+        }
+        encode(node: root, childrenByParent: childrenByParent, indent: 0, into: &lines, isRoot: true)
         return lines.joined(separator: "\n")
     }
 
     private static func encode(
         node: MindMapNode,
-        map: MindMap,
+        childrenByParent: [String: [MindMapNode]],
         indent: Int,
         into lines: inout [String],
         isRoot: Bool
@@ -39,8 +47,8 @@ public enum MindMapMarkdownCodec {
             let prefix = String(repeating: "  ", count: indent) + "- "
             lines.append("\(prefix)\(node.text)")
         }
-        for child in map.children(of: node.id) {
-            encode(node: child, map: map, indent: isRoot ? 0 : indent + 1, into: &lines, isRoot: false)
+        for child in childrenByParent[node.id] ?? [] {
+            encode(node: child, childrenByParent: childrenByParent, indent: isRoot ? 0 : indent + 1, into: &lines, isRoot: false)
         }
     }
 

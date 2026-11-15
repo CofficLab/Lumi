@@ -5,7 +5,7 @@
 PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 43
+测试文件: 7 个，用例总数: 50
 
 核心组件（源码目录）:
 - `Models/`
@@ -92,8 +92,15 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 41 | MindMap 画布手势基线 | 连续两次拖拽保持连续不跳回原点（**回归 #326**） | 手势 1 拖到 (80, 40) 并结束 | 手势 2 起始 translation=0，再拖 (10, -5) | 起始停在 (80, 40)，继续累加到 (90, 35) | P1 | ✅ 已覆盖 | `consecutiveDragsStayContinuous` |
 | 42 | MindMap 画布手势基线 | 连续两次缩放保持连续不跳回 1（**回归 #326**） | 手势 1 放大到 1.8 并结束 | 手势 2 起始 magnification=1，再放大 1.2 | 起始停在 1.8，继续累加到 1.8×1.2 | P1 | ✅ 已覆盖 | `consecutiveMagnificationsStayContinuous` |
 | 43 | MindMap 画布手势基线 | 默认基线为单位变换 | 新建手势基线 | 读取默认基线并施加单位增量 | baseScale=1.0、baseOffset=.zero，单位增量不改变结果 | P2 | ✅ 已覆盖 | `defaultBaselineIsIdentity` |
+| 44 | MindMap 导出 | 索引化遍历保持子节点原序与层级缩进（**回归 #1202**） | 根 + A/B + A1 的树 | 调用 `MindMapMarkdownCodec.encode` | 输出恰为 `# Root\n- A\n  - A1\n- B` | P1 | ✅ 已覆盖 | `markdownEncodePreservesChildOrderAndDepth` |
+| 45 | MindMap 导出 | Markdown 遍历必须 O(N)，大图不得冻结（**回归 #1202**） | 5 万节点宽树（输出本身 O(N)） | 计时调用 `encode` | 行数=count+1 且耗时 < 2s（二次扫描会远超） | P0 | ✅ 已覆盖 | `markdownEncodeHandlesLargeMapLinearly` |
+| 46 | MindMap 导出 | 导出器 Markdown 编码与 codec 一致 | 含根与子节点的图 | 调用 `MindMapFileExporter.encode(.markdown)` | 字节解码后等于 `MindMapMarkdownCodec.encode` | P1 | ✅ 已覆盖 | `exporterMarkdownEncodeMatchesCodec` |
+| 47 | MindMap 导出 | 导出器 JSON 编码可往返还原节点 | 含 note 的图 | encode(.json) 后用 ISO8601 解码 | id/title/nodes 与原图一致 | P1 | ✅ 已覆盖 | `exporterJSONEncodeRoundTripsNodes` |
+| 48 | MindMap 导出 | 导出格式扩展名常量 | — | 读取两种 Format 的 fileExtension | markdown=md、json=json | P2 | ✅ 已覆盖 | `exporterFormatFileExtensions` |
+| 49 | MindMap 导出 | Markdown 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.markdown)` | 读回字节等于 codec 输出，不依赖主线程 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesMarkdown` |
+| 50 | MindMap 导出 | JSON 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.json)` | 读回解码后 nodes/title 一致 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesJSON` |
 
-> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -106,21 +113,21 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 30 / 30
-- P2: 已覆盖 1 / 1
-- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 33 / 33
+- P2: 已覆盖 2 / 2
+- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（30 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（33 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
