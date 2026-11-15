@@ -5,7 +5,7 @@
 PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **消息列表风格** 处于 `标准` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 22 个，用例总数: 134
+测试文件: 22 个，用例总数: 135
 
 核心组件（源码目录）:
 - `Services/`
@@ -43,7 +43,7 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 - **ListV2MarkdownPrewarm**（2 条）：由 `conversationSwitchCancelsObsoletePrewarmBatch`、`sameConversationWarmsAllMessages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListV2ViewModel**（29 条）：由 `activationLoadsFirstPage`、`activationWithoutConversationClearsState`、`activationResetsPreviousConversationState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListBottomSettle**（3 条）：由 `bottomSettleStopsOnceGeometrySettles`、`bottomSettleToleratesSubPixelJitter`、`bottomSettleAbortsWhenGeometryUnavailable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListService**（10 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListService**（11 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`paginationBackfillsGapLargerThanRoundLimit` 等用例锁定（含 #594 超轮数上限空档不得永久跳过）；改动该模块时优先跑对应测试文件。
 - **MessageListServices**（6 条）：由 `activityMessageCoversSimpleStates`、`activityMessageUsesJobDescription`、`activityMessageFallsBackWithoutRunningJob` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStandardAutoReplySuppression**（2 条）：由 `fixtureSuppressesAutoReplyForEveryConversation`、`fixtureSuppressesAutoReplyBeforeInsertingUserMessages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStandardUITestingSupport**（6 条）：由 `fixtureSeedsBothConversations`、`fixtureSeedsMessagesForBothConversations`、`fixtureHugeConversationExceedsWindowLimit` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -192,27 +192,28 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 132 | PrependAnchorRestore | 绑定新的滚动视图时：锚点恢复标记必须被重置（#1330） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `attachResetsAnchorRestoreFlag` |
 | 133 | ListV2MarkdownPrewarm | 切换会话取消遗留预热批次，obsolete 内容不再写入缓存（#1249） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationSwitchCancelsObsoletePrewarmBatch` |
 | 134 | ListV2MarkdownPrewarm | 同一会话内的消息全部正常预热，不误取消（#1249） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameConversationWarmsAllMessages` |
+| 135 | MessageListService | 尾部刷新回填超过轮数上限的空档，不得永久跳过靠近窗口的消息（回归 #594） | pageSize=2，空档 25 条（>10×2） | 以完整存储替身触发尾部刷新 | 合并结果与完整存储一致，无跳过/重复 | P0 | ✅ 已覆盖 | `paginationBackfillsGapLargerThanRoundLimit` |
 
-> 说明：全部 **134 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **135 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 46 / 46
+- P0: 已覆盖 47 / 47
 - P1: 已覆盖 75 / 75
 - P2: 已覆盖 13 / 13
-- **合计: 134 / 134**（仅表示清单场景，非源码覆盖率）
+- **合计: 135 / 135**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（46 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（47 条）
 - **P1**: 其余功能性用例（75 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 134 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 135 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
