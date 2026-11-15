@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 28 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 33 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 28
+测试文件: 4 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Services/`
@@ -33,6 +33,9 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 - **TempFileStorageSymlink**（6 条）：由 `writeRejectsFileSymlinkPointingOutsideStorage`、`readRejectsFileSymlinkPointingOutsideStorage`、`writeRejectsNestedPathThroughSymlinkDirectory` 等用例锁定（#232）：路径边界检查必须解析符号链接，指向存储外部的文件/目录链接不得越界读写；指向内部的链接保持可用，经悬空链接目录写入必须失败且无外部副作用。改动 `resolveSafeURL` 时优先跑 `TempFileStorageSymlinkTests.swift`。
 - **点文件可见且可清理**（2 条）：由 `listsAndReadsRootDotfile`、`purgeRemovesExpiredRootDotfile` 锁定（**回归 #327**）：`.audit.txt` 这类点文件是合法临时文件，可写可读；`listFiles` 与 `purgeExpiredFiles` 的枚举都不得用 `.skipsHiddenFiles`，否则点文件可读写却永远不可见、过期也永不删除。改动两处枚举 options 时优先跑对应用例。
 - **列表枚举失败必须抛错**（2 条）：由 `listFilesThrowsWhenDirectoryCannotBeEnumerated`、`listFilesReturnsEmptyForReadableEmptyDirectory` 锁定（**回归 #511**）：`FileManager.enumerator` 对打不开的目录返回空序列而非 nil，`listFiles` 必须用 `errorHandler` 捕获失败并抛 `listFailed`，只有成功读取的空目录才返回空列表。改动 `listFiles` 枚举时优先跑对应用例。
+- **数据迁移保留天数导入**（5 条）：由 `importsRetentionDaysWhenOnlyVersionedDirectoryExists`、`importsRetentionDaysWhenNoLegacyDirectoryExists`、`mergesUnversionedDirectoryAndStillImports` 等用例锁定（**回归 #811**）：旧 UserDefaults 保留天数是独立于旧文件目录的配置，`migrateData` 无论无版本旧目录是否存在都必须执行 `importLegacyRetentionDays`；已有 settings.plist 不被覆盖，无旧值时保持默认。改动 `migrateData` 的目录守卫或导入顺序时优先跑 `AgentTempStorageMigrationTests.swift`（`.serialized`，注入 `legacyDefaultsDomainProvider` / `legacyFallbackRootDirectoryProvider`）。
+
+> **#811 变异验证**（`AgentTempStorageMigrationTests`）：把 `migrateData` 中「无版本旧目录」的 `if` 合并块改回 `guard fileExists else { return }`（复现原 bug，导入被短路）→ `importsRetentionDaysWhenOnlyVersionedDirectoryExists`（14→7）与 `importsRetentionDaysWhenNoLegacyDirectoryExists`（30→7）RED；`mergesUnversionedDirectoryAndStillImports`（无版本目录存在）仍 GREEN。该变异锁定「配置导入不得被文件目录守卫短路」的迁移不变量。
 
 ## 测试用例清单
 
@@ -66,27 +69,32 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 26 | 综合 | 过期根级点文件必须被清理删除（**回归 #327**） | 写入 `.audit-old.txt` 并把修改时间设为 40 天前 | 调用 `purgeExpiredFiles` 后 read/list | read 抛出 `fileNotFound`，列表为空，点文件不再永久残留 | P0 | ✅ 已覆盖 | `purgeRemovesExpiredRootDotfile` |
 | 27 | 综合 | 存储目录打不开时 listFiles 必须抛错而非返回空列表（**回归 #511**） | 写入 report.md 后用普通文件替换存储目录（ENOTDIR，与 uid 无关） | 调用 `listFiles` | 抛出 `listFailed`，不得把枚举失败当成空目录 | P0 | ✅ 已覆盖 | `listFilesThrowsWhenDirectoryCannotBeEnumerated` |
 | 28 | 综合 | 可读空目录必须返回空列表而非抛错（**回归 #511**） | 新建可读的空存储目录 | 调用 `listFiles` | 返回空列表，与「目录打不开」严格区分 | P0 | ✅ 已覆盖 | `listFilesReturnsEmptyForReadableEmptyDirectory` |
+| 29 | 数据迁移 | 仅有版本目录升级时仍导入旧保留天数（**回归 #811**） | 版本旧目录含文件、无版本旧目录不存在，旧 UserDefaults 保留天数=14 | 注入假域与 fallback 根后调用 `migrateData` | settings.plist 保留天数=14（非默认 7），版本目录文件被迁移 | P0 | ✅ 已覆盖 | `importsRetentionDaysWhenOnlyVersionedDirectoryExists` |
+| 30 | 数据迁移 | 没有任何旧目录时仍导入旧保留天数（**回归 #811**） | 无版本/无版本旧目录均不存在，旧保留天数=30 | 注入假域与 fallback 根后调用 `migrateData` | settings.plist 保留天数=30 | P0 | ✅ 已覆盖 | `importsRetentionDaysWhenNoLegacyDirectoryExists` |
+| 31 | 数据迁移 | 插件存储已有配置时不被旧值覆盖 | 先写入保留天数=21，旧 UserDefaults=14 | 调用 `migrateData` | 保留天数仍为 21 | P1 | ✅ 已覆盖 | `doesNotOverwriteExistingSettings` |
+| 32 | 数据迁移 | 没有旧保留天数时不导入，保持默认 | 旧域为空 | 调用 `migrateData` | 不生成 settings.plist，解析保留天数为默认 7 | P1 | ✅ 已覆盖 | `skipsImportWhenNoLegacyValue` |
+| 33 | 数据迁移 | 无版本旧目录存在时合并其内容并仍导入保留天数 | 无版本旧目录含文件，旧保留天数=14 | 注入假域与 fallback 根后调用 `migrateData` | 旧文件被合并进插件目录，且保留天数=14 | P1 | ✅ 已覆盖 | `mergesUnversionedDirectoryAndStillImports` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 18 / 18
 - P2: 已覆盖 1 / 1
-- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

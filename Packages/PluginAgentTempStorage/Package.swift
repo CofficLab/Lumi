@@ -23,6 +23,7 @@ let package = Package(
             dependencies: [
                 "PluginAgentTempStorage",
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
                 .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ]
