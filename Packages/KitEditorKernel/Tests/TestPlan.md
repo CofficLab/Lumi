@@ -5,7 +5,7 @@
 KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/plans/2026-06-13-editor-architecture.md](../../../docs/plans/2026-06-13-editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 351
+测试文件: 20 个，用例总数: 357
 
 ## 公开 API
 
@@ -49,7 +49,8 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 - **WorkspaceEditFileOperationsCoverage**（8 条）：由 `fileURLRejects`、`createBranches`、`renameBranches` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **WorkspaceEditFileOperations**（2 条）：由 `fileURLParsing`、`createDeleteOperations` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **XCConfigSyntaxCore**（3 条）：由 `tokenizeContent`、`includeDirectiveAtLocation`、`keyOccurrences` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorSaveWorkflowController**（9 条）：由 `performSaveUsesProvidedEncoding`、`performSaveSucceeds`、`performSaveFailsWhenFileMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorSaveWorkflowController**（12 条）：由 `performSaveUsesProvidedEncoding`、`performSaveSucceeds`、`performSaveFailsWhenFileMissing` 等用例锁定；改动该模块时优先跑对应测试文件。**#573**：写盘是异步的，成功/失败/缺失回调到达时当前文件可能已切换；`performSave` 接收 `currentFileURL` 访问器，三个回调都先 `guard currentFileURL() == url` 再推进状态，否则 A 的迟到回调会清掉 B 的脏标记、把 B 标记为已保存并用 A 的内容通知 LSP。`EditorState.notifyDidSave` 也改为绑定发起保存的文件 URI，而非回调时重读 `currentFileURL`。
+- **EditorConfigFileStore**（3 条，**#1250**）：由 `savingValuesWritesOnceAndMerges`、`sequentialSavingValueWritesPerKey`、`emptyValuesSkipWrite` 锁定；改动批量配置落盘时优先跑 `EditorConfigFileStoreBatchTests`。`savingValues` 合并多键只整份落盘一次并保留已有键，空字典不写盘。
 - **EditorSaveController**（5 条）：由 `buildsPipelineOptions`、`performSaveReportsMissingFile`、`performSaveReportsFailure` 等用例锁定。
 - **EditorSaveStateController**（3 条）：由 `appliesSaveSuccess`、`appliesSaveFailure`、`appliesMissingFileFailure` 锁定。
 - **EditorSaveWorkflowPolicy**（2 条）：由 `saveStateIcons`、`policyDecisions` 锁定。
@@ -60,6 +61,12 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 > 2. 把容差比较 `< 0.5` 反转为 `>= 0.5` → `purelyLocalDirtyEditIsNotAnExternalConflict` 与 `realExternalChangeIsDetectedRegardlessOfDirtyState` 均失败。
 > 3. 把兜底 `return true` 改为 `return false`（永不检出外部改动）→ `realExternalChangeIsDetectedRegardlessOfDirtyState` 与 `unknownBaselineReloadsConservatively` 均失败。
 > 三个变异分别锁定「dirty 不得参与判定」「容差方向」「兜底必须保守重载」三条不变量，恢复修复后全部 GREEN。
+
+> **#573 变异验证**（`EditorSaveWorkflowTests`，3 个独立变异均 RED）：
+> 1. 去掉 `onSuccess` 的 `guard currentFileURL() == url` → `staleSaveSuccessDoesNotPolluteSwitchedFile` 失败（B 被推进 .saved、persisted/notified/unsavedFlags 被写、conflict/sync 触发，6 处断言）。
+> 2. 去掉 `onFailure` 的身份守卫 → `staleSaveFailureDoesNotPolluteSwitchedFile` 失败（B 被标记 error）。
+> 3. 去掉 `onMissingFile` 的身份守卫 → `staleMissingFileDoesNotPolluteSwitchedFile` 失败（B 被标记 error）。
+> 三个变异分别锁定成功/失败/缺失三条迟到回调路径的文件身份不变量，恢复修复后全部 GREEN。
 
 ## 测试用例清单
 
@@ -416,27 +423,33 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 | 349 | EditorExternalFileConflict | 纯本地 dirty 且磁盘未变不得误报为外部改动（**回归 #397**） | 记录基线修改时间 | 以 dirty=true、磁盘时间不变或容差内调用 shouldReloadForChange | 返回 false | P0 | ✅ 已覆盖 | `purelyLocalDirtyEditIsNotAnExternalConflict` |
 | 350 | EditorExternalFileConflict | 磁盘真的被外部修改时无论 dirty 与否都必须检出（**回归 #397**） | 记录基线修改时间 | 磁盘时间前进超过容差，dirty 取 true/false | 均返回 true | P0 | ✅ 已覆盖 | `realExternalChangeIsDetectedRegardlessOfDirtyState` |
 | 351 | EditorExternalFileConflict | 尚无已知修改时间时保守地允许重载 | 新建控制器未记录基线 | 以 dirty=true/false 调用 shouldReloadForChange | 均返回 true | P1 | ✅ 已覆盖 | `unknownBaselineReloadsConservatively` |
+| 352 | EditorConfigFileStore | savingValues 合并多个键只落盘一次且保留已有键（**#1250**） | 临时目录 + CountingFileManager | 先 seed 一个键，再 savingValues 三个键 | createDirectory 共 2 次，已有键与新键都在 | P1 | ✅ 已覆盖 | `savingValuesWritesOnceAndMerges` |
+| 353 | EditorConfigFileStore | 逐键 savingValue 每次整份落盘（旧行为代价基线，**#1250**） | 临时目录 + CountingFileManager | 连续三次 savingValue | createDirectory 共 3 次 | P1 | ✅ 已覆盖 | `sequentialSavingValueWritesPerKey` |
+| 354 | EditorConfigFileStore | 空字典不触发写盘（**#1250**） | 临时目录 + CountingFileManager | savingValues([:]) | createDirectory 0 次，settings 文件不存在 | P2 | ✅ 已覆盖 | `emptyValuesSkipWrite` |
+| 355 | EditorSaveWorkflowController | 保存 A 后切到 B：A 的迟到成功回调不污染 B 的状态（**#573**） | A/B 均存在，currentFile 初始为 A | performSave(A) 后同步切到 B，等写盘完成 | A 内容写盘；B 的 states 仅 [.saving]，persisted/notified/unsavedFlags 空，conflict/sync 未触发，B 磁盘不变 | P0 | ✅ 已覆盖 | `staleSaveSuccessDoesNotPolluteSwitchedFile` |
+| 356 | EditorSaveWorkflowController | 写入失败后切到 B：A 的迟到失败回调不把 B 标记为 error（**#573**） | 以目录占位使写入失败 | performSave(目录) 后同步切到 B | states 仅 [.saving]，errors 空，sync 未触发 | P1 | ✅ 已覆盖 | `staleSaveFailureDoesNotPolluteSwitchedFile` |
+| 357 | EditorSaveWorkflowController | 文件缺失后切到 B：A 的迟到缺失回调不把 B 标记为 error（**#573**） | 目标文件不存在 | performSave(缺失) 后同步切到 B | states 仅 [.saving]，errors 空 | P2 | ✅ 已覆盖 | `staleMissingFileDoesNotPolluteSwitchedFile` |
 
-> 说明：全部 **351 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **357 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 34 / 34
-- P1: 已覆盖 255 / 255
-- P2: 已覆盖 62 / 62
-- **合计: 351 / 351**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 258 / 258
+- P2: 已覆盖 64 / 64
+- **合计: 357 / 357**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（255 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（62 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P1**: 其余功能性用例（258 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（64 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 351 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 357 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

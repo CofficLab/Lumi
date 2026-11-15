@@ -125,7 +125,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             syncSession: {},
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
-            setHasUnsavedChanges: { _ in }
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { nil }
         )
 
         #expect(infos.count == 1)
@@ -164,7 +165,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             syncSession: { synced = true },
             scheduleSuccessClear: { clearScheduled = true },
             notifyDidSave: { notified.append($0) },
-            setHasUnsavedChanges: { unsavedFlags.append($0) }
+            setHasUnsavedChanges: { unsavedFlags.append($0) },
+            currentFileURL: { fileURL }
         )
 
         #expect(await waitUntil { states.count >= 2 })
@@ -207,7 +209,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             syncSession: {},
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
-            setHasUnsavedChanges: { _ in }
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { fileURL }
         )
 
         #expect(await waitUntil { states.contains(.saved) })
@@ -242,7 +245,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             syncSession: {},
             scheduleSuccessClear: { clearScheduled = true },
             notifyDidSave: { _ in },
-            setHasUnsavedChanges: { _ in }
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { missing }
         )
 
         // `setSaveState(.saving)` 会立即发生，必须等错误回调到达。
@@ -281,7 +285,8 @@ struct EditorSaveWorkflowControllerExtraTests {
             syncSession: { synced = true },
             scheduleSuccessClear: {},
             notifyDidSave: { _ in },
-            setHasUnsavedChanges: { _ in }
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { directoryURL }
         )
 
         #expect(await waitUntil { !errors.isEmpty })
@@ -325,6 +330,137 @@ struct EditorSaveWorkflowControllerExtraTests {
         )
 
         #expect(performed == false)
+    }
+
+    @Test("保存 A 后切到 B：A 的迟到成功回调不污染 B 的状态（#573）")
+    func staleSaveSuccessDoesNotPolluteSwitchedFile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fileA = root.appendingPathComponent("A.swift")
+        let fileB = root.appendingPathComponent("B.swift")
+        try "old A".write(to: fileA, atomically: true, encoding: .utf8)
+        try "old B".write(to: fileB, atomically: true, encoding: .utf8)
+
+        let controller = EditorSaveWorkflowController()
+        var currentFile: URL? = fileA
+        var states: [EditorSaveState] = []
+        var persisted: [String] = []
+        var notified: [String] = []
+        var unsavedFlags: [Bool] = []
+        var conflictCleared = false
+        var synced = false
+
+        controller.performSave(
+            content: "A content",
+            url: fileA,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { _ in },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { persisted.append($0) },
+            clearConflict: { conflictCleared = true },
+            syncSession: { synced = true },
+            scheduleSuccessClear: {},
+            notifyDidSave: { notified.append($0) },
+            setHasUnsavedChanges: { unsavedFlags.append($0) },
+            currentFileURL: { currentFile }
+        )
+        // 写盘完成前切到 B：performSave 同步返回后 Task 尚未运行，
+        // 因此 A 的成功回调到达时当前文件已确定为 B。
+        currentFile = fileB
+
+        // A 的内容仍应被正确写盘（写入本身不受身份守卫影响）。
+        #expect(await waitUntil { (try? String(contentsOf: fileA, encoding: .utf8)) == "A content" })
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // B 的状态绝不能被 A 的回调推进。
+        #expect(states == [.saving])
+        #expect(persisted.isEmpty)
+        #expect(notified.isEmpty)
+        #expect(unsavedFlags.isEmpty)
+        #expect(conflictCleared == false)
+        #expect(synced == false)
+        #expect(try String(contentsOf: fileB, encoding: .utf8) == "old B")
+    }
+
+    @Test("写入失败后切到 B：A 的迟到失败回调不把 B 标记为 error（#573）")
+    func staleSaveFailureDoesNotPolluteSwitchedFile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        // 用目录占位，写入必然失败。
+        let directoryURL = root.appendingPathComponent("as-directory", isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let fileB = root.appendingPathComponent("B.swift")
+
+        let controller = EditorSaveWorkflowController()
+        var currentFile: URL? = directoryURL
+        var states: [EditorSaveState] = []
+        var errors: [String] = []
+        var synced = false
+
+        controller.performSave(
+            content: "text",
+            url: directoryURL,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { errors.append($0) },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { _ in },
+            clearConflict: {},
+            syncSession: { synced = true },
+            scheduleSuccessClear: {},
+            notifyDidSave: { _ in },
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { currentFile }
+        )
+        currentFile = fileB
+
+        try? await Task.sleep(for: .milliseconds(200))
+
+        #expect(states == [.saving])
+        #expect(errors.isEmpty)
+        #expect(synced == false)
+    }
+
+    @Test("文件缺失后切到 B：A 的迟到缺失回调不把 B 标记为 error（#573）")
+    func staleMissingFileDoesNotPolluteSwitchedFile() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let missing = root.appendingPathComponent("gone.swift")
+        let fileB = root.appendingPathComponent("B.swift")
+
+        let controller = EditorSaveWorkflowController()
+        var currentFile: URL? = missing
+        var states: [EditorSaveState] = []
+        var errors: [String] = []
+
+        controller.performSave(
+            content: "text",
+            url: missing,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { errors.append($0) },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { _ in },
+            clearConflict: {},
+            syncSession: {},
+            scheduleSuccessClear: {},
+            notifyDidSave: { _ in },
+            setHasUnsavedChanges: { _ in },
+            currentFileURL: { currentFile }
+        )
+        currentFile = fileB
+
+        try? await Task.sleep(for: .milliseconds(200))
+
+        #expect(states == [.saving])
+        #expect(errors.isEmpty)
     }
 }
 

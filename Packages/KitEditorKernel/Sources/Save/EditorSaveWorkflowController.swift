@@ -90,7 +90,8 @@ public final class EditorSaveWorkflowController {
         syncSession: @escaping () -> Void,
         scheduleSuccessClear: @escaping () -> Void,
         notifyDidSave: @escaping (_ content: String) -> Void,
-        setHasUnsavedChanges: @escaping (Bool) -> Void
+        setHasUnsavedChanges: @escaping (Bool) -> Void,
+        currentFileURL: @escaping @MainActor () -> URL?
     ) {
         guard let url else {
             if verbose {
@@ -108,6 +109,10 @@ public final class EditorSaveWorkflowController {
             content: content,
             url: url,
             onMissingFile: {
+                // 写盘是异步的：回调到达时可能已切到别的文件。只有当前文件仍是
+                // 发起保存的文件时才推进状态，否则 A 的迟到回调会清掉 B 的脏标记、
+                // 把 B 标记为已保存并用 A 的内容通知 LSP（#573）。
+                guard currentFileURL() == url else { return }
                 logError("保存失败: 文件不存在 at \(url.path)")
                 saveStateController.applyMissingFileFailure(
                     scheduleSuccessClear: scheduleSuccessClear,
@@ -128,6 +133,7 @@ public final class EditorSaveWorkflowController {
                 }
             },
             onSuccess: {
+                guard currentFileURL() == url else { return }
                 if verbose {
                     logInfo("保存成功")
                 }
@@ -143,6 +149,7 @@ public final class EditorSaveWorkflowController {
                 )
             },
             onFailure: { error in
+                guard currentFileURL() == url else { return }
                 logError("保存失败: \(error)")
                 saveStateController.applySaveFailure(
                     error: error,
