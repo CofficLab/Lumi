@@ -133,7 +133,13 @@ public final class MessageManager: MessageManaging, SuperLog {
     // MARK: - MessageManaging (reads)
 
     public func messages(for conversationID: UUID) -> [Message] {
-        let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
+        // 工具结果可能已通知 UI、但落盘仍在 persistQueue 排队；补丁叠加在磁盘
+        // 版本上，保证 AgentLoop 下一轮读到的是带结果的消息。pending 消息本身
+        // 已是最新版本，合并时仍然覆盖打过补丁的磁盘版本。
+        let diskMessages = Self.applyingToolResultPatches(
+            store?.fetchMessages(conversationId: conversationID) ?? [],
+            patches: pending.toolResultPatches(for: conversationID)
+        )
         let pendingMessages = pending.snapshot(for: conversationID)
 
         // AgentLoop uses this method as the durable source of truth before
@@ -200,7 +206,11 @@ public final class MessageManager: MessageManaging, SuperLog {
                 store?.fetchMessagesForLLMContext(conversationId: conversationID) ?? []
             }
             let pendingMessages = pending.snapshot(for: conversationID)
-            return Self.mergePendingVersions(diskMessages, pendingMessages)
+            let patchedDiskMessages = Self.applyingToolResultPatches(
+                diskMessages,
+                patches: pending.toolResultPatches(for: conversationID)
+            )
+            return Self.mergePendingVersions(patchedDiskMessages, pendingMessages)
         }.value
     }
 
@@ -208,7 +218,11 @@ public final class MessageManager: MessageManaging, SuperLog {
         if let pendingMessage = pending.snapshot(for: conversationID).first(where: { $0.id == id }) {
             return pendingMessage
         }
-        return store?.fetchMessage(id: id)
+        guard let diskMessage = store?.fetchMessage(id: id) else { return nil }
+        return Self.applyingToolResultPatches(
+            [diskMessage],
+            patches: pending.toolResultPatches(for: conversationID)
+        ).first
     }
 
     public func lastMessage(in conversationID: UUID) -> Message? {
@@ -387,11 +401,14 @@ public final class MessageManager: MessageManaging, SuperLog {
                 includesToolMessages: includesToolMessages, limit: limit
             )
         }
-        let disk = store.fetchMessagePage(
-            conversationId: conversationID,
-            limit: limit,
-            beforeMessageID: beforeMessageID,
-            includesToolMessages: includesToolMessages
+        let disk = Self.applyingToolResultPatches(
+            store.fetchMessagePage(
+                conversationId: conversationID,
+                limit: limit,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ),
+            patches: pending.toolResultPatches(for: conversationID)
         )
         return Self.mergedPage(
             disk: disk,
@@ -413,12 +430,15 @@ public final class MessageManager: MessageManaging, SuperLog {
         let store = self.store
         let pending = self.pending
         return await Task.detached(priority: .utility) {
-            let disk = store?.fetchMessagePage(
-                conversationId: conversationID,
-                limit: limit,
-                beforeMessageID: beforeMessageID,
-                includesToolMessages: includesToolMessages
-            ) ?? []
+            let disk = Self.applyingToolResultPatches(
+                store?.fetchMessagePage(
+                    conversationId: conversationID,
+                    limit: limit,
+                    beforeMessageID: beforeMessageID,
+                    includesToolMessages: includesToolMessages
+                ) ?? [],
+                patches: pending.toolResultPatches(for: conversationID)
+            )
             return Self.mergedPage(
                 disk: disk,
                 pendingMessages: pending.snapshot(for: conversationID),
@@ -571,6 +591,7 @@ public final class MessageManager: MessageManaging, SuperLog {
         // 避免 delete 先执行、随后 insert 又把消息复活。
         persistQueue.sync {
             _ = store?.deleteMessage(id: id)
+            pending.dequeueToolResults(messageID: id, conversationID: conversationID)
         }
         notifyMessageChange(.deleted(messageID: id, conversationID: conversationID))
     }
@@ -600,39 +621,94 @@ public final class MessageManager: MessageManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)updateToolCallResult begin conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID), contentChars=\(result.content.count), isError=\(result.isError)")
         }
-        let updatedMessage = pending.snapshot(for: conversationID)
-            .first(where: { $0.id == assistantMessageID })
-            ?? store?.fetchMessage(id: assistantMessageID)
-        guard var message = updatedMessage,
-              var toolCalls = message.toolCalls,
-              let index = toolCalls.firstIndex(where: { $0.id == toolCallID })
-        else {
-            if Self.verbose {
-                let snapshot = pending.snapshot(for: conversationID)
-                let stored = store?.fetchMessage(id: assistantMessageID)
-                Self.logger.warning("\(Self.t)updateToolCallResult miss toolCall=\(toolCallID), pendingCount=\(snapshot.count), pendingHasMessage=\(snapshot.contains(where: { $0.id == assistantMessageID })), storedHasMessage=\(stored != nil), storedToolCalls=\(stored?.toolCalls?.map(\.id) ?? [])")
+
+        // pending 命中：纯内存更新，落盘走后台串行队列。
+        var updatedToolCalls: [MessageToolCall]?
+        let hit = pending.update(id: assistantMessageID, conversationID: conversationID) { message in
+            guard var toolCalls = message.toolCalls,
+                  let index = toolCalls.firstIndex(where: { $0.id == toolCallID })
+            else { return }
+            toolCalls[index].result = result
+            if let authorizationState {
+                toolCalls[index].authorizationState = authorizationState
             }
+            message.toolCalls = toolCalls
+            updatedToolCalls = toolCalls
+        }
+        if hit != nil {
+            guard let toolCalls = updatedToolCalls else {
+                Self.logger.warning("\(Self.t)updateToolCallResult miss toolCall=\(toolCallID), message=\(assistantMessageID.uuidString.prefix(8))…")
+                return
+            }
+            persistUpdatedToolCalls(toolCalls, messageID: assistantMessageID)
+            notifyMessageChange(.updated(conversationID: conversationID))
             return
         }
 
-        toolCalls[index].result = result
-        if let authorizationState {
-            toolCalls[index].authorizationState = authorizationState
-        }
-        message.toolCalls = toolCalls
-        if pending.update(id: assistantMessageID, conversationID: conversationID) { pendingMessage in
-            pendingMessage.toolCalls = toolCalls
-        } != nil {
-            persistUpdatedToolCalls(toolCalls, messageID: assistantMessageID)
-        } else {
-            _ = store?.updateToolCalls(id: assistantMessageID, toolCalls: toolCalls)
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
-        }
-
+        // 非 pending：主线程不做任何 SwiftData fetch / 编码 / save（issue #1229）。
+        //
+        // 补丁先入 write-behind 缓冲，读路径立即可见：AgentLoop 下一轮用
+        // `messages(for:)` 作为事实来源，看不到工具结果就会重复执行同一个工具。
+        // 真正的 fetch + 编码 + save 交给串行落盘队列（与其他写回保持顺序），
+        // 完成后撤掉补丁并再通知一次 UI。
+        pending.enqueueToolResult(
+            PendingMessageBuffer.ToolResultPatch(result: result, authorizationState: authorizationState),
+            messageID: assistantMessageID,
+            toolCallID: toolCallID,
+            conversationID: conversationID
+        )
         notifyMessageChange(.updated(conversationID: conversationID))
+
+        let store = self.store
+        let pending = self.pending
+        persistQueue.async { [weak self] in
+            let saved = store?.applyToolCallResult(
+                messageID: assistantMessageID,
+                toolCallID: toolCallID,
+                result: result,
+                authorizationState: authorizationState
+            ) ?? false
+            pending.dequeueToolResult(
+                messageID: assistantMessageID,
+                toolCallID: toolCallID,
+                conversationID: conversationID
+            )
+            if !saved {
+                Self.logger.warning("\(Self.t)工具结果落盘失败 message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
+            }
+            Task { @MainActor [weak self] in
+                self?.notifyMessageChange(.updated(conversationID: conversationID))
+            }
+        }
+    }
+
+    /// 把尚未落盘的工具结果补丁合并进读结果（read-your-writes）。
+    ///
+    /// 补丁只在「助手消息已落盘、工具结果刚写回」的窗口内存在，通常为空，
+    /// 此时直接返回原数组，不做任何拷贝。
+    private nonisolated static func applyingToolResultPatches(
+        _ messages: [Message],
+        patches: [UUID: [String: PendingMessageBuffer.ToolResultPatch]]
+    ) -> [Message] {
+        guard !patches.isEmpty else { return messages }
+        return messages.map { message in
+            guard let messagePatches = patches[message.id],
+                  var toolCalls = message.toolCalls, !toolCalls.isEmpty
+            else { return message }
+            var didPatch = false
+            for (toolCallID, patch) in messagePatches {
+                guard let index = toolCalls.firstIndex(where: { $0.id == toolCallID }) else { continue }
+                toolCalls[index].result = patch.result
+                if let authorizationState = patch.authorizationState {
+                    toolCalls[index].authorizationState = authorizationState
+                }
+                didPatch = true
+            }
+            guard didPatch else { return message }
+            var updated = message
+            updated.toolCalls = toolCalls
+            return updated
+        }
     }
 
     private func persistUpdatedMessage(

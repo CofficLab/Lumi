@@ -29,7 +29,9 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     private let container: ModelContainer
     /// 消息库文件路径——日统计聚合的原生 SQL 快路径直接读它。
     private let databaseURL: URL
-    private let lock = NSLock()
+    /// internal 而非 private：测试需要占住存储锁，验证工具结果写回不再让
+    /// MainActor 同步等待 SwiftData（issue #1229）。
+    let lock = NSLock()
 
     // MARK: - Initialization
 
@@ -897,6 +899,45 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             let data = try? JSONEncoder().encode(toolCalls)
             model.toolCallsJson = data.flatMap { String(data: $0, encoding: .utf8) }
             return save(context, operation: "更新 toolCalls")
+        }
+    }
+
+    /// 在存储层内应用一次工具结果写回：一次 fetch + 一次窄解码 + 一次编码 + 一次 save。
+    ///
+    /// 供落盘队列调用。调用方不再先在主线程 `fetchMessage` 取整条消息、
+    /// 再 `updateToolCalls` 二次物化并编码整个数组（issue #1229）。
+    func applyToolCallResult(
+        messageID: UUID,
+        toolCallID: String,
+        result: MessageToolResult,
+        authorizationState: String?
+    ) -> Bool {
+        locked {
+            let context = ModelContext(container)
+            let idString = messageID.uuidString
+
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.id == idString }
+            )
+
+            guard let model = try? context.fetch(descriptor).first else {
+                return false
+            }
+
+            guard var toolCalls = model.toolCallsJson.flatMap({
+                try? JSONDecoder().decode([MessageToolCall].self, from: Data($0.utf8))
+            }), let index = toolCalls.firstIndex(where: { $0.id == toolCallID }) else {
+                return false
+            }
+
+            toolCalls[index].result = result
+            if let authorizationState {
+                toolCalls[index].authorizationState = authorizationState
+            }
+
+            let data = try? JSONEncoder().encode(toolCalls)
+            model.toolCallsJson = data.flatMap { String(data: $0, encoding: .utf8) }
+            return save(context, operation: "更新工具结果")
         }
     }
 

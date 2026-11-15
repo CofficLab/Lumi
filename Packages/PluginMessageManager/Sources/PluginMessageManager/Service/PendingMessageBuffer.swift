@@ -3,8 +3,20 @@ import ProviderMessage
 
 /// 内存中的「已通知 UI、尚未落盘」消息缓冲（write-behind 的脏数据）。
 final class PendingMessageBuffer: @unchecked Sendable {
+    /// 一次工具结果写回的补丁。
+    ///
+    /// 助手消息已离开 pending（落盘完成）时，工具结果不能再在主线程 fetch + 编码 + save；
+    /// 补丁先记在这里让读路径立即可见，后台落盘成功后再撤掉（issue #1229）。
+    struct ToolResultPatch: Sendable {
+        let result: MessageToolResult
+        let authorizationState: String?
+    }
+
     private let lock = NSLock()
     private var storage: [UUID: [Message]] = [:]
+
+    /// conversationID → messageID → toolCallID → 补丁。
+    private var toolResultStorage: [UUID: [UUID: [String: ToolResultPatch]]] = [:]
 
     func snapshot(for conversationID: UUID) -> [Message] {
         lock.lock(); defer { lock.unlock() }
@@ -45,6 +57,56 @@ final class PendingMessageBuffer: @unchecked Sendable {
     func clear(conversationID: UUID) {
         lock.lock(); defer { lock.unlock() }
         storage.removeValue(forKey: conversationID)
+        toolResultStorage.removeValue(forKey: conversationID)
+    }
+
+    // MARK: - Tool Result Patches
+
+    func enqueueToolResult(
+        _ patch: ToolResultPatch,
+        messageID: UUID,
+        toolCallID: String,
+        conversationID: UUID
+    ) {
+        lock.lock(); defer { lock.unlock() }
+        var messages = toolResultStorage[conversationID] ?? [:]
+        var patches = messages[messageID] ?? [:]
+        patches[toolCallID] = patch
+        messages[messageID] = patches
+        toolResultStorage[conversationID] = messages
+    }
+
+    func dequeueToolResult(messageID: UUID, toolCallID: String, conversationID: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        guard var messages = toolResultStorage[conversationID],
+              var patches = messages[messageID] else { return }
+        patches.removeValue(forKey: toolCallID)
+        if patches.isEmpty {
+            messages.removeValue(forKey: messageID)
+        } else {
+            messages[messageID] = patches
+        }
+        if messages.isEmpty {
+            toolResultStorage.removeValue(forKey: conversationID)
+        } else {
+            toolResultStorage[conversationID] = messages
+        }
+    }
+
+    func dequeueToolResults(messageID: UUID, conversationID: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        guard var messages = toolResultStorage[conversationID] else { return }
+        messages.removeValue(forKey: messageID)
+        if messages.isEmpty {
+            toolResultStorage.removeValue(forKey: conversationID)
+        } else {
+            toolResultStorage[conversationID] = messages
+        }
+    }
+
+    func toolResultPatches(for conversationID: UUID) -> [UUID: [String: ToolResultPatch]] {
+        lock.lock(); defer { lock.unlock() }
+        return toolResultStorage[conversationID] ?? [:]
     }
 
     @discardableResult
