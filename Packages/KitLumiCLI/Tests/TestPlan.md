@@ -5,7 +5,7 @@
 KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生成脚本、写入磁盘与查询安装状态。
 
 平台: macOS 14+
-测试文件: 8 个，用例总数: 68
+测试文件: 9 个，用例总数: 75
 
 ## 公开 API
 
@@ -28,6 +28,7 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 - **CLIScriptBuilderShellEscaping**（8 条）：由 `dollarSignPathResolvesVerbatim`、`backtickPathResolvesVerbatim`、`combinedSpecialCharsPathResolvesVerbatim` 等用例锁定；真实执行 /bin/sh，断言含 `$`、反引号、双引号、反斜杠、单引号、空格、非 ASCII 的安装路径原样解析（#142）。
 - **CLIScriptBuilderURLEncoding**（6 条）：由 `newlineInPathIsPreserved`、`crlfInPathIsPreserved`、`multibyteWithNewlineRoundTrips` 等用例锁定；真实执行 /bin/sh 运行脚本的 `urlencode`，断言换行/回车逐字节编码为 %0A/%0D 并可被 App 还原（#143）。
 - **CLIPathResolverShellOutput**（8 条）：由 `relativeDotPrefixKeepsAbsoluteEntries`、`emptyEntryPrefixKeepsAbsoluteEntries`、`rcNoiseBeforePathIsSkipped` 等用例锁定；直接驱动 `absolutePathEntries(fromShellOutput:)`，断言相对/空条目前缀的 PATH 行仍保留其后绝对目录、rc 噪声被跳过（#144）。
+- **CLIInstaller 目录安全**（7 条）：macOS 上可搜索目录也会被 `isExecutableFile` 判为可执行，`installedScriptURL` 与 `uninstall` 必须先用 `fileExists(isDirectory:)`（解析符号链接）确认目标不是目录，目录与指向目录的符号链接一律不认作脚本、绝不递归删除（#490）；指向普通文件的符号链接仍算文件，真实 Lumi 脚本的安装/状态/卸载不受影响。由 `CLIInstallerDirectorySafetyTests` 锁定；改动 `installedScriptURL`/`uninstall` 的目标判定或 `isNonDirectoryFile` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -101,27 +102,36 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 | 66 | CLIScriptBuilder | 生成的脚本带有归属标记 | — | 调用 `scriptContents()` | 内容包含 `ownershipMarker` | P1 | ✅ 已覆盖 | `scriptCarriesOwnershipMarker` |
 | 67 | CLIScriptBuilder | 归属判定接受新标记与旧版签名 | — | 调用 `isLumiOwnedScriptContents` | 含新标记或旧版签名的内容均返回 true | P1 | ✅ 已覆盖 | `ownershipDetectionAcceptsLumiScripts` |
 | 68 | CLIScriptBuilder | 归属判定不得把无关脚本认作 Lumi 安装 | — | 调用 `isLumiOwnedScriptContents` | 无关脚本与空字符串均返回 false | P0 | ✅ 已覆盖 | `ownershipDetectionRejectsUnrelatedScript` |
+| 69 | CLIInstaller 目录安全 | 状态查询不把同名目录当作已安装（**回归 #490**） | bin 下存在目录 `lumi`（内含 keep），且 isExecutableFile 为 true | 调用 `status(pathEntries:)` | `isInstalled` 为 false，`installedPath` 为 nil | P0 | ✅ 已覆盖 | `statusDoesNotReportDirectoryAsInstalled` |
+| 70 | CLIInstaller 目录安全 | 卸载不得递归删除同名目录及其内容（**回归 #490**） | bin 下存在目录 `lumi/keep` | 调用 `uninstall(pathEntries:)` | 返回 true，`lumi` 仍为目录，`keep` 存在且内容不变 | P0 | ✅ 已覆盖 | `uninstallPreservesDirectoryAndItsContents` |
+| 71 | CLIInstaller 目录安全 | installedScriptURL 对同名目录返回 nil（**回归 #490**） | bin 下存在目录 `lumi`（内含 keep） | 调用 `installedScriptURL(pathEntries:)` | 返回 nil | P0 | ✅ 已覆盖 | `installedScriptURLReturnsNilForDirectory` |
+| 72 | CLIInstaller 目录安全 | 卸载不得删除指向目录的符号链接，目标内容保留（**回归 #490**） | bin/lumi 是指向 realdir 的符号链接，realdir/keep 存在 | 调用 `status` 与 `uninstall` | `isInstalled` 为 false，卸载返回 true，keep 仍存在且内容不变 | P0 | ✅ 已覆盖 | `uninstallPreservesSymlinkToDirectory` |
+| 73 | CLIInstaller 目录安全 | 状态查询仍能查到真实安装的 Lumi 脚本（无回归） | bin 下已 install 真实 Lumi 脚本 | 调用 `status(pathEntries:)` | `isInstalled` 为 true，`installedPath` 末段为 lumi | P1 | ✅ 已覆盖 | `statusStillFindsRealLumiScript` |
+| 74 | CLIInstaller 目录安全 | 卸载仍能删除真实安装的 Lumi 脚本（无回归） | bin 下已 install 真实 Lumi 脚本 | 调用 `uninstall(pathEntries:)` | 返回 true，lumi 文件被删除 | P1 | ✅ 已覆盖 | `uninstallStillRemovesRealLumiScript` |
+| 75 | CLIInstaller 目录安全 | 指向真实 Lumi 脚本的符号链接仍被识别为已安装（无回归） | bin/lumi 是指向真实 Lumi 脚本文件的符号链接 | 调用 `status(pathEntries:)` | `isInstalled` 为 true，`installedPath` 末段为 lumi | P1 | ✅ 已覆盖 | `symlinkToRealLumiScriptIsStillRecognized` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#490）：`installedScriptURL` 原先只凭 `isExecutableFile` 认定脚本，macOS 上可搜索目录也判为可执行，名为 `lumi` 的目录被当成已安装脚本，`uninstall` 把该 URL 交给 `removeItem` 递归删除整个目录。修复为在 `installedScriptURL` 与 `uninstall` 都先用 `fileExists(isDirectory:)` 确认目标不是目录。注意当前 dev 的归属守卫 `isLumiOwnedScript` 因目录无法读成 `Data` 而附带拒绝目录，故 M1 同时禁用类型守卫（`isNonDirectoryFile` 恒 true）并放宽归属守卫（`isLumiOwnedScript` 恒 true）以复现报告的 destructive 路径 → `statusDoesNotReportDirectoryAsInstalled`、`uninstallPreservesDirectoryAndItsContents`、`installedScriptURLReturnsNilForDirectory`、`uninstallPreservesSymlinkToDirectory` 转红（目录被认作已安装、`keep` 被递归删除），`statusStillFindsRealLumiScript`、`uninstallStillRemovesRealLumiScript`、`symlinkToRealLumiScriptIsStillRecognized` 仍绿。变异施加并确认转红后还原，最终 75 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 49 / 49
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 3 / 3
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（49 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（52 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
