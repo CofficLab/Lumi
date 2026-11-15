@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 64 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 64
+测试文件: 8 个，用例总数: 67
 
 核心组件（源码目录）:
 - `Internal/`
@@ -42,6 +42,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **DiskManagerLumiTools**（27 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DiskManagerPlugin 运行时启停**（3 条）：由 `disablingPluginWithdrawsAgentTools`、`enablingPluginRestoresAgentTools`、`disabledToolsAreNotExecutable` 锁定。内核运行时禁用插件只撤回显式登记的贡献，不清理 Provider 侧写入；`onDisable` 必须撤回全部 10 个 Agent 工具（含缓存/项目清理与 `DeleteFilesTool` 删除），`onEnable` 必须恢复，登记/撤回经 `areAgentToolsRegistered` 标志保证幂等。禁用后工具不得再被解析或执行（**回归 #453**）。改动 `DiskManagerPlugin.onEnable/onDisable/registerAgentTools/unregisterAgentTools` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -111,27 +112,35 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 62 | CacheCleanerDuplicatePath | 嵌套父子路径重叠时先删父目录，子路径消失后跳过且不重复计入 | Google(含 Chrome) 父目录 192B + 子路径 Chrome 64B | 调用 `cleanup(toleratingMissing: true)` | 释放 192B，父目录删除，不抛错 | P1 | ✅ 已覆盖 | `cleanupNestedParentChildDoesNotAbort` |
 | 63 | CacheCleanerDuplicatePath | 按规范化路径去重：尾斜杠变体视为同一路径 | Firefox 路径与其尾斜杠变体各一次 | 调用 `cleanup`（默认严格模式） | 释放 128B，只删一次 | P1 | ✅ 已覆盖 | `cleanupDeduplicatesByNormalizedPath` |
 | 64 | CacheCleanerDuplicatePath | 工具流程（默认）删除缺失路径仍抛错，保持 #740 契约 | 不存在的绝对路径 | 调用 `cleanup`（默认） | 抛出 `CacheCleanupError` | P0 | ✅ 已覆盖 | `cleanupStillThrowsOnMissingPathByDefault` |
+| 65 | DiskManagerPlugin 运行时启停 | 运行时禁用后必须撤回全部 10 个 Agent 工具，含清理与删除（**回归 #453**） | 内核已启动且插件启用，工具均在 | `kernel.disablePlugin(id:)` | 10 个工具全部解析为 nil | P0 | ✅ 已覆盖 | `disablingPluginWithdrawsAgentTools` |
+| 66 | DiskManagerPlugin 运行时启停 | 运行时重新启用插件后恢复全部 Agent 工具 | 内核已启动且插件启用 | 先 disable 再 `enablePlugin` | 10 个工具全部恢复 | P1 | ✅ 已覆盖 | `enablingPluginRestoresAgentTools` |
+| 67 | DiskManagerPlugin 运行时启停 | 禁用后清理与删除工具不得再进入执行路径（**回归 #453**） | 内核已启动且插件启用 | `kernel.disablePlugin(id:)` | delete-files/clean-caches 解析为 nil，allTools 无 disk-manager. 前缀 | P0 | ✅ 已覆盖 | `disabledToolsAreNotExecutable` |
 
-> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#453**，`DiskManagerPlugin.onDisable/onEnable`）：
+> - **M1** `onDisable` 改为无操作（复现原 bug）→ `disablingPluginWithdrawsAgentTools` 转红（10 个工具未撤回），`disabledToolsAreNotExecutable` 转红（delete/clean 仍可解析，3 处断言）；`enablingPluginRestoresAgentTools` 仍绿。
+> - **M2** `onEnable` 改为无操作 → `enablingPluginRestoresAgentTools` 转红（10 个工具未恢复）；两条禁用用例仍绿。
+> - 还原完整修复（onDisable 撤回 + onEnable 恢复，幂等标志）→ 67 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 8 / 8
-- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（43 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 64 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

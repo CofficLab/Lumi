@@ -48,6 +48,7 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),

@@ -60,6 +60,10 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
     /// （扫描结果不因切换类型而丢失）。
     private let workspace = DiskCleanupWorkspace()
 
+    /// Agent 工具是否已登记。保证 onBoot/onEnable/onDisable/onShutdown 幂等，
+    /// 避免运行时启停重复注册或重复撤回。
+    private var areAgentToolsRegistered = false
+
     public init() {}
 
     // MARK: - SuperPlugin
@@ -73,11 +77,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 注册 Agent 工具到 ToolManagerProviding。
-        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
-                toolManager.add(tool, pluginID: id)
-            }
-        }
+        registerAgentTools(kernel: kernel)
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
@@ -153,13 +153,26 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         }
     }
 
+    /// 运行时重新启用：恢复 Agent 工具。
+    ///
+    /// 走这条路径说明插件曾经 Boot 过、工具已被撤回，这里重新登记一次即可。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        registerAgentTools(kernel: kernel)
+    }
+
+    /// 运行时禁用：立即撤回 Agent 工具。
+    ///
+    /// 内核在运行时禁用插件时只撤回它**显式登记**的贡献，不会替插件清理
+    /// Provider 侧的写入。若不在这里撤回工具，插件在设置里显示「已禁用」后，
+    /// 这 10 个工具仍能被 LLM 调用——包括缓存/项目清理与 `DeleteFilesTool`
+    /// 这类有破坏性副作用的操作（#453）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        unregisterAgentTools(kernel: kernel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // 撤回注册的 Agent 工具。
-        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
-                toolManager.remove(id: tool.name)
-            }
-        }
+        unregisterAgentTools(kernel: kernel)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
@@ -182,6 +195,28 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    // MARK: - Agent Tools Registration
+
+    /// 登记本插件的 Agent 工具。幂等：重复调用不会重复注册。
+    private func registerAgentTools(kernel: KernelCoreContainer) {
+        guard !areAgentToolsRegistered else { return }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        areAgentToolsRegistered = true
+        for tool in Self.agentTools {
+            toolManager.add(tool, pluginID: id)
+        }
+    }
+
+    /// 撤回本插件的 Agent 工具。幂等：重复调用不会重复撤回。
+    private func unregisterAgentTools(kernel: KernelCoreContainer) {
+        guard areAgentToolsRegistered else { return }
+        areAgentToolsRegistered = false
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        for tool in Self.agentTools {
+            toolManager.remove(id: tool.name)
+        }
     }
 
     // MARK: - Agent Tools
