@@ -41,13 +41,7 @@ public final class PortScanner: Sendable, SuperLog {
                 arguments: ["-iTCP", "-sTCP:LISTEN", "-n", "-P"],
                 options: ShellOptions(throwsOnError: false)
             )
-            guard result.exitCode == 0 else {
-                let message = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-                if message.isEmpty {
-                    return []
-                }
-                throw PortScannerError.scanFailed(message)
-            }
+            try Self.ensureScanSucceeded(exitCode: result.exitCode, stderr: result.stderr)
             return parseLsofOutput(result.stdout)
         } catch {
             if Self.verbose {
@@ -57,6 +51,19 @@ public final class PortScanner: Sendable, SuperLog {
             }
             throw error
         }
+    }
+
+    /// 把 lsof 退出码 + stderr 分类为「成功/无匹配」或「扫描失败」。
+    /// lsof 无匹配时退出码为 1 且 stderr 为空，是合法的「无监听端口」结果；
+    /// 信号终止（KitShell 以 terminationStatus 上报，如 SIGTERM=15）或其他非零
+    /// 退出必须抛 scanFailed，不能伪装成无端口（#523）。
+    static func ensureScanSucceeded(exitCode: Int32, stderr: String) throws {
+        guard exitCode != 0 else { return }
+        let message = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+        if exitCode == 1 && message.isEmpty { return }
+        throw PortScannerError.scanFailed(
+            message.isEmpty ? "lsof 扫描异常退出（退出码 \(exitCode)）" : message
+        )
     }
 
     func parseLsofOutput(_ output: String) -> [PortInfo] {
