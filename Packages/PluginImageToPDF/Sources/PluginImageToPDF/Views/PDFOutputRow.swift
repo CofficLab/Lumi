@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Single row in the output PDF list with status, progress, and actions.
@@ -7,10 +8,13 @@ struct PDFOutputRow: View {
     let onOpen: () -> Void
     let onRemove: () -> Void
 
+    /// 缩略图异步准备，首帧先显示占位图（#1189）。
+    @State private var thumbnail: NSImage?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                thumbnail
+                thumbnailView
                     .frame(width: 40, height: 40)
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -34,6 +38,20 @@ struct PDFOutputRow: View {
             }
         }
         .padding(.vertical, 6)
+        // 只在 outputURL 变化时重跑：转换进度的每次发布不再触发重新渲染。
+        // 行消失时 .task 自动取消，写回前再校验一次。
+        .task(id: item.status.outputURL) {
+            var image: NSImage?
+            if let outputURL = item.status.outputURL {
+                image = await PDFThumbnailLoader.thumbnail(for: outputURL)
+            }
+            // PDF 尚未生成或渲染失败时退回源图片缩略图。
+            if image == nil {
+                image = await ImageThumbnailLoader.thumbnail(for: item.source.url)
+            }
+            guard !Task.isCancelled else { return }
+            thumbnail = image
+        }
     }
 
     private var statusLine: some View {
@@ -89,14 +107,9 @@ struct PDFOutputRow: View {
     }
 
     @ViewBuilder
-    private var thumbnail: some View {
-        if let outputURL = item.status.outputURL,
-           let nsImage = bestThumbnail(for: outputURL) {
-            Image(nsImage: nsImage)
-                .resizable()
-                .scaledToFill()
-        } else if let nsImage = NSImage(contentsOf: item.source.url) {
-            Image(nsImage: nsImage)
+    private var thumbnailView: some View {
+        if let thumbnail {
+            Image(nsImage: thumbnail)
                 .resizable()
                 .scaledToFill()
         } else {
@@ -104,27 +117,4 @@ struct PDFOutputRow: View {
                 .foregroundStyle(.secondary)
         }
     }
-
-    /// Best-effort thumbnail for the produced PDF. Falls back to the source
-    /// image when PDFKit can't render it quickly.
-    private func bestThumbnail(for url: URL) -> NSImage? {
-        guard let pdf = PDFKit.PDFDocument(url: url),
-              let page = pdf.page(at: 0) else {
-            return nil
-        }
-        let bounds = page.bounds(for: .mediaBox)
-        let image = NSImage(size: bounds.size)
-        image.lockFocus()
-        if let ctx = NSGraphicsContext.current?.cgContext {
-            ctx.saveGState()
-            ctx.setFillColor(.white)
-            ctx.fill(NSRect(origin: .zero, size: bounds.size))
-            page.draw(with: .mediaBox, to: ctx)
-            ctx.restoreGState()
-        }
-        image.unlockFocus()
-        return image
-    }
 }
-
-import PDFKit
