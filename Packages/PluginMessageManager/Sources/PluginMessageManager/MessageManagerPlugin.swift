@@ -40,6 +40,10 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         policy: .required
     )
 
+    /// 持有已注册的 manager，供 `onShutdown` 排空 write-behind 落盘队列（#152）。
+    /// 强引用：内核在 `onShutdown` 之后才移除 Provider，shutdown 时 manager 必须仍存活。
+    private var messageManager: MessageManager?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -62,6 +66,7 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         )
         kernel.unregisterProvider((any MessageManaging).self)
         try kernel.registerProvider((any MessageManaging).self, manager)
+        self.messageManager = manager
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 SwiftData MessageManager，数据库路径：\(databaseRootURL.path)")
@@ -69,6 +74,10 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        // 恢复默认内存实现？不：进程退出，无需恢复。
+        // 进程退出前排空 write-behind 落盘队列：否则最后一条用户消息 / 助手回复 /
+        // 工具结果只存在于内存 pending，正常退出后重启即丢失（#152）。
+        // 同步排空即可——内核 sync stop() 与 async stopAsync()（默认转调 onShutdown）
+        // 都会经过这里，无需迁移到异步生命周期。
+        messageManager?.flushPendingWrites()
     }
 }

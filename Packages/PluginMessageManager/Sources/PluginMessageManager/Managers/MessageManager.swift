@@ -609,6 +609,23 @@ public final class MessageManager: MessageManaging, SuperLog {
         notifyMessageChange(.cleared(conversationID: conversationID))
     }
 
+    // MARK: - Shutdown Flush
+
+    /// 排空 write-behind 落盘队列，等待所有已接受的写入收敛到磁盘后才返回。
+    ///
+    /// 内核停止 / 插件卸载时调用（#152）：消息先进 pending buffer 再后台串行落盘，
+    /// 正常退出前若不排空，最后一条用户消息 / 助手回复 / 工具结果只存在于内存，
+    /// 重启后丢失。`persistQueue` 串行，`sync` 屏障返回时此前 enqueue 的 insert /
+    /// update / 工具结果写回全部执行完毕。
+    ///
+    /// nonisolated：只访问 nonisolated 的 `persistQueue`，可在任意线程调用。队列块内
+    /// 只做 store 写入 + 锁保护的 dequeue + 异步 `Task { @MainActor }` 通知，不同步
+    /// 回跳 MainActor，故主线程在 shutdown 等待不会死锁（与 deleteMessage /
+    /// clearMessages 的排空同一形态）。
+    public nonisolated func flushPendingWrites() {
+        persistQueue.sync {}
+    }
+
     // MARK: - Tool Call Result Update
 
     public func updateToolCallResult(

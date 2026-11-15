@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用例。
+PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 54
+测试文件: 13 个，用例总数: 65
 
 核心组件（源码目录）:
 - `Errors/`
@@ -40,6 +40,8 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 - **MessageManager 会话隔离**（9 条）：由 `snapshotIsConversationScoped`、`llmReadIsConversationScoped`、`syncReadIsConversationScoped`、`pendingWindowIsConversationScoped`、`concurrentInsertsDoNotLeak`、`mismatchedConversationIDIsRebuiltToTarget`、`updateIsConversationScoped`、`deleteIsConversationScoped`、`snapshotReflectsAllStreamsWrittenToSameConversation` 锁定——所有读路径（同步/快照/LLM/落盘前 pending 窗口）与写路径（更新/删除/并发插入）都必须按会话隔离，不得跨会话泄漏；`conversationID` 不一致的消息被重建到目标会话。
 - **首条用户消息跳过空白附件**（3 条）：由 `persistedQuerySkipsBlankAttachmentMessage`、`reopenedManagerReadsFirstNonBlankFromDisk`、`persistedQuerySkipsWhitespaceOnlyMessage` 锁定——`fetchFirstUserMessage` / `firstUserMessage` 必须返回第一条**非空白**用户消息（纯附件或纯空白正文的消息要跳过），与默认 Provider 及内存实现口径一致，供自动标题使用（#838）。
 - **LLM 窄读取保留附件 metadata**（1 条）：由 `llmReadKeepsAttachmentMetadata` 锁定——LLM 窄读取在跳过无关 metadata 的同时，必须还原图片/文件附件 metadata。
+- **工具结果写回不阻塞主线程**（8 条）：由 `toolResultWriteDoesNotBlockOnStoreLock`、`patchIsVisibleOnEveryReadPath`、`readYourWritesAfterToolResult`、`patchesAreScopedToConversation`、`sequentialWritesDoNotClobberEachOther`、`patchWithoutAuthorizationStateKeepsResolvedState`、`deleteClearsPendingPatches`、`clearMessagesClearsPendingPatches` 锁定——助手消息落盘后写回工具结果不得让 MainActor 同步等待存储锁；fetch/编码/save 交给串行落盘队列，主线程只登记内存补丁；补丁在落盘窗口内对所有读路径可见、按会话隔离、多次写回按序不覆盖、不带授权状态时保留磁盘已决定状态，删除/清空会话须清掉未落盘补丁（#1229）。
+- **MessageManager 停止排空 write-behind**（3 条）：由 `flushWaitsForBlockedWriteThenDurable`、`flushDrainsToolResultWriteBehind`、`flushConvergesBatchAndEmptiesPending` 锁定——内核停止/插件卸载时 `flushPendingWrites()` 必须排空串行落盘队列，用受控阻塞队列证明「停止调用返回后所有已接受写入（含工具结果写回）都已落盘、pending 清空」，否则正常退出会丢失最后一条消息（#152）。变异验证：把 `flushPendingWrites()` 改成 no-op（空 `sync` 不等待队列），三条用例全部转红——前两条在「flush 提前返回」断言（`!flushReturned.isSet`）失败，第三条在批量落盘断言失败。
 
 ## 测试用例清单
 
@@ -99,27 +101,38 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 52 | 首条用户消息跳过空白附件 | 持久化查询跳过纯附件空白消息，返回其后第一条文本（#838） | 先插纯附件空白消息 U1，后插文本 U2，等待落盘 | 执行该用例 | `fetchFirstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `persistedQuerySkipsBlankAttachmentMessage` |
 | 53 | 首条用户消息跳过空白附件 | 重启后从磁盘读取首条用户消息仍跳过空白附件消息（#838） | 落盘后重开 manager（纯磁盘路径） | 执行该用例 | `firstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `reopenedManagerReadsFirstNonBlankFromDisk` |
 | 54 | 首条用户消息跳过空白附件 | 纯空白正文的用户消息也被跳过（#838） | 先插纯空白正文消息，后插文本 | 执行该用例 | 跳过空白正文，返回第一条非空白文本 | P1 | ✅ 已覆盖 | `persistedQuerySkipsWhitespaceOnlyMessage` |
+| 55 | 工具结果写回不阻塞主线程 | 助手消息已落盘时，写回工具结果不等待存储锁（#1229） | 助手消息已落盘且离开 pending，后台占住存储锁 | 主线程写回工具结果 | 调用不阻塞（<1s），补丁已登记 | P0 | ✅ 已覆盖 | `toolResultWriteDoesNotBlockOnStoreLock` |
+| 56 | 工具结果写回不阻塞主线程 | 落盘窗口内，所有读路径都能看到工具结果补丁（#1229） | 磁盘仍是旧版本，补丁已登记 | 走同步/快照/LLM/分页各读路径 | 全部读到补丁；撤掉补丁后回到磁盘版本 | P0 | ✅ 已覆盖 | `patchIsVisibleOnEveryReadPath` |
+| 57 | 工具结果写回不阻塞主线程 | 写回后立刻读到结果，不等后台落盘（#1229） | 助手消息已落盘且离开 pending | 写回工具结果后立即同步读取 | 立即读到结果与授权状态，最终落盘一致 | P1 | ✅ 已覆盖 | `readYourWritesAfterToolResult` |
+| 58 | 工具结果写回不阻塞主线程 | 补丁只作用于所属会话（#1229） | 两个会话各有同 toolCallID 的助手消息 | 只写回会话 A | 仅 A 读到结果，B 无补丁 | P0 | ✅ 已覆盖 | `patchesAreScopedToConversation` |
+| 59 | 工具结果写回不阻塞主线程 | 同一消息的多次写回按顺序落盘，互不覆盖（#1229） | 助手消息含两个工具调用 | 连续三次写回（含同 id 覆盖） | 各结果按序落盘不互相覆盖，补丁全部撤掉 | P0 | ✅ 已覆盖 | `sequentialWritesDoNotClobberEachOther` |
+| 60 | 工具结果写回不阻塞主线程 | 补丁不带授权状态时，保留磁盘上已决定的授权状态（#1229） | 磁盘授权状态为 userApproved | 写回结果但 authorizationState 为 nil | 结果更新，授权状态仍为 userApproved | P1 | ✅ 已覆盖 | `patchWithoutAuthorizationStateKeepsResolvedState` |
+| 61 | 工具结果写回不阻塞主线程 | 删除消息会清掉尚未落盘的工具结果补丁（#1229） | 补丁已登记未落盘 | 删除该消息 | 补丁清空，磁盘与读路径均无该消息 | P1 | ✅ 已覆盖 | `deleteClearsPendingPatches` |
+| 62 | 工具结果写回不阻塞主线程 | 清空会话会清掉尚未落盘的工具结果补丁（#1229） | 补丁已登记未落盘 | 清空该会话 | 补丁清空，读路径为空 | P1 | ✅ 已覆盖 | `clearMessagesClearsPendingPatches` |
+| 63 | MessageManager 停止排空 write-behind | flush 等待被阻塞的落盘收敛后才返回，返回时消息已落盘（#152） | 后台占住存储锁，插入一条消息 | 另一线程调用 flushPendingWrites | flush 在锁释放前不返回；返回时消息已落盘、pending 清空 | P0 | ✅ 已覆盖 | `flushWaitsForBlockedWriteThenDurable` |
+| 64 | MessageManager 停止排空 write-behind | flush 同样排空工具结果写回，返回时工具结果已落盘（#152） | 后台占住存储锁，插入助手消息并写回工具结果 | 另一线程调用 flushPendingWrites | flush 在锁释放前不返回；返回时工具结果与授权状态已落盘 | P0 | ✅ 已覆盖 | `flushDrainsToolResultWriteBehind` |
+| 65 | MessageManager 停止排空 write-behind | flush 后批量消息全部落盘且 pending 清空（#152） | 连续插入 5 条消息 | 调用 flushPendingWrites | 5 条全部落盘，pending 清空 | P1 | ✅ 已覆盖 | `flushConvergesBatchAndEmptiesPending` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 47 / 47
 - P2: 已覆盖 0 / 0
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
