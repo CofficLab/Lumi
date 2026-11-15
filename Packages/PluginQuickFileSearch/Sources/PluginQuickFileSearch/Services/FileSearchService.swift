@@ -52,6 +52,10 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     private var indexStore = FileIndexStore(projectPath: "")
     private var searchTask: Task<Void, Never>?
+    /// 实际扫描/排序索引的 detached worker。detached 任务不继承外层 searchTask 的
+    /// 取消，必须单独持有句柄才能在查询变化时停掉过时的全索引搜索（#1219）。
+    /// 暴露为 internal 仅供取消回归测试断言句柄状态。
+    var searchWorkerTask: Task<[FileResult], Never>?
     private var indexingProjectPath: String?
     /// 项目代次。切换项目时递增，用于作废旧项目里发起、晚到的搜索结果。
     private var projectGeneration: Int = 0
@@ -144,6 +148,8 @@ public final class FileSearchService: ObservableObject, SuperLog {
         projectGeneration &+= 1
         searchTask?.cancel()
         searchTask = nil
+        searchWorkerTask?.cancel()
+        searchWorkerTask = nil
         searchResults = []
     }
 
@@ -183,8 +189,10 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     /// 监听搜索查询变化
     public func onSearchQueryChanged() {
-        // 取消之前的搜索任务
+        // 取消之前的搜索任务（外层 + 实际扫描索引的 detached worker）
         searchTask?.cancel()
+        searchWorkerTask?.cancel()
+        searchWorkerTask = nil
 
         let query = Self.normalizedQuery(searchQuery)
 
@@ -211,9 +219,13 @@ public final class FileSearchService: ObservableObject, SuperLog {
         let files = indexStore.files
         let generation = projectGeneration
 
-        let results = await Task.detached(priority: .userInitiated) {
+        // 持有 detached worker 句柄：查询变化时 onSearchQueryChanged 会取消它，
+        // searchInFiles 内部的协作式取消检查随即停止过时的全索引扫描（#1219）。
+        let worker = Task.detached(priority: .userInitiated) {
             FileSearchHelpers.searchInFiles(files, query: lowercaseQuery)
-        }.value
+        }
+        searchWorkerTask = worker
+        let results = await worker.value
 
         await MainActor.run { [weak self] in
             guard let self else { return }
@@ -373,12 +385,21 @@ public enum FileSearchHelpers {
     }
 
     /// 在文件列表中搜索
-    public static func searchInFiles(_ files: [FileResult], query: String) -> [FileResult] {
+    ///
+    /// `isCancelled` 默认读取当前任务的取消状态：在 detached worker 中运行时即为
+    /// 该 worker 的取消标志。查询变化取消 worker 后，扫描循环会协作式提前退出，
+    /// 不再对过时查询做完整的 O(F) 扫描与 O(M log M) 排序（#1219）。
+    public static func searchInFiles(
+        _ files: [FileResult],
+        query: String,
+        isCancelled: @Sendable () -> Bool = { Task.isCancelled }
+    ) -> [FileResult] {
         guard !query.isEmpty else { return [] }
 
         var scoredResults: [(FileResult, Int)] = []
 
-        for file in files {
+        for (index, file) in files.enumerated() {
+            if index % 128 == 0, isCancelled() { return [] }
             var score = 0
             let name = file.name.lowercased()
             let relativePath = file.relativePath.lowercased()
@@ -408,6 +429,8 @@ public enum FileSearchHelpers {
                 scoredResults.append((file, score))
             }
         }
+
+        if isCancelled() { return [] }
 
         // 按分数排序，分数相同时按文件名字母序
         let sorted = scoredResults
