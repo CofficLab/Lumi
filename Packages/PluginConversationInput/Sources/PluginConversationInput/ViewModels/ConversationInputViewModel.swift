@@ -455,6 +455,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     /// 将拖入的非图片文件加入发送器挂起池。
     func attachFile(_ url: URL) {
+        // 挂起池是发送器级全局数组，读取期间切换会话后，旧任务的结果不能落到新会话（#780）。
+        let conversationID = capability.selectedConversationID
         // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
         capability.beginAttachmentRead()
         Task { @MainActor in
@@ -463,9 +465,11 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 let attachment = try await Task.detached(priority: .userInitiated) {
                     try UserFileAttachmentLoader.load(from: url)
                 }.value
+                guard capability.selectedConversationID == conversationID else { return }
                 capability.addFileAttachment(attachment)
                 capability.isInputFocused = true
             } catch {
+                guard capability.selectedConversationID == conversationID else { return }
                 capability.recordAttachmentReadFailure()
                 capability.errorMessage = error.localizedDescription
                 refresh()
@@ -477,6 +481,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     func attachImage(_ url: URL) {
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
         let fileName = url.lastPathComponent
+        // 挂起池是发送器级全局数组，读取期间切换会话后，旧任务的结果不能落到新会话（#780）。
+        let conversationID = capability.selectedConversationID
         // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
         capability.beginAttachmentRead()
         Task { @MainActor in
@@ -486,6 +492,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             let outcome = await Task.detached(priority: .userInitiated) {
                 Self.loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName)
             }.value
+            guard capability.selectedConversationID == conversationID else { return }
             switch outcome {
             case .empty:
                 // 空文件保持静默忽略（见 #520）。

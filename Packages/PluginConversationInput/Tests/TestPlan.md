@@ -490,12 +490,37 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 201 | 编辑器 | 直接追加文字后发布得到新正文，缓存不发 stale（**回归 #1261**） | chip `"BODY"` 已发布 | 直接 `textStorage.append(" tail")` → 再发布 | 草稿为 `"BODY tail"`，折叠块区间仍指向 chip（缓存按新版本重算） | P0 | ✅ 已覆盖 | `directStorageEditInvalidatesCache` |
 | 202 | 编辑器 | 删除 chip 后缓存失效，正文不再含 chip 原文（**回归 #1261**） | 正文 `"A "` + chip `"BODY"` 已发布 | 直接 `deleteCharacters` 删掉 chip 占位 → 再发布 | 草稿为 `"A "`，折叠块清空，`hasPastePreviewAttachments` 归 false | P0 | ✅ 已覆盖 | `deletingChipInvalidatesCache` |
 
+### 补充轮次（ID 203–206）：拖放读取与会话绑定（#780）
+
+> 挂起池是**发送器级全局数组**，不按会话隔离。`attachFile` / `attachImage` 在
+> `Task.detached` 里读取，旧实现读完后无条件 `addFileAttachment` / `addImageAttachment`，
+> 读取期间切到 B 后，A 的旧任务仍把内容写进 B 使用的池子，下一条消息会把用户只想
+> 给 A 的文件/图片泄漏给 B 的模型；读取失败时还会把错误提示写到 B。修复按仓库约定
+> 「捕获身份 → await → 写回前比对」：进入 Task 前同步捕获 `selectedConversationID`，
+> 读取结束后（成功与失败分支都）先比对，不一致直接 `return`，不写任何状态。
+> 用例利用「MainActor 同步执行让出前 `Task {}` body 不会运行」：`attach*` 返回后
+> **同步**把 `selectedConversationID` 切到 B，再 `await waitForAttachmentReads()`
+> 等旧任务收尾，确定性地构造「旧请求晚到」，无需依赖读取耗时。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 203 | 拖放 | 读取期间切换会话，旧文件附件不落入新会话挂起池（**回归 #780**） | 选中 A + 真实临时 txt | `attachFile` → 同步切到 B → 等读取收尾 | B 的文件池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleFileDropDoesNotLeakIntoNewConversation` |
+| 204 | 拖放 | 读取期间切换会话，旧图片附件不落入新会话挂起池（**回归 #780**） | 选中 A + 真实临时 PNG | `attachImage` → 同步切到 B → 等读取收尾 | B 的图片池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleImageDropDoesNotLeakIntoNewConversation` |
+| 205 | 拖放 | 读取期间切换会话，旧文件读取失败不报错到新会话（**回归 #780**） | 选中 A + 不存在的路径 | `attachFile` → 同步切到 B → 等读取收尾 | B 的 `errorMessage` 为 nil（能力层与 ViewModel）、文件池为空 | P1 | ✅ 已覆盖 | `staleFileDropErrorDoesNotLeakIntoNewConversation` |
+| 206 | 拖放 | 读取期间切换会话，旧图片解码失败不报错到新会话（**回归 #780**） | 选中 A + 不可解码的假 PNG | `attachImage` → 同步切到 B → 等读取收尾 | B 的 `errorMessage` 为 nil（能力层与 ViewModel）、图片池为空 | P1 | ✅ 已覆盖 | `staleImageDropErrorDoesNotLeakIntoNewConversation` |
+
+> **#780 变异验证**（3 个独立变异均 RED，恢复后 GREEN）：
+> 1. 删除 `attachFile` 成功分支的会话守卫 → ID 203 失败（B 文件池非空、被聚焦）。
+> 2. 删除 `attachFile` catch 分支的会话守卫 → ID 205 失败（B 收到错误提示）。
+> 3. 删除 `attachImage` switch 前的会话守卫 → ID 204 与 206 均失败（B 图片池非空 / 收到错误提示）。
+> 三个变异分别锁定「文件成功入池」「文件失败报错」「图片入池与报错」三条写回路径都必须校验会话身份。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 68 / 68
-- P1: 已覆盖 116 / 116
+- P0: 已覆盖 70 / 70
+- P1: 已覆盖 118 / 118
 - P2: 已覆盖 18 / 18
-- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
+- **合计: 206 / 206**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
