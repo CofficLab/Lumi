@@ -106,6 +106,24 @@ public enum ShellIntegration {
         return Shell(rawValue: basename) ?? .zsh
     }
 
+    /// 补充所选 shell 的 SHELL 并继承用户 ZDOTDIR，供集成脚本恢复原始配置（#500）。
+    public static func makeEnvironment(
+        base: [String],
+        shellPath: String,
+        parentEnvironment: [String: String]
+    ) -> [String] {
+        var env = base
+        env.append("TERM_PROGRAM=Lumi_Terminal")
+        env.append("TERM=xterm-256color")
+        env.append("LANG=en_US.UTF-8")
+        env.append("PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+        env.append("SHELL=\(shellPath)")
+        if let zDotDir = parentEnvironment["ZDOTDIR"], !zDotDir.isEmpty {
+            env.append("ZDOTDIR=\(zDotDir)")
+        }
+        return env
+    }
+
     // MARK: - zsh Setup
 
     private static func setupZsh(environment: inout [String]) throws {

@@ -107,7 +107,7 @@ public final class TerminalSession: ObservableObject, Identifiable {
         let shell = ShellIntegration.autoDetectShell()
         let shellPath = shell.defaultPath
 
-        var environment = buildEnvironment()
+        var environment = buildEnvironment(shellPath: shellPath)
 
         do {
             let args = try ShellIntegration.setupIntegration(
@@ -129,7 +129,7 @@ public final class TerminalSession: ObservableObject, Identifiable {
             terminalView.startProcess(
                 executable: shellPath,
                 args: ["-l", "-i"],
-                environment: buildEnvironment(),
+                environment: buildEnvironment(shellPath: shellPath),
                 execName: shell.rawValue,
                 currentDirectory: initialWorkingDirectory
             )
@@ -138,14 +138,12 @@ public final class TerminalSession: ObservableObject, Identifiable {
     }
 
     /// 构建环境变量
-    private func buildEnvironment() -> [String] {
-        var env = Terminal.getEnvironmentVariables()
-        env.append("TERM_PROGRAM=Lumi_Terminal")
-        env.append("TERM=xterm-256color")
-        env.append("LANG=en_US.UTF-8")
-        // 补充常用 PATH
-        env.append("PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
-        return env
+    private func buildEnvironment(shellPath: String) -> [String] {
+        ShellIntegration.makeEnvironment(
+            base: Terminal.getEnvironmentVariables(),
+            shellPath: shellPath,
+            parentEnvironment: ProcessInfo.processInfo.environment
+        )
     }
 
     /// 应用主题颜色到终端
