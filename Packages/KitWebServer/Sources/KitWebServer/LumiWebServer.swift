@@ -123,12 +123,13 @@ private struct RouteDispatchMiddleware: RouterMiddleware {
 ///
 /// 每个请求依次经过:
 /// 1. **请求 ID** —— 生成/透传 `X-Request-ID`,写入响应头,便于日志关联。
-/// 2. **CORS 预检** —— `OPTIONS` 请求直接返回允许的方法与请求头。
-/// 3. **鉴权** —— 按 `authPolicy` 校验凭证,不通过则 401。
-/// 4. **跨源写保护** —— 浏览器发起的跨源写请求直接 403;无 Origin 的原生客户端放行。
-/// 5. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
-/// 6. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
-/// 7. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
+/// 2. **回环 Host 校验** —— `Host` 不在回环白名单内直接 403,挡住 DNS rebinding。
+/// 3. **CORS 预检** —— `OPTIONS` 请求直接返回允许的方法与请求头。
+/// 4. **鉴权** —— 按 `authPolicy` 校验凭证,不通过则 401。
+/// 5. **跨源写保护** —— 浏览器发起的跨源写请求直接 403;无 Origin 的原生客户端放行。
+/// 6. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
+/// 7. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
+/// 8. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
 public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendable {
     /// 服务日志。
     nonisolated static let logger = Logger(
@@ -487,6 +488,39 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             headers[field.name.description.lowercased()] = field.value
         }
 
+        // Host 不在 headerFields 里:NIOHTTPTypesHTTP1 把第一个 Host 提升成
+        // `:authority` 伪头,只有重复的 Host 才会留在普通字段中。两者都要校验,
+        // 否则「取第一个还是取最后一个」的歧义本身就是 rebinding/走私的入口。
+        var hostValues: [String] = []
+        if let authority = request.head.authority, !authority.isEmpty {
+            hostValues.append(authority)
+        }
+        for field in request.headers where field.name.description.lowercased() == "host" {
+            hostValues.append(field.value)
+        }
+
+        // DNS rebinding 防护:回环监听不是信任边界。rebinding 之后浏览器把攻击者
+        // 域名当作 same-origin,Origin 与 Host 两边都是攻击者可控值,跨源写保护
+        // 因此失效,GET 更是完全不进那条检查。只有 Host 本身落在回环白名单内
+        // 才能守住「仅本机访问」,且必须早于鉴权、CORS 与路由匹配(#1162)。
+        let effectivePort = boundPort ?? port
+        if hostValues.contains(where: { !Self.isLoopbackHost($0, defaultPort: effectivePort) }) {
+            return finish(
+                response: Self.makeErrorResponse(
+                    error: .forbidden(message: "Requests must address the loopback interface directly."),
+                    requestID: requestID
+                ),
+                requestID: requestID,
+                method: request.method.rawValue,
+                path: path,
+                pluginID: nil,
+                startedAt: startedAt,
+                headers: headers,
+                // 被拒绝的请求不该附带任何 CORS 允许头。
+                appliesCORS: false
+            )
+        }
+
         // 方法(HTTPTypes.Method -> 内核 HTTPMethod)
         guard let method = HTTPMethod(rawValue: request.method.rawValue) else {
             return finish(
@@ -673,10 +707,11 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
         path: String,
         pluginID: String?,
         startedAt: Date,
-        headers: [String: String]
+        headers: [String: String],
+        appliesCORS: Bool = true
     ) -> Response {
         var response = response
-        if let corsPolicy {
+        if appliesCORS, let corsPolicy {
             Self.applyCORSHeaders(to: &response, policy: corsPolicy, requestHeaders: headers)
         }
 
@@ -731,6 +766,35 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             return "Cross-origin \(method.rawValue) requests are not allowed."
         }
         return nil
+    }
+
+    /// 回环 Host 白名单。连接来自 127.0.0.1 不代表调用方就是本机页面:
+    /// DNS rebinding 之后浏览器仍把攻击者域名解析到回环地址。
+    private static let loopbackHostnames: Set<String> = ["127.0.0.1", "localhost", "::1"]
+
+    /// `Host` 头是否直接指向本机回环(允许携带监听端口)。
+    ///
+    /// 缺失或为空时放行:浏览器一定会带 `Host`,rebinding 无法借「不带 Host」绕过;
+    /// 不带 `Host` 的是 HTTP/1.0 或部分原生客户端,保持兼容。
+    static func isLoopbackHost(_ hostHeader: String?, defaultPort: Int) -> Bool {
+        guard let raw = hostHeader?.trimmingCharacters(in: .whitespaces), !raw.isEmpty else {
+            return true
+        }
+        let value = raw.lowercased()
+        // 裸 IPv6 回环没有 host:port 分隔语义,URLComponents 解析不了。
+        if value == "::1" { return true }
+        guard let components = URLComponents(string: "http://\(value)"),
+              var host = components.host?.lowercased() else {
+            return false
+        }
+        // URLComponents 保留 IPv6 的方括号（`[::1]`），白名单按裸地址比对。
+        if host.hasPrefix("["), host.hasSuffix("]") {
+            host.removeFirst()
+            host.removeLast()
+        }
+        guard loopbackHostnames.contains(host) else { return false }
+        // 带端口时必须正是监听端口,挡掉 `127.0.0.1:其它端口` 这类混淆形式。
+        return components.port == nil || components.port == defaultPort
     }
 
     /// `Origin` 是否与请求自身的 host 一致。
