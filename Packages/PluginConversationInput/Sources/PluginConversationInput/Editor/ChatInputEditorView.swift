@@ -140,6 +140,16 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.textContainerInset = NSSize(width: 4, height: 4)
         textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
 
+        // 重建输入框时必须用 binding 里的现有草稿初始化原生编辑器，并把这次
+        // 「binding → 编辑器」的下发记入协调器。否则新建的 EditorTextView 是空的，
+        // 而协调器的 lastSyncedBindingText 为 nil，首次 updateNSView 会把空串误判成
+        // 「编辑器侧 binding 不知情的新内容」回写 binding，静默清空用户未发送的
+        // 草稿——隐藏再恢复聊天区（终端/数据库等）就会触发这条路径（#601）。
+        textView.delegate = nil
+        textView.string = text
+        textView.delegate = context.coordinator
+        context.coordinator.noteBindingTextPushedDown(text)
+
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
         scrollView.onContentWidthChange = { [weak coordinator = context.coordinator, weak textView] width in

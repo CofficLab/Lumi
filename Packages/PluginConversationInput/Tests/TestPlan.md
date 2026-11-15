@@ -593,6 +593,15 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 219 | 折叠块 | 归属对话内块可正常消费，FIFO 依次推进 | 选中 A + 连续入队两个块 | 依次消费队首 | 队首始终指向第一个未消费块，消费后推进到下一个，全部消费后为 nil | P0 | ✅ 已覆盖 | `blockStaysConsumableInOriginatingConversation` |
 | 220 | 折叠块 | 瞬时选中往返 A→B→A 保留未消费的块（**回归 #518 / #781**） | 选中 A + 已入队一个块 | 同一连续段内连发 B、A 两次通知，等落定 | 块仍暴露且 id 不变 | P1 | ✅ 已覆盖 | `transientRoundTripKeepsPendingBlock` |
 | 221 | 折叠块 | 切换窗口内为新对话递交的块不被落定清空误删 | 选中 A + 已入队 A 的块 | 发 B 的通知后不等落定再入队 B 的块，然后等落定 | A 的块被丢弃，B 的块暴露且可消费 | P1 | ✅ 已覆盖 | `blockEnqueuedDuringSwitchWindowForNewConversationSurvives` |
+| 222 | 回归 | 重建输入框时用 binding 草稿初始化编辑器，首次刷新不清空草稿（**回归 #601**） | 真实 NSHostingView 渲染生产编辑器 + binding 持有草稿 | 宿主渲染后检查原生编辑器与 binding | 编辑器显示草稿且 binding 草稿保留，不被空编辑器回写清空 | P0 | ✅ 已覆盖 | `rebuiltEditorInitializesFromBindingAndKeepsDraft` |
+| 223 | 回归 | 隐藏再恢复聊天区后草稿仍在（**回归 #601**） | binding 持有草稿 | 渲染→移除宿主→用同一 binding 重建并渲染 | 恢复后编辑器重新显示草稿，binding 草稿未被清空 | P0 | ✅ 已覆盖 | `hideAndReshowPreservesDraft` |
+
+> **#601 变异验证**（恢复后 GREEN）：去掉 `makeNSView` 里「用 binding 文本初始化
+> 编辑器 + `noteBindingTextPushedDown`」这段 → ID 222 / 223 RED（重建后的空编辑器
+> 被首次 `updateNSView` 误判为编辑器侧新内容，把空串回写 binding 清空草稿）。
+> 变异锁定「重建时必须用 binding 初始化编辑器」是保留草稿的充要守卫。
+> 用例在真实 `NSHostingView` 里跑 `makeNSView` + `updateNSView`，settling 用
+> `await` 让出主 actor（不用 `RunLoop.main.run` 同步阻塞，避免饿死同包轮询用例）。
 
 > **#518 变异验证**（恢复后 GREEN）：① 去掉 `pendingBlock` 的归属对话守卫
 > （无条件返回队首）→ ID 217 RED（切换通知后 B 仍能拿到 A 的块），其余仍
@@ -602,10 +611,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 79 / 79
+- P0: 已覆盖 81 / 81
 - P1: 已覆盖 124 / 124
 - P2: 已覆盖 18 / 18
-- **合计: 221 / 221**（仅表示清单场景，非源码覆盖率）
+- **合计: 223 / 223**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
