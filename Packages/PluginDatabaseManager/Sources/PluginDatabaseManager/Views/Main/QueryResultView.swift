@@ -253,7 +253,8 @@ struct QueryResultView: View {
     }
 
     private func commitInsertEdit(insertId: UUID, column: String) {
-        let value = parseEditedCellValue(editInsertText)
+        let value = changeManager?.parseEditedValue(editInsertText, column: column)
+            ?? parseEditedCellValue(editInsertText)
         onStageInsertChange?(insertId, column, value)
         editingInsert = nil
     }
@@ -323,7 +324,8 @@ struct QueryResultView: View {
     }
 
     private func commitEdit(row: [DatabaseValue], column: String) {
-        let value = parseEditedCellValue(editText)
+        let value = changeManager?.parseEditedValue(editText, column: column)
+            ?? parseEditedCellValue(editText)
         onStageChange?(column, row, result.columns, value)
         editingCell = nil
     }

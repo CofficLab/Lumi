@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 131
+测试文件: 14 个，用例总数: 139
 
 核心组件（源码目录）:
 - `Agent/`
@@ -260,7 +260,20 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 130 | 字符串方言转义 | MySQL INSERT 语句对含反斜杠的字符串正确转义 | 表 t(id PK, name TEXT) | 新增行设 name=`path\to` 后 `generatedInsertStatements(for: .mysql)` | VALUES 为 `('path\\to')` | P1 | ✅ 已覆盖 | `mysqlInsertEscapesBackslash` |
 | 131 | 字符串方言转义 | MySQL DELETE 的主键字符串含反斜杠时也正确转义 | 文本主键表 t | 删除主键 `k\1` 的行后 `generatedDeleteStatements(for: .mysql)` | WHERE 为 `` `id` = 'k\\1' `` | P1 | ✅ 已覆盖 | `mysqlDeleteEscapesBackslashInPrimaryKey` |
 
-> 说明：全部 **131 条场景**已在本包 `swift test` 中实跑通过。
+### 文本单元格编辑保留原始值（回归 #554）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 132 | 文本编辑保值 | TEXT 列保留首尾空白，不被 trim（回归 #554） | 表 t(id PK, name TEXT) | `parseEditedValue("  padded  ", column: "name")` | 等于 `.string("  padded  ")` | P0 | ✅ 已覆盖 | `textColumnPreservesPaddedWhitespace` |
+| 133 | 文本编辑保值 | TEXT 列的字面量 NULL 保留为字符串，不映射 SQL NULL（回归 #554） | 同上 | 对 `NULL`/`null` 调用 `parseEditedValue` | 均为 `.string`，非 `.null` | P0 | ✅ 已覆盖 | `textColumnPreservesLiteralNULL` |
+| 134 | 文本编辑保值 | TEXT 列保留前导零，不被推断成整数（回归 #554） | 同上 | `parseEditedValue("00123", column: "name")` | 等于 `.string("00123")` | P0 | ✅ 已覆盖 | `textColumnPreservesLeadingZeros` |
+| 135 | 文本编辑保值 | TEXT 列的空串保留为空字符串，不映射 SQL NULL（回归 #554） | 同上 | `parseEditedValue("", column: "name")` | 等于 `.string("")` | P0 | ✅ 已覆盖 | `textColumnPreservesEmptyString` |
+| 136 | 文本编辑保值 | TEXT 列编辑生成的 UPDATE 把值内联为字符串字面量而非整数（回归 #554） | 表 t(id PK, name TEXT)，行 id=1 | 以 `parseEditedValue("00123")` 暂存 name 后 `generatedUpdateStatements(for: .mysql)` | 等于 ``UPDATE `t` SET `name` = '00123' WHERE `id` = 1;`` | P0 | ✅ 已覆盖 | `textColumnUpdateGeneratesStringLiteral` |
+| 137 | 文本编辑保值 | 数值/布尔列仍按类型推断，空串与 NULL 仍映射 SQL NULL（无回归） | 表 t(id INTEGER PK, amount REAL, flag BOOLEAN) | 对各列调用 `parseEditedValue` | id→integer、amount→double、flag→bool；NULL/空串→null | P1 | ✅ 已覆盖 | `numericAndBooleanColumnsStillInferTypes` |
+| 138 | 文本编辑保值 | 各方言文本类型变体都保留原始字符串，数值/布尔类型不算文本 | — | 对 TEXT/VARCHAR/NVARCHAR/CHAR/CLOB/JSON/UUID/ENUM 调用 `parseEditedCellValue(_:columnType:)`，并检查 `isTextColumnType` | 文本变体保留 `00123`/`NULL` 原文；INTEGER/BOOLEAN/DOUBLE PRECISION/BLOB 不算文本 | P1 | ✅ 已覆盖 | `textTypeVariantsPreserveRawString` |
+| 139 | 文本编辑保值 | 未知/缺省列类型沿用既有推断，不破坏无 schema 的调用方（无回归） | — | 不传 columnType 调用 `parseEditedCellValue` | `123`→integer、`  x  `→string("x")、`NULL`→null | P1 | ✅ 已覆盖 | `unknownColumnTypeFallsBackToInference` |
+
+> 说明：全部 **139 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -272,24 +285,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#273）：`RedisConnection.init` 原先恒用 `NWConnection(..., using: .tcp)`，`RedisDriver.connect` 丢弃 `config.sslOption`，即便选择 TLS 也明文发送 AUTH。修复为按 `RedisTransportPlan.make` + `RedisTransportSecurity.makeParameters` 构造传输层。M1 令 `makeParameters` 恒返回 `.tcp`（传输层忽略 TLS，原 bug）→ `tlsPlansProduceTLSParameters` 转红（4 个 TLS 模式都拿不到 TLS 协议），5 条计划映射与明文用例仍绿；M2 令 `RedisTransportPlan.make` 恒返回明文计划（决策层忽略 sslOption）→ `requireEnablesTLSWithoutFallback`、`verifyCAEnablesTLSWithCAOnlyVerification`、`verifyFullEnablesTLSWithFullVerification`、`preferEnablesTLSWithPlaintextFallback`、`tlsPlansProduceTLSParameters` 转红，disable/nil 与明文用例仍绿。两处变异均单独施加并确认转红后还原，最终 125 条全绿。
 >
 > 变异验证（#582）：`sqlLiteral` 原先对字符串只把 `'` 替换成 `''`，MySQL 默认开启反斜杠转义，用户输入的 `\n`/`\t` 被静默改写成控制字符。修复为按方言转义：MySQL 先把 `\` 翻倍再转义单引号，SQLite/PostgreSQL 保持只转义单引号。M1 禁用 MySQL 反斜杠转义分支（`if dialect == .mysql && false`）→ `mysqlStringEscapesBackslash`、`mysqlStringEscapesQuoteAndBackslash`、`mysqlUpdateEscapesBackslash`、`mysqlInsertEscapesBackslash`、`mysqlDeleteEscapesBackslashInPrimaryKey` 转红，`standardDialectsKeepBackslashLiteral` 仍绿。变异施加并确认转红后还原，最终 131 条全绿。
+>
+> 变异验证（#554）：`parseEditedCellValue` 原先对所有列统一 trim、把空串/`NULL` 映射成 SQL NULL、并推断 Int/Double/Bool，TEXT 列的合法内容被静默改写。修复为按列声明类型分流：文本类列（`isTextColumnType`）原样返回 `.string(text)`，其余列沿用推断；编辑提交入口改调 `TableChangeManager.parseEditedValue(_:column:)` 从 schema 取类型。M1 禁用文本分支（`if false && isTextColumnType(columnType)`）→ `textColumnPreservesPaddedWhitespace`、`textColumnPreservesLiteralNULL`、`textColumnPreservesLeadingZeros`、`textColumnPreservesEmptyString`、`textColumnUpdateGeneratesStringLiteral`、`textTypeVariantsPreserveRawString` 转红，`numericAndBooleanColumnsStillInferTypes`、`unknownColumnTypeFallsBackToInference` 仍绿。变异施加并确认转红后还原，最终 139 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 63 / 63
-- P1: 已覆盖 67 / 67
+- P0: 已覆盖 68 / 68
+- P1: 已覆盖 70 / 70
 - P2: 已覆盖 1 / 1
-- **合计: 131 / 131**（仅表示清单场景，非源码覆盖率）
+- **合计: 139 / 139**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（63 条）
-- **P1**: 其余功能性用例（67 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（68 条）
+- **P1**: 其余功能性用例（70 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 131 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 139 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

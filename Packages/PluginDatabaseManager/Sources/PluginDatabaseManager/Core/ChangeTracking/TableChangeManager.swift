@@ -34,9 +34,29 @@ private func escapeSQLString(_ s: String, dialect: DatabaseType) -> String {
     return escaped.replacingOccurrences(of: "'", with: "''")
 }
 
-/// 把单元格编辑文本解析为 ``DatabaseValue``：
-/// 空 / `NULL` → null；整数 → integer；小数 → double；true/false → bool；其余 → string。
-public func parseEditedCellValue(_ text: String) -> DatabaseValue {
+/// 判断列声明类型是否为文本类。文本列的编辑必须保留用户输入的原始字符串，
+/// 不得 trim、把空串/「NULL」映射成 SQL NULL，也不做数字/布尔推断（#554）。
+/// 覆盖三方言常见文本类型：CHAR/VARCHAR/NCHAR/NVARCHAR/CHARACTER VARYING、
+/// TEXT/TINYTEXT/MEDIUMTEXT/LONGTEXT、CLOB/NCLOB、SQLite STRING 亲和、
+/// JSON/JSONB、UUID、XML、MySQL ENUM/SET。未知或数值/布尔类型返回 false，
+/// 沿用既有推断行为。
+func isTextColumnType(_ dataType: String?) -> Bool {
+    guard let dataType, !dataType.isEmpty else { return false }
+    let upper = dataType.uppercased()
+    let textMarkers = ["CHAR", "TEXT", "CLOB", "STRING", "JSON", "UUID", "XML", "ENUM", "SET"]
+    return textMarkers.contains { upper.contains($0) }
+}
+
+/// 把单元格编辑文本解析为 ``DatabaseValue``。
+///
+/// 传入 `columnType` 且为文本类列时，原样保留输入字符串（含首尾空白、空串、
+/// `NULL`、形似数字的文本）；NULL 由独立的「Set NULL」菜单提供，不占用合法
+/// 字符串值（#554）。其余列（数值/布尔/未知）沿用：空 / `NULL` → null；
+/// 整数 → integer；小数 → double；true/false → bool；其余 → string。
+public func parseEditedCellValue(_ text: String, columnType: String? = nil) -> DatabaseValue {
+    if isTextColumnType(columnType) {
+        return .string(text)
+    }
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     if trimmed.isEmpty || trimmed.uppercased() == "NULL" { return .null }
     if let i = Int(trimmed) { return .integer(i) }
@@ -170,6 +190,13 @@ public final class TableChangeManager: ObservableObject {
     }
 
     // MARK: - Cell updates
+
+    /// 按列声明类型解析编辑文本：文本列保留原始字符串，数值/布尔列沿用推断（#554）。
+    /// 编辑提交入口（QueryResultView）调用它，而不是无类型的 `parseEditedCellValue`。
+    public func parseEditedValue(_ text: String, column: String) -> DatabaseValue {
+        let dataType = schema.columns.first(where: { $0.name == column })?.dataType
+        return parseEditedCellValue(text, columnType: dataType)
+    }
 
     public func stageCellUpdate(
         column: String,
