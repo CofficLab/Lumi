@@ -109,8 +109,12 @@ extension TextView: NSTextInputClient {
         )
 
         // Reset the selected ranges to reflect the replaced text.
-        selectionManager.setSelectedRanges(layoutManager.markedTextManager.markedRanges.map({
-            NSRange(location: $0.max, length: 0)
+        selectionManager.setSelectedRanges(layoutManager.markedTextManager.markedRanges.map({ markedRange in
+            // selectedRange 由输入法相对插入串起点给出；NSNotFound 时回退到标记末尾。
+            if selectedRange.location == NSNotFound {
+                return NSRange(location: markedRange.max, length: 0)
+            }
+            return NSRange(location: markedRange.location + selectedRange.location, length: selectedRange.length)
         }))
 
         _undoManager?.enable()
