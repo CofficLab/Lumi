@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 81 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 81
+测试文件: 13 个，用例总数: 99
 
 核心组件（源码目录）:
 - `Agent/`
@@ -39,6 +39,8 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 81 条�
 
 - **MailAccountStore**（26 条）：由 `testUpsertAndLoad`、`testUpsertUpdatesExistingByID`、`testDeleteRemovesAccountAndPassword` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailDraftAutosave**（9 条）：由 `testSaveEncodesAndWritesOffMainThread`、`testTextOnlyEditDoesNotRewriteAttachments`、`testStaleSaveDoesNotOverwriteNewerDraft` 等用例锁定；连续击键必须合并落盘、编码与写入不得占用主线程、附件只在增删时重写，晚到的旧快照不得覆盖新草稿（issue #1188）。
+- **Mail account_id 校验**（9 条）：由 `invalidAccountIDIsRejectedByEveryTool`、`nonStringAccountIDIsRejected`、`unknownAccountIDIsAnErrorNotAnEmptyResult`、`validAccountIDSelectsThatAccount` 锁定；只有完全省略 account_id 才能回落到第一个账户，传了但为空/格式非法/类型不对/账户不存在都必须在任何 IMAP/SMTP 操作前报错，否则发送工具会从错误的邮箱寄信（issue #840）。
 - **MailHTMLContent**（5 条）：由 `testUnauthorizedHTMLBlocksRemoteSubresources`、`testLinkActivatedOpensExternallyEvenWithoutAuthorization` 等用例锁定；改动阅读器远程内容策略时优先跑对应测试文件。
 - **MailWorkspace**（5 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先）时优先跑对应测试文件。
 - **MailComposerService**（12 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind`、`testAppendDraftUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -137,27 +139,45 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 81 条�
 | 79 | MailWorkspace | 未注入 sync（生产装配）时点选邮件仍经 session 取正文并置已读，不得永远停在加载态（**回归 #306**） | 缓存有 INBOX 邮件，VM 不传 sync（默认 nil） | 调用 `load()` 后 `selectMessage` | `selectedDetail` 非空且 uid 匹配、正文为 Hello，本地缓存未读计数归零 | P0 | ✅ 已覆盖 | `testSelectMessageFetchesBodyWithoutSyncService` |
 | 80 | MailWorkspace | 缓存按 uid 升序投影时首页必须取最新一页，翻页继续向更旧扩展（**回归 #308**） | 缓存 51 封 INBOX 邮件（uid 1…51），会话离线 | 调用 `load()` 后 `loadMore()` | 首页 50 封为 uid 51…2，翻页后 51 封为 uid 51…1，整体最新优先 | P0 | ✅ 已覆盖 | `testFirstPageKeepsNewestMailsAndPagesTowardOlder` |
 | 81 | MailComposerService | 保存草稿归档到 Drafts 时用 `\Draft`，与已发送归档区分（**回归 #403**） | mock 会话无 drafts 文件夹 | 调用 `composer.appendDraft(draft:account:)` | APPEND 到 Drafts 且 isDraft 为真，不触发 SMTP 发送 | P1 | ✅ 已覆盖 | `testAppendDraftUsesDraftFlag` |
+| 82 | MailDraftAutosave | 编码与文件写入不得占用主线程（**回归 #1188**） | 注入记录线程的草稿存储 | 设置正文并添加 4 KB 附件后 `saveDraftNow()` | 落盘不在主线程，文本文件存在且 `draftSavedAt` 非空 | P0 | ✅ 已覆盖 | `testSaveEncodesAndWritesOffMainThread` |
+| 83 | MailDraftAutosave | 纯文本编辑不得重写附件文件 | 已保存含附件的草稿 | 删除附件文件后只改正文再保存 | 附件文件不被重新写出，正文更新，草稿文本不内嵌附件字节/Base64 | P1 | ✅ 已覆盖 | `testTextOnlyEditDoesNotRewriteAttachments` |
+| 84 | MailDraftAutosave | 附件增删必须重写附件文件 | 已保存含 1 个附件的草稿 | 删除该附件后保存 | 附件文件被重写为空数组 | P1 | ✅ 已覆盖 | `testAttachmentChangesRewriteAttachmentFile` |
+| 85 | MailDraftAutosave | 恢复草稿后的首次纯文本编辑不重写附件 | 重开 VM 恢复到 1 个附件 | 删除附件文件后改正文并保存 | 附件文件不被写出，正文为编辑后的内容 | P1 | ✅ 已覆盖 | `testRestoredDraftSkipsAttachmentRewriteOnFirstTextEdit` |
+| 86 | MailDraftAutosave | 旧版内嵌附件草稿必须仍能恢复，附件不得丢失 | 磁盘上是内嵌 Base64 附件的旧草稿 | 新建 VM 读取草稿 | 正文与 1 个附件（字节一致）都被恢复 | P0 | ✅ 已覆盖 | `testLegacyDraftWithEmbeddedAttachmentsStillRestores` |
+| 87 | MailDraftAutosave | 旧草稿附件在首次保存时迁移到独立文件 | 磁盘上是旧版内嵌附件草稿 | 改正文后保存，再重开 VM | 正文为编辑后内容，附件迁移到独立文件且字节一致 | P1 | ✅ 已覆盖 | `testLegacyDraftMigratesAttachmentsOnFirstSave` |
+| 88 | MailDraftAutosave | 连续击键必须合并成一次落盘 | 注入计数存储，防抖 60 ms | 连续 8 次改正文并 `scheduleDraftSave()`，等待 400 ms | 只落盘 1 次，内容为最后一次编辑 | P1 | ✅ 已覆盖 | `testContinuousEditsCoalesceIntoOneWrite` |
+| 89 | MailDraftAutosave | 晚到的旧快照不得覆盖新草稿（**回归 #1188**） | 门闩卡住第一份快照 | 旧保存挂起时写入新正文并保存，再释放旧保存 | 磁盘上仍是新正文 | P0 | ✅ 已覆盖 | `testStaleSaveDoesNotOverwriteNewerDraft` |
+| 90 | MailDraftAutosave | 发送成功后文本与附件草稿文件都删除 | 已保存含附件的草稿 | 调用 `send()` 并等待 phase 变为 sent | 文本与附件草稿文件均不存在 | P1 | ✅ 已覆盖 | `testSendSuccessRemovesTextAndAttachmentFiles` |
+| 91 | Mail account_id 校验 | 四个工具都必须拒绝非法 account_id，且不触达 IMAP/SMTP（**回归 #840**） | 配置 A、B 两个账户，A 在前 | 对 list/read/search/send 传 `account_id: "not-a-uuid"` | 均抛 `ToolExecutionError` 且信息含 account_id；会话创建数为 0，无发送/归档/已读改动 | P0 | ✅ 已覆盖 | `invalidAccountIDIsRejectedByEveryTool` |
+| 92 | Mail account_id 校验 | 空串与纯空白的 account_id 必须被拒绝（**回归 #840**） | 配置两个账户 | 对四个工具传 `""` / `"   "` / `"\n\t"` | 均抛参数错误，不创建会话、不寄信 | P0 | ✅ 已覆盖 | `emptyAndWhitespaceAccountIDAreRejected` |
+| 93 | Mail account_id 校验 | 非字符串类型的 account_id 必须被拒绝（**回归 #840**） | 配置两个账户 | 对四个工具传数字、布尔、null、数组、对象 | 均抛参数错误，不创建会话、不寄信 | P0 | ✅ 已覆盖 | `nonStringAccountIDIsRejected` |
+| 94 | Mail account_id 校验 | 格式合法但不存在的账户必须报错，不得伪装成空结果（**回归 #840**） | 配置两个账户 | list 与 send 传一个随机 UUID | list 抛 `ToolExecutionError`（不是「没有可用的邮件账户」成功文案），send 抛 `MailError.notFound`，不创建会话 | P0 | ✅ 已覆盖 | `unknownAccountIDIsAnErrorNotAnEmptyResult` |
+| 95 | Mail account_id 校验 | 完全省略 account_id 时仍使用第一个账户 | 配置 A、B 两个账户，A 在前 | 不带 account_id 调用 list 与 send | 列出 A 的收件箱，MIME 的 From 为 A 邮箱且不含 B 邮箱 | P1 | ✅ 已覆盖 | `omittedAccountIDStillUsesFirstAccount` |
+| 96 | Mail account_id 校验 | 传入合法 account_id 时必须使用该账户 | 配置 A、B 两个账户 | send 传 B 的 UUID | From 为 B 邮箱，不得回落到 A | P1 | ✅ 已覆盖 | `validAccountIDSelectsThatAccount` |
+| 97 | Mail account_id 校验 | UUID 两侧空白被裁掉后仍视为合法 | 配置两个账户 | send 传 `"  <B 的 UUID>\n"` | 从 B 邮箱寄出 | P1 | ✅ 已覆盖 | `surroundingWhitespaceIsTrimmed` |
+| 98 | Mail account_id 校验 | 搜索只读被请求账户的缓存 | 两个账户各有不同主题的缓存邮件 | search 传 B 的 UUID 与只匹配 B 的关键字 | 只返回 B 的命中，不混入 A 的缓存 | P1 | ✅ 已覆盖 | `searchReadsOnlyTheRequestedAccountCache` |
+| 99 | Mail account_id 校验 | schema 必须说明省略与非法值的处理方式 | — | 读取四个工具 `inputSchema` 里 account_id 的 description | 同时说明可省略（Omit）与非法值会被拒绝（rejected） | P2 | ✅ 已覆盖 | `accountIDSchemaDocumentsRejection` |
 
 > 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 63 / 63
-- P2: 已覆盖 4 / 4
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 21 / 21
+- P1: 已覆盖 73 / 73
+- P2: 已覆盖 5 / 5
+- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（63 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P1**: 其余功能性用例（73 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
