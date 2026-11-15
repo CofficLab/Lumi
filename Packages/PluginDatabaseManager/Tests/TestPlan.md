@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 103
+测试文件: 9 个，用例总数: 109
 
 核心组件（源码目录）:
 - `Agent/`
@@ -57,6 +57,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **Redis key quoting**（2 条）：由 `quotedKeyRoundTripsAsSingleArgument`、`openRedisKeySendsSingleExactKeyArgument` 锁定（**回归 #282**）：含空格/引号/反斜杠的 Redis 键经 `RedisCommandParser.quote` 引用后，`tokenize` 必须还原为单个参数；`openRedisKey` 组合的 GET 经 `compose` 解析必须只携带一个完整键，不得被空格拆成多个参数而触发 wrong-argument-count。改动 `quote`/`tokenize` 或 `openRedisKey` 命令拼接时优先跑对应用例。
 - **SQLStatementParser**（11 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标；并由 `dollarQuotedFunctionBodyIsSingleStatement`、`statementsOutsideDollarQuotesStillSplit` 等锁定（**回归 #279**）：PostgreSQL 美元引用（`$$...$$`、`$tag$...$tag$`）体内的分号不得被当成语句分隔符，函数体必须作为单条语句执行，引用之外的分号仍正常切分；位置参数 `$1` 不被误判为引用起始符。改动 `split`/`stripLiteralsAndComments` 时优先跑对应测试文件。
 - **Schema 缓存目标**（#559，4 条）：`SchemaCacheService.loadSchemas` 必须把结果写入 `schemasByConfig`，不得写进 `databasesByConfig`；加载 schema 不得覆盖数据库列表缓存，数据库与 schema 各维护自己的缓存，数据库缓存命中后不得重新查询。由 `SchemaCacheTargetTests` 锁定。
+- **结构变更暂存幂等**（#560 / #561，6 条）：`SchemaChangeManager.stageDropIndex` 与 `stageRename` 必须先按名 `removeAll` 旧条目再追加，使同一索引的重复删除、同一原列的连续重命名收敛为单条 DDL（重命名折叠为 old→final），不得生成两条都从原对象出发的语句导致保存时第二条找不到对象、整个事务回滚；不同对象的变更各自保留，受保护索引仍拒绝删除。由 `SchemaChangeStagingIdempotencyTests` 锁定；改动暂存去重或 `statements(for:)` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -202,28 +203,41 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 102 | Schema 缓存目标 | 加载数据库只写数据库缓存，不碰 schema 缓存（回归 #559） | 同上 | loadDatabases | databasesByConfig 命中，schemasByConfig 为 nil | P1 | ✅ 已覆盖 | `loadDatabasesPopulatesDatabaseCacheOnly` |
 | 103 | Schema 缓存目标 | schema 加载后数据库缓存命中不得重新查询（回归 #559） | 同上 | loadDatabases → loadSchemas → loadDatabases | pg_database 查询仅 1 次（缓存命中） | P1 | ✅ 已覆盖 | `databaseCacheHitDoesNotRequeryAfterSchemaLoad` |
 
-> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
+### 结构变更暂存幂等（回归 #560 / #561）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 104 | 暂存幂等 | 同一索引删除重复暂存只生成一条 DROP INDEX（回归 #561） | 表 t 含索引 idx_old | `stageDropIndex(idx_old)` 两次 | dropIndex 变更仅 1 条，statements 仅 1 条且含 DROP INDEX 与 idx_old | P0 | ✅ 已覆盖 | `repeatedIndexDropStagesOnce` |
+| 105 | 暂存幂等 | 删除两个不同索引各自保留一条 DROP INDEX，收敛不误删 | 表 t 含 idx_a、idx_b | 暂存 idx_a、idx_b、再 idx_a | dropIndex 变更 2 条，statements 2 条分别含 idx_a、idx_b | P1 | ✅ 已覆盖 | `distinctIndexDropsBothStaged` |
+| 106 | 暂存幂等 | 受保护索引仍拒绝删除，幂等收敛不放宽保护 | 表 t 含主键索引 primary | `stageDropIndex(primary)` | 抛出 `protectedIndex("primary")`，changes 为空 | P1 | ✅ 已覆盖 | `protectedIndexDropStillThrows` |
+| 107 | 暂存幂等 | 同一原列连续两次重命名折叠为单条 RENAME（回归 #560） | 表 t 含列 old_name | `stageRename(old_name→middle_name)` 再 `stageRename(old_name→final_name)` | rename 变更仅 1 条，statements 仅 1 条含 old_name 与 final_name、不含 middle_name | P0 | ✅ 已覆盖 | `repeatedRenameFoldsToSingleStatement` |
+| 108 | 暂存幂等 | 从已暂存的新名再次重命名生成顺序有效的链式 DDL | 表 t 含列 old_name | 暂存 old_name→middle_name，再对 middle_name 暂存 →final_name | statements 2 条：old_name→middle_name、middle_name→final_name | P1 | ✅ 已覆盖 | `renameFromPendingNameChainsValidDDL` |
+| 109 | 暂存幂等 | 重命名两个不同列各自保留一条 RENAME，收敛不误删 | 表 t 含 old_name、other | 暂存 old_name→renamed_a、other→renamed_b | rename 变更 2 条，statements 2 条分别含 renamed_a、renamed_b | P1 | ✅ 已覆盖 | `distinctColumnRenamesBothStaged` |
+
+> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
+>
+> 变异验证（#560 / #561）：当前 dev 的 `stageDropIndex`、`stageRename` 均已先按名 `removeAll` 旧条目再追加，重复暂存天然收敛为单条 DDL，两 issue 报告的重复语句在现版本不可复现（前提已过时）。为锁定该不变量补充 6 条回归用例并验证鉴别力：M1 将 `stageDropIndex` 的去重判定 `existing.name == index.name` 改为 `false`（禁用索引删除去重）→ `repeatedIndexDropStagesOnce` 转红（同一索引生成两条 DROP INDEX）；M2 将 `stageRename` 的去重判定 `oldName == column.name` 改为 `false`（禁用重命名去重）→ `repeatedRenameFoldsToSingleStatement` 转红（同一原列生成两条 RENAME）。两处变异均单独施加并确认转红后还原，最终 109 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 52 / 52
-- P1: 已覆盖 50 / 50
+- P0: 已覆盖 54 / 54
+- P1: 已覆盖 54 / 54
 - P2: 已覆盖 1 / 1
-- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
+- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
-- **P1**: 其余功能性用例（50 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（54 条）
+- **P1**: 其余功能性用例（54 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 103 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
