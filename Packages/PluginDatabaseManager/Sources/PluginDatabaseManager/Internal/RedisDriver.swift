@@ -290,26 +290,39 @@ public final class RedisDriver: DatabaseDriver, Sendable {
             throw DatabaseError.invalidConfiguration("Redis 需要有效的主机地址")
         }
         let port = try config.validatedNetworkPort(default: 6379, serviceName: "Redis")
-        return try await RedisConnection(host: host, port: port, password: config.password)
+        return try await RedisConnection(host: host, port: port, password: config.password, sslOption: config.sslOption)
     }
 }
 
 public actor RedisConnection: DatabaseConnection {
-    private let connection: NWConnection
+    private var connection: NWConnection
     private var alive = false
 
-    public init(host: String, port: Int = 6379, password: String? = nil) async throws {
+    public init(host: String, port: Int = 6379, password: String? = nil, sslOption: ConnectionSSLOption? = nil) async throws {
         guard let networkPort = UInt16(exactly: port), networkPort > 0 else {
             throw DatabaseError.invalidConfiguration("Redis 需要 1 到 65535 之间的端口")
         }
-        connection = NWConnection(
-            host: NWEndpoint.Host(host),
-            port: NWEndpoint.Port(integerLiteral: networkPort),
-            using: .tcp
-        )
+        let endpointHost = NWEndpoint.Host(host)
+        let endpointPort = NWEndpoint.Port(integerLiteral: networkPort)
+        let plan = RedisTransportPlan.make(sslOption: sslOption)
+        let queue = DispatchQueue(label: "databasekit.redis.connection")
 
-        connection.start(queue: DispatchQueue(label: "databasekit.redis.connection"))
-        try await waitForReady()
+        connection = NWConnection(
+            host: endpointHost,
+            port: endpointPort,
+            using: RedisTransportSecurity.makeParameters(plan: plan, host: host)
+        )
+        connection.start(queue: queue)
+        do {
+            try await waitForReady()
+        } catch {
+            // prefer：TLS 不可用时回退明文；require/verify-* 绝不降级，直接失败（#273）。
+            connection.cancel()
+            guard plan.allowsPlaintextFallback else { throw error }
+            connection = NWConnection(host: endpointHost, port: endpointPort, using: .tcp)
+            connection.start(queue: queue)
+            try await waitForReady()
+        }
         alive = true
 
         if let password, !password.isEmpty {

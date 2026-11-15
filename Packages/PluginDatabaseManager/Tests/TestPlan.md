@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 118
+测试文件: 12 个，用例总数: 125
 
 核心组件（源码目录）:
 - `Agent/`
@@ -60,6 +60,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **结构变更暂存幂等**（#560 / #561，6 条）：`SchemaChangeManager.stageDropIndex` 与 `stageRename` 必须先按名 `removeAll` 旧条目再追加，使同一索引的重复删除、同一原列的连续重命名收敛为单条 DDL（重命名折叠为 old→final），不得生成两条都从原对象出发的语句导致保存时第二条找不到对象、整个事务回滚；不同对象的变更各自保留，受保护索引仍拒绝删除。由 `SchemaChangeStagingIdempotencyTests` 锁定；改动暂存去重或 `statements(for:)` 时优先跑对应测试文件。
 - **切换连接的缓存失效目标**（#558，4 条）：`DatabaseViewModel.connect` 切换连接时必须把「旧连接」`previousConfigId` 传给 `schemaCache.invalidate`，不得传新 `config.id`——否则新连接刚预加载的缓存被清、旧连接的 objects/databases/schemas/tableSchema 缓存残留，编辑旧连接后重连仍命中过期元数据；新连接缓存由 `refreshSidebarObjects`（refresh:true）重建并保留，首次连接（无旧连接）与重连同一配置（previousConfigId==config.id）的行为须保持。由 `SchemaCacheConnectionSwitchTests` 锁定；改动 `connect` 的缓存失效或 `SchemaCacheService.invalidate` 时优先跑对应测试文件。
 - **主键行标识唯一性**（#555，5 条）：`TableChangeManager.rowKey` 必须对每个主键列做「列名 UTF-8 长度前缀 + 值类型标签 + 值 UTF-8 长度前缀」的规范编码，保证不同主键值产生唯一且可逆的 key；不得直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接（含 `|`/`=` 的字符串会错位碰撞、同长度 BLOB 都描述成 "N bytes"、数字与同形字符串无法区分），否则两行的 `updatesByRow`/`deletedRowKeys` 相互覆盖，最终 UPDATE/DELETE 作用到错误主键。由 `TableChangeManagerRowKeyTests` 锁定；改动 `rowKey`/`rowKeyComponent` 时优先跑对应测试文件。
+- **Redis TLS 传输安全**（#273，7 条）：`RedisDriver.connect` 必须把 `config.sslOption` 传给 `RedisConnection`，`RedisConnection.init` 必须按 `RedisTransportPlan.make` 的决策用 `RedisTransportSecurity.makeParameters` 构造 `NWParameters`，不得恒用 `.tcp`。校验强度须与 `TLSSupport.makeTLSConfiguration` 一致：disable/nil 明文；prefer TLS+不校验+可回退；require TLS+不校验+**绝不回退**；verifyCA TLS+仅校验 CA+绝不回退；verifyFull TLS+校验 CA/主机名+绝不回退。否则用户选择 TLS 后仍明文发送 AUTH，泄露凭据。由 `RedisTransportSecurityTests` 锁定；改动 Redis 连接传输层或 SSL 映射时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -235,7 +236,19 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 117 | 主键行标识 | 不同字符串主键各自生成独立的 UPDATE（回归 #555） | 文本主键 id='a=b' 与 id='a' | 分别暂存两行 value 编辑 | 两条 UPDATE，WHERE 分别为 id='a=b' 与 id='a' | P1 | ✅ 已覆盖 | `distinctStringPrimaryKeysGenerateSeparateUpdates` |
 | 118 | 主键行标识 | rowKey 对含分隔符/同形异值的主键给出不同标识（回归 #555） | 文本主键 | 比较 'a=b'/'a'、integer(1)/string("1")、'x\|y'/'x'、null/string("NULL") 的 rowKey | 各组 key 互不相同 | P1 | ✅ 已覆盖 | `rowKeyDistinguishesSeparatorLadenAndHomographValues` |
 
-> 说明：全部 **118 条场景**已在本包 `swift test` 中实跑通过。
+### Redis TLS 传输安全（回归 #273）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 119 | Redis TLS | disable 与未设置使用明文（回归 #273） | sslOption=nil/disable | 计算 `RedisTransportPlan.make` | usesTLS=false，不允许回退 | P1 | ✅ 已覆盖 | `disableAndNilUsePlaintext` |
+| 120 | Redis TLS | require 启用 TLS、不校验证书、绝不回退明文（回归 #273） | sslOption=require | 计算 `make` | usesTLS=true，verification=none，不允许回退 | P0 | ✅ 已覆盖 | `requireEnablesTLSWithoutFallback` |
+| 121 | Redis TLS | verify-ca 启用 TLS、仅校验 CA、绝不回退明文（回归 #273） | sslOption=verify-ca | 计算 `make` | usesTLS=true，verification=caOnly，不允许回退 | P0 | ✅ 已覆盖 | `verifyCAEnablesTLSWithCAOnlyVerification` |
+| 122 | Redis TLS | verify-full 启用 TLS、校验 CA+主机名、绝不回退明文（回归 #273） | sslOption=verify-full | 计算 `make` | usesTLS=true，verification=full，不允许回退 | P0 | ✅ 已覆盖 | `verifyFullEnablesTLSWithFullVerification` |
+| 123 | Redis TLS | prefer 启用 TLS、不校验证书、允许回退明文（回归 #273） | sslOption=prefer | 计算 `make` | usesTLS=true，verification=none，允许回退 | P1 | ✅ 已覆盖 | `preferEnablesTLSWithPlaintextFallback` |
+| 124 | Redis TLS | TLS 计划构造的 NWParameters 含 TLS 协议，不得是明文（回归 #273） | prefer/require/verify-ca/verify-full | `makeParameters` | applicationProtocols 含 `NWProtocolTLS.Options` | P0 | ✅ 已覆盖 | `tlsPlansProduceTLSParameters` |
+| 125 | Redis TLS | 明文计划构造的 NWParameters 不含 TLS 协议（回归 #273） | nil/disable | `makeParameters` | applicationProtocols 不含 TLS | P1 | ✅ 已覆盖 | `plaintextPlansProduceTCPParameters` |
+
+> 说明：全部 **125 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -243,24 +256,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#560 / #561）：当前 dev 的 `stageDropIndex`、`stageRename` 均已先按名 `removeAll` 旧条目再追加，重复暂存天然收敛为单条 DDL，两 issue 报告的重复语句在现版本不可复现（前提已过时）。为锁定该不变量补充 6 条回归用例并验证鉴别力：M1 将 `stageDropIndex` 的去重判定 `existing.name == index.name` 改为 `false`（禁用索引删除去重）→ `repeatedIndexDropStagesOnce` 转红（同一索引生成两条 DROP INDEX）；M2 将 `stageRename` 的去重判定 `oldName == column.name` 改为 `false`（禁用重命名去重）→ `repeatedRenameFoldsToSingleStatement` 转红（同一原列生成两条 RENAME）。两处变异均单独施加并确认转红后还原，最终 109 条全绿。
 >
 > 变异验证（#558）：`DatabaseViewModel.connect` 原先把新 `config.id` 传给 `schemaCache.invalidate`，切换连接时清掉新连接缓存、留下旧连接缓存。修复为 `if let previousConfigId { schemaCache.invalidate(configId: previousConfigId) }`。M1 将失效目标还原为 `config.id`（原 bug）→ `switchInvalidatesPreviousObjectCache` 转红（旧连接 A 的对象缓存残留）；M2 删除失效调用（`_ = previousConfigId`）→ `switchInvalidatesPreviousDatabaseAndSchemaCache` 转红（旧连接 A 的数据库/schema 缓存残留）；M3 给失效加上 `previousConfigId != config.id` 守卫（跳过同配置重连）→ `reconnectSameConfigRefreshesCache` 转红（重连同一配置后旧数据库缓存未被清）。三处变异均单独施加并确认转红后还原，最终 113 条全绿。
+>
+> 变异验证（#273）：`RedisConnection.init` 原先恒用 `NWConnection(..., using: .tcp)`，`RedisDriver.connect` 丢弃 `config.sslOption`，即便选择 TLS 也明文发送 AUTH。修复为按 `RedisTransportPlan.make` + `RedisTransportSecurity.makeParameters` 构造传输层。M1 令 `makeParameters` 恒返回 `.tcp`（传输层忽略 TLS，原 bug）→ `tlsPlansProduceTLSParameters` 转红（4 个 TLS 模式都拿不到 TLS 协议），5 条计划映射与明文用例仍绿；M2 令 `RedisTransportPlan.make` 恒返回明文计划（决策层忽略 sslOption）→ `requireEnablesTLSWithoutFallback`、`verifyCAEnablesTLSWithCAOnlyVerification`、`verifyFullEnablesTLSWithFullVerification`、`preferEnablesTLSWithPlaintextFallback`、`tlsPlansProduceTLSParameters` 转红，disable/nil 与明文用例仍绿。两处变异均单独施加并确认转红后还原，最终 125 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 58 / 58
-- P1: 已覆盖 59 / 59
+- P0: 已覆盖 62 / 62
+- P1: 已覆盖 62 / 62
 - P2: 已覆盖 1 / 1
-- **合计: 118 / 118**（仅表示清单场景，非源码覆盖率）
+- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
-- **P1**: 其余功能性用例（59 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（62 条）
+- **P1**: 其余功能性用例（62 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 118 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 125 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
