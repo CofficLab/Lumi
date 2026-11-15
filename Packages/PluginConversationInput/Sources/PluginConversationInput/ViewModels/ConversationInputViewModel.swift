@@ -32,10 +32,24 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     @Published private(set) var canSend = false
     /// 待插入编辑器的折叠块。生产方递交后由编辑器消费（插入 chip），
     /// 消费完成后清空，避免同一个块被重复插入。
-    @Published private(set) var pendingBlock: ConversationInputBlockRequest?
+    ///
+    /// 块严格归属递交时选中的对话：只有该对话仍被选中时才暴露给编辑器。
+    /// 否则 A 的未消费选区会在切到 B 后被 B 的编辑器插入，造成跨对话泄漏
+    /// （#518）。判定读的是实时选中态，切换通知与清空判定之间的窗口也安全。
+    var pendingBlock: ConversationInputBlockRequest? {
+        guard let entry = pendingBlockQueue.first,
+              entry.conversationID == capability.selectedConversationID else { return nil }
+        return entry.request
+    }
     /// 启动补投会同步连续 enqueue 多个块，单槽 pendingBlock 会让后者覆盖前者。
     /// 用 FIFO 暂存未消费的块，pendingBlock 始终指向队首，消费一个再推进到下一个（#204）。
-    private var pendingBlockQueue: [ConversationInputBlockRequest] = []
+    private var pendingBlockQueue: [PendingBlockEntry] = []
+
+    /// 队列条目：块请求 + 递交时选中的对话（#518）。
+    private struct PendingBlockEntry {
+        let request: ConversationInputBlockRequest
+        let conversationID: UUID?
+    }
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
@@ -131,9 +145,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             systemImage: block.systemImage,
             collapseThreshold: block.collapseThreshold
         )
-        pendingBlockQueue.append(request)
-        // 已有块在等待编辑器消费时只入队、不覆盖，消费后由 consumePendingBlock 推进。
-        if pendingBlock == nil { pendingBlock = pendingBlockQueue.first }
+        pendingBlockQueue.append(PendingBlockEntry(
+            request: request,
+            conversationID: capability.selectedConversationID
+        ))
         capability.isInputFocused = true
         revision &+= 1
     }
@@ -150,11 +165,12 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
     func consumePendingBlock(id: UUID) {
         guard pendingBlock?.id == id else { return }
-        pendingBlockQueue.removeAll { $0.id == id }
-        pendingBlock = pendingBlockQueue.first
+        pendingBlockQueue.removeAll { $0.request.id == id }
+        // pendingBlock 是计算属性，推进队首要靠 revision 广播给视图。
+        revision &+= 1
     }
 
-    /// 对话切换：清空输入与未提交附件。
+    /// 对话切换：清空输入、未提交附件与未消费的折叠块。
     ///
     /// 判定延迟到下一主 actor 轮次：`create_new_conversation` 会在同一主 actor
     /// 连续段里做「创建即选中 B → 恢复 A」的瞬时往返，发出两次切换通知（#781）。
@@ -169,6 +185,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             self.draftConversationID = current
             self.capability.clearInput()
             self.capability.clearAttachments()
+            // 未消费的折叠块同样属于旧草稿：归属别的对话的块一律丢弃，
+            // 切回原对话也不复活，避免 A 的代码选区插进 B 的输入框（#518）。
+            // 只丢弃不匹配的条目：切换窗口内为新对话递交的块要保留。
+            self.pendingBlockQueue.removeAll { $0.conversationID != current }
             self.refresh()
         }
     }

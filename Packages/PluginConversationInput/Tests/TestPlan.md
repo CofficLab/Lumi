@@ -80,11 +80,15 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - **切换清空必须等落定**：`handleConversationSwitched` 把清空判定延迟到下一
   主 actor 轮次，选中态落定到草稿归属对话之外才清空；`create_new_conversation`
   的瞬时选中往返不得清空未发送草稿与附件（#781）
+- **折叠块严格归属对话**：待插入块绑定递交时选中的对话，`pendingBlock` 只在
+  归属对话仍被选中时暴露（实时判定）；落定切换丢弃归属旧对话的未消费块，
+  切回也不复活。A 的代码选区绝不能插进 B 的输入框（#518）
 
 - **附件预览区拖放**（10 条）：由 `fileURLProviderResolvesToLocalURL`、`plainTextProviderResolvesToLocalURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **附件预览区拖放类型声明**（4 条）：由 `previewDeclaresFileURLOnly`、`swiftUIKeepsFileURLForImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **批次拖放顺序**（6 条）：由 `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads`、`batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` 等用例锁定（**回归 #804**）：同一批拖入的多个附件需要并发读取但按原始 URL 顺序入池，不得随 I/O 完成时序乱序；改动 `attach(droppedURLs:)` / `readAttachmentsInOrder` 时优先跑 `ConversationInputDropOrderTests.swift`。
 - **对话切换草稿保留**（4 条）：由 `transientRoundTripPreservesDraft`、`realSwitchStillClearsDraft` 等用例锁定（**回归 #781**）：切换清空判定延迟到下一主 actor 轮次，选中态落定到草稿归属对话之外的对话才清空；`create_new_conversation` 的瞬时选中往返不得清空未发送草稿与附件；改动 `handleConversationSwitched` 时优先跑 `ConversationSwitchDraftRetentionTests.swift`。
+- **折叠块跨对话隔离**（5 条）：由 `unconsumedBlockIsHiddenImmediatelyAfterSwitch`、`settledSwitchDiscardsBlockEvenAfterReturning` 等用例锁定（**回归 #518**）：待插入块绑定递交时选中的对话，归属对话之外不暴露、落定切换即丢弃；改动 `pendingBlock` / `enqueue` / `consumePendingBlock` / `handleConversationSwitched` 时优先跑 `PendingBlockConversationBindingTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -571,12 +575,37 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 变异锁定「延迟判定 + 草稿归属比对」是保留草稿的充要守卫。
 > 既有 ID 45 / 92 两条用例同步改为「等判定落定再断言」，语义不变。
 
+### 补充轮次（ID 217–221）：折叠块跨对话隔离（#518）
+
+> 「Send to Conversation」把代码选区作为折叠块递交到输入插件的待插入队列，
+> 由**当前挂载的编辑器**消费。旧实现不记录块的归属对话，切换会话也不清空
+> 队列：A 的选区尚未消费就切到 B，B 的输入框更新时把 A 的代码插了进去，
+> 跨对话泄漏。修复给每个队列条目绑定递交时选中的对话：`pendingBlock` 改为
+> 计算属性，只在归属对话仍被选中时暴露队首（读实时选中态，切换通知与落定
+> 清空之间的窗口也安全）；`handleConversationSwitched` 落定清空时一并丢弃
+> 归属别的对话的条目（切回原对话也不复活），但保留切换窗口内为新对话递交
+> 的块。瞬时选中往返（#781）不清空块，与草稿保留契约一致。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 217 | 折叠块 | 切走后未消费的块立即不再暴露，落定后也不暴露（**回归 #518**） | 选中 A + 已入队一个块 + 生产同款观察者 | 发 B 的选中通知，先同步断言再等落定 | 通知发出的同一连续段里 `pendingBlock` 即为 nil；落定后仍 nil | P0 | ✅ 已覆盖 | `unconsumedBlockIsHiddenImmediatelyAfterSwitch` |
+| 218 | 折叠块 | 落定切换丢弃块，切回原对话也不复活（**回归 #518**） | 选中 A + 已入队一个块 | 切到 B 并落定，再切回 A 并落定 | 两次落定后 `pendingBlock` 均为 nil，块不随切回复活 | P0 | ✅ 已覆盖 | `settledSwitchDiscardsBlockEvenAfterReturning` |
+| 219 | 折叠块 | 归属对话内块可正常消费，FIFO 依次推进 | 选中 A + 连续入队两个块 | 依次消费队首 | 队首始终指向第一个未消费块，消费后推进到下一个，全部消费后为 nil | P0 | ✅ 已覆盖 | `blockStaysConsumableInOriginatingConversation` |
+| 220 | 折叠块 | 瞬时选中往返 A→B→A 保留未消费的块（**回归 #518 / #781**） | 选中 A + 已入队一个块 | 同一连续段内连发 B、A 两次通知，等落定 | 块仍暴露且 id 不变 | P1 | ✅ 已覆盖 | `transientRoundTripKeepsPendingBlock` |
+| 221 | 折叠块 | 切换窗口内为新对话递交的块不被落定清空误删 | 选中 A + 已入队 A 的块 | 发 B 的通知后不等落定再入队 B 的块，然后等落定 | A 的块被丢弃，B 的块暴露且可消费 | P1 | ✅ 已覆盖 | `blockEnqueuedDuringSwitchWindowForNewConversationSurvives` |
+
+> **#518 变异验证**（恢复后 GREEN）：① 去掉 `pendingBlock` 的归属对话守卫
+> （无条件返回队首）→ ID 217 RED（切换通知后 B 仍能拿到 A 的块），其余仍
+> GREEN（落定丢弃兜底）；② 去掉落定清空里的队列丢弃 → ID 218 / 221 RED
+> （切回 A 后旧块复活；窗口内新块被旧块压在队尾），ID 217 仍 GREEN（暴露
+> 守卫兜底）。两处变异分别锁定「实时暴露守卫」与「落定丢弃」互为补充。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 76 / 76
-- P1: 已覆盖 122 / 122
+- P0: 已覆盖 79 / 79
+- P1: 已覆盖 124 / 124
 - P2: 已覆盖 18 / 18
-- **合计: 216 / 216**（仅表示清单场景，非源码覆盖率）
+- **合计: 221 / 221**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
