@@ -145,6 +145,13 @@ private struct FailedView: View {
                 Text(pluginLocalization.string("Some data could not be removed. The app was not deleted."))
                     .font(.appBody)
                     .foregroundStyle(.secondary)
+                // 内核在卸载前已停止且无法在进程内重建：必须明确告知用户
+                // 退出后重启，而不是恢复一个服务全部失效的空壳窗口（#304）。
+                Text("核心服务已停止，请退出后重新打开 Lumi。")
+                    .font(.appBody)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             ScrollView {
@@ -161,7 +168,7 @@ private struct FailedView: View {
                     .fill(theme.overlay.opacity(0.5))
             )
 
-            AppButton("关闭", style: .secondary, size: .medium) {
+            AppButton("退出应用", style: .secondary, size: .medium) {
                 onClose()
             }
         }

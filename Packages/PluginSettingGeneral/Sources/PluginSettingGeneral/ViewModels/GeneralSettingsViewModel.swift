@@ -35,6 +35,8 @@ final class GeneralSettingsViewModel: ObservableObject {
     private let diagnosticsCapability: any GeneralSettingsDiagnosticsCapability
     private let storageCapability: any GeneralSettingsStorageCapability
     private let uninstallCapability: any GeneralSettingsUninstallCapability
+    /// 退出应用的动作注入点（测试用 spy）；nil 时走真实终止流程。
+    private let quitApplicationHandler: (@MainActor () -> Void)?
 
     // MARK: - Published State (供 View 展示)
 
@@ -77,13 +79,15 @@ final class GeneralSettingsViewModel: ObservableObject {
         updateChannelCapability: any GeneralSettingsUpdateChannelCapability,
         diagnosticsCapability: any GeneralSettingsDiagnosticsCapability,
         storageCapability: any GeneralSettingsStorageCapability,
-        uninstallCapability: any GeneralSettingsUninstallCapability
+        uninstallCapability: any GeneralSettingsUninstallCapability,
+        quitApplication: (@MainActor () -> Void)? = nil
     ) {
         self.docsCapability = docsCapability
         self.updateChannelCapability = updateChannelCapability
         self.diagnosticsCapability = diagnosticsCapability
         self.storageCapability = storageCapability
         self.uninstallCapability = uninstallCapability
+        self.quitApplicationHandler = quitApplication
         refreshManuals()
         selectedUpdateChannel = updateChannelCapability.updateChannel
         refreshStorageUsage()
@@ -294,14 +298,11 @@ final class GeneralSettingsViewModel: ObservableObject {
 
         // 关闭确认弹窗，隐藏设置窗口，切换到与主窗口解耦的独立卸载浮层。
         // 内核停止后设置窗口可能暂时失去内容，浮层负责承载后续所有阶段。
-        NSApp.windows.forEach { $0.orderOut(nil) }
+        NSApplication.shared.windows.forEach { $0.orderOut(nil) }
         UninstallOverlayWindowController.shared.show(
             phase: .running,
             onExit: { [weak self] in self?.terminateAfterUninstall() },
-            onClose: {
-                UninstallOverlayWindowController.shared.close()
-                self.restoreApplicationAfterUninstallFailure()
-            }
+            onClose: { [weak self] in self?.handleUninstallFailureClose() }
         )
         NotificationCenter.default.post(name: .lumiWillUninstall, object: nil)
 
@@ -350,9 +351,17 @@ final class GeneralSettingsViewModel: ObservableObject {
         }
     }
 
-    private func restoreApplicationAfterUninstallFailure() {
-        NSApp.unhide(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first(where: { $0.canBecomeKey })?.makeKeyAndOrderFront(nil)
+    /// 卸载失败浮层的「退出应用」回调（#304）。
+    ///
+    /// 卸载前内核已停止、插件与 Provider 全部注销，而插件侧不持有完整插件
+    /// 目录，无法在进程内重新装配内核。只恢复窗口会留下一个看似可用、
+    /// 实则所有服务都不可用的空壳，因此必须显式退出，由用户重新启动应用。
+    func handleUninstallFailureClose() {
+        UninstallOverlayWindowController.shared.close()
+        if let quitApplicationHandler {
+            quitApplicationHandler()
+        } else {
+            terminateAfterUninstall()
+        }
     }
 }
