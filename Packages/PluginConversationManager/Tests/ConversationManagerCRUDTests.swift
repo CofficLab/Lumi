@@ -358,6 +358,112 @@ struct ConversationManagerCRUDTests {
         #expect(deleted.isEmpty)
         #expect(manager.conversations.map(\.id) == [old])
     }
+
+    /// 回归 #535：删除进行中的「复活窗口」里，数据库行仍在，但分页重载必须靠
+    /// 墓碑排除该 ID，选中入口也必须拒绝它。直接构造该窗口（标记墓碑但不真删），
+    /// 确定性地证明排除来自墓碑而非数据库已空。
+    @Test func deletionTombstoneExcludesConversationFromReloadAndSelection() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationTombstoneWindow-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        let doomed = try await manager.createConversationAndWait(
+            title: "Doomed", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+        let survivor = try await manager.createConversationAndWait(
+            title: "Survivor", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        // 构造「删除进行中」窗口：数据库行仍在，墓碑已标记。
+        manager.pendingDeletionIDs = [doomed]
+
+        // 列表刷新走的分页读取必须排除墓碑 ID，不能把它复活；存活会话不受影响。
+        let page = try await manager.loadConversationPage(limit: 40, includingChildConversations: false)
+        #expect(!page.contains { $0.id == doomed })
+        #expect(page.contains { $0.id == survivor })
+
+        // 选中入口必须拒绝墓碑 ID，不把幽灵 ID 写回选中态。
+        manager.selectConversation(id: survivor)
+        #expect(manager.selectedConversationID == survivor)
+        manager.selectConversation(id: doomed)
+        #expect(manager.selectedConversationID == survivor)
+
+        // 解除墓碑后数据库行重新可见：证明上面的排除来自墓碑，而不是行已被删。
+        manager.pendingDeletionIDs = []
+        let restored = try await manager.loadConversationPage(limit: 40, includingChildConversations: false)
+        #expect(restored.contains { $0.id == doomed })
+    }
+
+    /// 回归 #535：`deleteConversation` 必须在广播 `.deleted` 之前同步标记墓碑，
+    /// 删除窗口内点选幽灵 ID 被拒绝；后台清理完成后墓碑解除、数据库行消失。
+    @Test func deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationTombstoneLifecycle-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        let id = try await manager.createConversationAndWait(
+            title: "Doomed", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+        #expect(manager.selectedConversationID == id)
+
+        manager.deleteConversation(id: id)
+        // 同步窗口（后台 Task 尚未运行）：墓碑立即生效，乐观移除立即生效。
+        #expect(manager.pendingDeletionIDs.contains(id))
+        #expect(!manager.conversations.contains { $0.id == id })
+        // 删除窗口内点选幽灵 ID 必须被拒绝，不写回选中态。
+        manager.selectConversation(id: id)
+        #expect(manager.selectedConversationID != id)
+
+        // 等后台清理完成：数据库行消失，墓碑解除。
+        var remaining = await store.fetchConversation(id: id)
+        for _ in 0..<100 where remaining != nil {
+            try await Task.sleep(for: .milliseconds(20))
+            remaining = await store.fetchConversation(id: id)
+        }
+        #expect(remaining == nil)
+        #expect(!manager.pendingDeletionIDs.contains(id))
+    }
+
+    /// 回归 #535：用门闩把异步清理挡在 `deleteToolCalls`，构造「慢清理」。
+    /// 清理未完成期间墓碑必须持续生效（重载仍排除该 ID），放行后才解除。
+    /// 只测最终成功路径不算覆盖异步写回约定（仓库约定）。
+    @Test func slowCleanupHoldsTombstoneUntilCleanupFinishes() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationTombstoneSlowCleanup-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let gate = CleanupGate()
+        let manager = ConversationManager(
+            store: store, dataDirectory: directory, toolManager: GatedToolManager(gate: gate)
+        )
+        let id = try await manager.createConversationAndWait(
+            title: "Doomed", projectPath: nil, modelID: nil, parentConversationID: nil
+        )
+
+        manager.deleteConversation(id: id)
+        #expect(manager.pendingDeletionIDs.contains(id))
+
+        // 等清理推进到 deleteToolCalls 并被门闩挡住：此时清理尚未完成。
+        await gate.waitUntilReached()
+        #expect(manager.pendingDeletionIDs.contains(id))
+        let page = try await manager.loadConversationPage(limit: 40, includingChildConversations: false)
+        #expect(!page.contains { $0.id == id })
+
+        // 放行清理，等墓碑解除。
+        gate.release()
+        for _ in 0..<100 where manager.pendingDeletionIDs.contains(id) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(!manager.pendingDeletionIDs.contains(id))
+    }
 }
 
 /// #801 批量删除失败回归替身：在清理阶段的 `deleteToolCalls`（落库删除之前）
@@ -369,6 +475,64 @@ private final class RowDeletingToolManager: ToolManagerProviding {
 
     func deleteToolCalls(for conversationID: UUID) async {
         _ = await store.deleteConversations(ids: [conversationID])
+    }
+
+    func allTools() -> [any SuperAgentTool] { [] }
+    func add(_ tool: any SuperAgentTool, pluginID: String) {}
+    func remove(id: String) {}
+    func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] { [] }
+    func tool(named name: String) -> (any SuperAgentTool)? { nil }
+    func displayDescription(for toolCall: ToolCall) -> String? { nil }
+    func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel? { nil }
+    func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
+        ToolCallResult(content: "", isError: false)
+    }
+    func toolCalls(for turnID: UUID) async -> [ToolCallRecord] { [] }
+    func toolCallResult(for toolCallID: String) async -> ToolCallResult? { nil }
+}
+
+/// #535 慢清理门闩：让测试确定性地停在异步清理中途，验证墓碑的生命周期。
+@MainActor
+private final class CleanupGate {
+    private var reachedContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+    private var reached = false
+    private var released = false
+
+    /// 清理替身进入 `deleteToolCalls` 时调用，唤醒等待中的测试。
+    func signalReached() {
+        reached = true
+        reachedContinuation?.resume()
+        reachedContinuation = nil
+    }
+
+    func waitUntilReached() async {
+        if reached { return }
+        await withCheckedContinuation { reachedContinuation = $0 }
+    }
+
+    /// 测试放行清理。
+    func release() {
+        released = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+
+    func waitUntilReleased() async {
+        if released { return }
+        await withCheckedContinuation { releaseContinuation = $0 }
+    }
+}
+
+/// #535 慢清理替身：在 `deleteToolCalls` 处被门闩挡住，模拟「清理很慢」。
+@MainActor
+private final class GatedToolManager: ToolManagerProviding {
+    private let gate: CleanupGate
+    init(gate: CleanupGate) { self.gate = gate }
+
+    func deleteToolCalls(for conversationID: UUID) async {
+        gate.signalReached()
+        await gate.waitUntilReleased()
     }
 
     func allTools() -> [any SuperAgentTool] { [] }

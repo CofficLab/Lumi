@@ -22,7 +22,7 @@ extension ConversationManager {
         beforeID: UUID? = nil,
         includingChildConversations: Bool
     ) async -> [ConversationSummary] {
-        let page = await store?.fetchConversationPage(
+        let rawPage = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
@@ -30,6 +30,9 @@ extension ConversationManager {
         ) ?? []
         // 分页结果同样要进缓存：否则翻到第二页后，这些真实会话在
         // 删除/标题/偏好路径里会被缓存守卫当成不存在（issue #965）。
+        // 排除正在异步删除的会话：清理完成前数据库行仍在，若不排除，列表重载
+        // 会把刚删的会话读回来「复活」，用户还能点选这个幽灵 ID（#535）。
+        let page = rawPage.filter { !pendingDeletionIDs.contains($0.id) }
         for summary in page {
             cache(summary)
         }
@@ -43,13 +46,16 @@ extension ConversationManager {
         includingChildConversations: Bool,
         projectPath: String
     ) async -> [ConversationSummary] {
-        let page = await store?.fetchConversationPage(
+        let rawPage = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations,
             projectPath: projectPath
         ) ?? []
+        // 排除正在异步删除的会话：清理完成前数据库行仍在，若不排除，列表重载
+        // 会把刚删的会话读回来「复活」，用户还能点选这个幽灵 ID（#535）。
+        let page = rawPage.filter { !pendingDeletionIDs.contains($0.id) }
         for summary in page {
             cache(summary)
         }
@@ -65,12 +71,15 @@ extension ConversationManager {
         includingChildConversations: Bool
     ) async throws -> [ConversationSummary] {
         guard let store else { throw ConversationPageLoadError.storageUnavailable }
-        let page = try await store.loadConversationPage(
+        let rawPage = try await store.loadConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         )
+        // 排除正在异步删除的会话：清理完成前数据库行仍在，若不排除，列表重载
+        // 会把刚删的会话读回来「复活」，用户还能点选这个幽灵 ID（#535）。
+        let page = rawPage.filter { !pendingDeletionIDs.contains($0.id) }
         for summary in page {
             cache(summary)
         }
@@ -85,13 +94,16 @@ extension ConversationManager {
         projectPath: String
     ) async throws -> [ConversationSummary] {
         guard let store else { throw ConversationPageLoadError.storageUnavailable }
-        let page = try await store.loadConversationPage(
+        let rawPage = try await store.loadConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations,
             projectPath: projectPath
         )
+        // 排除正在异步删除的会话：清理完成前数据库行仍在，若不排除，列表重载
+        // 会把刚删的会话读回来「复活」，用户还能点选这个幽灵 ID（#535）。
+        let page = rawPage.filter { !pendingDeletionIDs.contains($0.id) }
         for summary in page {
             cache(summary)
         }

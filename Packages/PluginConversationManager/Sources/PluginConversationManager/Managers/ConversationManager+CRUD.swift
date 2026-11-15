@@ -302,6 +302,9 @@ extension ConversationManager {
     }
 
     public func selectConversation(id: UUID) {
+        // 正在删除的会话不能被选中：否则会把幽灵 ID 写回选中态与持久化选中，
+        // 清理完成后 UI 停在一个已不存在的会话上（#535）。
+        guard !pendingDeletionIDs.contains(id) else { return }
         if Self.verbose {
             Self.logger.info("\(Self.t)Selecting conversation \(id.uuidString.prefix(8))...")
         }
@@ -399,6 +402,9 @@ extension ConversationManager {
         let removedReasoning = reasoningEffortOverrides[id]
         let selectionBeforeDelete = selectedConversationID
 
+        // 先记墓碑再乐观移除并广播：`.deleted` 会立即触发列表重载，而此刻数据库行
+        // 仍在，重载必须靠墓碑排除该 ID，否则会把刚删的会话读回来「复活」（#535）。
+        pendingDeletionIDs.insert(id)
         conversations.removeAll { $0.id == id }
         languageOverrides[id] = nil
         reasoningEffortOverrides[id] = nil
@@ -417,11 +423,15 @@ extension ConversationManager {
         // persistent cleanup so a reload cannot resurrect the row.
         Task {
             let ids = await store?.conversationIDsToDelete(id: id) ?? [id]
+            // 连带子会话也记入墓碑：清理期间任何重载都不能把它们读回来（#535）。
+            self.pendingDeletionIDs.formUnion(ids)
             // 先落库删除，成功后才清理消息/工具调用并确认内存移除；失败时还原
             // 乐观移除，绝不把「未删掉」当成成功，也不提前销毁消息（#801）。
             // 无 store 时没有持久化层，内存移除即最终结果，视为成功。
             let deleted = await store?.deleteConversations(ids: ids) ?? true
             guard deleted else {
+                // 落库失败：解除墓碑并还原乐观移除，会话重新可见、可选中。
+                self.pendingDeletionIDs.subtract(ids)
                 self.restoreOptimisticDeletion(
                     id: id,
                     summary: removedSummary,
@@ -445,6 +455,8 @@ extension ConversationManager {
                     notifyConversationObservers(.deleted(conversationID))
                 }
             }
+            // 落库删除与清理都已完成，解除墓碑：此后重载读到的就是真实数据库状态。
+            self.pendingDeletionIDs.subtract(ids)
             self.notifyConversationsChanged()
         }
     }

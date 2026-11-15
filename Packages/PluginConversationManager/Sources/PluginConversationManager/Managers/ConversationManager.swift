@@ -33,6 +33,13 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 缓存数组之外的会话推理强度；后台回合被挤出有界缓存后，下一次 LLM 请求
     /// 仍须携带用户为它保存的档位，而不是把「未加载」当成「未设置」（issue #892）。
     var reasoningEffortOverrides: [UUID: ReasoningEffort] = [:]
+    /// 正在异步落库删除的会话 ID（含连带子会话）的墓碑集合。
+    ///
+    /// 删除是「乐观移除内存 + 异步清理持久化」两段式：清理完成前数据库里仍有该行，
+    /// 此刻任何列表重载都会把它读回来「复活」，用户还能点选这个幽灵 ID。把这些 ID
+    /// 记为墓碑，分页读取与选中入口都据此排除，直到落库删除真正完成（成功或失败
+    /// 还原）才解除（issue #535）。
+    var pendingDeletionIDs: Set<UUID> = []
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }

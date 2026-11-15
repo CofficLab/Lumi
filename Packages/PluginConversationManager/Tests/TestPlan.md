@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 108 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 111 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 108
+测试文件: 14 个，用例总数: 111
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -168,18 +168,23 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 106 | ConversationProviderReplacement | 批量清理必须作用于替换后的生产 Provider（**回归 #640**） | 过期会话已落库，解析器模拟 order 8 替换 | `deleteConversations(createdBefore:)` | 返回命中 ID，生产替身收到 `cancelTurn`/`clearMessages`，默认替身皆空 | P0 | ✅ 已覆盖 | `batchDeletionCancelsAndClearsCurrentProductionProviders` |
 | 107 | ConversationProviderReplacement | 设置页统计读取替换后的生产 MessageManager（**回归 #640**） | Capability 由动态解析的 Manager 构造，默认计数 0、生产计数 7 | 替换后读取 `messageCount`/`messagesSnapshot` | 计数为 7、快照来自生产替身，而非空默认 | P1 | ✅ 已覆盖 | `capabilityStatisticsReadCurrentProductionMessageManager` |
 | 108 | ConversationProviderReplacement | 无解析器时回退创建时捕获的 Provider（**回归 #640** 护栏） | 直接注入捕获替身、不提供解析器 | `deleteConversation(id:)` 并等后台清理 | 捕获替身收到 `cancelTurn`/`clearMessages`，旧调用方不被破坏 | P1 | ✅ 已覆盖 | `managerFallsBackToCapturedProvidersWithoutResolver` |
+| 109 | ConversationManagerCRUD | 删除进行中的复活窗口里重载与选中都排除墓碑 ID（**回归 #535**） | 会话已落库且仍在库中，标记 `pendingDeletionIDs` 模拟删除进行中 | 调用 `loadConversationPage` 与 `selectConversation(id:)` | 分页结果不含墓碑 ID（存活会话仍在），选中被拒绝；解除墓碑后该 ID 重新可见 | P0 | ✅ 已覆盖 | `deletionTombstoneExcludesConversationFromReloadAndSelection` |
+| 110 | ConversationManagerCRUD | 删除同步标记墓碑、窗口内拒绝选中、清理后解除（**回归 #535**） | 会话已落库并被选中 | 调用 `deleteConversation(id:)`，同步断言后等后台清理完成 | 墓碑与乐观移除立即生效，窗口内选中幽灵 ID 被拒绝；库行消失后墓碑解除 | P0 | ✅ 已覆盖 | `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` |
+| 111 | ConversationManagerCRUD | 门闩构造慢清理，墓碑持续生效直到清理完成（**回归 #535**） | 工具管理器替身在 `deleteToolCalls` 处被门闩挡住 | 删除后等清理停在门闩，重载一次，再放行 | 清理未完成期间墓碑仍生效、重载仍排除该 ID；放行后墓碑解除 | P0 | ✅ 已覆盖 | `slowCleanupHoldsTombstoneUntilCleanupFinishes` |
 
-> 说明：全部 **108 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **111 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
+>
+> 变异验证（#535）：① 把 `loadConversationPage`/`fetchConversationPage` 的墓碑过滤改为恒真 → `deletionTombstoneExcludesConversationFromReloadAndSelection` 转红（重载复活墓碑 ID）；② 移除 `selectConversation` 的墓碑守卫 → 同用例转红（幽灵 ID 被选中）；③ 移除 `deleteConversation` 的同步 `pendingDeletionIDs.insert` → `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` 转红；④ 移除清理成功后的 `pendingDeletionIDs.subtract` → `slowCleanupHoldsTombstoneUntilCleanupFinishes` 转红（墓碑永不解除）。变异单独施加并确认转红后还原，最终 111 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
+- P0: 已覆盖 22 / 22
 - P1: 已覆盖 81 / 81
 - P2: 已覆盖 8 / 8
-- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
+- **合计: 111 / 111**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
