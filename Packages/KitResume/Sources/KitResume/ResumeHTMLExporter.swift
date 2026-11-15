@@ -114,7 +114,11 @@ public enum ResumeHTMLExporter {
         guard pageIndex < document.pageCount, let page = document.page(at: pageIndex) else {
             throw ResumeExportError.noPages
         }
-        return try rasterize(page: page, paper: ResumePaperSpec.preset(for: paper), dpi: dpi)
+        let preset = ResumePaperSpec.preset(for: paper)
+        let box = ExportablePDFPage(page: page)
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.rasterize(page: box.page, paper: preset, dpi: dpi)
+        }.value
     }
 
     /// 导出全部页面 PNG。
@@ -126,14 +130,21 @@ public enum ResumeHTMLExporter {
     ) async throws -> [Data] {
         let document = try await renderPDFDocument(html: html, fileURL: fileURL, paper: paper)
         let preset = ResumePaperSpec.preset(for: paper)
-        return try (0..<document.pageCount).compactMap { document.page(at: $0) }.map {
-            try rasterize(page: $0, paper: preset, dpi: dpi)
+        var results: [Data] = []
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { continue }
+            let box = ExportablePDFPage(page: page)
+            let data = try await Task.detached(priority: .userInitiated) {
+                try Self.rasterize(page: box.page, paper: preset, dpi: dpi)
+            }.value
+            results.append(data)
         }
+        return results
     }
 
     /// 将已渲染 PDF 文档中的单页栅格化为指定 DPI 的 PNG
     /// （供批量导出复用同一次渲染结果）。
-    public static func pngData(page: PDFPage, paper: ResumePaperKind, dpi: Int) throws -> Data {
+    nonisolated public static func pngData(page: PDFPage, paper: ResumePaperKind, dpi: Int) throws -> Data {
         try rasterize(page: page, paper: ResumePaperSpec.preset(for: paper), dpi: dpi)
     }
 
@@ -304,7 +315,7 @@ public enum ResumeHTMLExporter {
     }
 
     /// 以矢量 PDF 页为源，按目标 DPI 栅格化为 sRGB PNG。
-    private static func rasterize(page: PDFPage, paper: ResumePaperPreset, dpi: Int) throws -> Data {
+    nonisolated private static func rasterize(page: PDFPage, paper: ResumePaperPreset, dpi: Int) throws -> Data {
         let pixelSize = paper.pixelSize(dpi: dpi)
         let width = Int(pixelSize.width.rounded())
         let height = Int(pixelSize.height.rounded())
@@ -331,6 +342,11 @@ public enum ResumeHTMLExporter {
             throw ResumeExportError.pngEncodingFailed
         }
         return data
+    }
+
+    /// PDFPage 非 Sendable；渲染期间文档只读，装箱后可安全跨线程绘制。
+    private struct ExportablePDFPage: @unchecked Sendable {
+        let page: PDFPage
     }
 
     // MARK: - Loading helpers
