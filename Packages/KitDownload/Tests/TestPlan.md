@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 100
+测试文件: 14 个，用例总数: 104
 
 ## 公开 API
 
@@ -25,7 +25,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DefaultHTTPClient**（14 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest`、`resumeRejectsContentRangeStartBehindLocalPrefix` 等用例锁定；206 续传时 Content-Range 起始偏移必须等于本地续传起点，不一致必须拒绝拼接而非报告成功（**回归 #486**）；改动该模块时优先跑对应测试文件。
+- **DefaultHTTPClient**（18 条）：由 `freshDownloadWritesEntireBody`、`nonSuccessStatusThrowsWithoutWritingFile`、`resumeAppendsWithRangeRequest`、`resumeRejectsContentRangeStartBehindLocalPrefix`、`redownloadCompleteFileWith416Completes` 等用例锁定；206 续传时 Content-Range 起始偏移必须等于本地续传起点，不一致必须拒绝拼接而非报告成功（**回归 #486**）；本地文件已完整时越界 Range 收到的 416（Content-Range bytes */total 且 total 等于本地字节数）必须视为完成，其余 416 仍报错（**回归 #374**）；改动该模块时优先跑对应测试文件。
 - **DownloadConfigurationAndState**（4 条）：由 `defaults`、`customOverrides`、`nonFinal` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadCancellationPropagation**（3 条）：由 `cancellingCallerCancelsInternalDownload`、`cancelledCallerReportsCancelledStateAndStopsWrite`、`uncancelledDownloadStillCompletes` 锁定调用方（工具 Job / turn / 会话）取消必须经 `withTaskCancellationHandler` 转发到内部非结构化下载 Task，立即停掉 HTTP 请求与文件写入并进入 `.cancelled`；未取消的正常下载不得被误伤（**回归 #471**）；改动下载取消转发或任务等待时优先跑对应测试文件。
 - **DownloadConcurrencyLimit**（3 条）：由 `maxConcurrentDownloadsLimitIsEnforced`、`defaultLimitAllowsThreeConcurrentButNotFour`、`failedDownloadReleasesSlotForQueuedDownload` 锁定 `maxConcurrentDownloads` 必须真正限制并发：名额耗尽时后续下载不得进入 HTTPClient，下载到达任一终态（含失败）必须归还名额并唤醒排队者（**回归 #484**）；改动下载并发调度时优先跑对应测试文件。
@@ -144,8 +144,12 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 98 | DownloadCancellationPropagation | 未取消的下载仍正常完成，取消转发不得误伤正常路径 | 取消探针 HTTPClient，不放行取消只放行完成 | 启动下载待其进入后放行 | 返回目标路径，状态 `.completed`，未观察到取消，文件已写出 | P1 | ✅ 已覆盖 | `uncancelledDownloadStillCompletes` |
 | 99 | DefaultHTTPClient | 206 的 Content-Range 起始偏移落后于本地续传起点时必须拒绝拼接（**回归 #486**） | 本地已有 4 字节 AAAA 与 validator，请求 Range: bytes=4- | 服务器返回 206 Content-Range: bytes 0-3/4 + BBBB | 抛错，文件仍为 AAAA，未被拼成 AAAABBBB | P0 | ✅ 已覆盖 | `resumeRejectsContentRangeStartBehindLocalPrefix` |
 | 100 | DefaultHTTPClient | 206 的 Content-Range 起始偏移超前于本地续传起点时必须拒绝拼接（**回归 #486**） | 本地已有 400 字节与 validator | 服务器返回 206 Content-Range: bytes 500-999/1000 | 抛错，文件内容不变 | P0 | ✅ 已覆盖 | `resumeRejectsContentRangeStartAheadOfLocalPrefix` |
+| 101 | DefaultHTTPClient | 本地文件已完整时越界 Range 收到 416（total 等于本地字节数）必须视为完成，不得报 httpError(416)（**回归 #374**） | 本地已有 400 字节完整文件与 validator，existingBytes=400 | 服务器返回 416 Content-Range: bytes */400 | 返回 0（不抛错），发出 Range: bytes=400-，文件不变，validator 被清除 | P0 | ✅ 已覆盖 | `redownloadCompleteFileWith416Completes` |
+| 102 | DefaultHTTPClient | 416 声明总长与本地字节数不符时必须报错，不得伪装完成（**回归 #374**） | 本地 400 字节与 validator，existingBytes=400 | 服务器返回 416 Content-Range: bytes */1000 | 抛 httpError(416)，文件不变 | P0 | ✅ 已覆盖 | `redownloadWith416MismatchedTotalStillThrows` |
+| 103 | DefaultHTTPClient | 未发 Range（无 validator）时收到的 416 必须报错（**回归 #374**） | 本地 400 字节但无 validator，existingBytes=400 | 服务器返回 416 Content-Range: bytes */400 | 抛 httpError(416)，未发 Range，文件不变 | P0 | ✅ 已覆盖 | `range416WithoutValidatorThrows` |
+| 104 | DefaultHTTPClient | 416 缺 Content-Range 时必须报错，不得臆断完成（**回归 #374**） | 本地 400 字节与 validator，existingBytes=400 | 服务器返回 416 无 Content-Range | 抛 httpError(416)，文件不变 | P0 | ✅ 已覆盖 | `redownloadWith416MissingContentRangeThrows` |
 
-> 说明：全部 **100 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > **回归 #484 变异验证**（`DownloadConcurrencyLimitTests`，逐条单独施加后跑、确认 RED 再还原）：
@@ -165,23 +169,29 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 > - **M3** 校验比较 `start != existingBytes` 反转为 `start == existingBytes`（方向反了）→ 99/100 RED（错误区间被放行），合法续传 RED（正确区间被误拒）。
 > 三处变异分别命中「校验缺失」「比错字段」「比较方向反转」三个失效面，还原后 100 条全绿。
 
+> **回归 #374 变异验证**（`DefaultHTTPClientTests`，逐条单独施加后跑、确认 RED 再还原）：
+> - **M1** 把 416 完成分支的 `return 0` 改成 `throw DownloadError.httpError(statusCode)`（完成路径误报失败）→ 101 RED（完整文件重下被报 httpError(416)）。
+> - **M2** 完成条件 `total == existingBytes` 反转为 `total != existingBytes`（比错方向）→ 101/102 RED（完整文件被误拒、总长不符的损坏文件被伪装完成）。
+> - **M3** 删除 416 完成分支的 `canResume` 前置（未发 Range 也认完成）→ 103 RED（无 validator 的异常 416 被伪装完成）。
+> 三处变异分别命中「完成路径误报」「总长比较方向」「canResume 前置缺失」三个失效面，还原后 104 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
+- P0: 已覆盖 23 / 23
 - P1: 已覆盖 74 / 74
 - P2: 已覆盖 7 / 7
-- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
+- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
 - **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 100 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -196,6 +196,21 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         let httpResp = response as? HTTPURLResponse
         let statusCode = httpResp?.statusCode ?? 0
 
+        // 416 Range Not Satisfiable：续传起点已到达文件末尾。规范服务器会带
+        // Content-Range: bytes */<total>；当本地已有字节恰好等于服务器声明的总长度时，
+        // 文件其实已完整，应视为完成而非失败（#374）。其余 416（未发 Range、缺
+        // Content-Range、本地字节与总长不符）仍按错误处理，避免把损坏/过期文件伪装成完成。
+        if statusCode == 416 {
+            if canResume,
+               let contentRange = httpResp?.value(forHTTPHeaderField: "Content-Range"),
+               let total = parseContentRangeTotal(contentRange),
+               total == existingBytes {
+                ResumeValidatorStore.remove(for: destination)
+                return 0
+            }
+            throw DownloadError.httpError(statusCode)
+        }
+
         // 检查 HTTP 状态码：非 200/206 表示服务器错误（如 403 Forbidden、404 Not Found）。
         // LFS 文件重定向失败时，HuggingFace 可能返回 HTML 错误页面而非文件内容，
         // 若不检查状态码，错误页面会被写入磁盘伪装成模型文件。

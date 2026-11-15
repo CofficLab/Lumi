@@ -462,6 +462,100 @@ struct DefaultHTTPClientTests {
         }
         #expect(try Data(contentsOf: dest) == prefix)
     }
+
+    // 回归 #374：本地文件已完整时再次下载会发出越界 Range，服务器回 416
+    // bytes */<total>；当 total 等于本地字节数时应视为已完成，而非报 httpError(416)。
+    @Test func redownloadCompleteFileWith416Completes() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        let complete = Data(repeating: 0xAA, count: 400)
+        try complete.write(to: dest)
+        ResumeValidatorStore.save(ResumeValidator(etag: "\"v1\"", lastModified: nil), for: dest, url: url)
+        let capturedRange = Box<String?>(nil)
+        DownloadStubURLProtocol.handler = { request in
+            capturedRange.value = request.value(forHTTPHeaderField: "Range")
+            return self.respond(
+                status: 416,
+                headers: ["Content-Range": "bytes */400"],
+                body: Data()
+            )
+        }
+
+        let written = try await makeClient().download(
+            from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+            progressHandler: { _, _ in }, onCancelled: { _ in }
+        )
+        #expect(written == 0)
+        #expect(capturedRange.value == "bytes=400-")
+        #expect(try Data(contentsOf: dest) == complete)
+        #expect(ResumeValidatorStore.load(for: dest, url: url) == nil)
+    }
+
+    @Test func redownloadWith416MismatchedTotalStillThrows() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        let local = Data(repeating: 0xAA, count: 400)
+        try local.write(to: dest)
+        ResumeValidatorStore.save(ResumeValidator(etag: "\"v1\"", lastModified: nil), for: dest, url: url)
+        // 服务器声明总长 1000 ≠ 本地 400：本地文件并非完整成品，不能伪装完成。
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(status: 416, headers: ["Content-Range": "bytes */1000"], body: Data())
+        }
+
+        await #expect(throws: DownloadError.httpError(416)) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        #expect(try Data(contentsOf: dest) == local)
+    }
+
+    @Test func range416WithoutValidatorThrows() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        let local = Data(repeating: 0xAA, count: 400)
+        try local.write(to: dest)
+        // 无 validator → 未发 Range（canResume=false）；此时的 416 属异常，必须报错。
+        let capturedRange = Box<String?>(nil)
+        DownloadStubURLProtocol.handler = { request in
+            capturedRange.value = request.value(forHTTPHeaderField: "Range")
+            return self.respond(status: 416, headers: ["Content-Range": "bytes */400"], body: Data())
+        }
+
+        await #expect(throws: DownloadError.httpError(416)) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        #expect(capturedRange.value == nil)
+        #expect(try Data(contentsOf: dest) == local)
+    }
+
+    @Test func redownloadWith416MissingContentRangeThrows() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest); ResumeValidatorStore.remove(for: dest) }
+        let local = Data(repeating: 0xAA, count: 400)
+        try local.write(to: dest)
+        ResumeValidatorStore.save(ResumeValidator(etag: "\"v1\"", lastModified: nil), for: dest, url: url)
+        // 416 但缺 Content-Range：无法确认总长，不能臆断完成。
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(status: 416, body: Data())
+        }
+
+        await #expect(throws: DownloadError.httpError(416)) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        #expect(try Data(contentsOf: dest) == local)
+    }
 }
 
 /// 仅实现无请求头要求的极简 conformer：验证协议扩展对 download(...:headers:) 的
