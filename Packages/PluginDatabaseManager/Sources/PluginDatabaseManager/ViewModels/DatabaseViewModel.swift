@@ -219,8 +219,10 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             tableRowCount = nil
             changeManager = nil
             schemaChangeManager = nil
-            // 切换连接时清掉旧连接的结构缓存
-            schemaCache.invalidate(configId: config.id)
+            // 切换连接时清掉旧连接的结构缓存；新连接的缓存随后由 refreshSidebarObjects 重建。
+            if let previousConfigId {
+                schemaCache.invalidate(configId: previousConfigId)
+            }
             // 记住这次连接，下次自动重连
             DatabaseConnectionStore.lastSelectedConfigID = config.id
             
