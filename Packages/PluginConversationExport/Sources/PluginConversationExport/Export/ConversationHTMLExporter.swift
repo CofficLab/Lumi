@@ -290,7 +290,13 @@ enum ConversationHTMLExporter {
         dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         dateFormatter.dateFormat = "yyyyMMdd-HHmmss"
         let suffix = mode == .share ? "-share" : ""
-        return "\(safeFilenameComponent(title))\(suffix)-\(dateFormatter.string(from: date)).html"
+        let tail = "\(suffix)-\(dateFormatter.string(from: date)).html"
+        // 标题按最终文件名的 UTF-8 字节预算截断（含日期/扩展名），不切断字素簇（#513）。
+        let component = truncateToUTF8Bytes(
+            safeFilenameComponent(title),
+            budget: Self.maxFilenameBytes - tail.utf8.count
+        )
+        return component + tail
     }
 
     private static func safeFilenameComponent(_ title: String) -> String {
@@ -310,5 +316,23 @@ enum ConversationHTMLExporter {
         let trimmed = result.trimmingCharacters(in: CharacterSet(charactersIn: ".- "))
         let fallback = trimmed.isEmpty ? "Lumi-Conversation" : trimmed
         return String(fallback.prefix(80))
+    }
+
+    /// APFS 单个路径组件的 UTF-8 字节上限。
+    private static let maxFilenameBytes = 255
+
+    /// 按 UTF-8 字节预算截断：逐字素簇累加，超出预算即停，保证不切断字符、Unicode 有效。
+    private static func truncateToUTF8Bytes(_ value: String, budget: Int) -> String {
+        guard budget > 0 else { return "" }
+        if value.utf8.count <= budget { return value }
+        var result = ""
+        var bytes = 0
+        for character in value {
+            let size = String(character).utf8.count
+            if bytes + size > budget { break }
+            result.append(character)
+            bytes += size
+        }
+        return result
     }
 }
