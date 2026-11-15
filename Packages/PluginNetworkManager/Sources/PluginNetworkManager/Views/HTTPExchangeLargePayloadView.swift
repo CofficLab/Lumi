@@ -93,11 +93,17 @@ struct HTTPExchangeLargePayloadView: View {
         panel.nameFieldStringValue = "body-" + bodyKind.rawValue + "-" + shortID + ".txt"
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
-        do {
-            try HTTPExchangeExportFormatter.text(bodyData)
-                .write(to: url, atomically: true, encoding: .utf8)
-        } catch {
-            exportError = error.localizedDescription
+        // 格式化（JSON 美化 / 逐字节 hex）与原子写入的开销随整个 body 增长，
+        // 移到后台线程；主线程只保留保存面板与错误提示（#1200）。
+        Task { @MainActor in
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try HTTPExchangeExportFormatter.text(bodyData)
+                        .write(to: url, atomically: true, encoding: .utf8)
+                }.value
+            } catch {
+                exportError = error.localizedDescription
+            }
         }
     }
 }

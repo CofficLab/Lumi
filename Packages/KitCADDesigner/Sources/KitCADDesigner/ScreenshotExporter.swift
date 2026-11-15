@@ -9,14 +9,26 @@ public struct ScreenshotExporter {
     public init() {}
 
     /// 将 SCNView 当前画面导出为 PNG。
+    ///
+    /// 只有 SCNView 捕获需要 UI 访问，留在主线程；TIFF/PNG 转换与原子写入
+    /// 随视口像素与场景复杂度增长，移到后台线程（#1195）。
     @MainActor
-    public func exportPNG(from scnView: SCNView, to url: URL) throws {
-        guard let image = captureSnapshot(from: scnView) else {
+    public func exportPNG(from scnView: SCNView, to url: URL) async throws {
+        guard let image = captureSnapshot(from: scnView),
+              let rep = image.representations.first as? NSBitmapImageRep else {
             throw ScreenshotExporterError.snapshotFailed
         }
-        guard let tiff = image.tiffRepresentation,
-              let rep = NSBitmapImageRep(data: tiff),
-              let pngData = rep.representation(using: .png, properties: [:]) else {
+        let captured = CapturedBitmap(rep)
+        try await Task.detached(priority: .userInitiated) {
+            try Self.encodePNG(captured.rep, to: url)
+        }.value
+    }
+
+    /// 在后台线程把已捕获的位图转换为 PNG 并原子写入磁盘。
+    nonisolated static func encodePNG(_ rep: NSBitmapImageRep, to url: URL) throws {
+        guard let tiff = rep.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiff),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
             throw ScreenshotExporterError.encodingFailed
         }
         try pngData.write(to: url, options: .atomic)
@@ -62,6 +74,13 @@ public struct ScreenshotExporter {
         image.addRepresentation(rep)
         return image
     }
+}
+
+/// 捕获后的位图快照视为不可变，仅读取；包一层越过 Swift 6 的 Sendable 检查，
+/// 让主线程捕获的位图能交给后台线程编码（#1195）。
+private struct CapturedBitmap: @unchecked Sendable {
+    let rep: NSBitmapImageRep
+    init(_ rep: NSBitmapImageRep) { self.rep = rep }
 }
 
 public enum ScreenshotExporterError: LocalizedError, Equatable {
