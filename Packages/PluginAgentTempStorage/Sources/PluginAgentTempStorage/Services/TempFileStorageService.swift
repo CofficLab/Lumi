@@ -12,6 +12,7 @@ enum TempFileStorageError: LocalizedError, Equatable {
     case pathTraversal
     case fileNotFound(String)
     case readFailed(String)
+    case listFailed(String)
     case settingsUnavailable(String)
     case purgeFailed(String)
 
@@ -25,6 +26,8 @@ enum TempFileStorageError: LocalizedError, Equatable {
             "Temp file not found: \(name)"
         case .readFailed(let reason):
             "Failed to read temp file: \(reason)"
+        case .listFailed(let reason):
+            "Failed to enumerate temp storage directory: \(reason)"
         case .settingsUnavailable(let reason):
             "Failed to read temp storage settings: \(reason)"
         case .purgeFailed(let reason):
@@ -144,12 +147,17 @@ actor TempFileStorageService {
         let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey]
         // 与清理一致：点文件是合法临时文件，列表不得跳过隐藏文件，
         // 否则 `.audit.txt` 可写可读却永远不可见（#327）。
+        var enumerationFailure: Error?
         guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
             includingPropertiesForKeys: keys,
-            options: [.skipsPackageDescendants]
+            options: [.skipsPackageDescendants],
+            errorHandler: { _, error in
+                enumerationFailure = error
+                return false
+            }
         ) else {
-            return []
+            throw TempFileStorageError.listFailed(filesDirectory.path)
         }
 
         let rootPath = filesDirectory.resolvingSymlinksInPath().standardizedFileURL.path
@@ -169,6 +177,10 @@ actor TempFileStorageService {
                     modifiedAt: values?.contentModificationDate ?? .distantPast
                 )
             )
+        }
+        // 枚举器对打不开的目录返回空序列而非 nil，只有 errorHandler 能区分空目录与权限/IO 失败（#511）。
+        if let enumerationFailure {
+            throw TempFileStorageError.listFailed(enumerationFailure.localizedDescription)
         }
         return files.sorted { $0.modifiedAt > $1.modifiedAt }
     }

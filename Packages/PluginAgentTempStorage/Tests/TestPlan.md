@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 26 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 28 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 26
+测试文件: 3 个，用例总数: 28
 
 核心组件（源码目录）:
 - `Services/`
@@ -29,9 +29,10 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **AgentTempStorageRuntimeBridge**（3 条）：由 `injectedDirectoryResolvesToInjectedDirectory`、`sharedStorageUsesInjectedDirectory`、`refusesFallbackWithoutInjection` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（14 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk`、`unreadableSettingsAbortPurgeAndSurfaceError` 等用例锁定；其中 `storageSupportsNestedReadWriteAndList` 锁定列表必须递归枚举嵌套文件，`purgeRemovesExpiredNestedFiles` 锁定清理必须递归删除过期嵌套文件（#200）；改动该模块时优先跑对应测试文件。
+- **综合**（16 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk`、`unreadableSettingsAbortPurgeAndSurfaceError` 等用例锁定；其中 `storageSupportsNestedReadWriteAndList` 锁定列表必须递归枚举嵌套文件，`purgeRemovesExpiredNestedFiles` 锁定清理必须递归删除过期嵌套文件（#200）；改动该模块时优先跑对应测试文件。
 - **TempFileStorageSymlink**（6 条）：由 `writeRejectsFileSymlinkPointingOutsideStorage`、`readRejectsFileSymlinkPointingOutsideStorage`、`writeRejectsNestedPathThroughSymlinkDirectory` 等用例锁定（#232）：路径边界检查必须解析符号链接，指向存储外部的文件/目录链接不得越界读写；指向内部的链接保持可用，经悬空链接目录写入必须失败且无外部副作用。改动 `resolveSafeURL` 时优先跑 `TempFileStorageSymlinkTests.swift`。
 - **点文件可见且可清理**（2 条）：由 `listsAndReadsRootDotfile`、`purgeRemovesExpiredRootDotfile` 锁定（**回归 #327**）：`.audit.txt` 这类点文件是合法临时文件，可写可读；`listFiles` 与 `purgeExpiredFiles` 的枚举都不得用 `.skipsHiddenFiles`，否则点文件可读写却永远不可见、过期也永不删除。改动两处枚举 options 时优先跑对应用例。
+- **列表枚举失败必须抛错**（2 条）：由 `listFilesThrowsWhenDirectoryCannotBeEnumerated`、`listFilesReturnsEmptyForReadableEmptyDirectory` 锁定（**回归 #511**）：`FileManager.enumerator` 对打不开的目录返回空序列而非 nil，`listFiles` 必须用 `errorHandler` 捕获失败并抛 `listFailed`，只有成功读取的空目录才返回空列表。改动 `listFiles` 枚举时优先跑对应用例。
 
 ## 测试用例清单
 
@@ -63,27 +64,29 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 24 | TempFileStorageSymlink | 经悬空符号链接目录写入失败且不产生外部副作用（**回归 #232**） | `exports` 链接指向尚不存在的外部目录 | 调用 `write(filename: "exports/data.json")` | 写入抛出错误，外部目录保持为空 | P1 | ✅ 已覆盖 | `writeThroughDanglingSymlinkDirectoryFailsWithoutExternalSideEffects` |
 | 25 | 综合 | 根级点文件可写可读且列表可见（**回归 #327**） | 写入 `.audit.txt`（新鲜） | 调用 `read` 与 `listFiles` | read 返回内容，列表为 `[".audit.txt"]`，不因隐藏文件选项而消失 | P0 | ✅ 已覆盖 | `listsAndReadsRootDotfile` |
 | 26 | 综合 | 过期根级点文件必须被清理删除（**回归 #327**） | 写入 `.audit-old.txt` 并把修改时间设为 40 天前 | 调用 `purgeExpiredFiles` 后 read/list | read 抛出 `fileNotFound`，列表为空，点文件不再永久残留 | P0 | ✅ 已覆盖 | `purgeRemovesExpiredRootDotfile` |
+| 27 | 综合 | 存储目录打不开时 listFiles 必须抛错而非返回空列表（**回归 #511**） | 写入 report.md 后用普通文件替换存储目录（ENOTDIR，与 uid 无关） | 调用 `listFiles` | 抛出 `listFailed`，不得把枚举失败当成空目录 | P0 | ✅ 已覆盖 | `listFilesThrowsWhenDirectoryCannotBeEnumerated` |
+| 28 | 综合 | 可读空目录必须返回空列表而非抛错（**回归 #511**） | 新建可读的空存储目录 | 调用 `listFiles` | 返回空列表，与「目录打不开」严格区分 | P0 | ✅ 已覆盖 | `listFilesReturnsEmptyForReadableEmptyDirectory` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
+- P0: 已覆盖 12 / 12
 - P1: 已覆盖 15 / 15
 - P2: 已覆盖 1 / 1
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
 - **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

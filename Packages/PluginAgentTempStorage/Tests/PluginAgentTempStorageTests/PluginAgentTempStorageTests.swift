@@ -265,6 +265,7 @@ struct PluginAgentTempStorageTests {
         #expect(!TempFileStorageError.pathTraversal.errorDescription!.isEmpty)
         #expect(TempFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(TempFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
+        #expect(TempFileStorageError.listFailed("boom").errorDescription?.contains("boom") == true)
         #expect(TempFileStorageError.settingsUnavailable("boom").errorDescription?.contains("boom") == true)
         #expect(TempFileStorageError.purgeFailed("old.md").errorDescription?.contains("old.md") == true)
     }
@@ -303,6 +304,37 @@ struct PluginAgentTempStorageTests {
             _ = try await service.read(filename: ".audit-old.txt")
         }
         #expect(try await service.listFiles().map(\.name).isEmpty)
+    }
+
+    /// 回归 #511：存储目录打不开（被普通文件替换 → ENOTDIR）时 listFiles 必须抛错，
+    /// 不得把枚举失败当成空目录返回空列表。普通文件替换目录与 uid 无关，root 也失败。
+    @Test
+    func listFilesThrowsWhenDirectoryCannotBeEnumerated() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let filesDir = root.appendingPathComponent("files", isDirectory: true)
+        let service = TempFileStorageService(directory: filesDir, retentionDays: 7)
+        _ = try await service.write(filename: "report.md", content: "x")
+
+        try FileManager.default.removeItem(at: filesDir)
+        try Data("not a directory".utf8).write(to: filesDir)
+
+        await #expect {
+            _ = try await service.listFiles()
+        } throws: { error in
+            guard case .listFailed = error as? TempFileStorageError else { return false }
+            return true
+        }
+    }
+
+    /// 回归 #511：可读的空目录是合法结果，必须返回空列表而不是抛错，与「目录打不开」严格区分。
+    @Test
+    func listFilesReturnsEmptyForReadableEmptyDirectory() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        #expect(try await service.listFiles().isEmpty)
     }
 
     private func makeTemporaryDirectory() throws -> URL {
