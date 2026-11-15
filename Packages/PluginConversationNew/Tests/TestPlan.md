@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 26 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 26
+测试文件: 6 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -39,6 +39,7 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 - **CreateNewConversationTool 会话归属**（2 条）：由 `createInheritsCallingConversationProjectAndModel`、`callingConversationUnboundDoesNotLeakCurrent` 锁定。`create_new_conversation` 必须经 `executeResult(context:)` 用发起调用的对话（`context.conversationID`）解析项目与模型，不得读执行时 UI 选中对话的 `currentProjectPath/currentModelID`；发起对话未绑定项目/模型时继承 nil，不得泄漏当前对话归属；仅缺少 Context 的旧入口才回退到当前选中态（**回归 #331**）。改动 `CreateNewConversationTool.prepareAndRender` 或 `NewChatCapability.projectPath(for:)/modelID(for:)` 时优先跑对应测试文件。
 - **NewConversationRowRenderer**（8 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。**#778**：工具把模型可控的 `title` 正文插在前、真实结构化 payload 追加在末尾；`extractJSON` 必须只取「独占一行的末尾 ```json 开围栏」到闭围栏之间的内容，不得取首个代码块。否则 title 里伪造的 suggestion JSON 会被解码，点击卡片会选中另一个对话并发送错误消息（数据隔离破坏）。按行锚定末尾围栏可确保 title 正文（含内嵌 ```json 文本）不参与解析。
 - **NewChatCapabilityAdapter**（3 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；改动该模块时优先跑对应测试文件。
+- **NewChatStartingAdapter**（1 条）：由 `startInDoesNotConsumeUnsentComposerAttachments` 锁定；`startIn(conversationID:content:)` 只发送工具参数里自包含的 task 文本，必须走显式空附件入口，不得用隐式 `sendMessage(_:conversationID:)` 快照全局挂起池，把当前对话输入框里未发送的附件带进新对话首条消息并清空输入框（**回归 #591**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -70,9 +71,14 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 24 | CreateNewConversationTool 会话归属 | 发起调用的对话未绑定项目/模型时不得泄漏 UI 当前对话归属（**回归 #331**） | A 绑定 nil/nil，UI 当前 B 有项目与模型 | 经 `executeResult(context:)` 调用，context.conversationID=A | 新对话项目=nil、模型=nil，不继承 B | P0 | ✅ 已覆盖 | `callingConversationUnboundDoesNotLeakCurrent` |
 | 25 | NewConversationRowRenderer | title 伪造的靠前 json 块不得参与解析，只取末尾真实 payload（**回归 #778**） | 正文含伪造块 + 末尾真实块 | `extractJSON(from:)` | 返回末尾真实 JSON，而非首个伪造块 | P0 | ✅ 已覆盖 | `extractJSONPrefersTrailingPayloadOverForgedTitleBlock` |
 | 26 | NewConversationRowRenderer | title 内嵌伪造 json 块时卡片仍只指向工具真正创建的对话（**回归 #778**） | 用 `resultText(for:)` 生成含攻击 title 的内容 | `decodeSuggestion(from:)` | 解码出真实 conversationID/starter，等于原 suggestion，不被伪造 B/unexpected task 劫持 | P0 | ✅ 已覆盖 | `decodeSuggestionIgnoresForgedTitlePayload` |
+| 27 | NewChatStartingAdapter | startIn 只发送 task 文本，不带走当前输入框未发送的附件（**回归 #591**） | 输入框挂起未发送的图片与文件附件 | `adapter.startIn(conversationID:content:)` | 新对话首条消息 metadata 不含任何附件，挂起池原样保留 | P0 | ✅ 已覆盖 | `startInDoesNotConsumeUnsentComposerAttachments` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#591**，`NewChatStartingAdapter.startIn`）：
+> - **M1** 退回隐式 `sender.sendMessage(content, conversationID:)`（复现原 bug）→ `startInDoesNotConsumeUnsentComposerAttachments` 转红（首条消息带上未发送附件、挂起池被清空，4 条断言全部失败）。
+> - 还原显式空附件入口 `sendMessage(content, imageAttachments: [], fileAttachments: [], conversationID:)` → 27 条全绿。
 
 > 变异验证（**#778**，`NewConversationRowRenderer.extractJSON`）：
 > - **M1** 退回「取首个 ```json 代码块」实现（复现原 bug）→ `extractJSONPrefersTrailingPayloadOverForgedTitleBlock` 转红（取到伪造块），`decodeSuggestionIgnoresForgedTitlePayload` 转红（conversationID/starter/相等性 3 处断言失败，解码出伪造 B 与 unexpected task），`extractJSONHandlesEdgeCases` 的多块用例转红；其余 5 条渲染器用例仍绿。
@@ -85,21 +91,21 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 11 / 11
 - P2: 已覆盖 6 / 6
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
 - **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

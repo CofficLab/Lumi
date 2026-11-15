@@ -24,6 +24,14 @@ final class NewChatStartingAdapter: NewChatStarting {
 
     func startIn(conversationID: UUID, content: String) async {
         guard let sender else { return }
-        try? await sender.sendMessage(content, conversationID: conversationID)
+        // 只发送工具参数里自包含的 task 文本，必须走显式空附件入口：隐式
+        // sendMessage 会快照全局挂起池，把当前对话输入框里未发送的附件带进
+        // 新对话的首条消息并清空输入框，附件可能落到另一个项目/模型上下文（#591）。
+        try? await sender.sendMessage(
+            content,
+            imageAttachments: [],
+            fileAttachments: [],
+            conversationID: conversationID
+        )
     }
 }
