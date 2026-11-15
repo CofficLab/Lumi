@@ -419,6 +419,40 @@ struct ContextRecoveryToolsTests {
         observer.cancel()
     }
 
+    @Test("会话删除事件清空摘要库中的明文摘要（#350）")
+    func deletionObserverRemovesPersistedSummary() async throws {
+        let conversations = DefaultConversationManager()
+        let conversationID = try conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        let summaryStore = try ContextSummaryStore(directory: makeDirectory())
+        try await summaryStore.save(ContextSummaryRecord(
+            conversationID: conversationID,
+            text: "被删除会话的明文摘要",
+            coveredThroughMessageID: UUID(),
+            sourceLastMessageID: UUID(),
+            providerID: "p",
+            modelName: "m",
+            sourceMessageCount: 10,
+            updatedAt: Date()
+        ))
+        #expect(try await summaryStore.load(conversationID: conversationID) != nil)
+        let provider = LLMContextProvider(
+            messages: DefaultMessageManager(), conversations: conversations,
+            llmProvider: DefaultLLMManager(), summaryStore: summaryStore
+        )
+        let observer = LLMContextConversationDeletionObserver(conversations: conversations) {
+            [weak provider] id in
+            await provider?.purgeConversation(id)
+        }
+
+        conversations.deleteConversation(id: conversationID)
+        await observer.waitForPendingDeletion()
+
+        #expect(try await summaryStore.load(conversationID: conversationID) == nil)
+        observer.cancel()
+    }
+
     // MARK: - doctrine refusal
 
     @Test("摘要模型拒绝折叠时不产出块，历史走确定性降级")
