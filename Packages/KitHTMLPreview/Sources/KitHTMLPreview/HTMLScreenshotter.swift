@@ -24,8 +24,26 @@ public struct HTMLScreenshotter {
         timeout: TimeInterval = 30,
         limits: HTMLScreenshotLimits = .standard
     ) async throws -> NSImage {
+        // WebKit 交互必须留在主 actor；PDF 解析与逐页栅格化是纯 CPU/分配重活，
+        // 移到后台线程，避免每次截图都阻塞 UI（见 issue #1263）。
         let pdfData = try await createPDF(from: webView, timeout: timeout)
+        let cgImage = try await Task.detached(priority: .userInitiated) {
+            try rasterize(pdfData: pdfData, limits: limits)
+        }.value
+        return NSImage(
+            cgImage: cgImage,
+            size: NSSize(width: cgImage.width, height: cgImage.height)
+        )
+    }
 
+    /// 把 PDF 数据解析并逐页栅格化成位图。
+    ///
+    /// 纯 CPU 与内存分配工作，不依赖主 actor，可在后台线程执行（见 issue #1263）。
+    /// 资源上限在分配位图前校验，避免超长页面驱动无界内存。
+    nonisolated static func rasterize(
+        pdfData: Data,
+        limits: HTMLScreenshotLimits
+    ) throws -> CGImage {
         guard let pdfDocument = PDFDocument(data: pdfData) else {
             throw HTMLError.pdfCreationFailed
         }
@@ -57,7 +75,7 @@ public struct HTMLScreenshotter {
             throw HTMLError.emptyDocument
         }
         // CSS 文档高度不受画布尺寸约束：先按页数与总像素拒绝，
-        // 再分配位图，避免超长页面驱动无界的内存分配与主线程栅格化。
+        // 再分配位图，避免超长页面驱动无界的内存分配与栅格化。
         guard !geometry.exceeds(limits) else {
             throw HTMLError.snapshotTooLarge(
                 pageCount: geometry.pageCount,
@@ -66,40 +84,44 @@ public struct HTMLScreenshotter {
             )
         }
 
-        let imageSize = NSSize(width: maxWidth, height: totalHeight)
-        let image = NSImage(size: imageSize)
-        image.lockFocus()
-
-        // 填充白色背景
-        NSColor.white.set()
-        NSRect(origin: .zero, size: imageSize).fill()
-
-        guard let context = NSGraphicsContext.current else {
-            image.unlockFocus()
-            throw HTMLError.renderingFailed("Failed to get graphics context")
+        let width = Int(maxWidth.rounded(.up))
+        let height = Int(totalHeight.rounded(.up))
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            throw HTMLError.renderingFailed("Failed to create bitmap context")
         }
 
-        let cgContext = context.cgContext
+        // 填充白色背景
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
-        // NSImage.lockFocus() 创建的 CGContext 原点位于左下角，Y 轴向上，
-        // 与 PDF 坐标系一致。PDFPage.draw() 内部会自行处理坐标映射，
-        // 所以不需要额外翻转。
+        // 位图 CGContext 原点位于左下角，Y 轴向上，与 PDF 坐标系一致。
+        // PDFPage.draw() 内部会自行处理坐标映射，所以不需要额外翻转。
         // 但页面需要反向绘制：先画最后一页到图像底部，再画第一页到图像顶部。
         // 这样用户在左上角原点的图像中看到的就是正确从上到下的 HTML 内容。
         var currentY: CGFloat = 0
         for (index, bounds) in pageBounds.enumerated().reversed() {
             guard let page = pdfDocument.page(at: index) else { continue }
 
-            cgContext.saveGState()
-            cgContext.translateBy(x: 0, y: currentY)
+            context.saveGState()
+            context.translateBy(x: 0, y: currentY)
 
-            page.draw(with: .mediaBox, to: cgContext)
+            page.draw(with: .mediaBox, to: context)
 
-            cgContext.restoreGState()
+            context.restoreGState()
             currentY += bounds.height
         }
 
-        image.unlockFocus()
+        guard let image = context.makeImage() else {
+            throw HTMLError.renderingFailed("Failed to make image from context")
+        }
         return image
     }
 
