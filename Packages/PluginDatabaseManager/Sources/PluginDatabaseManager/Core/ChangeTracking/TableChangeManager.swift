@@ -5,7 +5,7 @@ import Combine
 ///
 /// 采用内联而非参数绑定，是为了在 SQLite/MySQL/PostgreSQL 三种方言下统一生成
 /// 可直接 `execute(sql, params: nil)` 的语句。BLOB 暂不支持内联（v1 视为只读）。
-public func sqlLiteral(for value: DatabaseValue) -> String {
+public func sqlLiteral(for value: DatabaseValue, dialect: DatabaseType) -> String {
     switch value {
     case .null:
         return "NULL"
@@ -16,11 +16,22 @@ public func sqlLiteral(for value: DatabaseValue) -> String {
     case .bool(let b):
         return b ? "TRUE" : "FALSE"
     case .string(let s):
-        return "'" + s.replacingOccurrences(of: "'", with: "''") + "'"
+        return "'" + escapeSQLString(s, dialect: dialect) + "'"
     case .data:
         // BLOB 编辑在 v1 不支持；生成 NULL 避免破坏语句结构。
         return "NULL"
     }
+}
+
+/// MySQL 默认开启反斜杠转义（NO_BACKSLASH_ESCAPES 关闭），`\n`/`\t`/`\0` 会被
+/// 解释成控制字符，必须先转义反斜杠再转义单引号，否则保存会静默改写用户输入（#582）。
+/// SQLite/PostgreSQL 标准字符串里反斜杠是普通字符，只转义单引号。
+private func escapeSQLString(_ s: String, dialect: DatabaseType) -> String {
+    var escaped = s
+    if dialect == .mysql {
+        escaped = escaped.replacingOccurrences(of: "\\", with: "\\\\")
+    }
+    return escaped.replacingOccurrences(of: "'", with: "''")
 }
 
 /// 把单元格编辑文本解析为 ``DatabaseValue``：
@@ -272,10 +283,10 @@ public final class TableChangeManager: ObservableObject {
         func q(_ name: String) -> String { DatabaseViewModel.quoteIdentifier(name, for: type) }
 
         return updatesByRow.values.map { row in
-            let setClause = row.columnUpdates.map { "\(q($0.key)) = \(sqlLiteral(for: $0.value))" }
+            let setClause = row.columnUpdates.map { "\(q($0.key)) = \(sqlLiteral(for: $0.value, dialect: type))" }
                 .joined(separator: ", ")
             let whereClause = row.primaryKeyValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value))" }
+                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value, dialect: type))" }
                 .joined(separator: " AND ")
             return "UPDATE \(tableExpr) SET \(setClause) WHERE \(whereClause);"
         }
@@ -302,7 +313,7 @@ public final class TableChangeManager: ObservableObject {
             // 按表结构列顺序输出，保证可读性
             let orderedColumns = allColumnNames.filter { insert.columnValues[$0] != nil }
             let cols = orderedColumns.map(q).joined(separator: ", ")
-            let vals = orderedColumns.map { sqlLiteral(for: insert.columnValues[$0]!) }.joined(separator: ", ")
+            let vals = orderedColumns.map { sqlLiteral(for: insert.columnValues[$0]!, dialect: type) }.joined(separator: ", ")
             return "INSERT INTO \(tableExpr) (\(cols)) VALUES (\(vals));"
         }
         .filter { !$0.isEmpty }
@@ -315,7 +326,7 @@ public final class TableChangeManager: ObservableObject {
         return deletedRowKeys.compactMap { key -> String? in
             guard let pkValues = deletedPKValues[key] else { return nil }
             let whereClause = pkValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value))" }
+                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value, dialect: type))" }
                 .joined(separator: " AND ")
             return "DELETE FROM \(tableExpr) WHERE \(whereClause);"
         }

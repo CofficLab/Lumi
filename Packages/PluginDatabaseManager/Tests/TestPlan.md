@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 125
+测试文件: 13 个，用例总数: 131
 
 核心组件（源码目录）:
 - `Agent/`
@@ -61,6 +61,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **切换连接的缓存失效目标**（#558，4 条）：`DatabaseViewModel.connect` 切换连接时必须把「旧连接」`previousConfigId` 传给 `schemaCache.invalidate`，不得传新 `config.id`——否则新连接刚预加载的缓存被清、旧连接的 objects/databases/schemas/tableSchema 缓存残留，编辑旧连接后重连仍命中过期元数据；新连接缓存由 `refreshSidebarObjects`（refresh:true）重建并保留，首次连接（无旧连接）与重连同一配置（previousConfigId==config.id）的行为须保持。由 `SchemaCacheConnectionSwitchTests` 锁定；改动 `connect` 的缓存失效或 `SchemaCacheService.invalidate` 时优先跑对应测试文件。
 - **主键行标识唯一性**（#555，5 条）：`TableChangeManager.rowKey` 必须对每个主键列做「列名 UTF-8 长度前缀 + 值类型标签 + 值 UTF-8 长度前缀」的规范编码，保证不同主键值产生唯一且可逆的 key；不得直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接（含 `|`/`=` 的字符串会错位碰撞、同长度 BLOB 都描述成 "N bytes"、数字与同形字符串无法区分），否则两行的 `updatesByRow`/`deletedRowKeys` 相互覆盖，最终 UPDATE/DELETE 作用到错误主键。由 `TableChangeManagerRowKeyTests` 锁定；改动 `rowKey`/`rowKeyComponent` 时优先跑对应测试文件。
 - **Redis TLS 传输安全**（#273，7 条）：`RedisDriver.connect` 必须把 `config.sslOption` 传给 `RedisConnection`，`RedisConnection.init` 必须按 `RedisTransportPlan.make` 的决策用 `RedisTransportSecurity.makeParameters` 构造 `NWParameters`，不得恒用 `.tcp`。校验强度须与 `TLSSupport.makeTLSConfiguration` 一致：disable/nil 明文；prefer TLS+不校验+可回退；require TLS+不校验+**绝不回退**；verifyCA TLS+仅校验 CA+绝不回退；verifyFull TLS+校验 CA/主机名+绝不回退。否则用户选择 TLS 后仍明文发送 AUTH，泄露凭据。由 `RedisTransportSecurityTests` 锁定；改动 Redis 连接传输层或 SSL 映射时优先跑对应测试文件。
+- **字符串字面量的方言转义**（#582，6 条）：`sqlLiteral(for:dialect:)` 生成内联字符串字面量时必须按方言转义——MySQL 默认开启反斜杠转义（NO_BACKSLASH_ESCAPES 关闭），须先把 `\` 翻倍再转义单引号，否则用户输入的 `\n`/`\t`/`\0` 被静默改写成控制字符、保存后内容与编辑器所见不一致；SQLite/PostgreSQL 标准串里反斜杠是普通字符，只转义单引号。UPDATE/INSERT/DELETE 三处生成路径都须传入当前 `DatabaseType`。由 `TableChangeManagerStringEscapeTests` 锁定；改动 `sqlLiteral`/`escapeSQLString` 或语句生成时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -248,7 +249,18 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 124 | Redis TLS | TLS 计划构造的 NWParameters 含 TLS 协议，不得是明文（回归 #273） | prefer/require/verify-ca/verify-full | `makeParameters` | applicationProtocols 含 `NWProtocolTLS.Options` | P0 | ✅ 已覆盖 | `tlsPlansProduceTLSParameters` |
 | 125 | Redis TLS | 明文计划构造的 NWParameters 不含 TLS 协议（回归 #273） | nil/disable | `makeParameters` | applicationProtocols 不含 TLS | P1 | ✅ 已覆盖 | `plaintextPlansProduceTCPParameters` |
 
-> 说明：全部 **125 条场景**已在本包 `swift test` 中实跑通过。
+### 字符串字面量的方言转义（回归 #582）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 126 | 字符串方言转义 | MySQL 字符串必须转义反斜杠，逐字节保留用户输入（回归 #582） | — | `sqlLiteral(for: .string("C:\new\test"), dialect: .mysql)` | 等于 `'C:\\new\\test'`（反斜杠翻倍） | P0 | ✅ 已覆盖 | `mysqlStringEscapesBackslash` |
+| 127 | 字符串方言转义 | MySQL 字符串同时含单引号与反斜杠时两者都正确转义 | — | `sqlLiteral(for: .string("a\'b"), dialect: .mysql)` | 等于 `'a\\''b'` | P1 | ✅ 已覆盖 | `mysqlStringEscapesQuoteAndBackslash` |
+| 128 | 字符串方言转义 | SQLite/PostgreSQL 标准串不转义反斜杠，只转义单引号 | — | 对 `C:\new\test` 与 `it's` 调用 sqlite/postgresql 字面量 | 反斜杠原样保留，单引号翻倍 | P1 | ✅ 已覆盖 | `standardDialectsKeepBackslashLiteral` |
+| 129 | 字符串方言转义 | MySQL UPDATE 语句对含反斜杠的单元格值正确转义 | 表 t(id PK, name TEXT) | 暂存 name=`C:\new\test` 后 `generatedUpdateStatements(for: .mysql)` | SET 子句为 `` `name` = 'C:\\new\\test' `` | P1 | ✅ 已覆盖 | `mysqlUpdateEscapesBackslash` |
+| 130 | 字符串方言转义 | MySQL INSERT 语句对含反斜杠的字符串正确转义 | 表 t(id PK, name TEXT) | 新增行设 name=`path\to` 后 `generatedInsertStatements(for: .mysql)` | VALUES 为 `('path\\to')` | P1 | ✅ 已覆盖 | `mysqlInsertEscapesBackslash` |
+| 131 | 字符串方言转义 | MySQL DELETE 的主键字符串含反斜杠时也正确转义 | 文本主键表 t | 删除主键 `k\1` 的行后 `generatedDeleteStatements(for: .mysql)` | WHERE 为 `` `id` = 'k\\1' `` | P1 | ✅ 已覆盖 | `mysqlDeleteEscapesBackslashInPrimaryKey` |
+
+> 说明：全部 **131 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -258,24 +270,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#558）：`DatabaseViewModel.connect` 原先把新 `config.id` 传给 `schemaCache.invalidate`，切换连接时清掉新连接缓存、留下旧连接缓存。修复为 `if let previousConfigId { schemaCache.invalidate(configId: previousConfigId) }`。M1 将失效目标还原为 `config.id`（原 bug）→ `switchInvalidatesPreviousObjectCache` 转红（旧连接 A 的对象缓存残留）；M2 删除失效调用（`_ = previousConfigId`）→ `switchInvalidatesPreviousDatabaseAndSchemaCache` 转红（旧连接 A 的数据库/schema 缓存残留）；M3 给失效加上 `previousConfigId != config.id` 守卫（跳过同配置重连）→ `reconnectSameConfigRefreshesCache` 转红（重连同一配置后旧数据库缓存未被清）。三处变异均单独施加并确认转红后还原，最终 113 条全绿。
 >
 > 变异验证（#273）：`RedisConnection.init` 原先恒用 `NWConnection(..., using: .tcp)`，`RedisDriver.connect` 丢弃 `config.sslOption`，即便选择 TLS 也明文发送 AUTH。修复为按 `RedisTransportPlan.make` + `RedisTransportSecurity.makeParameters` 构造传输层。M1 令 `makeParameters` 恒返回 `.tcp`（传输层忽略 TLS，原 bug）→ `tlsPlansProduceTLSParameters` 转红（4 个 TLS 模式都拿不到 TLS 协议），5 条计划映射与明文用例仍绿；M2 令 `RedisTransportPlan.make` 恒返回明文计划（决策层忽略 sslOption）→ `requireEnablesTLSWithoutFallback`、`verifyCAEnablesTLSWithCAOnlyVerification`、`verifyFullEnablesTLSWithFullVerification`、`preferEnablesTLSWithPlaintextFallback`、`tlsPlansProduceTLSParameters` 转红，disable/nil 与明文用例仍绿。两处变异均单独施加并确认转红后还原，最终 125 条全绿。
+>
+> 变异验证（#582）：`sqlLiteral` 原先对字符串只把 `'` 替换成 `''`，MySQL 默认开启反斜杠转义，用户输入的 `\n`/`\t` 被静默改写成控制字符。修复为按方言转义：MySQL 先把 `\` 翻倍再转义单引号，SQLite/PostgreSQL 保持只转义单引号。M1 禁用 MySQL 反斜杠转义分支（`if dialect == .mysql && false`）→ `mysqlStringEscapesBackslash`、`mysqlStringEscapesQuoteAndBackslash`、`mysqlUpdateEscapesBackslash`、`mysqlInsertEscapesBackslash`、`mysqlDeleteEscapesBackslashInPrimaryKey` 转红，`standardDialectsKeepBackslashLiteral` 仍绿。变异施加并确认转红后还原，最终 131 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 62 / 62
-- P1: 已覆盖 62 / 62
+- P0: 已覆盖 63 / 63
+- P1: 已覆盖 67 / 67
 - P2: 已覆盖 1 / 1
-- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
+- **合计: 131 / 131**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（62 条）
-- **P1**: 其余功能性用例（62 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（63 条）
+- **P1**: 其余功能性用例（67 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 125 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 131 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
