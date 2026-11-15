@@ -97,6 +97,11 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         imageDirectory: URL = FileManager.default.temporaryDirectory,
         isStillActive: (@Sendable () async -> Bool)? = nil
     ) async -> [ClipboardItem] {
+        // 密码管理器等会把「禁止留存」的内容标记为 transient / concealed。
+        // 命中即整体跳过：不返回条目、不写库、不写图片文件。即使生产者随后
+        // 清空系统剪贴板，Lumi 也不得保留副本（#774）。
+        if isExcludedFromHistory(pasteboard) { return [] }
+
         // Handle file URLs first (sync, no I/O)
         if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
             let fileItems = fileUrls
@@ -135,6 +140,22 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         }
 
         return []
+    }
+
+    /// 「禁止留存」的剪贴板标记类型（#774）。
+    ///
+    /// 密码管理器用这两个 UTI 声明内容不得被第三方持久化：
+    /// - `org.nspasteboard.TransientType`：临时内容，不应进入历史；
+    /// - `org.nspasteboard.ConcealedType`：敏感内容（如密码）。
+    static let excludedMarkerTypes: Set<NSPasteboard.PasteboardType> = [
+        NSPasteboard.PasteboardType("org.nspasteboard.TransientType"),
+        NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType"),
+    ]
+
+    /// 剪贴板是否携带「禁止留存」标记。命中即整体跳过收集（#774）。
+    static func isExcludedFromHistory(_ pasteboard: NSPasteboard) -> Bool {
+        guard let types = pasteboard.types else { return false }
+        return types.contains { Self.excludedMarkerTypes.contains($0) }
     }
 
     /// 读取剪贴板里的富文本表示。HTML 可能非常大，交给 ClipboardItem 统一限流。
