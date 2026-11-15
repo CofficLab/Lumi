@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 32 条用例。
+PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 33 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 32
+测试文件: 2 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Observers/`
@@ -27,7 +27,7 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationForkSelectionObserver**（3 条）：由 `buttonHiddenWithoutSelectedConversation`、`buttonFollowsSelectionState`、`doesNotRegisterTwice` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（27 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（28 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -65,27 +65,32 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 | 30 | 项目绑定 | 有项目源对话 fork 后沿用同一项目 | 当前项目 `/tmp/current-project`，源对话绑定 `/tmp/source-project` | 执行 `fork` | 副本 `projectPath` 为 `/tmp/source-project`，不受当前项目影响 | P1 | ✅ 已覆盖 | `forkOfBoundConversationKeepsItsProject` |
 | 31 | 综合 | 附件解码仅限保留窗口（**回归 #1324**） | `maxMessages + 40` 条带图片附件的 user 消息 | 重置 `attachmentDecodeCount` 后调用 `filteredMessages` | 仅保留最近 `maxMessages` 条，附件解码次数不超过 `maxMessages` | P1 | ✅ 已覆盖 | `filteredMessagesBoundsAttachmentDecodeToRetainedWindow` |
 | 32 | 综合 | 反向扫描跳过空消息保留最近可用条（**回归 #1324**） | 可用消息与空白消息交替，共 `maxMessages + 10` 轮 | 调用 `filteredMessages` | 保留 `maxMessages` 条可用消息，首条 `u10`、末条 `u(maxMessages+9)`，无空白 | P1 | ✅ 已覆盖 | `filteredMessagesReverseScanKeepsRecentUsableWithEmpties` |
+| 33 | 综合 | fork 只发送摘要，不带走源对话未发送的附件（**回归 #578**） | 源对话有历史，输入框挂起未发送的图片与文件附件 | 执行 `fork` | 摘要消息 metadata 不含任何附件，挂起池原样保留 | P0 | ✅ 已覆盖 | `forkDoesNotConsumeUnsentComposerAttachments` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#578）：把 `ConversationForkCoordinator.fork` 的发送改回隐式
+> `sender.sendMessage(summary, conversationID:)`，用例 33 立即转红（摘要消息
+> 带上未发送附件、挂起池被清空，4 条断言全部失败）；恢复显式空附件入口后转绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 19 / 19
 - P2: 已覆盖 6 / 6
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
