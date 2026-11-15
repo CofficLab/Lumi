@@ -2275,6 +2275,16 @@ public final class EditorState: ObservableObject, SuperLog {
 
     /// 真正执行查找匹配扫描。
     private func performFindMatchRefresh() {
+        // 查找面板关闭时匹配结果无人消费，跳过全文档正则扫描（见 issue #1279）。
+        // findText 在关闭面板后仍保留，若不加此守卫，每次按键仍会全文档扫描。
+        // 重新打开面板会触发 refreshFindMatches 重新扫描。
+        guard activeSession.findReplaceState.isFindPanelVisible else {
+            applyFindMatchesResult(
+                EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
+            )
+            return
+        }
+
         guard let text = content?.string else {
             applyFindMatchesResult(
                 EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)

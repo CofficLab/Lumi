@@ -189,4 +189,31 @@ struct EditorFindMatchPerformanceTests {
 
         #expect(state.findMatches.count == 2)
     }
+
+    @Test("关闭面板后保留查询但跳过扫描，重新打开恢复匹配")
+    func closedPanelSkipsScanAndReopenRestoresMatches() {
+        let state = EditorState(editorExtensions: EditorExtensionRegistry())
+        _ = state.documentController.load(text: "foo bar foo")
+        state.content = state.documentController.textStorage
+        state.openFindPanel()
+        state.updateFindQuery("foo")
+        state.refreshFindMatches()
+        #expect(state.findMatches.count == 2)
+
+        // 关闭面板保留 findText，但匹配结果无人消费：清空且不再全文档扫描。
+        state.closeFindPanel()
+        #expect(state.activeSession.findReplaceState.findText == "foo")
+        #expect(!state.activeSession.findReplaceState.isFindPanelVisible)
+        state.refreshFindMatches()
+        #expect(state.findMatches.isEmpty)
+
+        // 内容变化触发的防抖刷新在面板关闭时同样不产生匹配。
+        state.scheduleFindMatchRefresh()
+        #expect(state.findMatches.isEmpty)
+
+        // 重新打开面板恢复匹配。
+        state.openFindPanel()
+        state.refreshFindMatches()
+        #expect(state.findMatches.count == 2)
+    }
 }
