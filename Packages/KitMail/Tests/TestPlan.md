@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 36 条用例。
+KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 36
+测试文件: 8 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,8 +38,11 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 36 条用�
 - **MimeMessageBuilder**（5 条）：由 `testBuildAndParseRoundTrip`、`testPlainOnlyBuild`、`testReplyHeaders` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailUID**（2 条）：由 `testValidatedAcceptsProtocolRange`、`testValidatedRejectsZeroAndOutOfRange` 等用例锁定；改动 UID 边界时优先跑对应测试文件。
 - **MailCoreCallbackBridge**（4 条）：由 `testVoidOperationSucceedsWithoutValue`、`testValueOperationStillRejectsMissingValue` 等用例锁定；改动回调桥接或错误判定时优先跑对应测试文件。
+- **MailCoreAdapterAttachment**（4 条）：由 `testFetchAttachmentsKeepsFilenamelessAttachment`、`testFetchAttachmentsAssignsUniqueNamesToMultipleFilenamelessAttachments` 等用例锁定；改动附件遍历、文件名回退或落盘映射时优先跑对应测试文件。
 
 > **#403 变异验证**（`MailCoreAdapterAppendFlagsTests`）：把适配层标记选择 `isDraft ? .draft : .seen` 改为恒 `.draft`（复现原 bug）→ `testSentAppendUsesSeenWithoutDraft` 失败（记录到 `.draft`=16 而非 `.seen`=1，且含 `\Draft`），`testDraftAppendUsesDraftFlag` 仍 GREEN。该变异锁定「已发送归档不得带 `\Draft`」的适配层不变量； composer 侧调用点的变异见 PluginMail TestPlan。
+
+> **#844 变异验证**（`MailCoreAdapterAttachmentTests`）：两处变异均令全部 4 条用例 RED。① 把 `parser.attachments()` 改回 `parser.attachments`（漏写括号的 ObjC 方法引用，转数组恒失败 → parts 恒空）→ 连有名附件也被丢弃（`testFetchAttachmentsPreservesNamedAttachmentAndOrder` 返回 0）；② 把文件名回退 `attachment_\(index + 1)` 改回 `guard let filename = part.filename, !filename.isEmpty else { continue }`（复现原 bug）→ 无名/空名附件被丢弃。两处变异分别锁定「附件 part 必须真正取到」与「无 filename 的合法附件不得丢弃」两条不变量。
 
 ## 测试用例清单
 
@@ -81,27 +84,31 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 36 条用�
 | 34 | MailCoreCallbackBridge | 有返回值操作仍拒绝「无错误且无值」的回调，避免语义混淆 | 回调为 `(nil, nil)` | 调用 `perform` 取 `Data` | 抛出 `.protocolError("empty result")` | P1 | ✅ 已覆盖 | `testValueOperationStillRejectsMissingValue` |
 | 35 | MailSessionProtocol | 回归 #403：已发送归档用 `\Seen`，Sent 副本不得带 `\Draft` | 用记录 APPEND 标记的 MCOIMAPSession 子类替换会话 | 以 `isDraft: false` 调用 `MailCoreAdapter.appendMessageOperation(using:folder:mime:isDraft:)` | 标记为 `.seen` 且不含 `.draft` | P0 | ✅ 已覆盖 | `testSentAppendUsesSeenWithoutDraft` |
 | 36 | MailSessionProtocol | 草稿归档仍用 `\Draft`，与已发送归档区分 | 用记录 APPEND 标记的 MCOIMAPSession 子类替换会话 | 以 `isDraft: true` 调用 `MailCoreAdapter.appendMessageOperation(using:folder:mime:isDraft:)` | 标记为 `.draft` | P1 | ✅ 已覆盖 | `testDraftAppendUsesDraftFlag` |
+| 37 | MailCoreAdapterAttachment | 回归 #844：`Content-Disposition: attachment` 无 filename 的合法附件不得被丢弃，生成确定性回退名并保留数据 | 构造含无名附件的 multipart/mixed MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 1 个附件，名为 `attachment_1`，mimeType 与 data 与原始字节一致 | P0 | ✅ 已覆盖 | `testFetchAttachmentsKeepsFilenamelessAttachment` |
+| 38 | MailCoreAdapterAttachment | 回归 #844：空文件名附件不得被丢弃，回退为序号名 | 构造 filename="" 的附件 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 1 个附件，名为 `attachment_1`，保留 mimeType 与 data | P1 | ✅ 已覆盖 | `testFetchAttachmentsKeepsEmptyFilenameAttachment` |
+| 39 | MailCoreAdapterAttachment | 回归 #844：同一消息多个无名附件的回退名互不覆盖 | 构造两个无名附件的 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 2 个附件，名为 `attachment_1`/`attachment_2`，data 各自对应 | P0 | ✅ 已覆盖 | `testFetchAttachmentsAssignsUniqueNamesToMultipleFilenamelessAttachments` |
+| 40 | MailCoreAdapterAttachment | 回归 #844：有名附件保留原名与原始顺序，与无名附件共存 | 构造 named+unnamed 附件的 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 `["report.pdf", "attachment_2"]`，顺序与 data 不变 | P1 | ✅ 已覆盖 | `testFetchAttachmentsPreservesNamedAttachmentAndOrder` |
 
-> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 32 / 32
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 34 / 34
 - P2: 已覆盖 1 / 1
-- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（32 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（34 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
