@@ -84,6 +84,13 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// Git 状态刷新任务
     private var gitStatusRefreshTask: Task<Void, Never>?
 
+    /// 在途的 Git 采集后台任务。持有句柄才能真正取消采集，
+    /// 否则过期采集会继续排在共享串行 Git 队列上（issue #1244）。
+    private(set) var gitStatusWorkerTask: Task<GitStatusSnapshot?, Never>?
+
+    /// 当前采集的取消标记，用于跨串行队列线程传递取消。
+    private var gitStatusCancellation: GitCaptureCancellation?
+
     /// Git 状态防抖任务
     private var gitStatusDebounceTask: Task<Void, Never>?
     
@@ -147,7 +154,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     deinit {
         fullRefreshDebounceTask?.cancel()
         targetedDebounceTask?.cancel()
-        gitStatusRefreshTask?.cancel()
+        cancelGitStatusCapture()
         gitStatusDebounceTask?.cancel()
         watcherUpdateTask?.cancel()
         watcherProbeTask?.cancel()
@@ -171,7 +178,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
-        gitStatusRefreshTask?.cancel()
+        cancelGitStatusCapture()
         gitStatusDebounceTask?.cancel()
 
         projectRootPath = path
@@ -215,7 +222,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
-        gitStatusRefreshTask?.cancel()
+        cancelGitStatusCapture()
         gitStatusDebounceTask?.cancel()
     }
 
@@ -497,23 +504,39 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         let path = projectRootPath
         guard !path.isEmpty, isGitRepo else { return }
 
-        gitStatusRefreshTask?.cancel()
+        cancelGitStatusCapture()
+        let cancellation = GitCaptureCancellation()
+        gitStatusCancellation = cancellation
+
         gitStatusRefreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
 
-            let snapshot = await Task.detached(priority: .utility) { [provider = self.gitStatusProvider] in
-                provider.captureSnapshot(projectRootPath: path)
-            }.value
-
-            guard let snapshot, !Task.isCancelled else { return }
+            // 必须持有 worker 句柄：只取消外层 Task 停不掉已经排在共享串行 Git
+            // 队列上的采集，旧项目的采集会挡住当前项目的状态刷新（#1244）。
+            let worker = Task.detached(priority: .utility) { [provider = self.gitStatusProvider] in
+                provider.captureSnapshot(projectRootPath: path) { cancellation.isCancelled }
+            }
+            self.gitStatusWorkerTask = worker
+            let snapshot = await worker.value
 
             // 校验结果仍属于当前项目
-            guard self.projectRootPath == path else { return }
+            guard !Task.isCancelled, self.projectRootPath == path else { return }
+            guard let snapshot else { return }
 
             self.gitStatusSnapshot = snapshot
             // 递增 gitStatusToken 驱动 Git 状态标记颜色更新，但不触发文件列表重建
             self.gitStatusToken += 1
         }
+    }
+
+    /// 取消在途的 Git 采集：外层任务、后台 worker 与跨队列的取消标记一起停掉。
+    private func cancelGitStatusCapture() {
+        gitStatusRefreshTask?.cancel()
+        gitStatusWorkerTask?.cancel()
+        gitStatusCancellation?.cancel()
+        gitStatusRefreshTask = nil
+        gitStatusWorkerTask = nil
+        gitStatusCancellation = nil
     }
 
     /// 防抖刷新 Git 状态（用于文件系统变化后的增量刷新）
