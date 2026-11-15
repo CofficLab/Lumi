@@ -407,6 +407,25 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         }
     }
 
+    func performAndWaitNavigation(_ action: () -> Void) async throws {
+        if navigationContinuation != nil {
+            finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
+            webView.stopLoading()
+        }
+        let token = UUID()
+        navigationToken = token
+        isLoading = true
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            navigationContinuation = continuation
+            navigationTimeoutTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
+                guard !Task.isCancelled else { return }
+                self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
+            }
+            action()
+        }
+    }
+
     private func finishNavigation(_ result: Result<Void, Error>, token: UUID?) {
         guard let token, token == navigationToken, let continuation = navigationContinuation else { return }
         navigationContinuation = nil

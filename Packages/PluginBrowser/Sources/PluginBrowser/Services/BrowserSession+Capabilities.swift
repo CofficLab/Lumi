@@ -151,17 +151,14 @@ extension BrowserSession {
             guard webView.canGoBack else {
                 throw BrowserSession.SessionError.navigationUnavailable("There is no page to go back to.")
             }
-            webView.goBack()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.goBack() }
         case .forward:
             guard webView.canGoForward else {
                 throw BrowserSession.SessionError.navigationUnavailable("There is no page to go forward to.")
             }
-            webView.goForward()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.goForward() }
         case .reload:
-            webView.reload()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.reload() }
         case .goto:
             guard let url else {
                 throw BrowserSession.SessionError.invalidURL
