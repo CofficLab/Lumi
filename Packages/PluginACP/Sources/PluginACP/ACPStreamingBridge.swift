@@ -14,6 +14,13 @@ public protocol ACPStreamObserving: AnyObject {
 
     /// 当前流式消息的正文（无流式行为时返回 nil）。
     func acpStreamingContent(for conversationID: UUID) -> String?
+
+    /// 当前流式消息的身份标识。
+    ///
+    /// 底层每次 `start` 都新建一条流式消息（独立 id）；一个 ACP 回合内
+    /// 「LLM → 工具 → LLM」会产生多条消息。桥据此为每条消息使用独立的发送
+    /// 偏移，避免第二段沿用第一段的偏移被截断或整段丢弃（#351）。
+    func acpStreamingMessageID(for conversationID: UUID) -> UUID?
 }
 
 /// 流式观察者注销令牌。
@@ -35,6 +42,8 @@ public final class ACPStreamingBridge {
     private var handle: (any ACPStreamObserverHandle)?
     /// 已发出的正文长度（用于计算增量）。
     private var sentLength: [UUID: Int] = [:]
+    /// 最近一次发送增量所属的流式消息 id；变化即代表底层 `start` 了新消息。
+    private var streamMessageID: [UUID: UUID] = [:]
 
     /// 流式增量回调（已计算好的新片段 + 对话 ID）。
     var onDelta: ((UUID, String) -> Void)?
@@ -60,11 +69,20 @@ public final class ACPStreamingBridge {
     /// 清理会话状态（回合收尾时调用）。
     func reset(conversationID: UUID) {
         sentLength.removeValue(forKey: conversationID)
+        streamMessageID.removeValue(forKey: conversationID)
     }
 
     /// 把当前流式正文相对上次的增量发出去。
     private func flush(conversationID: UUID) {
         guard let content = stream.acpStreamingContent(for: conversationID) else { return }
+        // 底层 `start` 新消息时正文重置为空、id 变化。检测到新消息就把发送
+        // 偏移归零，否则第二段响应会沿用第一段的偏移：更短则整段丢弃，更长
+        // 则只发后缀（#351）。用消息身份而非长度判定，等长不同正文也能完整发出。
+        if let messageID = stream.acpStreamingMessageID(for: conversationID),
+           streamMessageID[conversationID] != messageID {
+            streamMessageID[conversationID] = messageID
+            sentLength[conversationID] = 0
+        }
         let alreadySent = sentLength[conversationID] ?? 0
         guard content.count > alreadySent else { return }
         let start = content.index(content.startIndex, offsetBy: alreadySent)

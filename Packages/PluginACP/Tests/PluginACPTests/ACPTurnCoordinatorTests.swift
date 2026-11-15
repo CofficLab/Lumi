@@ -947,6 +947,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     private final class MockStream: ACPStreamObserving {
         var observer: ((UUID) -> Void)?
         var contentByConversation: [UUID: String] = [:]
+        var messageIDByConversation: [UUID: UUID] = [:]
 
         func addACPStreamObserver(_ callback: @escaping (UUID) -> Void) -> any ACPStreamObserverHandle {
             observer = callback
@@ -957,9 +958,23 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             contentByConversation[conversationID]
         }
 
+        func acpStreamingMessageID(for conversationID: UUID) -> UUID? {
+            messageIDByConversation[conversationID]
+        }
+
         /// 模拟内核追加一段 token。
         func append(_ text: String, to conversationID: UUID) {
+            if messageIDByConversation[conversationID] == nil {
+                messageIDByConversation[conversationID] = UUID()
+            }
             contentByConversation[conversationID, default: ""] += text
+            observer?(conversationID)
+        }
+
+        /// 模拟底层 `streaming.start`：新建一条流式消息（正文清空、id 变化）。
+        func startNewMessage(for conversationID: UUID) {
+            contentByConversation[conversationID] = ""
+            messageIDByConversation[conversationID] = UUID()
             observer?(conversationID)
         }
     }
@@ -1041,6 +1056,151 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             return text == "完整答复"
         }
         XCTAssertEqual(fullSends.count, 1, "收尾不应重发已流式发送过的整段文本")
+    }
+
+    /// 回归 #351：一个回合内「LLM → 工具 → LLM」，第二段正文比第一段短时
+    /// 必须完整发出，不得沿用第一段偏移被整段丢弃。
+    func testSecondStreamShorterBodyIsSentFully() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-short")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 第一段较长的正文，随后工具完成，底层 start 新消息并流式更短的最终正文。
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("Done", to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["Checking...", "Done"], "第二段更短正文必须完整发出，不得被旧偏移丢弃")
+    }
+
+    /// 回归 #351：第二段正文比第一段长时必须整段发出，不得只发旧偏移之后的后缀。
+    func testSecondStreamLongerBodyIsSentCompletely() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-long")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        let finalBody = "Done with a much longer final answer"
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append(finalBody, to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["Checking...", finalBody], "第二段更长正文必须整段发出，不得截断成后缀")
+    }
+
+    /// 回归 #351：第二段与第一段等长但内容不同时，仍须完整发出（按消息身份而非长度判定）。
+    func testSecondStreamEqualLengthBodyIsSentFully() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-equal")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        stream.append("AAAA", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("BBBB", to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["AAAA", "BBBB"], "等长不同的第二段正文必须完整发出")
+    }
+
+    /// 回归 #351：偏移按消息重置后，收尾去重约定仍成立——第二段最终正文恰好发送一次。
+    func testSecondStreamFinalBodyNotResentAtFinalize() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-final")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("Done", to: conversationID)
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "Done")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+
+        let doneSends = box.messages.filter { message in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text == "Done"
+        }
+        XCTAssertEqual(doneSends.count, 1, "第二段最终正文应恰好流式发送一次，收尾不得整段重发")
     }
 
     // MARK: - 失败回合的 stopReason
