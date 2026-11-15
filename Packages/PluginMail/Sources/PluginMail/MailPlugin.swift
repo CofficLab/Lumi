@@ -127,7 +127,7 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                 systemImage: "envelope",
                 order: order
             ) {
-                MailSettingsView(sessionManager: sessionManager, accountStore: accountStore)
+                MailSettingsView(sessionManager: sessionManager, accountStore: accountStore, cacheService: cache)
             },
         ])
 

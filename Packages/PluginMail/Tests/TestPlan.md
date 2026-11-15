@@ -5,7 +5,7 @@
 PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 99
+测试文件: 14 个，用例总数: 108
 
 核心组件（源码目录）:
 - `Agent/`
@@ -41,6 +41,7 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 - **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailDraftAutosave**（9 条）：由 `testSaveEncodesAndWritesOffMainThread`、`testTextOnlyEditDoesNotRewriteAttachments`、`testStaleSaveDoesNotOverwriteNewerDraft` 等用例锁定；连续击键必须合并落盘、编码与写入不得占用主线程、附件只在增删时重写，晚到的旧快照不得覆盖新草稿（issue #1188）。
 - **Mail account_id 校验**（9 条）：由 `invalidAccountIDIsRejectedByEveryTool`、`nonStringAccountIDIsRejected`、`unknownAccountIDIsAnErrorNotAnEmptyResult`、`validAccountIDSelectsThatAccount` 锁定；只有完全省略 account_id 才能回落到第一个账户，传了但为空/格式非法/类型不对/账户不存在都必须在任何 IMAP/SMTP 操作前报错，否则发送工具会从错误的邮箱寄信（issue #840）。
+- **Mail 账户身份变更与缓存隔离**（9 条）：由 `testEmailChangeDetected`、`testIdentityChangePurgesCache`、`testDeletePurgesCache`、`testUnchangedIdentityKeepsCache` 锁定；编辑账户改变邮箱/用户名/IMAP/SMTP 主机时必须清空旧缓存，否则新邮箱会读到旧邮箱的邮件（issue #845）。
 - **MailHTMLContent**（5 条）：由 `testUnauthorizedHTMLBlocksRemoteSubresources`、`testLinkActivatedOpensExternallyEvenWithoutAuthorization` 等用例锁定；改动阅读器远程内容策略时优先跑对应测试文件。
 - **MailWorkspace**（5 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先）时优先跑对应测试文件。
 - **MailComposerService**（12 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind`、`testAppendDraftUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -157,21 +158,30 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 | 97 | Mail account_id 校验 | UUID 两侧空白被裁掉后仍视为合法 | 配置两个账户 | send 传 `"  <B 的 UUID>\n"` | 从 B 邮箱寄出 | P1 | ✅ 已覆盖 | `surroundingWhitespaceIsTrimmed` |
 | 98 | Mail account_id 校验 | 搜索只读被请求账户的缓存 | 两个账户各有不同主题的缓存邮件 | search 传 B 的 UUID 与只匹配 B 的关键字 | 只返回 B 的命中，不混入 A 的缓存 | P1 | ✅ 已覆盖 | `searchReadsOnlyTheRequestedAccountCache` |
 | 99 | Mail account_id 校验 | schema 必须说明省略与非法值的处理方式 | — | 读取四个工具 `inputSchema` 里 account_id 的 description | 同时说明可省略（Omit）与非法值会被拒绝（rejected） | P2 | ✅ 已覆盖 | `accountIDSchemaDocumentsRejection` |
+| 100 | 账户身份与缓存隔离 | email 变更必须被检测为身份变更（**回归 #845**） | 已有账户 A | 比较 email 不同的新旧配置 | identityChanged 返回 true | P0 | ✅ 已覆盖 | `testEmailChangeDetected` |
+| 101 | 账户身份与缓存隔离 | username 变更必须被检测为身份变更（**回归 #845**） | 已有账户 A | 比较 username 不同的新旧配置 | identityChanged 返回 true | P0 | ✅ 已覆盖 | `testUsernameChangeDetected` |
+| 102 | 账户身份与缓存隔离 | imapHost 变更必须被检测为身份变更（**回归 #845**） | 已有账户 A | 比较 imapHost 不同的新旧配置 | identityChanged 返回 true | P0 | ✅ 已覆盖 | `testImapHostChangeDetected` |
+| 103 | 账户身份与缓存隔离 | smtpHost 变更必须被检测为身份变更（**回归 #845**） | 已有账户 A | 比较 smtpHost 不同的新旧配置 | identityChanged 返回 true | P0 | ✅ 已覆盖 | `testSmtpHostChangeDetected` |
+| 104 | 账户身份与缓存隔离 | 仅改显示名不算身份变更 | 已有账户 A | 比较 displayName 不同的新旧配置 | identityChanged 返回 false | P1 | ✅ 已覆盖 | `testDisplayNameChangeIsNotIdentityChange` |
+| 105 | 账户身份与缓存隔离 | 仅改密码不算身份变更 | 已有账户 A | 比较密码不同但邮箱/主机相同的新旧配置 | identityChanged 返回 false | P1 | ✅ 已覆盖 | `testPasswordChangeIsNotIdentityChange` |
+| 106 | 账户身份与缓存隔离 | 身份变更后旧缓存必须被清空（**回归 #845**） | 账户 A 有 2 封缓存邮件 | 编辑为不同邮箱后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testIdentityChangePurgesCache` |
+| 107 | 账户身份与缓存隔离 | 删除账户后缓存必须被清空（**回归 #845**） | 账户 A 有缓存邮件 | 删除账户后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testDeletePurgesCache` |
+| 108 | 账户身份与缓存隔离 | 身份未变时保留缓存 | 账户 A 有 1 封缓存邮件 | 仅改显示名，不 purge | 缓存仍有 1 封 | P1 | ✅ 已覆盖 | `testUnchangedIdentityKeepsCache` |
 
-> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **90 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
-- P1: 已覆盖 73 / 73
+- P0: 已覆盖 27 / 27
+- P1: 已覆盖 76 / 76
 - P2: 已覆盖 5 / 5
-- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
+- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
-- **P1**: 其余功能性用例（73 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
+- **P1**: 其余功能性用例（76 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
