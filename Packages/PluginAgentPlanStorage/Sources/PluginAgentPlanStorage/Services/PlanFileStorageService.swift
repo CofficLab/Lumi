@@ -21,6 +21,7 @@ public enum PlanFileStorageError: LocalizedError, Equatable {
     case fileNotFound(String)
     case notAFile(String)
     case readFailed(String)
+    case listFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -36,6 +37,8 @@ public enum PlanFileStorageError: LocalizedError, Equatable {
             "Plan path is not a regular file: \(filename)"
         case .readFailed(let reason):
             "Failed to read plan file: \(reason)"
+        case .listFailed(let path):
+            "Failed to enumerate plan storage directory: \(path)"
         }
     }
 }
@@ -67,7 +70,7 @@ public actor PlanFileStorageService {
         }
 
         var removedCount = 0
-        for file in regularFiles() {
+        for file in (try? regularFiles()) ?? [] {
             guard file.modifiedAt < cutoff else { continue }
             do {
                 try fileManager.removeItem(at: file.url)
@@ -104,9 +107,9 @@ public actor PlanFileStorageService {
         }
     }
 
-    public func listFiles() -> [PlanFileInfo] {
+    public func listFiles() throws -> [PlanFileInfo] {
         _ = purgeExpiredFiles()
-        return regularFiles().map { file in
+        return try regularFiles().map { file in
             PlanFileInfo(
                 name: relativePath(for: file.url),
                 path: file.url.path,
@@ -136,16 +139,21 @@ public actor PlanFileStorageService {
         let modifiedAt: Date
     }
 
-    private func regularFiles() -> [RegularFile] {
+    private func regularFiles() throws -> [RegularFile] {
+        var enumerationFailure: Error?
         guard let enumerator = fileManager.enumerator(
             at: plansDirectory,
             includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey],
-            options: []
+            options: [],
+            errorHandler: { _, error in
+                enumerationFailure = error
+                return false
+            }
         ) else {
-            return []
+            throw PlanFileStorageError.listFailed(plansDirectory.path)
         }
 
-        return enumerator.compactMap { item in
+        let files = enumerator.compactMap { item -> RegularFile? in
             guard let url = item as? URL,
                   let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey]),
                   values.isDirectory != true else {
@@ -157,6 +165,12 @@ public actor PlanFileStorageService {
                 modifiedAt: values.contentModificationDate ?? .distantPast
             )
         }
+
+        // 枚举器对打不开的目录返回空序列而非 nil，只有 errorHandler 能区分空目录与权限/IO 失败（#510）。
+        if let enumerationFailure {
+            throw PlanFileStorageError.listFailed(enumerationFailure.localizedDescription)
+        }
+        return files
     }
 
     private func isRegularFile(_ url: URL) -> Bool {

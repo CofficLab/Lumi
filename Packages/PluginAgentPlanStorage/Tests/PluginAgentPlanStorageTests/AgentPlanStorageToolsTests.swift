@@ -147,7 +147,7 @@ struct AgentPlanToolsTests {
         let output = try await tool.execute(arguments: ["filename": ToolArgument("plan.md")])
 
         #expect(output == "Deleted plan plan.md")
-        #expect(await service.listFiles().isEmpty)
+        #expect(try await service.listFiles().isEmpty)
     }
 
     @Test("delete_plan 缺少参数时抛错")
@@ -188,6 +188,29 @@ struct AgentPlanToolsTests {
 
         #expect(output.contains("1 plan file(s)."))
         #expect(output.contains("- plan.md (10 bytes, modified "))
+    }
+
+    @Test("list_plans 目录无法枚举时抛错而不是报告空目录（回归 #510）")
+    func listPlansPropagatesEnumerationFailure() async throws {
+        let root = try makeTemporaryDirectory("list-unreadable")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let plansDir = root.appendingPathComponent("plans", isDirectory: true)
+        let service = try PlanFileStorageService(directory: plansDir, retentionDays: 30)
+        _ = try await service.write(filename: "plan.md", content: "body")
+        let tool = ListPlansTool(storage: service)
+
+        try FileManager.default.removeItem(at: plansDir)
+        try Data("not a directory".utf8).write(to: plansDir)
+
+        do {
+            _ = try await tool.execute(arguments: [:])
+            Issue.record("目录无法枚举时 list_plans 必须抛错而不是报告 No plan files")
+        } catch let error as PlanFileStorageError {
+            guard case .listFailed = error else {
+                Issue.record("期望 .listFailed，实际 \(error)")
+                return
+            }
+        }
     }
 
     @Test("四个工具的名称、风险等级与展示描述稳定")

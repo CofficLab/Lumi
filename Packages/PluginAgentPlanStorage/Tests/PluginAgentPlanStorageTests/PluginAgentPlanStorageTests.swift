@@ -26,11 +26,11 @@ struct PluginAgentPlanStorageTests {
         let path = try await service.write(filename: "work/current.md", content: "# Current plan")
         #expect(path.hasSuffix("/work/current.md"))
         #expect(try await service.read(filename: "work/current.md") == "# Current plan")
-        let listedFiles = await service.listFiles()
+        let listedFiles = try await service.listFiles()
         #expect(listedFiles.map(\.name) == ["work/current.md"])
 
         try await service.delete(filename: "work/current.md")
-        #expect(await service.listFiles().isEmpty)
+        #expect(try await service.listFiles().isEmpty)
     }
 
     @Test
@@ -60,7 +60,7 @@ struct PluginAgentPlanStorageTests {
         try FileManager.default.setAttributes([.modificationDate: oldDate], ofItemAtPath: root.appendingPathComponent("old.md").path)
 
         #expect(await service.purgeExpiredFiles(now: now) == 1)
-        #expect(await service.listFiles().map(\.name) == ["new.md"])
+        #expect(try await service.listFiles().map(\.name) == ["new.md"])
     }
 
     @Test
@@ -157,7 +157,7 @@ struct PluginAgentPlanStorageTests {
         }
 
         #expect(try await service.read(filename: "plan.md") == "first")
-        #expect(await service.listFiles().map(\.name) == ["plan.md"])
+        #expect(try await service.listFiles().map(\.name) == ["plan.md"])
     }
 
     @Test
@@ -177,7 +177,7 @@ struct PluginAgentPlanStorageTests {
             withIntermediateDirectories: false
         )
 
-        let listed = await service.listFiles()
+        let listed = try await service.listFiles()
         #expect(listed.map(\.name) == ["zebra.md", "alpha.md"])
         #expect(listed.allSatisfy { !$0.name.contains("afolder") })
     }
@@ -196,7 +196,7 @@ struct PluginAgentPlanStorageTests {
         )
 
         #expect(await service.purgeExpiredFiles() == 1)
-        #expect(await service.listFiles().map(\.name) == ["fresh.md"])
+        #expect(try await service.listFiles().map(\.name) == ["fresh.md"])
     }
 
     @Test
@@ -207,6 +207,39 @@ struct PluginAgentPlanStorageTests {
         #expect(PlanFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(PlanFileStorageError.notAFile("y").errorDescription?.contains("y") == true)
         #expect(PlanFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
+        #expect(PlanFileStorageError.listFailed("dir").errorDescription?.contains("dir") == true)
+    }
+
+    @Test
+    func listFilesThrowsWhenDirectoryCannotBeEnumerated() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let plansDir = root.appendingPathComponent("plans", isDirectory: true)
+        let service = try PlanFileStorageService(directory: plansDir, retentionDays: 30)
+        _ = try await service.write(filename: "plan.md", content: "body")
+
+        // 用普通文件替换计划目录：路径仍在但无法枚举，必须抛错而不是报告空目录（回归 #510）。
+        try FileManager.default.removeItem(at: plansDir)
+        try Data("not a directory".utf8).write(to: plansDir)
+
+        do {
+            _ = try await service.listFiles()
+            Issue.record("目录无法枚举时 listFiles 必须抛错")
+        } catch let error as PlanFileStorageError {
+            guard case .listFailed = error else {
+                Issue.record("期望 .listFailed，实际 \(error)")
+                return
+            }
+        }
+    }
+
+    @Test
+    func listFilesReturnsEmptyForReadableEmptyDirectory() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        #expect(try await service.listFiles().isEmpty)
     }
 
     private func makeTemporaryDirectory() throws -> URL {
