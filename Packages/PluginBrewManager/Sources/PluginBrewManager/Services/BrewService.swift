@@ -96,7 +96,7 @@ public actor BrewService {
             let version = f.versions?.stable ?? "unknown"
             let installedVer = f.installed?.first?.version
             packages.append(BrewPackage(
-                name: f.name,
+                name: f.full_name ?? f.name,
                 desc: f.desc,
                 homepage: f.homepage,
                 version: version,
@@ -133,7 +133,7 @@ public actor BrewService {
 
         for f in info.formulae {
             packages.append(BrewPackage(
-                name: f.name,
+                name: f.full_name ?? f.name,
                 desc: f.desc,
                 homepage: f.homepage,
                 version: f.versions?.stable ?? "unknown",
@@ -202,7 +202,7 @@ public actor BrewService {
         } else {
             for f in info.formulae {
                 packages.append(BrewPackage(
-                    name: f.name,
+                    name: f.full_name ?? f.name,
                     desc: f.desc,
                     homepage: f.homepage,
                     version: f.versions?.stable ?? "unknown",
