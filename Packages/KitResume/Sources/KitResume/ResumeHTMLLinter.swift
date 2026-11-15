@@ -62,6 +62,9 @@ public struct ResumeHTMLLinter: Sendable {
         if lower.range(of: #"<\s*script\b"#, options: .regularExpression) != nil {
             add(.error, "script_forbidden", "Scripts are not allowed in resumes.")
         }
+        if containsInlineScript(in: lower) {
+            add(.error, "inline_script_forbidden", "Inline event handlers and javascript: URLs are not allowed in resumes.")
+        }
         if lower.range(of: #"<\s*iframe\b"#, options: .regularExpression) != nil {
             add(.error, "iframe_forbidden", "Iframes are not allowed in resumes.")
         }
@@ -131,6 +134,22 @@ public struct ResumeHTMLLinter: Sendable {
         let cssURLPattern = #"url\(\s*[\"']?([^\"')]+?)[\"']?\s*\)"#
         return capturedValues(matching: attributePattern, in: html)
             + capturedValues(matching: cssURLPattern, in: html)
+    }
+
+    /// 内联脚本：标签内的事件处理器属性（`onload=`、`onclick=` 等）与
+    /// `javascript:` 伪协议 URL。`<script>` 之外的这些写法同样会执行 JS，
+    /// 预览禁用内容 JS 后虽不再执行，但「无脚本」契约必须在 lint 阶段就拒绝，
+    /// 否则文档会通过校验却在预览/导出间呈现不同 DOM（#494）。
+    ///
+    /// 事件处理器正则限定在单个标签内部（`[^>]*` 不跨越 `>`），避免把正文里
+    /// 偶然出现的 “on …=” 文本误判为脚本。
+    private func containsInlineScript(in lower: String) -> Bool {
+        let handlerPattern = #"<\s*[a-z][^>]*\son[a-z]+\s*="#
+        if lower.range(of: handlerPattern, options: .regularExpression) != nil {
+            return true
+        }
+        let jsURLPattern = #"\b(?:href|src|action|formaction|xlink:href)\s*=\s*["']?\s*javascript\s*:"#
+        return lower.range(of: jsURLPattern, options: .regularExpression) != nil
     }
 
     /// 只检查真正会加载资源的位置：资源属性、`srcset` 候选与 CSS `url(...)`。

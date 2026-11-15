@@ -113,6 +113,25 @@ public struct HTMLPreviewView: View {
     }
 }
 
+// MARK: - WebView Configuration
+
+/// 预览 WKWebView 的配置工厂。
+///
+/// 独立出来便于回归测试直接构造与生产完全一致的 WebView。内容 JavaScript
+/// 必须禁用：简历 / promo / prototype / canvas 等设计器都声称「无脚本」，
+/// 它们的导出管线一律设 `allowsContentJavaScript = false`。预览若放行，
+/// `<body onload=…>` 这类内联事件处理器会执行（还能调用原生消息通道），
+/// 并与导出渲染出不同的 DOM（#494）。原生 `evaluateJavaScript` 注入的
+/// 选区 / 元素桥接脚本不受此开关影响，仍正常安装与触发。
+enum HTMLPreviewWebViewFactory {
+    static func makeConfiguration(userContentController: WKUserContentController) -> WKWebViewConfiguration {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        configuration.userContentController = userContentController
+        return configuration
+    }
+}
+
 // MARK: - WKWebView Wrapper
 
 private struct _WKWebViewWrapper: NSViewRepresentable {
@@ -134,7 +153,6 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
         let userContentController = WKUserContentController()
         // 注册消息通道：JS 把「选中区块 → 发送」事件回传给 Swift。
         // Coordinator 作为 messageHandler 必须以弱引用持有，避免 webview↔coordinator 保留环
@@ -151,7 +169,7 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
                 name: HTMLPreviewElementBridgeScript.messageHandlerName
             )
         }
-        config.userContentController = userContentController
+        let config = HTMLPreviewWebViewFactory.makeConfiguration(userContentController: userContentController)
 
         let webView = WKWebView(frame: CGRect(origin: .zero, size: containerSize), configuration: config)
         webView.allowsMagnification = true
