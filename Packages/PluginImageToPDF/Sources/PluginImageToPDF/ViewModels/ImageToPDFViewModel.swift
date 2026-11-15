@@ -162,15 +162,40 @@ final class ImageToPDFViewModel: ObservableObject {
     /// Returns the number of files actually written. Failed exports are
     /// surfaced through `lastErrorMessage`.
     @discardableResult
-    func exportAll(to directoryURL: URL) -> Int {
+    func exportAll(to directoryURL: URL) async -> Int {
+        // 主线程只做快照：收集已成功输出的源文件 URL（Sendable）。
+        // 目录准备与逐文件复制随输出数量与总字节增长，移到后台线程（#1197）。
+        let sources: [URL] = outputItems.compactMap { item in
+            if case .done(let url) = item.status { return url }
+            return nil
+        }
+
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.copyOutputs(sources, to: directoryURL)
+        }.value
+
+        if !result.failed.isEmpty {
+            lastErrorMessage = String(
+                format: ImageToPDFLocalization.string("Could not export: %@"),
+                result.failed.joined(separator: ", ")
+            )
+        } else {
+            lastErrorMessage = nil
+        }
+
+        return result.written
+    }
+
+    /// 在后台线程把源 PDF 复制到目标目录，保留「同名目录拒绝、先临时文件再原子
+    /// 替换、失败不破坏旧结果」的既有行为。返回写入数与失败文件名。
+    nonisolated static func copyOutputs(
+        _ sources: [URL],
+        to directoryURL: URL
+    ) -> (written: Int, failed: [String]) {
         var written = 0
         var failed: [String] = []
 
-        for index in outputItems.indices {
-            guard case .done(let existingURL) = outputItems[index].status else {
-                continue
-            }
-
+        for existingURL in sources {
             let destination = directoryURL.appendingPathComponent(
                 existingURL.lastPathComponent
             )
@@ -209,20 +234,11 @@ final class ImageToPDFViewModel: ObservableObject {
             }
         }
 
-        if !failed.isEmpty {
-            lastErrorMessage = String(
-                format: ImageToPDFLocalization.string("Could not export: %@"),
-                failed.joined(separator: ", ")
-            )
-        } else {
-            lastErrorMessage = nil
-        }
-
-        return written
+        return (written, failed)
     }
 
     /// Open a directory picker, then export every converted PDF there.
-    func chooseDirectoryAndExport() {
+    func chooseDirectoryAndExport() async {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = true
@@ -235,7 +251,7 @@ final class ImageToPDFViewModel: ObservableObject {
 
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
-        exportAll(to: directory)
+        await exportAll(to: directory)
     }
 
     /// Show the produced PDF in Finder.

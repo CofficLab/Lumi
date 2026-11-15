@@ -100,7 +100,7 @@ struct ImageToPDFViewModelTests {
         #expect(Set(outputURLs.map(\.lastPathComponent)).count == 2)
 
         let exportDirectory = root.appendingPathComponent("export", isDirectory: true)
-        let written = model.exportAll(to: exportDirectory)
+        let written = await model.exportAll(to: exportDirectory)
         #expect(written == 2)
         let exported = try FileManager.default
             .contentsOfDirectory(atPath: exportDirectory.path)
@@ -241,7 +241,7 @@ struct ImageToPDFViewModelTests {
         let keepURL = conflictDirectory.appendingPathComponent("keep.txt")
         try Data("keep me".utf8).write(to: keepURL)
 
-        let written = model.exportAll(to: exportDirectory)
+        let written = await model.exportAll(to: exportDirectory)
 
         #expect(written == 0, "文件与目录类型冲突必须拒绝导出")
         var isDirectory: ObjCBool = false
@@ -282,7 +282,7 @@ struct ImageToPDFViewModelTests {
         // 回归 #469：状态仍是 .done，但暂存源文件已丢失，复制必然失败。
         try FileManager.default.removeItem(at: stagedURL)
 
-        let written = model.exportAll(to: exportDirectory)
+        let written = await model.exportAll(to: exportDirectory)
 
         #expect(written == 0)
         #expect(FileManager.default.fileExists(atPath: destination.path), "复制失败不得提前删除旧结果")
@@ -317,7 +317,7 @@ struct ImageToPDFViewModelTests {
         let destination = exportDirectory.appendingPathComponent("photo.pdf")
         try Data("OLD".utf8).write(to: destination)
 
-        let written = model.exportAll(to: exportDirectory)
+        let written = await model.exportAll(to: exportDirectory)
 
         #expect(written == 1)
         var isDirectory: ObjCBool = false
