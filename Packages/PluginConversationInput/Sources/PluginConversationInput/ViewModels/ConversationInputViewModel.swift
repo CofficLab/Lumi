@@ -476,34 +476,55 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 将拖入的图片加入发送器挂起池。
     func attachImage(_ url: URL) {
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+        let fileName = url.lastPathComponent
         // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
         capability.beginAttachmentRead()
         Task { @MainActor in
             defer { capability.endAttachmentRead() }
-            let data = await Task.detached(priority: .userInitiated, operation: {
-                try? Data(contentsOf: url)
-            }).value
-
-            // 空文件保持静默忽略（见 #520），但非空字节必须能解码才算图片。
-            guard let data, !data.isEmpty else { return }
-            guard ChatInputEditorRules.isDecodableImageData(data) else {
+            // 读取 + ImageIO 校验 + Base64 编码整体放到后台 worker，
+            // 主 actor 只做入池/报错（见 issue #1259）。
+            let outcome = await Task.detached(priority: .userInitiated) {
+                Self.loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName)
+            }.value
+            switch outcome {
+            case .empty:
+                // 空文件保持静默忽略（见 #520）。
+                return
+            case .undecodable:
                 capability.recordAttachmentReadFailure()
                 capability.errorMessage = String(
                     format: pluginLocalization.string("Could not read image: %@"),
-                    url.lastPathComponent
+                    fileName
                 )
                 refresh()
-                return
+            case .loaded(let attachment):
+                capability.addImageAttachment(attachment)
+                capability.isInputFocused = true
             }
-
-            let attachment = UserImageAttachment(
-                mimeType: mimeType,
-                base64Data: data.base64EncodedString(),
-                fileName: url.lastPathComponent
-            )
-            capability.addImageAttachment(attachment)
-            capability.isInputFocused = true
         }
+    }
+
+    /// 图片附件后台加载结果（跨 actor 传回主线程）。
+    private enum ImageAttachmentLoadOutcome: Sendable {
+        case empty
+        case undecodable
+        case loaded(UserImageAttachment)
+    }
+
+    /// 在后台 worker 读取字节、做 ImageIO 可解码性校验并 Base64 编码。
+    /// 这些都不触碰主线程状态，故 nonisolated（见 issue #1259）。
+    nonisolated private static func loadImageAttachment(
+        from url: URL,
+        mimeType: String,
+        fileName: String
+    ) -> ImageAttachmentLoadOutcome {
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return .empty }
+        guard ChatInputEditorRules.isDecodableImageData(data) else { return .undecodable }
+        return .loaded(UserImageAttachment(
+            mimeType: mimeType,
+            base64Data: data.base64EncodedString(),
+            fileName: fileName
+        ))
     }
 
     func removeImageAttachment(id: UUID) {
