@@ -183,7 +183,7 @@ public struct DesignerView: View {
         defer { isExporting = false }
 
         do {
-            let result = try IconComposerExportService().export(
+            let result = try await IconComposerExportService().export(
                 document: document,
                 outputDirectory: directoryURL
             )
