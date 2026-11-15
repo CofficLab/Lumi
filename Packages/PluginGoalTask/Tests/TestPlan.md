@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 178
+测试文件: 17 个，用例总数: 183
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -55,6 +55,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalViewRender**（8 条）：由 `taskRowHeightIsThirtyPoints`、`taskRowUsesOrangeSurface`、`longTitleIsTruncatedAtRowEdge` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTopShadow**（5 条）：由 `topShadowRendersAbovePanelEdge`、`topShadowFadesMonotonically`、`topShadowHasSolidContactLine`、`topShadowPeakIsAtPanelEdge`、`noShadowWithoutActiveGoal` 锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskConversationCleanup**（2 条）：由 `deletingConversationRemovesOnlyItsGoals`、`deletingMultipleConversationsRemovesEachGoalSet` 锁定；会话删除必须同步清理该会话的 Goals（**回归** #771），改动删除观察者时优先跑对应测试文件。
+- **GoalTaskOrphanCleanup**（5 条）：由 `testCreateGoalLinksTasksForCascade`、`testDeleteAllGoalsRemovesCreatedTasks`、`testDeleteAllGoalsRemovesAppendedTasks`、`testDeleteAllGoalsRemovesForkedTasks`、`testDeleteAllGoalsRemovesUnlinkedLegacyOrphan` 锁定；创建/追加/fork 的 Task 必须建立 `task.goal` 对象关系（字符串 `goalId` 不会自动填充关系），`deleteAllGoals` 必须连带删除全部 Task 并显式按 `goalId` 清掉未链接的历史孤儿，不得只依赖 `.cascade` 而残留永久孤儿（**回归** #815）。改动 `GoalStateManager` 的创建/删除路径或 `Goal`/`GoalTask` 关系时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -238,27 +239,36 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 176 | GoalTaskTools | update_goal_status blocked 但无建议时不输出建议列表（#857） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateGoalStatusBlockedWithoutSuggestionsHasNoList` |
 | 177 | GoalTaskTools | update_goal_status 非 blocked 状态不输出建议列表（#857） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateGoalStatusNonBlockedDoesNotSurfaceSuggestions` |
 | 178 | GoalTaskTools | stringList 逐项 trim、丢弃空串与非字符串项，兼容 [Any]（#857） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testStringListParsing` |
+| 179 | GoalTaskOrphanCleanup | createGoal 建立 Task→Goal 关系，使 .cascade 可命中 | 创建含 2 个 Task 的 Goal | 独立保活上下文 fetch Goal | `goal.tasks.count == 2`、ID 集合一致、每个 `task.goal` 指回该 Goal（**回归** #815） | P0 | ✅ 已覆盖 | `testCreateGoalLinksTasksForCascade` |
+| 180 | GoalTaskOrphanCleanup | deleteAllGoals 清除 createGoal 产生的全部 Task | 创建含 3 个 Task 的 Goal | `deleteAllGoals` | 该会话 Goals 为空，`fetchTasks(goalId:)` 为空，不得残留孤儿（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesCreatedTasks` |
+| 181 | GoalTaskOrphanCleanup | deleteAllGoals 清除追加（addTasksToGoal）的 Task | Goal 含 1 Task，再追加 2 个 | `deleteAllGoals` | `fetchTasks(goalId:)` 为空，追加的 Task 不得绕过清理（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesAppendedTasks` |
+| 182 | GoalTaskOrphanCleanup | deleteAllGoals 清除 fork 副本的 Task，且不影响源会话 | 源会话 Goal 含 2 Task，fork 到目标会话 | 对目标会话 `deleteAllGoals` | 副本 Task 与 Goals 清空，源会话 Task 仍为 2（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesForkedTasks` |
+| 183 | GoalTaskOrphanCleanup | deleteAllGoals 显式按 goalId 清除未链接的历史孤儿 Task | Goal 含 1 链接 Task，另用独立容器写入只带 goalId 的未链接孤儿 | `deleteAllGoals` | `fetchTasks(goalId:)` 为空，未链接孤儿也必须按 goalId 一并清除（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesUnlinkedLegacyOrphan` |
 
-> 说明：全部 **178 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **183 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#815**，`GoalStateManager`）：
+> - 机制 A（建立关系）：删除 createGoal / addTasksToGoal / forkGoal 里的 `task.goal = goal` / `copy.goal = forked`，用例 179 转红（`goal.tasks` 为空，2 条断言失败），而 180–183 仍绿（机制 B 按 goalId 显式删除兜底）；恢复后转绿。
+> - 机制 B（显式按 goalId 删除）：把 `deleteAllGoals` 改回只 `context.delete(goal)` 依赖 `.cascade`，用例 183 转红（未链接孤儿存活，1 条断言失败），而 179–182 仍绿（已链接 Task 被 cascade 命中）；恢复后转绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 24 / 24
+- P0: 已覆盖 29 / 29
 - P1: 已覆盖 138 / 138
 - P2: 已覆盖 16 / 16
-- **合计: 178 / 178**（仅表示清单场景，非源码覆盖率）
+- **合计: 183 / 183**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（29 条）
 - **P1**: 其余功能性用例（138 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（16 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 178 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 183 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
