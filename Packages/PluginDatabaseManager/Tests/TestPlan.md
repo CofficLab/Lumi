@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 99
+测试文件: 8 个，用例总数: 103
 
 核心组件（源码目录）:
 - `Agent/`
@@ -56,6 +56,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **Redis read-command routing**（2 条）：由 `redisReadCommandsUseQueryPath`、`redisWriteCommandsUseExecutePath` 锁定；改动 Redis 读命令判定（`isReadStatement` 的 redis 分支）时优先跑对应测试文件，防止 KEYS/TYPE 等只读命令被误路由到 execute 而丢掉 RESP 内容，以及 GETSET/ZRANGESTORE 等写命令被前缀误判为读。
 - **Redis key quoting**（2 条）：由 `quotedKeyRoundTripsAsSingleArgument`、`openRedisKeySendsSingleExactKeyArgument` 锁定（**回归 #282**）：含空格/引号/反斜杠的 Redis 键经 `RedisCommandParser.quote` 引用后，`tokenize` 必须还原为单个参数；`openRedisKey` 组合的 GET 经 `compose` 解析必须只携带一个完整键，不得被空格拆成多个参数而触发 wrong-argument-count。改动 `quote`/`tokenize` 或 `openRedisKey` 命令拼接时优先跑对应用例。
 - **SQLStatementParser**（11 条）：由 `trailingOperatorDoesNotCrash`、`unterminatedBlockComment`、`trailingQuote` 等用例锁定，防止 SQL 以 `-`、`/`、`*` 或未闭合块注释结尾时把 `endIndex` 当成有效下标；并由 `dollarQuotedFunctionBodyIsSingleStatement`、`statementsOutsideDollarQuotesStillSplit` 等锁定（**回归 #279**）：PostgreSQL 美元引用（`$$...$$`、`$tag$...$tag$`）体内的分号不得被当成语句分隔符，函数体必须作为单条语句执行，引用之外的分号仍正常切分；位置参数 `$1` 不被误判为引用起始符。改动 `split`/`stripLiteralsAndComments` 时优先跑对应测试文件。
+- **Schema 缓存目标**（#559，4 条）：`SchemaCacheService.loadSchemas` 必须把结果写入 `schemasByConfig`，不得写进 `databasesByConfig`；加载 schema 不得覆盖数据库列表缓存，数据库与 schema 各维护自己的缓存，数据库缓存命中后不得重新查询。由 `SchemaCacheTargetTests` 锁定。
 
 ## 测试用例清单
 
@@ -192,26 +193,37 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 98 | 查询历史归属 | 历史必须记录真正提交的 SQL，而非 await 期间被改写的编辑器文本（回归 #284） | 连接 A 执行挂起的慢查询 | 挂起 A 查询 → 改写编辑器为 SELECT 1（不切连接）→ 放行 A 查询 | 历史含真正提交的慢查询语句，不含被改写后的 SELECT 1 | P0 | ✅ 已覆盖 | `historyRecordsSubmittedSQLNotCurrentEditorText` |
 | 99 | 查询历史归属 | 旧连接查询晚到时不得把历史记到新连接名下（回归 #284） | 连接 A 执行挂起的慢查询，期间切到 B | 挂起 A 查询 → 连接 B 并改写编辑器为 SELECT 1 → 放行 A 查询 | selectedConfig 仍为 B；历史不含记到 B 名下的条目，也不含从未在 B 执行的 SELECT 1 | P0 | ✅ 已覆盖 | `staleQueryDoesNotRecordHistoryUnderNewConnection` |
 
-> 说明：全部 **99 条场景**已在本包 `swift test` 中实跑通过。
+### Schema 缓存目标（回归 #559）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 100 | Schema 缓存目标 | 加载 schema 不得覆盖数据库缓存（回归 #559） | 假 PG 连接，databases=[app_db,analytics]，schemas=[public,reporting] | loadDatabases → loadSchemas → loadDatabases | 第三次仍返回 [app_db,analytics]，databasesByConfig 不被 schema 覆盖 | P0 | ✅ 已覆盖 | `loadSchemasDoesNotOverwriteDatabaseCache` |
+| 101 | Schema 缓存目标 | 加载 schema 必须写入 schema 缓存而非数据库缓存（回归 #559） | 同上 | loadSchemas | 返回 [public,reporting]，schemasByConfig 命中，databasesByConfig 为 nil | P0 | ✅ 已覆盖 | `loadSchemasPopulatesSchemaCache` |
+| 102 | Schema 缓存目标 | 加载数据库只写数据库缓存，不碰 schema 缓存（回归 #559） | 同上 | loadDatabases | databasesByConfig 命中，schemasByConfig 为 nil | P1 | ✅ 已覆盖 | `loadDatabasesPopulatesDatabaseCacheOnly` |
+| 103 | Schema 缓存目标 | schema 加载后数据库缓存命中不得重新查询（回归 #559） | 同上 | loadDatabases → loadSchemas → loadDatabases | pg_database 查询仅 1 次（缓存命中） | P1 | ✅ 已覆盖 | `databaseCacheHitDoesNotRequeryAfterSchemaLoad` |
+
+> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 50 / 50
-- P1: 已覆盖 48 / 48
+- P0: 已覆盖 52 / 52
+- P1: 已覆盖 50 / 50
 - P2: 已覆盖 1 / 1
-- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
+- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（50 条）
-- **P1**: 其余功能性用例（48 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（52 条）
+- **P1**: 其余功能性用例（50 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 103 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
