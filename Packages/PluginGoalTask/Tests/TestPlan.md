@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 190
+测试文件: 19 个，用例总数: 194
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -252,8 +252,12 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 188 | GoalForkAutomationInheritance | sourceAutomationLevel 读选中源对话的等级，而非全局 New Chat 默认 | 选中源对话为 autonomous、全局为 chat | 调用 `sourceAutomationLevel` | 返回 autonomous（源对话等级），不是全局 chat（**回归** #772） | P0 | ✅ 已覆盖 | `testSourceLevelReadsSelectedConversationNotGlobal` |
 | 189 | GoalForkAutomationInheritance | applyAutomationLevel 把等级写到分叉出的目标对话 | 新建目标对话 | 调用 `applyAutomationLevel(.build, to:)` | setAutomationLevel 落在目标对话，其等级变为 build（**回归** #772） | P0 | ✅ 已覆盖 | `testApplyLevelTargetsForkedConversation` |
 | 190 | GoalForkAutomationInheritance | 未选中源对话时回落到全局默认（边界） | 无选中对话、全局为 build | 调用 `sourceAutomationLevel` | 返回全局 build（边界回落） | P2 | ✅ 已覆盖 | `testSourceLevelFallsBackToGlobalWhenNoSelection` |
+| 191 | GoalFailedGoalVisibility | 唯一的失败 Goal 且任务已结束时必须显示工具栏按钮 | 单个 failed Goal + failed Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false（侧栏高度 0），按钮为 true，保留记录仍有入口（**回归 #777**） | P0 | ✅ 已覆盖 | `testShownForSingleFailedGoalWithFailedTask` |
+| 192 | GoalFailedGoalVisibility | 唯一的失败 Goal 且没有任务时同样显示工具栏按钮 | 单个 failed Goal，tasks 为空 | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false，按钮为 true（**回归 #777**） | P1 | ✅ 已覆盖 | `testShownForSingleFailedGoalWithoutTasks` |
+| 193 | GoalFailedGoalVisibility | 失败 Goal 仍有未结束任务时侧栏可见，按钮保持隐藏 | 单个 failed Goal + pending Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 true，按钮为 false（不重复顶回）（**回归 #777**） | P1 | ✅ 已覆盖 | `testHiddenForFailedGoalWithPendingTask` |
+| 194 | GoalFailedGoalVisibility | 唯一的已完成 Goal 仍然隐藏按钮 | 单个 completed Goal + completed Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false，按钮仍为 false（自动删除路径不受影响）（**回归 #777**） | P1 | ✅ 已覆盖 | `testHiddenForSingleCompletedGoal` |
 
-> 说明：全部 **190 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **194 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#772**，`GoalForkCoordinator` / `GoalForkCapabilityAdapter`）：
@@ -264,23 +268,28 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 > - 机制 A（建立关系）：删除 createGoal / addTasksToGoal / forkGoal 里的 `task.goal = goal` / `copy.goal = forked`，用例 179 转红（`goal.tasks` 为空，2 条断言失败），而 180–183 仍绿（机制 B 按 goalId 显式删除兜底）；恢复后转绿。
 > - 机制 B（显式按 goalId 删除）：把 `deleteAllGoals` 改回只 `context.delete(goal)` 依赖 `.cascade`，用例 183 转红（未链接孤儿存活，1 条断言失败），而 179–182 仍绿（已链接 Task 被 cascade 命中）；恢复后转绿。
 
+> 变异验证（**#777**，`GoalVM.shouldShowToolbarButton`）：
+> - M1：改回只按 `goals.count > 1` 判定（复现原 bug）→ 用例 191/192 转红（唯一失败 Goal 在侧栏与工具栏同时消失），恢复后转绿。
+> - M2：去掉 `!hasActiveWork` 前置条件 → 用例 193 转红（侧栏已呈现失败 Goal 时按钮被重复顶回），恢复后转绿。
+> - M3：把 `.failed` 放宽成任意终态 `isTerminal` → 用例 194 与既有 `testHiddenForSingleFinishedGoal` 转红（已完成的单个 Goal 也顶出按钮），恢复后转绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 34 / 34
-- P1: 已覆盖 139 / 139
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 142 / 142
 - P2: 已覆盖 17 / 17
-- **合计: 190 / 190**（仅表示清单场景，非源码覆盖率）
+- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（139 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P1**: 其余功能性用例（142 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（17 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 190 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 194 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
