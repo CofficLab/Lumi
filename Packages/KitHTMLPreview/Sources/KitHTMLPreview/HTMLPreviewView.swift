@@ -312,7 +312,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     }
 
     func injectSelectionScript(into webView: WKWebView) {
-        webView.evaluateJavaScript(Self.selectionScript) { [weak self] _, _ in
+        webView.evaluateJavaScript(HTMLPreviewLegacySelectionScript.source) { [weak self] _, _ in
             self?.didInjectSelectionScript = true
         }
     }
@@ -335,7 +335,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     ///    `{ action:"send", blockID, label, outerHTML }`。
     /// 3. 切换选中时清除上一个高亮；点击区块外区域取消选中。
     /// 脚本幂等：重复注入会先移除旧实例（`window.__promoBlockBridge`）。
-    private static let selectionScript: String = """
+    fileprivate static let selectionScript: String = """
     (function () {
         if (window.__promoBlockBridge && window.__promoBlockBridge.dispose) {
             window.__promoBlockBridge.dispose();
@@ -367,6 +367,15 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
                 || el.tagName.toLowerCase();
         }
 
+        function cleanOuterHTML(el) {
+            // 浮动按钮已 appendChild 进 el，直接序列化会把它带进发给助手的源码；
+            // 克隆后剔除宿主注入的遮罩，只回传用户原始标记，且不改动实时 DOM。
+            var clone = el.cloneNode(true);
+            var overlays = clone.querySelectorAll('[data-promo-floating], [data-promo-highlight]');
+            for (var i = 0; i < overlays.length; i++) { overlays[i].remove(); }
+            return clone.outerHTML;
+        }
+
         function clearSelection() {
             if (highlighter) { highlighter.remove(); highlighter = null; }
             if (floating) { floating.remove(); floating = null; }
@@ -386,7 +395,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
                         action: 'send',
                         blockID: readBlockID(el),
                         label: readLabel(el),
-                        outerHTML: el.outerHTML
+                        outerHTML: cleanOuterHTML(el)
                     });
                 } catch (e) { /* 忽略 */ }
             });
@@ -467,6 +476,12 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
         }
     })();
     """
+}
+
+/// 存量选区脚本的内部入口：把 `fileprivate Coordinator.selectionScript` 桥接成可测试的 internal 常量，
+/// 与新版 `HTMLPreviewElementBridgeScript.source` 对齐，便于回归测试直接注入并捕获回传消息。
+enum HTMLPreviewLegacySelectionScript {
+    static var source: String { Coordinator.selectionScript }
 }
 
 fileprivate struct LoadKey: Equatable {
