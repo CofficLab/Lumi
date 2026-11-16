@@ -12,10 +12,12 @@ enum ConnectCacheInvalidator {
         case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/appStoreVersionLocalizations/"):
             if let localizationID = extractTrailingID(from: patchPath) {
                 cache.invalidate(tags: [.localization(localizationID)])
+                // 集合路径打 .version 标签且不含 localizationID，标签与谓词都漏掉，须按后缀显式失效（#817）。
                 cache.invalidate(accountKey: accountKey) { entry in
-                    (entry.path.contains("/appStoreVersionLocalizations/\(localizationID)")
-                        || entry.path.contains("/appScreenshotSets"))
-                        && entry.path.contains(localizationID)
+                    entry.path.hasSuffix("/appStoreVersionLocalizations")
+                        || ((entry.path.contains("/appStoreVersionLocalizations/\(localizationID)")
+                            || entry.path.contains("/appScreenshotSets"))
+                            && entry.path.contains(localizationID))
                 }
             }
 

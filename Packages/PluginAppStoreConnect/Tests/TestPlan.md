@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 101
+测试文件: 20 个，用例总数: 104
 
 核心组件（源码目录）:
 - `Sources/`
@@ -36,7 +36,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ASCSubmissionTimeline**（13 条）：由 `submissionPreviewBuildLabel`、`submissionPreviewSummaries`、`submissionPreviewCodableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectPlugin**（9 条）：由 `pluginMetadata`、`settingsEntry`、`activationKeepsChatToolbarCategoryVisible` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectRuleContributor**（1 条）：由 `loadsReleaseSafetyRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConnectCacheInvalidator**（18 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead`、`ciBuildRunPostInvalidatesBuildRunsList` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
+- **ConnectCacheInvalidator**（21 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead`、`ciBuildRunPostInvalidatesBuildRunsList`、`localizationPatchInvalidatesVersionCollection` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
 - **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
 - **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
 - **ASC Chat Toolbar 刷新**（3 条）：由 `refreshForcesNetworkOnAppIDBinding`、`refreshForcesNetworkOnBundleIDBinding`、`initialLoadUsesCacheFirst` 锁定；手动刷新必须把 forceRefresh 传到 App 解析与版本列表，首次加载仍缓存优先（**回归 #320**），改动聊天工具栏刷新的 forceRefresh 传播时优先跑对应测试文件。
@@ -158,29 +158,32 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 99 | ConnectCacheInvalidator | 更新工作流启用状态后失效工作流详情的内存缓存（回归 #816） | 工作流详情 GET `/v1/ciWorkflows/{id}` 已入 L1 | `PATCH /v1/ciWorkflows/{id}` 成功后触发失效 | 详情 L1 被清除，随后读取返回新的 isEnabled | P0 | ✅ 已覆盖 | `ciWorkflowPatchInvalidatesWorkflowDetail` |
 | 100 | ConnectCacheInvalidator | 更新工作流启用状态后失效工作流列表的内存缓存（回归 #816） | 工作流列表 GET `/v1/ciProducts/{id}/workflows` 已入 L1 | `PATCH /v1/ciWorkflows/{id}` 成功后触发失效 | 列表 L1 被清除（路径不含 /ciWorkflows，须按 /ciProducts 匹配） | P0 | ✅ 已覆盖 | `ciWorkflowPatchInvalidatesWorkflowList` |
 | 101 | ConnectCacheInvalidator | 更新工作流启用状态后失效 build runs 列表的内存缓存（回归 #816） | build runs 列表 GET `/v1/ciWorkflows/{id}/buildRuns` 已入 L1 | `PATCH /v1/ciWorkflows/{id}` 成功后触发失效 | 列表 L1 被清除 | P1 | ✅ 已覆盖 | `ciWorkflowPatchInvalidatesBuildRunsList` |
+| 102 | ConnectCacheInvalidator | 本地化 PATCH 后失效所属版本的本地化集合缓存（回归 #817） | 集合 GET `/v1/appStoreVersions/{id}/appStoreVersionLocalizations` 已入 L1 与磁盘（打 .version 标签） | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 集合两层缓存均被清除，列表不再返回旧描述 | P0 | ✅ 已覆盖 | `localizationPatchInvalidatesVersionCollection` |
+| 103 | ConnectCacheInvalidator | 本地化 PATCH 后失效该本地化的直接读取缓存（回归 #817） | 详情 GET `/v1/appStoreVersionLocalizations/{id}` 已入缓存 | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 详情缓存被清除，随后读取返回新值 | P0 | ✅ 已覆盖 | `localizationPatchInvalidatesDirectLocalizationRead` |
+| 104 | ConnectCacheInvalidator | 本地化 PATCH 不影响无关的缓存条目（回归 #817） | 无关条目 `/v1/apps` 已入缓存 | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 无关条目保留，谓词不清空全部缓存 | P1 | ✅ 已覆盖 | `localizationPatchKeepsUnrelatedEntries` |
 
-> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #320 变异验证：M1 把 ViewModel `loadVersions` 的 `listVersions(forceRefresh:)` 写死为 false（不再传播刷新标志）→ `refreshForcesNetworkOnAppIDBinding`/`refreshForcesNetworkOnBundleIDBinding` 失败（listVersions 仍收到 false，RED）；M2 把 `ConnectClient.listVersions` 的 `cachePolicy` 写死为 nil（忽略 forceRefresh）→ `forceRefreshBypassesVersionListCache` 失败（刷新仍命中旧缓存、请求数不增，RED）；还原后 95 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 26 / 26
-- P1: 已覆盖 67 / 67
+- P0: 已覆盖 28 / 28
+- P1: 已覆盖 68 / 68
 - P2: 已覆盖 8 / 8
-- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
+- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
-- **P1**: 其余功能性用例（67 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（68 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
