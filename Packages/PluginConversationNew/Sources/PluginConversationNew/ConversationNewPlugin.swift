@@ -4,6 +4,7 @@ import KitAgentTool
 import LumiLoggingKit
 import ProviderChatSection
 import ProviderConversation
+import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolbar
@@ -55,7 +56,13 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
         }
 
         // 组装层：创建 Capability + ViewModel，注入视图。
-        let capability = NewChatCapabilityAdapter(conversations: conversations)
+        // 消息存储用于判断建议卡片的首条消息是否已发出，跨卡片重建/重启保持幂等
+        // （#632、#592）；缺失时退化为原有的视图局部状态行为。
+        let messages = kernel.resolveProvider((any MessageManaging).self)
+        if messages == nil {
+            Self.logger.warning("\(Self.t)MessageManaging unavailable; suggestion cards cannot detect an already-sent starter")
+        }
+        let capability = NewChatCapabilityAdapter(conversations: conversations, messages: messages)
         let viewModel = NewChatViewModel(capability: capability)
         self.capability = capability
         self.viewModel = viewModel

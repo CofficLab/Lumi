@@ -1,5 +1,6 @@
 import Foundation
 import ProviderConversation
+import ProviderMessage
 
 /// 新建会话所需的最小会话管理能力。
 ///
@@ -50,15 +51,27 @@ protocol NewChatCapability: AnyObject {
 
     /// 将选中态恢复为 `conversationID`；nil 表示恢复「未选中」（新建会话）态。
     func restoreSelection(to conversationID: UUID?)
+
+    /// 指定对话的首条用户消息是否已经发出。
+    ///
+    /// 建议卡片的「已打开」不能只存在视图局部状态里：切换会话导致卡片重建、
+    /// 或应用重启后，局部状态回到 idle，再点一次就会重复发送首条消息并重复
+    /// 启动回合（#632、#592）。以消息存储为准可跨重建/重启保持幂等。
+    func starterAlreadySent(in conversationID: UUID) async -> Bool
 }
 
 /// 将 Kernel 的 ConversationManaging Provider 适配为插件能力。
 @MainActor
 final class NewChatCapabilityAdapter: NewChatCapability {
     private weak var conversations: (any ConversationManaging)?
+    private weak var messages: (any MessageManaging)?
 
-    init(conversations: (any ConversationManaging)?) {
+    init(
+        conversations: (any ConversationManaging)?,
+        messages: (any MessageManaging)? = nil
+    ) {
         self.conversations = conversations
+        self.messages = messages
     }
 
     func deselectConversation() {
@@ -119,6 +132,11 @@ final class NewChatCapabilityAdapter: NewChatCapability {
             return
         }
         conversations?.selectConversation(id: conversationID)
+    }
+
+    func starterAlreadySent(in conversationID: UUID) async -> Bool {
+        guard let messages else { return false }
+        return await messages.firstUserMessage(in: conversationID) != nil
     }
 }
 

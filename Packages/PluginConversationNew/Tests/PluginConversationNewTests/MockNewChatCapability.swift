@@ -18,6 +18,10 @@ final class MockNewChatCapability: NewChatCapability {
     var createError: Error?
     /// 视为仍存在于列表的对话 ID；用于模拟目标已被删除（#185）。
     var existingConversationIDs: Set<UUID> = []
+    /// 首条用户消息已发出的对话 ID；用于模拟卡片重建/重启后的幂等判定（#632、#592）。
+    var consumedStarterIDs: Set<UUID> = []
+    /// 回答消费判定前执行的副作用；用于构造「等待期间目标被删除」的晚到场景。
+    var beforeConsumptionAnswer: (@MainActor (UUID) async -> Void)?
 
     var selectedConversationID: UUID? { selectedID }
     var currentModelID: String? { modelID }
@@ -62,5 +66,10 @@ final class MockNewChatCapability: NewChatCapability {
 
     func deselectConversation() {
         selectedID = nil
+    }
+
+    func starterAlreadySent(in conversationID: UUID) async -> Bool {
+        await beforeConsumptionAnswer?(conversationID)
+        return consumedStarterIDs.contains(conversationID)
     }
 }
