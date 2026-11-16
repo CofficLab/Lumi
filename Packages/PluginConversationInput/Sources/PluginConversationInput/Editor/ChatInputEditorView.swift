@@ -826,7 +826,7 @@ extension ChatInputEditorView {
         public func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if ChatInputEditorRules.isEnterCommand(commandSelector) {
                 if let event = NSApp.currentEvent,
-                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.option)
+                   ChatInputEditorRules.shouldDeferReturnCommandToLineBreak(modifierFlags: event.modifierFlags)
                 {
                     return false
                 }

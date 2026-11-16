@@ -90,6 +90,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - **对话切换草稿保留**（4 条）：由 `transientRoundTripPreservesDraft`、`realSwitchStillClearsDraft` 等用例锁定（**回归 #781**）：切换清空判定延迟到下一主 actor 轮次，选中态落定到草稿归属对话之外的对话才清空；`create_new_conversation` 的瞬时选中往返不得清空未发送草稿与附件；改动 `handleConversationSwitched` 时优先跑 `ConversationSwitchDraftRetentionTests.swift`。
 - **折叠块跨对话隔离**（5 条）：由 `unconsumedBlockIsHiddenImmediatelyAfterSwitch`、`settledSwitchDiscardsBlockEvenAfterReturning` 等用例锁定（**回归 #518**）：待插入块绑定递交时选中的对话，归属对话之外不暴露、落定切换即丢弃；改动 `pendingBlock` / `enqueue` / `consumePendingBlock` / `handleConversationSwitched` 时优先跑 `PendingBlockConversationBindingTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **回车命令派发一致性**（3 条）：由 `returnCommandDefersToLineBreakForAllModifiers`、`returnCommandWithoutModifiersSubmits`、`commandDispatchMatchesDirectKeyRule` 锁定——AppKit 命令派发层与直接按键规则共用 `lineBreakReturnModifiers`，Shift/Option/Command/Control + 回车都插换行而非发送（**#644**）。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 配色一致性**（4 条）：由 `usesInjectedFillColor`、`usesInjectedTitleColor` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -595,6 +596,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 221 | 折叠块 | 切换窗口内为新对话递交的块不被落定清空误删 | 选中 A + 已入队 A 的块 | 发 B 的通知后不等落定再入队 B 的块，然后等落定 | A 的块被丢弃，B 的块暴露且可消费 | P1 | ✅ 已覆盖 | `blockEnqueuedDuringSwitchWindowForNewConversationSurvives` |
 | 222 | 回归 | 重建输入框时用 binding 草稿初始化编辑器，首次刷新不清空草稿（**回归 #601**） | 真实 NSHostingView 渲染生产编辑器 + binding 持有草稿 | 宿主渲染后检查原生编辑器与 binding | 编辑器显示草稿且 binding 草稿保留，不被空编辑器回写清空 | P0 | ✅ 已覆盖 | `rebuiltEditorInitializesFromBindingAndKeepsDraft` |
 | 223 | 回归 | 隐藏再恢复聊天区后草稿仍在（**回归 #601**） | binding 持有草稿 | 渲染→移除宿主→用同一 binding 重建并渲染 | 恢复后编辑器重新显示草稿，binding 草稿未被清空 | P0 | ✅ 已覆盖 | `hideAndReshowPreservesDraft` |
+| 224 | 回车 | 命令派发层对 Shift/Option/Command/Control + 回车都交回 AppKit 插换行（**回归 #644**） | 回车命令选择器 + 各修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags:)` | 四种修饰键均返回 true（不发送） | P0 | ✅ 已覆盖 | `returnCommandDefersToLineBreakForAllModifiers` |
+| 225 | 回车 | 无修饰键的回车命令仍走发送（**回归 #644**） | 回车命令选择器、无修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags: [])` | 返回 false（发送） | P1 | ✅ 已覆盖 | `returnCommandWithoutModifiersSubmits` |
+| 226 | 回车 | 命令派发与直接按键规则对同一修饰键结论一致（**回归 #644**） | 6 组修饰键组合 | 对每组比较 `shouldDeferReturnCommandToLineBreak` 与 `!shouldHandleReturnKey` | 两者恒相等，两条路径不分叉 | P0 | ✅ 已覆盖 | `commandDispatchMatchesDirectKeyRule` |
 
 > **#601 变异验证**（恢复后 GREEN）：去掉 `makeNSView` 里「用 binding 文本初始化
 > 编辑器 + `noteBindingTextPushedDown`」这段 → ID 222 / 223 RED（重建后的空编辑器
@@ -609,12 +613,19 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > （切回 A 后旧块复活；窗口内新块被旧块压在队尾），ID 217 仍 GREEN（暴露
 > 守卫兜底）。两处变异分别锁定「实时暴露守卫」与「落定丢弃」互为补充。
 
+> **#644 变异验证**（恢复后 GREEN）：M1 把 `shouldDeferReturnCommandToLineBreak`
+> 改回只豁免 Shift/Option（忽略 Command/Control）→ ID 224 RED（Control+Return 命令
+> 被当成发送）；M2 把它写死为恒 true → ID 225 RED（无修饰键回车也不发送）；
+> M3 把 `shouldHandleReturnKey` 的修饰键集合改窄为 [.shift, .option]（与命令派发分叉）
+> → ID 226 RED（两条路径结论不再一致）。三处变异分别锁定「命令派发豁免全部改行修饰键」
+> 「无修饰键仍发送」「两条路径共用同一集合」。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 81 / 81
-- P1: 已覆盖 124 / 124
+- P0: 已覆盖 83 / 83
+- P1: 已覆盖 125 / 125
 - P2: 已覆盖 18 / 18
-- **合计: 223 / 223**（仅表示清单场景，非源码覆盖率）
+- **合计: 226 / 226**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

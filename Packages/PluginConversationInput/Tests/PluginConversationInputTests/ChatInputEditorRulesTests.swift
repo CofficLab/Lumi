@@ -122,6 +122,38 @@ struct ChatInputEditorRulesTests {
         #expect(!ChatInputEditorRules.isEnterCommand(#selector(NSResponder.insertText(_:))))
     }
 
+    @Test("命令派发层对 Shift/Option/Command/Control + 回车都交回 AppKit 插换行")
+    func returnCommandDefersToLineBreakForAllModifiers() {
+        // Control+Return 经直接规则交给 AppKit 后落到 insertLineBreak: 命令，
+        // 命令派发层必须同样豁免，否则会误发送（#644）。
+        for flags in [NSEvent.ModifierFlags.shift, .option, .command, .control] {
+            #expect(
+                ChatInputEditorRules.shouldDeferReturnCommandToLineBreak(modifierFlags: flags),
+                "\(flags) + 回车命令应插入换行而非发送"
+            )
+        }
+    }
+
+    @Test("无修饰键的回车命令仍走发送")
+    func returnCommandWithoutModifiersSubmits() {
+        #expect(!ChatInputEditorRules.shouldDeferReturnCommandToLineBreak(modifierFlags: []))
+    }
+
+    @Test("命令派发与直接按键规则对同一修饰键结论一致")
+    func commandDispatchMatchesDirectKeyRule() {
+        // 锁定两条路径共用同一修饰键集合，防止再次分叉（#644 根因）。
+        let combos: [NSEvent.ModifierFlags] = [[], .shift, .option, .command, .control, [.shift, .control]]
+        for flags in combos {
+            let direct = ChatInputEditorRules.shouldHandleReturnKey(
+                keyCode: 36,
+                charactersIgnoringModifiers: "\r",
+                modifierFlags: flags
+            )
+            let command = ChatInputEditorRules.shouldDeferReturnCommandToLineBreak(modifierFlags: flags)
+            #expect(command == !direct, "\(flags) 下两条路径结论必须相反且一致")
+        }
+    }
+
     // MARK: - 拖放字符串解析
 
     @Test("绝对路径被解析为文件 URL")
