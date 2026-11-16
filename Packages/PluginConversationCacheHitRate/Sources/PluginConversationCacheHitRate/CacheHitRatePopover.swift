@@ -294,12 +294,8 @@ struct CacheHitRatePopover: View {
         // PNG 编码与落盘是 CPU/IO 密集操作，移到后台线程，避免卡住 UI（#1225）。
         let image = ExportableCGImage(cgImage)
         Task { @MainActor in
-            do {
-                try await Task.detached(priority: .userInitiated) {
-                    try Self.writePNG(image.cgImage, to: url)
-                }.value
-            } catch {
-                exportErrorMessage = error.localizedDescription
+            if let message = await Self.exportPNG(image, to: url) {
+                exportErrorMessage = message
             }
             isExporting = false
         }
@@ -313,11 +309,23 @@ struct CacheHitRatePopover: View {
         }
         try pngData.write(to: url)
     }
+
+    /// 编码并落盘，失败时带回错误文案而非静默成功（#515）；抽成 seam 供回归测试锁定报错链路。
+    nonisolated static func exportPNG(_ image: ExportableCGImage, to url: URL) async -> String? {
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                try writePNG(image.cgImage, to: url)
+            }.value
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
 }
 
 /// CGImage 不可变、可安全跨线程读取；包一层以越过 Swift 6 的 Sendable 检查，
 /// 让主线程光栅化得到的图像能交给后台线程编码。
-private struct ExportableCGImage: @unchecked Sendable {
+struct ExportableCGImage: @unchecked Sendable {
     let cgImage: CGImage
     init(_ cgImage: CGImage) { self.cgImage = cgImage }
 }
