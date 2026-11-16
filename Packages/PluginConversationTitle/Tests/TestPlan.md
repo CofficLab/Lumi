@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 74 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 76 条用例。
 
 平台: iOS 17+
-测试文件: 10 个，用例总数: 74
+测试文件: 10 个，用例总数: 76
 
 核心组件（源码目录）:
 - `Observers/`
@@ -36,7 +36,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **PlaceholderTitleCollapsing**（4 条）：由 `shortTextMatchesReference`、`longTextMatchesReference`、`extremelyWhitespaceHeavyMatchesReference`、`resultLengthIsBounded` 锁定；占位标题先取有界前缀再折叠空白，语义必须与「全量折叠再截断」完全一致且结果长度有界（**#1287**）。改动该模块时优先跑对应测试文件。
 - **TitleServiceFallback**（4 条）：由 `fallsBackWhenLLMThrows`、`fallsBackWhenLLMReturnsEmptyTitle`、`fallbackDoesNotOverwriteCustomTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TitleUpdateTool**（8 条）：由 `updatesSelectedTitle`、`trimsWhitespace`、`reportsMissingProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TitleUpdateTool**（10 条）：由 `updatesSelectedTitle`、`trimsWhitespace`、`reportsMissingProvider`、`executeResultThrowsOnPersistenceFailure`、`executeResultSuccessIsNotError` 等用例锁定；失败分支（服务不可用/未选中/写库失败）统一抛出 `ToolExecutionError`，带 context 的 `executeResult` 同样传播失败由宿主标记 `isError`，不得包成成功结果（**回归 #651**）。改动该模块时优先跑对应测试文件。
 - **TitleUtilityRouting**（4 条）：由 `titleRoutesToUtilityModel`、`titleWithoutDeclarationUsesMainModel`、`titleUsageRecordedToLedger` 等用例锁定。声明轻量模型时标题路由到轻量模型、未声明时沿用主模型；用量按 `.title` 用途记入账本并带服务模型，供应商未报用量时记估算值且不为零（**#1158**）。改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -117,29 +117,33 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 72 | PlaceholderTitleCollapsing | 占位标题结果长度有界（#1287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resultLengthIsBounded` |
 | 73 | TitleServiceBackfill | 永久跳过的条目不得阻塞窗口之外的有效对话（#799） | 200 条无首条用户消息的无标题对话 + 窗口外 1 条有效对话 | 执行回填两轮 | 有效对话被补写占位标题，跳过条目不写空标题，第二轮不重复补写 | P0 | ✅ 已覆盖 | `skippedWindowDoesNotBlockValidConversation` |
 | 74 | TitleServiceBackfill | 单轮回填遵守补写上限 | 201 条可回填的无标题对话 | 执行一轮回填 | 恰好补写 200 条，剩 1 条留到下次启动 | P1 | ✅ 已覆盖 | `backfillStopsAtWriteCap` |
+| 75 | TitleUpdateTool | executeResult 写库失败时抛出而非返回成功结果（**回归 #651**） | 有效 context 会话，stub 写库失败 | 调用 `executeResult(context:arguments:)` | 抛出 `ToolExecutionError`，由宿主标记 isError；不得返回 isError == false 的成功结果 | P0 | ✅ 已覆盖 | `executeResultThrowsOnPersistenceFailure` |
+| 76 | TitleUpdateTool | executeResult 成功时不带错误标记（**回归 #651**） | 有效 context 会话，写库成功 | 调用 `executeResult(context:arguments:)` | 结果 isError == false 且含成功文案，与失败路径形成对照 | P1 | ✅ 已覆盖 | `executeResultSuccessIsNotError` |
 
-> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **76 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#799）：把 `backfillUntitledConversations` 的查询改回 `untitledConversationIDs(limit: Self.backfillLimit)`（只取前 200 条窗口），`skippedWindowDoesNotBlockValidConversation` 立即变红（backfilled == 0，窗口外的有效对话永远轮不到）；恢复 `limit: Int.max` 全量取 ID 后重新变绿。`backfillStopsAtWriteCap` 锁定「补满 200 条即停」的有界语义。
 
+> 变异验证（#651）：`TitleUpdateTool` 的失败分支已在 dev 上统一抛出 `ToolExecutionError`（6e948db89 / 4e700b68b），宿主 `DefaultToolManagerProviding` 捕获抛出的 `executeResult` 后置 `isError == true`，GUI/ACP 据此显示失败。本次补锁 issue 直接引用的 `executeResult(context:)` 失败路径：M1 把 `executeResult` 改为 `do/catch` 将失败包成 `ToolCallResult(content: 失败文案)`（isError 默认 false，还原 #651 原始缺陷）→ `executeResultThrowsOnPersistenceFailure` 转红（不再抛出），`executeResultSuccessIsNotError` 仍绿；还原后 76 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 21 / 21
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 22 / 22
 - P2: 已覆盖 38 / 38
-- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
+- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（22 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（38 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 76 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
