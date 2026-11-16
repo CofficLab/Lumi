@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 169
+测试文件: 20 个，用例总数: 178
 
 核心组件（源码目录）:
 - `Agent/`
@@ -65,6 +65,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **后台行数 COUNT 的表身份校验**（#565，2 条）：`refreshTableRowCount` 在 `await` 之后写回共享 `tableRowCount` 前必须比对 `openTableObject?.id == table.id` 与连接代次，否则打开表 A 后快速切到 B，A 的慢 `SELECT COUNT(*)` 晚到会覆盖 B 的行数，分页 bar 据此算出错误的总页数与 Next 可用性；`openObject` 切换时把 `tableRowCount` 重置为 nil，保证新表自行发起 COUNT。由 `DatabaseViewModelRowCountRaceTests` 用门闩构造「旧表 COUNT 晚到」锁定；改动 `refreshTableRowCount`/`loadTablePage` 的行数写回或 `openObject` 重置时优先跑对应测试文件。
 - **结构变更与未保存数据编辑的冲突**（#583，5 条）：`saveSchemaChanges` 应用 DDL 前必须检查暂存的结构变更（`renameColumn` 的旧列名、`dropColumn` 的列名）是否与未保存数据编辑引用的列（`TableChangeManager.referencedColumnNames`：UPDATE 的 SET 列与主键 WHERE 列、INSERT 的列、DELETE 的主键列）相交；相交则明确报错并阻止，不得静默执行 DDL——否则数据变更管理器持有的旧 schema 快照会生成引用已不存在列名的 SQL（如 `UPDATE ... SET "name"`），保存必失败。不相交（重命名未被编辑引用的列）或无数据编辑时照常应用，且保留无关数据编辑。由 `DatabaseViewModelSchemaChangeConflictTests` 锁定；改动 `saveSchemaChanges` 的冲突守卫或 `referencedColumnNames` 时优先跑对应测试文件。
 - **连接凭据持久化的失败传播**（#569，7 条）：`DatabaseConnectionStore.saveConfigs` 必须先完成全部密码的 Keychain 写入（`setReportingErrors`，失败抛出 `KeychainStoreError`），最后才把脱敏配置写入 `UserDefaults`；不得用吞错的 `set` 无论成败都落盘——否则 Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，界面把「密码已丢失」的配置呈现为保存成功，重启后 `loadConfigs` 无法恢复凭据。`DatabaseViewModel.addConfig`/`updateConfig`/`removeConfig` 改为 `throws` 且持久化成功才更新内存 `configs`，表单据此保留输入并报错；`KeychainStore` 可注入以便测试替换后端。由 `DatabaseConnectionCredentialPersistenceTests` 锁定；改动 `saveConfigs` 的落盘时机或视图模型的凭据保存链路时优先跑对应测试文件。
+- **工具栏语句计数的 memo 与发布门禁**（#1254，9 条）：`MainView.toolbar` 不得在每次 body 求值时同步 `SQLStatementParser.split(queryText).count`——普通编辑与无关的 ViewModel 发布（`isLoading`/`queryResult`/`errorMessage`）都会在主线程重复整段词法解析，长脚本下卡顿。修复为 `StatementCountCache` 按文本 memo（文本不变命中缓存、不重复解析，文本变化才重算），`DatabaseViewModel.queryText` 的 `didSet` 经 `refreshStatementCount()` 更新存储值 `statementCount`（仅当计数变化才发布），init 手动 seeding 一次；工具栏读取 O(1) 的 `viewModel.statementCount`。由 `StatementCountCacheTests`（缓存语义）与 `DatabaseViewModelStatementCountTests`（VM 集成）锁定；改动 `StatementCountCache`、`queryText` 的 `didSet` 或工具栏计数来源时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -331,7 +332,21 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 168 | 凭据持久化失败传播 | updateConfig 在 Keychain 失败时抛出且保留原配置（回归 #569） | 注入失败 store 的视图模型，configs=[existing] | 改名+改密码后 `updateConfig(edited)` | 抛出 KeychainStoreError，configs 首项 password/name 仍为原值，UserDefaults 配置键为 nil | P0 | ✅ 已覆盖 | `updateConfigPropagatesKeychainFailureAndKeepsOriginal` |
 | 169 | 凭据持久化失败传播 | addConfig 成功时追加配置并脱敏持久化 | 注入正常 store 的视图模型 | `addConfig(带密码配置)` | configs 含新配置，落盘配置含新 id 且 password 为 nil，假后端存到密码原文 | P1 | ✅ 已覆盖 | `addConfigSuccessAppendsAndPersists` |
 
-> 说明：全部 **169 条场景**已在本包 `swift test` 中实跑通过。
+### 工具栏语句计数的 memo 与发布门禁（回归 #1254）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|--------|------|----------|
+| 170 | 语句计数 memo | 缓存计数与 SQLStatementParser.split 结果一致 | — | 对 `SELECT 1; SELECT 2; SELECT 3;` 调用 `count(for:)` | 等于 `split(...).count`，为 3 | P1 | ✅ 已覆盖 | `countMatchesParserSplit` |
+| 171 | 语句计数 memo | 文本不变时不得重复整段解析（memo 命中，回归 #1254） | — | 对同一文本连续调用 `count(for:)` 三次 | `parseCount == 1` | P0 | ✅ 已覆盖 | `repeatedSameTextDoesNotReparse` |
+| 172 | 语句计数 memo | 文本变化时必须重新解析并更新计数（回归 #1254） | — | 先 `count(for: "SELECT 1;")` 再 `count(for: "SELECT 1; SELECT 2;")` | 第二次返回 2，`parseCount` 由 1 变 2 | P0 | ✅ 已覆盖 | `changedTextReparses` |
+| 173 | 语句计数 memo | 纯注释脚本计数为 0 | — | `count(for: "-- just a comment\n/* block */")` | 返回 0 | P2 | ✅ 已覆盖 | `commentOnlyScriptCountsZero` |
+| 174 | 语句计数 memo | 空脚本计数为 0 | — | `count(for: "")` | 返回 0 | P2 | ✅ 已覆盖 | `emptyScriptCountsZero` |
+| 175 | 语句计数 VM 集成 | 初始化时按默认 queryText seeding statementCount | `DatabaseViewModel(loadSavedConfigs: false)` | 读取 `statementCount` | 等于 `split(queryText).count` | P1 | ✅ 已覆盖 | `statementCountSeededOnInit` |
+| 176 | 语句计数 VM 集成 | statementCount 必须随 queryText 变化更新（回归 #1254） | 同上 | 依次设 queryText 为三语句、单语句脚本 | statementCount 分别为 3、1 | P0 | ✅ 已覆盖 | `statementCountTracksQueryTextChanges` |
+| 177 | 语句计数 VM 集成 | 无关的 ViewModel 发布不得改变 statementCount（回归 #1254） | 同上，queryText 为两语句脚本 | 设 isLoading/queryResult/errorMessage 后读取 statementCount | 仍为 2，不被无关发布触发重算 | P0 | ✅ 已覆盖 | `unrelatedPublicationDoesNotChangeStatementCount` |
+| 178 | 语句计数 VM 集成 | 重置为相同 queryText 时计数保持不变 | 同上 | 连续两次设 queryText 为同一两语句脚本 | statementCount 仍为 2 | P1 | ✅ 已覆盖 | `resettingSameQueryTextKeepsCount` |
+
+> 说明：全部 **178 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -355,24 +370,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#583）：`saveSchemaChanges` 原先应用 DDL 后因 `changeManager?.hasChanges == true` 跳过重建数据变更管理器，使其继续持有旧列快照，重命名/删除被编辑引用的列后保存数据编辑生成 `UPDATE ... SET "name"` 报 `no such column`。修复为应用 DDL 前用 `referencedColumnNames` 与暂存结构变更的受影响列求交，相交则报错阻止。M1 删除该冲突守卫（直接进入 getConnection 执行 DDL）→ `renameOfColumnWithPendingEditIsBlocked`、`dropOfColumnWithPendingEditIsBlocked` 转红（tableSchemaError 为空、结构变更被应用、探针报 no such column: name），`referencedColumnNamesCollectsUpdateInsertDeleteColumns`、`renameOfUnreferencedColumnProceedsAndPreservesEdit`、`renameWithNoPendingDataEditProceeds` 仍绿。变异施加并确认转红后还原，最终 162 条全绿。
 >
 > 变异验证（#569）：`DatabaseConnectionStore.saveConfigs` 原先调用吞错的 `keychain.set`，无论密码是否写入成功都把脱敏配置落盘，表单随后无条件关闭；Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，重启后凭据无法恢复且界面无提示。修复为先完成全部 `setReportingErrors` 写入（失败抛出 `KeychainStoreError`）、最后才写 `UserDefaults`，并把 `addConfig`/`updateConfig`/`removeConfig` 改为 `throws`、持久化成功才更新内存列表。M1 把 `try keychain.setReportingErrors(...)` 还原为吞错的 `keychain.set(...)`（原 bug）→ `saveConfigsPropagatesKeychainWriteFailureAndDoesNotPersist`、`saveConfigsFailureKeepsPreviouslySavedConfigs`、`addConfigPropagatesKeychainFailureAndKeepsConfigsUnchanged`、`updateConfigPropagatesKeychainFailureAndKeepsOriginal` 转红（不抛错且配置被落盘/内存列表被更新），`saveConfigsSuccessSanitizesPasswordAndStoresInKeychain`、`loadConfigsRestoresPasswordFromKeychain`、`addConfigSuccessAppendsAndPersists` 仍绿。变异施加并确认转红后还原，最终 169 条全绿。
+>
+> 变异验证（#1254）：`MainView.toolbar` 原先在每次 body 求值时同步 `SQLStatementParser.split(viewModel.queryText).count`，普通编辑与无关的 ViewModel 发布都在主线程重复整段词法解析。修复为 `StatementCountCache` 按文本 memo + `queryText.didSet → refreshStatementCount()` 更新存储值 `statementCount`（仅计数变化才发布），工具栏改读 O(1) 的 `viewModel.statementCount`。M1 删除缓存的 memo 命中分支（每次都 `parseCount += 1` 并重新 `split`）→ `repeatedSameTextDoesNotReparse` 转红（同文本三次调用 parseCount 变 3），其余缓存/VM 用例仍绿；M2 删除 `queryText` 的 `didSet { refreshStatementCount() }`（计数不再随文本更新）→ `statementCountTracksQueryTextChanges`、`unrelatedPublicationDoesNotChangeStatementCount`、`resettingSameQueryTextKeepsCount` 转红（statementCount 停在 init seeding 值不跟随编辑），`statementCountSeededOnInit` 仍绿。两处变异均单独施加并确认转红后还原，最终 178 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 85 / 85
-- P1: 已覆盖 83 / 83
-- P2: 已覆盖 1 / 1
-- **合计: 169 / 169**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 89 / 89
+- P1: 已覆盖 86 / 86
+- P2: 已覆盖 3 / 3
+- **合计: 178 / 178**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（85 条）
-- **P1**: 其余功能性用例（83 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（89 条）
+- **P1**: 其余功能性用例（86 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 169 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 178 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

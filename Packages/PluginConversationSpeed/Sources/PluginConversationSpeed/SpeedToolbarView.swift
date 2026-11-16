@@ -48,6 +48,10 @@ struct SpeedToolbarView: View {
                 popoverShown = false
             }
         }
+        .onChange(of: popoverShown) { newValue in
+            // 仅在弹窗打开时才重建趋势历史，关闭时清空（#1226）。
+            viewModel.setPopoverPresented(newValue)
+        }
     }
 
     private var speedLabel: String {

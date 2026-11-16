@@ -137,28 +137,31 @@ public actor BrewService {
             throw BrewError.parsingError(NSError(domain: "BrewService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid data"]))
         }
 
-        let info = try JSONDecoder().decode(BrewInfo.self, from: data)
+        // outdated 的 schema 与 info 不同：目标版本在 current_version、已装版本在
+        // installed_versions（数组），name 对 Tap formula 已含 tap、对 cask 即 token。
+        // 用 BrewInfo 解码会读不到 versions/version，目标版本全部退化成 "unknown"（#847）。
+        let outdated = try JSONDecoder().decode(BrewOutdated.self, from: data)
         var packages: [BrewPackage] = []
 
-        for f in info.formulae {
+        for f in outdated.formulae {
             packages.append(BrewPackage(
-                name: f.full_name ?? f.name,
-                desc: f.desc,
-                homepage: f.homepage,
-                version: f.versions?.stable ?? "unknown",
-                installedVersion: f.installed?.first?.version,
+                name: f.name,
+                desc: nil,
+                homepage: nil,
+                version: f.current_version,
+                installedVersion: f.installed_versions.first,
                 outdated: true,
                 isCask: false
             ))
         }
 
-        for c in info.casks {
+        for c in outdated.casks {
             packages.append(BrewPackage(
-                name: c.token ?? c.name,
-                desc: c.desc,
-                homepage: c.homepage,
-                version: c.version ?? "unknown",
-                installedVersion: c.installed?.first?.version,
+                name: c.name,
+                desc: nil,
+                homepage: nil,
+                version: c.current_version,
+                installedVersion: c.installed_versions.first,
                 outdated: true,
                 isCask: true
             ))
