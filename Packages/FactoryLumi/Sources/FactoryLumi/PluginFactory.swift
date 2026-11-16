@@ -82,6 +82,7 @@ import PluginDevice
 import PluginDeviceChat
 import PluginDiskManager
 import PluginNetworkManager
+import PluginServerManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
@@ -250,6 +251,7 @@ public struct DefaultPluginFactory: PluginFactory {
             HostsManagerPlugin(),
             DiskManagerPlugin(),
             NetworkManagerPlugin(),
+            ServerManagerPlugin(),
             DocxReadPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
