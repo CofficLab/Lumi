@@ -105,6 +105,12 @@ final class TitleService: SuperLog {
 
             let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
             guard !placeholder.isEmpty else { continue }
+            // 读取首条消息期间用户可能已通过 update_title 改了标题：写前再复核一次，
+            // 旧回填不得覆盖新写入的自定义标题（#466）。与正常生成/兜底路径的二次校验一致。
+            guard await shouldApplyGeneratedTitle(
+                conversationID: id,
+                firstUserMessageContent: firstUserMessage.content
+            ) else { continue }
             guard await conversations.updateConversationTitleAndWait(placeholder, for: id) else { continue }
             backfilled += 1
         }

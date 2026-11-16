@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 76 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 78 条用例。
 
 平台: iOS 17+
-测试文件: 10 个，用例总数: 76
+测试文件: 10 个，用例总数: 78
 
 核心组件（源码目录）:
 - `Observers/`
@@ -32,7 +32,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **ConversationScopedTitleUpdate**（3 条）：由 `writesToCallingConversationInsteadOfSelection`、`doesNotLeakIntoOtherConversation`、`legacyPathStillUsesSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HeaderTitleObserver**（7 条）：由 `viewModelSkipsDuplicateTitle`、`viewModelStartsEmpty`、`syncsInitialTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（4 条）：由 `normalizeTitle`、`placeholderTitle`、`updateToolUpdatesTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TitleServiceBackfill**（6 条）：由 `backfillsUntitledConversation`、`skipsTitledConversation`、`skipsConversationWithoutUserMessage`、`skippedWindowDoesNotBlockValidConversation`、`backfillStopsAtWriteCap` 等用例锁定；回填取全库无标题 ID 后按「补满 200 条或耗尽列表」推进，永久跳过的条目不得阻塞窗口之外的有效对话（**回归 #799**）。改动该模块时优先跑对应测试文件。
+- **TitleServiceBackfill**（8 条）：由 `backfillsUntitledConversation`、`skipsTitledConversation`、`skipsConversationWithoutUserMessage`、`skippedWindowDoesNotBlockValidConversation`、`backfillStopsAtWriteCap`、`backfillDoesNotOverwriteTitleSetDuringMessageRead`、`backfillStillWritesWhenNoTitleSetDuringRead` 等用例锁定；回填取全库无标题 ID 后按「补满 200 条或耗尽列表」推进，永久跳过的条目不得阻塞窗口之外的有效对话（**回归 #799**）。读取首条用户消息的 await 窗口内用户可能已改标题，写前必须再复核一次 `shouldApplyGeneratedTitle`，旧回填不得覆盖新写入的自定义标题（**回归 #466**）。改动该模块时优先跑对应测试文件。
 - **PlaceholderTitleCollapsing**（4 条）：由 `shortTextMatchesReference`、`longTextMatchesReference`、`extremelyWhitespaceHeavyMatchesReference`、`resultLengthIsBounded` 锁定；占位标题先取有界前缀再折叠空白，语义必须与「全量折叠再截断」完全一致且结果长度有界（**#1287**）。改动该模块时优先跑对应测试文件。
 - **TitleServiceFallback**（4 条）：由 `fallsBackWhenLLMThrows`、`fallsBackWhenLLMReturnsEmptyTitle`、`fallbackDoesNotOverwriteCustomTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -119,31 +119,35 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 74 | TitleServiceBackfill | 单轮回填遵守补写上限 | 201 条可回填的无标题对话 | 执行一轮回填 | 恰好补写 200 条，剩 1 条留到下次启动 | P1 | ✅ 已覆盖 | `backfillStopsAtWriteCap` |
 | 75 | TitleUpdateTool | executeResult 写库失败时抛出而非返回成功结果（**回归 #651**） | 有效 context 会话，stub 写库失败 | 调用 `executeResult(context:arguments:)` | 抛出 `ToolExecutionError`，由宿主标记 isError；不得返回 isError == false 的成功结果 | P0 | ✅ 已覆盖 | `executeResultThrowsOnPersistenceFailure` |
 | 76 | TitleUpdateTool | executeResult 成功时不带错误标记（**回归 #651**） | 有效 context 会话，写库成功 | 调用 `executeResult(context:arguments:)` | 结果 isError == false 且含成功文案，与失败路径形成对照 | P1 | ✅ 已覆盖 | `executeResultSuccessIsNotError` |
+| 77 | TitleServiceBackfill | 回填读取首条消息期间用户改了标题，旧回填不得覆盖新标题（**回归 #466**） | 无标题对话，门闩让 firstUserMessage 读取挂起 | 读取窗口内 `updateConversationTitle` 写新标题后放行读取 | backfilled == 0，标题仍为用户新写入值，不消耗 LLM | P0 | ✅ 已覆盖 | `backfillDoesNotOverwriteTitleSetDuringMessageRead` |
+| 78 | TitleServiceBackfill | 回填读取期间无人改标题时仍正常补写占位标题（**回归 #466** 护栏） | 无标题对话，门闩让读取挂起 | 读取窗口内不改标题，直接放行 | backfilled == 1，补写首条消息占位标题，二次复核不过宽 | P1 | ✅ 已覆盖 | `backfillStillWritesWhenNoTitleSetDuringRead` |
 
-> 说明：全部 **76 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#799）：把 `backfillUntitledConversations` 的查询改回 `untitledConversationIDs(limit: Self.backfillLimit)`（只取前 200 条窗口），`skippedWindowDoesNotBlockValidConversation` 立即变红（backfilled == 0，窗口外的有效对话永远轮不到）；恢复 `limit: Int.max` 全量取 ID 后重新变绿。`backfillStopsAtWriteCap` 锁定「补满 200 条即停」的有界语义。
 
 > 变异验证（#651）：`TitleUpdateTool` 的失败分支已在 dev 上统一抛出 `ToolExecutionError`（6e948db89 / 4e700b68b），宿主 `DefaultToolManagerProviding` 捕获抛出的 `executeResult` 后置 `isError == true`，GUI/ACP 据此显示失败。本次补锁 issue 直接引用的 `executeResult(context:)` 失败路径：M1 把 `executeResult` 改为 `do/catch` 将失败包成 `ToolCallResult(content: 失败文案)`（isError 默认 false，还原 #651 原始缺陷）→ `executeResultThrowsOnPersistenceFailure` 转红（不再抛出），`executeResultSuccessIsNotError` 仍绿；还原后 76 条全绿。
 
+> 变异验证（#466）：把 `backfillUntitledConversations` 写前的二次复核 `guard await shouldApplyGeneratedTitle(...)` 删除（还原读取后无条件写占位标题的旧缺陷）→ `backfillDoesNotOverwriteTitleSetDuringMessageRead` 转红（backfilled == 1、用户新标题被占位标题覆盖，2 处断言失败），护栏 `backfillStillWritesWhenNoTitleSetDuringRead` 与其余 6 条回填用例仍绿；恢复二次复核后 78 条全绿。门闩 `BackfillReadGate` 让 `firstUserMessage` 读取挂起，测试在窗口内写入新标题后再放行，确定性构造「旧读取晚到」。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 22 / 22
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 38 / 38
-- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
+- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（22 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（38 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 76 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
