@@ -301,6 +301,77 @@ struct FinderCardTests {
 
         #expect(FinderOpener.validatedURL(for: file.path) == nil)
     }
+
+    // MARK: - 路径首尾空白保留（#571）
+
+    @Test func pathArgumentPreservesTrailingSpace() {
+        // 空格是合法文件名字符：path 参数必须原样保留，不得 trim 成另一个目录。
+        #expect(ShowFolderCardTool.path(from: ["path": ToolArgument("/tmp/demo ")]) == "/tmp/demo ")
+    }
+
+    @Test func pathArgumentPreservesLeadingSpace() {
+        #expect(ShowFolderCardTool.path(from: ["path": ToolArgument(" /tmp/demo")]) == " /tmp/demo")
+    }
+
+    @Test func pathArgumentNilOnlyForGenuinelyEmpty() {
+        #expect(ShowFolderCardTool.path(from: ["path": ToolArgument("")]) == nil)
+        #expect(ShowFolderCardTool.path(from: [:]) == nil)
+        // 纯空白不是「真正空串」：原样保留，交由目录存在性校验拒绝。
+        #expect(ShowFolderCardTool.path(from: ["path": ToolArgument("   ")]) == "   ")
+    }
+
+    @Test func cardPayloadKeepsTrailingSpacePath() async throws {
+        let manager = RecordingMessageManager()
+        let bridge = FinderMessageBridge()
+        bridge.configure(messages: manager)
+
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-571-card-\(UUID().uuidString)")
+        let spacedPath = base.path + " "
+        try FileManager.default.createDirectory(atPath: spacedPath, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: spacedPath) }
+
+        let tool = ShowFolderCardTool(bridge: bridge)
+        let result = try await tool.executeResult(
+            context: ToolExecutionContext(
+                jobID: "job-571",
+                conversationID: UUID(),
+                turnID: UUID()
+            ),
+            arguments: ["path": ToolArgument(spacedPath)]
+        )
+
+        #expect(!result.isError)
+        let message = try #require(manager.inserted.first?.message)
+        let payload = try #require(FinderTimeline.decodePayload(from: message.metadata))
+        #expect(payload.path == spacedPath)
+    }
+
+    @Test func finderOpenerPreservesTrailingSpaceDirectory() throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-571-open-\(UUID().uuidString)")
+        let spacedPath = base.path + " "
+        try FileManager.default.createDirectory(atPath: spacedPath, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: spacedPath) }
+
+        // 带尾空格的目录必须被原样打开；去掉空格的兄弟路径并不存在。
+        let url = try #require(FinderOpener.validatedURL(for: spacedPath))
+        #expect(url.path == spacedPath)
+        #expect(FinderOpener.validatedURL(for: base.path) == nil)
+    }
+
+    @Test func finderOpenerPreservesLeadingSpaceDirectory() throws {
+        let parent = FileManager.default.temporaryDirectory
+            .appendingPathComponent("finder-571-lead-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: parent) }
+
+        let spacedPath = parent.path + "/ demo"
+        try FileManager.default.createDirectory(atPath: spacedPath, withIntermediateDirectories: true)
+
+        let url = try #require(FinderOpener.validatedURL(for: spacedPath))
+        #expect(url.path == spacedPath)
+    }
 }
 
 /// 记录插入的消息，替代真实 `MessageManaging`。
