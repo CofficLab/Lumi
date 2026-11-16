@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 41 条用例。
+PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 41
+测试文件: 10 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Models/`
@@ -46,6 +46,7 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 - **ScreenRecorderPluginShutdown**（3 条）：由 `shutdownStopsAndFinalizesActiveRecording`、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 锁定插件关闭必须停止并落盘活动录制、隐藏指示器（**#223**）；改动该模块时优先跑对应测试文件。
 - **ScreenCaptureConfiguration**（3 条）：由 `appAudioEnablesCapturesAudio`、`withoutAppAudioCapturesAudioStaysOff`、`preservesDimensionsAndMicrophoneFlag` 锁定请求应用音频时必须打开 `capturesAudio` 总开关、未请求时不得打开（**回归 #819**）；改动流配置路径时优先跑对应测试文件。
 - **RecordingTestFeedback**（4 条）：由 `startClearsPreviousResult`、`feedbackShowsErrorNotStaleSaved`、`feedbackIgnoresMismatchedSessionID` 等用例锁定测试录制反馈只认本轮会话真正产生的结果——新会话启动清除上一轮 `lastResult`、失败显示本轮错误、会话 ID 不符不复用（**#851**）；改动该模块时优先跑对应测试文件。
+- **RecordingAutoStopFinalization**（2 条）：由 `maxDurationAutoStopFinalizesRecording`、`windowGoneAutoStopFinalizesRecording` 锁定自动停止（计时到期 / 目标窗口消失）必须在独立 Task 中执行 `stop()` 落盘：计时器 Task 直接 `await stop()` 会被其内部 `cancelTimers()` 取消自身，取消状态跨 `await` 保留使 `finalize` 的 `Task.checkCancellation()` 抛错、录制丢失（**回归 #377**）；改动 `startTimers` / `scheduleAutoStop` / `stop` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -92,8 +93,10 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 | 39 | RecordingTestFeedback | 本轮 finished 会话（ID 相符）显示已保存文件名 | 构造 id 相符的 finished 会话与本轮结果 | 调用 testFeedback | 文案含本轮输出文件名 | P1 | ✅ 已覆盖 | `feedbackShowsSavedForMatchingFinishedSession` |
 | 40 | RecordingTestFeedback | 本轮 error 会话显示本轮错误，不得复用上一轮已保存（**回归 #851**） | 构造 error 会话并保留上一轮 lastResult | 调用 testFeedback | 文案为本轮错误，不含上一轮文件名 | P0 | ✅ 已覆盖 | `feedbackShowsErrorNotStaleSaved` |
 | 41 | RecordingTestFeedback | 会话 ID 不符时不得复用结果（**回归 #851**） | 构造 id 与期望不符的 finished 会话 | 调用 testFeedback | 返回 nil | P0 | ✅ 已覆盖 | `feedbackIgnoresMismatchedSessionID` |
+| 42 | RecordingAutoStopFinalization | 计时到期自动停止必须落盘为 finished，不得因自取消进入 error 而丢失录制（**回归 #377**） | 注入可落盘引擎桩，maxDurationSeconds=1 | start 后等待计时器自动停止收尾 | 会话 finished、outputURL/lastResult 非空、输出目录有 mp4 | P0 | ✅ 已覆盖 | `maxDurationAutoStopFinalizesRecording` |
+| 43 | RecordingAutoStopFinalization | 目标窗口消失自动停止必须落盘为 finished，不得因自取消进入 error 而丢失录制（**回归 #377**） | 注入可落盘引擎桩与不存在的窗口 id | start 后等待存活检测自动停止收尾 | 会话 finished、outputURL/lastResult 非空、输出目录有 mp4 | P0 | ✅ 已覆盖 | `windowGoneAutoStopFinalizesRecording` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#224**，`RecordingSessionManager.start` 启动互斥）：
@@ -115,23 +118,27 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 > - **M3** 去掉 `testFeedback` 的 `session.id == expectedSessionID` 守卫（不校验会话身份）→ `feedbackIgnoresMismatchedSessionID` 转红（id 不符的 finished 会话仍返回已保存文案而非 nil）。
 > - 三处变异分别由不同用例捕获，均已还原；完整修复下 41 条全绿。
 
+> 变异验证（**#377**，`RecordingSessionManager` 自动停止落盘）：
+> - **M1** 把两处 `self.scheduleAutoStop()` 还原为计时器 Task 内直接 `_ = try? await self.stop()`（自动停止在已取消自身的 Task 内落盘）→ `maxDurationAutoStopFinalizesRecording`、`windowGoneAutoStopFinalizesRecording` 双双转红（`stop()` 内 `cancelTimers()` 取消计时器自身，取消状态跨 `await` 保留，`finalize` 的 `Task.checkCancellation()` 抛 `CancellationError`，会话进入 error、outputURL/lastResult 为 nil、输出目录无 mp4）。
+> - 还原完整修复（自动停止经 `scheduleAutoStop` 在独立非结构化 Task 中执行 `stop()`，不继承计时器取消状态）→ 43 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
+- P0: 已覆盖 18 / 18
 - P1: 已覆盖 22 / 22
 - P2: 已覆盖 3 / 3
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
 - **P1**: 其余功能性用例（22 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
