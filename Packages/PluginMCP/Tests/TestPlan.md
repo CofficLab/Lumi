@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 11 个，用例总数: 76
+测试文件: 12 个，用例总数: 81
 
 核心组件（源码目录）:
 - `Managers/`
@@ -41,6 +41,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（16 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回、#532 写回失败必须抛出且不污染内存列表）；改动该模块时优先跑对应测试文件。
 - **MCPSaveFailure**（7 条）：由 `editorSaveThrowsWhenWriteFails`、`toggleFailureReportsErrorAndKeepsState`、`deleteFailureReportsErrorAndKeepsServer` 等用例锁定（#532：编辑页/启停/删除都以「确实写进磁盘」为成功前提，失败必须给出错误文案且不改状态）；改动该模块时优先跑对应测试文件。
+- **MCPAutoStartSync**（5 条，#533）：由 `toggleOnPersistsAutoStartForNextLaunch`、`toggleOffClearsAutoStart`、`legacyEnabledWithoutAutoStartIsRepairedOnLoad`、`repairDoesNotTouchDisabledServers`、`toggleFailureKeepsAutoStartUnchanged` 锁定——`startAutoStartServers` 只连接 `enabled && autoStart` 的服务器，因此启停开关必须把 `autoStart` 与 `enabled` 一起写回（与编辑页 `autoStart: initialEnabled` 的约定一致），否则本次能连、重启后永不连接；读盘时必须自愈历史遗留的 `enabled=true/autoStart=false` 并落盘，且只修复已启用条目；写回失败时两者都保持原值（#532）。改动 `MCPSettingsView.setEnabled` 或 `MCPServerRegistry.load` 时优先跑对应测试文件。
 - **MCPToolAdapter**（12 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定（含 #178 取消透传）；改动该模块时优先跑对应测试文件。
 - **MCPArgumentsCodec**（15 条）：由 `roundTripPreservesArgumentWithSpaces`、`parseDoubleQuotedInputKeepsSpaces`、`emptyArgumentRoundTrips` 等用例锁定；参数编辑框的拼接/拆分必须可逆（`parse(join(args)) == args`），含空格/引号/反斜杠的单个参数不得被拆坏或丢失（#534）。
 
@@ -124,30 +125,36 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 74 | MCPSaveFailure | 删除：写回成功返回 nil 且服务器不再出现 | 可写数据目录 | 调用 deleteServer | 返回 nil，重建注册表后服务器不存在 | P1 | ✅ 已覆盖 | `deleteSuccessRemovesServer` |
 | 75 | MCPSaveFailure | 错误文案带上底层原因，加载失败也有可显示的说明 | 构造 writeFailed / loadFailed 错误 | 调用 persistenceFailureMessage | 文案含底层 localizedDescription；loadFailed 文案非空 | P1 | ✅ 已覆盖 | `failureMessageIncludesUnderlyingReason` |
 | 76 | MCPLocalization | 保存失败提示文案翻译（**#532**） | — | 以 zh-Hans 解析新增 key | 命中「保存 MCP 配置失败：%@」 | P2 | ✅ 已覆盖 | `saveFailureKey` |
+| 77 | MCPAutoStartSync | 启停开关必须同步 autoStart，重启后仍被自动启动选中（**回归 #533**） | 贡献模板以 enabled=false/autoStart=false 落库 | 调用 setEnabled(true) 后重建注册表 | 返回 nil，enabled 与 autoStart 均为 true，重启后仍在 `enabled && autoStart` 集合内 | P0 | ✅ 已覆盖 | `toggleOnPersistsAutoStartForNextLaunch` |
+| 78 | MCPAutoStartSync | 关闭开关后 autoStart 一并清零，重启不再自动连接（**回归 #533**） | 服务器 enabled=true/autoStart=true | 调用 setEnabled(false) 后重建注册表 | enabled 与 autoStart 均为 false，自动启动集合为空 | P1 | ✅ 已覆盖 | `toggleOffClearsAutoStart` |
+| 79 | MCPAutoStartSync | 遗留 enabled=true/autoStart=false 读盘自愈并写回（**回归 #533**） | 磁盘上是旧版本开关留下的半启用配置 | 初始化注册表并直接解码磁盘文件 | 内存与磁盘的 autoStart 都为 true，重启后仍被自动启动选中 | P0 | ✅ 已覆盖 | `legacyEnabledWithoutAutoStartIsRepairedOnLoad` |
+| 80 | MCPAutoStartSync | 自愈只修复已启用的服务器，禁用态保持不变（**回归 #533** 护栏） | 磁盘上同时有禁用与半启用两条配置 | 初始化注册表 | 禁用条目的 enabled/autoStart 仍为 false，只有已启用条目被修复 | P1 | ✅ 已覆盖 | `repairDoesNotTouchDisabledServers` |
+| 81 | MCPAutoStartSync | 写回失败时 autoStart 与 enabled 都保持原值（**回归 #533** / #532 护栏） | 配置文件路径被换成目录，原子写必然失败 | 调用 setEnabled(false) | 返回非空错误文案，enabled 与 autoStart 均保持 true | P0 | ✅ 已覆盖 | `toggleFailureKeepsAutoStartUnchanged` |
 
-> 说明：全部 **76 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
 > 变异验证（#534）：① 去掉 join 的引号包裹（含空格参数原样输出）→ `joinQuotesArgumentWithSpaces` 失败；② parse 把双引号当普通字符（不进入引号态）→ `parseDoubleQuotedInputKeepsSpaces` 失败；③ 用 `current.isEmpty` 取代 `hasToken` 标志（空引号 token 被丢弃）→ `emptyArgumentRoundTrips` 失败；恢复后重新通过。
 > 变异验证（#532）：① `persist(_:)` 把写入错误重新吞掉（`throw writeFailed` → `return`）→ 6 条写回失败用例失败；② `loadFailed` 守卫改回静默 `return` → `corruptFileSurvivesCRUD` 失败；③ addServer 先提交内存再写盘 → 新增/编辑页两条用例失败（列表被污染）；④ removeServer 先记墓碑再写盘 → 两条删除失败用例失败；⑤⑥ 启停/删除 helper 的 catch 返回 nil → 对应用例失败；⑦ 编辑页 save 用 `try?` 吞掉编辑模式失败 → `editorSaveThrowsWhenWriteFails` 失败；恢复后全部重新通过。
+> 变异验证（#533）：① 启停开关去掉 `updated.autoStart = enabled`（复现原 bug）→ `toggleOnPersistsAutoStartForNextLaunch`、`toggleOffClearsAutoStart` 失败；② `load()` 退回只去重、不做 autoStart 自愈 → `legacyEnabledWithoutAutoStartIsRepairedOnLoad`、`repairDoesNotTouchDisabledServers` 失败；③ 自愈去掉 `if repaired.enabled`（把禁用服务器也改成自动启动）→ `repairDoesNotTouchDisabledServers` 失败；④ 自愈后不写盘（`if servers.count != rawCount || needsAutoStartRepair` → `if servers.count != rawCount`）→ `legacyEnabledWithoutAutoStartIsRepairedOnLoad` 失败；恢复后全部重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 45 / 45
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 47 / 47
 - P2: 已覆盖 8 / 8
-- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（45 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 76 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

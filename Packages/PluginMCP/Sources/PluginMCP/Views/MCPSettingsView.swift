@@ -350,6 +350,9 @@ struct MCPSettingsView: View {
     ) -> String? {
         var updated = server
         updated.enabled = enabled
+        // 启用即随启动恢复：只写 enabled 会留下 autoStart=false，重启后
+        // startAutoStartServers 跳过它，UI 显示已启用却永远不连接（#533）。
+        updated.autoStart = enabled
         do {
             try registry.updateServer(updated)
             return nil

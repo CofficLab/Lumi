@@ -59,7 +59,19 @@ public final class MCPServerRegistry: ObservableObject {
             // 重复 id 会让 SwiftUI ForEach 渲染错乱（列表出现空白行）。去重后写回。
             let rawCount = decoded.count
             servers = deduplicated(decoded)
-            if servers.count != rawCount {
+            // 数据自愈：历史版本的启停开关只写 enabled，留下 enabled=true/autoStart=false，
+            // 重启后 startAutoStartServers 会跳过它（#533）。启用即随启动恢复。
+            let needsAutoStartRepair = servers.contains { $0.enabled && !$0.autoStart }
+            if needsAutoStartRepair {
+                servers = servers.map { server in
+                    var repaired = server
+                    if repaired.enabled {
+                        repaired.autoStart = true
+                    }
+                    return repaired
+                }
+            }
+            if servers.count != rawCount || needsAutoStartRepair {
                 persist()
             }
         } catch {
