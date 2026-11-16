@@ -940,6 +940,111 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(box.messages.count, countBefore)
     }
 
+    // MARK: - 启动前取消（#480）
+
+    /// 回归 #480：prompt 与 cancel 同一 burst 到达，runner Task 尚未启动、
+    /// AgentLoop runtime 还没创建（cancelTurn 是 no-op）。取消必须仍然生效：
+    /// 绝不能启动模型/工具，且原 prompt 以 cancelled 收尾。
+    func testCancelBeforeRunnerStartDoesNotRunTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-prestart")
+        _ = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        // startTurn 调度 runner Task 后立即 cancel：此刻 Task 尚未在主 actor 执行。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        coordinator.cancel(sessionID: sessionID)
+
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        // 被取消的回合绝不能启动模型/工具（这是 #480 的核心副作用）。
+        XCTAssertTrue(runner.runCalls.isEmpty, "取消先于 runner 启动时不得调用 runTurn")
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望取消响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .cancelled)
+    }
+
+    /// 守卫 #480：启动前取消不得污染同一会话的下一回合——新 prompt 的 runner
+    /// 必须正常启动并 end_turn（取消标志随旧 Task 存续，不能泄漏到新 Task）。
+    func testCancelBeforeStartDoesNotPoisonNextTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-then-new")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        // 第一回合：prompt 后立即 cancel（runner 未启动）。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.isEmpty)
+        // 排空主 actor，确保被取消的旧 runner Task 已执行完毕。
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        // 同一会话发起新回合：必须正常启动 runner，不被上一回合的取消污染。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(2), prompt: [.text("again")])
+        waitUntil({ runner.runCalls.contains(conversationID) }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.contains(conversationID), "新回合必须正常启动 runner")
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "ok")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil({ box.messages.contains { $0.id == .number(2) } }, timeout: 3.0)
+        guard let response = box.messages.first(where: { $0.id == .number(2) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望第二回合响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 守卫 #480：runner 已启动后再取消（运行中取消，#233）仍须正常生效，
+    /// 启动前取消的判定不得误跳过已经合法启动的回合。
+    func testCancelAfterRunnerStartStillCancelsRunningTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-running")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        // 等 runner 真正启动后再取消。
+        waitUntil { runner.runCalls.contains(conversationID) }
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.contains(conversationID), "已启动的回合不应被启动前判定跳过")
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望取消响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .cancelled)
+    }
+
     // MARK: - 流式输出
 
     /// 可手动推进的流式 store mock。
