@@ -72,14 +72,10 @@ enum ConnectCacheInvalidator {
             }
 
         case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/ciWorkflows/"):
-            cache.invalidate(accountKey: accountKey) { entry in
-                entry.path.contains("/ciWorkflows") || entry.path.contains("/ciBuildRuns")
-            }
+            invalidateXcodeCloudCaches(cache: cache, accountKey: accountKey)
 
         case ("POST", let postPath) where postPath.contains("/ciBuildRuns"):
-            cache.invalidate(accountKey: accountKey) { entry in
-                entry.path.contains("/ciBuildRuns")
-            }
+            invalidateXcodeCloudCaches(cache: cache, accountKey: accountKey)
 
         // 年龄分级声明挂在 appInfo 上，读路径是 /v1/appInfos/{id}/ageRatingDeclaration。
         // PATCH 成功后必须失效该读缓存，否则紧接着的读取仍返回旧声明。
@@ -147,6 +143,15 @@ enum ConnectCacheInvalidator {
         cache.invalidate(accountKey: accountKey) { entry in
             entry.path.contains("/reviewSubmissions")
                 || entry.path.contains("/reviewSubmissionItems")
+        }
+    }
+
+    // 读取路径横跨 /ciProducts（工作流列表）、/ciWorkflows（详情与 build runs 列表）、/ciBuildRuns，三者都要失效（#816）。
+    private static func invalidateXcodeCloudCaches(cache: ConnectAPICache, accountKey: String) {
+        cache.invalidate(accountKey: accountKey) { entry in
+            entry.path.contains("/ciProducts")
+                || entry.path.contains("/ciWorkflows")
+                || entry.path.contains("/ciBuildRuns")
         }
     }
 
