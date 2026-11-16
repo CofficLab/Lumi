@@ -9,13 +9,25 @@ final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let verbose: Bool = false
     // 懒加载：避免 AppManagerPluginSupport 实例化时（onReady 之前）就触发 CacheManager
     // 单例构建，保证首次使用时数据目录已按项目约定解析。
-    private lazy var cacheManager = CacheManager.shared
+    private lazy var cacheManager = injectedCacheManager ?? CacheManager.shared
 
     /// 用户主目录；测试可注入临时目录，生产环境使用 NSHomeDirectory()。
     private let homeDirectory: String
 
-    init(homeDirectory: String = NSHomeDirectory()) {
+    /// 扫描根目录；测试可注入临时目录，nil 时使用标准安装路径。
+    private let applicationRoots: [String]?
+
+    /// 缓存管理器；测试可注入独立数据库，nil 时使用共享单例。
+    private let injectedCacheManager: CacheManager?
+
+    init(
+        homeDirectory: String = NSHomeDirectory(),
+        applicationRoots: [String]? = nil,
+        cacheManager: CacheManager? = nil
+    ) {
         self.homeDirectory = homeDirectory
+        self.applicationRoots = applicationRoots
+        self.injectedCacheManager = cacheManager
     }
 
     // 标准应用安装路径
@@ -28,6 +40,7 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     // 用户特定的应用路径
     private func getUserApplicationPaths() -> [String] {
+        if let applicationRoots { return applicationRoots }
         var paths = standardPaths
 
         // 添加其他可能的路径
@@ -43,6 +56,41 @@ final class AppService: @unchecked Sendable, SuperLog {
     static func directoryURL(forPath path: String) -> URL {
         let expandedPath = NSString(string: path).expandingTildeInPath
         return URL(fileURLWithPath: expandedPath, isDirectory: true)
+    }
+
+    /// 标准应用容器子目录名（小写比较）。macOS 把 Terminal、活动监视器、控制台等
+    /// 放在 `/System/Applications/Utilities`，用户也常把工具放进 `/Applications/Utilities`。
+    private static let applicationContainerDirectoryNames: Set<String> = ["utilities"]
+
+    /// 枚举 root 下的 .app 包：直接子项，外加标准容器子目录（如 Utilities）内的一层。
+    ///
+    /// 只下降这一层，且不进入 .app 包内部、不递归任意目录树，
+    /// 否则系统工具永远扫不到，而 Downloads 之类的根又会被整棵遍历（#648）。
+    static func appBundleURLs(under root: URL) -> [URL] {
+        let fileManager = FileManager.default
+        guard let children = try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+
+        var bundles: [URL] = []
+        for child in children {
+            if child.pathExtension == "app" {
+                bundles.append(child)
+                continue
+            }
+            guard applicationContainerDirectoryNames.contains(child.lastPathComponent.lowercased()),
+                  (try? child.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true,
+                  let nested = try? fileManager.contentsOfDirectory(
+                      at: child,
+                      includingPropertiesForKeys: nil,
+                      options: [.skipsHiddenFiles]
+                  )
+            else { continue }
+            bundles.append(contentsOf: nested.filter { $0.pathExtension == "app" })
+        }
+        return bundles
     }
 
     private let libraryPaths = [
@@ -80,33 +128,27 @@ final class AppService: @unchecked Sendable, SuperLog {
                         for path in paths {
                             let url = Self.directoryURL(forPath: path)
 
-                            if let directoryContents = try? FileManager.default.contentsOfDirectory(
-                                at: url,
-                                includingPropertiesForKeys: [.contentModificationDateKey],
-                                options: [.skipsHiddenFiles]
-                            ) {
-                                for appURL in directoryContents where appURL.pathExtension == "app" {
-                                    validPaths.insert(appURL.path)
+                            for appURL in Self.appBundleURLs(under: url) {
+                                validPaths.insert(appURL.path)
 
-                                    // 获取文件修改时间
-                                    let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
-                                    let modDate = resourceValues?.contentModificationDate ?? Date()
+                                // 获取文件修改时间
+                                let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
+                                let modDate = resourceValues?.contentModificationDate ?? Date()
 
-                                    // 尝试从缓存加载 (如果未强制刷新)
-                                    if !force, let cachedItem = await cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
-                                        let app = AppModel(
-                                            bundleURL: appURL,
-                                            name: cachedItem.name,
-                                            identifier: cachedItem.identifier,
-                                            version: cachedItem.version,
-                                            iconFileName: cachedItem.iconFileName,
-                                            size: cachedItem.size
-                                        )
-                                        apps.append(app)
-                                    } else {
-                                        let app = AppModel(bundleURL: appURL)
-                                        apps.append(app)
-                                    }
+                                // 尝试从缓存加载 (如果未强制刷新)
+                                if !force, let cachedItem = await cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
+                                    let app = AppModel(
+                                        bundleURL: appURL,
+                                        name: cachedItem.name,
+                                        identifier: cachedItem.identifier,
+                                        version: cachedItem.version,
+                                        iconFileName: cachedItem.iconFileName,
+                                        size: cachedItem.size
+                                    )
+                                    apps.append(app)
+                                } else {
+                                    let app = AppModel(bundleURL: appURL)
+                                    apps.append(app)
                                 }
                             }
                         }

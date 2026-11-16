@@ -5,7 +5,7 @@
 AppManagerPlugin Manage installed applications for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 38
+测试文件: 4 个，用例总数: 42
 
 核心组件（源码目录）:
 - `Models/`
@@ -44,6 +44,7 @@ AppManagerPlugin Manage installed applications for Lumi.
 - **列表可用性**（3 条）：由 `listLoadingEndsWhenAppsPublishedWhileSizingContinues`、`initialEnumerationKeepsBlockingLoadingUntilAppsPublished`、`staleSizingCompletionDoesNotClobberNewerScanState` 锁定（**回归 #1221**）：`performScan` 枚举完成、发布 `installedApps` 后必须立即结束阻塞态 `isLoading`（`AppRailView` 仅在 `isLoading` 时用 overlay 替换整个列表），大小计算改用独立的 `isCalculatingSizes` 进度态，使已就绪的应用在逐个回填大小期间即可见、可选；阻塞 overlay 只保留给初始枚举阶段。`isLoading`/`isCalculatingSizes` 的写回与清理都受 `activeScanID == scanID` 身份校验保护：被取消的旧扫描晚到完成时不得覆盖新扫描的列表/加载/计算状态。改动 `performScan` 的加载态切换、`isCalculatingSizes` 或 `AppRailView` 列表 gating 时优先跑对应测试。
 - **部分删除失败与重试**（7 条）：由 `deleteFilesSkipsAlreadyMissingItemsSoRetryIsNotBlocked`、`deleteFilesContinuesPastFailureAndReportsPartial`、`partialDeletionRemovesDeletedItemsAndKeepsFailedForRetry`、`retryAfterPartialFailureClearsRemainingAndCompletes`、`successfulExtraOnlyDeletionKeepsAppAndRescans`、`completeAppDeletionRemovesAppAndClearsSelection`、`staleDeletionResultDoesNotPolluteNewSelection` 锁定（**回归 #410**）：`AppService.deleteFiles` 必须逐项处理、不再「首错即抛」——已不存在的条目视为删除成功（跳过），单项 `trashItem` 失败只记入 `DeleteFilesResult.failed` 并继续处理后续条目，返回 `deleted`/`failed` 两组结果而非抛错。`AppManagerViewModel.deleteSelectedFiles` 拿到结果后立即从 `relatedFiles`/`selectedFileIds` 移除已删项、App 本体被删时从 `installedApps` 移除；失败项保留勾选以便重试（此前整批抛错后 UI 仍显示已删的 App 与文件，重试指向不存在的 App 路径而永久卡死）。写回受 `selectedApp?.bundleURL.path == appPath` 身份校验保护：删除进行中切换到别的 App 后，旧结果不得污染新选中项。改动 `deleteFiles` 的逐项/跳过/结果聚合或 `deleteSelectedFiles`/`applyDeletionResult` 的写回与身份校验时优先跑对应测试。
 - **刷新选择协调**（4 条）：由 `refreshRemapsSelectionToNewModelByPath`、`refreshClearsSelectionWhenAppRemovedExternally`、`refreshClearsRemovedSelectionEvenWhenListNonEmpty`、`refreshPreservesRelatedFilesWhenAppStillExists` 锁定（**回归 #795**）：刷新用全新构造的 `AppModel`（每个 `id` 都是新 UUID）替换 `installedApps`，而行高亮按 `selectedApp?.id == app.id` 比较，故 `performScan` 发布新列表后必须调用 `reconcileSelection(with:)` 按稳定的 `bundleURL.path` 协调选中项——仍存在则 remap 到新模型（恢复行高亮与详情一致，且因 `AppModel.==` 按 path 相等，`AppManagerView.onChange(of: selectedApp)` 不会触发重扫，关联文件与待删除勾选保持不变）；已被外部移除则 `cancelSelection()` 清空选择/详情/关联文件/待删除勾选/确认弹窗，即使列表仍非空也不得残留矛盾状态。改动 `performScan` 发布列表后的协调、`reconcileSelection` 的 path 匹配或清空分支时优先跑对应测试。
+- **应用发现范围**（4 条）：由 `scanFindsAppsInsideUtilitiesContainer`、`discoveryStopsAtOneLevelAndNeverEntersAppBundles`、`discoveryStillReturnsDirectAppChildren`、`discoverySkipsHiddenEntries` 锁定（**回归 #648**）：`AppService.scanInstalledApps` 必须经 `AppService.appBundleURLs(under:)` 枚举每个根——除直接 `.app` 子项外，还要下降标准应用容器子目录（`Utilities`，名称大小写不敏感）一层，使 `/System/Applications/Utilities` 的 Terminal/活动监视器/控制台与 `/Applications/Utilities` 内的工具可被发现和管理；下降只限这一层，不得进入 `.app` 包内部、不得递归任意目录树（`Other/`、`Utilities/Nested/` 里的包不算应用来源），根与容器内的隐藏条目都跳过，空容器不影响直接子项。改动 `appBundleURLs`、`applicationContainerDirectoryNames` 或 `scanInstalledApps` 的枚举入口时优先跑对应测试。
 
 ## 测试用例清单
 
@@ -117,8 +118,12 @@ AppManagerPlugin Manage installed applications for Lumi.
 | 36 | 刷新选择协调 | 应用被外部移除后刷新清空选择与详情（回归 #795） | force:false→[alpha]、force:true→[]，已置关联文件/勾选/确认弹窗 | 选中 alpha 后刷新 | selectedApp=nil、relatedFiles/selectedFileIds 空、showUninstallConfirmation=false、isScanningFiles=false | P0 | ✅ 已覆盖 | `refreshClearsSelectionWhenAppRemovedExternally` |
 | 37 | 刷新选择协调 | 列表仍非空时被移除的选中项仍须清空（回归 #795） | force:false→[alpha,beta]、force:true→[alphaNew] | 选中 beta 后刷新 | installedApps==[alpha]、selectedApp=nil、relatedFiles/selectedFileIds 空 | P1 | ✅ 已覆盖 | `refreshClearsRemovedSelectionEvenWhenListNonEmpty` |
 | 38 | 刷新选择协调 | 应用仍在时仅 remap 选中，保留关联文件与勾选（回归 #795） | force:false→[old]、force:true→[new]，已置关联文件/勾选 | 选中 old 后刷新 | selectedApp.id==installedApps[0].id，relatedFiles/selectedFileIds 保持不变 | P1 | ✅ 已覆盖 | `refreshPreservesRelatedFilesWhenAppStillExists` |
+| 39 | 应用发现范围 | 扫描必须发现 Utilities 容器内的应用（回归 #648） | 临时根含 Top.app、Utilities/Terminal.app、Utilities/Activity Monitor.app，注入独立缓存库 | AppService.scanInstalledApps(force: true) | displayName 集合=={Top, Terminal, Activity Monitor}，Terminal 的 bundleURL 解析符号链接后指向 Utilities 子目录 | P0 | ✅ 已覆盖 | `scanFindsAppsInsideUtilitiesContainer` |
+| 40 | 应用发现范围 | 只下降容器一层，不得进入 .app 包或任意目录（回归 #648） | 根含 Top.app、Utilities/Terminal.app、Utilities/Nested/Deep.app、Other/Stray.app、Top.app/Contents/Inner.app | AppService.appBundleURLs(under:) | 仅返回 {Top.app, Terminal.app}，更深层/非容器/包内部条目均不出现 | P0 | ✅ 已覆盖 | `discoveryStopsAtOneLevelAndNeverEntersAppBundles` |
+| 41 | 应用发现范围 | 空容器不影响直接子项的既有发现（回归 #648） | 根含 Direct.app 与空的 Utilities 目录 | AppService.appBundleURLs(under:) | 返回 [Direct.app] | P1 | ✅ 已覆盖 | `discoveryStillReturnsDirectAppChildren` |
+| 42 | 应用发现范围 | 隐藏条目在根与容器内都被跳过（回归 #648） | 根含 Visible.app、.Hidden.app、Utilities/Console.app、Utilities/.Secret.app | AppService.appBundleURLs(under:) | 仅返回 {Visible.app, Console.app} | P1 | ✅ 已覆盖 | `discoverySkipsHiddenEntries` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#794）：把 `AppService.scanRelatedFiles` 无 Bundle ID 分支的 `return relatedFiles` 改回 `return []`（恢复缺陷），`nilBundleIdentifierStillListsAppItselfForUninstall`、`nilBundleIdentifierAppIsSelectedForUninstallByDefault` 两条转红（扫描结果为空、拿不到 App 本体），其余 17 条（合法 Bundle ID / 路径穿越 / 归属保护 / 缓存 / 插件状态）保持绿；还原后 19 条全绿。
@@ -148,23 +153,29 @@ AppManagerPlugin Manage installed applications for Lumi.
 > - **M3** 把 path 匹配 `$0.bundleURL.path == selected.bundleURL.path` 改为 `$0.id == selected.id`（按瞬时 id 匹配，新批次永远不命中）→ `refreshRemapsSelectionToNewModelByPath`、`refreshPreservesRelatedFilesWhenAppStillExists` 转红（选中被误清空而非 remap），清空两条仍绿。
 > - 还原完整修复 → 38 条全绿。
 
+> 变异验证（#648，`AppService.appBundleURLs` / `scanInstalledApps` 枚举入口）：
+> - **M1** 把 `scanInstalledApps` 的 `for appURL in Self.appBundleURLs(under: url)` 换回「只枚举根的直接子项并过滤 `pathExtension == "app"`」（复现原缺陷）→ `scanFindsAppsInsideUtilitiesContainer` 转红（Utilities 里的 Terminal/Activity Monitor 未被发现），helper 三条仍绿。
+> - **M2** 把 `applicationContainerDirectoryNames` 置为空集合（helper 不再下降任何容器）→ `scanFindsAppsInsideUtilitiesContainer`、`discoveryStopsAtOneLevelAndNeverEntersAppBundles`、`discoverySkipsHiddenEntries` 转红（结果缺少容器内应用），`discoveryStillReturnsDirectAppChildren` 仍绿。
+> - **M3** 把容器名判定 `applicationContainerDirectoryNames.contains(...)` 改为 `true`（任意目录都被下降一层）→ `discoveryStopsAtOneLevelAndNeverEntersAppBundles` 转红（`Other/Stray.app` 被当成应用来源），其余三条仍绿。
+> - 还原完整修复 → 42 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 21 / 21
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 1 / 1
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
