@@ -48,6 +48,11 @@ public final class ACPStreamingBridge {
     /// 流式增量回调（已计算好的新片段 + 对话 ID）。
     var onDelta: ((UUID, String) -> Void)?
 
+    /// 流式活动回调：每次底层流式通知（正文或思考 token）触发一次，早于增量计算。
+    /// 协调器据此判定 LLM 正在产出并解除首响应 watchdog；即使本次通知没有产生
+    /// 正文增量（如纯思考阶段）也算进展，避免健康的长流式被误判为无进展（#352）。
+    var onProgress: ((UUID) -> Void)?
+
     init(stream: any ACPStreamObserving) {
         self.stream = stream
         handle = stream.addACPStreamObserver { [weak self] conversationID in
@@ -74,6 +79,9 @@ public final class ACPStreamingBridge {
 
     /// 把当前流式正文相对上次的增量发出去。
     private func flush(conversationID: UUID) {
+        // 任何流式通知都证明 LLM 正在产出（正文或思考），先上报进展，
+        // 再计算正文增量；纯思考阶段没有正文增量也不得被 watchdog 误判（#352）。
+        onProgress?(conversationID)
         guard let content = stream.acpStreamingContent(for: conversationID) else { return }
         // 底层 `start` 新消息时正文重置为空、id 变化。检测到新消息就把发送
         // 偏移归零，否则第二段响应会沿用第一段的偏移：更短则整段丢弃，更长

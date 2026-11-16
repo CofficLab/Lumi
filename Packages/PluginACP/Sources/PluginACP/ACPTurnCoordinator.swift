@@ -153,6 +153,11 @@ public final class ACPTurnCoordinator {
                   let sessionID = self.activeSessionID(for: conversationID) else { return }
             self.sendUpdate(sessionID: sessionID, update: .agentMessageChunk(.text(delta)))
         }
+        // 任何流式增量（正文或思考 token）都证明 LLM 正在产出：据此解除首响应
+        // watchdog，否则持续健康流式的长回答会被误判为「无 LLM 进展」而拒绝（#352）。
+        streaming?.onProgress = { [weak self] conversationID in
+            self?.markLLMProgress(conversationID: conversationID)
+        }
     }
 
     // MARK: - 回合启动

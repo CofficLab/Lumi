@@ -977,6 +977,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             messageIDByConversation[conversationID] = UUID()
             observer?(conversationID)
         }
+
+        /// 模拟纯思考阶段的流式通知：底层触发观察者，但此刻还没有正文
+        /// （`acpStreamingContent` 返回 nil）。用于验证「思考 token 也算 LLM
+        /// 进展」，不得被首响应 watchdog 误判为无进展（#352）。
+        func emitThinkingSignal(for conversationID: UUID) {
+            observer?(conversationID)
+        }
     }
 
     private final class NoopStreamHandle: ACPStreamObserverHandle {
@@ -1056,6 +1063,125 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             return text == "完整答复"
         }
         XCTAssertEqual(fullSends.count, 1, "收尾不应重发已流式发送过的整段文本")
+    }
+
+    /// 回归 #352：健康的长流式正文必须解除首响应 watchdog，
+    /// 不得因「无 LLM 进展」被误判拒绝并取消底层回合。
+    func testStreamingBodyDisarmsWatchdog() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-wd")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 正文开始流式产出：这就是 LLM 进展，watchdog 必须解除。
+        stream.append("正在输出", to: conversationID)
+        // 越过 watchdog 超时窗口：不得产生 refusal，也不得取消底层回合。
+        RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "健康流式不应触发超时响应")
+        XCTAssertTrue(runner.cancelCalls.isEmpty, "健康流式不应取消底层回合")
+
+        // 回合正常收尾：恰好一次 end_turn 响应。
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "正在输出")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 回归 #352：纯思考阶段（只有思考 token、尚无正文增量）同样是 LLM 进展，
+    /// 必须解除 watchdog，否则长思考的健康回合会被误判拒绝。
+    func testThinkingOnlyStreamDisarmsWatchdog() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-think")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 只有思考通知，没有正文（acpStreamingContent 仍为 nil）。
+        stream.emitThinkingSignal(for: conversationID)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "纯思考流式不应触发超时响应")
+        XCTAssertTrue(runner.cancelCalls.isEmpty, "纯思考流式不应取消底层回合")
+
+        // 思考结束后正文产出并正常收尾。
+        stream.append("最终答复", to: conversationID)
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "最终答复")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 守卫 #352：装配了流式桥但底层毫无流式活动时，watchdog 仍须照常超时拒绝
+    /// 并取消底层回合——进展判定不能被「桥存在」本身过度解除。
+    func testStreamingBridgeWithoutActivityStillTimesOut() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-idle")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+
+        // 没有任何流式活动：watchdog 必须照常触发。
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertEqual(runner.cancelCalls, [conversationID])
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望 watchdog 超时响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
     }
 
     /// 回归 #351：一个回合内「LLM → 工具 → LLM」，第二段正文比第一段短时
