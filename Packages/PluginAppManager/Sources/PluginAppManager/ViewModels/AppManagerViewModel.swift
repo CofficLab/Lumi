@@ -135,6 +135,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
+        // 新批次的 AppModel 每个 id 都是新 UUID，行高亮按 id 比较会与实际选中脱节；
+        // 按稳定的 bundle 路径把选中项映射到新模型，应用已被外部移除时清空选择与详情（#795）。
+        reconcileSelection(with: apps)
         // 列表已就绪：结束「扫描应用」阻塞态，大小计算改用独立进度态，
         // 让用户在逐个回填大小期间即可看到并选择应用，而非等全部遍历完成（#1221）。
         isLoading = false
@@ -182,6 +185,18 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     func refresh() {
         Task {
             await scanApps(force: true)
+        }
+    }
+
+    /// 列表被新批次替换后，按稳定的 bundle 路径协调选中项（#795）。
+    /// 仍存在 → 映射到新模型，使行高亮（`selectedApp?.id == app.id`）与详情恢复一致；
+    /// 已被外部移除 → 清空选择、详情、关联文件与待删除勾选，不留矛盾状态。
+    private func reconcileSelection(with apps: [AppModel]) {
+        guard let selected = selectedApp else { return }
+        if let refreshed = apps.first(where: { $0.bundleURL.path == selected.bundleURL.path }) {
+            selectedApp = refreshed
+        } else {
+            cancelSelection()
         }
     }
 
