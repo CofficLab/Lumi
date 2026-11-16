@@ -9,6 +9,12 @@ final class EditorConfigController {
 
     func restoreConfig(
     ) -> EditorConfigSnapshot {
+        // 整份字典只加载/解码一次，各键在内存里读取（见 issue #1250）。
+        snapshot(from: EditorConfigStore.loadAll())
+    }
+
+    /// 从已加载的配置字典构造全局快照，避免逐键重复读盘 + plist 解码。
+    private func snapshot(from dict: [String: Any]) -> EditorConfigSnapshot {
         var snapshot = EditorConfigSnapshot(
             fontSize: 13.0,
             tabWidth: 4,
@@ -27,23 +33,23 @@ final class EditorConfigController {
             autoSaveDelay: 1.0
         )
 
-        if let value = EditorConfigStore.loadDouble(forKey: EditorConfigStore.fontSizeKey) { snapshot.fontSize = value }
-        if let value = EditorConfigStore.loadInt(forKey: EditorConfigStore.tabWidthKey) { snapshot.tabWidth = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.useSpacesKey) { snapshot.useSpaces = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.formatOnSaveKey) { snapshot.formatOnSave = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.organizeImportsOnSaveKey) { snapshot.organizeImportsOnSave = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.fixAllOnSaveKey) { snapshot.fixAllOnSave = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.trimTrailingWhitespaceOnSaveKey) { snapshot.trimTrailingWhitespaceOnSave = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.insertFinalNewlineOnSaveKey) { snapshot.insertFinalNewlineOnSave = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.wrapLinesKey) { snapshot.wrapLines = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showMinimapKey) { snapshot.showMinimap = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
-        if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
-        if let value = EditorConfigStore.loadString(forKey: EditorConfigStore.autoSaveModeKey),
+        if let value = dict[EditorConfigStore.fontSizeKey] as? Double { snapshot.fontSize = value }
+        if let value = dict[EditorConfigStore.tabWidthKey] as? Int { snapshot.tabWidth = value }
+        if let value = dict[EditorConfigStore.useSpacesKey] as? Bool { snapshot.useSpaces = value }
+        if let value = dict[EditorConfigStore.formatOnSaveKey] as? Bool { snapshot.formatOnSave = value }
+        if let value = dict[EditorConfigStore.organizeImportsOnSaveKey] as? Bool { snapshot.organizeImportsOnSave = value }
+        if let value = dict[EditorConfigStore.fixAllOnSaveKey] as? Bool { snapshot.fixAllOnSave = value }
+        if let value = dict[EditorConfigStore.trimTrailingWhitespaceOnSaveKey] as? Bool { snapshot.trimTrailingWhitespaceOnSave = value }
+        if let value = dict[EditorConfigStore.insertFinalNewlineOnSaveKey] as? Bool { snapshot.insertFinalNewlineOnSave = value }
+        if let value = dict[EditorConfigStore.wrapLinesKey] as? Bool { snapshot.wrapLines = value }
+        if let value = dict[EditorConfigStore.showMinimapKey] as? Bool { snapshot.showMinimap = value }
+        if let value = dict[EditorConfigStore.showGutterKey] as? Bool { snapshot.showGutter = value }
+        if let value = dict[EditorConfigStore.showFoldingRibbonKey] as? Bool { snapshot.showFoldingRibbon = value }
+        if let value = dict[EditorConfigStore.autoSaveModeKey] as? String,
            let mode = EditorAutoSaveMode(rawValue: value) {
             snapshot.autoSaveMode = mode
         }
-        if let value = EditorConfigStore.loadDouble(forKey: EditorConfigStore.autoSaveDelayKey) {
+        if let value = dict[EditorConfigStore.autoSaveDelayKey] as? Double {
             snapshot.autoSaveDelay = value
         }
 
@@ -55,8 +61,10 @@ final class EditorConfigController {
 
     func restoreScopedConfig(
     ) -> EditorScopedConfigSnapshot {
-        let global = restoreConfig()
-        let rawScopes = EditorConfigStore.loadDictionary(forKey: scopedOverridesKey) ?? [:]
+        // 全局快照与 scoped overrides 共用同一次加载（见 issue #1250）。
+        let dict = EditorConfigStore.loadAll()
+        let global = snapshot(from: dict)
+        let rawScopes = dict[scopedOverridesKey] as? [String: Any] ?? [:]
         let workspaceOverrides = EditorConfigPersistencePolicy.decodeOverrideMap(rawScopes["workspace"] as? [String: Any])
         let languageOverrides = EditorConfigPersistencePolicy.decodeOverrideMap(rawScopes["language"] as? [String: Any])
         return EditorScopedConfigSnapshot(
@@ -73,20 +81,24 @@ final class EditorConfigController {
     }
 
     func persistConfig(_ snapshot: EditorConfigSnapshot) {
-        EditorConfigStore.saveValue(snapshot.fontSize, forKey: EditorConfigStore.fontSizeKey)
-        EditorConfigStore.saveValue(snapshot.tabWidth, forKey: EditorConfigStore.tabWidthKey)
-        EditorConfigStore.saveValue(snapshot.useSpaces, forKey: EditorConfigStore.useSpacesKey)
-        EditorConfigStore.saveValue(snapshot.formatOnSave, forKey: EditorConfigStore.formatOnSaveKey)
-        EditorConfigStore.saveValue(snapshot.organizeImportsOnSave, forKey: EditorConfigStore.organizeImportsOnSaveKey)
-        EditorConfigStore.saveValue(snapshot.fixAllOnSave, forKey: EditorConfigStore.fixAllOnSaveKey)
-        EditorConfigStore.saveValue(snapshot.trimTrailingWhitespaceOnSave, forKey: EditorConfigStore.trimTrailingWhitespaceOnSaveKey)
-        EditorConfigStore.saveValue(snapshot.insertFinalNewlineOnSave, forKey: EditorConfigStore.insertFinalNewlineOnSaveKey)
-        EditorConfigStore.saveValue(snapshot.wrapLines, forKey: EditorConfigStore.wrapLinesKey)
-        EditorConfigStore.saveValue(snapshot.showMinimap, forKey: EditorConfigStore.showMinimapKey)
-        EditorConfigStore.saveValue(snapshot.showGutter, forKey: EditorConfigStore.showGutterKey)
-        EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
-        EditorConfigStore.saveValue(snapshot.autoSaveMode.rawValue, forKey: EditorConfigStore.autoSaveModeKey)
-        EditorConfigStore.saveValue(snapshot.autoSaveDelay, forKey: EditorConfigStore.autoSaveDelayKey)
+        // 全部键合并成一次读-改-写，避免逐键重复整份 plist 的加载/编码/落盘（见 issue #1250）。
+        let values: [String: Any] = [
+            EditorConfigStore.fontSizeKey: snapshot.fontSize,
+            EditorConfigStore.tabWidthKey: snapshot.tabWidth,
+            EditorConfigStore.useSpacesKey: snapshot.useSpaces,
+            EditorConfigStore.formatOnSaveKey: snapshot.formatOnSave,
+            EditorConfigStore.organizeImportsOnSaveKey: snapshot.organizeImportsOnSave,
+            EditorConfigStore.fixAllOnSaveKey: snapshot.fixAllOnSave,
+            EditorConfigStore.trimTrailingWhitespaceOnSaveKey: snapshot.trimTrailingWhitespaceOnSave,
+            EditorConfigStore.insertFinalNewlineOnSaveKey: snapshot.insertFinalNewlineOnSave,
+            EditorConfigStore.wrapLinesKey: snapshot.wrapLines,
+            EditorConfigStore.showMinimapKey: snapshot.showMinimap,
+            EditorConfigStore.showGutterKey: snapshot.showGutter,
+            EditorConfigStore.showFoldingRibbonKey: snapshot.showFoldingRibbon,
+            EditorConfigStore.autoSaveModeKey: snapshot.autoSaveMode.rawValue,
+            EditorConfigStore.autoSaveDelayKey: snapshot.autoSaveDelay,
+        ]
+        EditorConfigStore.saveValues(values)
         // 注意：currentThemeId 不在此持久化，主题持久化由 ThemeManagerPlugin 全权负责
     }
 

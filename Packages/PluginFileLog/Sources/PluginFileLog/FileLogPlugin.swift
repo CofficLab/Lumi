@@ -65,7 +65,8 @@ public final class FileLogPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             NotificationCenter.default.removeObserver(uninstallObserver)
             self.uninstallObserver = nil
         }
-        FileLogCoordinator.shared.stop()
+        // 必须等收尾完成：异步 stop 会在进程退出前丢掉最后一窗日志（#472）。
+        FileLogCoordinator.shared.stopAndWait()
     }
 }
 

@@ -22,7 +22,7 @@ public struct ListPlansTool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "列出计划文件" }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let files = await storage.listFiles()
+        let files = try await storage.listFiles()
         let header = "Storage directory: \(await storage.storageDirectoryPath)\nRetention: \(await storage.retentionDays) days"
         guard !files.isEmpty else { return "No plan files.\n\(header)" }
 

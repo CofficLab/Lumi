@@ -116,10 +116,11 @@ package extension TextSelectionManager {
             } else if CharacterSet.codeIdentifierCharacters.isSuperset(of: CharacterSet(charactersIn: substring)) {
                 hasFoundValidWordChar = true
             }
-            rangeToDelete.length += substring.count
+            // NSRange 以 UTF-16 计长，须用 NSString.length 而非 grapheme 数，避免劈开代理对。
+            rangeToDelete.length += (substring as NSString).length
 
             if delta < 0 {
-                rangeToDelete.location -= substring.count
+                rangeToDelete.location -= (substring as NSString).length
             }
         }
 

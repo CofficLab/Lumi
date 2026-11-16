@@ -50,7 +50,7 @@ public struct ClipboardHistoryView: View {
                             .tag(item.id)
                             .contextMenu {
                                 Button(pluginLocalization.string("Copy")) {
-                                    viewModel.copyToClipboard(item)
+                                    Task { await viewModel.copyToClipboard(item) }
                                 }
                                 Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
@@ -61,7 +61,7 @@ public struct ClipboardHistoryView: View {
                                 }
                             }
                             .onTapGesture(count: 2) {
-                                viewModel.copyToClipboard(item)
+                                Task { await viewModel.copyToClipboard(item) }
                             }
                     }
                 }
@@ -82,7 +82,12 @@ public struct ClipboardHistoryView: View {
             .overlay(GlassDivider(), alignment: .top)
         }
         .onAppear {
-            viewModel.refresh()
+            // 可见时合并刷新一次，补上隐藏期间错过的变化；隐藏时刷新被挡掉，
+            // 系统级复制不再触发主 actor 全量重拉（issue #1305）。
+            viewModel.setPanelVisible(true)
+        }
+        .onDisappear {
+            viewModel.setPanelVisible(false)
         }
     }
 }

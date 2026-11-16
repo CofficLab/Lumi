@@ -6,6 +6,7 @@ public enum DockerError: Error, LocalizedError, Sendable {
     case commandFailed(String)
     case parsingFailed(String)
     case dockerNotFound
+    case outputTruncated
 
     public var errorDescription: String? {
         switch self {
@@ -15,6 +16,8 @@ public enum DockerError: Error, LocalizedError, Sendable {
             return "Failed to parse Docker output: \(msg)"
         case .dockerNotFound:
             return "Docker executable not found. Please ensure Docker is installed and in your PATH."
+        case .outputTruncated:
+            return "Docker output was truncated and is incomplete."
         }
     }
 }

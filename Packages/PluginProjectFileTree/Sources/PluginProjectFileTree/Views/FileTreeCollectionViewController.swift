@@ -285,8 +285,8 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
         fileTreeDataSource.setPackageDependencies(dependencies)
     }
 
-    func reloadDirectory(at url: URL) {
-        fileTreeDataSource.reloadDirectory(at: url)
+    func reloadDirectories(at urls: [URL]) {
+        fileTreeDataSource.reloadDirectories(at: urls)
     }
 
     func fullRefresh() {
@@ -856,9 +856,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             case .moved(_, let failedSources, let affectedParents):
                 self.onTreeMutation?()
 
-                for parent in affectedParents {
-                    self.fileTreeDataSource.reloadDirectory(at: parent)
-                }
+                self.fileTreeDataSource.reloadDirectories(at: Array(affectedParents))
 
                 self.ensureDirectoryExpanded(targetURL)
 

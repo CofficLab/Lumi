@@ -192,16 +192,24 @@ public final class UserDefinedCloudProvider: VendorLLMProvider {
 
     public override var openAIConfiguration: OpenAICompatibleProviderConfiguration? {
         guard configuration.apiFormat == .openAI else { return nil }
-        return OpenAICompatibleProviderConfiguration(baseURL: configuration.baseURL)
+        return OpenAICompatibleProviderConfiguration(baseURL: endpointURL(appending: "chat/completions"))
     }
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
         guard configuration.apiFormat == .anthropic else { return nil }
-        return AnthropicCompatibleProviderConfiguration(baseURL: configuration.baseURL)
+        return AnthropicCompatibleProviderConfiguration(baseURL: endpointURL(appending: "messages"))
     }
 
     public override var responsesEndpointURL: String {
-        configuration.apiFormat == .responses ? configuration.baseURL : super.responsesEndpointURL
+        configuration.apiFormat == .responses ? endpointURL(appending: "responses") : super.responsesEndpointURL
+    }
+
+    /// baseURL 是 API 根地址，需追加各协议的操作端点；流式与非流式共用此配置（#334）。
+    private func endpointURL(appending path: String) -> String {
+        let root = configuration.baseURL.hasSuffix("/")
+            ? String(configuration.baseURL.dropLast())
+            : configuration.baseURL
+        return root + "/" + path
     }
 }
 

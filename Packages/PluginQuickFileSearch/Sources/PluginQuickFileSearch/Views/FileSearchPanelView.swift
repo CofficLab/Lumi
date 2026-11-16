@@ -49,6 +49,8 @@ public struct FileSearchPanelView: View {
         .onAppear {
             isSearchFocused = true
             selectedIndex = 0
+            // 每次打开面板都补查一次索引 TTL，过期则重建（#376）。
+            searchService.refreshIndexIfExpired()
         }
         .onChange(of: searchService.searchResults.count) { _ in
             selectedIndex = 0
@@ -91,7 +93,7 @@ public struct FileSearchPanelView: View {
                 .font(.system(size: 13))
                 .focused($isSearchFocused)
                 .onSubmit {
-                    selectFirstResult()
+                    selectSelectedResult()
                 }
                 .overlay(
                     Group {
@@ -210,9 +212,12 @@ public struct FileSearchPanelView: View {
         hotkeyManager.hideOverlay()
     }
 
-    private func selectFirstResult() {
-        guard !searchService.searchResults.isEmpty else { return }
-        selectFile(at: 0)
+    private func selectSelectedResult() {
+        guard let index = FileSearchSubmitSelection.indexToOpen(
+            selectedIndex: selectedIndex,
+            resultCount: searchService.searchResults.count
+        ) else { return }
+        selectFile(at: index)
     }
 
     private func selectFile(at index: Int) {

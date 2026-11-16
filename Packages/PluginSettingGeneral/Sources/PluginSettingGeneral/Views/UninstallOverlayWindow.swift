@@ -13,7 +13,8 @@ final class UninstallOverlayWindowController {
     private var panel: UninstallOverlayPanel?
     private var hostingView: NSHostingView<UninstallOverlayView>?
     private var onExit: (@MainActor () -> Void)?
-    private var onClose: (@MainActor () -> Void)?
+    /// 失败阶段的关闭回调；暴露只读供回归测试验证接线（#304）。
+    private(set) var onClose: (@MainActor () -> Void)?
 
     private init() {}
 

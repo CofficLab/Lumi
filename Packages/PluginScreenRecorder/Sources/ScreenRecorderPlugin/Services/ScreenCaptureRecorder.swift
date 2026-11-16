@@ -6,6 +6,17 @@ import Foundation
 import os
 import ScreenCaptureKit
 
+/// 录制引擎窄协议：会话管理器只依赖启动 / 停止 / 取消与错误回调，
+/// 测试注入桩引擎以覆盖启动流程（如并发互斥，#224），不触碰真实采集。
+protocol RecordingEngine: AnyObject, Sendable {
+    /// 流意外停止时回调（如权限被收回、显示配置变化）。
+    var onError: (@Sendable (Error) -> Void)? { get set }
+    @MainActor
+    func start(filter: SCContentFilter, config: RecordingConfig, tempOutputURL: URL) async throws
+    func stop() async throws -> ScreenCaptureRecorder.Output
+    func cancel() async
+}
+
 /// 屏幕录制引擎：`SCStream` 连续采帧 → `AVAssetWriter` 编码为 `.mp4`。
 ///
 /// 设计要点（生产级稳健性）：
@@ -16,7 +27,7 @@ import ScreenCaptureKit
 /// - `stream(_:didStopWithError:)` 兜底：标记失败并通知外部，防止悬挂会话。
 ///
 /// 参考 DeskPad 的 `SCStream` 逐帧 `CMSampleBuffer` 处理方式（不采用其虚拟显示器）。
-final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
+final class ScreenCaptureRecorder: NSObject, RecordingEngine, @unchecked Sendable {
 
     private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.screen-recorder.engine")
 
@@ -73,21 +84,17 @@ final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
         self.tempURL = tempOutputURL
 
         // 1) 配置 SCStream。
-        let streamConfig = SCStreamConfiguration()
-        streamConfig.width = width
-        streamConfig.height = height
-        streamConfig.showsCursor = config.showCursor
-        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.frameRate))
-        streamConfig.queueDepth = 6
         var captureMicrophone = false
         if config.includeMicrophone {
             // 兜底：调用方若绕过会话管理器，也不能在 macOS 14 上静默降级成无声录制。
             try RecordingMicrophoneCapability.validate(includeMicrophone: true)
             if #available(macOS 15.0, *) {
-                streamConfig.captureMicrophone = true
                 captureMicrophone = true
             }
         }
+        let streamConfig = Self.makeStreamConfiguration(
+            config: config, width: width, height: height, captureMicrophone: captureMicrophone
+        )
 
         let stream = SCStream(filter: filter, configuration: streamConfig, delegate: self)
         try await stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: writerQueue)
@@ -209,6 +216,34 @@ final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
         width = max(RecordingResolution.minimumDimension, width)
         height = max(RecordingResolution.minimumDimension, height)
         return (width, height)
+    }
+
+    // MARK: - Stream configuration
+
+    /// 构建 `SCStreamConfiguration`。
+    ///
+    /// `capturesAudio` 是应用音频的总开关，默认 `false`：只注册 `.audio` 输出而不打开它，
+    /// ScreenCaptureKit 不会投递应用音频样本，录制会沿成功路径静默缺少声音（#819）。
+    /// 必须在创建 `SCStream` 之前按 `includeAppAudio` 设置。
+    static func makeStreamConfiguration(
+        config: RecordingConfig,
+        width: Int,
+        height: Int,
+        captureMicrophone: Bool
+    ) -> SCStreamConfiguration {
+        let streamConfig = SCStreamConfiguration()
+        streamConfig.width = width
+        streamConfig.height = height
+        streamConfig.showsCursor = config.showCursor
+        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.frameRate))
+        streamConfig.queueDepth = 6
+        streamConfig.capturesAudio = config.includeAppAudio
+        if captureMicrophone {
+            if #available(macOS 15.0, *) {
+                streamConfig.captureMicrophone = true
+            }
+        }
+        return streamConfig
     }
 
     // MARK: - Codec settings

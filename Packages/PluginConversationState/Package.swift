@@ -8,12 +8,12 @@ let package = Package(
         .library(name: "PluginConversationState", targets: ["PluginConversationState"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(path: "../ProviderMessageSender"),
     ],
     targets: [
@@ -22,10 +22,10 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ],
             path: "Sources/PluginConversationState"
@@ -34,7 +34,7 @@ let package = Package(
             name: "PluginConversationStateTests",
             dependencies: [
                 "PluginConversationState",
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
             ],
             path: "Tests/PluginConversationStateTests"
         ),

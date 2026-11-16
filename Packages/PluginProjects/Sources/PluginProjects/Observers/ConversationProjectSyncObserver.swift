@@ -13,6 +13,7 @@ import ProviderProject
 /// 行为约定：
 /// - 仅在对话存在且 `projectPath` 非空时切换；
 /// - 与当前项目路径相同则不重复打开；
+/// - 当前项目来自外部打开（`.externalOpen`）时让位，不因对话联动覆盖用户显式意图（#131）；
 /// - 选中未绑定项目的对话不强关当前项目（用户手动打开的项目不应被误伤）；
 /// - 查询对话摘要与打开项目均为异步，失败仅记录日志，不阻塞选中流程。
 @MainActor
@@ -27,6 +28,10 @@ final class ConversationProjectSyncObserver: SuperLog {
     private let conversations: any ConversationManaging
     private let project: any ProjectProviding
     private var observer: (any SelectedConversationObserverHandle)?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    /// 最近一次当前项目变更的原因。`.externalOpen` 代表用户显式意图，
+    /// 优先级高于对话联动，据此让位避免覆盖外部打开的项目（#131）。
+    private var lastProjectChangeReason: ProjectChangeReason?
     private var pendingConversationID: UUID?
     private var hasPendingProjectSync = false
     private var projectSyncTask: Task<Void, Never>?
@@ -40,6 +45,11 @@ final class ConversationProjectSyncObserver: SuperLog {
             self.handleSelectedConversationChanged(conversationID)
         }
 
+        projectObserver = project.addObserver { [weak self] event in
+            guard case .currentProjectChanged(_, let reason) = event else { return }
+            self?.lastProjectChangeReason = reason
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册当前对话变化观察者")
         }
@@ -48,6 +58,8 @@ final class ConversationProjectSyncObserver: SuperLog {
     func cancel() {
         observer?.cancel()
         observer = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         projectSyncTask?.cancel()
         projectSyncTask = nil
         hasPendingProjectSync = false
@@ -79,6 +91,9 @@ final class ConversationProjectSyncObserver: SuperLog {
                 continue
             }
             guard project.currentProject?.path != projectPath else { continue }
+            // 外部打开（.externalOpen）代表用户显式意图，优先级高于对话联动。
+            // 当前项目来自外部打开时让位，避免启动恢复的选中对话把项目覆盖回去（#131）。
+            guard lastProjectChangeReason != .externalOpen else { continue }
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)当前对话绑定项目，切换项目到 \(projectPath, privacy: .public)")

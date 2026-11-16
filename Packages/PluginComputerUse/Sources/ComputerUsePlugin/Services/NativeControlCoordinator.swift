@@ -126,6 +126,16 @@ final class NativeControlCoordinator: ObservableObject {
         try session.check()
     }
 
+    /// 当前租约是否已获授权——与 `acquire` 的 `approved` 语义一致。
+    ///
+    /// 自主会话（A3）的授权只存在于内存租约（`unattended`），不写入持久白名单；
+    /// 原生输入前的校验必须复用同一判定，否则 A3 会被一个它从未产生过的持久授权
+    /// 挡下，第一个动作就 `.stopped`（#826）。「停止」会 interrupt 会话并置 `stopped`，
+    /// 系统权限收回由调用方的 `hasAccessibilityPermission` 兜底，二者仍能立即中断输入。
+    func isApproved(_ session: NativeControlSession) -> Bool {
+        self.session === session && approved && !stopped
+    }
+
     /// Continue releases the paused job with a re-observe result. Never replay a
     /// saved batch against a window the user may have changed in the meantime.
     func waitForUserAfterInterruption(_ session: NativeControlSession) async throws {

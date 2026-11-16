@@ -18,6 +18,7 @@ import Testing
         switch event {
         case .selectedConversationChanged(let id): events.append(.selection(id))
         case .conversationAutomationChanged(let id): events.append(.automationChanged(id))
+        case .conversationStateChanged(let id): events.append(.stateChanged(id))
         case .conversationsChanged: events.append(.conversationsChanged)
         }
     }
@@ -72,12 +73,15 @@ import Testing
     var conversationChanges = 0
     var selectionChanges = 0
     var automationChanges: [UUID] = []
+    var stateChanges: [UUID] = []
     let handle = context.addObserver { event in
         switch event {
         case .selectedConversationChanged:
             selectionChanges += 1
         case .conversationAutomationChanged(let id):
             automationChanges.append(id)
+        case .conversationStateChanged(let id):
+            stateChanges.append(id)
         case .conversationsChanged:
             conversationChanges += 1
         }
@@ -102,13 +106,16 @@ import Testing
     #expect(automationChanges == [conversationID])
 
     state.publish(.updated(conversationID))
-    #expect(conversationChanges == 2)
+    // 运行时状态走逐行事件，不得当成结构变化触发全量刷新（#1258）。
+    #expect(conversationChanges == 1)
+    #expect(stateChanges == [conversationID])
 
     observer.cancel()
     observer.cancel()
     _ = try conversations.createConversation(title: "After cancel", projectPath: nil, providerID: nil, modelName: nil)
     state.publish(.removed(conversationID))
-    #expect(conversationChanges == 2)
+    #expect(conversationChanges == 1)
+    #expect(stateChanges == [conversationID])
     #expect(selectionChanges == 1)
 
     handle.cancel()
@@ -117,6 +124,7 @@ import Testing
 private enum ContextEventSnapshot: Equatable {
     case selection(UUID?)
     case automationChanged(UUID)
+    case stateChanged(UUID)
     case conversationsChanged
 }
 

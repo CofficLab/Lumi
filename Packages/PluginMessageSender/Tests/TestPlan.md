@@ -33,7 +33,8 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - 发送：`sendMessage(_:conversationID:)`、`startTurn(for:)`
 - 停止：`cancelCurrentRequest()`
 - 恢复：`resumeTurn(in:request:)`
-- 队列：`pendingMessages(for:)`、`cancelPendingMessage(id:in:)`
+- 队列：`pendingMessages(for:)`、`cancelPendingMessage(id:in:)`、`allPendingMessages`（稳定快照）、`restorePendingQueues(_:)`（重启恢复，不自动排空）
+- 持久化：`PendingQueueStore`（JSON 落盘 / 读取）、`PendingQueuePersistence`（订阅队列变化即落盘，启动恢复，退出兜底）；`MessageSenderPlugin.onBoot` 恢复并订阅、`onShutdown` 兜底落盘并拆除（#596）
 - 内部入口：`handleAgentLoopEvent(_:)`（由 `AgentLoopObserver` 调用）
 
 ### 关键行为契约（实现约定，非协议要求）
@@ -70,6 +71,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **MessageSender 恢复回合终态去重**（2 条）：由 `eventFirstDoesNotDoubleDrain`、`compensationFirstDoesNotDoubleDrain` 锁定——事件路径与补偿路径谁先到都只通知一次、排空一次（**回归 #164**）。
 - **MessageSender 恢复与全局发送状态**（2 条）：由 `resumeSuccessKeepsOtherConversationSending` 等用例锁定——恢复的收尾按账本重算全局 `isSending`，不得无条件复位（**回归 #166**）。
 - **MessageSender 会话删除失效**（3 条）：由 `deletionInvalidatesQueueAndTrackingTask` 等用例锁定——删除通知到达即清掉该会话的队列、账本与跟踪任务，迟到终态不得再落库或拉起回合（**回归 #167**）。
+- **MessageSender 待发队列持久化**（11 条）：由 `busySubmitPersistsAndSurvivesRestart`、`pluginBootRestoresPersistedQueue`、`restoreSkipsDeletedConversation` 等用例锁定——忙碌时提交的待发队列每次变化即落盘，重启后恢复到新 sender 且不自动拉起回合，跳过运行时已删除的会话（**回归 #596**）。
 
 ## 测试用例清单
 
@@ -123,11 +125,22 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 46 | MessageSender 附件读取门禁 | 读取失败时等待返回 false，发送入口据此中止（#1174） | 一次在途读取 + 等待任务 | 读取窗口内 `recordAttachmentReadFailure()` 后 `endAttachmentRead()` | 等待任务收到 false，发送入口据此中止本次发送 | P0 | ✅ 已覆盖 | `waitReturnsFalseWhenAttachmentReadFails` |
 | 47 | MessageSender 附件读取门禁 | 失败标记在新读取窗口开始时复位，干净读取仍返回 true（#1174） | 先一个失败窗口，再一个干净窗口 | 失败窗口结束后 `beginAttachmentRead()` 开新窗口并正常结束 | 第一个窗口返回 false，新窗口返回 true（失败不毒化后续发送） | P0 | ✅ 已覆盖 | `readFailureFlagResetsOnNextReadWindow` |
 | 48 | 队列 | 后台附件发送入队保留预编码 metadata，排空复用不丢附件（#1323） | 活动回合 + 后台路径提交带图片/文件的第二条消息 | `commitUserMessageInBackground` 入队 → 投递 `.completed` → `startTurn` 排空 | 队列条目携带入队时已编码的 `attachmentMetadata`；排空后落库消息的图片/文件附件可完整解码回来（不在主 actor 重新编码） | P0 | ✅ 已覆盖 | `queuedBackgroundSendPreservesAttachmentMetadataForDrain` |
+| 49 | MessageSender 待发队列持久化 | 队列快照往返保留正文、附件、折叠块与预编码 metadata（#596） | 临时落盘文件 | 构造含图片/文件附件、折叠块、metadata 的 `PendingChatMessage` → `save` → `load` | 解码结果与原消息逐字段相等（Codable 保真，不丢附件） | P0 | ✅ 已覆盖 | `storeRoundTripPreservesContentAndAttachments` |
+| 50 | MessageSender 待发队列持久化 | 忙碌时提交的消息即时落盘，重启后恢复到新 sender 且不自动发回合（#596） | 会话忙（AgentLoop `.running`）+ 观察器已订阅 | 提交带附件消息入队 → 用同一 store 在全新 sender 上 `restore()` | 入队即写盘；新 sender 队列恢复正文与图片/文件附件；不落库、不拉起回合、`isSending == false` | P0 | ✅ 已覆盖 | `busySubmitPersistsAndSurvivesRestart` |
+| 51 | MessageSender 待发队列持久化 | 取消排队消息后落盘同步移除该条（#596） | 队列两条 + 观察器已订阅 | `cancelPendingMessage` 移除首条 | 落盘快照只剩剩余一条 | P1 | ✅ 已覆盖 | `observationPersistsCancelRemoval` |
+| 52 | MessageSender 待发队列持久化 | 回合终态排空队列后落盘文件被清除（#596） | 队列入队后文件已存在 | 投递 `.completed` 触发排空 | 队列归空，落盘文件被删除（不残留过期内容） | P1 | ✅ 已覆盖 | `terminalDrainRemovesPersistedFile` |
+| 53 | MessageSender 待发队列持久化 | 空队列落盘删除已有文件（#596） | 文件已存在 | `save([])` | 文件被删除，`load()` 为空 | P1 | ✅ 已覆盖 | `emptySaveRemovesExistingFile` |
+| 54 | MessageSender 待发队列持久化 | 损坏的落盘文件解码为空数组，不阻断启动（#596） | 写入非法 JSON 字节 | `load()` | 返回空数组，不抛错 | P1 | ✅ 已覆盖 | `corruptFileLoadsEmpty` |
+| 55 | MessageSender 待发队列持久化 | 文件不存在时读取为空数组（#596） | 指向不存在的路径 | `load()` | 返回空数组 | P2 | ✅ 已覆盖 | `missingFileLoadsEmpty` |
+| 56 | MessageSender 待发队列持久化 | 恢复跳过运行时已删除的会话（#596） | 一个会话已删除、一个仍存在 | `restorePendingQueues` 同时携带两者 | 已删除会话不恢复，仍存在的会话照常装回 | P0 | ✅ 已覆盖 | `restoreSkipsDeletedConversation` |
+| 57 | MessageSender 待发队列持久化 | 多会话快照按会话 ID 稳定排序（#596） | 两个会话各有排队消息 | 读取 `allPendingMessages` 两次 | 会话间按 uuidString 升序、会话内 FIFO；两次读取一致 | P1 | ✅ 已覆盖 | `allPendingMessagesSnapshotIsStablyOrdered` |
+| 58 | MessageSender 待发队列持久化 | 插件启动时从落盘文件恢复待发队列（#596） | 预先写盘一条待发消息 | `kernel.start(plugins:)` 装配插件 | 解析出的 sender 队列含恢复内容，且不落库 | P0 | ✅ 已覆盖 | `pluginBootRestoresPersistedQueue` |
+| 59 | MessageSender 待发队列持久化 | 插件退出前兜底落盘当前队列（#596） | 已 boot 插件 + 忙碌入队 | `onShutdown` | 落盘文件含当前队列；AgentLoop 观察者归零 | P1 | ✅ 已覆盖 | `pluginShutdownFlushesQueueToDisk` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
 > ID 35–45 为 #165 / #164 / #166 / #167 的回归套件。
-> 本表 48 行覆盖 59 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 59 行覆盖 70 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -139,10 +152,15 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 23 / 23
-- P2: 已覆盖 2 / 2
-- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 27 / 27
+- P1: 已覆盖 29 / 29
+- P2: 已覆盖 3 / 3
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+
+> 变异验证（#596，待发队列持久化）：
+> - M1 把 `PendingQueuePersistence.startObserving` 的回调改成不落盘（去掉 `self?.persist()`）→ `busySubmitPersistsAndSurvivesRestart`、`observationPersistsCancelRemoval`、`terminalDrainRemovesPersistedFile` 变红（入队/取消/排空都不再写盘）；恢复后转绿。
+> - M2 去掉 `MessageSenderPlugin.onBoot` 里的 `persistence.restore()` → `pluginBootRestoresPersistedQueue` 变红（启动不再恢复）；恢复后转绿。
+> - M3 去掉 `MessageSender.restorePendingQueues` 的 `deletedConversations` 守卫 → `restoreSkipsDeletedConversation` 变红（已删除会话被误恢复）；恢复后转绿。
 
 ## 优先级说明
 

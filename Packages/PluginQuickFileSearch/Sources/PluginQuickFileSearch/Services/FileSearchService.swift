@@ -50,15 +50,21 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     // MARK: - Private Properties
 
-    private var indexStore = FileIndexStore(projectPath: "")
+    /// 暴露为 internal 仅供回归测试注入过期索引（#376）；生产代码只经本类方法读写。
+    var indexStore = FileIndexStore(projectPath: "")
     private var searchTask: Task<Void, Never>?
+    /// 实际扫描/排序索引的 detached worker。detached 任务不继承外层 searchTask 的
+    /// 取消，必须单独持有句柄才能在查询变化时停掉过时的全索引搜索（#1219）。
+    /// 暴露为 internal 仅供取消回归测试断言句柄状态。
+    var searchWorkerTask: Task<[FileResult], Never>?
     private var indexingProjectPath: String?
     /// 项目代次。切换项目时递增，用于作废旧项目里发起、晚到的搜索结果。
     private var projectGeneration: Int = 0
 
     // MARK: - Initialization
 
-    private init() {
+    /// internal 供回归测试创建隔离实例（#376）；生产仍使用 `shared`。
+    init() {
         if Self.verbose {
             QuickFileSearchLog.logger.info("\(Self.t)\(Self.emoji) FileSearchService 初始化完成")
         }
@@ -94,6 +100,17 @@ public final class FileSearchService: ObservableObject, SuperLog {
         searchResults = []
         searchQuery = ""
         invalidateSearchState()
+    }
+
+    /// 面板每次打开时调用：同一项目也检查索引 TTL，过期则重建（#376）。
+    ///
+    /// 关闭再打开面板不会重建父 Overlay，`targetWindowId` 的 nil→nil 也不触发
+    /// `onChange`，`updateProject` 的同路径过期检查因此从未在重开时执行。面板自身
+    /// 的 `onAppear` 每次显示都会触发，由它主动调用本方法补上这次检查。
+    public func refreshIndexIfExpired() {
+        let path = currentProjectPath
+        guard !path.isEmpty, indexStore.needsReindex() else { return }
+        rebuildIndex(for: path)
     }
 
     /// 选择文件并更新项目状态
@@ -144,6 +161,8 @@ public final class FileSearchService: ObservableObject, SuperLog {
         projectGeneration &+= 1
         searchTask?.cancel()
         searchTask = nil
+        searchWorkerTask?.cancel()
+        searchWorkerTask = nil
         searchResults = []
     }
 
@@ -183,8 +202,10 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     /// 监听搜索查询变化
     public func onSearchQueryChanged() {
-        // 取消之前的搜索任务
+        // 取消之前的搜索任务（外层 + 实际扫描索引的 detached worker）
         searchTask?.cancel()
+        searchWorkerTask?.cancel()
+        searchWorkerTask = nil
 
         let query = Self.normalizedQuery(searchQuery)
 
@@ -211,9 +232,13 @@ public final class FileSearchService: ObservableObject, SuperLog {
         let files = indexStore.files
         let generation = projectGeneration
 
-        let results = await Task.detached(priority: .userInitiated) {
+        // 持有 detached worker 句柄：查询变化时 onSearchQueryChanged 会取消它，
+        // searchInFiles 内部的协作式取消检查随即停止过时的全索引扫描（#1219）。
+        let worker = Task.detached(priority: .userInitiated) {
             FileSearchHelpers.searchInFiles(files, query: lowercaseQuery)
-        }.value
+        }
+        searchWorkerTask = worker
+        let results = await worker.value
 
         await MainActor.run { [weak self] in
             guard let self else { return }
@@ -373,12 +398,21 @@ public enum FileSearchHelpers {
     }
 
     /// 在文件列表中搜索
-    public static func searchInFiles(_ files: [FileResult], query: String) -> [FileResult] {
+    ///
+    /// `isCancelled` 默认读取当前任务的取消状态：在 detached worker 中运行时即为
+    /// 该 worker 的取消标志。查询变化取消 worker 后，扫描循环会协作式提前退出，
+    /// 不再对过时查询做完整的 O(F) 扫描与 O(M log M) 排序（#1219）。
+    public static func searchInFiles(
+        _ files: [FileResult],
+        query: String,
+        isCancelled: @Sendable () -> Bool = { Task.isCancelled }
+    ) -> [FileResult] {
         guard !query.isEmpty else { return [] }
 
         var scoredResults: [(FileResult, Int)] = []
 
-        for file in files {
+        for (index, file) in files.enumerated() {
+            if index % 128 == 0, isCancelled() { return [] }
             var score = 0
             let name = file.name.lowercased()
             let relativePath = file.relativePath.lowercased()
@@ -408,6 +442,8 @@ public enum FileSearchHelpers {
                 scoredResults.append((file, score))
             }
         }
+
+        if isCancelled() { return [] }
 
         // 按分数排序，分数相同时按文件名字母序
         let sorted = scoredResults

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 68 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 74 条用例。
 
 平台: iOS 17+
-测试文件: 9 个，用例总数: 68
+测试文件: 10 个，用例总数: 74
 
 核心组件（源码目录）:
 - `Observers/`
@@ -32,7 +32,8 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **ConversationScopedTitleUpdate**（3 条）：由 `writesToCallingConversationInsteadOfSelection`、`doesNotLeakIntoOtherConversation`、`legacyPathStillUsesSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HeaderTitleObserver**（7 条）：由 `viewModelSkipsDuplicateTitle`、`viewModelStartsEmpty`、`syncsInitialTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（4 条）：由 `normalizeTitle`、`placeholderTitle`、`updateToolUpdatesTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TitleServiceBackfill**（4 条）：由 `backfillsUntitledConversation`、`skipsTitledConversation`、`skipsConversationWithoutUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TitleServiceBackfill**（6 条）：由 `backfillsUntitledConversation`、`skipsTitledConversation`、`skipsConversationWithoutUserMessage`、`skippedWindowDoesNotBlockValidConversation`、`backfillStopsAtWriteCap` 等用例锁定；回填取全库无标题 ID 后按「补满 200 条或耗尽列表」推进，永久跳过的条目不得阻塞窗口之外的有效对话（**回归 #799**）。改动该模块时优先跑对应测试文件。
+- **PlaceholderTitleCollapsing**（4 条）：由 `shortTextMatchesReference`、`longTextMatchesReference`、`extremelyWhitespaceHeavyMatchesReference`、`resultLengthIsBounded` 锁定；占位标题先取有界前缀再折叠空白，语义必须与「全量折叠再截断」完全一致且结果长度有界（**#1287**）。改动该模块时优先跑对应测试文件。
 - **TitleServiceFallback**（4 条）：由 `fallsBackWhenLLMThrows`、`fallsBackWhenLLMReturnsEmptyTitle`、`fallbackDoesNotOverwriteCustomTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleUpdateTool**（8 条）：由 `updatesSelectedTitle`、`trimsWhitespace`、`reportsMissingProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -110,27 +111,35 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 66 | TitleUtilityRouting | 未声明轻量模型时标题沿用主模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleWithoutDeclarationUsesMainModel` |
 | 67 | TitleUtilityRouting | 标题用量按用途记入账本并带服务模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleUsageRecordedToLedger` |
 | 68 | TitleUtilityRouting | 供应商未报用量时标题用量记估算值且不为零 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `titleUsageEstimatedWhenUnreported` |
+| 69 | PlaceholderTitleCollapsing | 短文本占位标题与全量折叠参照一致 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `shortTextMatchesReference` |
+| 70 | PlaceholderTitleCollapsing | 长文本占位标题与全量折叠参照一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longTextMatchesReference` |
+| 71 | PlaceholderTitleCollapsing | 极长空白串占位标题仍与参照一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `extremelyWhitespaceHeavyMatchesReference` |
+| 72 | PlaceholderTitleCollapsing | 占位标题结果长度有界（#1287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resultLengthIsBounded` |
+| 73 | TitleServiceBackfill | 永久跳过的条目不得阻塞窗口之外的有效对话（#799） | 200 条无首条用户消息的无标题对话 + 窗口外 1 条有效对话 | 执行回填两轮 | 有效对话被补写占位标题，跳过条目不写空标题，第二轮不重复补写 | P0 | ✅ 已覆盖 | `skippedWindowDoesNotBlockValidConversation` |
+| 74 | TitleServiceBackfill | 单轮回填遵守补写上限 | 201 条可回填的无标题对话 | 执行一轮回填 | 恰好补写 200 条，剩 1 条留到下次启动 | P1 | ✅ 已覆盖 | `backfillStopsAtWriteCap` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#799）：把 `backfillUntitledConversations` 的查询改回 `untitledConversationIDs(limit: Self.backfillLimit)`（只取前 200 条窗口），`skippedWindowDoesNotBlockValidConversation` 立即变红（backfilled == 0，窗口外的有效对话永远轮不到）；恢复 `limit: Int.max` 全量取 ID 后重新变绿。`backfillStopsAtWriteCap` 锁定「补满 200 条即停」的有界语义。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 18 / 18
-- P2: 已覆盖 37 / 37
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 21 / 21
+- P2: 已覆盖 38 / 38
+- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（18 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（21 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（38 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

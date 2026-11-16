@@ -41,12 +41,40 @@ final class MailComposeViewModel: ObservableObject {
     @Published private(set) var phase: Phase = .idle
     @Published var draftSavedAt: Date?
 
+    // 草稿自动保存
+    private let draftStore: any MailDraftSaving
+    private let draftSaveDelay: Duration
+    private var draftSaveTask: Task<Void, Never>?
+    private var draftSaveGeneration = 0
+    private var attachmentsRevision = 0
+
     /// 本地草稿文件路径（自动保存）。
-    private var draftURL: URL? {
-        let dir = dataDirectory
-            .appendingPathComponent("drafts", isDirectory: true)
-        let key = "\(account.id.uuidString)-\(mode.key)-\(originalDetail?.summary.uid ?? 0)"
-        return dir.appendingPathComponent("\(key).json")
+    private var draftURL: URL { draftURLs.text }
+
+    /// 附件单独落盘：纯文本编辑只重写小的草稿 JSON（见 issue #1188）。
+    private var draftAttachmentsURL: URL { draftURLs.attachments }
+
+    private var draftURLs: (text: URL, attachments: URL) {
+        Self.draftURLs(
+            dataDirectory: dataDirectory,
+            accountID: account.id,
+            modeKey: mode.key,
+            uid: originalDetail?.summary.uid ?? 0
+        )
+    }
+
+    private nonisolated static func draftURLs(
+        dataDirectory: URL,
+        accountID: UUID,
+        modeKey: String,
+        uid: UInt64
+    ) -> (text: URL, attachments: URL) {
+        let directory = dataDirectory.appendingPathComponent("drafts", isDirectory: true)
+        let key = "\(accountID.uuidString)-\(modeKey)-\(uid)"
+        return (
+            directory.appendingPathComponent("\(key).json"),
+            directory.appendingPathComponent("\(key).attachments.json")
+        )
     }
 
     init(
@@ -55,7 +83,9 @@ final class MailComposeViewModel: ObservableObject {
         account: MailAccountConfig,
         dataDirectory: URL,
         mode: MailComposeMode,
-        originalDetail: MailMessageDetail? = nil
+        originalDetail: MailMessageDetail? = nil,
+        draftStore: (any MailDraftSaving)? = nil,
+        draftSaveDelay: Duration = .milliseconds(400)
     ) {
         self.composer = composer
         self.sessionManager = sessionManager
@@ -63,8 +93,30 @@ final class MailComposeViewModel: ObservableObject {
         self.dataDirectory = dataDirectory
         self.mode = mode
         self.originalDetail = originalDetail
+        self.draftSaveDelay = draftSaveDelay
         // 同一账户/模式/原邮件上下文存在本地草稿时优先恢复，否则用模式默认内容。
-        if !restoreDraft() {
+        let urls = Self.draftURLs(
+            dataDirectory: dataDirectory,
+            accountID: account.id,
+            modeKey: mode.key,
+            uid: originalDetail?.summary.uid ?? 0
+        )
+        let restored = Self.readDraft(
+            textURL: urls.text,
+            attachmentsURL: urls.attachments,
+            modeKey: mode.key
+        )
+        self.draftStore = draftStore ?? MailDraftStore(
+            restoredAttachmentsRevision: restored?.attachmentsOnDisk == true ? 0 : nil
+        )
+        if let restored {
+            to = restored.payload.to
+            cc = restored.payload.cc
+            subject = restored.payload.subject
+            body = restored.payload.body
+            attachments = restored.attachments
+            draftSavedAt = restored.savedAt
+        } else {
             applyModeDefaults()
         }
     }
@@ -116,47 +168,96 @@ final class MailComposeViewModel: ObservableObject {
 
     // MARK: - 草稿恢复与自动保存
 
-    /// 读取并恢复本地草稿；文件缺失、损坏或模式不匹配时返回 false。
-    private func restoreDraft() -> Bool {
-        guard let url = draftURL,
-              let data = try? Data(contentsOf: url),
-              let payload = try? JSONDecoder().decode(DraftPayload.self, from: data),
-              payload.mode == mode.key
-        else { return false }
-        to = payload.to
-        cc = payload.cc
-        subject = payload.subject
-        body = payload.body
-        attachments = payload.attachments.map {
-            MimeAttachmentData(filename: $0.filename, mimeType: $0.mimeType, data: $0.data)
-        }
-        draftSavedAt = (try? FileManager.default
-            .attributesOfItem(atPath: url.path)[.modificationDate]) as? Date
-        return true
+    private struct RestoredDraft {
+        var payload: MailDraftPayload
+        var attachments: [MimeAttachmentData]
+        var savedAt: Date?
+        /// 附件是否已存放在独立文件里。旧格式内嵌附件时为 false，
+        /// 首次保存需要把附件迁移到独立文件，否则纯文本编辑会丢掉附件。
+        var attachmentsOnDisk: Bool
     }
 
-    func saveDraftNow() {
-        do {
-            try FileManager.default.createDirectory(
-                at: draftURL!.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            let payload = DraftPayload(
+    /// 读取本地草稿；文件缺失、损坏或模式不匹配时返回 nil。
+    private nonisolated static func readDraft(
+        textURL: URL,
+        attachmentsURL: URL,
+        modeKey: String
+    ) -> RestoredDraft? {
+        guard let data = try? Data(contentsOf: textURL),
+              let payload = try? JSONDecoder().decode(MailDraftPayload.self, from: data),
+              payload.mode == modeKey
+        else { return nil }
+
+        let stored: [MailDraftAttachment]
+        let attachmentsOnDisk: Bool
+        if let legacy = payload.attachments {
+            stored = legacy
+            attachmentsOnDisk = false
+        } else {
+            stored = (try? Data(contentsOf: attachmentsURL)).flatMap {
+                try? JSONDecoder().decode([MailDraftAttachment].self, from: $0)
+            } ?? []
+            attachmentsOnDisk = true
+        }
+        let savedAt = (try? FileManager.default
+            .attributesOfItem(atPath: textURL.path)[.modificationDate]) as? Date
+        return RestoredDraft(
+            payload: payload,
+            attachments: stored.map {
+                MimeAttachmentData(filename: $0.filename, mimeType: $0.mimeType, data: $0.data)
+            },
+            savedAt: savedAt,
+            attachmentsOnDisk: attachmentsOnDisk
+        )
+    }
+
+    /// 编辑后调用：合并连续击键，延迟落盘。
+    func scheduleDraftSave() {
+        draftSaveTask?.cancel()
+        let delay = draftSaveDelay
+        draftSaveTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
+            self.draftSaveTask = nil
+            await self.saveDraftNow()
+        }
+    }
+
+    /// 立即落盘当前草稿（取消防抖）。编码与文件 IO 都在主线程之外执行。
+    func saveDraftNow() async {
+        draftSaveTask?.cancel()
+        draftSaveTask = nil
+        draftSaveGeneration += 1
+        let generation = draftSaveGeneration
+        let snapshot = MailDraftSnapshot(
+            textURL: draftURL,
+            attachmentsURL: draftAttachmentsURL,
+            payload: MailDraftPayload(
                 mode: mode.key,
                 to: to,
                 cc: cc,
                 subject: subject,
                 body: body,
-                attachments: attachments.map {
-                    DraftAttachment(filename: $0.filename, mimeType: $0.mimeType, data: $0.data)
-                }
-            )
-            let data = try JSONEncoder().encode(payload)
-            try data.write(to: draftURL!)
+                attachments: nil
+            ),
+            attachments: attachments.map {
+                MailDraftAttachment(filename: $0.filename, mimeType: $0.mimeType, data: $0.data)
+            },
+            attachmentsRevision: attachmentsRevision
+        )
+        do {
+            let written = try await draftStore.save(snapshot, generation: generation)
+            guard generation == draftSaveGeneration, written else { return }
             draftSavedAt = .now
         } catch {
             // 自动保存失败不阻断编辑，静默忽略。
         }
+    }
+
+    /// 关闭撰写窗口时把防抖窗口内的最后一次编辑落盘，避免丢字。
+    func flushDraftSaveOnClose() {
+        guard phase != .sent else { return }
+        Task { await saveDraftNow() }
     }
 
     // MARK: - 发送
@@ -189,13 +290,13 @@ final class MailComposeViewModel: ObservableObject {
             do {
                 try await composer.send(draft: draft, account: account)
                 phase = .sent
-                clearLocalDraft()
+                await discardLocalDraft()
             } catch let error as MailError {
                 phase = .failed(error.localizedDescription)
-                saveDraftNow() // 失败保留草稿
+                await saveDraftNow() // 失败保留草稿
             } catch {
                 phase = .failed(error.localizedDescription)
-                saveDraftNow()
+                await saveDraftNow()
             }
         }
     }
@@ -209,13 +310,15 @@ final class MailComposeViewModel: ObservableObject {
                 data: data
             )
         )
-        saveDraftNow()
+        attachmentsRevision += 1
+        scheduleDraftSave()
     }
 
     func removeAttachment(at index: Int) {
         guard attachments.indices.contains(index) else { return }
         attachments.remove(at: index)
-        saveDraftNow()
+        attachmentsRevision += 1
+        scheduleDraftSave()
     }
 
     // MARK: - 工具
@@ -240,10 +343,16 @@ final class MailComposeViewModel: ObservableObject {
         }
     }
 
-    private func clearLocalDraft() {
-        if let url = draftURL {
-            try? FileManager.default.removeItem(at: url)
-        }
+    private func discardLocalDraft() async {
+        draftSaveTask?.cancel()
+        draftSaveTask = nil
+        draftSaveGeneration += 1
+        let generation = draftSaveGeneration
+        await draftStore.discard(
+            textURL: draftURL,
+            attachmentsURL: draftAttachmentsURL,
+            generation: generation
+        )
     }
 }
 
@@ -257,19 +366,4 @@ private extension MailComposeMode {
         case .forward: return "forward"
         }
     }
-}
-
-private struct DraftAttachment: Codable {
-    var filename: String
-    var mimeType: String
-    var data: Data
-}
-
-private struct DraftPayload: Codable {
-    var mode: String
-    var to: String
-    var cc: String
-    var subject: String
-    var body: String
-    var attachments: [DraftAttachment]
 }

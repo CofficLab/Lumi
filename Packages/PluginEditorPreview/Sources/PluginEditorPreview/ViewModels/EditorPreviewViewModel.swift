@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 public enum EditorPreviewState: Equatable, Sendable {
@@ -38,11 +39,15 @@ public enum EditorPreviewFileKind: Equatable, Sendable {
 public final class EditorPreviewViewModel: ObservableObject {
     @Published public private(set) var state: EditorPreviewState = .empty
 
+    /// 已加载的预览图片。视图只渲染这里已准备好的图片，不在 body 里打开文件（#1194）。
+    @Published public private(set) var previewImage: NSImage?
+
     private var loadTask: Task<Void, Never>?
     private var watchTask: Task<Void, Never>?
     private var loadGeneration = 0
     private var watchedFileSignature: FileSignature?
     private let pollInterval: Duration
+    private let imageLoader: (URL) async -> EditorPreviewImageLoader.Box?
 
     private struct FileSignature: Equatable {
         let modificationDate: Date?
@@ -51,9 +56,13 @@ public final class EditorPreviewViewModel: ObservableObject {
 
     init(
         projectCapability: any EditorPreviewProjectCapability,
-        pollInterval: Duration = .seconds(1)
+        pollInterval: Duration = .seconds(1),
+        imageLoader: @escaping (URL) async -> EditorPreviewImageLoader.Box? = { url in
+            await EditorPreviewImageLoader.load(at: url)
+        }
     ) {
         self.pollInterval = pollInterval
+        self.imageLoader = imageLoader
         updateCurrentFile(projectCapability.currentFileURL)
     }
 
@@ -65,6 +74,8 @@ public final class EditorPreviewViewModel: ObservableObject {
         watchTask?.cancel()
         watchTask = nil
         watchedFileSignature = nil
+        // 切换选中即作废旧图片，避免新文件短暂显示上一张图。
+        previewImage = nil
 
         guard let normalizedURL else {
             state = .empty
@@ -79,6 +90,13 @@ public final class EditorPreviewViewModel: ObservableObject {
             startWatching(normalizedURL, generation: generation)
         case .image:
             state = .image(normalizedURL)
+            // 图片打开与解码移到后台，主线程只发布已准备好的图片（#1194）。
+            loadTask = Task { [weak self] in
+                guard let self else { return }
+                let box = await self.imageLoader(normalizedURL)
+                guard !Task.isCancelled else { return }
+                self.applyImage(box?.image, url: normalizedURL, generation: generation)
+            }
             return
         case .unsupported:
             state = .unsupported(normalizedURL)
@@ -181,5 +199,19 @@ public final class EditorPreviewViewModel: ObservableObject {
     private func apply(_ nextState: EditorPreviewState, generation: Int) {
         guard generation == loadGeneration else { return }
         state = nextState
+    }
+
+    /// 写回已加载的图片；晚到的旧选中不得覆盖最新一次的图片（#1194）。
+    private func applyImage(_ image: NSImage?, url: URL, generation: Int) {
+        guard generation == loadGeneration else { return }
+        if let image {
+            previewImage = image
+        } else {
+            previewImage = nil
+            state = .failed(
+                url,
+                EditorPreviewLocalization.string("Preview is not available for this file type.")
+            )
+        }
     }
 }

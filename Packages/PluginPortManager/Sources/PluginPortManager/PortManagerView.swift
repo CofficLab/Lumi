@@ -101,13 +101,16 @@ public struct PortManagerView: View {
 
     public func killProcess(_ port: PortInfo) async {
         do {
-            try await PortScanner.shared.killProcess(pid: port.pid)
+            try await PortScanner.shared.killProcess(port)
             // Refresh after killing
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
             errorMessage = pluginLocalization.string("Failed to kill process: \(error.localizedDescription)")
             showError = true
+            // 拒绝 kill（进程已退出 / PID 被复用 / 端口归属变化）后刷新列表，
+            // 避免用户继续基于过期行操作（#246）。
+            await refresh()
         }
     }
 }

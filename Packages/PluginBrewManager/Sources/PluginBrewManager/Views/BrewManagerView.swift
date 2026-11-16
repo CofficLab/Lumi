@@ -49,6 +49,24 @@ struct BrewManagerView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
+        .confirmationDialog(
+            pluginLocalization.string("Uninstall Package"),
+            isPresented: Binding(
+                get: { viewModel.packagePendingUninstall != nil },
+                set: { if !$0 { viewModel.cancelUninstall() } }
+            ),
+            titleVisibility: .visible,
+            presenting: viewModel.packagePendingUninstall
+        ) { package in
+            Button(pluginLocalization.string("Uninstall"), role: .destructive) {
+                Task { await viewModel.confirmUninstall(package: package) }
+            }
+            Button(pluginLocalization.string("Cancel"), role: .cancel) {
+                viewModel.cancelUninstall()
+            }
+        } message: { package in
+            Text(pluginLocalization.string("Uninstalling \(package.name) may affect other packages that depend on it. This action cannot be undone."))
+        }
     }
 
     private var content: some View {
@@ -82,7 +100,7 @@ struct BrewManagerView: View {
                             packages: viewModel.installedPackages,
                             isLoading: viewModel.isLoading,
                             onUninstall: { package in
-                                Task { await viewModel.uninstall(package: package) }
+                                viewModel.requestUninstall(package: package)
                             },
                             onBrowseSearch: { selectedTab = .search }
                         )

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 37 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 37
+测试文件: 8 个，用例总数: 58
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
 - **MindMapStore 保存失败**（2 条）：由 `failedSavePropagatesAndKeepsStateUnchanged`、`successfulSaveUpdatesMemoryAndDisk` 用例锁定；`updateMap` 必须先落盘再提交内存，目录不可写导致保存失败时把错误抛给工具并写入 `lastError`，内存与磁盘都保持旧值，不得误报成功（#429）。
+- **MindMap 画布手势基线**（6 条）：由 `scaleAccumulatesOnBaseline`、`offsetAccumulatesOnBaseline`、`consecutiveDragsStayContinuous` 等用例锁定；连续拖拽/缩放须在上一手势结束保存的基线上累加增量并钳到上下限，不得每次从零覆盖导致第二次手势跳变（#326）。
 
 ## 测试用例清单
 
@@ -85,8 +86,29 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 35 | MindMapMarkdownCodec 健壮性 | 仅含根节点时往返仍保留独立根文本 | 标题 `Project`、根文本 `Central Problem`、无子节点 | 编码后再解码 | 标题为 `Project`，根文本为 `Central Problem`，仅一个节点 | P1 | ✅ 已覆盖 | `roundTripPreservesDistinctRootTextWithoutChildren` |
 | 36 | MindMapStore 保存失败 | 保存失败时抛错、保留错误状态且内存与磁盘不变（**回归 #429**） | 已创建一张导图，存储目录设为只读 | 调用 `updateNode` 改根文本后再 reload | 抛错，`lastError` 非空，内存与磁盘根文本仍为旧值，重载后不变 | P0 | ✅ 已覆盖 | `failedSavePropagatesAndKeepsStateUnchanged` |
 | 37 | MindMapStore 保存失败 | 可写时保存成功并同步内存与磁盘 | 已创建一张导图，存储目录可写 | 调用 `updateNode` 改根文本 | 不抛错，`lastError` 为空，内存与磁盘根文本均为新值 | P1 | ✅ 已覆盖 | `successfulSaveUpdatesMemoryAndDisk` |
+| 38 | MindMap 画布手势基线 | 缩放在基线上累加而非覆盖（**回归 #326**） | 基线缩放已提交为 2.0 | 第二次手势放大 1.5 | 结果为 3.0，而非被覆盖成 1.5 | P1 | ✅ 已覆盖 | `scaleAccumulatesOnBaseline` |
+| 39 | MindMap 画布手势基线 | 缩放钳到上下限 | 基线缩放为 2.0 | 分别放大 10.0、缩小 0.01 | 结果钳到 maxScale / minScale | P1 | ✅ 已覆盖 | `scaleIsClamped` |
+| 40 | MindMap 画布手势基线 | 平移在基线上累加而非覆盖（**回归 #326**） | 基线平移已提交为 (100, 50) | 第二次拖拽 (30, 20) | 结果为 (130, 70)，而非被覆盖成 (30, 20) | P1 | ✅ 已覆盖 | `offsetAccumulatesOnBaseline` |
+| 41 | MindMap 画布手势基线 | 连续两次拖拽保持连续不跳回原点（**回归 #326**） | 手势 1 拖到 (80, 40) 并结束 | 手势 2 起始 translation=0，再拖 (10, -5) | 起始停在 (80, 40)，继续累加到 (90, 35) | P1 | ✅ 已覆盖 | `consecutiveDragsStayContinuous` |
+| 42 | MindMap 画布手势基线 | 连续两次缩放保持连续不跳回 1（**回归 #326**） | 手势 1 放大到 1.8 并结束 | 手势 2 起始 magnification=1，再放大 1.2 | 起始停在 1.8，继续累加到 1.8×1.2 | P1 | ✅ 已覆盖 | `consecutiveMagnificationsStayContinuous` |
+| 43 | MindMap 画布手势基线 | 默认基线为单位变换 | 新建手势基线 | 读取默认基线并施加单位增量 | baseScale=1.0、baseOffset=.zero，单位增量不改变结果 | P2 | ✅ 已覆盖 | `defaultBaselineIsIdentity` |
+| 44 | MindMap 导出 | 索引化遍历保持子节点原序与层级缩进（**回归 #1202**） | 根 + A/B + A1 的树 | 调用 `MindMapMarkdownCodec.encode` | 输出恰为 `# Root\n- A\n  - A1\n- B` | P1 | ✅ 已覆盖 | `markdownEncodePreservesChildOrderAndDepth` |
+| 45 | MindMap 导出 | Markdown 遍历必须 O(N)，大图不得冻结（**回归 #1202**） | 5 万节点宽树（输出本身 O(N)） | 计时调用 `encode` | 行数=count+1 且耗时 < 2s（二次扫描会远超） | P0 | ✅ 已覆盖 | `markdownEncodeHandlesLargeMapLinearly` |
+| 46 | MindMap 导出 | 导出器 Markdown 编码与 codec 一致 | 含根与子节点的图 | 调用 `MindMapFileExporter.encode(.markdown)` | 字节解码后等于 `MindMapMarkdownCodec.encode` | P1 | ✅ 已覆盖 | `exporterMarkdownEncodeMatchesCodec` |
+| 47 | MindMap 导出 | 导出器 JSON 编码可往返还原节点 | 含 note 的图 | encode(.json) 后用 ISO8601 解码 | id/title/nodes 与原图一致 | P1 | ✅ 已覆盖 | `exporterJSONEncodeRoundTripsNodes` |
+| 48 | MindMap 导出 | 导出格式扩展名常量 | — | 读取两种 Format 的 fileExtension | markdown=md、json=json | P2 | ✅ 已覆盖 | `exporterFormatFileExtensions` |
+| 49 | MindMap 导出 | Markdown 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.markdown)` | 读回字节等于 codec 输出，不依赖主线程 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesMarkdown` |
+| 50 | MindMap 导出 | JSON 编码+原子写入可在后台 detached 任务完成（**回归 #1202**） | 临时目标 URL | 在 `Task.detached` 中调用 `write(.json)` | 读回解码后 nodes/title 一致 | P0 | ✅ 已覆盖 | `exporterWriteRunsOffMainAndWritesJSON` |
+| 51 | MindMap 布局缓存与查找 | 地图不变时复用缓存布局，视口变换不重算（**回归 #1191**） | 注入计数 compute 的缓存 | 对同一 map 连续调用 `layout(for:)` 两次 | compute 仅 1 次，两次结果一致 | P0 | ✅ 已覆盖 | `layoutCacheReusesResultForUnchangedMap` |
+| 52 | MindMap 布局缓存与查找 | 节点文本变化触发重算 | 缓存已布局某图 | 改根文本后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenNodeTextChanges` |
+| 53 | MindMap 布局缓存与查找 | 结构变化（新增节点）触发重算 | 缓存已布局某图 | 新增子节点后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenStructureChanges` |
+| 54 | MindMap 布局缓存与查找 | 折叠状态变化触发重算 | 缓存已布局某图 | 折叠根节点后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenCollapsedChanges` |
+| 55 | MindMap 布局缓存与查找 | 布局方向变化触发重算 | 缓存已布局 right | 改为 down 后再布局 | compute 共 2 次 | P1 | ✅ 已覆盖 | `layoutCacheRecomputesWhenLayoutDirectionChanges` |
+| 56 | MindMap 布局缓存与查找 | 字典化查找后边收集完整且正确（**回归 #1191**） | 根+A/B+A1 的 right 树 | 调用 `MindMapLayoutEngine.layout` | 边集恰为 r->a/r->b/a->a1 | P1 | ✅ 已覆盖 | `layoutCollectsAllVisibleEdges` |
+| 57 | MindMap 布局缓存与查找 | 折叠子树不得产生边也不得布局其子节点（**回归 #1191**） | 折叠节点 a 含子 a1 | 调用 `layout` | 边仅 r->a，nodes 无 a1 | P0 | ✅ 已覆盖 | `layoutSkipsCollapsedSubtreeEdges` |
+| 58 | MindMap 布局缓存与查找 | 布局查找必须 O(N)，大图不得卡顿（**回归 #1191**） | 1 万节点宽树 | 计时调用 `layout` | 节点数=count、边数=count-1 且耗时 < 3s | P0 | ✅ 已覆盖 | `layoutHandlesLargeMapLinearly` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -99,21 +121,21 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 0 / 0
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 18 / 18
+- P1: 已覆盖 38 / 38
+- P2: 已覆盖 2 / 2
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
+- **P1**: 其余功能性用例（38 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

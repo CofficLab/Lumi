@@ -50,8 +50,9 @@ struct EditorPreviewView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(24)
             }
-        case .image(let url):
-            if let image = NSImage(contentsOf: url) {
+        case .image:
+            // 只渲染 ViewModel 已在后台准备好的图片，body 内不做文件 IO（#1194）。
+            if let image = viewModel.previewImage {
                 ScrollView([.horizontal, .vertical]) {
                     Image(nsImage: image)
                         .resizable()
@@ -61,9 +62,9 @@ struct EditorPreviewView: View {
                 }
             } else {
                 placeholder(
-                    icon: "photo",
+                    icon: "hourglass",
                     title: EditorPreviewLocalization.string("Image Preview"),
-                    message: EditorPreviewLocalization.string("Preview is not available for this file type.")
+                    message: EditorPreviewLocalization.string("Preview is unavailable until the editor finishes loading the file.")
                 )
             }
         case .unsupported(let url):

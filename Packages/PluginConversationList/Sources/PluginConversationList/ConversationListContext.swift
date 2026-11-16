@@ -15,6 +15,9 @@ final class ConversationListContext {
     enum Event {
         case selectedConversationChanged(UUID?)
         case conversationAutomationChanged(UUID)
+        /// 运行时会话状态变化（回合/工具/授权/活动）。只刷新对应可见行，
+        /// 不触发分页摘要列表的结构刷新（#1258）。
+        case conversationStateChanged(UUID)
         case conversationsChanged
     }
 
@@ -96,6 +99,10 @@ final class ConversationListContext {
 
     func markAutomationLevelChanged(for conversationID: UUID) {
         notify(.conversationAutomationChanged(conversationID))
+    }
+
+    func markConversationStateChanged(for conversationID: UUID) {
+        notify(.conversationStateChanged(conversationID))
     }
 
     func setSelectedConversationID(_ id: UUID?) {

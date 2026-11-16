@@ -251,6 +251,10 @@ public actor GoalStateManager: SuperLog {
                 goal.status = .inProgress
             }
             context.insert(task)
+            // 建立 SwiftData 关系：字符串 goalId 不会自动填充对象关系，
+            // 不设置 task.goal 则 Goal.tasks 为空，.cascade 删除时命中不到
+            // 这些 Task，Goal 删除后永久残留孤儿（#815）。
+            task.goal = goal
             createdTasks.append(task)
         }
         
@@ -300,6 +304,8 @@ public actor GoalStateManager: SuperLog {
                 parallelGroup: taskInfo.parallelGroup
             )
             context.insert(task)
+            // 追加的 Task 同样必须建立关系，否则绕过 .cascade 清理（#815）。
+            task.goal = goal
             createdTasks.append(task)
         }
         
@@ -612,6 +618,8 @@ public actor GoalStateManager: SuperLog {
             copy.errorMessage = task.errorMessage
             copy.completedAt = task.completedAt
             context.insert(copy)
+            // fork 副本的 Task 也必须挂到副本 Goal 上，否则清理时残留孤儿（#815）。
+            copy.goal = forked
             copies.append(copy)
         }
 
@@ -718,6 +726,16 @@ public actor GoalStateManager: SuperLog {
         let goals = try context.fetch(descriptor)
 
         for goal in goals {
+            // 显式按字符串外键 goalId 删除 Task，不只依赖 Goal.tasks 的 .cascade：
+            // 历史遗留的 Task 只写了 goalId、未建立对象关系，cascade 命中不到，
+            // 会在 Goal 删除后永久残留（#815）。按 goalId 删除可一并清掉这些孤儿。
+            let goalID = goal.id
+            let taskDescriptor = FetchDescriptor<GoalTask>(
+                predicate: #Predicate<GoalTask> { $0.goalId == goalID }
+            )
+            for task in try context.fetch(taskDescriptor) {
+                context.delete(task)
+            }
             context.delete(goal)
         }
 

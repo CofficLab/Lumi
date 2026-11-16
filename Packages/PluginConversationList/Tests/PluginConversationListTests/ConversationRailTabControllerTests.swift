@@ -245,6 +245,41 @@ import Testing
     #expect(try compiledStrings(language: "zh-TW")["Projects"] == "專案")
 }
 
+/// #1170：被取消的旧刷新晚到后，不得移除新刷新刚注册的 Chats 标签。
+@Test @MainActor func cancelledRefreshDoesNotRemoveNewerRailTabs() async throws {
+    let conversations = GatedCountConversationManager()
+    conversations.gateNextCount = true
+    let context = makeContext(conversations: conversations)
+    let attentionStore = ConversationAttentionStore()
+    let sortStabilizer = ConversationSortStabilizer()
+    let controller = ConversationRailTabController(
+        context: context,
+        attentionStore: attentionStore,
+        sortStabilizer: sortStabilizer,
+        chatsViewModel: makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .all),
+        projectViewModel: makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .currentProject),
+        order: 81,
+        pluginID: "test.conversation-list"
+    )
+    let rail = DefaultRailViewProviding()
+    controller.start(rail: rail)
+    defer { controller.stop() }
+
+    // 旧刷新 A 进入全库计数查询并被门闩挂起，此刻快照为 0。
+    while conversations.countGate == nil { await Task.yield() }
+
+    // 创建第一条会话触发刷新 B；B 读到 1 并注册 Chats 标签。
+    _ = try conversations.createConversation(title: "First", projectPath: nil, providerID: nil, modelName: nil)
+    let chatsTabID = "test.conversation-list.chats"
+    #expect(await waitUntil(timeout: .seconds(5)) { rail.tabs.contains { $0.id == chatsTabID } })
+
+    // 释放 A：它带着旧快照 0 返回，不得移除 B 注册的标签。
+    conversations.countGate?.resume()
+    conversations.countGate = nil
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(rail.tabs.contains { $0.id == chatsTabID }, "被取消的旧刷新移除了新注册的 Chats 标签")
+}
+
 private func compiledStrings(language: String) throws -> [String: String] {
     let bundle = PluginConversationList.pluginLocalization.bundle
     let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
@@ -293,4 +328,122 @@ private func waitUntil(
         try? await Task.sleep(for: .milliseconds(5))
     }
     return condition()
+}
+
+/// 全库计数查询可被门闩挂起的会话管理替身，用来构造「旧刷新晚到」的交错。
+@MainActor
+private final class GatedCountConversationManager: ConversationManaging {
+    private var summaries: [ConversationSummary] = []
+    private var observers: [UUID: (ConversationEvent) -> Void] = [:]
+
+    /// 置 true 时下一次计数查询挂起，直到 `countGate` 被 resume。
+    var gateNextCount = false
+    var countGate: CheckedContinuation<Void, Never>?
+
+    var conversations: [ConversationSummary] { summaries }
+    var selectedConversationID: UUID? { nil }
+    var currentTitle: String { "" }
+    var dataDirectory: URL { URL(fileURLWithPath: "/tmp/PluginConversationListTests") }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        let id = UUID()
+        summaries.append(ConversationSummary(
+            id: id, title: title ?? "New", createdAt: Date(), updatedAt: Date(), projectPath: projectPath
+        ))
+        notify(.created(id))
+        return id
+    }
+
+    func conversationCount(projectPath: String?) async -> Int {
+        // 请求发起时锁定快照，模拟存储层返回的是查询时刻的计数。
+        let snapshot: Int
+        if let projectPath {
+            snapshot = summaries.filter { $0.projectPath == projectPath }.count
+        } else {
+            snapshot = summaries.count
+        }
+        if gateNextCount {
+            gateNextCount = false
+            await withCheckedContinuation { countGate = $0 }
+        }
+        return snapshot
+    }
+
+    func addConversationObserver(
+        _ callback: @escaping (ConversationEvent) -> Void
+    ) -> any ConversationObserverHandle {
+        let token = UUID()
+        observers[token] = callback
+        return BlockObserverHandle { [weak self] in self?.observers[token] = nil }
+    }
+
+    private func notify(_ event: ConversationEvent) {
+        for callback in observers.values { callback(event) }
+    }
+
+    func selectConversation(id: UUID) {}
+    func deselectConversation() {}
+    func deleteConversation(id: UUID) {}
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { false }
+    func markConversationActive(id: UUID, messageDate: Date) {}
+    func isSending(for conversationID: UUID?) -> Bool { false }
+    func providerID(for conversationID: UUID?) -> String? { nil }
+    func modelName(for conversationID: UUID?) -> String? { nil }
+    func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
+
+    var globalVerbosity: ResponseVerbosity { .standard }
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+    func setVerbosity(_ level: ResponseVerbosity, for conversationID: UUID?) {}
+    func setGlobalVerbosity(_ level: ResponseVerbosity) {}
+
+    var globalReasoningEffort: ReasoningEffort? { nil }
+    func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { .medium }
+    func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { nil }
+    func setReasoningEffort(_ effort: ReasoningEffort, for conversationID: UUID?) {}
+    func clearReasoningEffort(for conversationID: UUID?) {}
+    func setGlobalReasoningEffort(_ effort: ReasoningEffort?) {}
+
+    var globalAutomationLevel: AutomationLevel { .chat }
+    func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+    func setAutomationLevel(_ level: AutomationLevel, for conversationID: UUID?) {}
+    func setGlobalAutomationLevel(_ level: AutomationLevel) {}
+
+    var globalLanguage: ConversationLanguage { .chinese }
+    func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+    func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
+    func setGlobalLanguage(_ language: ConversationLanguage) {}
+
+    func addSelectedConversationObserver(
+        _ observer: @escaping (UUID?) -> Void
+    ) -> any SelectedConversationObserverHandle {
+        NoopSelectedConversationObserverHandle()
+    }
+}
+
+@MainActor
+private final class BlockObserverHandle: ConversationObserverHandle {
+    private let onCancel: () -> Void
+    init(_ onCancel: @escaping () -> Void) { self.onCancel = onCancel }
+    func cancel() { onCancel() }
 }

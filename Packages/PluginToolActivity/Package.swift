@@ -9,14 +9,13 @@ let package = Package(
         .library(name: "PluginToolActivity", targets: ["PluginToolActivity"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
-        .package(path: "../KitLLM"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -25,9 +24,9 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                "ProviderChatSection",
-                "ProviderConversation",
-                "ProviderToolManager",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ],
             path: "Sources/PluginToolActivity",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -36,10 +35,10 @@ let package = Package(
             name: "PluginToolActivityTests",
             dependencies: [
                 "PluginToolActivity",
-                "ProviderConversation",
-                "ProviderToolManager",
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
             ],
             path: "Tests/PluginToolActivityTests"
         ),

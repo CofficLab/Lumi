@@ -4,8 +4,10 @@ import Combine
 /// 把一个 ``DatabaseValue`` 转成 SQL 字面量（内联、已转义）。
 ///
 /// 采用内联而非参数绑定，是为了在 SQLite/MySQL/PostgreSQL 三种方言下统一生成
-/// 可直接 `execute(sql, params: nil)` 的语句。BLOB 暂不支持内联（v1 视为只读）。
-public func sqlLiteral(for value: DatabaseValue) -> String {
+/// 可直接 `execute(sql, params: nil)` 的语句。BLOB 内联为各方言的二进制字面量
+/// （SQLite/MySQL `X'…'`、PostgreSQL `decode('…','hex')`），供 BLOB 主键定位行（#567）；
+/// BLOB 单元格的编辑本身仍只读（#281）。
+public func sqlLiteral(for value: DatabaseValue, dialect: DatabaseType) -> String {
     switch value {
     case .null:
         return "NULL"
@@ -16,16 +18,54 @@ public func sqlLiteral(for value: DatabaseValue) -> String {
     case .bool(let b):
         return b ? "TRUE" : "FALSE"
     case .string(let s):
-        return "'" + s.replacingOccurrences(of: "'", with: "''") + "'"
-    case .data:
-        // BLOB 编辑在 v1 不支持；生成 NULL 避免破坏语句结构。
-        return "NULL"
+        return "'" + escapeSQLString(s, dialect: dialect) + "'"
+    case .data(let data):
+        // BLOB 单元格编辑仍只读（#281），但 BLOB 主键值必须内联成正确的二进制字面量，
+        // 否则 WHERE pk = NULL 永不匹配，编辑/删除命中 0 行（#567）。
+        let hex = data.map { String(format: "%02x", $0) }.joined()
+        switch dialect {
+        case .postgresql:
+            return "decode('\(hex)', 'hex')"
+        case .sqlite, .mysql, .redis:
+            return "X'\(hex)'"
+        }
     }
 }
 
-/// 把单元格编辑文本解析为 ``DatabaseValue``：
-/// 空 / `NULL` → null；整数 → integer；小数 → double；true/false → bool；其余 → string。
-public func parseEditedCellValue(_ text: String) -> DatabaseValue {
+/// MySQL 默认开启反斜杠转义（NO_BACKSLASH_ESCAPES 关闭），`\n`/`\t`/`\0` 会被
+/// 解释成控制字符，必须先转义反斜杠再转义单引号，否则保存会静默改写用户输入（#582）。
+/// SQLite/PostgreSQL 标准字符串里反斜杠是普通字符，只转义单引号。
+private func escapeSQLString(_ s: String, dialect: DatabaseType) -> String {
+    var escaped = s
+    if dialect == .mysql {
+        escaped = escaped.replacingOccurrences(of: "\\", with: "\\\\")
+    }
+    return escaped.replacingOccurrences(of: "'", with: "''")
+}
+
+/// 判断列声明类型是否为文本类。文本列的编辑必须保留用户输入的原始字符串，
+/// 不得 trim、把空串/「NULL」映射成 SQL NULL，也不做数字/布尔推断（#554）。
+/// 覆盖三方言常见文本类型：CHAR/VARCHAR/NCHAR/NVARCHAR/CHARACTER VARYING、
+/// TEXT/TINYTEXT/MEDIUMTEXT/LONGTEXT、CLOB/NCLOB、SQLite STRING 亲和、
+/// JSON/JSONB、UUID、XML、MySQL ENUM/SET。未知或数值/布尔类型返回 false，
+/// 沿用既有推断行为。
+func isTextColumnType(_ dataType: String?) -> Bool {
+    guard let dataType, !dataType.isEmpty else { return false }
+    let upper = dataType.uppercased()
+    let textMarkers = ["CHAR", "TEXT", "CLOB", "STRING", "JSON", "UUID", "XML", "ENUM", "SET"]
+    return textMarkers.contains { upper.contains($0) }
+}
+
+/// 把单元格编辑文本解析为 ``DatabaseValue``。
+///
+/// 传入 `columnType` 且为文本类列时，原样保留输入字符串（含首尾空白、空串、
+/// `NULL`、形似数字的文本）；NULL 由独立的「Set NULL」菜单提供，不占用合法
+/// 字符串值（#554）。其余列（数值/布尔/未知）沿用：空 / `NULL` → null；
+/// 整数 → integer；小数 → double；true/false → bool；其余 → string。
+public func parseEditedCellValue(_ text: String, columnType: String? = nil) -> DatabaseValue {
+    if isTextColumnType(columnType) {
+        return .string(text)
+    }
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     if trimmed.isEmpty || trimmed.uppercased() == "NULL" { return .null }
     if let i = Int(trimmed) { return .integer(i) }
@@ -106,6 +146,23 @@ public final class TableChangeManager: ObservableObject {
         changedCellCount + pendingInsertCount + pendingDeleteCount
     }
 
+    /// 暂存数据编辑所引用的全部列名：UPDATE 的 SET 列与主键 WHERE 列、INSERT 的列、DELETE 的主键列。
+    /// 结构变更若重命名/删除其中任一列，这些编辑基于旧 schema 快照生成的 SQL 必然失效（#583）。
+    public var referencedColumnNames: Set<String> {
+        var names: Set<String> = []
+        for update in updatesByRow.values {
+            names.formUnion(update.columnUpdates.keys)
+            for pk in update.primaryKeyValues { names.insert(pk.column) }
+        }
+        for insert in pendingInserts {
+            names.formUnion(insert.columnValues.keys)
+        }
+        for pkValues in deletedPKValues.values {
+            for pk in pkValues { names.insert(pk.column) }
+        }
+        return names
+    }
+
     public var canUndo: Bool { !undoStack.isEmpty }
     public var canRedo: Bool { !redoStack.isEmpty }
 
@@ -115,8 +172,28 @@ public final class TableChangeManager: ObservableObject {
         guard !pkColumns.isEmpty else { return nil }
         return pkColumns.map { pk -> String in
             let value = value(of: pk, in: rowValues, columns: columns)
-            return "\(pk)=\(value.description)"
+            return Self.rowKeyComponent(column: pk, value: value)
         }.joined(separator: "|")
+    }
+
+    /// 主键行标识的规范编码：列名与值都带 UTF-8 字节长度前缀，值再带类型标签。
+    ///
+    /// 直接用 `"\(pk)=\(value.description)"` 以 `|` 拼接会让不同主键碰撞
+    /// （如 `id='a=b'` 与 `id='a'`、含 `|` 的字符串、同长度 BLOB、数字与同形字符串），
+    /// 使两行的编辑/删除状态相互覆盖，最终 UPDATE/DELETE 作用到错误的主键（#555）。
+    /// 长度前缀 + 类型标签保证编码唯一且可逆。
+    private static func rowKeyComponent(column: String, value: DatabaseValue) -> String {
+        let tag: String
+        let payload: String
+        switch value {
+        case .null: tag = "n"; payload = ""
+        case .integer(let i): tag = "i"; payload = String(i)
+        case .double(let d): tag = "d"; payload = String(d)
+        case .bool(let b): tag = "b"; payload = b ? "1" : "0"
+        case .string(let s): tag = "s"; payload = s
+        case .data(let data): tag = "x"; payload = data.base64EncodedString()
+        }
+        return "\(column.utf8.count):\(column)=\(tag)\(payload.utf8.count):\(payload)"
     }
 
     public func isRowDeleted(rowValues: [DatabaseValue], columns: [String]) -> Bool {
@@ -139,6 +216,13 @@ public final class TableChangeManager: ObservableObject {
     }
 
     // MARK: - Cell updates
+
+    /// 按列声明类型解析编辑文本：文本列保留原始字符串，数值/布尔列沿用推断（#554）。
+    /// 编辑提交入口（QueryResultView）调用它，而不是无类型的 `parseEditedCellValue`。
+    public func parseEditedValue(_ text: String, column: String) -> DatabaseValue {
+        let dataType = schema.columns.first(where: { $0.name == column })?.dataType
+        return parseEditedCellValue(text, columnType: dataType)
+    }
 
     public func stageCellUpdate(
         column: String,
@@ -247,15 +331,30 @@ public final class TableChangeManager: ObservableObject {
         generatedDeleteStatements(for: type) + generatedInsertStatements(for: type) + generatedUpdateStatements(for: type)
     }
 
+    /// 主键 WHERE 条件：NULL 用 `IS NULL`，非 NULL 用 `= 字面量`。
+    /// SQL 里 `= NULL` 永远不成立，可空主键（如未声明 NOT NULL 的 TEXT PRIMARY KEY）
+    /// 的行会因此命中 0 行，保存却报成功并清空暂存，编辑/删除静默失效（#568）。
+    private func primaryKeyCondition(
+        column: String,
+        value: DatabaseValue,
+        dialect: DatabaseType,
+        quote: (String) -> String
+    ) -> String {
+        if case .null = value {
+            return "\(quote(column)) IS NULL"
+        }
+        return "\(quote(column)) = \(sqlLiteral(for: value, dialect: dialect))"
+    }
+
     public func generatedUpdateStatements(for type: DatabaseType) -> [String] {
         let tableExpr = DatabaseViewModel.qualifiedName(for: table, type: type)
         func q(_ name: String) -> String { DatabaseViewModel.quoteIdentifier(name, for: type) }
 
         return updatesByRow.values.map { row in
-            let setClause = row.columnUpdates.map { "\(q($0.key)) = \(sqlLiteral(for: $0.value))" }
+            let setClause = row.columnUpdates.map { "\(q($0.key)) = \(sqlLiteral(for: $0.value, dialect: type))" }
                 .joined(separator: ", ")
             let whereClause = row.primaryKeyValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value))" }
+                .map { primaryKeyCondition(column: $0.column, value: $0.value, dialect: type, quote: q) }
                 .joined(separator: " AND ")
             return "UPDATE \(tableExpr) SET \(setClause) WHERE \(whereClause);"
         }
@@ -282,7 +381,7 @@ public final class TableChangeManager: ObservableObject {
             // 按表结构列顺序输出，保证可读性
             let orderedColumns = allColumnNames.filter { insert.columnValues[$0] != nil }
             let cols = orderedColumns.map(q).joined(separator: ", ")
-            let vals = orderedColumns.map { sqlLiteral(for: insert.columnValues[$0]!) }.joined(separator: ", ")
+            let vals = orderedColumns.map { sqlLiteral(for: insert.columnValues[$0]!, dialect: type) }.joined(separator: ", ")
             return "INSERT INTO \(tableExpr) (\(cols)) VALUES (\(vals));"
         }
         .filter { !$0.isEmpty }
@@ -295,7 +394,7 @@ public final class TableChangeManager: ObservableObject {
         return deletedRowKeys.compactMap { key -> String? in
             guard let pkValues = deletedPKValues[key] else { return nil }
             let whereClause = pkValues
-                .map { "\(q($0.column)) = \(sqlLiteral(for: $0.value))" }
+                .map { primaryKeyCondition(column: $0.column, value: $0.value, dialect: type, quote: q) }
                 .joined(separator: " AND ")
             return "DELETE FROM \(tableExpr) WHERE \(whereClause);"
         }

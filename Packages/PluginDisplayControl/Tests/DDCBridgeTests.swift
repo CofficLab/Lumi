@@ -7,81 +7,79 @@ import Testing
 // without crashing — the same scenario that caused the original nil crash.
 
 @Test("DisplayDDCBridge returns nil/false when no service exists for display")
-func bridgeReturnsNilWithoutService() {
+func bridgeReturnsNilWithoutService() async {
     let bridge = DisplayDDCBridge()
     let fakeDisplayID: CGDirectDisplayID = 999_999
 
     // No refresh called — should have no services, no crash
-    #expect(!bridge.hasService(for: fakeDisplayID))
-    #expect(bridge.read(.brightness, displayID: fakeDisplayID) == nil)
-    #expect(bridge.read(.volume, displayID: fakeDisplayID) == nil)
-    #expect(bridge.read(.contrast, displayID: fakeDisplayID) == nil)
-    #expect(bridge.write(50, for: .brightness, displayID: fakeDisplayID) == false)
-    #expect(bridge.write(50, for: .volume, displayID: fakeDisplayID) == false)
-    #expect(bridge.write(50, for: .contrast, displayID: fakeDisplayID) == false)
+    #expect(await !bridge.hasService(for: fakeDisplayID))
+    #expect(await bridge.read(.brightness, displayID: fakeDisplayID) == nil)
+    #expect(await bridge.read(.volume, displayID: fakeDisplayID) == nil)
+    #expect(await bridge.read(.contrast, displayID: fakeDisplayID) == nil)
+    #expect(await bridge.write(50, for: .brightness, displayID: fakeDisplayID) == false)
+    #expect(await bridge.write(50, for: .volume, displayID: fakeDisplayID) == false)
+    #expect(await bridge.write(50, for: .contrast, displayID: fakeDisplayID) == false)
 }
 
 @Test("DisplayDDCBridge returns nil after refresh with empty display IDs")
-func bridgeReturnsNilAfterEmptyRefresh() {
+func bridgeReturnsNilAfterEmptyRefresh() async {
     let bridge = DisplayDDCBridge()
-    bridge.refresh(displayIDs: [])
+    await bridge.refresh(displayIDs: [])
 
-    #expect(!bridge.hasService(for: 0))
-    #expect(bridge.read(.brightness, displayID: 0) == nil)
+    #expect(await !bridge.hasService(for: 0))
+    #expect(await bridge.read(.brightness, displayID: 0) == nil)
 }
 
 @Test("DisplayDDCBridge handles refresh with non-existent display IDs gracefully")
-func bridgeRefreshWithInvalidIDs() {
+func bridgeRefreshWithInvalidIDs() async {
     let bridge = DisplayDDCBridge()
     // These display IDs don't exist on the system — should not crash
-    bridge.refresh(displayIDs: [999_888, 777_666])
+    await bridge.refresh(displayIDs: [999_888, 777_666])
 
-    #expect(!bridge.hasService(for: 999_888))
-    #expect(!bridge.hasService(for: 777_666))
-    #expect(bridge.read(.brightness, displayID: 999_888) == nil)
-    #expect(bridge.write(50, for: .volume, displayID: 777_666) == false)
+    #expect(await !bridge.hasService(for: 999_888))
+    #expect(await !bridge.hasService(for: 777_666))
+    #expect(await bridge.read(.brightness, displayID: 999_888) == nil)
+    #expect(await bridge.write(50, for: .volume, displayID: 777_666) == false)
 }
 
 @Test("DisplayDDCBridge multiple refreshes do not crash")
-func bridgeMultipleRefreshes() {
+func bridgeMultipleRefreshes() async {
     let bridge = DisplayDDCBridge()
     // Repeated refreshes should be safe — no crash, no leak
     for _ in 0..<5 {
-        bridge.refresh(displayIDs: [])
+        await bridge.refresh(displayIDs: [])
     }
-    #expect(bridge.read(.brightness, displayID: 0) == nil)
+    #expect(await bridge.read(.brightness, displayID: 0) == nil)
 }
 
 @Test("DisplayDDCBridge read/write all control kinds without service returns nil/false")
-func bridgeAllControlsWithoutService() {
+func bridgeAllControlsWithoutService() async {
     let bridge = DisplayDDCBridge()
     let fakeID: CGDirectDisplayID = 42
 
     for control: DisplayControlKind in [.brightness, .volume, .contrast] {
-        #expect(bridge.read(control, displayID: fakeID) == nil)
-        #expect(bridge.write(50, for: control, displayID: fakeID) == false)
+        #expect(await bridge.read(control, displayID: fakeID) == nil)
+        #expect(await bridge.write(50, for: control, displayID: fakeID) == false)
     }
 }
 
 @Test("DisplayDDCBridge write clamps out-of-range values without crashing")
-func bridgeWriteClampsValues() {
+func bridgeWriteClampsValues() async {
     let bridge = DisplayDDCBridge()
     let fakeDisplayID: CGDirectDisplayID = 123
 
     // Values outside 0–100 should not crash, just fail gracefully (no service)
-    #expect(bridge.write(-50, for: .brightness, displayID: fakeDisplayID) == false)
-    #expect(bridge.write(200, for: .brightness, displayID: fakeDisplayID) == false)
+    #expect(await bridge.write(-50, for: .brightness, displayID: fakeDisplayID) == false)
+    #expect(await bridge.write(200, for: .brightness, displayID: fakeDisplayID) == false)
 }
 
 @Test("DisplayDDCBridge can be deallocated safely after refresh")
-func bridgeDeallocation() {
+func bridgeDeallocation() async {
     // Ensure no dangling pointers or leaks when bridge is deinitialized
-    autoreleasepool {
-        let bridge = DisplayDDCBridge()
-        bridge.refresh(displayIDs: [999_000])
-        _ = bridge.read(.brightness, displayID: 999_000)
-        _ = bridge.write(50, for: .volume, displayID: 999_000)
-    }
+    let bridge = DisplayDDCBridge()
+    await bridge.refresh(displayIDs: [999_000])
+    _ = await bridge.read(.brightness, displayID: 999_000)
+    _ = await bridge.write(50, for: .volume, displayID: 999_000)
     // If we reach here without a crash, the test passes
 }
 

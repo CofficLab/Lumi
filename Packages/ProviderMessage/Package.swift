@@ -8,12 +8,12 @@ let package = Package(
         .library(name: "ProviderMessage", targets: ["ProviderMessage"]),
     ],
     dependencies: [
-        .package(path: "../ProviderConversation"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
     ],
     targets: [
         .target(
             name: "ProviderMessage",
-            dependencies: [.product(name: "ProviderConversation", package: "ProviderConversation")],
+            dependencies: [.product(name: "ProviderConversation", package: "LumiProviders")],
             path: "Sources/ProviderMessage"
         ),
         .testTarget(

@@ -23,6 +23,10 @@ public final class MessageSenderPlugin: SuperPlugin, SuperLog {
     )
 
     private var agentLoopObserver: AgentLoopObserver?
+    private var pendingQueuePersistence: PendingQueuePersistence?
+
+    /// 待发队列持久化存储；测试可注入临时文件，避免污染真实 Application Support（#596）。
+    var pendingQueueStore = PendingQueueStore()
 
     public init() {}
 
@@ -41,9 +45,20 @@ public final class MessageSenderPlugin: SuperPlugin, SuperLog {
         )
         try kernel.registerProvider((any MessageSendingProviding).self, sender)
         agentLoopObserver = AgentLoopObserver(agentLoop: agentLoop, sender: sender)
+
+        // 先恢复上次未排空的待发队列，再订阅变化即时落盘，
+        // 保证已提交但尚未发出的消息与附件在重启后不丢失（#596）。
+        let persistence = PendingQueuePersistence(store: pendingQueueStore, sender: sender)
+        persistence.restore()
+        persistence.startObserving()
+        pendingQueuePersistence = persistence
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        // 退出前兜底落盘当前队列，再拆除监听（#596）。
+        pendingQueuePersistence?.persist()
+        pendingQueuePersistence?.stop()
+        pendingQueuePersistence = nil
         agentLoopObserver?.cancel()
         agentLoopObserver = nil
     }

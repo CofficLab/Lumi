@@ -102,6 +102,74 @@ struct GitWorkspaceViewModelTests {
         #expect(viewModel.changeLabel(for: "README.md") == "M")
     }
 
+    /// 回归 #1283：大变更集下标签与排序仍正确，且工作树列表可稳定重复读取
+    /// （缓存而非每次 body 重建）。
+    @Test func largeWorkingTreeKeepsCorrectLabelsAndOrdering() async throws {
+        let modified = (0..<2000).map { "f\($0).txt" }
+        let status = try makeStatus(
+            branch: "main",
+            modified: modified,
+            added: ["added.txt"],
+            deleted: ["deleted.txt"],
+            staged: ["staged.txt"]
+        )
+        let git = StubGitWorkspaceGitProvider(statuses: ["/project": status])
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/project")
+
+        #expect(viewModel.workingTreeFiles.count == 2003)
+        #expect(viewModel.workingTreeFiles == viewModel.workingTreeFiles.sorted())
+        #expect(viewModel.changeLabel(for: "f1999.txt") == "M")
+        #expect(viewModel.changeLabel(for: "added.txt") == "A")
+        #expect(viewModel.changeLabel(for: "deleted.txt") == "D")
+        #expect(viewModel.changeLabel(for: "staged.txt") == "S")
+
+        // 重复读取应返回同一缓存内容，不再每次重建。
+        let first = viewModel.workingTreeFiles
+        for _ in 0..<50 {
+            #expect(viewModel.workingTreeFiles == first)
+        }
+    }
+
+    /// 回归 #1283：文件同时出现在多个分类时，标签优先级与原先一致。
+    @Test func labelPrecedenceMatchesCategoryPriority() async throws {
+        let status = try makeStatus(
+            branch: "main",
+            modified: ["all.txt", "added.txt", "deleted.txt", "renamed.txt", "untracked.txt", "modified.txt"],
+            added: ["all.txt", "added.txt"],
+            deleted: ["all.txt", "deleted.txt"],
+            renamed: ["all.txt", "renamed.txt"],
+            staged: ["all.txt"],
+            untracked: ["all.txt", "untracked.txt"]
+        )
+        let git = StubGitWorkspaceGitProvider(statuses: ["/project": status])
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/project")
+
+        #expect(viewModel.changeLabel(for: "all.txt") == "S")
+        #expect(viewModel.changeLabel(for: "added.txt") == "A")
+        #expect(viewModel.changeLabel(for: "deleted.txt") == "D")
+        #expect(viewModel.changeLabel(for: "renamed.txt") == "R")
+        #expect(viewModel.changeLabel(for: "untracked.txt") == "?")
+        #expect(viewModel.changeLabel(for: "modified.txt") == "M")
+    }
+
+    /// 回归 #1283：移除项目后缓存的工作树与标签必须清空。
+    @Test func clearingProjectResetsCachedWorkingTree() async throws {
+        let status = try makeStatus(branch: "main", modified: ["a.txt"], added: ["b.txt"])
+        let git = StubGitWorkspaceGitProvider(statuses: ["/project": status])
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/project")
+        #expect(viewModel.workingTreeFiles == ["a.txt", "b.txt"])
+
+        await viewModel.reload(path: nil)
+        #expect(viewModel.workingTreeFiles.isEmpty)
+        #expect(viewModel.changeLabel(for: "a.txt") == "?")
+    }
+
     private func makeStatus(
         branch: String,
         modified: [String],

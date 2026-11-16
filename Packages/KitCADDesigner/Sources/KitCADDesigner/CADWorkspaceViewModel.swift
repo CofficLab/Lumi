@@ -109,7 +109,9 @@ final class CADWorkspaceViewModel: ObservableObject {
                     component = .profile(current)
                 }
             }
-            syncScene()
+            if let updated = store.selectedComponent, !sceneController.rebuildComponent(updated) {
+                syncScene()
+            }
             refreshBOM()
         } catch {
             store.setError(error.localizedDescription)
@@ -140,7 +142,9 @@ final class CADWorkspaceViewModel: ObservableObject {
             try store.updateComponent(id: componentId) { component in
                 component.transform = transform
             }
-            syncScene()
+            if !sceneController.updateComponentTransform(id: componentId, transform: transform) {
+                syncScene()
+            }
         } catch {
             store.setError(error.localizedDescription)
         }

@@ -91,6 +91,8 @@ final class VideoConverterViewModel: ObservableObject {
 
                 conversionLog += "✅ \(VideoConverterLocalization.string("Conversion completed!"))\n"
                 progress = 1.0
+            } catch is CancellationError {
+                // 用户取消：cancelConversion 已记录取消日志，不再叠加错误行。
             } catch {
                 conversionLog += "❌ \(VideoConverterLocalization.string("Error: %@", error.localizedDescription))\n"
             }

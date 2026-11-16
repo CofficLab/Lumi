@@ -245,6 +245,7 @@ public actor MCPServerSession: MCPServerServing {
         name: String,
         arguments: [String: MCPJSONValue]
     ) async throws -> MCPCallResult {
+        try Task.checkCancellation()
         let client = try connectedClient()
         let mappedArguments = arguments.isEmpty
             ? nil
@@ -255,7 +256,19 @@ public actor MCPServerSession: MCPServerServing {
             name: name,
             arguments: mappedArguments
         )
-        let result = try await context.value
+        // 取消必须终止底层请求：cancelRequest 先以 CancellationError 释放本地
+        // pending continuation，再尽力向服务器发送协议取消通知。服务器永不响应
+        // 时本地等待也能立即结束，Job 不会永远停在 cancelling（#178）。
+        let result = try await withTaskCancellationHandler {
+            try await context.value
+        } onCancel: {
+            Task {
+                try? await client.cancelRequest(
+                    context.requestID,
+                    reason: "Tool call cancelled by client"
+                )
+            }
+        }
         return MCPContentCodec.encode(
             result.content,
             structuredContent: result.structuredContent,

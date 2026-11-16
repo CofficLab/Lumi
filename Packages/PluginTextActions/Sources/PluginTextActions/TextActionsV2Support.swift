@@ -18,12 +18,20 @@ enum TextActionsSettings {
         TextActionsPluginLocalStore.shared.isEnabled
     }
 
+    /// 选区监听的启停目标。
+    ///
+    /// - Important: 注入点而非写死 `TextSelectionManager.shared`。回归 #303
+    ///   要求「设置开关与插件生命周期统一持有并清理同一个监听」，单测据此
+    ///   注入替身断言关闭开关确实停止监听，而不必注册真实全局监听。生产
+    ///   默认仍是单例，与插件的 `selectionMonitor` 指向同一对象。
+    @MainActor static var selectionMonitor: any TextSelectionMonitoring = TextSelectionManager.shared
+
     @MainActor static func setEnabled(_ enabled: Bool) {
         TextActionsPluginLocalStore.shared.setEnabled(enabled)
         if enabled {
-            TextSelectionManager.shared.startMonitoring()
+            selectionMonitor.startMonitoring()
         } else {
-            TextSelectionManager.shared.stopMonitoring()
+            selectionMonitor.stopMonitoring()
         }
     }
 }
@@ -262,7 +270,11 @@ final class TextSelectionManager: TextSelectionMonitoring {
             try? await Task.sleep(for: TextSelectionReadPolicy.initialDelay)
             for attempt in 0..<TextSelectionReadPolicy.retryCount {
                 guard token == self.evaluationToken else { return }
-                if let result = self.selectedTextProvider.readSelectedText(anchor: anchor),
+                // AX 读取在后台线程执行（见 issue #1326）；await 期间用户可能
+                // 已触发新一轮评估，写回状态前必须重新比对 token。
+                let result = await self.selectedTextProvider.readSelectedText(anchor: anchor)
+                guard token == self.evaluationToken else { return }
+                if let result,
                    TextSelectionReadPolicy.shouldPresentMenu(for: result.text) {
                     if self.suppression.consumeMatch(text: result.text, keyCode: keyCode) {
                         return

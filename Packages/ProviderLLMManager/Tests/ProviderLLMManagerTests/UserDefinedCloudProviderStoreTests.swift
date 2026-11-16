@@ -303,19 +303,19 @@ struct UserDefinedCloudProviderStoreTests {
         let openAIProvider = UserDefinedCloudProvider(
             configuration: makeConfiguration(apiFormat: .openAI)
         )
-        #expect(openAIProvider.openAIConfiguration?.baseURL == "https://llm.example.com/v1")
+        #expect(openAIProvider.openAIConfiguration?.baseURL == "https://llm.example.com/v1/chat/completions")
         #expect(openAIProvider.anthropicConfiguration == nil)
 
         let anthropicProvider = UserDefinedCloudProvider(
             configuration: makeConfiguration(apiFormat: .anthropic)
         )
-        #expect(anthropicProvider.anthropicConfiguration?.baseURL == "https://llm.example.com/v1")
+        #expect(anthropicProvider.anthropicConfiguration?.baseURL == "https://llm.example.com/v1/messages")
         #expect(anthropicProvider.openAIConfiguration == nil)
 
         let responsesProvider = UserDefinedCloudProvider(
             configuration: makeConfiguration(apiFormat: .responses)
         )
-        #expect(responsesProvider.responsesEndpointURL == "https://llm.example.com/v1")
+        #expect(responsesProvider.responsesEndpointURL == "https://llm.example.com/v1/responses")
     }
 
     @Test("自定义供应商在管理器中暴露为云端供应商")

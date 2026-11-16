@@ -9,15 +9,15 @@ let package = Package(
         .library(name: "KitOpenIn", targets: ["KitOpenIn"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
     ],
     targets: [
         .target(
             name: "KitOpenIn",
             dependencies: [
-                "KitAgentTool",
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 "LumiUI",
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToast", package: "LumiProviders"),
@@ -29,7 +29,7 @@ let package = Package(
             name: "KitOpenInTests",
             dependencies: [
                 "KitOpenIn",
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToast", package: "LumiProviders"),
             ]

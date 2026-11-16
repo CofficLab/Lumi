@@ -19,6 +19,15 @@ public enum ClipboardManagerRuntime {
         )
     }
 
+    /// 图片负载的持久目录：`<dataRoot>/images`。
+    ///
+    /// 剪贴板历史是持久 SwiftData，图片若落在系统临时目录，会被系统清理，
+    /// 留下永久损坏、重启也无法恢复的历史条目（#242）。图片必须与数据库
+    /// 同住在插件自有的持久目录里。
+    public static func imageDirectory() -> URL {
+        databaseDirectory().appendingPathComponent("images", isDirectory: true)
+    }
+
     /// 生产环境兜底数据根目录。
     private static let productionFallbackDataRootDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

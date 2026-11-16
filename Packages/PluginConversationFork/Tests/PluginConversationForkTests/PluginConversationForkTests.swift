@@ -315,6 +315,25 @@ struct ConversationForkCoordinatorTests {
         )
     }
 
+    /// 注入指定 sender 的组装变体：用于断言分叉对全局挂起附件池的副作用。
+    private func makeCoordinator(
+        conversations: any ConversationManaging,
+        messages: DefaultMessageManager,
+        sender: any MessageSendingProviding
+    ) -> ConversationForkCoordinator {
+        let summarizer = ConversationSummarizer(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: DefaultLLMProviderManagerProviding()
+        )
+        return ConversationForkCoordinator(
+            conversations: conversations,
+            messages: messages,
+            sender: sender,
+            summarizer: summarizer
+        )
+    }
+
     @Test("preview 统计参与摘要的消息条数与提问轮数")
     func previewCountsMessagesAndRequests() async throws {
         let conversations = DefaultConversationManager()
@@ -426,6 +445,52 @@ struct ConversationForkCoordinatorTests {
         #expect(forked.title == "旧对话")
         #expect(forked.projectPath == "/tmp/proj")
         #expect(forked.modelName == "gpt-4")
+    }
+
+    @Test("fork 只发送摘要，不带走源对话未发送的附件（**回归 #578**）")
+    func forkDoesNotConsumeUnsentComposerAttachments() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let sourceID = try conversations.createConversation(title: "源对话", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.selectConversation(id: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        // 用户在源对话输入框里挂了尚未发送的图片与文件附件。
+        let image = UserImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data("unsent-image".utf8).base64EncodedString(),
+            fileName: "unsent.png"
+        )
+        let file = UserFileAttachment(fileName: "unsent.txt", mimeType: "text/plain", textContent: "未发送")
+        sender.addImageAttachment(image)
+        sender.addFileAttachment(file)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages, sender: sender)
+            .fork(conversationID: sourceID)
+
+        // 摘要消息只能有摘要文本，不得携带源对话的未发送附件。
+        let summaryMessage = try #require(
+            messages.messages(for: outcome.newConversationID).first { $0.role == .user && $0.content == outcome.summary }
+        )
+        #expect(
+            UserAttachmentMetadata.decodeImageAttachments(from: summaryMessage.metadata).isEmpty,
+            "分叉摘要不得带走输入框里未发送的图片附件"
+        )
+        #expect(
+            UserAttachmentMetadata.decodeFileAttachments(from: summaryMessage.metadata).isEmpty,
+            "分叉摘要不得带走输入框里未发送的文件附件"
+        )
+
+        // 与本次分叉无关的挂起附件必须原样留在输入框。
+        #expect(sender.pendingImageAttachments.map(\.id) == [image.id], "未发送的图片附件应保留")
+        #expect(sender.pendingFileAttachments.map(\.id) == [file.id], "未发送的文件附件应保留")
     }
 
     @Test("fork 继承源对话的自动化级别、推理强度与详细程度")

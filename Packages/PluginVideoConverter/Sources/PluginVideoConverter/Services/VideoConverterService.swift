@@ -8,6 +8,14 @@ actor VideoConverterService: SuperLog {
     nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
     private var currentProcess: Process?
+    private var isCancelled = false
+
+    /// 测试接缝：直接指定 ffmpeg 可执行文件，跳过真实路径探测。
+    private var ffmpegPathOverride: String?
+
+    func setFFmpegPathOverride(_ path: String?) {
+        ffmpegPathOverride = path
+    }
 
     /// Convert a video file to the specified format using FFmpeg.
     func convert(
@@ -17,6 +25,7 @@ actor VideoConverterService: SuperLog {
         onProgress: @escaping @Sendable (Double) -> Void,
         onLog: @escaping @Sendable (String) -> Void
     ) async throws {
+        isCancelled = false
         let ffmpegPath = try await resolveFFmpegPath()
 
         let process = Process()
@@ -44,14 +53,13 @@ actor VideoConverterService: SuperLog {
             handle.readabilityHandler = nil
             try? pipe.fileHandleForReading.close()
             try? pipe.fileHandleForWriting.close()
+            currentProcess = nil
         }
         process.standardError = pipe
 
-        // Parse progress from FFmpeg stderr
-        var totalDuration: Double = 0
-
-        // First, probe duration
-        totalDuration = await probeDuration(ffmpegPath: ffmpegPath, inputPath: input.path)
+        // First, probe duration（只读元数据；探测进程同样可被 cancel 终止）
+        let totalDuration = await probeDuration(ffmpegPath: ffmpegPath, inputPath: input.path)
+        try checkCancellation()
 
         let outputStream = AsyncStream<Data> { continuation in
             handle.readabilityHandler = { fileHandle in
@@ -68,10 +76,9 @@ actor VideoConverterService: SuperLog {
         onLog("FFmpeg: \(ffmpegPath)")
         onLog("Args: \(args.joined(separator: " "))")
 
-        try process.run()
-
-        // Parse progress from stderr
-        Task {
+        // stderr 必须与进程退出并发排空：先 wait 后读会在管道写满时
+        // 与 FFmpeg 互相等待，永久死锁（#209）。
+        let parseTask = Task {
             for await data in outputStream {
                 if let line = String(data: data, encoding: .utf8) {
                     if totalDuration > 0, let time = parseTime(line), time > 0 {
@@ -82,8 +89,15 @@ actor VideoConverterService: SuperLog {
             }
         }
 
-        process.waitUntilExit()
+        do {
+            try await runAndWaitForExit(process)
+        } catch {
+            parseTask.cancel()
+            throw error
+        }
+        await parseTask.value
 
+        try checkCancellation()
         if process.terminationStatus != 0 {
             throw VideoConverterError.conversionFailed(exitCode: process.terminationStatus)
         }
@@ -91,15 +105,47 @@ actor VideoConverterService: SuperLog {
         onProgress(1.0)
     }
 
-    /// Cancel the running FFmpeg process.
+    /// Cancel the running FFmpeg process (probe or conversion).
     func cancel() {
-        currentProcess?.terminate()
+        isCancelled = true
+        if let process = currentProcess, process.isRunning {
+            process.terminate()
+        }
         currentProcess = nil
     }
 
     // MARK: - Private
 
+    private func checkCancellation() throws {
+        if isCancelled {
+            throw CancellationError()
+        }
+    }
+
+    /// 启动进程并异步等待退出。
+    ///
+    /// 绝不在 actor 内同步 `waitUntilExit`：那会阻塞 actor，
+    /// 让 `cancel()` 永远排不进来（#209）。terminationHandler 必须在
+    /// run 之前设置，避免「进程已退出才装 handler」的竞态。
+    private func runAndWaitForExit(_ process: Process) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            process.terminationHandler = { _ in
+                continuation.resume()
+            }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                continuation.resume(throwing: error)
+            }
+        }
+    }
+
     private func resolveFFmpegPath() async throws -> String {
+        if let ffmpegPathOverride {
+            return ffmpegPathOverride
+        }
+
         let candidates = [
             "/opt/homebrew/bin/ffmpeg",
             "/usr/local/bin/ffmpeg",
@@ -138,24 +184,51 @@ actor VideoConverterService: SuperLog {
     private func probeDuration(ffmpegPath: String, inputPath: String) async -> Double {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
-        process.arguments = ["-i", inputPath, "-f", "null", "-"]
+        // 只读容器元数据：`-i` 不带输出参数时 ffmpeg 打印 Duration 后立即退出。
+        // 旧实现 `-f null -` 会完整解码整个视频，长视频探测极慢且 stderr 巨大（#209）。
+        process.arguments = ["-hide_banner", "-i", inputPath]
+        process.standardOutput = FileHandle.nullDevice
 
         let pipe = Pipe()
+        let handle = pipe.fileHandleForReading
         // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
         defer {
+            handle.readabilityHandler = nil
             try? pipe.fileHandleForReading.close()
             try? pipe.fileHandleForWriting.close()
+            currentProcess = nil
         }
         process.standardError = pipe
 
+        let stream = AsyncStream<Data> { continuation in
+            handle.readabilityHandler = { fileHandle in
+                let data = fileHandle.availableData
+                if data.isEmpty {
+                    continuation.finish()
+                } else {
+                    continuation.yield(data)
+                }
+            }
+        }
+
+        let collect = Task {
+            var output = Data()
+            for await chunk in stream {
+                output.append(chunk)
+            }
+            return output
+        }
+
         do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            // 探测进程也交给 cancel 管理；否则取消只能等转换阶段才生效。
+            currentProcess = process
+            try await runAndWaitForExit(process)
+            let data = await collect.value
             if let output = String(data: data, encoding: .utf8) {
                 return parseDuration(output) ?? 0
             }
         } catch {
+            collect.cancel()
             Self.logger.error("\(Self.t)Probe video duration failed: \(error.localizedDescription)")
         }
 

@@ -13,7 +13,8 @@ protocol FileTreeGitStatusUpdating: AnyObject {
 @MainActor
 protocol FileTreeRefreshing: AnyObject {
     func fullRefresh()
-    func reloadDirectory(at url: URL)
+    /// 一次下发全部变化目录：数据源负责合并嵌套路径、后台扫描并只提交一次。
+    func reloadDirectories(at urls: [URL])
 }
 
 /// NSViewRepresentable 桥接层
@@ -131,7 +132,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
             viewController.updateGitStatus(snapshot)
         }
 
-        /// 消费一次精准刷新：按变化目录集合决定全量重建还是逐目录 reload。
+        /// 消费一次精准刷新：按变化目录集合决定全量重建还是一次批量精准 reload。
         ///
         /// 根目录不是 items 中的节点，`reloadDirectory(at: root)` 会静默 no-op；
         /// 根目录命中时必须走 `fullRefresh()` 重建根级子节点，否则外部在根目录
@@ -160,9 +161,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
                 return
             }
 
-            for path in changedPaths {
-                viewController.reloadDirectory(at: URL(fileURLWithPath: path))
-            }
+            viewController.reloadDirectories(at: changedPaths.map { URL(fileURLWithPath: $0) })
         }
     }
 }

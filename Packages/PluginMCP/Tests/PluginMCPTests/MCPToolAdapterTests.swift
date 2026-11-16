@@ -232,6 +232,40 @@ struct MCPToolAdapterTests {
         #expect(providing.normalizedInputSchemaJSON != nil)
     }
 
+    // MARK: - 取消透传（Issue #178）
+
+    @Test("CancellationError 必须原样透传，不得包装为执行失败（**#178**）")
+    func cancellationErrorPassesThrough() async throws {
+        let adapter = adapter(
+            for: MCPToolDescriptor(name: "echo", description: "x"),
+            session: CancellingSessionStub()
+        )
+        await #expect(throws: CancellationError.self) {
+            _ = try await adapter.executeResult(
+                context: ToolExecutionContext(jobID: "j", conversationID: UUID()),
+                arguments: [:]
+            )
+        }
+    }
+
+    @Test("调用返回后任务已取消时不得产出成功结果（**#178**）")
+    func cancelledAfterCallReturnsThrowsCancellation() async throws {
+        let adapter = adapter(
+            for: MCPToolDescriptor(name: "echo", description: "x"),
+            session: EchoSessionStub()
+        )
+        let task = Task {
+            // 先确保取消已生效，再进入 executeResult，模拟回包晚于取消。
+            while !Task.isCancelled { await Task.yield() }
+            return try await adapter.executeResult(
+                context: ToolExecutionContext(jobID: "j", conversationID: UUID()),
+                arguments: [:]
+            )
+        }
+        task.cancel()
+        await #expect(throws: CancellationError.self) { _ = try await task.value }
+    }
+
     @Test("规范化文本与直接序列化结果一致")
     func normalizedTextMatchesDirectSerialization() async throws {
         let (session, tools) = try await makeSession()
@@ -247,5 +281,29 @@ struct MCPToolAdapterTests {
             encoding: .utf8
         )
         #expect(normalized == expected)
+    }
+}
+
+/// 会话替身：callTool 直接抛 CancellationError（#178 透传路径）。
+private struct CancellingSessionStub: MCPServerServing {
+    let config = MCPServerConfig(name: "Stub", command: "/bin/echo")
+    var isConnected: Bool { true }
+    func connect() async throws {}
+    func disconnect() async {}
+    func listTools() async throws -> [MCPToolDescriptor] { [] }
+    func callTool(name: String, arguments: [String: MCPJSONValue]) async throws -> MCPCallResult {
+        throw CancellationError()
+    }
+}
+
+/// 会话替身：callTool 正常返回成功，用于构造「回包晚于取消」（#178）。
+private struct EchoSessionStub: MCPServerServing {
+    let config = MCPServerConfig(name: "Stub", command: "/bin/echo")
+    var isConnected: Bool { true }
+    func connect() async throws {}
+    func disconnect() async {}
+    func listTools() async throws -> [MCPToolDescriptor] { [] }
+    func callTool(name: String, arguments: [String: MCPJSONValue]) async throws -> MCPCallResult {
+        MCPCallResult(text: "ok")
     }
 }

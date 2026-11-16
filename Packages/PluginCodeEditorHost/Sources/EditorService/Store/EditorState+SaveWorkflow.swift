@@ -75,9 +75,11 @@ extension EditorState {
             syncSession: { [weak self] in self?.syncActiveSessionState() },
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },
             notifyDidSave: { [weak self] content in
-                guard let self, let uri = self.currentFileURL?.absoluteString else { return }
+                // 用发起保存的文件 URI，而不是回调到达时的 currentFileURL：
+                // 异步写盘期间可能已切到别的文件，避免把 A 的内容通知成 B 的文档（#573）。
+                guard let self, let url else { return }
                 self.recordSuccessfulSave()
-                self.lspClient.documentDidSave(uri: uri, text: content)
+                self.lspClient.documentDidSave(uri: url.absoluteString, text: content)
             },
             setHasUnsavedChanges: { [weak self] value in
                 self?.hasUnsavedChanges = value
@@ -85,7 +87,11 @@ extension EditorState {
                     // 保存成功（或被清除）后取消待执行的自动保存
                     self?.autoSaveScheduler.cancel()
                 }
-            }
+            },
+            currentFileURL: { [weak self] in self?.currentFileURL },
+            // 写盘期间文档可能已被继续编辑：成功回调据此复核保存的内容是否仍等于
+            // 当前文档，避免旧回调把新编辑标记为已保存而绕过关闭保护（#338）。
+            currentContent: { [weak self] in self?.documentController.currentText }
         )
     }
 

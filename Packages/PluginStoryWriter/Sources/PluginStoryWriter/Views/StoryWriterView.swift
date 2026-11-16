@@ -19,7 +19,12 @@ struct StoryWriterView: View {
             switch viewModel.selectedNodeKind {
             case .story:
                 if let story = viewModel.currentStory {
+                    // 按故事 identity 物化编辑器：切换故事时 SwiftUI 必须重建
+                    // StoryEditorView，让 @State draft 以新故事重新初始化。否则
+                    // 旧草稿（含旧故事 id 与未保存简介）会被复用，简介更新、删除
+                    // 与导出文件名仍指向旧故事，误写/误删原文档（#289）。
                     StoryEditorView(viewModel: viewModel, story: story)
+                        .id(story.id)
                 } else {
                     emptyState
                 }

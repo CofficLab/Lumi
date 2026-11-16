@@ -6,6 +6,8 @@ struct RAGIndexSchedulingConfiguration: Sendable, Equatable {
     var retryBaseDelay: TimeInterval = 60
     var retryMaxDelay: TimeInterval = 30 * 60
     var maxConsecutiveFailures = 5
+    /// 候选扫描结果的复用窗口：成功切片后在此窗口内不再重扫项目路径。
+    var candidateRefreshInterval: TimeInterval = 60
 
     func retryDelay(for failureCount: Int) -> TimeInterval {
         guard failureCount > 0 else { return 0 }

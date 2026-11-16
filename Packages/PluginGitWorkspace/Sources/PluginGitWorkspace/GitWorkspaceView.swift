@@ -185,12 +185,13 @@ public struct GitWorkspaceView: View {
                     .foregroundStyle(.green)
                     .padding(.vertical, 8)
             } else {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(viewModel.workingTreeFiles, id: \.self) { file in
+                        let label = viewModel.changeLabel(for: file)
                         HStack(spacing: 8) {
-                            Text(viewModel.changeLabel(for: file))
+                            Text(label)
                                 .font(.system(.caption, design: .monospaced).weight(.bold))
-                                .foregroundStyle(changeColor(for: file))
+                                .foregroundStyle(changeColor(forLabel: label))
                                 .frame(width: 20)
                             Text(file)
                                 .font(.system(.body, design: .monospaced))
@@ -253,8 +254,8 @@ public struct GitWorkspaceView: View {
         }
     }
 
-    private func changeColor(for file: String) -> Color {
-        switch viewModel.changeLabel(for: file) {
+    private func changeColor(forLabel label: String) -> Color {
+        switch label {
         case "A": return .green
         case "D": return .red
         case "R": return .blue

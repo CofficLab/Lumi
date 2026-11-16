@@ -5,7 +5,7 @@
 KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的终端渲染、Shell 集成、主题适配与多标签会话管理。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 13
+测试文件: 2 个，用例总数: 19
 
 核心组件（源码目录）:
 - `Core/`
@@ -31,6 +31,7 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（13 条）：由 `shellIntegrationAutoDetect`、`shellDefaultPath`、`themeAdapterDefaultColors` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **子进程环境**（#500，6 条）：`ShellIntegration.makeEnvironment` 须在 SwiftTerm 允许列表之上导出所选 shell 的 `SHELL`、继承父进程非空 `ZDOTDIR`（未设置/空串不写入），并保留 base 与 TERM/LANG/PATH；集成脚本 `setupZsh` 须能从环境数组恢复用户原始 `ZDOTDIR` 到 `USER_ZDOTDIR`，不得回退到家目录。由 `TerminalEnvironmentTests` 锁定。
 
 ## 测试用例清单
 
@@ -49,27 +50,35 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 | 11 | 综合 | 普通文件不是目录被拒绝（**回归 #174**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `workingDirectoryValidatorRejectsRegularFile` |
 | 12 | 综合 | 无搜索权限的目录被拒绝（**回归 #174**） | 非 root 运行 | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `workingDirectoryValidatorRejectsInaccessibleDirectory` |
 | 13 | 综合 | nil/空串/有效目录均通过校验（**回归 #174**） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `workingDirectoryValidatorAcceptsValidInput` |
+| 14 | 子进程环境 | 环境导出所选 shell 的 SHELL | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `environmentExportsSelectedShell` |
+| 15 | 子进程环境 | 环境继承用户自定义 ZDOTDIR | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `environmentInheritsCustomZdotdir` |
+| 16 | 子进程环境 | 父进程未设置 ZDOTDIR 时不写入该项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `environmentOmitsZdotdirWhenUnset` |
+| 17 | 子进程环境 | 父进程 ZDOTDIR 为空串时不写入该项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `environmentOmitsZdotdirWhenEmpty` |
+| 18 | 子进程环境 | 环境保留 base 与 TERM/LANG/PATH 等基础项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `environmentKeepsBaseAndTermVars` |
+| 19 | 子进程环境 | 集成脚本从环境恢复用户 ZDOTDIR 而非回退家目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `integrationRecoversCustomZdotdir` |
 
-> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#500）：M1 删除 `makeEnvironment` 的 `env.append("SHELL=\(shellPath)")` → `environmentExportsSelectedShell` 转红；M2 删除继承 ZDOTDIR 的 `if let zDotDir …` 整块 → `environmentInheritsCustomZdotdir`、`integrationRecoversCustomZdotdir` 转红（集成回退家目录）；M3 去掉 `!zDotDir.isEmpty` 守卫 → `environmentOmitsZdotdirWhenEmpty` 转红（空串被写入）；M4 将 `var env = base` 改为 `var env: [String] = []` → `environmentKeepsBaseAndTermVars` 转红（base 丢失）。四处变异均单独施加并确认转红后还原，最终 19 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 4 / 4
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 7 / 7
 - P2: 已覆盖 4 / 4
-- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
+- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（7 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

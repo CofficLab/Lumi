@@ -577,7 +577,10 @@ public final class HTTPExchangeStore {
             guard let statusCode = record.responseStatusCode else { return false }
             return (200..<300).contains(statusCode)
         case .abnormal:
-            guard let statusCode = record.responseStatusCode else { return true }
+            guard let statusCode = record.responseStatusCode else {
+                // 无状态码时只有已带错误的终止失败才算异常；在途 Pending（无错误）不算（#823）。
+                return record.errorDescription != nil
+            }
             return !(200..<300).contains(statusCode)
         }
     }

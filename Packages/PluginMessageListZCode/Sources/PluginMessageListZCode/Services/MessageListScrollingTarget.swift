@@ -25,6 +25,18 @@ protocol MessageListScrollingTarget: AnyObject {
 
     /// 把指定锚点行钉回视口顶部。
     func scrollToAnchorTop(_ anchorID: UUID)
+
+    /// 进入/退出「锚点恢复」状态：期间底部追踪器抑制文档增长钉底（#1330）。
+    func setAnchorRestoring(_ active: Bool)
+
+    /// 读取当前文档高度；`nil` 表示不可用（未附着 / 几何非法）。
+    /// 锚点恢复用它判断懒加载行布局是否已稳定。
+    func documentHeight() -> CGFloat?
+}
+
+extension MessageListScrollingTarget {
+    func setAnchorRestoring(_ active: Bool) {}
+    func documentHeight() -> CGFloat? { nil }
 }
 
 /// 生产实现：把 `ScrollViewProxy` 与可选的 `ScrollViewBottomController` 组合成
@@ -57,5 +69,13 @@ final class ProxyMessageListScrollingTarget: MessageListScrollingTarget {
 
     func scrollToAnchorTop(_ anchorID: UUID) {
         proxy.scrollTo(anchorID, anchor: .top)
+    }
+
+    func setAnchorRestoring(_ active: Bool) {
+        controller?.isRestoringAnchor = active
+    }
+
+    func documentHeight() -> CGFloat? {
+        controller?.geometrySnapshot()?.documentHeight
     }
 }

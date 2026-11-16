@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import ProviderConversation
 import ProviderMessage
@@ -213,29 +214,157 @@ struct ConversationStoreSettingsViewModelTests {
         ]
         let viewModel = ConversationStoreSettingsViewModel(capability: capability)
         await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
         await viewModel.loadMessages()
         #expect(viewModel.messageCounts[selectedID] == 2)
         #expect(viewModel.messagesForSelected.count == 2)
 
-        // 新消息不会改变会话摘要身份，只能靠消息变化事件驱动刷新。
+        // inserted：消息仍在 pending，预览要立即能看到它，但磁盘计数不变。
         let inserted = Message(conversationID: selectedID, role: .assistant, content: "m2")
-        capability.messageCounts[selectedID] = 3
         capability.messagesByConversation[selectedID]?.append(inserted)
         viewModel.handleMessageChange(.inserted(inserted, conversationID: selectedID))
-
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: .seconds(1))
-        while viewModel.messagesForSelected.count != 3, clock.now < deadline {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-
-        #expect(viewModel.messageCounts[selectedID] == 3)
+        await waitUntil { viewModel.messagesForSelected.count == 3 }
         #expect(viewModel.messagesForSelected.last?.content == "m2")
+        #expect(viewModel.messageCounts[selectedID] == 2, "inserted 未落盘，磁盘计数不应变化")
 
-        // 非选中会话：只更新计数，不刷新当前预览。
+        // persisted：落盘后磁盘计数才 +1，且走防抖合并刷新。
+        capability.messageCounts[selectedID] = 3
+        viewModel.handleMessageChange(.persisted(inserted, conversationID: selectedID))
+        await waitUntil { viewModel.messageCounts[selectedID] == 3 }
+        #expect(viewModel.messageCounts[selectedID] == 3)
+
+        // 非选中会话：只可能更新计数，不刷新当前预览。
         viewModel.handleMessageChange(.updated(conversationID: backgroundID))
+        try await Task.sleep(for: .milliseconds(200))
         #expect(viewModel.messageCounts[backgroundID] == 1)
         #expect(viewModel.messagesForSelected.count == 3)
+    }
+
+    @Test func insertedAndUpdatedEventsDoNotQueryDiskCount() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 5]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        // 等可见性触发的合并刷新落地，再取基线。
+        try await Task.sleep(for: .milliseconds(250))
+        let baseline = capability.messageCountRequests.count
+
+        for _ in 0..<10 {
+            let message = Message(conversationID: id, role: .assistant, content: "x")
+            viewModel.handleMessageChange(.inserted(message, conversationID: id))
+            viewModel.handleMessageChange(.updated(conversationID: id))
+        }
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(
+            capability.messageCountRequests.count == baseline,
+            "inserted/updated 不改变磁盘计数，不应触发任何 COUNT 查库"
+        )
+    }
+
+    @Test func closedSettingsPageDoesNoCountIO() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        viewModel.setSettingsVisible(false)
+        let baseline = capability.messageCountRequests.count
+        capability.messageCounts[id] = 99
+        let message = Message(conversationID: id, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: id))
+        viewModel.handleMessageChange(.deleted(messageID: message.id, conversationID: id))
+        viewModel.handleMessageChange(.cleared(conversationID: id))
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(capability.messageCountRequests.count == baseline, "页面关闭期间不做计数 I/O")
+        #expect(viewModel.messageCounts[id] == 2, "关闭期间不写回计数")
+    }
+
+    @Test func untrackedConversationIsNotCounted() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+        let baseline = capability.messageCountRequests.count
+
+        // 不在已加载列表里的会话：没人显示它的计数，不应查库也不应写入字典。
+        let strangerID = UUID()
+        capability.messageCounts[strangerID] = 42
+        let message = Message(conversationID: strangerID, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: strangerID))
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(capability.messageCountRequests.count == baseline)
+        #expect(viewModel.messageCounts[strangerID] == nil)
+    }
+
+    @Test func unchangedCountDoesNotRepublish() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 2)
+        let selectedID = initial[0].id
+        let otherID = initial[1].id
+        capability.initialPage = initial
+        capability.selectedConversationID = selectedID
+        capability.messageCounts = [selectedID: 1, otherID: 7]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        var publishCount = 0
+        let cancellable = viewModel.objectWillChange.sink { _ in publishCount += 1 }
+        // 非选中会话 + 计数未变：既不应刷新预览，也不应触发 objectWillChange。
+        let message = Message(conversationID: otherID, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: otherID))
+        try await Task.sleep(for: .milliseconds(300))
+        cancellable.cancel()
+
+        #expect(publishCount == 0, "计数未变不应重新发布 @Published messageCounts")
+        #expect(viewModel.messageCounts[otherID] == 7)
+    }
+
+    @Test func reopeningRefreshesStaleCounts() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        // 关闭期间计数变化被忽略，缓存保持旧值。
+        viewModel.setSettingsVisible(false)
+        capability.messageCounts[id] = 10
+        let message = Message(conversationID: id, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: id))
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(viewModel.messageCounts[id] == 2)
+
+        // 重新打开：把落后的计数补齐。
+        viewModel.setSettingsVisible(true)
+        await waitUntil { viewModel.messageCounts[id] == 10 }
+        #expect(viewModel.messageCounts[id] == 10)
     }
 
     private func makeConversations(count: Int, offset: Int = 0, childOf parentID: UUID? = nil) -> [ConversationSummary] {
@@ -248,6 +377,15 @@ struct ConversationStoreSettingsViewModelTests {
                 lastMessageAt: date,
                 parentConversationID: parentID
             )
+        }
+    }
+
+    /// 轮询直到条件成立或超时。计数/预览刷新都带 120ms 防抖，MainActor 被并行
+    /// 测试抢占时固定 sleep 可能不够，用轮询更稳。
+    private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
         }
     }
 }
@@ -270,6 +408,8 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var messageCounts: [UUID: Int] = [:]
     var summariesByID: [UUID: ConversationSummary] = [:]
     var pageRequests: [PageRequest] = []
+    /// 记录每次 `messageCount(for:)` 查库的会话 id，用于断言冗余 I/O 是否被消除（#1311）。
+    private(set) var messageCountRequests: [UUID] = []
     /// 首屏/刷新页与翻页的注入延迟，用于构造「旧分页晚到」场景。
     var pageDelay: Duration?
     var nextPageDelay: Duration?
@@ -310,7 +450,8 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     }
 
     func messageCount(for conversationID: UUID) -> Int {
-        messageCounts[conversationID] ?? 0
+        messageCountRequests.append(conversationID)
+        return messageCounts[conversationID] ?? 0
     }
 
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {

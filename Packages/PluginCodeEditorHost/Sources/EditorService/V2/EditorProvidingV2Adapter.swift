@@ -1594,21 +1594,33 @@ private final class DiffCapability: EditorDiffProviding {
             let replacement = hunk.addedContents.joined(separator: "\n")
             if let removed = hunk.oldChangeRange {
                 // 替换：removed 首行行首 → 末行下一行行首（含末行换行）。
+                // 删除范围吞掉末行换行，替换文本须补回避免粘连下一行；纯删除保持空文本（#586）。
+                let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+                let lineCount = normalized.split(separator: "\n", omittingEmptySubsequences: false).count
+                let removedEndsInNewline = removed.upperBound < lineCount
+                // 末行无尾换行时「下一行行首」越界，范围终点钳到末行行尾。
+                let end = removedEndsInNewline
+                    ? EditorPosition(line: removed.upperBound, character: 0)
+                    : EditorPosition(line: removed.upperBound - 1, character: (hunk.removedContents.last ?? "").utf16.count)
+                let newText = (!hunk.addedContents.isEmpty && removedEndsInNewline)
+                    ? replacement + "\n"
+                    : replacement
                 return EditorTextEdit(
                     range: EditorV2Range(
                         start: EditorPosition(line: removed.lowerBound - 1, character: 0),
-                        end: EditorPosition(line: removed.upperBound, character: 0)
+                        end: end
                     ),
-                    newText: replacement
+                    newText: newText
                 )
             }
             if hunk.addedContents.isEmpty {
                 return nil
             }
-            // 纯新增：插在 oldStart（1-based）前一行的行尾之后 = 该行行首位置。
+            // 纯新增：oldStart 含前导上下文行，跳过它们才是真实插入点（#587）。
+            let leadingContext = hunk.lines.prefix { $0.kind == .unchanged }.count
             return EditorTextEdit(
                 range: EditorV2Range(
-                    at: EditorPosition(line: max(0, hunk.oldStart - 1), character: 0)
+                    at: EditorPosition(line: max(0, hunk.oldStart - 1 + leadingContext), character: 0)
                 ),
                 newText: replacement + "\n"
             )

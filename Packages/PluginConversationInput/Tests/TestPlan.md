@@ -77,9 +77,18 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - **输入框必须悬浮**：输入框是一张浮起的卡片（圆角表面 + 描边 + 投影 + 与四周的
   间距），不是贴在聊天区上的一条扁平色带。卡片几何写死在
   `ComposerSurfaceTests` 里，动 `ComposerLayout` 的间距必须同步改测试
+- **切换清空必须等落定**：`handleConversationSwitched` 把清空判定延迟到下一
+  主 actor 轮次，选中态落定到草稿归属对话之外才清空；`create_new_conversation`
+  的瞬时选中往返不得清空未发送草稿与附件（#781）
+- **折叠块严格归属对话**：待插入块绑定递交时选中的对话，`pendingBlock` 只在
+  归属对话仍被选中时暴露（实时判定）；落定切换丢弃归属旧对话的未消费块，
+  切回也不复活。A 的代码选区绝不能插进 B 的输入框（#518）
 
 - **附件预览区拖放**（10 条）：由 `fileURLProviderResolvesToLocalURL`、`plainTextProviderResolvesToLocalURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **附件预览区拖放类型声明**（4 条）：由 `previewDeclaresFileURLOnly`、`swiftUIKeepsFileURLForImage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **批次拖放顺序**（6 条）：由 `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads`、`batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` 等用例锁定（**回归 #804**）：同一批拖入的多个附件需要并发读取但按原始 URL 顺序入池，不得随 I/O 完成时序乱序；改动 `attach(droppedURLs:)` / `readAttachmentsInOrder` 时优先跑 `ConversationInputDropOrderTests.swift`。
+- **对话切换草稿保留**（4 条）：由 `transientRoundTripPreservesDraft`、`realSwitchStillClearsDraft` 等用例锁定（**回归 #781**）：切换清空判定延迟到下一主 actor 轮次，选中态落定到草稿归属对话之外的对话才清空；`create_new_conversation` 的瞬时选中往返不得清空未发送草稿与附件；改动 `handleConversationSwitched` 时优先跑 `ConversationSwitchDraftRetentionTests.swift`。
+- **折叠块跨对话隔离**（5 条）：由 `unconsumedBlockIsHiddenImmediatelyAfterSwitch`、`settledSwitchDiscardsBlockEvenAfterReturning` 等用例锁定（**回归 #518**）：待插入块绑定递交时选中的对话，归属对话之外不暴露、落定切换即丢弃；改动 `pendingBlock` / `enqueue` / `consumePendingBlock` / `handleConversationSwitched` 时优先跑 `PendingBlockConversationBindingTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -134,7 +143,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 42 | 编辑器 | 回车在发送前先上报当前已提交文本 | 装配 Coordinator | 置文本「你」→ 触发 `insertNewline` | draft 为「你」且 `onSubmit` 被调用 1 次 | P0 | ✅ 已覆盖 | `returnPublishesDraftBeforeSubmit` |
 | 43 | 拖放 | 常见图片文件被识别为聊天图片 | — | 校验 PNG / HEIC / PDF | 前两者为 true、PDF 为 false | P1 | ✅ 已覆盖 | `imageDropRuleRecognizesCommonImages` |
 | 44 | 拖放 | 目录与文件分开识别 | 临时目录 + 目录内文件 | 校验 `isDirectoryURL` | 目录为 true、其内文件为 false | P1 | ✅ 已覆盖 | `directoryDropRuleRecognizesDirectories` |
-| 45 | 会话 | 切换会话清空未提交的文本与附件 | 真实 Conversation / Message / Sender | 写入草稿 + 图片 + 文件附件后切换会话 | 文本与两个附件池全部清空 | P0 | ✅ 已覆盖 | `switchingConversationsClearsAttachments` |
+| 45 | 会话 | 切换会话清空未提交的文本与附件 | 真实 Conversation / Message / Sender | 写入草稿 + 图片 + 文件附件后切换会话，等清空判定落定 | 文本与两个附件池全部清空 | P0 | ✅ 已覆盖 | `switchingConversationsClearsAttachments` |
 | 46 | 观察 | 输入错误状态通过 typed observer 同步并支持取消 | 仅 Input Provider | 写 `errorMessage` → `cancel()` → 再写 nil | 同步到 ViewModel；cancel 后不再同步 | P1 | ✅ 已覆盖 | `inputObserverTracksErrorState` |
 | 47 | 折叠块 | 折叠块按阈值决定 chip 还是纯文本插入 | 短 / 长 / 纯空白三种内容 | 校验 `shouldCollapse` | 短与纯空白为 false、长内容为 true | P1 | ✅ 已覆盖 | `pendingBlockCollapsesOnlyAboveThreshold` |
 | 48 | 折叠块 | 递交折叠块后待插入、消费后清空 | 仅 Input Provider | `enqueue` → 消费无关 ID → 消费正确 ID | 待插入项与 ID / 标题就位并自动聚焦；无关 ID 不误清；正确 ID 消费后清空 | P1 | ✅ 已覆盖 | `enqueueThenConsumePendingBlock` |
@@ -198,7 +207,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 89 | 附件✕ | 关闭最后一张图片后预览行整体消失 | 单张图片附件 | 移除它 | `hasAttachments == false`（`AttachmentPreviewView` 整行不渲染） | P0 | ✅ 已覆盖 | `closingLastImageHidesPreviewRow` |
 | 90 | 附件✕ | 关闭图片不影响文件附件 | 图片 + 文件各一 | 移除图片 | 文件保留，`hasAttachments` 仍为真 | P1 | ✅ 已覆盖 | `closingImageKeepsFileAttachments` |
 | 91 | 附件✕ | 连点同一个 ✕ 幂等，不误删其他图片 | 两个图片附件 | 同一 ID 连移除两次 | 另一个不受影响，无越界删除 | P1 | ✅ 已覆盖 | `closingSameImageTwiceIsIdempotent` |
-| 92 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先 `handleConversationSwitched()` 清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
+| 92 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先切走选中态并 `handleConversationSwitched()`，等落定清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
 | 93 | 附件✕ | 关闭图片后发送按钮状态随之回落 | 仅一张图片、正文为空 | 移除它 | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `closingLastImageDisablesSend` |
 | 94 | 附件✕ | 点文件 chip 的 ✕ 后立即移除 | 两个文件附件 | 移除其一 | 列表与 Sender 池同步为剩余项 | P1 | ✅ 已覆盖 | `closingFileChipUpdatesPreview` |
 | 95 | 附件✕ | Observer 退订后 ✕ 仍移除附件，但预览不再刷新（**回归**） | 装配 Observer 后 `cancel()` | 移除其一 | Sender 池已删；ViewModel 停在旧状态（锁住「句柄必须显式 cancel」） | P2 | ✅ 已覆盖 | `removalAfterObserverCancelStopsRefreshingPreview` |
@@ -490,12 +499,122 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 201 | 编辑器 | 直接追加文字后发布得到新正文，缓存不发 stale（**回归 #1261**） | chip `"BODY"` 已发布 | 直接 `textStorage.append(" tail")` → 再发布 | 草稿为 `"BODY tail"`，折叠块区间仍指向 chip（缓存按新版本重算） | P0 | ✅ 已覆盖 | `directStorageEditInvalidatesCache` |
 | 202 | 编辑器 | 删除 chip 后缓存失效，正文不再含 chip 原文（**回归 #1261**） | 正文 `"A "` + chip `"BODY"` 已发布 | 直接 `deleteCharacters` 删掉 chip 占位 → 再发布 | 草稿为 `"A "`，折叠块清空，`hasPastePreviewAttachments` 归 false | P0 | ✅ 已覆盖 | `deletingChipInvalidatesCache` |
 
+### 补充轮次（ID 203–206）：拖放读取与会话绑定（#780）
+
+> 挂起池是**发送器级全局数组**，不按会话隔离。`attachFile` / `attachImage` 在
+> `Task.detached` 里读取，旧实现读完后无条件 `addFileAttachment` / `addImageAttachment`，
+> 读取期间切到 B 后，A 的旧任务仍把内容写进 B 使用的池子，下一条消息会把用户只想
+> 给 A 的文件/图片泄漏给 B 的模型；读取失败时还会把错误提示写到 B。修复按仓库约定
+> 「捕获身份 → await → 写回前比对」：进入 Task 前同步捕获 `selectedConversationID`，
+> 读取结束后（成功与失败分支都）先比对，不一致直接 `return`，不写任何状态。
+> 用例利用「MainActor 同步执行让出前 `Task {}` body 不会运行」：`attach*` 返回后
+> **同步**把 `selectedConversationID` 切到 B，再 `await waitForAttachmentReads()`
+> 等旧任务收尾，确定性地构造「旧请求晚到」，无需依赖读取耗时。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 203 | 拖放 | 读取期间切换会话，旧文件附件不落入新会话挂起池（**回归 #780**） | 选中 A + 真实临时 txt | `attachFile` → 同步切到 B → 等读取收尾 | B 的文件池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleFileDropDoesNotLeakIntoNewConversation` |
+| 204 | 拖放 | 读取期间切换会话，旧图片附件不落入新会话挂起池（**回归 #780**） | 选中 A + 真实临时 PNG | `attachImage` → 同步切到 B → 等读取收尾 | B 的图片池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleImageDropDoesNotLeakIntoNewConversation` |
+| 205 | 拖放 | 读取期间切换会话，旧文件读取失败不报错到新会话（**回归 #780**） | 选中 A + 不存在的路径 | `attachFile` → 同步切到 B → 等读取收尾 | B 的 `errorMessage` 为 nil（能力层与 ViewModel）、文件池为空 | P1 | ✅ 已覆盖 | `staleFileDropErrorDoesNotLeakIntoNewConversation` |
+| 206 | 拖放 | 读取期间切换会话，旧图片解码失败不报错到新会话（**回归 #780**） | 选中 A + 不可解码的假 PNG | `attachImage` → 同步切到 B → 等读取收尾 | B 的 `errorMessage` 为 nil（能力层与 ViewModel）、图片池为空 | P1 | ✅ 已覆盖 | `staleImageDropErrorDoesNotLeakIntoNewConversation` |
+
+> **#780 变异验证**（3 个独立变异均 RED，恢复后 GREEN）：
+> 1. 删除 `attachFile` 成功分支的会话守卫 → ID 203 失败（B 文件池非空、被聚焦）。
+> 2. 删除 `attachFile` catch 分支的会话守卫 → ID 205 失败（B 收到错误提示）。
+> 3. 删除 `attachImage` switch 前的会话守卫 → ID 204 与 206 均失败（B 图片池非空 / 收到错误提示）。
+> 三个变异分别锁定「文件成功入池」「文件失败报错」「图片入池与报错」三条写回路径都必须校验会话身份。
+
+### 补充轮次（ID 207–212）：批次拖放按原始顺序入池（#804）
+
+> 两条拖放链（输入框 AppKit `performDragOperation` / 预览区 SwiftUI `.onDrop`）都先
+> 拿到有序 URL 数组，旧实现却逐个 URL 起独立 `Task` 读取、读完即 `add*Attachment`，
+> 文件大小与 I/O 时长决定最终顺序：用户拖 A、B 可能得到 B、A，且该乱序被直接编码进
+> 消息 metadata。修复新增整批入口 `attach(droppedURLs:)`：目录同步按序插入文本，
+> 图片/文件并发读取但**按批次索引收集**后再入池（`readAttachmentsInOrder` 先全部启动
+> 后台任务再按序 await）。整批同步登记 `beginAttachmentRead`（#1023），读取结束统一
+> 校验会话身份（#780），单项失败只跳过该项并报错、其余仍按序入池。
+> 用例用可注入的 `batchAttachmentReader` + 门闩（`AsyncLatch`）确定性构造「后拖入的
+> 先读完」：A 挂门闩、B 立即返回并放行信号，测试等 B 完成后才放行 A，乱序必现而非
+> 依赖真实 I/O 时序。套件 `.serialized`，避免并发用例互相覆盖注入的读取器。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 207 | 批次拖放顺序 | 同一批文件按原始拖放顺序入池，而非读取完成顺序（**回归 #804**） | 注入读取器：A 挂门闩、B 立即返回 | `attach(droppedURLs: [A, B])` → 等 B 完成 → 放行 A → 等读取收尾 | 文件池为 `["A.txt", "B.txt"]`，读取窗口内计数为 2，已聚焦 | P0 | ✅ 已覆盖 | `batchFileDropsKeepOriginalOrderDespiteOutOfOrderReads` |
+| 208 | 批次拖放顺序 | 同一批图片按原始拖放顺序入池，而非读取完成顺序（**回归 #804**） | 注入读取器：A 挂门闩、B 立即返回 | `attach(droppedURLs: [A, B])` → 等 B 完成 → 放行 A → 等读取收尾 | 图片池为 `["A.png", "B.png"]`，已聚焦 | P0 | ✅ 已覆盖 | `batchImageDropsKeepOriginalOrderDespiteOutOfOrderReads` |
+| 209 | 批次拖放顺序 | 图片与文件混拖时各自池内仍保持原始相对顺序（**回归 #804**） | 批次 [文件A, 图片B, 文件C]，A 最后完成 | `attach(droppedURLs:)` → 等 B 完成 → 放行 A → 等读取收尾 | 文件池 `["A.txt", "C.txt"]`、图片池 `["B.png"]` | P1 | ✅ 已覆盖 | `batchMixedDropsKeepPerPoolOrder` |
+| 210 | 批次拖放顺序 | 批次读取期间切换会话，整批旧附件不落入新会话（**回归 #780**） | 选中 A + 注入立即返回的读取器 | `attach(droppedURLs: [u1, u2])` → 同步切到 B → 等读取收尾 | B 的文件池为空、ViewModel 列表为空、不报错、不聚焦 | P0 | ✅ 已覆盖 | `staleBatchDropDoesNotLeakIntoNewConversation` |
+| 211 | 批次拖放顺序 | 批次中一个文件读取失败：报错但其余成功附件仍按序入池（**回归 #804**） | 注入读取器：A 返回错误、B/C 成功 | `attach(droppedURLs: [A, B, C])` → 等读取收尾 | 文件池 `["B.txt", "C.txt"]`，`errorMessage == "boom A"` | P1 | ✅ 已覆盖 | `batchFileReadFailureSurfacesErrorAndKeepsSuccessfulOrder` |
+| 212 | 批次拖放顺序 | 批次中的目录按原始顺序排队插入文本，附件按序入池（**回归 #804**） | 真实临时目录 A/C + 注入文件 B 读取器 | `attach(droppedURLs: [dirA, fileB, dirC])` → 等读取收尾 | 文本块按 A→C 排队（消费首块后露出第二块），文件池只有 B | P1 | ✅ 已覆盖 | `batchDirectoriesKeepInsertOrder` |
+
+> **#804 变异验证**（恢复后 GREEN）：把批次入池循环 `for outcome in outcomes` 改成
+> `for outcome in outcomes.reversed()`（等价于按完成顺序入池的原始缺陷）→ ID 207 / 208 /
+> 209 / 211 均 RED（池内顺序颠倒），ID 210（整批丢弃）与 212（单附件池）不受影响仍 GREEN。
+> 变异锁定「按原始批次索引收集后再入池」这一顺序契约。
+
+### 补充轮次（ID 213–216）：对话切换草稿保留（#781）
+
+> `create_new_conversation` 的契约是「回合内只备料、不切换」，但内核创建顶层
+> 对话即抢占选中态，工具随后恢复原选中态。两次选中通知在同一主 actor 连续段里
+> 发出（创建落库后同步通知 B，工具紧接着同步恢复 A，中间无挂起），旧实现把
+> 每次通知都当成「会话切换了，草稿必须清空」，于是用户留在 A 却丢了正在编辑
+> 的正文与未发送附件。修复把清空判定延迟到下一主 actor 轮次：届时选中态已
+> 落定，仍停在草稿归属对话（`draftConversationID`，构造时快照）则不清空；
+> 真正切走才清空并更新归属。连续多次通知只保留最后一次判定（取消前一任务）。
+> 工具的 `restoreSelection` 保留为防御性兜底，不受本修复影响。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 213 | 会话 | 瞬时选中往返 A→B→A 不得清空草稿与附件（**回归 #781**） | 选中 A + 草稿正文 + 图片/文件附件各一 + 生产同款观察者 | 同一连续段内连发 B、A 两次选中通知，等判定落定 | 正文与两类附件原样保留，`clearInput` 零调用，ViewModel 状态不变 | P0 | ✅ 已覆盖 | `transientRoundTripPreservesDraft` |
+| 214 | 会话 | 真实切换到另一对话仍必须清空草稿与附件（**回归 #781**） | 同上 | 只发 B 的选中通知，等判定落定 | 正文与两类附件全部清空，ViewModel 同步为空 | P0 | ✅ 已覆盖 | `realSwitchStillClearsDraft` |
+| 215 | 会话 | 新建会话未选中态的瞬时往返 nil→B→nil 不得清空草稿（**回归 #781**） | 未选中态 + 草稿正文 + 两类附件 | 同一连续段内连发 B、nil 两次通知，等判定落定 | 草稿与附件保留，`clearInput` 零调用 | P0 | ✅ 已覆盖 | `transientRoundTripFromNilPreservesDraft` |
+| 216 | 会话 | 往返保留草稿后，再真实切走仍要清空（**回归 #781**） | 选中 A + 草稿 | 先 B→A 往返并落定，再发 C 的通知并落定 | 往返后草稿保留；切到 C 后正文与附件清空 | P1 | ✅ 已覆盖 | `laterRealSwitchAfterRoundTripClears` |
+
+> **#781 变异验证**（恢复后 GREEN）：把 `handleConversationSwitched` 还原为
+> 旧的同步清空实现 → ID 213 / 215 RED（往返后草稿与附件被清掉，
+> `clearInputCount != 0`），ID 214 仍 GREEN（真实切换本就应清空）。
+> 变异锁定「延迟判定 + 草稿归属比对」是保留草稿的充要守卫。
+> 既有 ID 45 / 92 两条用例同步改为「等判定落定再断言」，语义不变。
+
+### 补充轮次（ID 217–221）：折叠块跨对话隔离（#518）
+
+> 「Send to Conversation」把代码选区作为折叠块递交到输入插件的待插入队列，
+> 由**当前挂载的编辑器**消费。旧实现不记录块的归属对话，切换会话也不清空
+> 队列：A 的选区尚未消费就切到 B，B 的输入框更新时把 A 的代码插了进去，
+> 跨对话泄漏。修复给每个队列条目绑定递交时选中的对话：`pendingBlock` 改为
+> 计算属性，只在归属对话仍被选中时暴露队首（读实时选中态，切换通知与落定
+> 清空之间的窗口也安全）；`handleConversationSwitched` 落定清空时一并丢弃
+> 归属别的对话的条目（切回原对话也不复活），但保留切换窗口内为新对话递交
+> 的块。瞬时选中往返（#781）不清空块，与草稿保留契约一致。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 217 | 折叠块 | 切走后未消费的块立即不再暴露，落定后也不暴露（**回归 #518**） | 选中 A + 已入队一个块 + 生产同款观察者 | 发 B 的选中通知，先同步断言再等落定 | 通知发出的同一连续段里 `pendingBlock` 即为 nil；落定后仍 nil | P0 | ✅ 已覆盖 | `unconsumedBlockIsHiddenImmediatelyAfterSwitch` |
+| 218 | 折叠块 | 落定切换丢弃块，切回原对话也不复活（**回归 #518**） | 选中 A + 已入队一个块 | 切到 B 并落定，再切回 A 并落定 | 两次落定后 `pendingBlock` 均为 nil，块不随切回复活 | P0 | ✅ 已覆盖 | `settledSwitchDiscardsBlockEvenAfterReturning` |
+| 219 | 折叠块 | 归属对话内块可正常消费，FIFO 依次推进 | 选中 A + 连续入队两个块 | 依次消费队首 | 队首始终指向第一个未消费块，消费后推进到下一个，全部消费后为 nil | P0 | ✅ 已覆盖 | `blockStaysConsumableInOriginatingConversation` |
+| 220 | 折叠块 | 瞬时选中往返 A→B→A 保留未消费的块（**回归 #518 / #781**） | 选中 A + 已入队一个块 | 同一连续段内连发 B、A 两次通知，等落定 | 块仍暴露且 id 不变 | P1 | ✅ 已覆盖 | `transientRoundTripKeepsPendingBlock` |
+| 221 | 折叠块 | 切换窗口内为新对话递交的块不被落定清空误删 | 选中 A + 已入队 A 的块 | 发 B 的通知后不等落定再入队 B 的块，然后等落定 | A 的块被丢弃，B 的块暴露且可消费 | P1 | ✅ 已覆盖 | `blockEnqueuedDuringSwitchWindowForNewConversationSurvives` |
+| 222 | 回归 | 重建输入框时用 binding 草稿初始化编辑器，首次刷新不清空草稿（**回归 #601**） | 真实 NSHostingView 渲染生产编辑器 + binding 持有草稿 | 宿主渲染后检查原生编辑器与 binding | 编辑器显示草稿且 binding 草稿保留，不被空编辑器回写清空 | P0 | ✅ 已覆盖 | `rebuiltEditorInitializesFromBindingAndKeepsDraft` |
+| 223 | 回归 | 隐藏再恢复聊天区后草稿仍在（**回归 #601**） | binding 持有草稿 | 渲染→移除宿主→用同一 binding 重建并渲染 | 恢复后编辑器重新显示草稿，binding 草稿未被清空 | P0 | ✅ 已覆盖 | `hideAndReshowPreservesDraft` |
+
+> **#601 变异验证**（恢复后 GREEN）：去掉 `makeNSView` 里「用 binding 文本初始化
+> 编辑器 + `noteBindingTextPushedDown`」这段 → ID 222 / 223 RED（重建后的空编辑器
+> 被首次 `updateNSView` 误判为编辑器侧新内容，把空串回写 binding 清空草稿）。
+> 变异锁定「重建时必须用 binding 初始化编辑器」是保留草稿的充要守卫。
+> 用例在真实 `NSHostingView` 里跑 `makeNSView` + `updateNSView`，settling 用
+> `await` 让出主 actor（不用 `RunLoop.main.run` 同步阻塞，避免饿死同包轮询用例）。
+
+> **#518 变异验证**（恢复后 GREEN）：① 去掉 `pendingBlock` 的归属对话守卫
+> （无条件返回队首）→ ID 217 RED（切换通知后 B 仍能拿到 A 的块），其余仍
+> GREEN（落定丢弃兜底）；② 去掉落定清空里的队列丢弃 → ID 218 / 221 RED
+> （切回 A 后旧块复活；窗口内新块被旧块压在队尾），ID 217 仍 GREEN（暴露
+> 守卫兜底）。两处变异分别锁定「实时暴露守卫」与「落定丢弃」互为补充。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 68 / 68
-- P1: 已覆盖 116 / 116
+- P0: 已覆盖 81 / 81
+- P1: 已覆盖 124 / 124
 - P2: 已覆盖 18 / 18
-- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
+- **合计: 223 / 223**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

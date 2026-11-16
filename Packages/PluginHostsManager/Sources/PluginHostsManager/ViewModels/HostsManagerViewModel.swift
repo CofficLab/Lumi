@@ -13,6 +13,10 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     @Published var searchText = ""
     @Published var selectedGroup: String?
 
+    /// Retry 的目标操作：保存失败时重试保存以保留未落盘编辑，加载失败时重新加载（#458）。
+    enum RetryAction { case load, save }
+    private var retryAction: RetryAction = .load
+
     private let readHostsFile: () async throws -> String
     private let writeHostsFile: (String) async throws -> Void
 
@@ -20,6 +24,9 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     // 只有最新保存能回写 UI，避免旧编辑覆盖最新配置（#254）。
     private var saveGeneration = 0
     private var saveChain: Task<Void, Never>?
+
+    /// 加载代次：解析移到后台后，晚到的旧加载不得覆盖更新一次的 entries（#1205）。
+    private var loadGeneration = 0
 
     init(
         readHostsFile: @escaping () async throws -> String = {
@@ -114,9 +121,17 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         }
         isLoading = true
         errorMessage = nil
+        loadGeneration += 1
+        let generation = loadGeneration
         do {
             let content = try await readHostsFile()
-            self.entries = HostsParser.parse(content: content)
+            // 解析整份 hosts 随文件大小增长，移到后台线程（#1205）。
+            let parsed = await Task.detached(priority: .userInitiated) {
+                HostsParser.parse(content: content)
+            }.value
+            guard generation == loadGeneration else { return }
+            self.entries = parsed
+            retryAction = .load
             // 导入/外部刷新后分组集合可能变化：旧分组若已不存在，继续用它过滤会让全部条目隐藏。
             if let selectedGroup, !groups.contains(selectedGroup) {
                 self.selectedGroup = nil
@@ -127,10 +142,13 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            // 旧加载的失败同样不得覆盖最新一次的状态。
+            guard generation == loadGeneration else { return }
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to load hosts file: \(error.localizedDescription)")
             }
             errorMessage = "Load failed: \(error.localizedDescription)"
+            retryAction = .load
         }
         isLoading = false
     }
@@ -138,20 +156,31 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     public func saveHosts() async {
         // 在挂起前捕获快照与序号：每次保存写入的是它被请求时的 entries，
         // 串行链保证按请求顺序落盘，最新一次最后写入（#254）。
-        let content = HostsParser.serialize(entries: entries)
+        let snapshot = entries
         saveGeneration += 1
         let generation = saveGeneration
         let previous = saveChain
         let task = Task { @MainActor [weak self] in
             await previous?.value
             guard let self else { return }
-            await self.performSave(content: content, generation: generation)
+            await self.performSave(entries: snapshot, generation: generation)
         }
         saveChain = task
         await task.value
     }
 
-    private func performSave(content: String, generation: Int) async {
+    /// 错误横幅的 Retry：按最近一次失败的操作类型重试。保存失败重试保存
+    /// （保留内存中未落盘的编辑），加载失败重新从磁盘加载（#458）。
+    public func retry() async {
+        switch retryAction {
+        case .save:
+            await saveHosts()
+        case .load:
+            await loadHosts()
+        }
+    }
+
+    private func performSave(entries snapshot: [HostEntry], generation: Int) async {
         if Self.verbose {
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.info("\(self.t)Saving hosts file")
@@ -161,6 +190,11 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         defer { isLoading = false }
         errorMessage = nil
         do {
+            // 序列化整份 hosts 随条目数增长，移到后台线程（#1205）。
+            // 用的是请求时的快照，串行链仍保证按请求顺序落盘（#254）。
+            let content = await Task.detached(priority: .userInitiated) {
+                HostsParser.serialize(entries: snapshot)
+            }.value
             try await writeHostsFile(content)
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
@@ -178,6 +212,9 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to save hosts file: \(error.localizedDescription)")
             }
             errorMessage = "Save failed: \(error.localizedDescription)"
+            // 保存失败时内存里仍是未落盘的编辑：Retry 必须重试保存，而不是 reload
+            // 磁盘旧内容把这些编辑静默丢弃（#458）。
+            retryAction = .save
         }
     }
     

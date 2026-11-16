@@ -110,13 +110,53 @@ struct NewConversationSuggestionCard: View {
             phase = .failed
             return
         }
+        // 目标会话可能已被用户删除：点击时先校验，缺失则直接进入失败态，
+        // 不切换、不发送，避免向已删除 ID 启动不可见回合（#185）。
+        guard conversations.conversationExists(id: suggestion.conversationID) else {
+            phase = .failed
+            return
+        }
         phase = .starting
         Task { @MainActor in
-            conversations.selectConversation(id: suggestion.conversationID)
-            // sendMessage 落库后由 AgentLoop 自动开始回合；此调用会等待回合结束。
-            await sender.startIn(conversationID: suggestion.conversationID, content: suggestion.starter)
-            phase = .opened
+            let opened = await Self.performStart(
+                suggestion: suggestion,
+                conversations: conversations,
+                sender: sender
+            )
+            phase = opened ? .opened : .failed
         }
+    }
+
+    /// 卡片「在新对话中开始」的可测试编排：校验目标存在 → 切换 → 发送 → 按结果收敛。
+    ///
+    /// 返回 `true` 表示成功打开；`false` 表示目标已删除或发送失败。失败时保留
+    /// （必要时恢复）原选中态，绝不向已删除 ID 写入消息或启动回合（#185）。
+    @MainActor
+    static func performStart(
+        suggestion: NewConversationSuggestion,
+        conversations: any NewChatCapability,
+        sender: any NewChatStarting
+    ) async -> Bool {
+        // Task 真正执行时目标仍可能被删除：切换/发送前再次校验身份。
+        guard conversations.conversationExists(id: suggestion.conversationID) else {
+            return false
+        }
+        let originalSelection = conversations.selectedConversationID
+        conversations.selectConversation(id: suggestion.conversationID)
+        // sendMessage 落库后由 AgentLoop 自动开始回合；此调用会等待回合结束。
+        let succeeded = await sender.startIn(
+            conversationID: suggestion.conversationID,
+            content: suggestion.starter
+        )
+        guard succeeded else {
+            // 发送失败：仅当选中态仍停在我们切换的目标时才恢复，避免覆盖
+            // 用户在等待期间的手动切换。
+            if conversations.selectedConversationID == suggestion.conversationID {
+                conversations.restoreSelection(to: originalSelection)
+            }
+            return false
+        }
+        return true
     }
 }
 

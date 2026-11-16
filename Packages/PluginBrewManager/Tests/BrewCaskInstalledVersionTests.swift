@@ -65,10 +65,12 @@ struct BrewCaskInstalledVersionTests {
 
     @Test("getOutdated 的 cask 保留真实安装版本")
     func getOutdatedCaskPreservesInstalledVersion() async throws {
-        let service = makeService(stdout: #"{"formulae":[],"casks":[{"name":["Applite"],"token":"applite","version":"1.3.0","installed":"1.2.5"}]}"#)
+        // outdated 的真实 schema：installed_versions 是数组、current_version 是目标版本（#847）。
+        let service = makeService(stdout: #"{"formulae":[],"casks":[{"name":"applite","installed_versions":["1.2.5"],"current_version":"1.3.0","pinned":false,"pinned_version":null}]}"#)
         let packages = try await service.getOutdated()
         let cask = try #require(packages.first)
         #expect(cask.installedVersion == "1.2.5")
+        #expect(cask.version == "1.3.0")
         #expect(cask.outdated == true)
     }
 

@@ -77,6 +77,15 @@ public final class ScreenRecorderPlugin: SuperPlugin, PluginDataMigrating, Super
         [StartRecordingV2Tool.toolName, StopRecordingV2Tool.toolName, ListRecordableAppsV2Tool.toolName].forEach {
             tools?.remove(id: $0)
         }
+        // 活动录制必须停止并落盘：单例独立于插件生命周期，不显式停止的话
+        // 禁用后采集仍继续，而 stop 工具已被移除，用户无法再停止（#223）。
+        // stop 是异步的，fire-and-forget 调度（对齐 MCPPlugin 的关闭模式）。
+        let manager = RecordingSessionManager.shared
+        Task { @MainActor in
+            await manager.shutdown()
+        }
+        // 观察者随后即被注销，终态活动不会再驱动指示器，这里显式隐藏。
+        RecordingIndicatorController.shared.hide()
         activationObserver?.cancel()
         activationObserver = nil
         recordingObserver?.cancel()

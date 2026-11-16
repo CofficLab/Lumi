@@ -67,29 +67,46 @@ public enum AppStorePromoHTMLExporter {
                 actualHeight: pointHeight
             )
         }
-        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              let context = CGContext(
-                data: nil,
-                width: preset.width,
-                height: preset.height,
-                bitsPerComponent: 8,
-                bytesPerRow: 0,
-                space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              ) else {
+        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw AppStorePromoExportError.pngEncodingFailed
         }
-        // WKWebView snapshots use a Retina backing representation even though
-        // the CSS viewport is already the exact App Store point size.
-        // Rasterize that representation at one output pixel per CSS pixel so
-        // the encoded file has the required dimensions without changing layout.
+        let box = ExportableCGImage(cgImage: sourceImage)
+        let width = preset.width
+        let height = preset.height
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.encodePNG(sourceImage: box.cgImage, width: width, height: height)
+        }.value
+    }
+
+    /// 在后台线程把快照归一化到目标像素尺寸并编码为 PNG。
+    ///
+    /// WKWebView snapshots use a Retina backing representation even though
+    /// the CSS viewport is already the exact App Store point size.
+    /// Rasterize that representation at one output pixel per CSS pixel so
+    /// the encoded file has the required dimensions without changing layout.
+    nonisolated static func encodePNG(sourceImage: CGImage, width: Int, height: Int) throws -> Data {
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            throw AppStorePromoExportError.pngEncodingFailed
+        }
         context.interpolationQuality = .high
-        context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: preset.width, height: preset.height))
+        context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let normalizedImage = context.makeImage(),
               let data = NSBitmapImageRep(cgImage: normalizedImage).representation(using: .png, properties: [:]) else {
             throw AppStorePromoExportError.pngEncodingFailed
         }
         return data
+    }
+
+    private struct ExportableCGImage: @unchecked Sendable {
+        let cgImage: CGImage
     }
 
     private static func captureViewport(

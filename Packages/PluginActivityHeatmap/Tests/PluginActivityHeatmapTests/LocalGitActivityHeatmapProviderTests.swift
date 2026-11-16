@@ -20,7 +20,7 @@ struct LocalGitActivityHeatmapProviderTests {
 
         let snapshot = LocalGitActivityHeatmapProvider.makeSnapshot(
             repositoryPath: "/tmp/project",
-            commits: commits,
+            commitDates: commits.compactMap { GitDateFormatting.date(from: $0.date) },
             calendar: calendar,
             now: secondDay
         )

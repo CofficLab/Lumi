@@ -143,6 +143,13 @@ final class ListV2ViewModel: ObservableObject {
     /// 已预热过 Markdown 块级缓存的消息 id。
     private var warmedMarkdownMessageIDs: Set<UUID> = []
 
+    /// 仍在后台运行的 Markdown 预热批次。切换会话时统一取消，
+    /// 避免上一会话的遗留批次继续解析并写入共享缓存（#1249）。
+    private var markdownPrewarmTasks: [Task<Void, Never>] = []
+
+    /// 预热写入缝隙：默认走 KitMarkdown 共享缓存；测试可注入以观测/门控后台预热。
+    var markdownWarm: @Sendable (String) -> Void = { MarkdownRenderCache.warm(markdown: $0) }
+
     init(services: MessageListServices) {
         self.services = services
     }
@@ -190,6 +197,8 @@ final class ListV2ViewModel: ObservableObject {
         guard selectedConversationID == conversationID else { return }
         activationSequence &+= 1
         let mySequence = activationSequence
+        // 切换会话：停掉上一会话遗留的后台预热批次（#1249）。
+        cancelMarkdownPrewarm()
 
         activeConversationID = conversationID
         latestUserMessageID = nil
@@ -565,11 +574,29 @@ final class ListV2ViewModel: ObservableObject {
         let contents = pending.map(\.content)
         pending.forEach { warmedMarkdownMessageIDs.insert($0.id) }
 
-        Task.detached(priority: .utility) {
+        let warm = markdownWarm
+        // 丢弃已取消批次的句柄，避免数组随翻页无界增长。
+        markdownPrewarmTasks.removeAll { $0.isCancelled }
+        let task = Task.detached(priority: .utility) {
             for content in contents {
-                MarkdownRenderCache.warm(markdown: content)
+                // 逐条检查取消：会话切换后不再为 obsolete 批次解析/写缓存（#1249）。
+                guard !Task.isCancelled else { return }
+                warm(content)
             }
         }
+        markdownPrewarmTasks.append(task)
+    }
+
+    /// 取消所有仍在运行的预热批次并清空预热记忆。
+    ///
+    /// 切换会话时调用：上一会话的预热已无意义，必须停止其后台解析与缓存写入；
+    /// 清空 `warmedMarkdownMessageIDs` 让切回时能重新预热（命中缓存时近免费）。
+    private func cancelMarkdownPrewarm() {
+        for task in markdownPrewarmTasks {
+            task.cancel()
+        }
+        markdownPrewarmTasks.removeAll()
+        warmedMarkdownMessageIDs.removeAll()
     }
 }
 

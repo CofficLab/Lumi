@@ -70,9 +70,7 @@ public struct ExportAppIconTool: SuperAgentTool {
             // 2. 明确指定文档（按 documentId+scope 解析，缺失则报错）。
             if let explicitDocumentId, !explicitDocumentId.isEmpty {
                 let (document, _) = try await IconToolSupport.resolveDocument(arguments)
-                let result = try await MainActor.run {
-                    try IconComposerExportService().export(document: document, outputDirectory: outputURL, name: resolvedName)
-                }
+                let result = try await IconComposerExportService().export(document: document, outputDirectory: outputURL, name: resolvedName)
                 await rememberExport(result)
                 return exportSuccessMessage(language: language, url: result.iconURL)
             }
@@ -98,9 +96,7 @@ public struct ExportAppIconTool: SuperAgentTool {
                     name: resolvedName
                 )
             case .document(let document):
-                result = try await MainActor.run {
-                    try service.export(document: document, outputDirectory: outputURL, name: resolvedName)
-                }
+                result = try await service.export(document: document, outputDirectory: outputURL, name: resolvedName)
             }
 
             await rememberExport(result)

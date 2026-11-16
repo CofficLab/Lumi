@@ -43,6 +43,7 @@ final class SpeedConversationObserver: SuperLog {
     private func selectedConversationDidChange(to conversationID: UUID?) {
         if conversationID == nil {
             refreshTask?.cancel()
+            viewModel.beginRefresh()
             viewModel.selectConversation(nil, messages: [])
             return
         }
@@ -62,16 +63,19 @@ final class SpeedConversationObserver: SuperLog {
             return
         }
 
+        // 事件发生时同步记录代次：此后任何插入 / 选择事件都会使本次快照过时（#1156）。
+        let generation = viewModel.beginRefresh()
         refreshTask = Task(priority: .utility) { @MainActor [weak self] in
             await Task.yield()
             guard !Task.isCancelled,
                   let self,
-                  self.conversations.selectedConversationID == conversationID else { return }
-            await self.refresh(conversationID: conversationID)
+                  self.conversations.selectedConversationID == conversationID,
+                  self.viewModel.refreshGeneration == generation else { return }
+            await self.refresh(conversationID: conversationID, generation: generation)
         }
     }
 
-    private func refresh(conversationID: UUID?) async {
+    private func refresh(conversationID: UUID?, generation: UInt64) async {
         guard let conversationID else {
             viewModel.selectConversation(nil, messages: [])
             return
@@ -79,7 +83,8 @@ final class SpeedConversationObserver: SuperLog {
 
         let snapshot = await messages.messagesSnapshot(in: conversationID)
         guard !Task.isCancelled,
-              conversations.selectedConversationID == conversationID else { return }
+              conversations.selectedConversationID == conversationID,
+              viewModel.refreshGeneration == generation else { return }
         viewModel.selectConversation(conversationID, messages: snapshot)
     }
 }

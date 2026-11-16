@@ -1,0 +1,13 @@
+{
+  "object": [
+    {
+      "mirror": "https://github.com/lumi-softworks/LumiKitAgentTool.git",
+      "original": "https://github.com/lumi-softworks/KitAgentTool.git"
+    },
+    {
+      "mirror": "https://github.com/lumi-softworks/LumiProviderToolManager.git",
+      "original": "https://github.com/lumi-softworks/ProviderToolManager.git"
+    }
+  ],
+  "version": 1
+}

@@ -53,6 +53,9 @@ public enum CLIInstaller {
         )
         for target in candidates {
             let scriptURL = target.scriptURL(for: commandName)
+            // 目录在 macOS 上也会被 isExecutableFile 判为可执行（可搜索目录），
+            // 必须先确认是普通文件，否则同名目录会被当成已安装脚本、卸载时递归删除（#490）。
+            guard isNonDirectoryFile(at: scriptURL, fileManager: fileManager) else { continue }
             guard fileManager.isExecutableFile(atPath: scriptURL.path) else { continue }
             // 只认 Lumi 自己安装的脚本：同名的第三方程序不得被当成已安装，
             // 否则状态查询会误报、卸载会误删（#134）。
@@ -215,6 +218,9 @@ public enum CLIInstaller {
             environment: environment,
             fileManager: fileManager
         ) else { return true }
+        // 卸载是递归删除，必须再次确认目标是普通文件而非目录，
+        // 即便上游判定被改动也绝不递归删除同名目录（#490）。
+        guard isNonDirectoryFile(at: installed, fileManager: fileManager) else { return true }
         do {
             try fileManager.removeItem(at: installed)
             return true
@@ -224,6 +230,20 @@ public enum CLIInstaller {
     }
 
     // MARK: - Private Helpers
+
+    /// 目标是否存在且不是目录（解析符号链接后判定）。
+    ///
+    /// macOS 上可搜索目录也会被 `isExecutableFile` 判为可执行，仅凭可执行性
+    /// 无法区分脚本与目录。`fileExists(isDirectory:)` 会解析符号链接：指向普通
+    /// 文件的链接仍算文件（保留合法安装方式），指向目录的链接与目录本身一律
+    /// 排除，确保卸载的递归删除不会落到目录上（#490）。
+    private static func isNonDirectoryFile(at url: URL, fileManager: FileManager) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return false
+        }
+        return !isDirectory.boolValue
+    }
 
     /// 读取脚本内容并判断是否由 Lumi 安装。
     ///

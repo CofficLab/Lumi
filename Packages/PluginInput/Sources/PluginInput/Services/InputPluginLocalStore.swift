@@ -8,6 +8,7 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     private let pluginDirectory: URL
     private let settingsFileURL: URL
     private let corruptSettingsFileURL: URL
+    private let legacySettingsFileURL: URL
 
     public convenience init() {
         self.init(pluginDirectory: InputPluginRuntimeBridge.resolvedPluginDirectory)
@@ -17,10 +18,34 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
+        self.legacySettingsFileURL = root.appendingPathComponent("settings/settings.plist")
         do {
             try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
             Self.logger.error("\(self.t)Create input plugin settings directory failed: \(error.localizedDescription)")
+        }
+        migrateLegacyNestedSettingsIfNeeded()
+    }
+
+    /// 把旧版本嵌套的 `settings/settings.plist` 前移到当前读取位置。
+    ///
+    /// 历史提交把读写路径从 `settings/settings.plist` 改成根目录的 `settings.plist`，
+    /// 但通用插件数据迁移只原样拷贝目录、不会扁平化嵌套文件，导致升级后旧规则与
+    /// 偏好被静默丢弃（issue #784）。仅在根文件不存在且旧文件存在时迁移一次；
+    /// 拷贝成功后才清理旧文件，失败时保留旧文件以免数据丢失。
+    private func migrateLegacyNestedSettingsIfNeeded() {
+        guard !fileManager.fileExists(atPath: settingsFileURL.path),
+              fileManager.fileExists(atPath: legacySettingsFileURL.path) else { return }
+        do {
+            try fileManager.copyItem(at: legacySettingsFileURL, to: settingsFileURL)
+            try? fileManager.removeItem(at: legacySettingsFileURL)
+            let legacyDirectory = legacySettingsFileURL.deletingLastPathComponent()
+            if let contents = try? fileManager.contentsOfDirectory(atPath: legacyDirectory.path),
+               contents.isEmpty {
+                try? fileManager.removeItem(at: legacyDirectory)
+            }
+        } catch {
+            Self.logger.error("\(self.t)Migrate legacy nested input settings failed: \(error.localizedDescription)")
         }
     }
 

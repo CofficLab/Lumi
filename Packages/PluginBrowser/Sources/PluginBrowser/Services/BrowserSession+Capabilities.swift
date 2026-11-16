@@ -151,17 +151,14 @@ extension BrowserSession {
             guard webView.canGoBack else {
                 throw BrowserSession.SessionError.navigationUnavailable("There is no page to go back to.")
             }
-            webView.goBack()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.goBack() }
         case .forward:
             guard webView.canGoForward else {
                 throw BrowserSession.SessionError.navigationUnavailable("There is no page to go forward to.")
             }
-            webView.goForward()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.goForward() }
         case .reload:
-            webView.reload()
-            await waitForInteractionNavigation()
+            try await performAndWaitNavigation { webView.reload() }
         case .goto:
             guard let url else {
                 throw BrowserSession.SessionError.invalidURL
@@ -204,29 +201,58 @@ extension BrowserSession {
         """
 
         guard let raw = try await webView.evaluateJavaScript(wrapped),
-              let json = raw as? String,
-              let data = json.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let json = raw as? String else {
             throw BrowserSession.SessionError.noPage
         }
 
+        // 结果的 UTF-8 拷贝、JSON 解析与 pretty-print 可达数 MB（页面可控），
+        // 放到后台执行，避免在主 actor 上阻塞 UI 渲染（见 issue #1297）。
+        let decoded = await Task.detached(priority: .userInitiated) {
+            Self.decodeEvaluateResult(json)
+        }.value
+        switch decoded {
+        case .success(let text):
+            return text
+        case .noPage:
+            throw BrowserSession.SessionError.noPage
+        case .scriptFailed(let reason):
+            throw BrowserSession.SessionError.scriptFailed(reason)
+        }
+    }
+
+    /// 在后台解析 `evaluateJavaScript` 返回的 JSON 信封并渲染结果值。
+    ///
+    /// 纯函数、不触碰主 actor 状态，因此可安全地在分离任务里执行。
+    nonisolated static func decodeEvaluateResult(_ json: String) -> EvaluateDecoded {
+        guard let data = json.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return .noPage
+        }
         let ok = (object["ok"] as? Bool) ?? false
         if !ok {
-            throw BrowserSession.SessionError.scriptFailed((object["error"] as? String) ?? "Unknown error")
+            return .scriptFailed((object["error"] as? String) ?? "Unknown error")
         }
         guard let value = object["value"] else {
-            return "null"
+            return .success("null")
         }
         if let text = value as? String {
-            return text
+            return .success(text)
         }
         if JSONSerialization.isValidJSONObject(value),
            let pretty = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted]),
            let text = String(data: pretty, encoding: .utf8) {
-            return text
+            return .success(text)
         }
-        return String(describing: value)
+        return .success(String(describing: value))
     }
+}
+
+/// `decodeEvaluateResult` 的可发送结果，用于把后台解析产物带回主 actor，
+/// 再映射成 `SessionError`（错误类型本身不必跨 actor 传递）。
+enum EvaluateDecoded: Sendable {
+    case success(String)
+    case noPage
+    case scriptFailed(String)
 }
 
 // MARK: - 截图

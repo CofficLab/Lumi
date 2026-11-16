@@ -1,5 +1,6 @@
 import ProviderEditor
 import Foundation
+import KitKeychain
 import LumiLoggingKit
 import Combine
 
@@ -9,7 +10,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public nonisolated static let verbose: Bool = false
     @Published var configs: [DatabaseConfig] = []
     @Published var selectedConfig: DatabaseConfig?
-    @Published var queryText: String = "SELECT * FROM sqlite_master;"
+    @Published var queryText: String = "SELECT * FROM sqlite_master;" {
+        didSet { refreshStatementCount() }
+    }
+    /// 工具栏「Run All (N)」的语句条数，仅在 `queryText` 变化时经 memo 缓存重算（#1254）。
+    /// 视图读取这个存储值（O(1)），不再在每次 body 求值时重新 split 整段脚本。
+    @Published public private(set) var statementCount: Int = 0
+    private var statementCountCache = StatementCountCache()
     @Published var queryResult: QueryResult?
     @Published var errorMessage: String?
     @Published var isConnected: Bool = false
@@ -71,7 +78,18 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         inspectorVisible.toggle()
     }
 
+    /// 重算语句条数；文本未变时缓存直接返回，不触发解析（#1254）。
+    /// 只有计数真正变化才发布，避免无关刷新引起多余的 objectWillChange。
+    private func refreshStatementCount() {
+        let newCount = statementCountCache.count(for: queryText)
+        if newCount != statementCount {
+            statementCount = newCount
+        }
+    }
+
     private let manager: DatabaseManagerCore
+    /// 连接凭据的 Keychain 存储；可注入以便测试模拟写入失败。
+    private let keychain: KeychainStore
 
     /// 宿主注入的嵌入式编辑器能力（语法高亮）；nil 时 View 退回 TextEditor。
     @Published public var embeddedEditorProvider: (any EditorEmbeddedEditorProviding)?
@@ -91,8 +109,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 测试专用初始化：`loadSavedConfigs == false` 时跳过从 UserDefaults 读取已存配置，
     /// 始终使用一份独立的内存 demo 连接，避免并行测试共享进程级 UserDefaults 串扰。
     /// `manager` 可注入，用于构造可控延迟的驱动复现连接竞态。
-    public init(loadSavedConfigs: Bool, manager: DatabaseManagerCore = .shared) {
+    public init(loadSavedConfigs: Bool, manager: DatabaseManagerCore = .shared, keychain: KeychainStore? = nil) {
         self.manager = manager
+        self.keychain = keychain ?? DatabaseConnectionStore.keychain
         Task {
             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         }
@@ -114,6 +133,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 await DatabaseAgentConnectionRegistry.shared.upsert(config)
             }
         }
+        // didSet 不会在默认值初始化时触发，这里手动 seeding 一次（#1254）。
+        refreshStatementCount()
     }
 
     deinit {
@@ -124,9 +145,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         }
     }
 
-    public func addConfig(_ config: DatabaseConfig) {
-        configs.append(config)
-        DatabaseConnectionStore.saveConfigs(configs)
+    public func addConfig(_ config: DatabaseConfig) throws {
+        var updated = configs
+        updated.append(config)
+        // 先持久化成功再更新内存列表：Keychain 写入失败时抛出，
+        // 配置不会出现在列表里，表单据此保留用户输入并报错（#569）。
+        try DatabaseConnectionStore.saveConfigs(updated, keychain: keychain)
+        configs = updated
         Task {
             await DatabaseAgentConnectionRegistry.shared.upsert(config)
         }
@@ -134,15 +159,18 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 编辑已存在的连接配置（保留 id）。若表单里密码留空，沿用已存密码，避免误清空。
     /// 若当前正连着该连接，则用新配置断开重连。
-    public func updateConfig(_ config: DatabaseConfig) {
+    public func updateConfig(_ config: DatabaseConfig) throws {
         guard let index = configs.firstIndex(where: { $0.id == config.id }) else { return }
         var updated = config
         if (updated.password?.isEmpty ?? true) {
             updated.password = configs[index].password
         }
         let wasConnected = (selectedConfig?.id == config.id && isConnected)
-        configs[index] = updated
-        DatabaseConnectionStore.saveConfigs(configs)
+        var newConfigs = configs
+        newConfigs[index] = updated
+        // 持久化成功才提交内存改动，失败时抛出并保留原配置（#569）。
+        try DatabaseConnectionStore.saveConfigs(newConfigs, keychain: keychain)
+        configs = newConfigs
         Task { await DatabaseAgentConnectionRegistry.shared.upsert(updated) }
 
         if wasConnected {
@@ -157,13 +185,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     /// 移除一个已保存的连接。如果删除的是当前连接，先断开再删除。
-    public func removeConfig(_ config: DatabaseConfig) {
+    public func removeConfig(_ config: DatabaseConfig) throws {
         if selectedConfig?.id == config.id {
             Task { await disconnect() }
         }
-        configs.removeAll { $0.id == config.id }
-        DatabaseConnectionStore.deletePassword(for: config.id)
-        DatabaseConnectionStore.saveConfigs(configs)
+        var newConfigs = configs
+        newConfigs.removeAll { $0.id == config.id }
+        DatabaseConnectionStore.deletePassword(for: config.id, keychain: keychain)
+        try DatabaseConnectionStore.saveConfigs(newConfigs, keychain: keychain)
+        configs = newConfigs
         Task {
             await DatabaseAgentConnectionRegistry.shared.remove(id: config.id)
         }
@@ -219,8 +249,10 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             tableRowCount = nil
             changeManager = nil
             schemaChangeManager = nil
-            // 切换连接时清掉旧连接的结构缓存
-            schemaCache.invalidate(configId: config.id)
+            // 切换连接时清掉旧连接的结构缓存；新连接的缓存随后由 refreshSidebarObjects 重建。
+            if let previousConfigId {
+                schemaCache.invalidate(configId: previousConfigId)
+            }
             // 记住这次连接，下次自动重连
             DatabaseConnectionStore.lastSelectedConfigID = config.id
             
@@ -717,6 +749,23 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         guard let config = selectedConfig,
               let manager = schemaChangeManager,
               manager.hasChanges else { return }
+        // 结构变更若重命名/删除了仍有未保存数据编辑的列，数据变更管理器持有的旧 schema
+        // 快照会生成引用已不存在列名的 SQL（如 UPDATE ... SET "name"），保存必然失败。
+        // 明确阻止并要求用户先保存/放弃数据编辑，绝不静默用旧 schema 生成必失败的 SQL（#583）。
+        if let dataChanges = changeManager, dataChanges.hasChanges {
+            let invalidatedColumns = Set(manager.changes.flatMap { change -> [String] in
+                switch change {
+                case .renameColumn(_, let oldName, _): return [oldName]
+                case .dropColumn(_, let column): return [column.name]
+                case .addColumn, .addIndex, .dropIndex: return []
+                }
+            })
+            let conflict = invalidatedColumns.intersection(dataChanges.referencedColumnNames)
+            if !conflict.isEmpty {
+                tableSchemaError = "结构变更会改动仍有未保存数据编辑的列（\(conflict.sorted().joined(separator: ", "))）。请先保存或放弃这些数据编辑，再应用结构变更。"
+                return
+            }
+        }
         guard let connection = await self.manager.getConnection(for: config.id) else {
             tableSchemaError = "Not connected to database"
             return
@@ -918,7 +967,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             let tx = try await connection.beginTransaction()
             do {
                 for sql in statements {
-                    _ = try await tx.execute(sql, params: nil)
+                    let affected = try await tx.execute(sql, params: nil)
+                    // 按主键定位单行的 UPDATE/DELETE 命中 0 行，说明 WHERE 没匹配到目标行
+                    // （如可空主键曾用 = NULL）。必须回滚并报错，不能当成保存成功清空暂存（#568）。
+                    if affected == 0, Self.isRowTargetingWrite(sql) {
+                        throw DatabaseError.transactionFailed("写入未命中任何行，已回滚：\(sql)")
+                    }
                 }
                 try await tx.commit()
             } catch {
@@ -932,6 +986,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             errorMessage = error.localizedDescription
         }
         isLoading = false
+    }
+
+    /// 是否为按主键定位单行的写入（UPDATE/DELETE）。这类语句命中 0 行即未匹配到目标行，
+    /// 保存不能报成功（#568）。INSERT 总会新增行，不参与该判定。
+    public nonisolated static func isRowTargetingWrite(_ sql: String) -> Bool {
+        let head = sql.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return head.hasPrefix("UPDATE ") || head.hasPrefix("DELETE ")
     }
 
     /// 按方言引用单个标识符（SQLite/PG 用双引号，MySQL 用反引号）。

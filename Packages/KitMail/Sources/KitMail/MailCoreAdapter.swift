@@ -375,12 +375,15 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     }
 
     /// 遍历消息结构，对需要网络的附件 part 下载并落盘。
-    private func fetchAttachments(
+    /// internal 以便测试直接驱动内联附件映射（#844）。
+    func fetchAttachments(
         for parser: MCOMessageParser,
         uid: UInt32,
         folder: String
     ) async throws -> [MailAttachment] {
-        let parts = parser.attachments as? [MCOAbstractPart] ?? []
+        // attachments 是 ObjC 方法（非属性）；漏写 () 会得到方法引用，
+        // 转数组永远失败 → parts 恒空 → 所有附件都被丢弃。
+        let parts = parser.attachments() as? [MCOAbstractPart] ?? []
         guard !parts.isEmpty else { return [] }
 
         let directory = attachmentDirectory()
@@ -390,8 +393,12 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         )
 
         var results: [MailAttachment] = []
-        for part in parts {
-            guard let filename = part.filename, !filename.isEmpty else { continue }
+        for (index, part) in parts.enumerated() {
+            // Content-Disposition: attachment 不要求 filename；缺失时生成确定性
+            // 序号名保留合法附件，而不是丢弃（#844）。序号取 part 索引，保证同一
+            // 消息内多个无名附件不互相覆盖。
+            let rawFilename = part.filename ?? ""
+            let filename = rawFilename.isEmpty ? "attachment_\(index + 1)" : rawFilename
             let mimeType = part.mimeType ?? "application/octet-stream"
 
             if let attachment = part as? MCOAttachment, let data = attachment.data {

@@ -5,7 +5,7 @@
 PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 123 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 123
+测试文件: 15 个，用例总数: 124
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -46,7 +46,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextPopoverConversationIsolation**（6 条）：由 `auxiliaryLedgerIsConversationScoped`、`auxiliaryStoreIsConversationScoped`、`ledgerLoadDoesNotPullOtherConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextPopoverExport**（5 条）：由 `exportHeightIsNotClampedByPopoverMaxHeight`、`exportRendersFullCompactionTimeline`、`exportWidthMatchesPopoverWidth` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextPopoverLayout**（6 条）：由 `trendViewHeightIsConstrained`、`trendViewRendersInTightSpace`、`trendViewHeightStaysStableWithManySamples` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ContextRecoveryTools**（18 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ContextRecoveryTools**（19 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -68,6 +68,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **降级预算必须折算校准倍率**：`reportContextLimitExceeded` 学到倍率 ≥1.25 后，确定性降级要把可用预算折算回未校准量纲（`inputTokenLimit / factor`）再裁剪，否则估算落在 `limit/factor … limit` 的历史会被原样选中，紧急重试把已确认超限的请求再发一次（**#813**，`emergencyFallbackTrimsWithCalibratedBudget`）。
 - **文本附件必须计入预算并可被降级裁剪**：附件正文存在 metadata、转换阶段才拼进真实请求；估算要覆盖渲染后的附件正文，降级要把文本附件折进正文裁剪并从 metadata 移除，否则超大附件让首次请求与紧急重试都原样超限（**#814**，`estimateIncludesTextAttachment`、`emergencyFallbackTrimsOversizedTextAttachment`）。
 - **压缩去重守卫不得在 MainActor 同步全量读取**：复用压缩上下文的合格请求会反复进入去重守卫；已记录的 sourceLastMessageID 必须 O(1) 内存命中即返回，首次核对走异步快照，既保住跨重启去重保护，又不让每个请求都同步 fetch/解码/排序整段会话（**#1256**，`duplicateGuardAvoidsSynchronousFullRead`）。
+- **会话删除必须清空持久化摘要**：删除会话事件除清内存与磁盘块外，还必须删除摘要库中该会话的明文摘要，不得在用户删除后残留隐私数据（**#350**，`deletionObserverRemovesPersistedSummary`）。
 
 ## 测试用例清单
 
@@ -196,27 +197,30 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 121 | UtilityModelAndAuxiliaryUsage | 供应商未报用量时记估算值且不为零 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingUsageRecordedAsEstimatedNeverZero` |
 | 122 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
 | 123 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
+| 124 | ContextRecoveryTools | 会话删除事件必须清空摘要库中的明文摘要，不得残留已删除会话的数据（#350） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deletionObserverRemovesPersistedSummary` |
 
-> 说明：全部 **123 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#350）：删除 `purgeConversation` 中 `summaryStore?.remove(conversationID:)` 一行后，`deletionObserverRemovesPersistedSummary` 转红（摘要仍可加载），其余 18 条 ContextRecoveryTools 用例不受影响；恢复后 19/19 通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
+- P0: 已覆盖 22 / 22
 - P1: 已覆盖 97 / 97
 - P2: 已覆盖 5 / 5
-- **合计: 123 / 123**（仅表示清单场景，非源码覆盖率）
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
 - **P1**: 其余功能性用例（97 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 123 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

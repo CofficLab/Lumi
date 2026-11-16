@@ -245,7 +245,7 @@ private final class NoopMessageSenderObserverHandle: MessageSenderObserverHandle
 }
 
 /// 待发送消息（队列条目）。
-public struct PendingChatMessage: Identifiable, Equatable, Sendable {
+public struct PendingChatMessage: Identifiable, Equatable, Sendable, Codable {
     public let id: UUID
     public let conversationID: UUID
     public let content: String

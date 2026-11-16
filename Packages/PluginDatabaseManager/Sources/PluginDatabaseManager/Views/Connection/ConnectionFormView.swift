@@ -202,9 +202,9 @@ struct ConnectionFormView: View {
             let config = try makeConnectionConfig()
             if editing != nil {
                 // 编辑：保留原 id，把新字段（含 SSL）合并回去
-                viewModel.updateConfig(config)
+                try viewModel.updateConfig(config)
             } else {
-                viewModel.addConfig(config)
+                try viewModel.addConfig(config)
             }
             isPresented = false
         } catch {

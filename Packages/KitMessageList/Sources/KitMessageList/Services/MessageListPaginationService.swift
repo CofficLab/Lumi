@@ -22,10 +22,6 @@ public struct MessageListPaginationService {
     public let pageSize: Int
     public let maxRetainedCount: Int
 
-    /// 回填空档时最多往前取几页。空档长度取决于用户向上翻了多少页，
-    /// 上限用于兜住极端长会话，避免尾部刷新退化成无界扫描。
-    private static let maxBackfillRounds = 10
-
     /// 入口防御：异常配置在 Debug 下通过 assert 暴露调用方错误，
     /// Release 下钳制到安全范围，避免 `pageSize + 1` 溢出或 `suffix` 负数 trap。
     private static let maxPageSize = 200
@@ -183,7 +179,12 @@ public struct MessageListPaginationService {
     /// 回填窗口尾部与最近一页之间的空档。
     ///
     /// 从最近一页的头部往前逐页取，直到取到已经在窗口里的消息（空档到此闭合）
-    /// 或绕回最近一页。
+    /// 或绕回最近一页、或取空（已到会话起点）。
+    ///
+    /// 不设固定轮数上限：上限会在空档超过「轮数 × pageSize」时提前退出，把只
+    /// 回填了一半的空档当成完整结果合并，永久跳过靠近窗口尾部的那段消息（#594）。
+    /// 游标每轮严格前移、消息总量有限，循环必然终止；另加游标不前移即退出的
+    /// 兜底，避免存储层分页异常时退化成死循环。
     ///
     /// - Returns: 空档内的消息（按时间升序）；没有空档时返回空数组。
     private func backfillGap(
@@ -197,7 +198,7 @@ public struct MessageListPaginationService {
         var cursor = pageHead.id
         var collected: [Message] = []
 
-        for _ in 0..<Self.maxBackfillRounds {
+        while true {
             let page = await messageManager.messagePageAsync(
                 for: conversationID,
                 limit: pageSize,
@@ -211,7 +212,8 @@ public struct MessageListPaginationService {
             if page.contains(where: { currentIDs.contains($0.id) || pageIDs.contains($0.id) }) {
                 break
             }
-            guard let oldest = page.first else { break }
+            // 游标必须严格前移，否则停止（防御存储层分页异常导致死循环）。
+            guard let oldest = page.first, oldest.id != cursor else { break }
             cursor = oldest.id
         }
 

@@ -12,12 +12,10 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitProjectDetect"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProjectRAG"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
@@ -29,8 +27,8 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitProjectDetect", package: "KitProjectDetect"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderPluginControl", package: "LumiProviders"),
@@ -49,8 +47,8 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderPluginControl", package: "LumiProviders"),

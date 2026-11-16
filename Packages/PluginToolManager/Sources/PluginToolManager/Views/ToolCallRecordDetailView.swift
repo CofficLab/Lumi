@@ -88,10 +88,10 @@ struct ToolCallRecordDetailView: View {
                     }
                 }
 
-                payloadSection(title: L("Arguments"), value: record.argumentsJSON, fallback: "{}")
-                payloadSection(title: L("Result"), value: record.resultContent, fallback: L("No result content"))
+                PayloadSection(title: L("Arguments"), value: record.argumentsJSON, fallback: "{}")
+                PayloadSection(title: L("Result"), value: record.resultContent, fallback: L("No result content"))
                 if let resultJSON = record.resultJSON, !resultJSON.isEmpty {
-                    payloadSection(title: L("Result JSON"), value: resultJSON, fallback: "{}")
+                    PayloadSection(title: L("Result JSON"), value: resultJSON, fallback: "{}")
                 }
             }
             .padding(22)
@@ -108,16 +108,70 @@ struct ToolCallRecordDetailView: View {
             .foregroundStyle(theme.textPrimary)
             .textSelection(.enabled)
     }
+}
 
-    private func payloadSection(title: String, value: String, fallback: String) -> some View {
+/// 大载荷的有界预览（issue #1303）。
+///
+/// 工具结果按原样存储，可达数 MB（shell 输出上限 16 MiB）。把整段交给一个
+/// 可选中 `Text` 会让 SwiftUI 在主线程上布局全部字符，选中大记录即卡死。
+/// 这里只渲染前 `limit` 个字符，默认布局与载荷总大小无关。
+///
+/// 计算复杂度 O(limit)：用 `prefix` 与索引比较判断是否截断，**不**调用
+/// `value.count`（那会遍历整段字符串，重新引入 O(N) 主线程开销）。
+struct PayloadPreview: Equatable {
+    /// 实际渲染的文本（前缀）。
+    let text: String
+    /// 是否仍有未渲染的剩余内容。
+    let isTruncated: Bool
+
+    /// 初始渲染上限（字符）。
+    static let initialLimit = 20_000
+    /// 每次「显示更多」追加的上限（字符）。
+    static let increment = 50_000
+
+    static func make(_ value: String, limit: Int) -> PayloadPreview {
+        let prefix = value.prefix(max(0, limit))
+        return PayloadPreview(
+            text: String(prefix),
+            isTruncated: prefix.endIndex < value.endIndex
+        )
+    }
+}
+
+/// 单个载荷区块：默认只布局有界前缀，截断时提供「显示更多」逐段展开。
+private struct PayloadSection: View {
+    let title: String
+    let value: String
+    let fallback: String
+    @LumiTheme private var theme
+    @State private var visibleLimit = PayloadPreview.initialLimit
+
+    private func L(_ key: String) -> String {
+        pluginLocalization.string(key)
+    }
+
+    var body: some View {
+        let preview = PayloadPreview.make(value.isEmpty ? fallback : value, limit: visibleLimit)
         AppSettingSection(title: title, titleAlignment: .leading) {
-            Text(value.isEmpty ? fallback : value)
-                .font(.appMonoCaption)
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            VStack(alignment: .leading, spacing: 8) {
+                Text(preview.text)
+                    .font(.appMonoCaption)
+                    .foregroundStyle(theme.textPrimary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                if preview.isTruncated {
+                    HStack(spacing: 12) {
+                        Text(L("Output truncated"))
+                            .font(.appCaption)
+                            .foregroundStyle(theme.textSecondary)
+                        AppButton(L("Show more"), systemImage: "ellipsis.circle", style: .secondary, size: .small) {
+                            visibleLimit += PayloadPreview.increment
+                        }
+                    }
+                }
+            }
         }
     }
 }

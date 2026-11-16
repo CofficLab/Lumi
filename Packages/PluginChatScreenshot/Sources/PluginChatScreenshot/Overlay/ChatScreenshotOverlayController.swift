@@ -88,8 +88,8 @@ final class ChatScreenshotOverlayController {
         // 跨屏拖选场景极少,够用。
         selectionRect = rect
         for v in views where v !== view {
-            v.selectionRect = rect
-            v.needsDisplay = true
+            // 仅当其它屏幕的可见选区交集实际变化时才重绘（见 issue #1266）。
+            v.updateSelectionRect(rect)
         }
     }
 

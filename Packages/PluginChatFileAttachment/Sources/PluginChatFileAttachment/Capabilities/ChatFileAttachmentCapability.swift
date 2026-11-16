@@ -1,4 +1,5 @@
 import Foundation
+import ProviderConversation
 import ProviderConversationInput
 import ProviderMessage
 import ProviderMessageSender
@@ -9,6 +10,9 @@ import ProviderMessageSender
 /// Provider 的解析与适配在插件入口完成。
 @MainActor
 protocol ChatFileAttachmentCapability: AnyObject {
+    /// 当前选中的会话；附件读取写回前必须比对选择时捕获的会话身份（#161）。
+    var selectedConversationID: UUID? { get }
+
     /// 把附件追加到当前会话的待发送内容。
     func addFileAttachment(_ attachment: UserFileAttachment)
 
@@ -30,13 +34,20 @@ protocol ChatFileAttachmentCapability: AnyObject {
 final class ChatFileAttachmentCapabilityAdapter: ChatFileAttachmentCapability {
     private let sender: (any MessageSendingProviding)?
     private let conversationInput: (any ConversationInputProviding)?
+    private let conversations: (any ConversationManaging)?
 
     init(
         sender: (any MessageSendingProviding)?,
-        conversationInput: (any ConversationInputProviding)?
+        conversationInput: (any ConversationInputProviding)?,
+        conversations: (any ConversationManaging)?
     ) {
         self.sender = sender
         self.conversationInput = conversationInput
+        self.conversations = conversations
+    }
+
+    var selectedConversationID: UUID? {
+        conversations?.selectedConversationID
     }
 
     func addFileAttachment(_ attachment: UserFileAttachment) {

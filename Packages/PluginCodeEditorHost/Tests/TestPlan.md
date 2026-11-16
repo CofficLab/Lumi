@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 224 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 239 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 25 个，用例总数: 224
+测试文件: 27 个，用例总数: 239
 
 核心组件（源码目录）:
 - `Editor/`
@@ -49,16 +49,17 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorCallHierarchyItem**（2 条）：由 `testFileBadgeAcceptsUnescapedFileURL`、`testFileBadgeFallsBackForNonFileURI` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorConfigStore**（2 条）：由 `testSettingsDirectoryDoesNotDuplicateStorageDirectoryForDefaultRoot`、`testSettingsDirectoryUsesHostPersistenceRootWhenProvided` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorContributionRegistry**（7 条）：由 `installAndWithdraw`、`contextMenuContributionInstallAndWithdraw`、`replaceSwapsAtomically` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorDirtyBodyRetention**（5 条）：由 `testSwitchingBackRestoresUnsavedBody`、`testSavingClearsDirtyBodyAndSwitchBackLoadsDisk`、`testGoBackRestoresUnsavedBody` 等用例锁定 Auto Save 关闭时切换文件的未保存正文保留（**回归 #396**：脏正文随会话同步落快照、加载时优先于磁盘内容、持久化基线保持磁盘内容、与磁盘一致的快照判干净）；改动会话同步或 loadFile 时优先跑对应测试文件。
 - **EditorExtensionRegistry**（2 条）：由 `testHighlightProvidersCachesResultsPerLanguage`、`testRegisterHighlightContributorViaKernelBridge` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorExternalReloadIdentity**（2 条）：由 `externalReloadDiscardedAfterTabSwitch`、`externalReloadAppliedWhenStillSameFile` 锁定外部重读续体的当前标签复核；改动该模块时优先跑对应测试文件。
-- **EditorFindMatchPerformance**（10 条）：由 `plainTextMatchesUnchanged`、`wholeWordMatchesUnchanged`、`regexMatchesUnchanged` 等用例锁定查找匹配性能修复不改变结果；改动该模块时优先跑对应测试文件。
+- **EditorFindMatchPerformance**（11 条）：由 `plainTextMatchesUnchanged`、`wholeWordMatchesUnchanged`、`regexMatchesUnchanged` 等用例锁定查找匹配性能修复不改变结果；改动该模块时优先跑对应测试文件。
 - **EditorFindReplaceController**（9 条）：由 `testMatchesPlainTextCaseInsensitive`、`testMatchesWholeWordSkipsSubstrings`、`testMatchesInSelectionOnlyUsesNonEmptySelections` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorJumpToDefinitionDelegate**（14 条）：由 `testSubstringIfValidReturnsTextForValidRange`、`testSubstringIfValidRejectsStaleRanges`、`testLSPFileURLAcceptsUnescapedFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorKernelPureLogic**（69 条）：由 `testEditorMinimapPolicyVisibleStateUsesUserPreference`、`testEditorMinimapPolicyLargeFileStateIsGated`、`testEditorPeekModeTitlesRemainStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorKeybindingStore**（4 条）：由 `testBindingsFileUsesDefaultRootWithoutForceUnwrappingApplicationSupport`、`testBindingsFileUsesHostPersistenceRootWhenProvided`、`testCorruptBindingsFileIsQuarantinedAndRecovered` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorOpenItemCommand**（1 条）：由 `testCallHierarchyItemCommandAcceptsUnescapedFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorProjectContextLSPRefresh**（24 条）：由 `testBuildServerPathChangeRequiresServerRestart`、`testLegacyReuseLogicIgnoredBuildServerPathChange`、`testBuildServerKindExtractsInitializationOption` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorProvidingV2AdapterCapability**（15 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testOpenDocumentInBackgroundDoesNotActivate`、`testDiagnosticsSnapshotMapsSeverityMessageAndDocumentURI` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorProvidingV2AdapterCapability**（24 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testAcceptReplacementHunkPreservesFollowingNewline`、`testAcceptPureAdditionInsertsAtActualPosition` 等用例锁定文档打开与 diff 逐块接受（替换补回末行换行、纯新增跳过前导上下文）；改动该模块时优先跑对应测试文件。
 - **EditorSelectionSet**（11 条）：由 `testInitialSelection`、`testEmptySelectionsFallbackToInitial`、`testMultipleSelectionsAreSortedByLocation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorServiceFacade**（13 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorNavigationHistory**（2 条）：由 `testRemoveDropsEveryEntryForClosedSession`、`testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` 锁定关闭标签后历史清理与索引维护；改动导航历史时优先跑对应测试文件。
@@ -297,27 +298,42 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 222 | EditorTotalLineCount | 原生输入后总行数按编辑增量更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAfterNativeEdit` |
 | 223 | EditorTotalLineCount | 原生输入替换多行区间时总行数正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAfterMultiLineNativeEdit` |
 | 224 | EditorTotalLineCount | 总行数与正文换行数始终一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `totalLineCountAlwaysMatchesDocument` |
+| 225 | EditorFindMatchPerformance | 关闭面板后保留查询但跳过扫描，重新打开恢复匹配 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `closedPanelSkipsScanAndReopenRestoresMatches` |
+| 226 | EditorProvidingV2AdapterCapability | 接受替换 hunk 不得吞掉末行换行而粘连下一行（**回归 #586**） | 文档 a\nb\nc\n | computeDiff 到 a\nB\nc\n 后 accept 该 hunk | 缓冲为 a\nB\nc\n，下一行独立 | P0 | ✅ 已覆盖 | `testAcceptReplacementHunkPreservesFollowingNewline` |
+| 227 | EditorProvidingV2AdapterCapability | 接受多行替换 hunk 保持行结构（**回归 #586**） | 文档 a\nb\nc\nd\n | computeDiff 到 a\nX\nY\nd\n 后 accept | 缓冲为 a\nX\nY\nd\n | P1 | ✅ 已覆盖 | `testAcceptMultiLineReplacementPreservesLineStructure` |
+| 228 | EditorProvidingV2AdapterCapability | 接受末行（含尾换行）替换保留尾换行（**回归 #586**） | 文档 a\nb\n | computeDiff 到 a\nB\n 后 accept | 缓冲为 a\nB\n | P1 | ✅ 已覆盖 | `testAcceptReplacementOfLastLineWithTrailingNewline` |
+| 229 | EditorProvidingV2AdapterCapability | 接受末行（无尾换行）替换不新增多余换行（**回归 #586**） | 文档 a\nb | computeDiff 到 a\nB 后 accept | 缓冲为 a\nB，无多余尾换行 | P1 | ✅ 已覆盖 | `testAcceptReplacementOfLastLineWithoutTrailingNewline` |
+| 230 | EditorProvidingV2AdapterCapability | 接受纯删除 hunk 干净移除整行不留空行（**回归 #586**） | 文档 a\nb\nc\n | computeDiff 到 a\nc\n 后 accept | 缓冲为 a\nc\n，无残留空行 | P1 | ✅ 已覆盖 | `testAcceptPureDeletionRemovesLineCleanly` |
+| 231 | EditorProvidingV2AdapterCapability | 接受替换为空行的 hunk 保留空行（**回归 #586**） | 文档 a\nb\nc\n | computeDiff 到 a\n\nc\n 后 accept | 缓冲为 a\n\nc\n，空行保留 | P1 | ✅ 已覆盖 | `testAcceptReplacementWithEmptyLineKeepsBlankLine` |
+| 232 | EditorProvidingV2AdapterCapability | 接受纯新增 hunk 不得插在上下文开头而须落在真实插入点（**回归 #587**） | 文档 a\nb\n | computeDiff 到 a\nX\nb\n 后 accept 该纯新增 hunk | 缓冲为 a\nX\nb\n，X 在 a 之后 b 之前 | P0 | ✅ 已覆盖 | `testAcceptPureAdditionInsertsAtActualPosition` |
+| 233 | EditorProvidingV2AdapterCapability | 接受文档开头的纯新增 hunk 插在最前（**回归 #587**） | 文档 a\nb\n | computeDiff 到 X\na\nb\n 后 accept | 缓冲为 X\na\nb\n | P1 | ✅ 已覆盖 | `testAcceptPureAdditionAtStart` |
+| 234 | EditorProvidingV2AdapterCapability | 接受文档末尾的纯新增 hunk 插在末行之后（**回归 #587**） | 文档 a\nb\n | computeDiff 到 a\nb\nX\n 后 accept | 缓冲为 a\nb\nX\n | P1 | ✅ 已覆盖 | `testAcceptPureAdditionAtEnd` |
+| 235 | EditorDirtyBodyRetention | Auto Save 关闭时切回文件必须恢复未保存正文并保持脏标记，随后保存写盘（**回归 #396**） | A 有未保存编辑，Auto Save 关闭 | 切到 B 再切回 A，同步一次内容后保存 | 正文为脏快照、脏标记保持、磁盘最终为编辑后内容 | P0 | ✅ 已覆盖 | `testSwitchingBackRestoresUnsavedBody` |
+| 236 | EditorDirtyBodyRetention | 保存成功后清空脏正文快照，切回加载磁盘内容且保持干净（**回归 #396**） | A 编辑后已保存 | 切到 B 再切回 A | 正文为已保存内容，脏标记为 false，快照为 nil | P1 | ✅ 已覆盖 | `testSavingClearsDirtyBodyAndSwitchBackLoadsDisk` |
+| 237 | EditorDirtyBodyRetention | 未编辑文件切回加载磁盘内容且保持干净（**回归 #396**） | A 未编辑 | 切到 B 再切回 A | 正文为磁盘内容，脏标记为 false | P1 | ✅ 已覆盖 | `testCleanFileSwitchKeepsDiskContent` |
+| 238 | EditorDirtyBodyRetention | 正文改回磁盘内容或与磁盘一致的过期快照，切回判定为干净（**回归 #396**） | A 编辑后改回原内容；另构造与磁盘一致的 dirtyBody | 切到 B 再切回 A | 正文为磁盘内容，脏标记为 false | P1 | ✅ 已覆盖 | `testRevertedEditIsTreatedAsCleanAfterSwitchBack` |
+| 239 | EditorDirtyBodyRetention | 后退到有未保存编辑的文件必须恢复脏正文不得丢失（**回归 #396**） | A 有未保存编辑，已打开 B | goBack 回到 A | 正文为脏快照，脏标记为 true | P0 | ✅ 已覆盖 | `testGoBackRestoresUnsavedBody` |
 
-> 说明：全部 **224 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **239 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 187 / 187
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 198 / 198
 - P2: 已覆盖 19 / 19
-- **合计: 224 / 224**（仅表示清单场景，非源码覆盖率）
+- **合计: 239 / 239**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（187 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（198 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 224 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 239 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

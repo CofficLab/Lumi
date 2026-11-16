@@ -33,8 +33,13 @@ final class ConversationListContextObserver {
                 context?.markConversationsChanged()
             }
         }
-        stateHandle = conversationState?.addConversationStateObserver { [weak context] _ in
-            context?.markConversationsChanged()
+        stateHandle = conversationState?.addConversationStateObserver { [weak context] event in
+            // 运行时状态（回合/工具输出/进度/授权）只刷新对应可见行，
+            // 不能当成结构变化触发四个列表的全量 reload（#1258）。
+            switch event {
+            case let .updated(conversationID), let .removed(conversationID):
+                context?.markConversationStateChanged(for: conversationID)
+            }
         }
     }
 

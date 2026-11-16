@@ -311,3 +311,87 @@ func messageNotificationAndOrderingAreStable() {
     #expect(messageOrdering(earlier, later))
     #expect(!messageOrdering(later, earlier))
 }
+
+@MainActor
+@Test("尾部刷新回填超过轮数上限的空档，不得永久跳过靠近窗口的消息（回归 #594）")
+func paginationBackfillsGapLargerThanRoundLimit() async {
+    let conversationID = UUID()
+    let base = Date(timeIntervalSince1970: 1_700_000_000)
+    // pageSize=2 → 旧实现 10 轮最多回填 20 条；构造 25 条空档触发提前退出。
+    let windowCount = 3
+    let gapCount = 25
+    let total = windowCount + gapCount + 2
+    let store = (0..<total).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "m\(index)",
+            createdAt: base.addingTimeInterval(Double(index))
+        )
+    }
+    let window = Array(store[..<windowCount])
+    let gap = Array(store[windowCount..<(windowCount + gapCount)])
+    let page = Array(store[(windowCount + gapCount)...])
+
+    let manager = StoreMessageListCapability(store: store)
+    let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 100)
+
+    let result = await service.refreshTail(
+        conversationID: conversationID,
+        messageManager: manager,
+        current: window
+    )
+    let ids = result?.merged.map(\.id) ?? []
+
+    // 整段空档都必须回填：合并结果与完整存储一致（升序、无重复、无跳过）。
+    #expect(ids == store.map(\.id))
+    // 紧邻窗口尾部的空档消息正是旧实现永久跳过的那条。
+    #expect(ids.contains(gap[0].id))
+    #expect(Set(ids).count == ids.count)
+    #expect(page.allSatisfy { ids.contains($0.id) })
+}
+
+/// 基于完整消息存储的分页替身：忠实模拟存储层 `ORDER BY createdAt, id` +
+/// `beforeMessageID` 严格向前 + `limit` 的游标分页，用于多轮回填回归。
+/// 与固定返回 `earlierPage` 的替身不同，它能随游标逐页前移，暴露轮数上限缺陷。
+@MainActor
+private final class StoreMessageListCapability: MessageListMessageCapability {
+    private let store: [Message]
+
+    init(store: [Message]) {
+        self.store = store.sorted {
+            if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+            return $0.id.uuidString < $1.id.uuidString
+        }
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] { store }
+
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message] {
+        let candidates: [Message]
+        if let cursor = beforeMessageID {
+            guard let index = store.firstIndex(where: { $0.id == cursor }) else { return [] }
+            candidates = Array(store[..<index])
+        } else {
+            candidates = store
+        }
+        return Array(candidates.suffix(limit))
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool {
+        if let cursor = beforeMessageID {
+            guard let index = store.firstIndex(where: { $0.id == cursor }) else { return false }
+            return index > 0
+        }
+        return !store.isEmpty
+    }
+}

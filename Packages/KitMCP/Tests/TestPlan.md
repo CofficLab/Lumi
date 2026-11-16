@@ -5,7 +5,7 @@
 KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提供与 UI/插件无关的 MCP 客户端能力：服务器配置模型、传输层（stdio / Streamable HTTP）、 会话生命周期（initialize / listTools / callTool）、工具描述与调用结果模型。 - 底层使用官方 `modelcontextprotocol/swift-sdk`（精确锁版 `0.12.1`，官方分级 Tier 3）， 通过 `MCPServerServing` 薄抽象隔离，替换实现不影响上层调用方。 - 不依赖任何其他 Lumi 包；只被 `PluginMCP`（或宿主）依赖。
 
 平台: macOS 13+, iOS 17+
-测试文件: 4 个，用例总数: 36
+测试文件: 5 个，用例总数: 38
 
 ## 公开 API
 
@@ -27,6 +27,7 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 - **MCPContentCodec**（7 条）：由 `textAndImage`、`resourceLink`、`errorFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerSession**（10 条）：由 `listAndCallTool`、`errorResult`、`notConnected` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPServerSessionCancellation**（2 条）：由 `cancellationCompletesWhenServerNeverResponds`、`preCancelledCallDoesNotSendRequest` 等用例锁定取消必须终止底层请求（#178）；改动该模块时优先跑对应测试文件。
 - **MCPToolSchema**（11 条）：由 `parametersMatchDirectParsing`、`normalizedJSONMatchesDirectSerialization`、`invalidJSONYieldsNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -69,27 +70,30 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 | 34 | MCPToolSchema | 描述符的相等性能区分不同 schema | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `descriptorEqualityDistinguishesSchemas` |
 | 35 | MCPToolSchema | 重复访问描述符的 schema 不会改变内容 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessIsStable` |
 | 36 | MCPToolSchema | 重复读取 schema 的耗时显著低于首次解析 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessIsCheaperThanParsing` |
+| 37 | MCPServerSessionCancellation | 服务器永不响应时取消仍必须立即结束调用（**#178**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancellationCompletesWhenServerNeverResponds` |
+| 38 | MCPServerSessionCancellation | 已取消的任务进入 callTool 时不得发出请求（**#178**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `preCancelledCallDoesNotSendRequest` |
 
-> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证（#178）：移除 `callTool` 的 `withTaskCancellationHandler`/`cancelRequest` 桥接后，`cancellationCompletesWhenServerNeverResponds` 被 5 秒看门狗判为仍在等待而失败；恢复后重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 9 / 9
 - P1: 已覆盖 27 / 27
 - P2: 已覆盖 2 / 2
-- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
 - **P1**: 其余功能性用例（27 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 13+, iOS 17+
-- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -170,8 +170,11 @@ struct ListV4View: View {
                     )
                 )
             }
-            .onChange(of: historyBoundary) { _ in
-                if runtime.atBottomBox.value {
+            .onChange(of: historyBoundary) { oldValue, newValue in
+                // prepend（加载更早历史）只改头部、不改尾部：不是「新消息到达」，
+                // 不能触发跟随滚到底，否则视口会跳到会话末尾（#1330）。
+                if HistoryWindowChange.hasNewTail(oldLast: oldValue.last, newLast: newValue.last),
+                   runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
                 if !initialPositionGate.isReady, !viewModel.isLoading {

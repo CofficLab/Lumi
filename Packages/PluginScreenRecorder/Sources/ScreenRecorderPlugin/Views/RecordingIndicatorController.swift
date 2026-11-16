@@ -90,6 +90,8 @@ final class RecordingIndicatorController {
 
     private var window: RecordingIndicatorWindow?
     private let model = RecordingIndicatorModel()
+    /// 指示器是否应处于可见态；与窗口实际可见性同步，供关闭回归断言（#223）。
+    private(set) var isVisible = false
 
     private init() {}
 
@@ -97,6 +99,7 @@ final class RecordingIndicatorController {
         model.description = description
         model.elapsedSeconds = 0
         model.isStopping = false
+        isVisible = true
 
         let window = self.window ?? RecordingIndicatorWindow()
         let hosting = NSHostingView(rootView: RecordingIndicatorContent(model: model))
@@ -119,6 +122,7 @@ final class RecordingIndicatorController {
     }
 
     func hide() {
+        isVisible = false
         window?.orderOut(nil)
     }
 

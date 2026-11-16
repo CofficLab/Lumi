@@ -181,6 +181,77 @@ import ProviderStorage
     #expect(store.data(forKey: "InputPluginConfig") == nil)
 }
 
+/// 回归 #784：旧版本嵌套的 settings/settings.plist 必须在首次启动时前移，
+/// 否则通用迁移只拷贝目录、当前存储只读根文件，旧规则与偏好被静默丢弃。
+@Test func localStoreMigratesLegacyNestedSettingsOnFirstRead() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("InputPluginLocalStore-Legacy-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let legacyDirectory = directory.appendingPathComponent("settings", isDirectory: true)
+    try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+    let legacyURL = legacyDirectory.appendingPathComponent("settings.plist")
+    let configData = Data("legacy-rule-config".utf8)
+    let plist: [String: Any] = ["InputPluginConfig": configData]
+    try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
+        .write(to: legacyURL)
+
+    let store = InputPluginLocalStore(pluginDirectory: directory)
+
+    #expect(store.data(forKey: "InputPluginConfig") == configData)
+    #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("settings.plist").path))
+    #expect(!FileManager.default.fileExists(atPath: legacyURL.path))
+}
+
+/// 护栏 #784：根文件已存在时不得用旧嵌套文件覆盖它，旧文件原样保留。
+@Test func localStoreKeepsExistingFlatSettingsOverLegacyNested() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("InputPluginLocalStore-LegacyGuard-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let flatURL = directory.appendingPathComponent("settings.plist")
+    let newData = Data("new-rule-config".utf8)
+    try PropertyListSerialization.data(fromPropertyList: ["InputPluginConfig": newData], format: .binary, options: 0)
+        .write(to: flatURL)
+
+    let legacyDirectory = directory.appendingPathComponent("settings", isDirectory: true)
+    try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+    let legacyURL = legacyDirectory.appendingPathComponent("settings.plist")
+    let oldData = Data("old-rule-config".utf8)
+    try PropertyListSerialization.data(fromPropertyList: ["InputPluginConfig": oldData], format: .binary, options: 0)
+        .write(to: legacyURL)
+
+    let store = InputPluginLocalStore(pluginDirectory: directory)
+
+    #expect(store.data(forKey: "InputPluginConfig") == newData)
+    #expect(FileManager.default.fileExists(atPath: legacyURL.path))
+}
+
+/// 回归 #784：迁移后的配置可继续保存并跨重启读取，旧嵌套文件不再残留。
+@Test func localStoreMigratedSettingsSurviveReloadAndSave() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("InputPluginLocalStore-LegacyReload-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let legacyDirectory = directory.appendingPathComponent("settings", isDirectory: true)
+    try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+    let legacyURL = legacyDirectory.appendingPathComponent("settings.plist")
+    let configData = Data("legacy-rule-config".utf8)
+    try PropertyListSerialization.data(fromPropertyList: ["InputPluginConfig": configData], format: .binary, options: 0)
+        .write(to: legacyURL)
+
+    let store = InputPluginLocalStore(pluginDirectory: directory)
+    #expect(store.data(forKey: "InputPluginConfig") == configData)
+
+    let updated = Data("updated-rule-config".utf8)
+    #expect(store.set(updated, forKey: "InputPluginConfig") == true)
+
+    let reloaded = InputPluginLocalStore(pluginDirectory: directory)
+    #expect(reloaded.data(forKey: "InputPluginConfig") == updated)
+    #expect(!FileManager.default.fileExists(atPath: legacyURL.path))
+}
+
 @MainActor
 @Test func refreshingSettingsReloadsInputSources() {
     // InputSettingsViewModel 会触碰 InputService.shared，进而读取插件数据目录。

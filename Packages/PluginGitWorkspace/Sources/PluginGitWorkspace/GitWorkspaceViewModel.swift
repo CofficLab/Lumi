@@ -35,7 +35,9 @@ struct UnavailableGitWorkspaceGitProvider: GitWorkspaceGitProviding {
 
 @MainActor
 final class GitWorkspaceViewModel: ObservableObject {
-    @Published private(set) var status: GitStatus?
+    @Published private(set) var status: GitStatus? {
+        didSet { rebuildWorkingTree() }
+    }
     @Published private(set) var commits: [GitCommitLog] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
@@ -44,23 +46,43 @@ final class GitWorkspaceViewModel: ObservableObject {
     private var requestGeneration = 0
     private var loadingPath: String?
 
-    var workingTreeFiles: [String] {
-        guard let status else { return [] }
-        return Array(Set(status.modified + status.added + status.deleted + status.renamed + status.staged + status.untracked)).sorted()
-    }
+    /// 缓存的工作树文件列表（去重 + 排序），仅在 status 变化时重建。
+    /// 视图每次 body 会多次读取它，避免每次都重建 Set 并排序（见 issue #1283）。
+    @Published private(set) var workingTreeFiles: [String] = []
+    /// 文件 → 变更标签的预计算映射，让 changeLabel 从 O(N) 线性扫描降为 O(1)。
+    private var changeLabels: [String: String] = [:]
 
     init(git: any GitWorkspaceGitProviding) {
         self.git = git
     }
 
     func changeLabel(for file: String) -> String {
-        guard let status else { return "?" }
-        if status.staged.contains(file) { return "S" }
-        if status.added.contains(file) { return "A" }
-        if status.deleted.contains(file) { return "D" }
-        if status.renamed.contains(file) { return "R" }
-        if status.untracked.contains(file) { return "?" }
-        return "M"
+        changeLabels[file] ?? "?"
+    }
+
+    /// status 变化时一次性重建工作树列表与标签映射。
+    ///
+    /// 标签优先级与原先的逐个 `contains` 判断一致：
+    /// staged(S) > added(A) > deleted(D) > renamed(R) > untracked(?) > modified(M)。
+    /// 按优先级从低到高写入字典，高优先级覆盖低优先级。
+    private func rebuildWorkingTree() {
+        guard let status else {
+            workingTreeFiles = []
+            changeLabels = [:]
+            return
+        }
+        let all = status.modified + status.added + status.deleted
+            + status.renamed + status.staged + status.untracked
+        workingTreeFiles = Array(Set(all)).sorted()
+
+        var labels: [String: String] = [:]
+        for file in status.modified { labels[file] = "M" }
+        for file in status.untracked { labels[file] = "?" }
+        for file in status.renamed { labels[file] = "R" }
+        for file in status.deleted { labels[file] = "D" }
+        for file in status.added { labels[file] = "A" }
+        for file in status.staged { labels[file] = "S" }
+        changeLabels = labels
     }
 
     func reload(path: String?, force: Bool = false) async {

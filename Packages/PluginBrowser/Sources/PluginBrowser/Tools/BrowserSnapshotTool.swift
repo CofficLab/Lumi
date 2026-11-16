@@ -80,9 +80,11 @@ public struct BrowserSnapshotTool: SuperAgentTool {
                 limit: limit,
                 conversationID: context.conversationID
             )
-            content = matches.isEmpty
+            // find 分支同样要应用 interactive_only，否则带过滤时非交互节点会漏出（#834）。
+            let visible = BrowserAccessibilityNode.filterInteractive(matches, interactiveOnly: interactiveOnly)
+            content = visible.isEmpty
                 ? "No element matched. Take a browser_snapshot without filters to see what is on the page."
-                : matches.map { $0.renderLine() }.joined(separator: "\n")
+                : visible.map { $0.renderLine() }.joined(separator: "\n")
         } else {
             let snapshot = try await sessions.snapshot(
                 interactiveOnly: interactiveOnly,

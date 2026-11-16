@@ -131,6 +131,35 @@ struct StoryWriterViewModelTests {
         #expect(viewModel.chapters.isEmpty)
         #expect(viewModel.characters.isEmpty)
     }
+
+    /// 回归 issue #1246：编辑器按键即时刷新内存列表，磁盘持久化只做合并后的最新快照，
+    /// 且持久化不回写内存——旧快照落盘不得覆盖用户刚输入的新内容。
+    @Test func inMemoryApplyIsImmediateAndPersistDoesNotWriteBack() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = StoryStore(pluginDirectory: directory)
+        let viewModel = StoryWriterViewModel(store: store)
+        _ = await viewModel.createStory(title: "First")
+        guard let chapter = await viewModel.createChapter(title: "Opening"),
+              let storyID = viewModel.currentStoryID else {
+            Issue.record("Could not create chapter")
+            return
+        }
+
+        var newer = chapter
+        newer.content = "newer body words"
+        viewModel.applyChapterInMemory(newer)
+        #expect(viewModel.chapters.first?.content == "newer body words")
+        #expect(viewModel.totalWordCount == newer.wordCount)
+
+        var older = chapter
+        older.content = "older"
+        await viewModel.persistChapter(older)
+        #expect(viewModel.chapters.first?.content == "newer body words", "持久化不得回写内存覆盖新内容")
+
+        let reloaded = await store.loadChapters(storyID: storyID)
+        #expect(reloaded.first?.content == "older")
+    }
 }
 
 @MainActor

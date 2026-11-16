@@ -33,6 +33,13 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 缓存数组之外的会话推理强度；后台回合被挤出有界缓存后，下一次 LLM 请求
     /// 仍须携带用户为它保存的档位，而不是把「未加载」当成「未设置」（issue #892）。
     var reasoningEffortOverrides: [UUID: ReasoningEffort] = [:]
+    /// 正在异步落库删除的会话 ID（含连带子会话）的墓碑集合。
+    ///
+    /// 删除是「乐观移除内存 + 异步清理持久化」两段式：清理完成前数据库里仍有该行，
+    /// 此刻任何列表重载都会把它读回来「复活」，用户还能点选这个幽灵 ID。把这些 ID
+    /// 记为墓碑，分页读取与选中入口都据此排除，直到落库删除真正完成（成功或失败
+    /// 还原）才解除（issue #535）。
+    var pendingDeletionIDs: Set<UUID> = []
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -73,10 +80,24 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public let dataDirectory: URL
     let project: (any ProjectProviding)?
     let llmProviderManager: (any LLMManaging)?
-    let messageManager: (any MessageManaging)?
     let toolManager: (any ToolManagerProviding)?
-    let agentTurn: (any AgentLoopProviding)?
     let eventBus: KernelCoreEventBus?
+
+    /// 创建时捕获的默认 Provider，仅在没有解析器时兜底。
+    private let capturedMessageManager: (any MessageManaging)?
+    private let capturedAgentTurn: (any AgentLoopProviding)?
+    /// 动态解析当前生产 Provider。order 7 创建本管理器时解析到的默认
+    /// Message/AgentLoop 会被 order 8 插件替换，删除/统计必须作用于替换后的
+    /// 生产实例，否则取消回合/清消息落在无人使用的默认实例上（#640）。
+    private let messageManagerResolver: (@MainActor () -> (any MessageManaging)?)?
+    private let agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)?
+
+    var messageManager: (any MessageManaging)? {
+        messageManagerResolver?() ?? capturedMessageManager
+    }
+    var agentTurn: (any AgentLoopProviding)? {
+        agentTurnResolver?() ?? capturedAgentTurn
+    }
 
     /// 项目切换观察者：监听当前项目变化，清空对话选择。
     private var projectObserver: (any ProjectProvidingObserverHandle)?
@@ -91,21 +112,30 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         messageManager: (any MessageManaging)? = nil,
         toolManager: (any ToolManagerProviding)? = nil,
         agentTurn: (any AgentLoopProviding)? = nil,
-        eventBus: KernelCoreEventBus? = nil
+        eventBus: KernelCoreEventBus? = nil,
+        messageManagerResolver: (@MainActor () -> (any MessageManaging)?)? = nil,
+        agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)? = nil
     ) {
         self.store = store
         self.dataDirectory = dataDirectory
         self.project = project
         self.llmProviderManager = llmProviderManager
-        self.messageManager = messageManager
+        self.capturedMessageManager = messageManager
         self.toolManager = toolManager
-        self.agentTurn = agentTurn
+        self.capturedAgentTurn = agentTurn
         self.eventBus = eventBus
+        self.messageManagerResolver = messageManagerResolver
+        self.agentTurnResolver = agentTurnResolver
 
-        // 监听项目切换，仅在用户主动切换时清空对话选择
+        // 监听项目切换，在用户主动切换或外部打开时清空对话选择
         projectObserver = project?.addObserver { [weak self] event in
-            guard case .currentProjectChanged(_, reason: .userSelected) = event else { return }
-            self?.deselectConversation()
+            guard case .currentProjectChanged(_, reason: let reason) = event else { return }
+            switch reason {
+            case .userSelected, .externalOpen:
+                self?.deselectConversation()
+            default:
+                break
+            }
         }
     }
 
@@ -148,27 +178,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
-                // New Chat 的默认语言独立于选中会话，必须跨重启保留；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                // New Chat 的全局默认值独立于选中会话，只能从单独落盘的全局值恢复。
+                // 不能用选中会话的配置反写全局默认，否则新建会话会继承上一个会话的
+                // 设置，并跨重启持续污染（issue #786）。
                 if let persistedLanguage = persistedState?.globalLanguage {
                     self.globalLanguage = persistedLanguage
                 }
-                // New Chat 的默认详细度同样独立于选中会话，必须先恢复；有选中会话时
-                // 下面的会话级复制仍会覆盖它。
                 if let persistedVerbosity = persistedState?.globalVerbosity {
                     self.globalVerbosity = persistedVerbosity
                 }
-                // New Chat 的默认自动化级别同样独立于选中会话，必须先恢复；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
                 if let persistedAutomation = persistedState?.globalAutomationLevel {
                     self.globalAutomationLevel = persistedAutomation
-                }
-                if self.selectedConversationID != nil {
-                    // 初始化全局详细程度为当前选中对话的详细程度
-                    self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
-                    self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
-                    self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
-                    self.globalLanguage = self.language(for: self.selectedConversationID)
                 }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()

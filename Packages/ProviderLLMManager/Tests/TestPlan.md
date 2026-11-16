@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 59 条用例。
+ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 75 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 59
+测试文件: 7 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Errors/`
@@ -29,6 +29,9 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 
 - **UserDefinedCloudProviderConfigurationTests**（18 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UserDefinedCloudProviderStoreTests**（14 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UserDefinedCloudProviderEndpointTests**（7 条）：由 `openAIAppendsChatCompletionsPath`、`anthropicAppendsMessagesPath`、`responsesAppendsResponsesPath` 等用例锁定（回归 #334：API 根地址须追加各协议操作端点）；改动该模块时优先跑对应测试文件。
+- **RemoteModelRefreshSelectionTests**（3 条）：由 `selectionRevalidatedAfterRemoteRefresh`、`noSelectionChangeWhenSelectionStillValid`、`requestUsesRevalidatedSelection` 锁定；改动远程刷新选中态重校验时优先跑对应测试文件。
+- **UtilityModelRouteTests**（6 条）：由 `validDeclarationReturnsUtilityRoute`、`missingDeclarationReturnsNil`、`declarationOutsidePoolReturnsNil` 等用例锁定（#1157 轻量任务模型路由校验）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -93,27 +96,43 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 | 57 | UserDefinedCloudProviderStoreTests | 自定义供应商在管理器中暴露为云端供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderIsRegisteredAsRemoteProvider` |
 | 58 | UserDefinedCloudProviderConfigurationTests | 非正上下文窗口校验后被归一化为未知（**回归 #1121**） | 模型窗口分别为 0、-4096、128000 | 调用 `validated()` | 前两者窗口变为 nil（按未知处理），正整数保持不变 | P0 | ✅ 已覆盖 | `normalizesNonPositiveContextWindowToUnknown` |
 | 59 | UserDefinedCloudProviderStoreTests | 加载时把非正上下文窗口归一化为未知（**回归 #1121**） | 磁盘配置中模型窗口为 0 / -1 | 新建 Store 并装配管理器 | 配置不会被丢弃；Store 与注册供应商的模型窗口均为 nil | P0 | ✅ 已覆盖 | `normalizesNonPositiveContextWindowWhenLoading` |
+| 60 | RemoteModelRefreshSelectionTests | 刷新移除当前选中的远程模型后重校验为默认模型并广播选择变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionRevalidatedAfterRemoteRefresh` |
+| 61 | RemoteModelRefreshSelectionTests | 刷新后选中模型仍然有效时不广播选择变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noSelectionChangeWhenSelectionStillValid` |
+| 62 | RemoteModelRefreshSelectionTests | 刷新移除选中的远程模型后，请求不再静默回退到失效模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestUsesRevalidatedSelection` |
+| 63 | UtilityModelRouteTests | 有效声明返回轻量模型路由 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validDeclarationReturnsUtilityRoute` |
+| 64 | UtilityModelRouteTests | 未声明轻量模型时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `missingDeclarationReturnsNil` |
+| 65 | UtilityModelRouteTests | 声明为空字符串时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyDeclarationReturnsNil` |
+| 66 | UtilityModelRouteTests | 声明的模型不在模型池中时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `declarationOutsidePoolReturnsNil` |
+| 67 | UtilityModelRouteTests | 远程刷新下线推荐模型后回退 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retiredRemoteUtilityModelReturnsNil` |
+| 68 | UtilityModelRouteTests | 未注册供应商返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unknownProviderReturnsNil` |
+| 69 | UserDefinedCloudProviderEndpointTests | OpenAI 格式在 API 根后追加 /chat/completions（**回归 #334**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAIAppendsChatCompletionsPath` |
+| 70 | UserDefinedCloudProviderEndpointTests | Anthropic 格式在 API 根后追加 /messages（**回归 #334**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicAppendsMessagesPath` |
+| 71 | UserDefinedCloudProviderEndpointTests | Responses 格式在 API 根后追加 /responses（**回归 #334**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `responsesAppendsResponsesPath` |
+| 72 | UserDefinedCloudProviderEndpointTests | 根地址带尾斜杠时不产生双斜杠（**回归 #334**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `trailingSlashDoesNotDoubleSlash` |
+| 73 | UserDefinedCloudProviderEndpointTests | 根地址不含版本前缀时同样追加操作路径（**回归 #334**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rootWithoutVersionPrefixStillAppendsPath` |
+| 74 | UserDefinedCloudProviderEndpointTests | 非 OpenAI 格式不暴露 OpenAI 配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAIConfigurationNilForOtherFormats` |
+| 75 | UserDefinedCloudProviderEndpointTests | 非 Anthropic 格式不暴露 Anthropic 配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicConfigurationNilForOtherFormats` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 14 / 14
-- P1: 已覆盖 36 / 36
-- P2: 已覆盖 9 / 9
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 49 / 49
+- P2: 已覆盖 12 / 12
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（36 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P1**: 其余功能性用例（49 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -13,6 +13,7 @@ struct CacheHitRateToolbarView: View {
     @State private var isPopoverPresented = false
     @State private var selectedConversationID: UUID?
     @State private var messageRefreshRevision = 0
+    @State private var latestSnapshot: [Message] = []
     @State private var observerHandle: (any CacheHitRateToolbarState.ObserverHandle)?
 
     var body: some View {
@@ -52,6 +53,13 @@ struct CacheHitRateToolbarView: View {
             if newValue == nil {
                 isPopoverPresented = false
             }
+        }
+        .onChange(of: isPopoverPresented) { presented in
+            // 打开弹窗时用最近快照即时补建历史，关闭时清空（#1226）。
+            history = CacheHitRateHistoryGate.resolve(
+                isPopoverPresented: presented,
+                snapshot: latestSnapshot
+            )
         }
         .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
@@ -99,6 +107,7 @@ struct CacheHitRateToolbarView: View {
         guard let conversationID = selectedConversationID else {
             stats = .empty
             history = .empty
+            latestSnapshot = []
             unavailabilityReason = .noConversationSelected
             return
         }
@@ -110,8 +119,13 @@ struct CacheHitRateToolbarView: View {
             selectedConversationID: selectedConversationID,
             isCancelled: Task.isCancelled
         ) else { return }
+        latestSnapshot = snapshot
         stats = CacheHitRateStats.compute(messages: snapshot)
-        history = CacheHitRateHistory.build(from: snapshot)
+        // 历史只在弹窗打开时构建；关闭时跳过排序 / 遍历（#1226）。
+        history = CacheHitRateHistoryGate.resolve(
+            isPopoverPresented: isPopoverPresented,
+            snapshot: snapshot
+        )
         if stats.sampleCount > 0 {
             unavailabilityReason = .waitingForResponse
         } else if snapshot.contains(where: { $0.role == .assistant }) {
@@ -138,5 +152,17 @@ enum CacheHitRateRefreshGate {
         guard !isCancelled else { return false }
         guard conversationID == selectedConversationID else { return false }
         return revision == currentRevision
+    }
+}
+
+/// 趋势历史构建门禁（#1226）。
+///
+/// 工具栏数值（`CacheHitRateStats`）常驻可见、必须即时刷新；趋势历史只在弹窗里
+/// 展示。`CacheHitRateHistory.build` 会对整段消息排序并逐条累计（O(M log M)），
+/// 长会话里每条消息插入都重建会造成主线程卡顿。弹窗关闭时直接返回空历史，
+/// 打开时用最近一次快照即时补建，无需等待新的刷新事件。
+enum CacheHitRateHistoryGate {
+    static func resolve(isPopoverPresented: Bool, snapshot: [Message]) -> CacheHitRateHistory {
+        isPopoverPresented ? CacheHitRateHistory.build(from: snapshot) : .empty
     }
 }

@@ -53,6 +53,15 @@ public actor MailAgentToolService {
         do {
             account = try accountFor(accountID)
         } catch MailError.notFound {
+            // 指定了 id 却找不到账户属于参数错误，不能伪装成「没有配置账户」
+            // 的成功文案，否则调用方以为自己读到了目标邮箱（#840）。
+            if let accountID {
+                throw ToolExecutionError.executionFailed(
+                    toolName: MailListMessagesTool.toolName,
+                    reason: "找不到 account_id 对应的邮件账户：\(accountID.uuidString)。"
+                        + "请用 mail_list_accounts 查看可用账户。"
+                )
+            }
             return "没有可用的邮件账户。请先在「设置 → 邮件」添加账户。"
         } catch {
             throw error
@@ -231,7 +240,7 @@ public struct MailListMessagesTool: SuperAgentTool {
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         MailToolSupport.schema(
             properties: [
-                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts; optional, defaults to the first account."),
+                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts. Omit it to use the first account; an empty or malformed value is rejected."),
                 "folder": MailToolSupport.string("IMAP folder path; default INBOX."),
                 "limit": MailToolSupport.integer("Max messages to return; default 10, range 1...50.", minimum: 1, maximum: 50),
             ],
@@ -256,7 +265,7 @@ public struct MailListMessagesTool: SuperAgentTool {
             )
         }
         return try await service.listMessages(
-            accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
+            accountID: try MailToolSupport.accountID(arguments, toolName: name),
             folder: MailToolSupport.optionalString(arguments, "folder") ?? "INBOX",
             limit: limit
         )
@@ -280,7 +289,7 @@ public struct MailReadMessageTool: SuperAgentTool {
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         MailToolSupport.schema(
             properties: [
-                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts; optional, defaults to the first account."),
+                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts. Omit it to use the first account; an empty or malformed value is rejected."),
                 "folder": MailToolSupport.string("IMAP folder path; default INBOX."),
                 "uid": MailToolSupport.integer("Message uid returned by mail_list_messages."),
             ],
@@ -309,7 +318,7 @@ public struct MailReadMessageTool: SuperAgentTool {
             )
         }
         return try await service.readMessage(
-            accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
+            accountID: try MailToolSupport.accountID(arguments, toolName: name),
             folder: MailToolSupport.optionalString(arguments, "folder") ?? "INBOX",
             uid: UInt64(uid)
         )
@@ -333,7 +342,7 @@ public struct MailSearchMessagesTool: SuperAgentTool {
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         MailToolSupport.schema(
             properties: [
-                "account_id": MailToolSupport.string("Account UUID; optional, defaults to the first account."),
+                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts. Omit it to use the first account; an empty or malformed value is rejected."),
                 "folder": MailToolSupport.string("Optional IMAP folder to restrict the search."),
                 "query": MailToolSupport.string("Search keyword."),
             ],
@@ -354,7 +363,7 @@ public struct MailSearchMessagesTool: SuperAgentTool {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需参数: query")
         }
         return try await service.searchMessages(
-            accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
+            accountID: try MailToolSupport.accountID(arguments, toolName: name),
             folder: MailToolSupport.optionalString(arguments, "folder"),
             query: query
         )
@@ -378,7 +387,7 @@ public struct MailSendMessageTool: SuperAgentTool {
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         MailToolSupport.schema(
             properties: [
-                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts; optional, defaults to the first account."),
+                "account_id": MailToolSupport.string("Account UUID from mail_list_accounts. Omit it to use the first account; an empty or malformed value is rejected."),
                 "to": MailToolSupport.string("Comma-separated recipient addresses."),
                 "subject": MailToolSupport.string("Email subject."),
                 "body": MailToolSupport.string("Plain text body."),
@@ -402,7 +411,7 @@ public struct MailSendMessageTool: SuperAgentTool {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需参数: to/subject/body")
         }
         return try await service.sendMessage(
-            accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
+            accountID: try MailToolSupport.accountID(arguments, toolName: name),
             to: to,
             subject: subject,
             body: body
@@ -442,8 +451,31 @@ private enum MailToolSupport {
         return ToolArgumentNumber.int(arguments[key]?.value)
     }
 
-    static func optionalUUID(_ arguments: [String: ToolArgument], _ key: String) -> UUID? {
-        guard let string = optionalString(arguments, key) else { return nil }
-        return UUID(uuidString: string)
+    /// 解析 account_id：只有「完全没传」才允许回落到默认账户。
+    ///
+    /// 传了但为空、格式非法或类型不对时必须报参数错误。原先两种情况都变成
+    /// nil，`accountFor(nil)` 会选第一个账户，发送工具于是在审批通过后从
+    /// 错误的邮箱寄出邮件（#840）。
+    static func accountID(
+        _ arguments: [String: ToolArgument],
+        toolName: String
+    ) throws -> UUID? {
+        guard let argument = arguments["account_id"] else { return nil }
+        guard let string = argument.value as? String else {
+            throw ToolExecutionError.executionFailed(
+                toolName: toolName,
+                reason: "参数 account_id 必须是字符串形式的账户 UUID（见 mail_list_accounts），"
+                    + "或省略该参数以使用默认账户；收到 \(type(of: argument.value))。"
+            )
+        }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let id = UUID(uuidString: trimmed) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: toolName,
+                reason: "参数 account_id 不是合法的账户 UUID：「\(string)」。"
+                    + "请用 mail_list_accounts 返回的 id，或省略该参数以使用默认账户。"
+            )
+        }
+        return id
     }
 }

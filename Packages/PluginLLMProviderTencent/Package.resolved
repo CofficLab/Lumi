@@ -2,21 +2,21 @@
   "originHash" : "856a4bace8ee77587fd633bec0788b87fd013282745e7e570908caff7c3c1b82",
   "pins" : [
     {
-      "identity" : "kitagenttool",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/KitAgentTool.git",
-      "state" : {
-        "revision" : "cb2f0450a85aa18772c06f9b442beccd8e44b1a0",
-        "version" : "1.0.2"
-      }
-    },
-    {
       "identity" : "lumikernel",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKernel.git",
       "state" : {
         "revision" : "c0aace6a4b0b428f3b059020327a558c470538ed",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "lumikitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
+      "state" : {
+        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
+        "version" : "1.0.3"
       }
     },
     {

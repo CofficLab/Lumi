@@ -167,6 +167,25 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
         refreshTotalWordCount()
     }
 
+    /// 立即把章节快照写回内存列表，不等磁盘。
+    ///
+    /// 编辑器每次按键都调用它即时刷新 UI（大纲、字数），磁盘持久化则由
+    /// 防抖任务合并后只做一次（见 issue #1246）。同步执行，无 await 后写回。
+    public func applyChapterInMemory(_ chapter: Chapter) {
+        if let idx = chapters.firstIndex(where: { $0.id == chapter.id }) {
+            chapters[idx] = chapter
+        }
+        refreshTotalWordCount()
+    }
+
+    /// 只把章节快照持久化到磁盘，不回写内存列表。
+    ///
+    /// 内存列表已由 `applyChapterInMemory` 即时更新；这里不做 await 后的共享
+    /// 状态写回，避免旧的防抖快照覆盖用户刚输入的新内容（见 issue #1246）。
+    public func persistChapter(_ chapter: Chapter) async {
+        await store.updateChapter(chapter)
+    }
+
     // MARK: - Characters
 
     public func createCharacter(name: String) async -> Character? {

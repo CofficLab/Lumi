@@ -105,6 +105,23 @@ public struct WebPageResult<Item: Encodable & Sendable>: Encodable, Sendable {
         self.limit = pagination.limit
         self.hasMore = pagination.offset + self.items.count < items.count
     }
+
+    /// 由已分页的当前页数据与总数构造分页结果。
+    ///
+    /// 用于调用方已经在别处（如后台线程）完成切片、只想映射当前页的场景，
+    /// 避免把完整序列再交给主线程处理一遍。
+    ///
+    /// - Parameters:
+    ///   - pageItems: 当前页数据（调用方已按 `pagination` 切片）。
+    ///   - total: 过滤后的总条数。
+    ///   - pagination: 分页参数。
+    public init(pageItems: [Item], total: Int, pagination: WebPagination) {
+        self.items = pageItems
+        self.total = total
+        self.offset = pagination.offset
+        self.limit = pagination.limit
+        self.hasMore = pagination.offset + pageItems.count < total
+    }
 }
 
 // MARK: - Request Log

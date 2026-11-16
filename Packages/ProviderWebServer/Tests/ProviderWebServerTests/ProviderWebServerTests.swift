@@ -123,4 +123,41 @@ struct ProviderWebServerTests {
         resolved.unregister(pluginID: "p1")
         #expect(provider.unregistered == ["p1"])
     }
+
+    // MARK: - Pagination
+
+    @Test("预分页构造与全量构造结果一致")
+    func prePaginatedResultMatchesFullResult() {
+        let all = Array(0..<7)
+        let pagination = WebPagination(offset: 2, limit: 3)
+
+        let full = WebPageResult(items: all, pagination: pagination)
+        let pre = WebPageResult(
+            pageItems: pagination.page(of: all),
+            total: all.count,
+            pagination: pagination
+        )
+
+        #expect(pre.items == full.items)
+        #expect(pre.total == full.total)
+        #expect(pre.offset == full.offset)
+        #expect(pre.limit == full.limit)
+        #expect(pre.hasMore == full.hasMore)
+        #expect(pre.items == [2, 3, 4])
+        #expect(pre.hasMore == true)
+    }
+
+    @Test("预分页越过末尾时 items 为空且 hasMore 为 false")
+    func prePaginatedResultBeyondEnd() {
+        let all = Array(0..<5)
+        let pagination = WebPagination(offset: 10, limit: 2)
+        let result = WebPageResult(
+            pageItems: pagination.page(of: all),
+            total: all.count,
+            pagination: pagination
+        )
+        #expect(result.items.isEmpty)
+        #expect(result.total == 5)
+        #expect(result.hasMore == false)
+    }
 }

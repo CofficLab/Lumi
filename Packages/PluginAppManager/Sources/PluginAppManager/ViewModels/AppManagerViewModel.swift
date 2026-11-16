@@ -208,8 +208,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                 }
 
                 self.relatedFiles = files
-                // 默认全选
-                self.selectedFileIds = Set(files.map { $0.id })
+                // 默认只勾选能可靠确认归属的条目；仅凭同名匹配到的目录
+                // （ownershipVerified == false）不得默认删除，避免误删其它厂商数据（#647）。
+                self.selectedFileIds = Set(files.filter { $0.ownershipVerified }.map { $0.id })
                 self.isScanningFiles = false
                 self.relatedFilesTask = nil
             }

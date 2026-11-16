@@ -7,6 +7,13 @@ public struct FileIndexStore {
     private(set) var files: [FileResult] = []
     private(set) var lastUpdated: Date?
 
+    /// 显式成员初始化器：允许回归测试注入过期的 `lastUpdated`（#376）。
+    init(projectPath: String, files: [FileResult] = [], lastUpdated: Date? = nil) {
+        self.projectPath = projectPath
+        self.files = files
+        self.lastUpdated = lastUpdated
+    }
+
     /// 更新索引
     mutating func update(_ newFiles: [FileResult]) {
         self.files = newFiles

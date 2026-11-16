@@ -67,11 +67,20 @@ public final class ACPTurnCoordinator {
 
     /// 已上报、可能进入授权流程的工具调用元数据。
     private struct ToolCallMetadata {
-        let sessionID: ACPSessionId
         let name: String
         let kind: ToolKind
         let title: String
         let rawInput: JSONValue?
+    }
+
+    /// 元数据登记键：会话 + 工具调用 ID。
+    ///
+    /// 不同会话可能上报相同的 toolCallId（如各会话首个调用都叫 "call_001"）。
+    /// 仅以裸 ID 为键会让后写的会话覆盖先写的会话，授权弹窗展示错会话的
+    /// 标题/入参（#353）。按 (sessionID, toolCallID) 隔离后互不串扰。
+    private struct ToolCallKey: Hashable {
+        let sessionID: ACPSessionId
+        let toolCallID: String
     }
 
     /// 权限选项：optionId → 恢复回合时提交给内核的 answer。
@@ -95,8 +104,8 @@ public final class ACPTurnCoordinator {
     private var activeTurns: [ACPSessionId: ActiveTurn] = [:]
     /// 正在等待用户决定的权限请求（每会话至多一个）。
     private var permissionTasks: [ACPSessionId: Task<Void, Never>] = [:]
-    /// 已上报工具调用元数据（key: toolCallId）。
-    private var toolCallMetadata: [String: ToolCallMetadata] = [:]
+    /// 已上报工具调用元数据（key: 会话 + toolCallId）。
+    private var toolCallMetadata: [ToolCallKey: ToolCallMetadata] = [:]
     private var observerHandle: (any AgentLoopObserverHandle)?
     private var retryObserverHandle: (any AgentLoopRetryLifecycleObserverHandle)?
     private var watchdogTasks: [ACPSessionId: Task<Void, Never>] = [:]
@@ -204,6 +213,11 @@ public final class ACPTurnCoordinator {
             guard let self else { return }
             guard let turn = self.activeTurns[sessionID], !turn.finalized else { return }
             guard !turn.hasLLMProgress else { return }
+            // 只发 refusal 不取消底层回合的话，模型晚回包后工具仍会照常执行，
+            // 产生客户端既不能停止也观察不到的副作用（#222）。先取消再收尾，
+            // 与 session/cancel 路径一致；finalize 的 finalized 标志保证随后
+            // 到达的 cancelled 事件不会重复响应。
+            self.agentLoop.cancelTurn(in: turn.conversationID)
             await self.finalize(
                 conversationID: turn.conversationID,
                 cancelled: false,
@@ -303,8 +317,7 @@ public final class ACPTurnCoordinator {
             let title = call.displayDescription ?? call.name
             let rawInput = Self.json(from: call.arguments)
             // 登记元数据：授权弹窗需要真实 toolCallId / 标题 / 类别 / 原始入参。
-            toolCallMetadata[call.id] = ToolCallMetadata(
-                sessionID: sessionID,
+            toolCallMetadata[ToolCallKey(sessionID: sessionID, toolCallID: call.id)] = ToolCallMetadata(
                 name: call.name,
                 kind: kind,
                 title: title,
@@ -405,7 +418,8 @@ public final class ACPTurnCoordinator {
         // 用真实 toolCallId（内核授权挂起的 suspension.toolCallID 即模型原始调用 ID），
         // 与先前上报的 `tool_call` 通知保持一致；payload 里的 "approval:<id>" 不可用。
         let toolCallID = suspension.toolCallID ?? ""
-        let metadata = toolCallMetadata[toolCallID]
+        // 只取本会话登记的元数据：裸 ID 可能命中其它会话的同名调用（#353）。
+        let metadata = toolCallMetadata[ToolCallKey(sessionID: sessionID, toolCallID: toolCallID)]
         let question = (payload?["question"] as? String) ?? ACPLocalization.allowThisOperation
 
         let options = PermissionOptions(
@@ -568,15 +582,15 @@ public final class ACPTurnCoordinator {
                 .map(\.id)
         )
         let pendingIDs = toolCallMetadata
-            .filter { $0.value.sessionID == sessionID && !completedIDs.contains($0.key) }
-            .map(\.key)
+            .filter { $0.key.sessionID == sessionID && !completedIDs.contains($0.key.toolCallID) }
+            .map(\.key.toolCallID)
         for toolCallID in pendingIDs {
             sendUpdate(sessionID: sessionID, update: .toolCallUpdate(ToolCallUpdate(
                 toolCallId: toolCallID,
                 status: .cancelled
             )))
         }
-        toolCallMetadata = toolCallMetadata.filter { $0.value.sessionID != sessionID }
+        toolCallMetadata = toolCallMetadata.filter { $0.key.sessionID != sessionID }
     }
 
     /// 补发已落库工具结果的终态（completed/failed）。

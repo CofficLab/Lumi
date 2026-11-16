@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 32 条用例。
+PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆盖 38 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 32
+测试文件: 3 个，用例总数: 38
 
 核心组件（源码目录）:
 - `Observers/`
@@ -19,6 +19,7 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 - `ConversationForkCoordinator`
 - `ConversationForkPlugin`
 - `ConversationForkPopoverContent`
+- `ConversationForkPreviewModel`
 - `ConversationSummarizer`
 - `ConversationForkSelectionObserver`
 
@@ -27,7 +28,8 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationForkSelectionObserver**（3 条）：由 `buttonHiddenWithoutSelectedConversation`、`buttonFollowsSelectionState`、`doesNotRegisterTwice` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（27 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationForkPreviewModel**（5 条）：由 `stalePreviewDuringNewLoadIsDiscarded`、`stalePreviewAfterNewLoadIsDiscarded`、`reopenSameConversationDiscardsEarlierRequest` 等用例锁定；预览异步写回必须按代次校验身份，旧请求不得发布预览或改动加载标记（#463）。
+- **综合**（28 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -65,27 +67,42 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 | 30 | 项目绑定 | 有项目源对话 fork 后沿用同一项目 | 当前项目 `/tmp/current-project`，源对话绑定 `/tmp/source-project` | 执行 `fork` | 副本 `projectPath` 为 `/tmp/source-project`，不受当前项目影响 | P1 | ✅ 已覆盖 | `forkOfBoundConversationKeepsItsProject` |
 | 31 | 综合 | 附件解码仅限保留窗口（**回归 #1324**） | `maxMessages + 40` 条带图片附件的 user 消息 | 重置 `attachmentDecodeCount` 后调用 `filteredMessages` | 仅保留最近 `maxMessages` 条，附件解码次数不超过 `maxMessages` | P1 | ✅ 已覆盖 | `filteredMessagesBoundsAttachmentDecodeToRetainedWindow` |
 | 32 | 综合 | 反向扫描跳过空消息保留最近可用条（**回归 #1324**） | 可用消息与空白消息交替，共 `maxMessages + 10` 轮 | 调用 `filteredMessages` | 保留 `maxMessages` 条可用消息，首条 `u10`、末条 `u(maxMessages+9)`，无空白 | P1 | ✅ 已覆盖 | `filteredMessagesReverseScanKeepsRecentUsableWithEmpties` |
+| 33 | 综合 | fork 只发送摘要，不带走源对话未发送的附件（**回归 #578**） | 源对话有历史，输入框挂起未发送的图片与文件附件 | 执行 `fork` | 摘要消息 metadata 不含任何附件，挂起池原样保留 | P0 | ✅ 已覆盖 | `forkDoesNotConsumeUnsentComposerAttachments` |
+| 34 | ConversationForkPreviewModel | 旧预览在新加载进行中晚到：不发布也不关掉加载标记（**回归 #463**） | 门闩挂起 A、B 两次快照，先打开 A 再打开 B | 先放行 A 的快照，再放行 B | A 晚到时预览仍为 nil、isLoading 仍为真；B 发布后预览属于 B | P0 | ✅ 已覆盖 | `stalePreviewDuringNewLoadIsDiscarded` |
+| 35 | ConversationForkPreviewModel | 旧预览在新加载完成后晚到：不覆盖已发布的新预览（**回归 #463**） | 门闩挂起 A、B 两次快照，先打开 A 再打开 B | 先放行 B 发布预览，再放行 A | 预览仍属于 B，target 仍为 B，isLoading 为假 | P0 | ✅ 已覆盖 | `stalePreviewAfterNewLoadIsDiscarded` |
+| 36 | ConversationForkPreviewModel | 同一对话重复打开：只认最新一次请求（**回归 #463**） | 对同一对话先后打开两次，两次快照都被门闩挂起 | 先放行第一次（旧代次）快照，再放行第二次 | 旧结果被丢弃且加载标记不被关闭；第二次结果正常发布 | P0 | ✅ 已覆盖 | `reopenSameConversationDiscardsEarlierRequest` |
+| 37 | ConversationForkPreviewModel | 无选中对话时清空状态，晚到的旧结果也不得发布（**回归 #463**） | A 的快照在途时以 nil 打开 | 放行 A 的快照 | preview 为 nil、isLoading 为假、target 为 nil，晚到结果不写回 | P0 | ✅ 已覆盖 | `openWithoutSelectionClearsStateAndIgnoresLateResult` |
+| 38 | ConversationForkPreviewModel | 单次打开正常发布预览并锁定目标对话 | 对话 A 有一条提问，快照被门闩挂起 | 打开 A 后放行快照 | 预览标题/提问/条数正确，isLoading 转假，target 为 A | P1 | ✅ 已覆盖 | `singleOpenPublishesPreview` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#578）：把 `ConversationForkCoordinator.fork` 的发送改回隐式
+> `sender.sendMessage(summary, conversationID:)`，用例 33 立即转红（摘要消息
+> 带上未发送附件、挂起池被清空，4 条断言全部失败）；恢复显式空附件入口后转绿。
+
+> 变异验证（#463）：去掉 `ConversationForkPreviewModel.open` 写回前的
+> `revision == currentRevision` 守卫，用例 34-37 全部转红（旧预览覆盖新目标、
+> 加载标记被旧请求关掉、nil 打开后晚到结果仍发布，共 9 条断言失败），
+> 用例 38 正常路径保持绿；恢复守卫后 38 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 20 / 20
 - P2: 已覆盖 6 / 6
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（20 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

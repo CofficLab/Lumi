@@ -120,7 +120,7 @@ struct ConnectionsListView: View {
                 Label(pluginLocalization.string("Edit"), systemImage: "pencil")
             }
             Button(role: .destructive) {
-                viewModel.removeConfig(config)
+                try? viewModel.removeConfig(config)
             } label: {
                 Label(pluginLocalization.string("Delete"), systemImage: "trash")
             }

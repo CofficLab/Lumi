@@ -69,10 +69,23 @@ public struct EditorConfigFileStore: Sendable {
         loadDict()[key] as? T
     }
 
-    public func savingValue(_ value: Any, forKey key: String) {
-        var dict = loadDict()
+    public func savingValue(_ value: Any, forKey key: String, fileManager: FileManager = .default) {
+        var dict = loadDict(fileManager: fileManager)
         dict[key] = value
-        saveDict(dict)
+        saveDict(dict, fileManager: fileManager)
+    }
+
+    /// 一次性写入多个键：只加载/解码一次、编码/原子写一次。
+    ///
+    /// 逐键 `savingValue` 会对每个键重复完整的 load→encode→write 循环；
+    /// 持久化整份配置快照时用本方法把 N 次循环合并为一次（见 issue #1250）。
+    public func savingValues(_ values: [String: Any], fileManager: FileManager = .default) {
+        guard !values.isEmpty else { return }
+        var dict = loadDict(fileManager: fileManager)
+        for (key, value) in values {
+            dict[key] = value
+        }
+        saveDict(dict, fileManager: fileManager)
     }
 
     public func removingValue(forKey key: String) {

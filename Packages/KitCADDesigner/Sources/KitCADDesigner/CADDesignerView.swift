@@ -111,7 +111,7 @@ public struct CADDesignerView: View {
             .buttonStyle(.bordered)
 
             Button {
-                exportPNG()
+                Task { await exportPNG() }
             } label: {
                 Label(L.string("Export PNG"), systemImage: "square.and.arrow.down")
             }
@@ -222,7 +222,7 @@ public struct CADDesignerView: View {
     }
 
     @MainActor
-    private func exportPNG() {
+    private func exportPNG() async {
         viewModel.isExporting = true
         defer { viewModel.isExporting = false }
 
@@ -240,7 +240,7 @@ public struct CADDesignerView: View {
         )
         do {
             try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try ScreenshotExporter().exportPNG(from: found, to: outputURL)
+            try await ScreenshotExporter().exportPNG(from: found, to: outputURL)
             store.setExportURL(outputURL)
         } catch {
             store.setError(error.localizedDescription)

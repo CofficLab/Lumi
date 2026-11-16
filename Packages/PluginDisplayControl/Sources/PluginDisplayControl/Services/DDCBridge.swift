@@ -44,6 +44,29 @@ enum DDCVolumeWritePlan: Equatable {
     }
 }
 
+// MARK: - DDC Value Scaling
+
+/// DDC 读数与写回的百分比换算（#837）。
+///
+/// 显示器经 DDC/CI 报告的 VCP 满量程可能大于 100（例如亮度 max=255）。
+/// 百分比与写回都必须以显示器报告的原始 max 为满量程，绝不能截断到 100，
+/// 否则读数被压成 100%、写回的硬件值也按比例偏小。
+enum DDCValueScaling {
+    /// 由原始 current/reportedMax 计算百分比，并返回应缓存的满量程。
+    ///
+    /// `reportedMax` 原样保留（不截断）；调用方保证 `reportedMax > 0`。
+    /// 百分比上限夹到 100，防止 current 超过 max 时读数越界。
+    static func read(current: UInt16, reportedMax: UInt16) -> (percentage: Double, maxToCache: UInt16) {
+        let percentage = Double(current) / Double(reportedMax) * 100
+        return (min(100, percentage), reportedMax)
+    }
+
+    /// 由百分比与满量程 max 计算要写回的硬件值（四舍五入）。
+    static func write(percentage: Double, maxValue: UInt16) -> UInt16 {
+        UInt16((min(100, max(0, percentage)) / 100 * Double(maxValue)).rounded())
+    }
+}
+
 // MARK: - DDC Service (stored per display)
 
 private struct DDCService {
@@ -65,20 +88,52 @@ private struct RegistryService {
 // MARK: - DisplayDDCBridge
 
 final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
+    /// DDC 状态与 I2C 传输全部限制在这条串行队列上。
+    /// I2C 重试循环里有 `usleep`，在主线程执行会周期性冻住 UI（见 issue #1216）。
+    private let queue = DispatchQueue(label: "com.coffic.lumi.display-control.ddc", qos: .userInitiated)
+
+    // 以下状态只在 queue 上读写。
     private var servicesByDisplayID: [CGDirectDisplayID: DDCService] = [:]
     private var maxValues: [ControlKey: UInt16] = [:]
     private var controlCodes: [ControlKey: DDCVCPCode] = [:]
-    private let maxDetectLimit: UInt16 = 100
+    /// 写回前若尚未读取过该通道，假设满量程为 100（多数显示器）。
+    /// 一旦读取成功，以显示器报告的原始 max 为准（#837），不再用此值截断。
+    private let defaultWriteMax: UInt16 = 100
 
-    func refresh(displayIDs: [CGDirectDisplayID]) {
-        servicesByDisplayID = Arm64DDCMatcher().matchedServices(for: displayIDs)
+    func refresh(displayIDs: [CGDirectDisplayID]) async {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                self.servicesByDisplayID = Arm64DDCMatcher().matchedServices(for: displayIDs)
+                continuation.resume()
+            }
+        }
     }
 
-    func hasService(for displayID: CGDirectDisplayID) -> Bool {
-        servicesByDisplayID[displayID] != nil
+    func hasService(for displayID: CGDirectDisplayID) async -> Bool {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.servicesByDisplayID[displayID] != nil)
+            }
+        }
     }
 
-    func read(_ control: DisplayControlKind, displayID: CGDirectDisplayID) -> Double? {
+    func read(_ control: DisplayControlKind, displayID: CGDirectDisplayID) async -> Double? {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.readOnQueue(control, displayID: displayID))
+            }
+        }
+    }
+
+    func write(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) async -> Bool {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.writeOnQueue(value, for: control, displayID: displayID))
+            }
+        }
+    }
+
+    private func readOnQueue(_ control: DisplayControlKind, displayID: CGDirectDisplayID) -> Double? {
         guard let service = servicesByDisplayID[displayID] else {
             return nil
         }
@@ -91,26 +146,24 @@ final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
                 continue
             }
 
-            let effectiveMax = min(values.max, maxDetectLimit)
-            let effectiveCurrent = min(values.current, effectiveMax)
-            maxValues[key] = effectiveMax
+            // 以显示器报告的原始 max 为满量程，不截断到 100（#837）。
+            let scaled = DDCValueScaling.read(current: values.current, reportedMax: values.max)
+            maxValues[key] = scaled.maxToCache
             controlCodes[key] = vcp
-
-            let percentage = Double(effectiveCurrent) / Double(effectiveMax) * 100
-            return min(100, max(0, percentage))
+            return scaled.percentage
         }
 
         return nil
     }
 
-    func write(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) -> Bool {
+    private func writeOnQueue(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) -> Bool {
         guard let service = servicesByDisplayID[displayID] else {
             return false
         }
 
         let key = ControlKey(displayID: displayID, control: control)
-        let maxValue = maxValues[key] ?? maxDetectLimit
-        var ddcValue = UInt16((min(100, max(0, value)) / 100 * Double(maxValue)).rounded())
+        let maxValue = maxValues[key] ?? defaultWriteMax
+        var ddcValue = DDCValueScaling.write(percentage: value, maxValue: maxValue)
         if control == .volume, value > 0 {
             ddcValue = max(1, ddcValue)
         }

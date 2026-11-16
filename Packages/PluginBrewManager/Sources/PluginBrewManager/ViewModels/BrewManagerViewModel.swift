@@ -59,6 +59,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var isBrewInstalled: Bool = false
+    /// 等待用户确认卸载的包。单击 Uninstall 只设置它，确认后才真正执行（#656）。
+    @Published var packagePendingUninstall: BrewPackage?
     
     // 搜索防抖
     private var searchCancellable: AnyCancellable?
@@ -286,6 +288,22 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         isLoading = false
     }
     
+    /// 单击 Uninstall 入口：只登记待确认的包，不执行任何卸载（#656）。
+    func requestUninstall(package: BrewPackage) {
+        packagePendingUninstall = package
+    }
+
+    /// 用户在确认对话框点击「卸载」后才调用，真正执行破坏性操作。
+    func confirmUninstall(package: BrewPackage) async {
+        packagePendingUninstall = nil
+        await uninstall(package: package)
+    }
+
+    /// 取消确认对话框，不执行卸载。
+    func cancelUninstall() {
+        packagePendingUninstall = nil
+    }
+
     func uninstall(package: BrewPackage) async {
         if Self.verbose {
             if BrewManagerPluginSupport.verbose {

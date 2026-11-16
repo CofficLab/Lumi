@@ -60,7 +60,11 @@ public final class ConversationManagerPlugin: SuperPlugin, PluginDataMigrating, 
             messageManager: kernel.resolveProvider((any MessageManaging).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
-            eventBus: KernelCoreEventBus()
+            eventBus: KernelCoreEventBus(),
+            // order 8 的 Message/AgentLoop 插件会在本插件之后替换默认 Provider，
+            // 删除/统计须动态解析当前生产实例，不能停留在创建时捕获的默认值（#640）。
+            messageManagerResolver: { [weak kernel] in kernel?.resolveProvider((any MessageManaging).self) },
+            agentTurnResolver: { [weak kernel] in kernel?.resolveProvider((any AgentLoopProviding).self) }
         )
         let previousManager = kernel.resolveProvider((any ConversationManaging).self)
         kernel.unregisterProvider((any ConversationManaging).self)
@@ -73,11 +77,9 @@ public final class ConversationManagerPlugin: SuperPlugin, PluginDataMigrating, 
 
         // 4. 注册「Conversations」设置入口。
         //    组装层创建 Capability + ViewModel + Observer，注入设置页。
-        let messageManager = kernel.resolveProvider((any MessageManaging).self)
-        let settingsCapability = ConversationStoreCapabilityAdapter(
-            manager: manager,
-            messageManager: messageManager
-        )
+        //    Capability 不再单独捕获 MessageManaging，改由 manager 动态解析，
+        //    保证 order 8 替换后统计读取的是生产实例（#640）。
+        let settingsCapability = ConversationStoreCapabilityAdapter(manager: manager)
         let settingsViewModel = ConversationStoreSettingsViewModel(capability: settingsCapability)
         let settingsObserver = ConversationStoreObserver(
             capability: settingsCapability,

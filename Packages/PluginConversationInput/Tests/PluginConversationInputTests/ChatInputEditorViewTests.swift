@@ -226,7 +226,7 @@ struct ChatInputEditorViewTests {
     }
 
     @Test("switching conversations clears pre-commit attachments")
-    func switchingConversationsClearsAttachments() throws {
+    func switchingConversationsClearsAttachments() async throws {
         let conversations = DefaultConversationManager()
         let first = try conversations.createConversation(
             title: "A", projectPath: nil, providerID: nil, modelName: nil
@@ -264,6 +264,9 @@ struct ChatInputEditorViewTests {
         )
 
         conversations.selectConversation(id: second)
+
+        // 切换判定延迟到下一主 actor 轮次（#781），等落定后再断言清空。
+        await awaitSettle()
 
         #expect(input.text.isEmpty)
         #expect(sender.pendingImageAttachments.isEmpty)

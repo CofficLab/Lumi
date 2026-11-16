@@ -14,7 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "ProviderLLMManager",
             dependencies: [
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/ProviderLLMManager"
@@ -31,7 +31,7 @@ let package = Package(
             name: "ProviderLLMManagerTests",
             dependencies: [
                 "ProviderLLMManager",
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Tests/ProviderLLMManagerTests"

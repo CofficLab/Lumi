@@ -40,7 +40,7 @@ struct MainView: View {
             allowsMultipleSelection: true
         ) { result in
             if case .success(let urls) = result {
-                viewModel.addScreenshotFiles(urls)
+                Task { await viewModel.addScreenshotFiles(urls) }
             }
         }
         .task {

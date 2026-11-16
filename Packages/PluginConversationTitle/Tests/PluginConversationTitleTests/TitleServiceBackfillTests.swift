@@ -134,4 +134,73 @@ struct TitleServiceBackfillTests {
         #expect(!title.isEmpty)
         #expect(title.count <= 41, "占位标题过长：\(title.count) 字")
     }
+
+    /// 回归 #799：永久跳过的条目填满查询窗口时，窗口之外的有效对话仍须被回填。
+    ///
+    /// 旧实现只取前 200 条无标题 ID。`S1...S200` 都没有首条用户消息，每轮都被
+    /// 跳过却不写标题、不推进游标，于是查询窗口永远被它们占满，排在窗口之外的
+    /// `V`（有首条用户消息）在任何一次启动都轮不到，永远停在占位符。
+    @Test("永久跳过的条目不得阻塞窗口之外的有效对话")
+    func skippedWindowDoesNotBlockValidConversation() async {
+        let conversations = TitleTestDoubles.StubConversationManager()
+        // 200 条无标题、无首条用户消息的对话：每轮都会被永久跳过。
+        var skippedIDs: [UUID] = []
+        for _ in 0..<200 {
+            let id = UUID()
+            skippedIDs.append(id)
+            conversations.appendSummary(id: id, title: nil)
+        }
+        // 排在窗口之外的有效对话。
+        let validID = UUID()
+        conversations.appendSummary(id: validID, title: nil)
+        let messages = TitleTestDoubles.StubMessageManager(messages: [
+            Message(conversationID: validID, role: .user, content: "Investigate login timeout")
+        ])
+        let llm = TitleTestDoubles.StubLLMManager()
+
+        let service = makeService(messages: messages, conversations: conversations, llm: llm)
+        defer { service.stop() }
+
+        let backfilled = await service.backfillUntitledConversations()
+
+        #expect(backfilled == 1, "窗口之外的有效对话必须被回填")
+        #expect(conversations.title(of: validID) == "Investigate login timeout")
+        #expect(llm.receivedRequests.isEmpty, "回填不应消耗 LLM 额度")
+        for id in skippedIDs {
+            #expect(conversations.title(of: id) == nil, "无首条用户消息的对话不应被写入空标题")
+        }
+
+        // 再跑一轮：V 已有标题，不应重复补写；跳过条目仍不阻塞。
+        let secondRun = await service.backfillUntitledConversations()
+        #expect(secondRun == 0)
+        #expect(conversations.title(of: validID) == "Investigate login timeout")
+    }
+
+    /// 上限仍约束成功补写的条数：一次启动最多补 200 条，剩下的留到下次启动。
+    @Test("单轮回填遵守补写上限")
+    func backfillStopsAtWriteCap() async {
+        let conversations = TitleTestDoubles.StubConversationManager()
+        var messages: [Message] = []
+        var ids: [UUID] = []
+        for index in 0..<201 {
+            let id = UUID()
+            ids.append(id)
+            conversations.appendSummary(id: id, title: nil)
+            messages.append(Message(conversationID: id, role: .user, content: "问题 \(index)"))
+        }
+        let llm = TitleTestDoubles.StubLLMManager()
+
+        let service = makeService(
+            messages: TitleTestDoubles.StubMessageManager(messages: messages),
+            conversations: conversations,
+            llm: llm
+        )
+        defer { service.stop() }
+
+        let backfilled = await service.backfillUntitledConversations()
+
+        #expect(backfilled == 200, "单轮最多补写 200 条，实际 \(backfilled)")
+        let untitledCount = ids.filter { conversations.title(of: $0) == nil }.count
+        #expect(untitledCount == 1, "应恰好剩 1 条留到下次启动，实际 \(untitledCount)")
+    }
 }

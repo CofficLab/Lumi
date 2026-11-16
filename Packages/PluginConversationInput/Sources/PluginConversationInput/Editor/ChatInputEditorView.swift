@@ -36,7 +36,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onArrowDown: (() -> Void)?
     private let onEnter: (() -> Void)?
     private let onEscape: (() -> Void)?
-    private let onFileDrop: ((URL) -> Void)?
+    private let onFileDrop: (([URL]) -> Void)?
     /// 编辑器插入完折叠块后的回调，ViewModel 据此清空待插入状态。
     private let onBlockInserted: ((UUID) -> Void)?
     /// 编辑器内容里的折叠块区间变化时回调。
@@ -62,7 +62,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onArrowDown: (() -> Void)? = nil,
         onEnter: (() -> Void)? = nil,
         onEscape: (() -> Void)? = nil,
-        onFileDrop: ((URL) -> Void)? = nil,
+        onFileDrop: (([URL]) -> Void)? = nil,
         onBlockInserted: ((UUID) -> Void)? = nil,
         onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)? = nil,
         isFocused: Binding<Bool>,
@@ -110,8 +110,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
             guard let coordinator, let textView else { return false }
             return coordinator.handlePaste(pasteboard, in: textView)
         }
-        textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
-            coordinator?.handleFileDrop(url)
+        textView.fileDropHandler = { [weak coordinator = context.coordinator] urls in
+            coordinator?.handleFileDrop(urls)
         }
         textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
             guard let coordinator else { return }
@@ -139,6 +139,16 @@ public struct ChatInputEditorView: NSViewRepresentable {
         )
         textView.textContainerInset = NSSize(width: 4, height: 4)
         textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
+
+        // 重建输入框时必须用 binding 里的现有草稿初始化原生编辑器，并把这次
+        // 「binding → 编辑器」的下发记入协调器。否则新建的 EditorTextView 是空的，
+        // 而协调器的 lastSyncedBindingText 为 nil，首次 updateNSView 会把空串误判成
+        // 「编辑器侧 binding 不知情的新内容」回写 binding，静默清空用户未发送的
+        // 草稿——隐藏再恢复聊天区（终端/数据库等）就会触发这条路径（#601）。
+        textView.delegate = nil
+        textView.string = text
+        textView.delegate = context.coordinator
+        context.coordinator.noteBindingTextPushedDown(text)
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
@@ -867,8 +877,8 @@ extension ChatInputEditorView {
         }
 
         @MainActor
-        func handleFileDrop(_ url: URL) {
-            parent.onFileDrop?(url)
+        func handleFileDrop(_ urls: [URL]) {
+            parent.onFileDrop?(urls)
         }
 
         @MainActor
@@ -915,7 +925,7 @@ final class EditorTextView: NSTextView {
     var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
-    var fileDropHandler: ((URL) -> Void)?
+    var fileDropHandler: (([URL]) -> Void)?
     private var pastePreviewPopover: NSPopover?
 
     /// 当前鼠标悬停的粘贴折叠按钮，供 cell 绘制高亮态时查询。
@@ -1203,9 +1213,8 @@ final class EditorTextView: NSTextView {
             // 附件错误；它们应当落到下面的字符串分支或默认拖放处理（#882）。
             let fileURLs = urls.filter { ChatInputEditorRules.isFileAttachmentURL($0) }
             if !fileURLs.isEmpty {
-                for url in fileURLs {
-                    fileDropHandler?(url)
-                }
+                // 整批按原始顺序交付，由 ViewModel 保持入池顺序（#804）。
+                fileDropHandler?(fileURLs)
                 return true
             }
         }
@@ -1215,9 +1224,7 @@ final class EditorTextView: NSTextView {
             guard !urls.isEmpty else {
                 return super.performDragOperation(sender)
             }
-            for url in urls {
-                fileDropHandler?(url)
-            }
+            fileDropHandler?(urls)
             return true
         }
 

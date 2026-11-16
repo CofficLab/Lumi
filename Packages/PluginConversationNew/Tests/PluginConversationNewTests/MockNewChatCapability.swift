@@ -16,6 +16,8 @@ final class MockNewChatCapability: NewChatCapability {
     var bindings: [UUID: (projectPath: String?, modelID: String?)] = [:]
     /// 下一次创建时抛出的错误；nil 表示成功。
     var createError: Error?
+    /// 视为仍存在于列表的对话 ID；用于模拟目标已被删除（#185）。
+    var existingConversationIDs: Set<UUID> = []
 
     var selectedConversationID: UUID? { selectedID }
     var currentModelID: String? { modelID }
@@ -47,6 +49,10 @@ final class MockNewChatCapability: NewChatCapability {
     func selectConversation(id: UUID) {
         selections.append(id)
         selectedID = id
+    }
+
+    func conversationExists(id: UUID) -> Bool {
+        existingConversationIDs.contains(id)
     }
 
     func restoreSelection(to conversationID: UUID?) {

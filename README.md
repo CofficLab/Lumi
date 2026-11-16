@@ -13,22 +13,17 @@ Lumi is an AI-powered personal desktop assistant for macOS. It combines LLM chat
 
 ## Features
 
-- **Multi-provider LLM chat** — 20+ built-in provider integrations, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, and local MLX models. Several integrations expose more than one provider implementation.
+- **Multi-provider LLM chat** — built-in integrations for multiple providers, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, Codex, and local models via MLX.
 - **Agent with tool use** — read and edit files, run shell commands, fetch and search the web, use browser and computer-control tools, inspect images, and request user input during a task.
 - **Built-in code editor** — project file tree, syntax highlighting, fuzzy file search, outline, references, call hierarchy, problems, language services, and Markdown preview.
 - **Developer tools** — native terminal, Git/GitHub integration, SQLite/MySQL/PostgreSQL/Redis database tools, Docker, Homebrew, ports and hosts management, and project diagnostics.
 - **System utilities** — clipboard history, disk and network monitoring, screen recording, OCR, display control, anti-sleep, downloads, and more.
 - **Project intelligence** — project-scoped agent rules, skills, memory, project file search, and local vector-based RAG for code-oriented questions.
-- **Themes and customization** — more than 100 default plugins, runtime plugin enable/disable support, and 22 built-in themes.
-- **Local HTTP API** — the built-in web server listens on the local loopback interface and aggregates routes contributed by enabled plugins.
-
-> MCP client support is not currently shipped in the default application. The repository contains MCP-related compatibility comments, but no MCP package or stdio/SSE transport implementation yet.
+- **Themes and customization** — runtime plugin enable/disable support, and 22 built-in themes.
 
 ## Download
 
-Download the latest DMG from the [Releases](https://github.com/CofficLab/Lumi/releases) page. Release automation produces architecture-specific `arm64` and `x86_64` DMGs. The direct-distribution build uses [Sparkle](https://sparkle-project.org) for updates; Debug builds disable app updates.
-
-The Mac App Store distribution and the direct-distribution build can differ in entitlements and update integration. Check the release notes for the exact contents of each build.
+Download the latest DMG from the [Releases](https://github.com/CofficLab/Lumi/releases) page.
 
 ## Architecture
 
@@ -101,9 +96,7 @@ The concrete provider contracts live under `Packages/Provider*`; the feature imp
 ## Requirements
 
 - macOS 14.0 or later
-- Xcode 27.0 or later. The project uses Xcode's JSON project format
-  (`project.xcproj`), which Xcode 26 cannot open. The release workflow runs on
-  the `xcode-27` runner with Xcode 27.0.
+- Xcode 26 or later. The project uses Xcode's JSON project format (`project.xcproj`).
 - Swift 6.0 or later
 
 Some features require additional macOS permissions. For example, Computer Use and screen capture require the corresponding Accessibility, Automation, or Screen Recording permissions.
@@ -146,7 +139,7 @@ There is no root `Package.swift`; the application is built through `Lumi.xcodepr
 
 ## Contributing
 
-Issues and pull requests are welcome at [CofficLab/Lumi](https://github.com/CofficLab/Lumi). New features are generally implemented as `Plugin*` packages and composed in [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift). Start with [`SuperPlugin`](https://github.com/lumi-softworks/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift), an existing plugin, and the relevant `Provider*` contract.
+Issues and pull requests are welcome at [CofficLab/Lumi](https://github.com/CofficLab/Lumi).
 
 ## License
 

@@ -101,6 +101,7 @@ import Testing
     conversations.selectConversation(id: selectedID)
     let viewModel = ConversationSpeedViewModel()
     viewModel.selectConversation(selectedID, messages: [])
+    viewModel.setPopoverPresented(true)
     let observer = SpeedMessageObserver(messages: messages, viewModel: viewModel)
 
     messages.insertMessage(speedObserverMessage(conversationID: otherID, outputTokens: 500, durationMs: 1_000), to: otherID)

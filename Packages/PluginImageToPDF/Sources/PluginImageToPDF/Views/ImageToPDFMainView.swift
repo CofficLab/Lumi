@@ -22,7 +22,8 @@ struct ImageToPDFMainView: View {
             ImageDropZoneView(viewModel: viewModel)
 
             if !viewModel.inputImages.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
+                // 懒加载：视口外的行不构建，也不发起缩略图加载（#1196）。
+                LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.inputImages) { item in
                         ImageListRow(item: item) {
                             viewModel.removeImage(item)
@@ -90,7 +91,7 @@ struct ImageToPDFMainView: View {
                         .lineLimit(1)
                 }
                 Button {
-                    viewModel.chooseDirectoryAndExport()
+                    Task { await viewModel.chooseDirectoryAndExport() }
                 } label: {
                     Label(
                         ImageToPDFLocalization.string("Export to…"),
@@ -128,7 +129,8 @@ struct ImageToPDFMainView: View {
                         .fill(Color.secondary.opacity(0.05))
                 )
             } else {
-                VStack(alignment: .leading, spacing: 0) {
+                // 懒加载：视口外的行不构建，也不发起缩略图渲染（#1189）。
+                LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.outputItems) { item in
                         PDFOutputRow(
                             item: item,

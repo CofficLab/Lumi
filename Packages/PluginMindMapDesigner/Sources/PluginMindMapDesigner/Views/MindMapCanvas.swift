@@ -10,6 +10,9 @@ struct MindMapCanvas: View {
 
     @ObservedObject private var store: MindMapStore
     @State private var dragOffset: CGSize = .zero
+    @State private var gestureBase = CanvasGestureTransform()
+    // 视口变换（scale/offset）复用缓存布局，仅地图变化时重算（#1191）。
+    @State private var layoutCache = MindMapLayoutCache()
 
     private let padding: CGFloat = 48
 
@@ -31,7 +34,7 @@ struct MindMapCanvas: View {
 
     var body: some View {
         GeometryReader { _ in
-            let result = MindMapLayoutEngine.layout(map)
+            let result = layoutCache.layout(for: map)
             let origin = result.bounds.origin
             let contentWidth = max(result.bounds.width, 0) + padding * 2
             let contentHeight = max(result.bounds.height, 0) + padding * 2
@@ -82,6 +85,7 @@ struct MindMapCanvas: View {
             editingNodeId = nil
             scale = 1.0
             dragOffset = .zero
+            gestureBase = CanvasGestureTransform()
         }
     }
 
@@ -155,13 +159,20 @@ struct MindMapCanvas: View {
     private var magnification: some Gesture {
         MagnificationGesture()
             .onChanged { value in
-                scale = max(0.3, min(3.0, value))
+                scale = gestureBase.scale(magnification: value)
+            }
+            .onEnded { _ in
+                gestureBase.baseScale = scale
             }
     }
 
     private var drag: some Gesture {
         DragGesture()
-            .onChanged { value in dragOffset = value.translation }
-            .onEnded { _ in }
+            .onChanged { value in
+                dragOffset = gestureBase.offset(translation: value.translation)
+            }
+            .onEnded { _ in
+                gestureBase.baseOffset = dragOffset
+            }
     }
 }

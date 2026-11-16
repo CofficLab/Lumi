@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用例。
+PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆盖 78 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 54
+测试文件: 16 个，用例总数: 78
 
 核心组件（源码目录）:
 - `Errors/`
@@ -23,6 +23,8 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 - `MessageModel`
 - `MessageStore`
 - `PendingMessageBuffer`
+- `V4MessageReader`
+- `MessageLegacyMigration`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -40,6 +42,14 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 - **MessageManager 会话隔离**（9 条）：由 `snapshotIsConversationScoped`、`llmReadIsConversationScoped`、`syncReadIsConversationScoped`、`pendingWindowIsConversationScoped`、`concurrentInsertsDoNotLeak`、`mismatchedConversationIDIsRebuiltToTarget`、`updateIsConversationScoped`、`deleteIsConversationScoped`、`snapshotReflectsAllStreamsWrittenToSameConversation` 锁定——所有读路径（同步/快照/LLM/落盘前 pending 窗口）与写路径（更新/删除/并发插入）都必须按会话隔离，不得跨会话泄漏；`conversationID` 不一致的消息被重建到目标会话。
 - **首条用户消息跳过空白附件**（3 条）：由 `persistedQuerySkipsBlankAttachmentMessage`、`reopenedManagerReadsFirstNonBlankFromDisk`、`persistedQuerySkipsWhitespaceOnlyMessage` 锁定——`fetchFirstUserMessage` / `firstUserMessage` 必须返回第一条**非空白**用户消息（纯附件或纯空白正文的消息要跳过），与默认 Provider 及内存实现口径一致，供自动标题使用（#838）。
 - **LLM 窄读取保留附件 metadata**（1 条）：由 `llmReadKeepsAttachmentMetadata` 锁定——LLM 窄读取在跳过无关 metadata 的同时，必须还原图片/文件附件 metadata。
+- **工具结果写回不阻塞主线程**（8 条）：由 `toolResultWriteDoesNotBlockOnStoreLock`、`patchIsVisibleOnEveryReadPath`、`readYourWritesAfterToolResult`、`patchesAreScopedToConversation`、`sequentialWritesDoNotClobberEachOther`、`patchWithoutAuthorizationStateKeepsResolvedState`、`deleteClearsPendingPatches`、`clearMessagesClearsPendingPatches` 锁定——助手消息落盘后写回工具结果不得让 MainActor 同步等待存储锁；fetch/编码/save 交给串行落盘队列，主线程只登记内存补丁；补丁在落盘窗口内对所有读路径可见、按会话隔离、多次写回按序不覆盖、不带授权状态时保留磁盘已决定状态，删除/清空会话须清掉未落盘补丁（#1229）。
+- **MessageManager 停止排空 write-behind**（3 条）：由 `flushWaitsForBlockedWriteThenDurable`、`flushDrainsToolResultWriteBehind`、`flushConvergesBatchAndEmptiesPending` 锁定——内核停止/插件卸载时 `flushPendingWrites()` 必须排空串行落盘队列，用受控阻塞队列证明「停止调用返回后所有已接受写入（含工具结果写回）都已落盘、pending 清空」，否则正常退出会丢失最后一条消息（#152）。变异验证：把 `flushPendingWrites()` 改成 no-op（空 `sync` 不等待队列），三条用例全部转红——前两条在「flush 提前返回」断言（`!flushReturned.isSet`）失败，第三条在批量落盘断言失败。
+- **MessageManager 更新落盘失败保留 pending**（3 条）：由 `updateRetainsPendingWhenNoDiskRecord`、`updateRetainsPendingWhenSaveFails`、`updateDequeuesPendingWhenSaveSucceeds` 锁定——`persistUpdatedMessage` 只有在 `store.updateMessage` 确认落盘成功（返回 true）后才能撤掉 pending；磁盘无记录或 save 失败时必须保留缓冲并暴露可观察错误（`logger.error`），否则消息既不在磁盘也不在内存，从所有读路径静默消失；成功路径仍须 dequeue，避免过度保留堵死 write-behind 窗口（#151）。
+> 变异验证（#151）：把 `persistUpdatedMessage` 改回忽略 Bool、无条件 `dequeuePending`，前两条用例转红——pending 不再保留 B、`messages(for:)` 读不到消息（场景 A 彻底消失 / 场景 B 退回旧 A）；成功路径用例仍绿。恢复后 3 条全绿。
+- **MessageManager 写回代次门控**（4 条）：由 `writeBackKeepsLatestContentAcrossABCInterleaving`、`toolCallMissStillDrainsPendingGeneration`、`gatedDequeueOnlyRemovesMatchingGeneration`、`duplicateUpdateStillResolvesLatestGeneration` 锁定——pending 按代次（generation）门控 dequeue：insert/更新落盘闭包只能撤掉自己实际写入的那一代，旧写回不得撤掉已更新的新 pending；后续更新在队列里的旧更新完成前必须仍走队列（命中 pending），不得绕过队列同步写磁盘而被旧内容覆盖。用「可挂起队列 + 受控存储锁」确定性复现 A→B→C 交错，断言磁盘最终是 C；工具调用未命中也要把原 toolCalls 原样入队消费掉被 bump 的代次，避免 pending 泄漏；重复同值更新仍推进代次，最新一代写回后 pending 清空（#150）。
+> 变异验证（#150）：把 `PendingMessageBuffer.dequeue(id:conversationID:generation:)` 的代次 guard 去掉、改回按 id 无条件移除，A→B→C 用例转红（磁盘最终退回 B）、`gatedDequeueOnlyRemovesMatchingGeneration` 与 `duplicateUpdateStillResolvesLatestGeneration` 转红（旧代次撤掉了新 pending）；`toolCallMissStillDrainsPendingGeneration` 仍绿（它守的是泄漏而非门控）。恢复后 4 条全绿。
+- **v4 历史消息迁移**（6 条）：由 `migrationImportsMessagesWithOrderAndContent`、`repeatMigrationDoesNotDuplicate`、`oncePolicySkipsAfterSuccessMarker`、`corruptLegacyDatabaseDoesNotWriteMarker`、`unknownRoleRowsAreSkippedWithoutFailingMigration`、`locatorFindsSiblingV4Directory` 锁定——v4 升级必须把历史消息随会话迁入 v5 消息库：保留会话关联、时间顺序、正文、工具调用（v4 `base64Data` 图片形状须映射成 v5 `data`）、推理内容与用户图片附件；重复迁移不得产生重复数据；marker 只在全部成功后写入（损坏旧库吞错不写 marker，下次启动重试）；未知 role 行跳过不阻塞其余消息（#394）。
+> 变异验证（#394）：① 把 `createdAt` 映射改成时间戳取反，顺序/字段断言转红；② 把 toolCallsJSON 直接解码成 v5 `[MessageToolCall]`（v4 图片附件字段不兼容），工具调用断言转红；③ 在迁移开始前预写 marker，损坏旧库用例的「不写 marker」断言转红。恢复后 6 条全绿。
 
 ## 测试用例清单
 
@@ -99,27 +109,51 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 52 | 首条用户消息跳过空白附件 | 持久化查询跳过纯附件空白消息，返回其后第一条文本（#838） | 先插纯附件空白消息 U1，后插文本 U2，等待落盘 | 执行该用例 | `fetchFirstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `persistedQuerySkipsBlankAttachmentMessage` |
 | 53 | 首条用户消息跳过空白附件 | 重启后从磁盘读取首条用户消息仍跳过空白附件消息（#838） | 落盘后重开 manager（纯磁盘路径） | 执行该用例 | `firstUserMessage` 返回 U2 | P1 | ✅ 已覆盖 | `reopenedManagerReadsFirstNonBlankFromDisk` |
 | 54 | 首条用户消息跳过空白附件 | 纯空白正文的用户消息也被跳过（#838） | 先插纯空白正文消息，后插文本 | 执行该用例 | 跳过空白正文，返回第一条非空白文本 | P1 | ✅ 已覆盖 | `persistedQuerySkipsWhitespaceOnlyMessage` |
+| 55 | 工具结果写回不阻塞主线程 | 助手消息已落盘时，写回工具结果不等待存储锁（#1229） | 助手消息已落盘且离开 pending，后台占住存储锁 | 主线程写回工具结果 | 调用不阻塞（<1s），补丁已登记 | P0 | ✅ 已覆盖 | `toolResultWriteDoesNotBlockOnStoreLock` |
+| 56 | 工具结果写回不阻塞主线程 | 落盘窗口内，所有读路径都能看到工具结果补丁（#1229） | 磁盘仍是旧版本，补丁已登记 | 走同步/快照/LLM/分页各读路径 | 全部读到补丁；撤掉补丁后回到磁盘版本 | P0 | ✅ 已覆盖 | `patchIsVisibleOnEveryReadPath` |
+| 57 | 工具结果写回不阻塞主线程 | 写回后立刻读到结果，不等后台落盘（#1229） | 助手消息已落盘且离开 pending | 写回工具结果后立即同步读取 | 立即读到结果与授权状态，最终落盘一致 | P1 | ✅ 已覆盖 | `readYourWritesAfterToolResult` |
+| 58 | 工具结果写回不阻塞主线程 | 补丁只作用于所属会话（#1229） | 两个会话各有同 toolCallID 的助手消息 | 只写回会话 A | 仅 A 读到结果，B 无补丁 | P0 | ✅ 已覆盖 | `patchesAreScopedToConversation` |
+| 59 | 工具结果写回不阻塞主线程 | 同一消息的多次写回按顺序落盘，互不覆盖（#1229） | 助手消息含两个工具调用 | 连续三次写回（含同 id 覆盖） | 各结果按序落盘不互相覆盖，补丁全部撤掉 | P0 | ✅ 已覆盖 | `sequentialWritesDoNotClobberEachOther` |
+| 60 | 工具结果写回不阻塞主线程 | 补丁不带授权状态时，保留磁盘上已决定的授权状态（#1229） | 磁盘授权状态为 userApproved | 写回结果但 authorizationState 为 nil | 结果更新，授权状态仍为 userApproved | P1 | ✅ 已覆盖 | `patchWithoutAuthorizationStateKeepsResolvedState` |
+| 61 | 工具结果写回不阻塞主线程 | 删除消息会清掉尚未落盘的工具结果补丁（#1229） | 补丁已登记未落盘 | 删除该消息 | 补丁清空，磁盘与读路径均无该消息 | P1 | ✅ 已覆盖 | `deleteClearsPendingPatches` |
+| 62 | 工具结果写回不阻塞主线程 | 清空会话会清掉尚未落盘的工具结果补丁（#1229） | 补丁已登记未落盘 | 清空该会话 | 补丁清空，读路径为空 | P1 | ✅ 已覆盖 | `clearMessagesClearsPendingPatches` |
+| 63 | MessageManager 停止排空 write-behind | flush 等待被阻塞的落盘收敛后才返回，返回时消息已落盘（#152） | 后台占住存储锁，插入一条消息 | 另一线程调用 flushPendingWrites | flush 在锁释放前不返回；返回时消息已落盘、pending 清空 | P0 | ✅ 已覆盖 | `flushWaitsForBlockedWriteThenDurable` |
+| 64 | MessageManager 停止排空 write-behind | flush 同样排空工具结果写回，返回时工具结果已落盘（#152） | 后台占住存储锁，插入助手消息并写回工具结果 | 另一线程调用 flushPendingWrites | flush 在锁释放前不返回；返回时工具结果与授权状态已落盘 | P0 | ✅ 已覆盖 | `flushDrainsToolResultWriteBehind` |
+| 65 | MessageManager 停止排空 write-behind | flush 后批量消息全部落盘且 pending 清空（#152） | 连续插入 5 条消息 | 调用 flushPendingWrites | 5 条全部落盘，pending 清空 | P1 | ✅ 已覆盖 | `flushConvergesBatchAndEmptiesPending` |
+| 66 | v4 历史消息迁移 | 迁移保留会话关联、顺序、正文与工具调用/附件/推理内容，不得丢失（#394） | 合成 v4 旧库含两个会话、四类 role 消息与图片附件 | 执行迁移后按会话读取 | id/顺序/正文/metadata/工具调用/附件/推理/错误字段全部保留，marker 写入 | P0 | ✅ 已覆盖 | `migrationImportsMessagesWithOrderAndContent` |
+| 67 | v4 历史消息迁移 | 重复迁移与已存在消息不得产生重复数据（#394） | 新库已含同 id 消息 | 连续执行两次迁移 | 消息数不变，id 集合无重复 | P0 | ✅ 已覆盖 | `repeatMigrationDoesNotDuplicate` |
+| 68 | v4 历史消息迁移 | once 策略成功后写 marker，后续启动跳过（#394） | 首次迁移成功 | 旧库追加新消息后再次迁移 | 新消息不被导入 | P1 | ✅ 已覆盖 | `oncePolicySkipsAfterSuccessMarker` |
+| 69 | v4 历史消息迁移 | 旧库损坏时吞错、不得写 marker，保留重试机会（#394） | Core/Lumi.db 为非法字节 | 执行迁移 | 不抛错、无 marker、新库为空 | P0 | ✅ 已覆盖 | `corruptLegacyDatabaseDoesNotWriteMarker` |
+| 70 | v4 历史消息迁移 | 未知 role 的行被跳过，不阻塞其余消息与 marker（#394） | 旧库含 bogus role 与有效消息 | 执行迁移 | 仅有效消息导入，marker 写入 | P1 | ✅ 已覆盖 | `unknownRoleRowsAreSkippedWithoutFailingMigration` |
+| 71 | v4 历史消息迁移 | v4 根目录定位：兄弟目录存在则返回，缺失返回 nil（#394） | 父目录下有/无 db_production_v4 | 调用 locate | 存在返回该目录，缺失返回 nil | P2 | ✅ 已覆盖 | `locatorFindsSiblingV4Directory` |
+| 72 | MessageManager 更新落盘失败保留 pending | insert 失败后 update 找不到磁盘记录时保留 pending，消息不从读路径消失（#151） | 磁盘无记录，pending 持有消息 A | 更新到 B 后排空落盘队列 | pending 仍含 B，磁盘为空，`messages(for:)` 仍读到 B | P0 | ✅ 已覆盖 | `updateRetainsPendingWhenNoDiskRecord` |
+| 73 | MessageManager 更新落盘失败保留 pending | update save 失败时保留 pending，磁盘旧内容不被误删（#151） | 磁盘已有 A，触发器使 UPDATE 落盘失败 | 更新到 B 后排空落盘队列 | pending 仍含 B，磁盘仍为 A，`messages(for:)` 读到 B | P0 | ✅ 已覆盖 | `updateRetainsPendingWhenSaveFails` |
+| 74 | MessageManager 更新落盘失败保留 pending | update 落盘成功时撤掉 pending，磁盘更新为最新内容（#151） | 磁盘已有 A，pending 持有 A | 更新到 B 后排空落盘队列 | pending 清空，磁盘为 B，`messages(for:)` 读到 B | P1 | ✅ 已覆盖 | `updateDequeuesPendingWhenSaveSucceeds` |
+| 75 | MessageManager 写回代次门控 | A→B→C 交错：旧 insert 不得撤掉新 pending，磁盘最终是 C（#150） | 占住存储锁，insert(A)、update(B) 入队后挂起队列再放行锁 | insert(A) 落盘后更新到 C，放行队列排空 | 磁盘最终为 C，pending 清空 | P0 | ✅ 已覆盖 | `writeBackKeepsLatestContentAcrossABCInterleaving` |
+| 76 | MessageManager 写回代次门控 | 工具调用未命中也排空被 bump 的代次，pending 不泄漏（#150） | assistant 仍在 pending，写回不存在的 toolCallID | 放行存储锁并排空落盘队列 | pending 清空，磁盘 toolCalls 保持原样、result 为 nil | P0 | ✅ 已覆盖 | `toolCallMissStillDrainsPendingGeneration` |
+| 77 | MessageManager 写回代次门控 | 代次门控 dequeue：旧代次不撤新 pending，匹配代次才撤（#150） | enqueue A(gen1) 后 update 到 B(gen2) | 先按 gen1 dequeue，再按 gen2 dequeue | gen1 不撤（pending 仍 B），gen2 撤掉（pending 空） | P0 | ✅ 已覆盖 | `gatedDequeueOnlyRemovesMatchingGeneration` |
+| 78 | MessageManager 写回代次门控 | 重复同值更新仍推进代次，最新一代写回后 pending 清空（#150） | enqueue A 后连续两次 update 到同值 B | 按第一代 dequeue，再按最新代 dequeue | 第一代不撤，最新代撤掉后 pending 空 | P1 | ✅ 已覆盖 | `duplicateUpdateStillResolvesLatestGeneration` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 42 / 42
-- P2: 已覆盖 0 / 0
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 51 / 51
+- P2: 已覆盖 1 / 1
+- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（42 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（51 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

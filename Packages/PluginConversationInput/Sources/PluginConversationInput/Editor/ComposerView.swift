@@ -51,9 +51,10 @@ struct ComposerView: View {
             chipPalette: PasteChipPalette(theme: theme),
             onSubmit: onSend,
             onEnter: onSend,
-            onFileDrop: { url in
-                // 分流规则收敛在 ViewModel，输入框与附件预览共用同一份。
-                viewModel.attach(droppedURL: url)
+            onFileDrop: { urls in
+                // 分流规则收敛在 ViewModel，输入框与附件预览共用同一份；
+                // 整批按原始拖放顺序入池（#804）。
+                viewModel.attach(droppedURLs: urls)
             },
             onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
             onCollapsedBlocksChanged: { blocks in viewModel.updateCollapsedBlocks(blocks) },

@@ -106,15 +106,21 @@ struct AttachmentPreviewRemovalTests {
     }
 
     @Test("附件池被外部清空后再点陈旧 ✕ 是安全空操作")
-    func closingStaleThumbnailIsSafeNoOp() {
+    func closingStaleThumbnailIsSafeNoOp() async throws {
         let chain = AttachmentRemovalChain()
         let stale = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
         chain.sender.addImageAttachment(stale)
         chain.refresh()
 
         // 切换会话会清空挂起池，但 SwiftUI 视图可能还持有一帧旧缩略图；
-        // 用户此刻点 ✕ 走的是已被清空的 ID。
+        // 用户此刻点 ✕ 走的是已被清空的 ID。清空判定延迟到选中态落定
+        // 另一对话之后（#781），这里先把选中态切走再触发切换处理。
+        let other = try chain.conversations.createConversation(
+            title: "B", projectPath: nil, providerID: nil, modelName: nil
+        )
+        chain.conversations.selectConversation(id: other)
         chain.viewModel.handleConversationSwitched()
+        await awaitSettle()
         #expect(chain.viewModel.imageAttachments.isEmpty)
 
         chain.viewModel.removeImageAttachment(id: stale.id)
@@ -184,10 +190,12 @@ struct AttachmentPreviewRemovalTests {
 @MainActor
 private final class AttachmentRemovalChain {
     let sender: DefaultMessageSender
+    let conversations: DefaultConversationManager
     let viewModel: ConversationInputViewModel
     let observer: ConversationInputObserver
 
     init() {
+        conversations = DefaultConversationManager()
         sender = DefaultMessageSender(
             conversations: DefaultConversationManager(),
             messages: DefaultMessageManager(),
@@ -196,7 +204,7 @@ private final class AttachmentRemovalChain {
         let capability = ConversationInputCapabilityAdapter(
             input: DefaultConversationInputProvider(),
             sender: sender,
-            conversations: nil,
+            conversations: conversations,
             conversationState: nil
         )
         viewModel = ConversationInputViewModel(capability: capability)

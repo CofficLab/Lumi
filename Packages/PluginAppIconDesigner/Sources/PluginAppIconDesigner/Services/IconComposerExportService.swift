@@ -66,14 +66,30 @@ public struct IconComposerExportService {
         document: IconDocument,
         outputDirectory: URL,
         name: String = "AppIcon"
-    ) throws -> ExportResult {
+    ) async throws -> ExportResult {
         let document = IconDocumentSanitizer.sanitized(document)
-        let lintReport = IconDocumentLinter().lint(document)
-        if !lintReport.isExportable {
-            throw IconDocumentLintError.blocked(lintReport.errors)
-        }
-        let artwork = try appIconExportService.renderPreviewPNG(document: document, pixelSize: 1024)
-        return try export(artwork: artwork, outputDirectory: outputDirectory, name: name)
+        nonisolated(unsafe) let fileManager = self.fileManager
+
+        // lint 是纯校验，放到后台先跑，blocked 文档直接失败、不浪费栅格化。
+        try await Task.detached(priority: .userInitiated) {
+            let lintReport = IconDocumentLinter().lint(document)
+            if !lintReport.isExportable {
+                throw IconDocumentLintError.blocked(lintReport.errors)
+            }
+        }.value
+
+        // ImageRenderer 只能在主 actor 栅格化；其余 PNG 压缩、manifest 编码与
+        // 全部原子文件写入都移到后台，避免整条导出管线阻塞 UI（见 issue #1291）。
+        let cgImage = try appIconExportService.renderPreviewCGImage(document: document, pixelSize: 1024)
+        return try await Task.detached(priority: .userInitiated) {
+            let artwork = try AppIconExportService.encodePNG(cgImage: cgImage)
+            return try Self.writeIconSet(
+                artwork: artwork,
+                outputDirectory: outputDirectory,
+                name: name,
+                fileManager: fileManager
+            )
+        }.value
     }
 
     public func export(
@@ -86,6 +102,22 @@ public struct IconComposerExportService {
     }
 
     private func export(artwork: Data, outputDirectory: URL, name: String) throws -> ExportResult {
+        try Self.writeIconSet(
+            artwork: artwork,
+            outputDirectory: outputDirectory,
+            name: name,
+            fileManager: fileManager
+        )
+    }
+
+    /// 把 artwork 写成 Xcode `.icon` 集：建目录、原子写 PNG、编码并写 manifest、
+    /// replace/move 安装。纯文件 IO 与编码，无 actor 亲和，可在后台执行（见 issue #1291）。
+    nonisolated private static func writeIconSet(
+        artwork: Data,
+        outputDirectory: URL,
+        name: String,
+        fileManager: FileManager
+    ) throws -> ExportResult {
         let safeName = Self.safeName(name)
         let iconURL = outputDirectory.appendingPathComponent("\(safeName).icon", isDirectory: true)
         try fileManager.createDirectory(at: outputDirectory, withIntermediateDirectories: true)

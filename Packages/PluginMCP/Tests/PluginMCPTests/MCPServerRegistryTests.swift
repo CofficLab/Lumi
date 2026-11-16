@@ -181,4 +181,68 @@ struct MCPServerRegistryTests {
         #expect(!second.servers.contains { $0.command == "xcrun" })
         #expect(second.servers.contains { $0.command == "docker" })
     }
+
+    // MARK: - 解码失败不得清空写回（回归 #531）
+
+    @Test("解码失败保留原文件，不被 seed 覆盖")
+    func corruptFileIsPreservedOnLoad() throws {
+        let dir = makeTempDirectory()
+        let fileURL = dir.appendingPathComponent("mcp-servers.json")
+        // 合法 JSON 但类型不符（对象而非数组）→ 解码抛错。
+        let corrupt = Data(#"{ "unexpected": true }"#.utf8)
+        try corrupt.write(to: fileURL)
+
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        #expect(registry.loadFailed)
+        // 原文件字节必须原封不动：seed 不得原子覆盖用户配置。
+        let after = try Data(contentsOf: fileURL)
+        #expect(after == corrupt)
+    }
+
+    @Test("解码失败后 CRUD 也不覆盖原文件")
+    func corruptFileSurvivesCRUD() throws {
+        let dir = makeTempDirectory()
+        let fileURL = dir.appendingPathComponent("mcp-servers.json")
+        // 截断/损坏的字节 → 读取或解码抛错。
+        let corrupt = Data("][ truncated".utf8)
+        try corrupt.write(to: fileURL)
+
+        let registry = MCPServerRegistry(directory: dir)
+        #expect(registry.loadFailed)
+
+        let added = registry.addServer(MCPServerConfig(name: "New", command: "/bin/echo"))
+        registry.updateServer(added)
+        registry.removeServer(id: added.id)
+
+        let after = try Data(contentsOf: fileURL)
+        #expect(after == corrupt)
+    }
+
+    @Test("文件缺失视为首次运行，允许 seed 落库")
+    func missingFileAllowsSeed() throws {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        #expect(!registry.loadFailed)
+        #expect(registry.servers.contains { $0.command == "xcrun" })
+        // 落库成功：重建后仍在。
+        let second = MCPServerRegistry(directory: dir)
+        #expect(second.servers.contains { $0.command == "xcrun" })
+    }
+
+    @Test("合法文件加载不置 loadFailed")
+    func validFileDoesNotSetLoadFailed() throws {
+        let dir = makeTempDirectory()
+        let first = MCPServerRegistry(directory: dir)
+        first.addServer(MCPServerConfig(name: "OK", command: "npx"))
+
+        let second = MCPServerRegistry(directory: dir)
+        #expect(!second.loadFailed)
+        #expect(second.servers.contains { $0.name == "OK" })
+    }
 }

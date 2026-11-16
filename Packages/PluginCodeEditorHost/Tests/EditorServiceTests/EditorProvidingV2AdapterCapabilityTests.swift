@@ -445,4 +445,116 @@ extension EditorProvidingV2AdapterCapabilityTests {
         XCTAssertFalse(text.contains("CHANGED-2"), "rejected hunk not applied: \(text)")
         XCTAssertTrue(text.contains("line2\n"), "rejected region intact: \(text)")
     }
+
+    private func makeAcceptFixture(_ text: String) async throws -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("V2AdapterDiffFix-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("Accept.swift")
+        try Data(text.utf8).write(to: url)
+        _ = try await adapter.documents.open(EditorOpenRequest(uri: url, kind: .activate))
+        await flushAsync()
+        return dir
+    }
+
+    // 回归 #586：接受替换 hunk 不得吞掉末行换行而粘连下一行。
+    func testAcceptReplacementHunkPreservesFollowingNewline() async throws {
+        let oldText = "a\nb\nc\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nB\nc\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nB\nc\n")
+    }
+
+    func testAcceptMultiLineReplacementPreservesLineStructure() async throws {
+        let oldText = "a\nb\nc\nd\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nX\nY\nd\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nX\nY\nd\n")
+    }
+
+    func testAcceptReplacementOfLastLineWithTrailingNewline() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nB\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nB\n")
+    }
+
+    func testAcceptReplacementOfLastLineWithoutTrailingNewline() async throws {
+        let oldText = "a\nb"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nB")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nB")
+    }
+
+    func testAcceptPureDeletionRemovesLineCleanly() async throws {
+        let oldText = "a\nb\nc\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nc\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nc\n")
+    }
+
+    func testAcceptReplacementWithEmptyLineKeepsBlankLine() async throws {
+        let oldText = "a\nb\nc\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\n\nc\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\n\nc\n")
+    }
+
+    // 回归 #587：纯新增 hunk 须跳过前导上下文，插在真实插入点而非上下文开头。
+    func testAcceptPureAdditionInsertsAtActualPosition() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nX\nb\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nX\nb\n")
+    }
+
+    func testAcceptPureAdditionAtStart() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "X\na\nb\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "X\na\nb\n")
+    }
+
+    func testAcceptPureAdditionAtEnd() async throws {
+        let oldText = "a\nb\n"
+        let dir = try await makeAcceptFixture(oldText)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: "a\nb\nX\n")
+        try await adapter.diff.accept(hunks: hunks, in: documentID)
+        await flushAsync()
+        XCTAssertEqual(service.state.content?.string, "a\nb\nX\n")
+    }
 }

@@ -127,7 +127,14 @@ final class ConversationForkCoordinator {
         conversations.setLanguage(conversations.language(for: conversationID), for: newID)
 
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
-        try? await sender.sendMessage(summaryOutcome.summary, conversationID: newID)
+        // 只发送摘要文本，必须走显式空附件入口：隐式 sendMessage 会快照全局挂起池，
+        // 把源对话里用户未发送的附件带进新对话的摘要消息，并从输入框清空（#578）。
+        try? await sender.sendMessage(
+            summaryOutcome.summary,
+            imageAttachments: [],
+            fileAttachments: [],
+            conversationID: newID
+        )
 
         return Outcome(
             newConversationID: newID,

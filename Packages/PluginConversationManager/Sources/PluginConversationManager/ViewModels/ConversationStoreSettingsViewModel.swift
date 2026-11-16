@@ -26,6 +26,12 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     private var pendingReload = false
     private var messageRefreshTask: Task<Void, Never>?
 
+    /// 设置页是否可见。关闭期间消息事件不做任何计数 I/O（#1311）。
+    private var isSettingsVisible = false
+    /// 计数刷新的合并任务与待刷新会话集合（与预览路径同样的防抖策略）。
+    private var countRefreshTask: Task<Void, Never>?
+    private var pendingCountRefreshIDs: Set<UUID> = []
+
     let conversationPageSize = 40
     let messageDisplayLimit = 40
 
@@ -68,6 +74,31 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     /// 由 Observer 转发的迁移进度变化。
     func updateMigration(isActive: Bool) {
         isMigrationActive = isActive
+    }
+
+    /// 设置页可见性变化（View 的 onAppear / onDisappear 调用）。
+    ///
+    /// 计数与预览的唯一消费者就是本设置页。页面关闭期间没有任何人在读这些值，
+    /// 因此消息事件不应再触发主线程计数 I/O（#1311）。重新打开时，关闭期间被
+    /// 忽略的事件可能已让缓存计数落后，这里把已加载会话整体排入同一条合并刷新
+    /// 路径补齐，而不是在 onAppear 里同步批量查库。
+    func setSettingsVisible(_ visible: Bool) {
+        guard isSettingsVisible != visible else { return }
+        isSettingsVisible = visible
+        if visible {
+            for conversation in conversations {
+                pendingCountRefreshIDs.insert(conversation.id)
+            }
+            if !pendingCountRefreshIDs.isEmpty {
+                scheduleCountRefresh()
+            }
+        } else {
+            countRefreshTask?.cancel()
+            countRefreshTask = nil
+            pendingCountRefreshIDs.removeAll()
+            messageRefreshTask?.cancel()
+            messageRefreshTask = nil
+        }
     }
 
     // MARK: - 用户意图
@@ -130,20 +161,40 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     /// 新消息不会改变 `ConversationSummary` 的身份，也只可能微调 `lastMessageAt`，
     /// 因此会话事件这条路收不到通知；不订阅消息变化，计数与当前会话预览就一直
     /// 停在打开页面时的快照（#995）。
+    ///
+    /// 但订阅不等于每个事件都要查库（#1311）：
+    /// - 计数只统计**磁盘**。`.inserted`（仍在 pending）与 `.updated`（内容/工具
+    ///   结果变化）不增删行，磁盘计数必然不变，直接跳过，不做主线程 COUNT。
+    /// - 只有 `.persisted` / `.deleted` / `.cleared` 才可能改变磁盘计数。
+    /// - 计数仅在设置页可见、且该会话已在加载列表里（有人在看）时才刷新，并走
+    ///   与预览相同的防抖合并 + 相等性守卫，避免重复 I/O 与重复 `objectWillChange`。
     func handleMessageChange(_ change: MessageChange) {
         let conversationID: UUID
+        let affectsDiskCount: Bool
         switch change {
-        case .inserted(_, let id), .persisted(_, let id):
+        case .inserted(_, let id):
             conversationID = id
-        case .updated(let id), .cleared(let id):
+            affectsDiskCount = false
+        case .persisted(_, let id):
             conversationID = id
+            affectsDiskCount = true
+        case .updated(let id):
+            conversationID = id
+            affectsDiskCount = false
+        case .cleared(let id):
+            conversationID = id
+            affectsDiskCount = true
         case .deleted(_, let id):
             conversationID = id
+            affectsDiskCount = true
         }
 
-        messageCounts[conversationID] = capability.messageCount(for: conversationID)
+        if affectsDiskCount, isSettingsVisible, messageCounts[conversationID] != nil {
+            pendingCountRefreshIDs.insert(conversationID)
+            scheduleCountRefresh()
+        }
 
-        guard conversationID == selectedConversationID else { return }
+        guard isSettingsVisible, conversationID == selectedConversationID else { return }
         // 流式回复会连续产生变化事件，合并成一次快照读取。
         messageRefreshTask?.cancel()
         messageRefreshTask = Task { [weak self] in
@@ -268,6 +319,29 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
         for conversation in conversations where messageCounts[conversation.id] == nil {
             let count = capability.messageCount(for: conversation.id)
             messageCounts[conversation.id] = count
+        }
+    }
+
+    /// 合并计数刷新：短窗口内多个事件只触发一次查库（与预览路径一致的防抖）。
+    private func scheduleCountRefresh() {
+        countRefreshTask?.cancel()
+        countRefreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
+            self?.flushPendingCountRefresh()
+        }
+    }
+
+    /// 真正查库并写回。相等性守卫：计数没变就不写 `@Published`，避免无谓的
+    /// `objectWillChange`。只在可见 + 磁盘计数可能变化的事件后到达这里。
+    private func flushPendingCountRefresh() {
+        let ids = pendingCountRefreshIDs
+        pendingCountRefreshIDs.removeAll()
+        for id in ids {
+            let count = capability.messageCount(for: id)
+            if messageCounts[id] != count {
+                messageCounts[id] = count
+            }
         }
     }
 }

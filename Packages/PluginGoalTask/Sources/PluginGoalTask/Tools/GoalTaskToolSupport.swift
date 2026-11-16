@@ -13,6 +13,22 @@ enum GoalTaskToolSupport {
         (arguments[key]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// 解析字符串数组参数：逐项 trim 并丢弃空串与非字符串项。
+    /// 兼容 `[String]` 与 JSON 解码得到的 `[Any]` 两种载体。
+    static func stringList(_ arguments: [String: ToolArgument], _ key: String) -> [String] {
+        let raw: [Any]
+        if let strings = arguments[key]?.value as? [String] {
+            raw = strings
+        } else if let any = arguments[key]?.value as? [Any] {
+            raw = any
+        } else {
+            return []
+        }
+        return raw
+            .compactMap { ($0 as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
     static func taskInputs(_ value: Any?) -> [(title: String, description: String?, executionContext: String?, parallelGroup: String?)] {
         guard let tasks = value as? [[String: Any]] else { return [] }
         return tasks.compactMap { task in

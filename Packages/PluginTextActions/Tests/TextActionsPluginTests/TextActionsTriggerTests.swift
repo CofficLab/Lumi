@@ -266,7 +266,7 @@ private final class CapturingTextEventMonitor: TextEventMonitoring {
 private final class CountingSelectedTextProvider: SelectedTextProviding {
     private(set) var readCount = 0
 
-    func readSelectedText(anchor: CGPoint) -> SelectedText? {
+    func readSelectedText(anchor: CGPoint) async -> SelectedText? {
         readCount += 1
         return nil
     }
