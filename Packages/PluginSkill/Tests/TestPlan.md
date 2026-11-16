@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 73 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 77 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 73
+测试文件: 12 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -50,6 +50,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 73 条
 - **SkillSettingsRefresh**（3 条）：由 `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion`、`refreshWithoutSelectionClearsSkills` 锁定设置页显式刷新必须先使选中项目的 `SkillService` 缓存失效再重扫磁盘，30s TTL 内外部增删改立即可见；无选中项目时刷新清空且不崩溃（**回归 #642**）；改动 `SkillSettingsViewModel.refresh` 或缓存失效路径时优先跑对应测试文件。
 - **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
 - **Skill Tools Conversation Scope**（3 条）：由 `resolveProjectPathConversationPriority`、`readExplicitPathBeatsConversationProject`、`toolsRouteThroughConversationProject` 锁定；list / read / update / delete_skill 的项目路径回退链必须是「显式 `project_path` → 会话绑定项目 → UI 当前项目」，会话绑定项目优先于 UI 当前项目（**回归 #789**）。「UI 当前=B、会话=A」的确定性回归并入 `projectPathFallback`（唯一 `.serialized` 单例用例），避免跨套件并行踩踏 `SkillRuntime`。
+- **Skill 更新原子性**（4 条）：由 `directoryOccupiedBodyRejectsUpdateAndKeepsMetadata`、`directoryOccupiedBodyRejectsContentOnlyUpdate`、`failedBodyWriteRollsBackMetadata`、`normalUpdateWritesMetadataAndBody` 锁定；update_skill 的元数据与正文必须「要么全成、要么全不变」——写入前校验两个目标路径（被目录占用时提前拒绝，metadata.json 不被重写），正文写入中途失败时回滚已改的元数据（**回归 #526**）；改动 `SkillCreationService.updateSkill` 的写入/校验/回滚分支时优先跑对应测试文件。回滚用例用 macOS `chflags uchg` 确定性触发正文写失败，仅 macOS 编译。
 
 ## 测试用例清单
 
@@ -130,8 +131,12 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 73 条
 | 71 | Skill Tools Conversation Scope | resolveProjectPath 会话项目优先于当前项目，显式路径最优先 | 提供会话项目 / 显式路径 / 空白显式路径 | 调用 `SkillToolSupport.resolveProjectPath` | 回退链为 显式 → 会话 → 当前，空白显式等同省略（**回归 #789**） | P1 | ✅ 已覆盖 | `resolveProjectPathConversationPriority` |
 | 72 | Skill Tools Conversation Scope | read_skill 显式 project_path 仍优先于会话绑定项目 | 会话绑定 A，显式传 B，技能仅在 B | 调用 `executeResult(context:arguments:)` | 读到 B 的技能，误用 A 会抛 notFound | P1 | ✅ 已覆盖 | `readExplicitPathBeatsConversationProject` |
 | 73 | Skill Tools Conversation Scope | 未传路径时四个工具都经 Context 落到会话绑定项目 | 会话绑定 A，技能仅在 A | 依次调用 list/read/update/delete 的 `executeResult` | 四个工具均作用于 A，不得读/写/删 UI 当前项目（**回归 #789**） | P0 | ✅ 已覆盖 | `toolsRouteThroughConversationProject` |
+| 74 | Skill 更新原子性 | 正文路径被目录占用时，带标题与正文的更新被拒绝且元数据不变 | SKILL.md 被换成同名目录 | 调用 `updateSkill(title:content:)` | 抛 SkillCreationError，title 仍为原值，metadata.json 修改时间不变（**回归 #526**） | P0 | ✅ 已覆盖 | `directoryOccupiedBodyRejectsUpdateAndKeepsMetadata` |
+| 75 | Skill 更新原子性 | 正文路径被目录占用时，仅改正文的更新也被拒绝且元数据不变 | SKILL.md 被换成同名目录 | 调用 `updateSkill(content:)` | 抛 SkillCreationError，title 仍为原值（**回归 #526**） | P0 | ✅ 已覆盖 | `directoryOccupiedBodyRejectsContentOnlyUpdate` |
+| 76 | Skill 更新原子性 | 正文写入失败时回滚已修改的元数据，技能保持原样 | SKILL.md 加 uchg 标志（仅 macOS） | 调用 `updateSkill(title:content:)` | 正文写失败抛错，元数据回滚到原 title（**回归 #526**） | P0 | ✅ 已覆盖 | `failedBodyWriteRollsBackMetadata` |
+| 77 | Skill 更新原子性 | 正常的标题与正文更新同时落盘 | 正常技能 | 调用 `updateSkill(title:content:)` | title 与正文均更新成功 | P1 | ✅ 已覆盖 | `normalUpdateWritesMetadataAndBody` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #525 变异验证：M1 移除 `deleteSkill` 的 isDirectory 守卫（回到只凭 fileExists 删除）→ `deleteOrdinaryFileIsRejected` 失败（普通文件被删、未抛错，RED）；M2 把定位改用 `locateValidSkillDirectory`（要求完整技能目录）→ `deleteIncompleteDirectoryStillSucceeds` 失败（残缺目录删不掉，RED）；还原后 64 条全绿。
@@ -139,24 +144,26 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 73 条
 > 回归 #527 变异验证：M1 把正文读取还原为 `skill.loadContent() ?? ""`（读取失败伪装成空正文）→ `readUndecodableBodyThrows` 失败（非法 UTF-8 未抛错，RED）；M2 把首分支改为 `if let loaded = skill.loadContent(), !loaded.isEmpty`（真正的空正文也抛错）→ `readEmptyBodySucceeds` 失败（空 SKILL.md 误抛 invalidFile，RED）；还原后 67 条全绿。
 >
 > 回归 #642 变异验证：M1 把 `refresh()` 还原为 `Task { await reload() }`（不失效缓存）→ `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion` 失败（TTL 内命中旧缓存，外部增删不可见，RED）；M2 把失效键改为 `invalidateCache(projectPath: "")`（清错键，选中项目缓存仍在）→ 同样两条失败（RED）；还原后 70 条全绿。
+>
+> 回归 #526 变异验证：M1 移除 `updateSkill` 正文写失败 catch 中的元数据回滚（只 `throw error`）→ `failedBodyWriteRollsBackMetadata` 失败（元数据停留在 Changed，RED）；M2 移除写入前的两处 `ensureWritableTarget` 预校验 → `directoryOccupiedBodyRejectsUpdateAndKeepsMetadata` 失败（元数据被先写后回滚，修改时间改变，RED）；还原后 77 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 47 / 47
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 48 / 48
 - P2: 已覆盖 7 / 7
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（47 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（48 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 77 条用例位于 `Tests/`，需在目标平台执行 `swift test`（其中 `failedBodyWriteRollsBackMetadata` 用 `chflags` 触发写失败，仅 macOS 编译）
 
 ## 测试执行
 
