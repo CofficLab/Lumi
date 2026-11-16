@@ -60,7 +60,7 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         // 记录启动时的代次：处理期间若发生「停止监控」，代次会变，结果被丢弃。
         let generation = lifecycleGeneration.begin()
         Task {
-            let items = await Self.itemsAsync(
+            let items = await Self.captureItems(
                 from: pasteboard,
                 appName: NSWorkspace.shared.frontmostApplication?.localizedName,
                 isStillActive: { [weak self] in
@@ -89,6 +89,24 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
 
     // MARK: - Items Extraction (Async for Image Processing)
+
+    /// 生产采集入口：图片负载写入插件自有的持久目录，而非系统临时目录（#242）。
+    ///
+    /// 历史是持久 SwiftData，临时目录里的 PNG 会被系统清理，留下永久损坏的条目。
+    /// 这里把持久目录显式传给 `itemsAsync`，单元测试可直接驱动此入口验证落盘位置。
+    @MainActor
+    static func captureItems(
+        from pasteboard: NSPasteboard,
+        appName: String?,
+        isStillActive: (@Sendable () async -> Bool)? = nil
+    ) async -> [ClipboardItem] {
+        await itemsAsync(
+            from: pasteboard,
+            appName: appName,
+            imageDirectory: ClipboardManagerRuntime.imageDirectory(),
+            isStillActive: isStillActive
+        )
+    }
 
     /// Extracts clipboard items asynchronously by moving image encoding/writing to background
     static func itemsAsync(
@@ -226,6 +244,8 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         }
 
         do {
+            // 持久图片目录可能尚不存在（首次采集），先建目录再写文件（#242）。
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try pngData.write(to: imageURL)
             return imageURL.path
         } catch {
