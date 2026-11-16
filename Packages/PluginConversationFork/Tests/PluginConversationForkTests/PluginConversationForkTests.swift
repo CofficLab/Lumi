@@ -334,6 +334,32 @@ struct ConversationForkCoordinatorTests {
         )
     }
 
+    /// 注入指定 LLM 供应商的组装变体：用于门闩挂起摘要生成，
+    /// 在「摘要进行中」这一窗口里验证取消语义（#579）。
+    private func makeCoordinator(
+        conversations: any ConversationManaging,
+        messages: DefaultMessageManager,
+        llmProvider: any LLMManaging
+    ) -> ConversationForkCoordinator {
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let summarizer = ConversationSummarizer(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: llmProvider
+        )
+        return ConversationForkCoordinator(
+            conversations: conversations,
+            messages: messages,
+            sender: sender,
+            summarizer: summarizer
+        )
+    }
+
     @Test("preview 统计参与摘要的消息条数与提问轮数")
     func previewCountsMessagesAndRequests() async throws {
         let conversations = DefaultConversationManager()
@@ -586,6 +612,66 @@ struct ConversationForkCoordinatorTests {
         }
 
         #expect(conversations.conversations.count == before)
+    }
+
+    @Test("摘要生成期间 Cancel：分叉终止，不创建/选中/发送（**回归 #579**）")
+    func forkCancelledDuringSummaryDoesNotCreateConversation() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let gate = ForkSummaryGate()
+        let coordinator = makeCoordinator(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: GatingLLMProvider(gate: gate)
+        )
+
+        let sourceID = try conversations.createConversation(title: "源对话", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.selectConversation(id: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+        let beforeCount = conversations.conversations.count
+
+        let forkTask = Task { @MainActor in
+            try await coordinator.fork(conversationID: sourceID)
+        }
+        // 摘要请求已发出但尚未返回：分叉正挂起在 summarize 的 await 上。
+        await gate.waitUntilReached()
+        forkTask.cancel()   // 用户此刻点了 Cancel
+        gate.release()      // 摘要晚到完成
+
+        await #expect(throws: CancellationError.self) {
+            try await forkTask.value
+        }
+        #expect(conversations.conversations.count == beforeCount, "取消后不得新建对话")
+        #expect(conversations.selectedConversationID == sourceID, "取消后选中态不得改变")
+    }
+
+    @Test("摘要生成期间未 Cancel：分叉正常完成（#579 守卫）")
+    func forkCompletesWhenNotCancelledDuringSummary() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let gate = ForkSummaryGate()
+        let coordinator = makeCoordinator(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: GatingLLMProvider(gate: gate)
+        )
+
+        let sourceID = try conversations.createConversation(title: "源对话", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.selectConversation(id: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let forkTask = Task { @MainActor in
+            try await coordinator.fork(conversationID: sourceID)
+        }
+        await gate.waitUntilReached()
+        gate.release()      // 不取消，摘要正常返回
+
+        let outcome = try await forkTask.value
+        #expect(outcome.newConversationID != sourceID)
+        #expect(conversations.selectedConversationID == outcome.newConversationID)
+        #expect(messages.messages(for: outcome.newConversationID).contains { $0.content == outcome.summary })
     }
 
     @Test("displayTitle 回退到最后一条提问")
@@ -887,5 +973,80 @@ private final class CurrentProjectFallbackConversations: ConversationManaging {
         base.conversations
             .filter { $0.projectPath == projectPath }
             .map { $0.id.uuidString }
+    }
+}
+
+// MARK: - 摘要门闩与可挂起的 LLM 替身（#579）
+
+/// 让测试在「摘要请求已发出、尚未返回」的窗口里确定性地挂起 / 放行分叉。
+///
+/// `signalReached`/`waitUntilReached` 标记摘要已进入 LLM 请求；
+/// `release`/`waitUntilReleased` 控制摘要何时返回。两者都用 CheckedContinuation，
+/// 挂起期间释放主 actor，使同为主 actor 的测试得以介入并取消任务。
+@MainActor
+private final class ForkSummaryGate {
+    private var reachedContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+    private(set) var reached = false
+    private var released = false
+
+    func signalReached() {
+        reached = true
+        reachedContinuation?.resume()
+        reachedContinuation = nil
+    }
+
+    func waitUntilReached() async {
+        if reached { return }
+        await withCheckedContinuation { reachedContinuation = $0 }
+    }
+
+    func release() {
+        released = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+
+    func waitUntilReleased() async {
+        if released { return }
+        await withCheckedContinuation { releaseContinuation = $0 }
+    }
+}
+
+/// `complete` 先标记到达再等待放行的 LLM 替身，用于把 `summarize` 挂起在
+/// LLM 请求上。其余成员沿用 `LLMManaging`/`SuperLLMProvider` 的默认实现，
+/// 只覆盖被观测到的查询入口（与 PluginConversationTitle 的 StubLLMManager 同形）。
+@MainActor
+private final class GatingLLMProvider: LLMManaging {
+    private let gate: ForkSummaryGate
+
+    init(gate: ForkSummaryGate) {
+        self.gate = gate
+    }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        gate.signalReached()
+        await gate.waitUntilReleased()
+        return LLMResponse(content: "摘要正文")
+    }
+
+    var providerCount: Int { 0 }
+    func allProviders() -> [any SuperLLMProvider] { [] }
+    func provider(id: String) -> (any SuperLLMProvider)? { nil }
+    func register(_ provider: any SuperLLMProvider) throws {}
+    func unregister(id: String) {}
+    var selectedProviderID: String? { nil }
+    var selectedModel: String? { nil }
+    func models(for providerID: String) -> [String] { [] }
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
+
+    var providerID: String { "gating-llm" }
+    var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(
+            id: "gating-llm",
+            displayName: "Gating LLM",
+            defaultModel: "gating-model",
+            models: [LLMModelInfo(id: "gating-model")]
+        )
     }
 }

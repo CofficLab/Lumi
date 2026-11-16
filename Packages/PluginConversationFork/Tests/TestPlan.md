@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆盖 38 条用例。
+PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 38
+测试文件: 3 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Observers/`
@@ -30,6 +30,7 @@ PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆
 - **ConversationForkSelectionObserver**（3 条）：由 `buttonHiddenWithoutSelectedConversation`、`buttonFollowsSelectionState`、`doesNotRegisterTwice` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationForkPreviewModel**（5 条）：由 `stalePreviewDuringNewLoadIsDiscarded`、`stalePreviewAfterNewLoadIsDiscarded`、`reopenSameConversationDiscardsEarlierRequest` 等用例锁定；预览异步写回必须按代次校验身份，旧请求不得发布预览或改动加载标记（#463）。
 - **综合**（28 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ForkCancellation**（2 条）：由 `forkCancelledDuringSummaryDoesNotCreateConversation`、`forkCompletesWhenNotCancelledDuringSummary` 锁定；摘要生成期间用户取消（Cancel / 关闭弹窗）后，分叉必须在建对话前终止，不得再改动对话列表 / 选中态 / 消息。`ConversationForkCoordinator.fork` 在 `summarize` 返回后、`createConversation` 前 `try Task.checkCancellation()`；弹窗持有 `forkTask` 句柄并在 Cancel / `onDisappear` 时取消（**回归 #579**）。改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -73,8 +74,10 @@ PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆
 | 36 | ConversationForkPreviewModel | 同一对话重复打开：只认最新一次请求（**回归 #463**） | 对同一对话先后打开两次，两次快照都被门闩挂起 | 先放行第一次（旧代次）快照，再放行第二次 | 旧结果被丢弃且加载标记不被关闭；第二次结果正常发布 | P0 | ✅ 已覆盖 | `reopenSameConversationDiscardsEarlierRequest` |
 | 37 | ConversationForkPreviewModel | 无选中对话时清空状态，晚到的旧结果也不得发布（**回归 #463**） | A 的快照在途时以 nil 打开 | 放行 A 的快照 | preview 为 nil、isLoading 为假、target 为 nil，晚到结果不写回 | P0 | ✅ 已覆盖 | `openWithoutSelectionClearsStateAndIgnoresLateResult` |
 | 38 | ConversationForkPreviewModel | 单次打开正常发布预览并锁定目标对话 | 对话 A 有一条提问，快照被门闩挂起 | 打开 A 后放行快照 | 预览标题/提问/条数正确，isLoading 转假，target 为 A | P1 | ✅ 已覆盖 | `singleOpenPublishesPreview` |
+| 39 | ForkCancellation | 摘要生成期间 Cancel：分叉终止，不创建/选中/发送（**回归 #579**） | 门闩把摘要挂起在 LLM 请求上，源对话有历史 | 摘要进行中取消 forkTask 再放行摘要 | fork 抛 `CancellationError`，对话条数不变、选中态仍为源对话 | P0 | ✅ 已覆盖 | `forkCancelledDuringSummaryDoesNotCreateConversation` |
+| 40 | ForkCancellation | 摘要生成期间未 Cancel：分叉正常完成（#579 守卫） | 门闩把摘要挂起在 LLM 请求上，源对话有历史 | 摘要进行中不取消，直接放行摘要 | fork 正常返回，新对话被创建/选中并写入摘要首条消息 | P1 | ✅ 已覆盖 | `forkCompletesWhenNotCancelledDuringSummary` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#578）：把 `ConversationForkCoordinator.fork` 的发送改回隐式
@@ -86,23 +89,28 @@ PluginConversationFork 的实现包，包含 7 个主要类型；当前测试覆
 > 加载标记被旧请求关掉、nil 打开后晚到结果仍发布，共 9 条断言失败），
 > 用例 38 正常路径保持绿；恢复守卫后 38 条全绿。
 
+> 变异验证（#579）：去掉 `ConversationForkCoordinator.fork` 在 `summarize` 返回后、
+> `createConversation` 前的 `try Task.checkCancellation()`，用例 39 立即转红
+> （fork 不再抛 `CancellationError`，取消后仍新建对话并改选中态，3 条断言失败），
+> 用例 40 正常路径保持绿；恢复取消复核后 40 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 20 / 20
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 21 / 21
 - P2: 已覆盖 6 / 6
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
