@@ -756,11 +756,25 @@ public enum ShellExecutor {
                 process.standardOutput = stdoutPipe
                 process.standardError = stderrPipe
 
+                // Tracks readability callbacks that have already started. The
+                // termination handler must wait for them before completing, so
+                // a slow external output callback cannot cross the return
+                // boundary nor let the aggregate miss data it has not yet
+                // appended (#171).
+                let outputCallbacksInFlight = DispatchGroup()
+
                 // Set up termination handler
                 process.terminationHandler = { [stdoutPipe, stderrPipe] _ in
                     // Clean up handlers
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+
+                    // A readability callback may already be running on the file
+                    // handle queue: clearing the handler only stops *future*
+                    // invocations. Wait for the in-flight one to finish (it
+                    // appends to the aggregate after the external callback) so
+                    // no callback outlives the return and no read data is lost.
+                    outputCallbacksInFlight.wait()
 
                     // Drain bytes already available, but never wait forever if
                     // a descendant inherited the pipe file descriptor.
@@ -786,6 +800,8 @@ public enum ShellExecutor {
 
                 // Set up streaming handlers
                 stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+                    outputCallbacksInFlight.enter()
+                    defer { outputCallbacksInFlight.leave() }
                     let data = handle.availableData
                     if !data.isEmpty {
                         stdoutHandler(data)
@@ -793,6 +809,8 @@ public enum ShellExecutor {
                 }
 
                 stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+                    outputCallbacksInFlight.enter()
+                    defer { outputCallbacksInFlight.leave() }
                     let data = handle.availableData
                     if !data.isEmpty {
                         stderrHandler(data)
