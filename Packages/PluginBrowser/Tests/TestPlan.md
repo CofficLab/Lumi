@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 86
+测试文件: 19 个，用例总数: 92
 
 核心组件（源码目录）:
 - `Models/`
@@ -47,6 +47,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 - **BrowserPlugin**（5 条）：由 `browserManagesRailLifecycle`、`browserSuppressesContentHeaderWhileActive`、`browserRestoresHiddenContentHeaderOnDeactivate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Browser 可访问性快照**（8 条）：由 `buildsTreeFromFlatList`、`rendersRoleNameAndState`、`escapesForgedNodeLinesInName` 等用例锁定；快照的树结构、渲染格式与 interactive_only 过滤语义不得随意变更，否则 LLM 侧解析会失效。
+- **Browser find 路径 interactive_only 过滤**（6 条）：由 `interactiveFilterDropsHeadingWhenInteractiveOnly`、`interactiveFilterDisabledKeepsAllMatches`、`interactiveFilterKeepsOnlyInteractiveRoles`、`interactiveFilterKeepsAllWhenAllInteractive`、`interactiveFilterReturnsEmptyWhenNoneInteractive`、`interactiveFilterOnEmptyMatchesReturnsEmpty` 锁定。`browser_snapshot` 带 role/name/text 过滤走 find 分支时，必须经 `BrowserAccessibilityNode.filterInteractive` 同样应用 interactive_only，与快照树过滤共用 `isInteractive` 判据；非交互匹配（如 heading）不得漏出，全部非交互时返回空匹配提示（**回归 #834**）。
 - **Browser ref 登记簿**（5 条）：由 `normalizesRefFormats`、`staleMessageIncludesLastKnownSignature` 等用例锁定；ref 规范化规则与失效提示的措辞是 LLM 恢复动作的依据。
 - **Browser 内容边界**（6 条）：由 `wrapsContentInMarkers`、`neutralizesForgedMarkers` 等用例锁定；nonce 机制是防提示注入的核心，任何削弱都会造成安全问题。
 - **Browser 工具本地化**（3 条）：由 `allToolsDescribeInChinese`、`interactExposesEveryAction` 等用例锁定；工具描述与参数说明必须覆盖 4 种语言。
@@ -154,16 +155,23 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 84 | 导航失败传播 | reload 导航失败时抛出错误而非返回成功（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFail` 回调 | 抛出 WebKit 错误，不静默返回成功 | P0 | ✅ 已覆盖 | `reloadNavigationFailurePropagates` |
 | 85 | 导航失败传播 | 导航成功时正常返回 | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFinish` 回调 | 正常返回，不抛错 | P1 | ✅ 已覆盖 | `successfulNavigationReturns` |
 | 86 | 导航失败传播 | 本地审批策略取消导航时抛出 blockedLocalNavigation（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFailProvisionalNavigation` 带 `blockedLocalNavigation` | 抛出 `blockedLocalNavigation` 错误 | P0 | ✅ 已覆盖 | `blockedLocalNavigationPropagates` |
+| 87 | find 交互过滤 | 带过滤时 interactive_only 必须丢掉非交互 heading 匹配（**回归 #834**） | matches 为 heading "Welcome" 与 button "Submit" | 以 interactiveOnly=true 调用 `filterInteractive` | 只剩 button（lumi-2），heading 被剔除 | P0 | ✅ 已覆盖 | `interactiveFilterDropsHeadingWhenInteractiveOnly` |
+| 88 | find 交互过滤 | interactive_only 关闭时保留全部匹配 | matches 为 heading/button/link | 以 interactiveOnly=false 调用 `filterInteractive` | 三条原样保留，顺序不变 | P1 | ✅ 已覆盖 | `interactiveFilterDisabledKeepsAllMatches` |
+| 89 | find 交互过滤 | 只保留可交互角色 | matches 为 button/link/textbox/paragraph/heading | 以 interactiveOnly=true 调用 `filterInteractive` | 只剩 button/link/textbox | P1 | ✅ 已覆盖 | `interactiveFilterKeepsOnlyInteractiveRoles` |
+| 90 | find 交互过滤 | 全部可交互时全部保留 | matches 为 button/link | 以 interactiveOnly=true 调用 `filterInteractive` | 两条都保留 | P1 | ✅ 已覆盖 | `interactiveFilterKeepsAllWhenAllInteractive` |
+| 91 | find 交互过滤 | 全部非交互时返回空（触发空匹配提示） | matches 为 heading/paragraph | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P1 | ✅ 已覆盖 | `interactiveFilterReturnsEmptyWhenNoneInteractive` |
+| 92 | find 交互过滤 | 空匹配列表过滤后仍为空 | matches 为空 | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P2 | ✅ 已覆盖 | `interactiveFilterOnEmptyMatchesReturnsEmpty` |
 
-> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 54 / 54
-- P2: 已覆盖 14 / 14
-- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 58 / 58
+- P2: 已覆盖 15 / 15
+- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -176,14 +184,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（54 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（58 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
