@@ -49,6 +49,8 @@ public struct FileSearchPanelView: View {
         .onAppear {
             isSearchFocused = true
             selectedIndex = 0
+            // 每次打开面板都补查一次索引 TTL，过期则重建（#376）。
+            searchService.refreshIndexIfExpired()
         }
         .onChange(of: searchService.searchResults.count) { _ in
             selectedIndex = 0

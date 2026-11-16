@@ -50,7 +50,8 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     // MARK: - Private Properties
 
-    private var indexStore = FileIndexStore(projectPath: "")
+    /// 暴露为 internal 仅供回归测试注入过期索引（#376）；生产代码只经本类方法读写。
+    var indexStore = FileIndexStore(projectPath: "")
     private var searchTask: Task<Void, Never>?
     /// 实际扫描/排序索引的 detached worker。detached 任务不继承外层 searchTask 的
     /// 取消，必须单独持有句柄才能在查询变化时停掉过时的全索引搜索（#1219）。
@@ -62,7 +63,8 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     // MARK: - Initialization
 
-    private init() {
+    /// internal 供回归测试创建隔离实例（#376）；生产仍使用 `shared`。
+    init() {
         if Self.verbose {
             QuickFileSearchLog.logger.info("\(Self.t)\(Self.emoji) FileSearchService 初始化完成")
         }
@@ -98,6 +100,17 @@ public final class FileSearchService: ObservableObject, SuperLog {
         searchResults = []
         searchQuery = ""
         invalidateSearchState()
+    }
+
+    /// 面板每次打开时调用：同一项目也检查索引 TTL，过期则重建（#376）。
+    ///
+    /// 关闭再打开面板不会重建父 Overlay，`targetWindowId` 的 nil→nil 也不触发
+    /// `onChange`，`updateProject` 的同路径过期检查因此从未在重开时执行。面板自身
+    /// 的 `onAppear` 每次显示都会触发，由它主动调用本方法补上这次检查。
+    public func refreshIndexIfExpired() {
+        let path = currentProjectPath
+        guard !path.isEmpty, indexStore.needsReindex() else { return }
+        rebuildIndex(for: path)
     }
 
     /// 选择文件并更新项目状态
