@@ -43,13 +43,20 @@ struct CoreDisplayInfoDictionaryOwnershipTests {
     @Test("反复读取显示器名称不累积未释放的字典")
     func repeatedDisplayNameDoesNotAccumulateDictionaries() {
         // 这条路径每 5 秒被刷新流程调用一次，是泄漏的实际发生点。
+        // 先预热分配器，避免首次调用的惰性初始化被算进增长里。
+        for _ in 0..<50 {
+            _ = DisplayService.displayName(for: CGMainDisplayID(), isBuiltIn: true)
+        }
+
         let before = Self.currentAllocatedBytes()
-        for _ in 0..<200 {
+        for _ in 0..<3000 {
             _ = DisplayService.displayName(for: CGMainDisplayID(), isBuiltIn: true)
         }
         let after = Self.currentAllocatedBytes()
 
-        // 允许一定的正常波动，但泄漏 200 个字典必然越过这个阈值。
+        // 阈值经实测标定：平衡所有权时增长约 0 字节；若调用点改用
+        // `takeUnretainedValue()` 泄漏 +1 字典，每次约 5.5KB，3000 次约 16.5MB，
+        // 必然越过 8MB。迭代次数太少（如 200 次仅约 1.1MB）会落在阈值之下而漏判。
         let growth = after - before
         #expect(growth < 8 * 1024 * 1024, "分配字节数增长了 \(growth) 字节，可能仍有泄漏")
     }
