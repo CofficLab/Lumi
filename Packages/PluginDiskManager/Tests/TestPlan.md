@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 15 个主要类型；当前测试覆盖 85 条用例。
+PluginDiskManager 的实现包，包含 15 个主要类型；当前测试覆盖 90 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 85
+测试文件: 12 个，用例总数: 90
 
 核心组件（源码目录）:
 - `Internal/`
@@ -47,6 +47,7 @@ PluginDiskManager 的实现包，包含 15 个主要类型；当前测试覆盖 
 - **DirectoryTreePackageSize**（4 条）：由 `topLevelSummaryCountsPackageContentRecursively`、`fullTreeCountsPackageContentInParentDirectory`、`fullTreeAggregatesRegularFilesIntoParentDirectory`、`nestedPackageContentIsCountedRecursively` 锁定（**回归 #850**）：`.app`/`.photoslibrary` 等 package 仍折叠为单个叶子展示，但其大小必须递归累计内部真实内容（含嵌套 package），不得只读目录记录的几十字节；该递归大小必须计入父目录与扫描进度的 `scannedBytes`。`buildTree` 的自底向上聚合必须把叶子（普通文件与 package）大小也传入父目录，否则父目录大小恒为 0。改动 `DirectoryTreeService.buildTopLevelSummary/buildTree/packageContentSize` 或聚合循环时优先跑对应测试文件（串行套件）。
 - **扫描控制栏可见性**（9 条）：由 `scanningKeepsControlBarVisibleWithoutResults`、`cacheCleanerControlBarStaysVisibleWhileScanning`、`largeFilesControlBarStaysVisibleWhileScanning` 等用例锁定（**回归 #849**）：五个扫描界面（系统缓存/目录分析/大文件/项目清理/Xcode 清理）的控制栏内含唯一 Stop 分支（`isScanning` 时调用 `stopScan()`），扫描进行中必须保留控制栏使 Stop 可达——大文件在扫描开始时清空结果，仍须可见；空闲有结果时显示 Start/Refresh，空闲且无结果时隐藏。可见性统一由 `ScanControlBarVisibility.isVisible(isScanning:hasResults:)`（`isScanning || hasResults`）决定，各 ViewModel 经 `isScanControlBarVisible` 接入真实结果集合（categories/rootEntries/largeFiles/projects/itemsByCategory）。改动该 helper、五个 ViewModel 的 `isScanControlBarVisible` 或五个父视图的控制栏 gate 时优先跑对应测试文件。
 - **WorkspaceIconCache**（5 条）：由 `iconQueriesOncePerPathAndReusesInstance`、`distinctPathsAreQueriedSeparately`、`cacheEvictsOldestBeyondLimit` 等用例锁定（**回归 #1223**）：大文件/目录树/缓存三个行视图过去在 `body` 内直接 `NSWorkspace.shared.icon(forFile:)`，每次 body 求值都重复同步 workspace 查询；改为经 `@MainActor WorkspaceIconCache.shared.icon(forPath:)` 按路径缓存，同一路径至多查询一次并复用同一 NSImage 实例，NSImage 仍不进入 Sendable 模型。缓存有上限并按插入顺序 FIFO 淘汰，避免无界增长；不对懒加载/无界的目录树做发布期预取。改动 `WorkspaceIconCache` 或三个行视图的 `icon` 计算属性时优先跑对应测试文件。
+- **XcodeCleanerSummary**（5 条）：由 `summaryMatchesItemsAfterPublication`、`summaryIsRebuiltOncePerUpdateNotPerRead`、`toggleUpdatesSummaryByExactlyTheChangedItem` 等用例锁定（**回归 #1222**）：Xcode 清理 footer 单次 body 求值会读 `selectedSize` 两次、`totalSize` 一次，旧实现每个计算属性都重新 `flatMap`/`filter`/`reduce` 整个结果集，分类头还各自 filter/reduce 其 items。改为在 `XcodeCleanerViewModel` 维护预聚合快照（`totalSize`/`selectedSize`/`selectedCount` 与每分类 `XcodeCategorySummary`），由 `itemsByCategory` 的 `didSet` 在每次变更时单遍嵌套累加重算一次（不产生 flatMap/filter 临时数组），footer 与分类头读取存储值。`summaryRebuildCount` 仅供测试断言「每次更新只重算一次、读取不再重算」。改动该快照、`rebuildSummary()`、`didSet` 或 `XcodeCategorySection` 的 `selectedCount`/`categorySize` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -137,8 +138,13 @@ PluginDiskManager 的实现包，包含 15 个主要类型；当前测试覆盖 
 | 83 | WorkspaceIconCache | 超出上限按 FIFO 淘汰最旧条目，避免无界增长（**回归 #1223**） | limit=2 的 `WorkspaceIconCache` | 依次取 `/a`、`/b`、`/c` 后再取 `/a` | `/a` 被淘汰后重查计数为 2，`/c` 仍为 1 | P0 | ✅ 已覆盖 | `cacheEvictsOldestBeyondLimit` |
 | 84 | WorkspaceIconCache | 预取填充缓存后取图标不再额外查询 | 注入计数 lookup 的 `WorkspaceIconCache` | `prefetch([/a,/b])` 后各取一次图标 | 两路径 lookup 计数各为 1 | P1 | ✅ 已覆盖 | `prefetchPopulatesCacheWithoutExtraQueries` |
 | 85 | WorkspaceIconCache | removeAll 清空后强制重新查询 | 注入计数 lookup 的 `WorkspaceIconCache` | 取 `/a`、`removeAll()`、再取 `/a` | lookup 计数为 2 | P2 | ✅ 已覆盖 | `removeAllForcesRequery` |
+| 86 | XcodeCleanerSummary | 发布后全局与每分类聚合快照与条目一致（**回归 #1222**） | 构造 `XcodeCleanerViewModel`，derivedData(100 选中/200 未选)+logs(30 选中) | 赋值 `itemsByCategory` 后读 totalSize/selectedSize/selectedCount/categorySummary | total=330、selected=130、count=2，每分类快照精确匹配 | P1 | ✅ 已覆盖 | `summaryMatchesItemsAfterPublication` |
+| 87 | XcodeCleanerSummary | 每次更新只重算一次快照，多次读取不再重算（**回归 #1222**） | 发布一个分类 | 记录 `summaryRebuildCount`，循环 50 次读取 selectedSize/totalSize/selectedCount/categorySummary | 重算次数保持为 1，不随读取增长 | P0 | ✅ 已覆盖 | `summaryIsRebuiltOncePerUpdateNotPerRead` |
+| 88 | XcodeCleanerSummary | 单行切换只触发一次重算且只改变该行贡献（**回归 #1222**） | derivedData(100 未选/200 选中) | `toggleSelection(for:)` 切换 100 的项 | 重算次数 +1，selectedSize 200→300、count 1→2、totalSize 不变 | P1 | ✅ 已覆盖 | `toggleUpdatesSummaryByExactlyTheChangedItem` |
+| 89 | XcodeCleanerSummary | 分类全选/反选刷新该分类与全局快照 | logs(10 未选/20 选中) | 依次 `selectAll(in:)`、`deselectAll(in:)` | 全选 selectedSize=30/count=2，反选 selectedSize=0/count=0，totalSize 恒 30 | P1 | ✅ 已覆盖 | `selectAllAndDeselectAllRefreshCategorySummary` |
+| 90 | XcodeCleanerSummary | 空发布把快照重置为零 | 先发布非空再赋 `[:]` | 读 totalSize/selectedSize/selectedCount/categorySummary | 全为 0，categorySummary 为空 | P2 | ✅ 已覆盖 | `emptyPublicationResetsSummary` |
 
-> 说明：全部 **85 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **90 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#453**，`DiskManagerPlugin.onDisable/onEnable`）：
@@ -161,23 +167,28 @@ PluginDiskManager 的实现包，包含 15 个主要类型；当前测试覆盖 
 > - **M1** 删除 `if let cached = storage[path] { return cached }` 命中提前返回（复现原 bug：每次重复查询）→ `iconQueriesOncePerPathAndReusesInstance` 转红（同路径计数 >1、实例不复用），`distinctPathsAreQueriedSeparately`、`prefetchPopulatesCacheWithoutExtraQueries`、`removeAllForcesRequery` 相应转红；`swift test --filter WorkspaceIconCacheTests` 退出码 1。
 > - 还原完整修复（命中提前返回 + FIFO 淘汰）→ 85 条全绿。
 
+> 变异验证（**#1222**，`XcodeCleanerViewModel` 聚合快照与 `itemsByCategory.didSet`）：
+> - **M1** 把 `totalSize`/`selectedSize`/`selectedCount` 改回每次读取都 `flatMap`/`filter`/`reduce` 的计算属性（复现原 bug：读取即重算）→ `summaryIsRebuiltOncePerUpdateNotPerRead` 转红（50 次读取使重算计数增长），`toggleUpdatesSummaryByExactlyTheChangedItem` 转红（断言读取额外重算，计数 != +1）；三条值正确性用例仍绿。
+> - **M2** 移除 `itemsByCategory` 的 `didSet { rebuildSummary() }`（快照不再随更新重算）→ `summaryMatchesItemsAfterPublication`、`selectAllAndDeselectAllRefreshCategorySummary`、`toggleUpdatesSummaryByExactlyTheChangedItem`、`emptyPublicationResetsSummary` 值断言全部转红，`summaryIsRebuiltOncePerUpdateNotPerRead` 基线计数转红。
+> - 还原完整修复（didSet 单遍重算 + 存储快照共享读取）→ 90 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
-- P1: 已覆盖 49 / 49
-- P2: 已覆盖 9 / 9
-- **合计: 85 / 85**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 28 / 28
+- P1: 已覆盖 52 / 52
+- P2: 已覆盖 10 / 10
+- **合计: 90 / 90**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
-- **P1**: 其余功能性用例（49 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（52 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 85 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 90 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

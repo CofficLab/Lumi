@@ -6,7 +6,9 @@ import Combine
 class XcodeCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🧹"
     nonisolated static let verbose: Bool = false
-    @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
+    @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:] {
+        didSet { rebuildSummary() }
+    }
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var errorMessage: String?
@@ -19,13 +21,48 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
         ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !itemsByCategory.isEmpty)
     }
 
-    // Statistics
-    var totalSize: Int64 {
-        itemsByCategory.values.flatMap { $0 }.reduce(0) { $0 + $1.size }
-    }
+    // Statistics（#1223 同类问题 #1222）：聚合快照随 itemsByCategory 每次变更
+    // 由 didSet 单遍重算一次，footer/分类头读取存储值而非每次 body 求值重复
+    // flatMap/filter/reduce 整个结果集。
+    private(set) var totalSize: Int64 = 0
+    private(set) var selectedSize: Int64 = 0
+    private(set) var selectedCount: Int = 0
+    private(set) var categorySummary: [XcodeCleanCategory: XcodeCategorySummary] = [:]
+    /// 快照重算次数，供回归测试断言「每次更新只重算一次、读取不再重算」。
+    private(set) var summaryRebuildCount: Int = 0
 
-    var selectedSize: Int64 {
-        itemsByCategory.values.flatMap { $0 }.filter { $0.isSelected }.reduce(0) { $0 + $1.size }
+    /// 单遍嵌套累加（不产生 flatMap/filter 临时数组），同时算出全局与每分类聚合。
+    private func rebuildSummary() {
+        var total: Int64 = 0
+        var selected: Int64 = 0
+        var selectedCount = 0
+        var perCategory: [XcodeCleanCategory: XcodeCategorySummary] = [:]
+        for (category, items) in itemsByCategory {
+            var categorySize: Int64 = 0
+            var categorySelectedSize: Int64 = 0
+            var categorySelectedCount = 0
+            for item in items {
+                categorySize += item.size
+                if item.isSelected {
+                    categorySelectedSize += item.size
+                    categorySelectedCount += 1
+                }
+            }
+            perCategory[category] = XcodeCategorySummary(
+                size: categorySize,
+                selectedSize: categorySelectedSize,
+                selectedCount: categorySelectedCount,
+                totalCount: items.count
+            )
+            total += categorySize
+            selected += categorySelectedSize
+            selectedCount += categorySelectedCount
+        }
+        totalSize = total
+        selectedSize = selected
+        self.selectedCount = selectedCount
+        categorySummary = perCategory
+        summaryRebuildCount += 1
     }
 
     private let service = XcodeCleanService.shared
