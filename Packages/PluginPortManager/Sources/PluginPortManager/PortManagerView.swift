@@ -2,17 +2,14 @@ import LumiUI
 import SwiftUI
 
 public struct PortManagerView: View {
-    @State private var ports: [PortInfo] = []
+    @StateObject private var viewModel = PortManagerViewModel()
     @State private var searchText = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var showError = false
 
     public var filteredPorts: [PortInfo] {
         if searchText.isEmpty {
-            return ports
+            return viewModel.ports
         } else {
-            return ports.filter {
+            return viewModel.ports.filter {
                 $0.port.contains(searchText) ||
                     $0.command.localizedCaseInsensitiveContains(searchText) ||
                     $0.pid.contains(searchText)
@@ -36,21 +33,21 @@ public struct PortManagerView: View {
                     style: .secondary,
                     size: .small
                 ) {
-                    Task { await refresh() }
+                    Task { await viewModel.refresh() }
                 }
-                .disabled(isLoading)
+                .disabled(viewModel.isLoading)
             }
             .padding()
             .background(Material.regularMaterial)
 
             GlassDivider()
 
-            if isLoading && ports.isEmpty {
+            if viewModel.isLoading && viewModel.ports.isEmpty {
                 AppLoadingOverlay(
                     message: LocalizedStringKey(pluginLocalization.string("Loading Ports")),
                     size: .medium
                 )
-            } else if ports.isEmpty {
+            } else if viewModel.ports.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
                     title: LocalizedStringKey(pluginLocalization.string("No Listening Ports")),
@@ -61,7 +58,7 @@ public struct PortManagerView: View {
                     ForEach(filteredPorts) { port in
                         PortRowView(port: port) {
                             Task {
-                                await killProcess(port)
+                                await viewModel.killProcess(port)
                             }
                         }
                     }
@@ -70,45 +67,17 @@ public struct PortManagerView: View {
             }
         }
         .task {
-            await refresh()
+            await viewModel.refresh()
         }
-        .alert(Text(verbatim: pluginLocalization.string("Error")), isPresented: $showError, actions: {
+        .alert(Text(verbatim: pluginLocalization.string("Error")), isPresented: $viewModel.showError, actions: {
             Button(role: .cancel) {
             } label: {
                 Text(pluginLocalization.string("OK"))
             }
         }, message: {
-            Text(errorMessage ?? pluginLocalization.string("Unknown error"))
+            Text(viewModel.errorMessage ?? pluginLocalization.string("Unknown error"))
         })
         .frame(maxWidth: .infinity)
-    }
-
-    public func refresh() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            ports = try await PortScanner.shared.scanPorts()
-            showError = false
-        } catch {
-            ports = []
-            errorMessage = String(
-                format: pluginLocalization.string("Failed to scan ports: %@"),
-                error.localizedDescription
-            )
-            showError = true
-        }
-    }
-
-    public func killProcess(_ port: PortInfo) async {
-        do {
-            try await PortScanner.shared.killProcess(pid: port.pid)
-            // Refresh after killing
-            try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
-            await refresh()
-        } catch {
-            errorMessage = pluginLocalization.string("Failed to kill process: \(error.localizedDescription)")
-            showError = true
-        }
     }
 }
 

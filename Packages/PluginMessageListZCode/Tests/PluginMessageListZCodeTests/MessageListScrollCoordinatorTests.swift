@@ -16,6 +16,10 @@ final class StubScrollingTarget: MessageListScrollingTarget {
     /// `pinToBottom` 的返回值序列；`nil` 表示该次不可用。
     var pinSnapshots: [ScrollViewBottomController.Snapshot?]
     private(set) var pinCount = 0
+    /// `setAnchorRestoring` 的调用序列（#1330）。
+    private(set) var anchorRestoringFlags: [Bool] = []
+    /// `documentHeight` 的返回值序列；耗尽后返回 nil（#1330）。
+    var documentHeights: [CGFloat?] = []
 
     init(isAttached: Bool = false, pinSnapshots: [ScrollViewBottomController.Snapshot?] = []) {
         self.isAttached = isAttached
@@ -38,6 +42,15 @@ final class StubScrollingTarget: MessageListScrollingTarget {
 
     func scrollToAnchorTop(_ anchorID: UUID) {
         calls.append(.scrollToAnchorTop(anchorID))
+    }
+
+    func setAnchorRestoring(_ active: Bool) {
+        anchorRestoringFlags.append(active)
+    }
+
+    func documentHeight() -> CGFloat? {
+        guard !documentHeights.isEmpty else { return nil }
+        return documentHeights.removeFirst()
     }
 }
 
@@ -364,6 +377,86 @@ struct MessageListScrollCoordinatorTests {
     @Test("底部锚点 id 与协调器常量一致")
     func bottomAnchorIDIsStable() {
         #expect(MessageListScrollCoordinator.bottomAnchorID == "message-list-bottom-anchor")
+    }
+
+    // MARK: - 锚点恢复互斥（#1330）
+
+    @Test("锚点恢复会取消已排程的底部跟随，并全程持有恢复标记")
+    func pinToAnchorCancelsScheduledBottomFollow() async {
+        let coordinator = MessageListScrollCoordinator()
+        let target = StubScrollingTarget()
+        let anchorID = UUID()
+
+        // 与生产路径相同的顺序：边界变化先排程底部跟随，
+        // 紧接着 loadEarlier 完成后调用 pinToAnchor。
+        coordinator.scheduleScrollToBottomAfterLayout(
+            target: target,
+            messages: [makeRow()],
+            animated: false
+        )
+        await coordinator.pinToAnchor(target: target, anchorID: anchorID)
+
+        // 给被取消的底部任务一个执行窗口，确认它确实没有落地。
+        try? await Task.sleep(
+            nanoseconds: MessageListScrollCoordinator.postAppendDelayNs
+                + MessageListScrollCoordinator.scrollRetryDelayNs + 80_000_000
+        )
+
+        #expect(target.bottomScrollCount == 0)
+        #expect(target.calls == [.scrollToAnchorTop(anchorID)])
+        #expect(target.anchorRestoringFlags == [true, false])
+    }
+
+    @Test("锚点恢复在文档高度稳定前持续重试钉回锚点")
+    func pinToAnchorRetriesUntilDocumentStable() async {
+        let coordinator = MessageListScrollCoordinator()
+        let target = StubScrollingTarget()
+        let anchorID = UUID()
+        // 懒加载行高持续修正：1000 → 1400 → 1800，随后稳定。
+        target.documentHeights = [1000, 1400, 1800, 1800, 1800, 1800]
+
+        await coordinator.pinToAnchor(target: target, anchorID: anchorID)
+
+        // 首次钉回 + 每读到一个高度再钉一次，直到连续 3 帧稳定。
+        #expect(target.calls == Array(repeating: .scrollToAnchorTop(anchorID), count: 6))
+        #expect(target.anchorRestoringFlags == [true, false])
+    }
+
+    @Test("新的底部意图会打断进行中的锚点恢复并解除抑制")
+    func bottomFollowInvalidatesAnchorRestore() async {
+        let coordinator = MessageListScrollCoordinator()
+        let target = StubScrollingTarget()
+        // 高度一直不稳定 → 恢复循环不会自行退出，只能被底部意图打断。
+        target.documentHeights = Array(repeating: 1000, count: 100)
+
+        let restore = Task { @MainActor in
+            await coordinator.pinToAnchor(target: target, anchorID: UUID())
+        }
+        await waitUntil { target.anchorRestoringFlags == [true] }
+
+        coordinator.scrollToBottom(target: target, messages: [makeRow()], animated: false)
+        await restore.value
+
+        #expect(target.anchorRestoringFlags == [true, false])
+        #expect(target.bottomScrollCount >= 1)
+        coordinator.cancelPendingTasks()
+    }
+
+    @Test("cancelPendingTasks 会解除锚点恢复的抑制标记")
+    func cancelPendingTasksClearsAnchorRestoreFlag() async {
+        let coordinator = MessageListScrollCoordinator()
+        let target = StubScrollingTarget()
+        target.documentHeights = Array(repeating: 1000, count: 100)
+
+        let restore = Task { @MainActor in
+            await coordinator.pinToAnchor(target: target, anchorID: UUID())
+        }
+        await waitUntil { target.anchorRestoringFlags == [true] }
+
+        coordinator.cancelPendingTasks()
+        await restore.value
+
+        #expect(target.anchorRestoringFlags == [true, false])
     }
 }
 

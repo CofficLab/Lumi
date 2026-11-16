@@ -165,6 +165,26 @@ private final class ProcessOutputCollector: @unchecked Sendable {
     }
 }
 
+/// 一次 Git 采集的取消标记。
+///
+/// 采集经 `GitAccessCoordinator.performSync` 跳到串行队列的线程上执行，
+/// 那里没有 Swift Task 上下文，`Task.isCancelled` 恒为 false；
+/// 取消必须用显式标记跨线程传递，否则过期的采集会一直占着串行队列（issue #1244）。
+final class GitCaptureCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return cancelled
+    }
+
+    func cancel() {
+        lock.lock(); defer { lock.unlock() }
+        cancelled = true
+    }
+}
+
 /// 文件树 Git 状态提供器
 ///
 /// 负责在后台线程执行 Git status 查询，构建轻量 snapshot 供 UI 层只读使用。
@@ -179,6 +199,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     private static let maximumCapturedOutputBytes = 8 * 1024 * 1024
     private static let timeoutExitCode: Int32 = -2
     private static let truncatedOutputExitCode: Int32 = -3
+    private static let cancelledExitCode: Int32 = -4
     private let commandTimeout: TimeInterval
 
     /// - Parameter commandTimeout: Maximum duration for each Git subprocess.
@@ -197,12 +218,26 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     /// 如果查询失败，返回 nil（调用方应保留上一份 snapshot）。
     ///
     /// - Parameter projectRootPath: 项目根目录的绝对路径
-    /// - Returns: 快照，或 nil 表示查询失败
-    public func captureSnapshot(projectRootPath: String) -> GitStatusSnapshot? {
+    /// - Parameter isCancelled: 取消检查。排队前、取到串行队列后、每个 git 子进程之间
+    ///   以及子进程轮询期间都会调用；返回 true 时立即放弃采集并返回 nil（issue #1244）。
+    /// - Returns: 快照，或 nil 表示查询失败/已取消
+    public func captureSnapshot(
+        projectRootPath: String,
+        isCancelled: @Sendable () -> Bool = { false }
+    ) -> GitStatusSnapshot? {
+        // 排队前先拒绝过期采集：否则旧项目的采集会排在共享串行队列前面，
+        // 挡住当前项目的状态刷新。
+        guard !isCancelled() else { return nil }
+
         // 系统 git 调用通过 GitAccessCoordinator 串行化，避免并发访问仓库状态。
         return GitAccessCoordinator.performSync {
+            // 排队期间可能已被取消：取到队列后立刻再检查一次，不要启动任何子进程。
+            guard !isCancelled() else { return nil }
+
             // 1. 检测是否为 Git 仓库
-            guard isGitRepository(at: projectRootPath) else {
+            let isRepository = isGitRepository(at: projectRootPath, isCancelled: isCancelled)
+            guard !isCancelled() else { return nil }
+            guard isRepository else {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)非 Git 仓库，返回空 snapshot：\(projectRootPath)")
                 }
@@ -210,17 +245,20 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
             }
 
             // 2. 解析项目根相对仓库根的前缀（monorepo 子目录场景，#443）
-            let projectPrefix = resolveProjectPrefix(from: projectRootPath)
+            let projectPrefix = resolveProjectPrefix(from: projectRootPath, isCancelled: isCancelled)
+            guard !isCancelled() else { return nil }
 
             // 3. 获取 staged 和 unstaged 变更文件列表
             let stagedDiffFiles: [GitDiffFile]
             let unstagedDiffFiles: [GitDiffFile]
 
             do {
-                let porcelain = try runGitStatusPorcelain(at: projectRootPath)
+                let porcelain = try runGitStatusPorcelain(at: projectRootPath, isCancelled: isCancelled)
+                guard !isCancelled() else { return nil }
                 stagedDiffFiles = Self.stagedFiles(from: porcelain)
                 unstagedDiffFiles = Self.unstagedFiles(from: porcelain)
             } catch {
+                guard !isCancelled() else { return nil }
                 Self.logger.warning("\(Self.t)Git status 查询失败：\(error.localizedDescription)")
                 return nil // 查询失败，返回 nil 让调用方保留旧 snapshot
             }
@@ -285,8 +323,8 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     // MARK: - Private
 
     /// 检测目录是否为 Git 仓库（系统 git 命令）。
-    private func isGitRepository(at path: String) -> Bool {
-        let (status, output) = runGit(["rev-parse", "--is-inside-work-tree"], in: path)
+    private func isGitRepository(at path: String, isCancelled: () -> Bool) -> Bool {
+        let (status, output) = runGit(["rev-parse", "--is-inside-work-tree"], in: path, isCancelled: isCancelled)
         guard status == 0 else { return false }
         return output.trimmingCharacters(in: .whitespacesAndNewlines) == "true"
     }
@@ -296,10 +334,11 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     /// `-z` 让 Git 以 NUL 分隔、原始 UTF-8 输出路径，不做 C 风格引号/八进制转义，
     /// 中文、空格、引号、反斜杠等合法文件名才能原样还原（#442）。
     /// - Throws: 命令执行失败（非 Git 仓库 / 路径无效）。
-    private func runGitStatusPorcelain(at path: String) throws -> String {
+    private func runGitStatusPorcelain(at path: String, isCancelled: () -> Bool) throws -> String {
         let (status, output) = runGit(
             ["status", "--porcelain", "-z", "--untracked-files=all"],
-            in: path
+            in: path,
+            isCancelled: isCancelled
         )
         guard status == 0 else {
             throw GitStatusQueryError.gitCommandFailed(status: status)
@@ -377,7 +416,16 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     }
 
     /// 执行系统 git 命令，返回 (退出码, 标准输出)。
-    private func runGit(_ arguments: [String], in directory: String) -> (status: Int32, output: String) {
+    ///
+    /// `isCancelled` 在启动子进程前与轮询期间检查：过期的采集不再 spawn 新的 git 进程，
+    /// 已在跑的进程也会被立即终止，而不是等满 `commandTimeout`（issue #1244）。
+    private func runGit(
+        _ arguments: [String],
+        in directory: String,
+        isCancelled: () -> Bool
+    ) -> (status: Int32, output: String) {
+        guard !isCancelled() else { return (Self.cancelledExitCode, "") }
+
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["git"] + arguments
@@ -412,7 +460,13 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
         let deadline = Date().addingTimeInterval(commandTimeout)
         var timedOut = false
+        var cancelled = false
         while process.isRunning {
+            if isCancelled() {
+                cancelled = true
+                terminate(process)
+                break
+            }
             if Date() >= deadline {
                 timedOut = true
                 terminate(process)
@@ -425,6 +479,10 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         // pipe. terminate(_:) force-kills it if SIGTERM is ignored.
         process.waitUntilExit()
         drainGroup.wait()
+
+        if cancelled {
+            return (Self.cancelledExitCode, "")
+        }
 
         if timedOut {
             Self.logger.warning("Git command timed out after \(self.commandTimeout)s: \(arguments.joined(separator: " "))")
@@ -488,8 +546,8 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     /// porcelain 路径始终相对仓库根；monorepo 子目录作为项目时须剥掉该前缀，
     /// 快照键才能与 UI 相对项目根计算的查询键一致（#443）。仓库根作为项目时前缀为空。
     /// 由 git 自身计算前缀，天然处理 worktree 与符号链接，无需手动解析 .git。
-    private func resolveProjectPrefix(from projectPath: String) -> String {
-        let (status, output) = runGit(["rev-parse", "--show-prefix"], in: projectPath)
+    private func resolveProjectPrefix(from projectPath: String, isCancelled: () -> Bool) -> String {
+        let (status, output) = runGit(["rev-parse", "--show-prefix"], in: projectPath, isCancelled: isCancelled)
         guard status == 0 else { return "" }
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }

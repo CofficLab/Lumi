@@ -22,6 +22,26 @@ final class ConversationSpeedViewModel: ObservableObject {
     /// 会话内的 LLM 请求次数（assistant 消息数）。
     @Published private(set) var requestCount: Int = 0
 
+    /// 趋势历史仅在弹窗打开时才需要展示。关闭时跳过 `SpeedSample.samples`
+    /// 的排序 / 遍历（O(M log M)），避免每条消息插入都在主线程重建整段历史（#1226）。
+    private(set) var isPopoverPresented = false
+
+    /// 最近一次刷新拿到的消息快照。弹窗打开时用它即时重建历史，
+    /// 无需等待下一次选择 / 插入事件。
+    private var latestMessages: [Message] = []
+
+    /// 刷新代次（#1156）：每次选择变化 / 消息插入事件发生时同步递增。
+    /// 异步快照在排程时记录代次，写回前再次比对；期间出现过更新的事件
+    /// 就说明快照已过时，必须丢弃，否则旧选择快照会覆盖新插入的统计。
+    private(set) var refreshGeneration: UInt64 = 0
+
+    /// 记录一次新的刷新事件，返回供异步任务比对的代次。
+    @discardableResult
+    func beginRefresh() -> UInt64 {
+        refreshGeneration &+= 1
+        return refreshGeneration
+    }
+
     func selectConversation(_ conversationID: UUID?, messages: [Message]) {
         if selectedConversationID != conversationID {
             resetDisplayState()
@@ -35,7 +55,16 @@ final class ConversationSpeedViewModel: ObservableObject {
         updateState(conversationID: conversationID, messages: messages)
     }
 
+    /// 弹窗开合时同步趋势历史：打开时用最近快照即时重建，关闭时清空。
+    /// 工具栏数值（cachedTPS / requestCount）不受影响，始终保持最新（#1226）。
+    func setPopoverPresented(_ presented: Bool) {
+        guard isPopoverPresented != presented else { return }
+        isPopoverPresented = presented
+        speedHistory = presented ? SpeedSample.samples(from: latestMessages) : []
+    }
+
     private func updateState(conversationID: UUID?, messages: [Message]) {
+        latestMessages = messages
         guard conversationID != nil else {
             cachedTPS = nil
             unavailabilityReason = .noConversationSelected
@@ -44,8 +73,10 @@ final class ConversationSpeedViewModel: ObservableObject {
             return
         }
 
-        let history = SpeedSample.samples(from: messages)
-        speedHistory = history
+        // 历史只在弹窗打开时重建；关闭时保持为空，省去每条消息的排序开销（#1226）。
+        if isPopoverPresented {
+            speedHistory = SpeedSample.samples(from: messages)
+        }
         requestCount = messages.filter { $0.role == .assistant }.count
 
         guard !messages.isEmpty else {

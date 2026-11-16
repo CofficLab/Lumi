@@ -35,6 +35,21 @@ struct HTMLPreviewLoadPlanner {
         )
     }
 
+    /// 仅在加载键变化（`didReload == true`）时才规划加载。
+    ///
+    /// 加载键未变化时调用方本来就不会触发新加载，此时整文件磁盘读取与字符串比较
+    /// 纯属浪费——而 `updateNSView` 会在每次 SwiftUI 更新（含每帧 resize）触发。
+    /// 这里直接返回 nil，跳过 I/O（见 issue #1280）。
+    func loadRequestIfNeeded(
+        didReload: Bool,
+        html: String,
+        fileURL: URL?,
+        readAccessRootURL: URL? = nil
+    ) -> HTMLWebViewLoadRequest? {
+        guard didReload else { return nil }
+        return loadRequest(html: html, fileURL: fileURL, readAccessRootURL: readAccessRootURL)
+    }
+
     /// 子目录中的页面（如本地化 HTML）需要读取上级目录的共享资源；
     /// 仅当首选目录确实包含该文件时才采用，避免把读取权限放大到无关目录。
     private func readAccessRoot(for fileURL: URL, preferred: URL?) -> URL {

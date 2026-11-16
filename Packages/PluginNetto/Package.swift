@@ -16,8 +16,8 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
 .target(
@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/PluginNetto",
             resources: [
@@ -45,8 +45,8 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Tests"
         )

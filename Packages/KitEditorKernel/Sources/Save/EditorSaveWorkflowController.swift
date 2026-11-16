@@ -90,7 +90,9 @@ public final class EditorSaveWorkflowController {
         syncSession: @escaping () -> Void,
         scheduleSuccessClear: @escaping () -> Void,
         notifyDidSave: @escaping (_ content: String) -> Void,
-        setHasUnsavedChanges: @escaping (Bool) -> Void
+        setHasUnsavedChanges: @escaping (Bool) -> Void,
+        currentFileURL: @escaping @MainActor () -> URL?,
+        currentContent: @escaping @MainActor () -> String?
     ) {
         guard let url else {
             if verbose {
@@ -108,6 +110,10 @@ public final class EditorSaveWorkflowController {
             content: content,
             url: url,
             onMissingFile: {
+                // 写盘是异步的：回调到达时可能已切到别的文件。只有当前文件仍是
+                // 发起保存的文件时才推进状态，否则 A 的迟到回调会清掉 B 的脏标记、
+                // 把 B 标记为已保存并用 A 的内容通知 LSP（#573）。
+                guard currentFileURL() == url else { return }
                 logError("保存失败: 文件不存在 at \(url.path)")
                 saveStateController.applyMissingFileFailure(
                     scheduleSuccessClear: scheduleSuccessClear,
@@ -128,6 +134,15 @@ public final class EditorSaveWorkflowController {
                 }
             },
             onSuccess: {
+                guard currentFileURL() == url else { return }
+                // 写盘是异步的：回调到达时文档可能已被继续编辑（v1→v2）。只有
+                // 保存的内容仍等于当前文档时才落快照、清脏标记并通知 LSP；否则
+                // 旧回调不得把新编辑标记为已保存，必须保持 editing/dirty 让新内容
+                // 可再次保存，避免关闭保护被绕过而丢失未落盘的编辑（#338）。
+                guard currentContent() == content else {
+                    setSaveState(.editing)
+                    return
+                }
                 if verbose {
                     logInfo("保存成功")
                 }
@@ -143,6 +158,7 @@ public final class EditorSaveWorkflowController {
                 )
             },
             onFailure: { error in
+                guard currentFileURL() == url else { return }
                 logError("保存失败: \(error)")
                 saveStateController.applySaveFailure(
                     error: error,

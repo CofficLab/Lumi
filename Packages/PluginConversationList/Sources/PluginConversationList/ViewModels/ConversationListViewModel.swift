@@ -51,6 +51,7 @@ final class ConversationListViewModel: ObservableObject {
     private var paginationCursor: ConversationPageCursor?
     private var isReloading = false
     private var reloadPending = false
+    private var listGeneration: UInt64 = 0
     private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
     private var attentionObserverHandle: (any ConversationAttentionStore.ObserverHandle)?
 
@@ -77,6 +78,8 @@ final class ConversationListViewModel: ObservableObject {
                 self?.immediateSelectionID = id
             case let .conversationAutomationChanged(id):
                 self?.updateAutomationLevel(for: id)
+            case let .conversationStateChanged(id):
+                self?.refreshConversationState(for: id)
             case .conversationsChanged:
                 self?.scheduleReload()
             }
@@ -192,6 +195,7 @@ final class ConversationListViewModel: ObservableObject {
 
         let path = effectiveProjectPath
         let expectedCount = conversations.count
+        let generation = listGeneration
         do {
             let page = try await fetchPage(
                 path: path,
@@ -200,7 +204,8 @@ final class ConversationListViewModel: ObservableObject {
             )
 
             // 翻页期间切了项目或列表被刷新，旧页不能追加到新列表上。
-            guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
+            guard effectiveProjectPath == path, conversations.count == expectedCount,
+                  listGeneration == generation else { return }
 
             hasLoadError = false
             conversations.append(contentsOf: page)
@@ -213,7 +218,8 @@ final class ConversationListViewModel: ObservableObject {
             hasMore = page.count == Self.pageSize
         } catch {
             // 失败不改游标与 hasMore：再次滚动到列表底部时会重试，而不是永久失去分页能力。
-            guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
+            guard effectiveProjectPath == path, conversations.count == expectedCount,
+                  listGeneration == generation else { return }
             hasLoadError = true
         }
     }
@@ -287,6 +293,7 @@ final class ConversationListViewModel: ObservableObject {
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
         if snapshot != conversations {
+            listGeneration &+= 1
             // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动。
             let stabilized = snapshot
                 .map { conv -> (ConversationSummary, Date) in
@@ -323,6 +330,13 @@ final class ConversationListViewModel: ObservableObject {
         var updated = conversations[index]
         updated.automationLevel = context.conversations.automationLevel(for: conversationID)
         conversations[index] = updated
+    }
+
+    /// 运行时状态变化只让对应可见行重新读取 `conversationState(for:)`，
+    /// 不触碰分页摘要数据，也不为隐藏/未初始化的列表启动任何加载（#1258）。
+    private func refreshConversationState(for conversationID: UUID) {
+        guard conversations.contains(where: { $0.id == conversationID }) else { return }
+        objectWillChange.send()
     }
 
     private func fetchPage(

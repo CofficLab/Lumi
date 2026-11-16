@@ -78,22 +78,63 @@ public final class EditorSessionService {
 
     @discardableResult
     public func closeSession(id: EditorSession.ID) -> EditorSession? {
-        sessionStore.close(sessionID: id)
+        let previousActiveID = sessionStore.activeSessionID
+        let replacement = sessionStore.close(sessionID: id)
+        return restoreAfterClose(replacement, previousActiveID: previousActiveID)
     }
 
     @discardableResult
     public func closeOtherSessions(keeping id: EditorSession.ID) -> EditorSession? {
-        sessionStore.closeOthers(keeping: id)
+        let previousActiveID = sessionStore.activeSessionID
+        let replacement = sessionStore.closeOthers(keeping: id)
+        return restoreAfterClose(replacement, previousActiveID: previousActiveID)
     }
 
     @discardableResult
     public func closeTabsToLeft(of id: EditorSession.ID) -> EditorSession? {
-        sessionStore.closeTabsToLeft(of: id)
+        let previousActiveID = sessionStore.activeSessionID
+        let replacement = sessionStore.closeTabsToLeft(of: id)
+        return restoreAfterClose(replacement, previousActiveID: previousActiveID)
     }
 
     @discardableResult
     public func closeTabsToRight(of id: EditorSession.ID) -> EditorSession? {
-        sessionStore.closeTabsToRight(of: id)
+        let previousActiveID = sessionStore.activeSessionID
+        let replacement = sessionStore.closeTabsToRight(of: id)
+        return restoreAfterClose(replacement, previousActiveID: previousActiveID)
+    }
+
+    /// 关闭活跃 Session 后 store 会选出替补 Tab：正文与运行时状态必须一并切过去，
+    /// 否则外部状态指向替补、屏幕与 `currentFileURL` 仍属于已关闭的文档（#588）。
+    ///
+    /// 活跃 Session 未变（关掉的是后台 Tab）时不得触碰当前正文，否则会丢掉
+    /// 正在编辑的内容。替补为空表示已无 Tab，清空编辑器。
+    @discardableResult
+    private func restoreAfterClose(
+        _ replacement: EditorSession?,
+        previousActiveID: EditorSession.ID?
+    ) -> EditorSession? {
+        guard sessionStore.activeSessionID != previousActiveID else { return replacement }
+        guard let replacement else {
+            state.loadFile(from: nil)
+            return nil
+        }
+        guard let fileURL = replacement.fileURL else {
+            state.applySessionRestore(replacement)
+            return replacement
+        }
+
+        let canRestoreImmediately =
+            state.currentFileURL == fileURL &&
+            state.content != nil &&
+            state.focusedTextView != nil
+
+        if canRestoreImmediately {
+            state.applySessionRestore(replacement)
+        } else {
+            state.loadFile(from: fileURL, restoringSession: replacement)
+        }
+        return replacement
     }
 
     public func closeAllSessions() {

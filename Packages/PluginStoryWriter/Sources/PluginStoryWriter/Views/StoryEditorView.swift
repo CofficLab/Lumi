@@ -10,6 +10,7 @@ struct StoryEditorView: View {
     @State private var draft: StoryEditorDraft
     @State private var isEditingTitle = false
     @State private var editTitle = ""
+    @State private var exportErrorMessage: String?
 
     init(viewModel: StoryWriterViewModel, story: Story) {
         self.viewModel = viewModel
@@ -111,6 +112,14 @@ struct StoryEditorView: View {
                 await viewModel.updateStory(saved)
             }
         }
+        .alert(L("Export Failed"), isPresented: Binding(
+            get: { exportErrorMessage != nil },
+            set: { if !$0 { exportErrorMessage = nil } }
+        )) {
+            Button(L("OK"), role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "")
+        }
     }
 
     private func saveTitle() {
@@ -130,10 +139,21 @@ struct StoryEditorView: View {
             let panel = NSSavePanel()
             panel.allowedContentTypes = [.plainText]
             panel.nameFieldStringValue = "\(story.title).md"
-            if panel.runModal() == .OK, let url = panel.url {
-                try? markdown.write(to: url, atomically: true, encoding: .utf8)
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            // 整篇文档的编码与原子写放到后台线程，避免大文档/慢磁盘冻结 UI（见 issue #1248）。
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try Self.writeMarkdownFile(markdown, to: url)
+                }.value
+            } catch {
+                exportErrorMessage = error.localizedDescription
             }
         }
+    }
+
+    /// 导出文件的编码与落盘。必须是 `nonisolated`，供后台任务调用。
+    nonisolated static func writeMarkdownFile(_ markdown: String, to url: URL) throws {
+        try markdown.write(to: url, atomically: true, encoding: .utf8)
     }
 }
 

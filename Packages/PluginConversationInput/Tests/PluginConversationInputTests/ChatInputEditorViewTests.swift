@@ -119,6 +119,67 @@ struct ChatInputEditorViewTests {
         #expect(input.inputCursorPosition == 1)
     }
 
+    @Test("拖入目录插入路径后光标移到末尾，后续输入不会插到路径之前（#645）")
+    func directoryDropAdvancesCaretPastInsertedPath() throws {
+        let input = DefaultConversationInputProvider()
+        let capability = ConversationInputCapabilityAdapter(
+            input: input,
+            sender: nil,
+            conversations: nil,
+            conversationState: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var dragging = false
+
+        // binding 与 ComposerView 一致：光标写回 setCursorPosition，最终落到
+        // capability.inputCursorPosition——这正是后续输入判断插入点的依据。
+        let view = ChatInputEditorView(
+            text: Binding(get: { viewModel.text }, set: { viewModel.setText($0) }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(
+                get: { viewModel.inputCursorPosition },
+                set: { viewModel.setCursorPosition($0) }
+            ),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 }),
+            pendingBlock: viewModel.pendingBlock
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = EditorTextView()
+        coordinator.attach(to: textView)
+
+        // 用户已写 "look at"，光标停在末尾（offset 7）。
+        textView.string = "look at"
+        textView.setSelectedRange(NSRange(location: 7, length: 0))
+        input.text = "look at"
+        capability.inputCursorPosition = 7
+        viewModel.refresh()
+        #expect(viewModel.inputCursorPosition == 7)
+
+        // 生产路径：拖入目录 → enqueue 纯文本块（collapseThreshold .max，不折叠）。
+        viewModel.insertDirectoryPath(URL(fileURLWithPath: "/tmp/pkg"))
+        let block = try #require(viewModel.pendingBlock)
+        #expect(block.text == "/tmp/pkg")
+        #expect(!block.shouldCollapse)
+
+        // updateNSView 消费 pendingBlock 的同一入口。
+        coordinator.insert(block, in: textView)
+
+        // 路径插在光标处，正文变成 "look at\n/tmp/pkg"。
+        #expect(textView.string == "look at\n/tmp/pkg")
+        let end = textView.string.count
+        // 编辑器光标必须落在插入文本末尾，而不是停在旧的 offset 7。
+        #expect(textView.selectedRange().location == end)
+        // 发布回 binding → capability，后续输入才会接在路径之后（#645）。
+        #expect(viewModel.inputCursorPosition == end)
+        #expect(input.inputCursorPosition == end)
+        #expect(input.inputCursorPosition > 7)
+    }
+
     @Test("provisional zero-width layout does not publish an editor height")
     func zeroWidthLayoutDoesNotProduceHeight() {
         #expect(
@@ -226,7 +287,7 @@ struct ChatInputEditorViewTests {
     }
 
     @Test("switching conversations clears pre-commit attachments")
-    func switchingConversationsClearsAttachments() throws {
+    func switchingConversationsClearsAttachments() async throws {
         let conversations = DefaultConversationManager()
         let first = try conversations.createConversation(
             title: "A", projectPath: nil, providerID: nil, modelName: nil
@@ -264,6 +325,9 @@ struct ChatInputEditorViewTests {
         )
 
         conversations.selectConversation(id: second)
+
+        // 切换判定延迟到下一主 actor 轮次（#781），等落定后再断言清空。
+        await awaitSettle()
 
         #expect(input.text.isEmpty)
         #expect(sender.pendingImageAttachments.isEmpty)

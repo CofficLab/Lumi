@@ -74,6 +74,31 @@ public final class DisplayControlPlugin: SuperPlugin, PluginDataMigrating, Super
         }
         let viewModel = DisplayControlViewModel()
         self.viewModel = viewModel
+        installRuntimeContributions(kernel: kernel, viewModel: viewModel)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        guard let viewModel else { return }
+        installRuntimeContributions(kernel: kernel, viewModel: viewModel)
+    }
+
+    /// 运行时禁用只调用本方法、不调用 `onShutdown`，Kernel 也只撤回经
+    /// `trackContribution` 注册的贡献。观察器的 5 秒刷新定时器与订阅、
+    /// `DisplayService` 150ms 防抖窗口内尚未执行的硬件写入、以及直接写入
+    /// ActivityBar 的入口都不在 Kernel 的自动撤回范围内，必须在这里清理（#460）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        removeRuntimeContributions(kernel: kernel)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        removeRuntimeContributions(kernel: kernel)
+        viewModel = nil
+    }
+
+    /// 观察器是否在运行（测试用于断言运行时禁用已停止周期刷新与订阅，#460）。
+    var isObserverRunningForTesting: Bool { observer?.isRunningForTesting ?? false }
+
+    private func installRuntimeContributions(kernel: KernelCoreContainer, viewModel: DisplayControlViewModel) {
         observer?.cancel()
         observer = DisplayControlObserver(viewModel: viewModel)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -111,10 +136,10 @@ public final class DisplayControlPlugin: SuperPlugin, PluginDataMigrating, Super
         }
     }
 
-    public func onShutdown(kernel: KernelCoreContainer) throws {
+    private func removeRuntimeContributions(kernel: KernelCoreContainer) {
         observer?.cancel()
         observer = nil
-        viewModel = nil
+        DisplayService.shared.cancelPendingWrites()
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])

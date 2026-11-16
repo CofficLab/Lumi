@@ -56,15 +56,29 @@ public struct DownloadBatchV2Tool: SuperAgentTool {
         let items = DownloadPluginSupport.classifyBatchURLs(rawValues)
         guard items.contains(where: { $0.url != nil }) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "urls 参数必需且必须是 HTTP/HTTPS 字符串数组") }
         let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPluginSupport.defaultDownloadDirectory()
+        // 同名条目分配互不冲突的目标名（#158）：不同来源落到同一路径会互相
+        // 覆盖/续传，拼出两个来源混合的损坏文件且双双报成功。
+        let plans = DownloadPluginSupport.planBatchDestinations(for: items, directory: directory)
         var lines: [String] = []
         var succeeded = 0
-        for item in items {
+        for (item, plan) in zip(items, plans) {
             guard let url = item.url else {
                 // 无效项必须出现在结果里，不能静默丢弃
                 lines.append("❌ 无效 URL: \(item.raw)")
                 continue
             }
-            let id = UUID().uuidString; let name = DownloadPluginSupport.extractFilename(from: url); let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil); await DownloadRuntime.tasks.remember(task)
+            let destination: URL
+            switch plan {
+            case .invalidURL:
+                lines.append("❌ 无效 URL: \(item.raw)")
+                continue
+            case .invalidFilename(let badName):
+                lines.append("❌ 非法文件名: \(badName)")
+                continue
+            case .ready(let target):
+                destination = target
+            }
+            let id = UUID().uuidString; let name = destination.lastPathComponent; let task = DownloadTask(id: id, url: url, destination: destination, expectedSize: nil); await DownloadRuntime.tasks.remember(task)
             do { _ = try await DownloadRuntime.manager.download(task); succeeded += 1; lines.append("✅ \(name)\n任务 ID: \(id)") }
             catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") }
         }

@@ -83,22 +83,37 @@ public actor MemoryFileStorage {
         let fileName = Self.fileName(forID: id)
         let directory = directory(for: type, scope: scope, projectPath: projectPath)
         let fileURL = directory.appendingPathComponent("\(fileName).md")
-        guard fileManager.fileExists(atPath: fileURL.path),
-              let raw = try? String(contentsOf: fileURL, encoding: .utf8) else {
+        // 只有文件确实不存在时才返回 nil。存在但读取/UTF-8 解码失败必须抛出，
+        // 否则 recall_memory 会把「不可读」误报为「不存在」，诱导 Agent 重建或覆盖既有记忆（#788）。
+        guard fileManager.fileExists(atPath: fileURL.path) else {
             return nil
+        }
+        let raw: String
+        do {
+            raw = try String(contentsOf: fileURL, encoding: .utf8)
+        } catch {
+            throw MemoryError.storageUnavailable(error.localizedDescription)
         }
         return parse(raw, filePath: fileURL.path, id: id)
     }
 
-    public func list(scope: MemoryScope, projectPath: String?) -> [MemoryItem] {
+    public func list(scope: MemoryScope, projectPath: String?) throws -> [MemoryItem] {
         let directory = scope == .global
             ? memoryRoot.appendingPathComponent("global")
             : projectsDirectory(for: projectPath)
-        guard let contents = try? fileManager.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ) else { return [] }
+        // 目录确实不存在时尚无记忆，返回空列表；存在但枚举失败（权限/IO，或路径被普通文件占位）
+        // 必须抛出，否则 list_memories 会把文件系统错误误报为「暂无记忆」（#529）。
+        guard fileManager.fileExists(atPath: directory.path) else { return [] }
+        let contents: [URL]
+        do {
+            contents = try fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            throw MemoryError.storageUnavailable(error.localizedDescription)
+        }
 
         return contents
             .filter { $0.pathExtension == "md" }

@@ -38,6 +38,8 @@ public final class EditorPreviewPlugin: SuperPlugin {
     private var viewModel: EditorPreviewViewModel?
     private var projectObserver: EditorPreviewProjectObserver?
     private var isTabRegistered = false
+    /// 禁用后项目观察者仍存活，注册决策须据此守卫，否则切换文件/项目会重新注册入口（#364）。
+    private var isEnabled = true
 
     public init() {}
 
@@ -106,12 +108,14 @@ public final class EditorPreviewPlugin: SuperPlugin {
         if kernel.isProviderRegistered((any PanelBottomProviding).self) {
             panelBottom = kernel.resolveProvider((any PanelBottomProviding).self)
         }
+        isEnabled = true
         isTabRegistered = false
         updateFooterTab(for: project.currentFileURL, viewModel: viewModel)
     }
 
     /// 运行时禁用：撤回 Preview 入口（内核不会代撤 Provider 侧贡献）。
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        isEnabled = false
         panelBottom?.removeItems(ownerPluginID: Self.pluginID)
         isTabRegistered = false
     }
@@ -120,7 +124,7 @@ public final class EditorPreviewPlugin: SuperPlugin {
 
     /// 按当前文件是否可预览注册/撤回 Preview 入口。
     private func updateFooterTab(for fileURL: URL?, viewModel: EditorPreviewViewModel) {
-        let shouldRegister = fileURL != nil && viewModel.state.showsPreviewFooter
+        let shouldRegister = isEnabled && fileURL != nil && viewModel.state.showsPreviewFooter
         guard shouldRegister != isTabRegistered else { return }
         isTabRegistered = shouldRegister
         if shouldRegister {

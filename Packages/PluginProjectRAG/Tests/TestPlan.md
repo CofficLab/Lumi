@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 240 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 245 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 39 个，用例总数: 240
+测试文件: 40 个，用例总数: 245
 
 核心组件（源码目录）:
 - PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
@@ -42,6 +42,7 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 - **RAGServiceEnsureOutcome**（2 条）：由 `ensureIndexedReportsDistinctOutcomes`、`onlyIndexedAndFreshConfirmProgress` 锁定。`ensureIndexed` 必须区分 `indexed` / `fresh` / `throttled` / `paused`；只有前两者算调度进展，节流或暂停跳过不得清除失败退避，也必须等待下一个轮询间隔，否则失败索引后 scheduler 会把节流跳过记成成功并空转（**回归 #1116**）。
 - **RAGServiceCancellation**（2 条）：由 `staleTokenCannotRestartBackgroundIndexing`、`foregroundIndexingIgnoresBackgroundCancellation` 锁定。后台索引令牌必须在派发前捕获；`cancelBackgroundIndexing()` 后同一令牌永久失效，迟到切片不得再打开后台索引或写入索引状态；前台索引不受后台令牌影响（**回归 #1117**）。
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RAG idle 调度候选扫描**（5 条）：由 `probesRunOffMainActor`、`currentProjectIsExcludedBeforeProbing`、`cancellingScanStopsProbing`、`projectSwitchDiscardsStaleScan`、`successfulSliceReusesCandidates` 锁定。候选扫描只在 MainActor 上捕获不可变路径快照，路径存在性探测必须放到后台 worker 并显式转发取消；当前项目在探测**之前**排除；探测结束后写回前比对当前项目身份，切换项目则整份丢弃旧扫描；成功切片消费候选而不是立刻重扫，缓存耗尽或超过 `candidateRefreshInterval` 才重新探测，避免 P 个项目追赶时产生 O(P²) 的主线程文件系统突发（**回归 #1251**）。改动 `RAGIndexScheduler.makeCandidates/candidatesForNextSlice/consumeCandidate` 或 `RAGProjectPathProbing` 时优先跑对应测试文件。
 - **RAGPureLogic**（63 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。CRLF（`\r\n`）在 Swift 中是单个 Character，必须整体算一个换行，分块窗口与 `lineRange` 都按真实源码行计算（**回归 #1114**）。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
 - **RAGServiceModelMigration**（1 条）：由 `backgroundIndexRebuildsWhenEmbeddingModelChanged` 用例锁定；该用例预置一个模型标识过期但维度相同的索引状态，再以 `background: true` 触发索引，缺少后台迁移能力时会抛「后台索引暂不执行 embedding 模型迁移」。
@@ -301,8 +302,13 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 | 238 | ProjectRAGSearchMemoryConversation | 另一对话不得消费抑制标记，原对话仍可消费（**回归 #467**） | 记录对话 A 的自动检索 | 先以 B consume，再以 A consume | B 返回 false，A 返回 true | P0 | ✅ 已覆盖 | `doesNotSuppressAcrossConversations` |
 | 239 | ProjectRAGSearchMemoryConversation | 无对话上下文的旧入口不得消费已绑定对话的标记（**回归 #467**） | 记录对话 A 的自动检索 | 以 conversationID=nil consume | 返回 false | P0 | ✅ 已覆盖 | `legacyNilConversationDoesNotConsumeBoundMarker` |
 | 240 | ProjectRAGCrossConversationSuppression | 对话 A 注入后，对话 B 的同查询真实检索不被跳过（**回归 #467**） | A 已自动注入，B 在 2s 内同项目同查询 | 经 executeResult(context: B) 调 search_code | 不含 already injected，返回真实结果，searchCallCount=2 | P0 | ✅ 已覆盖 | `conversationBSearchIsNotSuppressedByA` |
+| 241 | RAG idle 调度候选扫描 | 路径探测不得在 MainActor 上执行（**回归 #1251**） | 3 个已保存项目，其中 1 个目录不存在 | 调用 `makeCandidates`，记录探测线程与顺序 | 探测全部发生在后台线程；只保留存在的 2 个目录，顺序与输入一致 | P0 | ✅ 已覆盖 | `probesRunOffMainActor` |
+| 242 | RAG idle 调度候选扫描 | 当前项目在探测之前就被排除（**回归 #1251**） | 2 个项目，当前项目为第一个 | 调用 `makeCandidates` | 只探测第二个路径，当前项目不浪费文件系统调用 | P1 | ✅ 已覆盖 | `currentProjectIsExcludedBeforeProbing` |
+| 243 | RAG idle 调度候选扫描 | 取消扫描后不得继续探测路径（**回归 #1251**） | 50 个项目，门闩拦住第一次探测 | 探测进行中 cancel 扫描任务再放行门闩 | 返回空候选，探测次数 ≤ 2（detached worker 收到取消转发） | P0 | ✅ 已覆盖 | `cancellingScanStopsProbing` |
+| 244 | RAG idle 调度候选扫描 | 探测期间切换项目，旧扫描结果必须整份丢弃（**回归 #1251**） | 2 个项目，门闩拦住第一次探测 | 探测进行中把当前项目切到 A 再放行门闩 | 返回空候选，不采用切换前的扫描结果 | P0 | ✅ 已覆盖 | `projectSwitchDiscardsStaleScan` |
+| 245 | RAG idle 调度候选扫描 | 成功切片后复用候选，缓存空了才重扫路径（**回归 #1251**） | 3 个存在的项目 | 连续取候选、消费一个、再取、全部消费后再取 | 探测次数 3 → 3 → 3 → 6；P 个项目各成功一片只触发一次全量探测 | P1 | ✅ 已覆盖 | `successfulSliceReusesCandidates` |
 
-> 说明：全部 **240 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **245 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > Task 2.1a 探测结论（2026-11-12）：CSQLite 3.51.3 的 compile_options 不含 ENABLE_FTS5，`CREATE VIRTUAL TABLE ... USING fts5` 失败 → 索引词法检索走 Task 2.1b' Swift BM25 路线。
 > Task 2.2 手工抽样（2026-11-12）：对 PluginProjectRAG 自身 10 个 Swift 文件分块，8/8 个切点全部落在空行或顶层声明边界，无函数拦腰切断。
@@ -312,21 +318,21 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 61 / 61
-- P1: 已覆盖 165 / 165
+- P0: 已覆盖 64 / 64
+- P1: 已覆盖 167 / 167
 - P2: 已覆盖 14 / 14
-- **合计: 240 / 240**（仅表示清单场景，非源码覆盖率）
+- **合计: 245 / 245**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（61 条）
-- **P1**: 其余功能性用例（165 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（64 条）
+- **P1**: 其余功能性用例（167 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 240 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 245 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

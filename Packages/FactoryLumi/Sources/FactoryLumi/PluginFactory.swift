@@ -57,6 +57,7 @@ import PluginSubagent
 import PluginHTMLCanvas
 import PluginDiskSpeedTest
 import PluginCaffeinate
+import PluginCacheManager
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
@@ -82,6 +83,7 @@ import PluginDevice
 import PluginDeviceChat
 import PluginDiskManager
 import PluginNetworkManager
+import PluginServerManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
@@ -249,7 +251,9 @@ public struct DefaultPluginFactory: PluginFactory {
             SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
+            CacheManagerPlugin(),
             NetworkManagerPlugin(),
+            ServerManagerPlugin(),
             DocxReadPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),

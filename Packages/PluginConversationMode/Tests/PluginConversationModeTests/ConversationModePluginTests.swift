@@ -135,3 +135,56 @@ struct ConversationModePluginTests {
         return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
     }
 }
+
+/// 回归 #608：自动化级别工具栏在已有会话里切换时只改该会话，不得改写全局默认
+/// （全局默认是新建会话的初始模式）；只有无选中会话时才写全局。
+@Suite("AutomationLevelToolbar")
+@MainActor
+struct AutomationLevelToolbarTests {
+    @Test("切换已有会话的自动化级别不得改写全局默认（**回归 #608**）")
+    func existingConversationModeSwitchDoesNotChangeGlobalDefault() throws {
+        let conversations = DefaultConversationManager()
+        conversations.setGlobalAutomationLevel(.build)
+        let observation = ConversationManagerObservationBox(conversations: conversations)
+        let toolbar = AutomationLevelToolbarView(observation: observation)
+
+        // 打开已有会话 A（创建即自动选中），全局默认仍是 Build。
+        let a = try conversations.createConversation(
+            title: "A", projectPath: nil, providerID: nil, modelName: nil
+        )
+        #expect(conversations.selectedConversationID == a)
+        #expect(conversations.automationLevel(for: a) == .build)
+
+        // 在 A 里临时切到 Chat。
+        toolbar.updateAutomationLevel(.chat)
+
+        // 只改 A，全局默认不得被污染。
+        #expect(conversations.automationLevel(for: a) == .chat)
+        #expect(conversations.globalAutomationLevel == .build)
+
+        // 随后新建的 B 必须继承 Build，而不是 A 临时用的 Chat。
+        let b = try conversations.createConversation(
+            title: "B", projectPath: nil, providerID: nil, modelName: nil
+        )
+        #expect(conversations.automationLevel(for: b) == .build)
+
+        observation.cancel()
+    }
+
+    @Test("无选中会话时切换自动化级别写入全局默认（**回归 #608**）")
+    func noSelectionLevelSwitchUpdatesGlobalDefault() {
+        let conversations = DefaultConversationManager()
+        conversations.setGlobalAutomationLevel(.build)
+        let observation = ConversationManagerObservationBox(conversations: conversations)
+        let toolbar = AutomationLevelToolbarView(observation: observation)
+
+        // 没有选中会话：工具栏改的就是全局默认。
+        #expect(conversations.selectedConversationID == nil)
+        toolbar.updateAutomationLevel(.autonomous)
+
+        #expect(conversations.globalAutomationLevel == .autonomous)
+        #expect(conversations.automationLevel(for: nil) == .autonomous)
+
+        observation.cancel()
+    }
+}

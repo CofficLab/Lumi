@@ -35,25 +35,43 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
         )
 
         // 早期回退路径没有版本目录，仍需在首次升级时保留并复制其内容。
-        let legacyDirectory = AgentTempStoragePluginRuntimeBridge.productionFallbackRootDirectory
+        let legacyDirectory = Self.legacyFallbackRootDirectoryProvider()
             .appendingPathComponent("AgentTempStorage", isDirectory: true)
-        guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
-        try FileManager.default.createDirectory(
-            at: context.currentPluginDataDirectory,
-            withIntermediateDirectories: true
-        )
-        try PluginDataMigrationUtility.mergeDirectoryContents(
-            from: legacyDirectory,
-            to: context.currentPluginDataDirectory
-        )
+        if FileManager.default.fileExists(atPath: legacyDirectory.path) {
+            try FileManager.default.createDirectory(
+                at: context.currentPluginDataDirectory,
+                withIntermediateDirectories: true
+            )
+            try PluginDataMigrationUtility.mergeDirectoryContents(
+                from: legacyDirectory,
+                to: context.currentPluginDataDirectory
+            )
+        }
 
-        // 保留天数此前存在 UserDefaults，仅在插件存储尚无该键时导入。
+        // 保留天数此前存在 UserDefaults，是独立于旧文件目录的配置。无论无版本
+        // 旧目录是否存在都必须导入：若被上面的目录守卫短路，仅升级版本目录的
+        // 用户会静默回退到默认 7 天，后续清理可能误删用户本想保留的文件（#811）。
         importLegacyRetentionDays(to: context.currentPluginDataDirectory)
+    }
+
+    /// 读取旧版保留天数所在的 UserDefaults 域。
+    ///
+    /// 抽成可替换入口，便于单测注入假域：测试进程里 `Bundle.main` 是 xctest
+    /// 可执行文件（没有 bundle identifier），拿不到 app 的持久化域。
+    nonisolated(unsafe) static var legacyDefaultsDomainProvider: () -> [String: Any]? = {
+        UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
+    }
+
+    /// 无版本旧目录的根（迁移时检查 `<root>/AgentTempStorage` 是否存在）。
+    /// 抽成可替换入口，便于单测确定性地构造「仅有版本目录」的升级场景，
+    /// 不依赖开发者本机 Application Support 的真实状态。
+    nonisolated(unsafe) static var legacyFallbackRootDirectoryProvider: () -> URL = {
+        AgentTempStoragePluginRuntimeBridge.productionFallbackRootDirectory
     }
 
     /// 把 `UserDefaults.standard` 中的旧保留天数导入插件专属存储。
     private func importLegacyRetentionDays(to directory: URL) {
-        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? ""),
+        guard let domain = Self.legacyDefaultsDomainProvider(),
               let legacyValue = domain["AgentTempStorage.retentionDays"] as? Int
         else {
             return

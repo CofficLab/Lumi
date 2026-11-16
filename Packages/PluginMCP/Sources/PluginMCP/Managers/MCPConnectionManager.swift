@@ -94,6 +94,12 @@ public final class MCPConnectionManager: ObservableObject {
         do {
             try await session.connect()
             let descriptors = try await session.listTools()
+            // 精确 Xcode 规则只对本机 mcpbridge 生效；以实际命令而非服务器 id
+            // 判定身份，避免 foreign 服务器的同名工具继承权限（#530）。
+            let isXcodeNative = MCPPermissionPolicy.isXcodeNativeServer(
+                command: config.command,
+                arguments: config.arguments
+            )
             let adapters = descriptors.map { descriptor in
                 MCPToolAdapter(
                     serverID: serverID,
@@ -101,7 +107,8 @@ public final class MCPConnectionManager: ObservableObject {
                     descriptor: descriptor,
                     session: session,
                     policy: policy,
-                    riskOverride: nil
+                    riskOverride: nil,
+                    isXcodeNativeServer: isXcodeNative
                 )
             }
             // 幂等：先移除同名残留（如连接重试），再注册。

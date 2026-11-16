@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 93 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 93
+测试文件: 16 个，用例总数: 124
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -53,6 +53,14 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStore**（14 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity`、`updateChatGPTVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
+
+- **ConversationProviderReplacement**（4 条，#640）：由 `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager`、`managerFallsBackToCapturedProvidersWithoutResolver` 锁定——`ConversationManager` 在 order 7 创建时捕获的默认 Message/AgentLoop 会被 order 8 插件替换；删除（单条/批量）的 `cancelTurn`/`clearMessages` 与设置页 Capability 的 count/snapshot 必须经解析器动态读取当前生产 Provider，不得停留在创建时的默认实例；无解析器时回退捕获值。改动 Provider 注入或删除/统计链路时必须优先跑该文件。
+
+- **ConversationStartupSnapshotMerge**（2 条，#439）：由 `startupSnapshotMergesConversationCreatedDuringLoad`、`loadWithoutLocalChangesRestoresPersistedSelection` 锁定——启动加载是「await 读快照 → 写回内存」两段式，写回前必须比对本地改动代次：加载期间用户新建/选中的会话不得被晚到的旧快照覆盖，选中态不得被劫持回快照首项；只有加载期间无本地改动时才沿用快照并恢复持久化选中。改动 `loadConversations()` 写回链路时必须优先跑该文件。
+
+- **ConversationStoreSettingsReloadRange**（6 条，#537）：由 `eventReloadKeepsLoadedPagesAndSelection`、`eventReloadStopsAtLoadedRangeWithoutOverfetch`、`eventReloadRefreshesSummariesAcrossLoadedRange`、`staleReloadDoesNotDropPageAppendedDuringRefresh`、`refillDeduplicatesConversationBumpedBetweenPages`、`reloadHidesLoadMoreWhenRangeCoversStore` 锁定——设置页的事件刷新（`.created`/`.updated`/`.deleted`/`.listChanged`）必须按原分页游标重新覆盖刷新前已加载的记录数，不得只重取第一页而丢掉用户翻过的分页、把第二页之后的选中会话误判为不存在并改选首项；只加载过第一页时不得额外翻页；刷新期间翻页已把列表变长时，旧范围结果必须丢弃并按新范围重取（异步写回身份校验）；续页重叠记录按 ID 去重保序；`hasMoreConversations` 以「已加载数 < 总数」判定，范围覆盖全库时不再显示翻页入口。改动 `ConversationStoreSettingsViewModel.performReload` / `refillLoadedRange` 时必须优先跑该文件。
+
+- **选中标题补载**（5 条）：由 `pageHydrationOfSelectedConversationPublishesRealTitle`、`hydratedSummaryEntryAlsoRefreshesTitle`、`staleCachedTitleIsCorrectedByLaterHydration`、`hydrationOfOtherConversationKeepsSelectedTitle`、`repeatedHydrationWithSameTitleDoesNotRepublish` 锁定（**回归 #641**）：只有首页会话进缓存，选中分页里的旧会话时 `selectConversation` 会先按旧缓存算出 `currentTitle == "No conversation"`；此后任何补载路径（分页读取逐条 `cache`、项目同步、`cacheHydratedSummary`）写入的正是选中会话时，`cache` 必须重算 `currentTitle` 并在标题真的变化时发 `.updated(id)`，让 `ConversationTitleHeaderObserver` 重新读取标题。补载其它会话不得改写选中项标题；标题未变的重复补载不得重复发事件（整页补载会造成通知风暴）。改动 `cache`/`cacheHydratedSummary`/`updateCurrentTitle` 或标题事件发布时优先跑对应测试。
 
 ## 测试用例清单
 
@@ -151,27 +159,68 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 91 | ConversationManagerPreference | New Chat 默认自动化级别跨重启保留（**回归 #1144**） | 未选中任何会话 | `setGlobalAutomationLevel(.chat)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalAutomationLevel` 仍为 Chat | P1 | ✅ 已覆盖 | `globalAutomationLevelPersistsAcrossRestartWithoutSelectedConversation` |
 | 92 | ConversationManagerPreference | New Chat 默认 ChatGPT 详细度跨重启保留 | 未选中任何会话 | `setGlobalVerbosity(.chatGPT)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalVerbosity` 仍为 chatGPT | P1 | ✅ 已覆盖 | `globalChatGPTVerbosityPersistsAcrossRestartWithoutSelectedConversation` |
 | 93 | ConversationStore | ChatGPT V5 详细程度可持久化 | 临时数据库 | 创建后 `updateConversationPreferences(verbosity: .chatGPT)` | 更新成功且读回为 chatGPT | P1 | ✅ 已覆盖 | `updateChatGPTVerbosity` |
+| 94 | ConversationManagerCRUD | 单条删除落库失败时还原乐观移除（**回归 #801**） | 绕过管理器删除库行制造 `store.deleteConversations` 失败 | 调用 `deleteConversation(id:)` 并等后台 Task | 内存列表、选中项与当前标题还原为该会话，不报告成功 | P0 | ✅ 已覆盖 | `singleDeletionRestoresMemoryWhenPersistFails` |
+| 95 | ConversationManagerCRUD | 批量清理落库失败时返回空数组并保留内存（**回归 #801**） | 工具管理器替身在清理阶段删掉库行，使落库删除返回 false | 调用 `deleteConversations(createdBefore:)` | 返回空数组，内存列表原样保留，不报告虚假「已清理 N 条」 | P0 | ✅ 已覆盖 | `bulkDeletionReturnsEmptyAndKeepsMemoryWhenPersistFails` |
+| 96 | ConversationStoreSettingsViewModel | inserted/updated 事件不触发磁盘计数查询（**回归 #1311**） | 设置页可见，已加载选中会话计数基线 | 连续投递 10 组 `.inserted`/`.updated` | COUNT 查库次数保持基线，不增加 | P1 | ✅ 已覆盖 | `insertedAndUpdatedEventsDoNotQueryDiskCount` |
+| 97 | ConversationStoreSettingsViewModel | 设置页关闭期间不做计数 I/O（**回归 #1311**） | 设置页可见后关闭 | 投递 `.persisted`/`.deleted`/`.cleared` | 不查库也不写回计数，缓存保持旧值 | P1 | ✅ 已覆盖 | `closedSettingsPageDoesNoCountIO` |
+| 98 | ConversationStoreSettingsViewModel | 未跟踪会话不计数（**回归 #1311**） | 设置页可见，已加载列表 | 对不在列表里的会话投递 `.persisted` | 不查库，计数字典不含该会话 | P1 | ✅ 已覆盖 | `untrackedConversationIsNotCounted` |
+| 99 | ConversationStoreSettingsViewModel | 计数未变不重新发布（**回归 #1311**） | 设置页可见，两个会话已加载 | 对非选中会话投递计数不变的 `.persisted` | 不触发 `objectWillChange`，计数保持原值 | P1 | ✅ 已覆盖 | `unchangedCountDoesNotRepublish` |
+| 100 | ConversationStoreSettingsViewModel | 重新打开补齐落后计数（**回归 #1311**） | 关闭期间计数变化被忽略 | 重新打开设置页 | 计数刷新为最新值 | P1 | ✅ 已覆盖 | `reopeningRefreshesStaleCounts` |
+| 101 | ConversationLegacyMigration | v4 迁移必须把 lastMessageAt 映射为 updatedAt，不得回退 createdAt（**回归 #836**） | 旧库含 A（创建 day1/活跃 day10）与 B（创建 day5/活跃 day5） | 读取迁移摘要并按 lastMessageAt 降序排序 | A.lastMessageAt=day10≠createdAt，B=day5，排序为 A、B | P0 | ✅ 已覆盖 | `readerMapsLastMessageAtToUpdatedAtForActivitySorting` |
+| 102 | ConversationGlobalDefaultsIsolation | 有选中会话时重启不得用会话配置反写全局默认（**回归 #786**） | 全局 brief/chat/english，选中会话 A 改为 detailed/autonomous/chinese 并落盘 | 新建 Manager 并 `loadConversations()` | 全局默认仍为 brief/chat/english，A 的会话级配置保持不变 | P0 | ✅ 已覆盖 | `restartWithSelectedConversationKeepsIndependentGlobalDefaults` |
+| 103 | ConversationGlobalDefaultsIsolation | 重启后新建会话继承全局默认而非选中会话配置（**回归 #786**） | 全局 brief/chat/english，选中会话 A 为 detailed/autonomous/chinese | 重启后 `createConversationAndWait` 创建 B | B 的详细度/自动化/语言为 brief/chat/english，不继承 A | P0 | ✅ 已覆盖 | `newConversationAfterRestartInheritsGlobalDefaultsNotSelectedConversation` |
+| 104 | ConversationGlobalDefaultsIsolation | 运行期改会话级详细度不得反写全局默认（**回归 #786** 护栏） | 全局 brief，会话 A 初始 brief | `setVerbosity(.detailed, for: A)` | 全局仍 brief，A 变为 detailed | P1 | ✅ 已覆盖 | `changingConversationVerbosityDoesNotRewriteGlobalDefault` |
+| 105 | ConversationProviderReplacement | 单条删除必须取消并清理替换后的生产 Provider（**回归 #640**） | 解析器初始指向默认替身，随后模拟 order 8 替换为生产替身 | `deleteConversation(id:)` 并等后台清理 | 生产 AgentLoop 收到 `cancelTurn`、生产 MessageManager 收到 `clearMessages`；默认替身两者皆空 | P0 | ✅ 已覆盖 | `singleDeletionCancelsAndClearsCurrentProductionProviders` |
+| 106 | ConversationProviderReplacement | 批量清理必须作用于替换后的生产 Provider（**回归 #640**） | 过期会话已落库，解析器模拟 order 8 替换 | `deleteConversations(createdBefore:)` | 返回命中 ID，生产替身收到 `cancelTurn`/`clearMessages`，默认替身皆空 | P0 | ✅ 已覆盖 | `batchDeletionCancelsAndClearsCurrentProductionProviders` |
+| 107 | ConversationProviderReplacement | 设置页统计读取替换后的生产 MessageManager（**回归 #640**） | Capability 由动态解析的 Manager 构造，默认计数 0、生产计数 7 | 替换后读取 `messageCount`/`messagesSnapshot` | 计数为 7、快照来自生产替身，而非空默认 | P1 | ✅ 已覆盖 | `capabilityStatisticsReadCurrentProductionMessageManager` |
+| 108 | ConversationProviderReplacement | 无解析器时回退创建时捕获的 Provider（**回归 #640** 护栏） | 直接注入捕获替身、不提供解析器 | `deleteConversation(id:)` 并等后台清理 | 捕获替身收到 `cancelTurn`/`clearMessages`，旧调用方不被破坏 | P1 | ✅ 已覆盖 | `managerFallsBackToCapturedProvidersWithoutResolver` |
+| 109 | ConversationManagerCRUD | 删除进行中的复活窗口里重载与选中都排除墓碑 ID（**回归 #535**） | 会话已落库且仍在库中，标记 `pendingDeletionIDs` 模拟删除进行中 | 调用 `loadConversationPage` 与 `selectConversation(id:)` | 分页结果不含墓碑 ID（存活会话仍在），选中被拒绝；解除墓碑后该 ID 重新可见 | P0 | ✅ 已覆盖 | `deletionTombstoneExcludesConversationFromReloadAndSelection` |
+| 110 | ConversationManagerCRUD | 删除同步标记墓碑、窗口内拒绝选中、清理后解除（**回归 #535**） | 会话已落库并被选中 | 调用 `deleteConversation(id:)`，同步断言后等后台清理完成 | 墓碑与乐观移除立即生效，窗口内选中幽灵 ID 被拒绝；库行消失后墓碑解除 | P0 | ✅ 已覆盖 | `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` |
+| 111 | ConversationManagerCRUD | 门闩构造慢清理，墓碑持续生效直到清理完成（**回归 #535**） | 工具管理器替身在 `deleteToolCalls` 处被门闩挡住 | 删除后等清理停在门闩，重载一次，再放行 | 清理未完成期间墓碑仍生效、重载仍排除该 ID；放行后墓碑解除 | P0 | ✅ 已覆盖 | `slowCleanupHoldsTombstoneUntilCleanupFinishes` |
+| 112 | ConversationStartupSnapshotMerge | 加载期间新建的会话不被晚到的旧快照覆盖，选中态不被劫持（**回归 #439**） | 门闩把只含旧会话的快照挡在写回前，持久化选中指向旧会话 | 加载停在 await 时新建并选中一个会话，再放行旧快照 | 新会话存活、旧会话被合并进来，选中态与标题停在新会话 | P0 | ✅ 已覆盖 | `startupSnapshotMergesConversationCreatedDuringLoad` |
+| 113 | ConversationStartupSnapshotMerge | 加载期间无本地改动时仍恢复持久化选中（**回归 #439** 护栏） | 旧会话已落库，持久化选中指向它，无门闩无新建 | 新建 Manager 并 `loadConversations()` | 列表含旧会话，选中态恢复为旧会话 | P1 | ✅ 已覆盖 | `loadWithoutLocalChangesRestoresPersistedSelection` |
+| 114 | ConversationStoreSettingsViewModel | 事件刷新必须重新覆盖已加载分页并保留选中（**回归 #537**） | 45 条已加载（40+5），选中第二页第 43 条 | 新建一条会话顶到最前后投递 `.created` | 列表重新覆盖原范围（含被挤下移的选中会话），选中态不变，续页沿用原分页游标 | P0 | ✅ 已覆盖 | `eventReloadKeepsLoadedPagesAndSelection` |
+| 115 | ConversationStoreSettingsViewModel | 只加载过第一页时刷新不得额外翻页（**回归 #537** 护栏） | 库中 120 条，仅加载第一页 40 条并选中其中一条 | 投递 `.updated` 事件刷新 | 只发出一次分页请求，列表仍为前 40 条，选中态不变，仍可继续翻页 | P0 | ✅ 已覆盖 | `eventReloadStopsAtLoadedRangeWithoutOverfetch` |
+| 116 | ConversationStoreSettingsViewModel | 事件刷新必须刷新整个已加载范围的摘要（**回归 #537**） | 80 条已加载（两页），第二页某条详细度在库中已变更 | 投递 `.updated` 事件刷新 | 第二页摘要同步为新值，第一页不受影响，列表仍为 80 条 | P0 | ✅ 已覆盖 | `eventReloadRefreshesSummariesAcrossLoadedRange` |
+| 117 | ConversationStoreSettingsViewModel | 晚到的旧范围刷新不得吃掉刷新期间追加的分页（**回归 #537**） | 门闩同时挡住第三页翻页与事件刷新的首页请求，已选中第二页某条 | 先放行翻页（列表变 120 条），再放行刷新 | 旧范围结果被丢弃并按新范围重取，最终 120 条齐全、选中态保留 | P0 | ✅ 已覆盖 | `staleReloadDoesNotDropPageAppendedDuringRefresh` |
+| 118 | ConversationStoreSettingsViewModel | 续页重叠的会话必须按 ID 去重（**回归 #537**） | 80 条已加载，刷新续页返回与首页重叠的记录 | 投递 `.listChanged` 事件刷新 | 列表无重复 ID，保持首次出现顺序 | P0 | ✅ 已覆盖 | `refillDeduplicatesConversationBumpedBetweenPages` |
+| 119 | ConversationStoreSettingsViewModel | 已加载范围覆盖全库时不再显示翻页入口（**回归 #537**） | 库中正好 40 条，首屏已全部加载 | 投递 `.listChanged` 事件刷新 | `hasMoreConversations` 为假，列表仍为 40 条 | P1 | ✅ 已覆盖 | `reloadHidesLoadMoreWhenRangeCoversStore` |
+| 120 | 选中标题补载 | 分页补载选中会话后必须重算并发布真实标题（**回归 #641**） | store 为 nil，选中一个不在缓存里的 ID | 按分页路径调用 `cache(summary)` | `currentTitle` 从 "No conversation" 变为真实标题，且发出 `.updated(id)` | P0 | ✅ 已覆盖 | `pageHydrationOfSelectedConversationPublishesRealTitle` |
+| 121 | 选中标题补载 | `cacheHydratedSummary` 入口同样必须纠正标题（**回归 #641**） | 选中未缓存的 ID，标题为占位文案 | 调用 `cacheHydratedSummary(summary)` | `currentTitle` 为补载标题，且发出 `.updated(id)` | P0 | ✅ 已覆盖 | `hydratedSummaryEntryAlsoRefreshesTitle` |
+| 122 | 选中标题补载 | 缓存里已有旧摘要时后续补载仍须纠正标题（**回归 #641**） | 缓存含同 ID 的旧标题，选中后按 ID 补载会跳过 | 再次 `cache` 同 ID 的新摘要 | `currentTitle` 更新为新标题并发出 `.updated(id)` | P0 | ✅ 已覆盖 | `staleCachedTitleIsCorrectedByLaterHydration` |
+| 123 | 选中标题补载 | 补载其它会话不得改写选中项标题（**回归 #641** 护栏） | 已选中缓存内标题为 Selected 的会话 | `cache` 另一 ID 的摘要 | `currentTitle` 仍为 Selected，不发 `.updated(otherID)` | P1 | ✅ 已覆盖 | `hydrationOfOtherConversationKeepsSelectedTitle` |
+| 124 | 选中标题补载 | 标题未变的重复补载不得重复发事件（**回归 #641** 护栏） | 已选中缓存内会话，标题稳定 | 连续两次 `cache` 同一摘要 | `currentTitle` 不变，不产生 `.updated(id)`（避免整页补载通知风暴） | P1 | ✅ 已覆盖 | `repeatedHydrationWithSameTitleDoesNotRepublish` |
 
-> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
+>
+> 变异验证（#535）：① 把 `loadConversationPage`/`fetchConversationPage` 的墓碑过滤改为恒真 → `deletionTombstoneExcludesConversationFromReloadAndSelection` 转红（重载复活墓碑 ID）；② 移除 `selectConversation` 的墓碑守卫 → 同用例转红（幽灵 ID 被选中）；③ 移除 `deleteConversation` 的同步 `pendingDeletionIDs.insert` → `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` 转红；④ 移除清理成功后的 `pendingDeletionIDs.subtract` → `slowCleanupHoldsTombstoneUntilCleanupFinishes` 转红（墓碑永不解除）。变异单独施加并确认转红后还原，最终 111 条全绿。
+>
+> 变异验证（#439）：把 `loadConversations()` 写回处的代次判断 `if self.conversationMutationGeneration == startGeneration` 改为恒真（永远走覆盖分支）→ `startupSnapshotMergesConversationCreatedDuringLoad` 转红（新建会话被旧快照抹掉、选中态被劫持回旧会话、标题退回旧值），`loadWithoutLocalChangesRestoresPersistedSelection` 仍绿。变异确认转红后还原，最终 113 条全绿。
+>
+> 变异验证（#537）：① `performReload` 直接用首页结果、不调用 `refillLoadedRange` → `eventReloadKeepsLoadedPagesAndSelection`、`eventReloadRefreshesSummariesAcrossLoadedRange`、`refillDeduplicatesConversationBumpedBetweenPages`、`staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（分页与第二页选中态丢失）；② 移除写回前的列表身份守卫（`conversations.count == loadedCount && last?.id == loadedLastID`）→ `staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（晚到的旧范围刷新吃掉刚追加的第三页）；③ 续页游标改为 `beforeUpdatedAt: nil, beforeID: nil` → `eventReloadKeepsLoadedPagesAndSelection` 转红（续页重复取首页、游标断言失败）；④ 去掉按 ID 去重、直接返回 `loaded` → `refillDeduplicatesConversationBumpedBetweenPages` 转红（列表出现重复 ID）；⑤ `hasMoreConversations` 回退为 `page.count == conversationPageSize` → `reloadHidesLoadMoreWhenRangeCoversStore` 转红（正好 40 条时仍显示翻页入口）。变异单独施加并确认转红后还原，最终 119 条全绿。
+
+> 变异验证（#641，`ConversationManager.cache`）：① 删除补载后的选中项标题重算与 `.updated` 发布整块（恢复缺陷）→ `pageHydrationOfSelectedConversationPublishesRealTitle`、`hydratedSummaryEntryAlsoRefreshesTitle`、`staleCachedTitleIsCorrectedByLaterHydration` 转红（标题停在旧值、无事件），两条护栏仍绿；② 去掉 `currentTitle != previousTitle` 判定、每次补载都发 `.updated` → `repeatedHydrationWithSameTitleDoesNotRepublish` 转红（标题未变仍发事件），其余仍绿；③ 保留 `updateCurrentTitle()` 但删除 `notifyConversationObservers(.updated(summary.id))` → 三条纠正用例转红（标题已改但标题栏观察者收不到事件），两条护栏仍绿。变异单独施加并确认转红后还原，最终 124 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 73 / 73
+- P0: 已覆盖 31 / 31
+- P1: 已覆盖 85 / 85
 - P2: 已覆盖 8 / 8
-- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（73 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（31 条）
+- **P1**: 其余功能性用例（85 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 93 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
 .target(
@@ -42,7 +42,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PortManagerPluginTests",
-            dependencies: [.target(name: "PortManagerPlugin")],
+            dependencies: [
+                .target(name: "PortManagerPlugin"),
+                .product(name: "KitShell", package: "KitShell"),
+            ],
             path: "Tests"
         )
     ]

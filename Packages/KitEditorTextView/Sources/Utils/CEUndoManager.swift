@@ -163,12 +163,13 @@ public class CEUndoManager: UndoManager {
 
     /// Registers a mutation into the undo stack.
     ///
-    /// Calling this method while the manager is in an undo/redo operation will result in a no-op.
+    /// Calling this method while the manager is in an undo/redo operation or is disabled will result in a no-op.
     /// - Parameter mutation: The mutation to register for undo/redo
     public func registerMutation(_ mutation: TextMutation) {
         removeAllActions()
         guard let textView,
               let textStorage = textView.textStorage,
+              !isDisabled,
               !isUndoing,
               !isRedoing else {
             return

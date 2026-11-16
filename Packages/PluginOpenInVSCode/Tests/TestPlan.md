@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginOpenInVSCode 的实现包，包含 4 个主要类型；当前测试覆盖 2 条用例。
+PluginOpenInVSCode 的实现包，包含 4 个主要类型；当前测试覆盖 3 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 2
+测试文件: 1 个，用例总数: 3
 
 核心组件（源码目录）:
 - `ViewModels/`
@@ -24,7 +24,7 @@ PluginOpenInVSCode 的实现包，包含 4 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **OpenInVSCodePlugin**（2 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInVSCodePlugin**（3 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders`、`disableWithdrawsToolAndEnableRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -32,27 +32,28 @@ PluginOpenInVSCode 的实现包，包含 4 个主要类型；当前测试覆盖 
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | OpenInVSCodePlugin | 启动时注册对应工具、文档和左侧工具栏贡献，关闭时一并撤回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersAndRemovesToolDocumentationAndToolbarItem` |
 | 2 | OpenInVSCodePlugin | 缺少可选 Provider 时生命周期回调安全降级 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pluginToleratesMissingProviders` |
+| 3 | OpenInVSCodePlugin | 运行时禁用撤回 Agent 工具与工具栏按钮，启用时恢复（**回归 #297**） | 已注册 ToolManager 与 Toolbar Provider | onBoot 后 onDisable，再 onEnable | 禁用后工具与按钮均撤回，启用后恢复 | P1 | ✅ 已覆盖 | `disableWithdrawsToolAndEnableRestoresIt` |
 
-> 说明：全部 **2 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **3 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 1 / 1
+- P1: 已覆盖 2 / 2
 - P2: 已覆盖 0 / 0
-- **合计: 2 / 2**（仅表示清单场景，非源码覆盖率）
+- **合计: 3 / 3**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（1 条）
+- **P1**: 其余功能性用例（2 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 2 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 3 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

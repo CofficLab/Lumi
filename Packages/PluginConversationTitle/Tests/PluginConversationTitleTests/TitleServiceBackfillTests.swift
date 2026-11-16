@@ -134,4 +134,173 @@ struct TitleServiceBackfillTests {
         #expect(!title.isEmpty)
         #expect(title.count <= 41, "占位标题过长：\(title.count) 字")
     }
+
+    /// 回归 #799：永久跳过的条目填满查询窗口时，窗口之外的有效对话仍须被回填。
+    ///
+    /// 旧实现只取前 200 条无标题 ID。`S1...S200` 都没有首条用户消息，每轮都被
+    /// 跳过却不写标题、不推进游标，于是查询窗口永远被它们占满，排在窗口之外的
+    /// `V`（有首条用户消息）在任何一次启动都轮不到，永远停在占位符。
+    @Test("永久跳过的条目不得阻塞窗口之外的有效对话")
+    func skippedWindowDoesNotBlockValidConversation() async {
+        let conversations = TitleTestDoubles.StubConversationManager()
+        // 200 条无标题、无首条用户消息的对话：每轮都会被永久跳过。
+        var skippedIDs: [UUID] = []
+        for _ in 0..<200 {
+            let id = UUID()
+            skippedIDs.append(id)
+            conversations.appendSummary(id: id, title: nil)
+        }
+        // 排在窗口之外的有效对话。
+        let validID = UUID()
+        conversations.appendSummary(id: validID, title: nil)
+        let messages = TitleTestDoubles.StubMessageManager(messages: [
+            Message(conversationID: validID, role: .user, content: "Investigate login timeout")
+        ])
+        let llm = TitleTestDoubles.StubLLMManager()
+
+        let service = makeService(messages: messages, conversations: conversations, llm: llm)
+        defer { service.stop() }
+
+        let backfilled = await service.backfillUntitledConversations()
+
+        #expect(backfilled == 1, "窗口之外的有效对话必须被回填")
+        #expect(conversations.title(of: validID) == "Investigate login timeout")
+        #expect(llm.receivedRequests.isEmpty, "回填不应消耗 LLM 额度")
+        for id in skippedIDs {
+            #expect(conversations.title(of: id) == nil, "无首条用户消息的对话不应被写入空标题")
+        }
+
+        // 再跑一轮：V 已有标题，不应重复补写；跳过条目仍不阻塞。
+        let secondRun = await service.backfillUntitledConversations()
+        #expect(secondRun == 0)
+        #expect(conversations.title(of: validID) == "Investigate login timeout")
+    }
+
+    /// 上限仍约束成功补写的条数：一次启动最多补 200 条，剩下的留到下次启动。
+    @Test("单轮回填遵守补写上限")
+    func backfillStopsAtWriteCap() async {
+        let conversations = TitleTestDoubles.StubConversationManager()
+        var messages: [Message] = []
+        var ids: [UUID] = []
+        for index in 0..<201 {
+            let id = UUID()
+            ids.append(id)
+            conversations.appendSummary(id: id, title: nil)
+            messages.append(Message(conversationID: id, role: .user, content: "问题 \(index)"))
+        }
+        let llm = TitleTestDoubles.StubLLMManager()
+
+        let service = makeService(
+            messages: TitleTestDoubles.StubMessageManager(messages: messages),
+            conversations: conversations,
+            llm: llm
+        )
+        defer { service.stop() }
+
+        let backfilled = await service.backfillUntitledConversations()
+
+        #expect(backfilled == 200, "单轮最多补写 200 条，实际 \(backfilled)")
+        let untitledCount = ids.filter { conversations.title(of: $0) == nil }.count
+        #expect(untitledCount == 1, "应恰好剩 1 条留到下次启动，实际 \(untitledCount)")
+    }
+
+    /// 回归 #466：回填在 await 首条用户消息期间，用户可能已通过 update_title 改了标题。
+    ///
+    /// 旧实现只在读取**前**检查 `hasCustomTitle`，读取返回后无条件写占位标题，
+    /// 把窗口内新写入的自定义标题覆盖掉。写前必须再复核一次（与正常生成/兜底
+    /// 路径一致），旧回填不得覆盖新写入。用门闩让读取挂起，构造「旧读取晚到」。
+    @Test("回填读取期间用户改了标题，旧回填不得覆盖新标题")
+    func backfillDoesNotOverwriteTitleSetDuringMessageRead() async {
+        let conversationID = UUID()
+        let conversations = TitleTestDoubles.StubConversationManager()
+        conversations.appendSummary(id: conversationID, title: nil)
+        let messages = TitleTestDoubles.StubMessageManager(messages: [
+            Message(conversationID: conversationID, role: .user, content: "帮我排查登录超时的问题")
+        ])
+        let llm = TitleTestDoubles.StubLLMManager()
+        let gate = BackfillReadGate()
+        messages.firstUserMessageGate = {
+            gate.signalReached()
+            await gate.waitUntilReleased()
+        }
+
+        let service = makeService(messages: messages, conversations: conversations, llm: llm)
+        defer { service.stop() }
+
+        async let backfilledResult = service.backfillUntitledConversations()
+        // 等回填进入 firstUserMessage 读取并挂起（此时已通过读取前的 hasCustomTitle 检查）。
+        await gate.waitUntilReached()
+        // await 窗口内用户通过 update_title 写入新标题。
+        #expect(conversations.updateConversationTitle("用户刚改的标题", for: conversationID))
+        // 让晚到的读取返回。
+        gate.release()
+        let backfilled = await backfilledResult
+
+        #expect(backfilled == 0, "读取期间已被改标题的对话不应再被回填")
+        #expect(conversations.title(of: conversationID) == "用户刚改的标题", "旧回填不得覆盖用户新写入的标题")
+        #expect(llm.receivedRequests.isEmpty, "回填不应消耗 LLM 额度")
+    }
+
+    /// 护栏：读取窗口内无人改标题时，二次复核仍判定「无标题」，正常补写占位标题。
+    /// 防止把二次校验写得过宽而漏掉真正需要回填的对话。
+    @Test("回填读取期间无人改标题时仍正常补写占位标题")
+    func backfillStillWritesWhenNoTitleSetDuringRead() async {
+        let conversationID = UUID()
+        let conversations = TitleTestDoubles.StubConversationManager()
+        conversations.appendSummary(id: conversationID, title: nil)
+        let messages = TitleTestDoubles.StubMessageManager(messages: [
+            Message(conversationID: conversationID, role: .user, content: "帮我排查登录超时的问题")
+        ])
+        let llm = TitleTestDoubles.StubLLMManager()
+        let gate = BackfillReadGate()
+        messages.firstUserMessageGate = {
+            gate.signalReached()
+            await gate.waitUntilReleased()
+        }
+
+        let service = makeService(messages: messages, conversations: conversations, llm: llm)
+        defer { service.stop() }
+
+        async let backfilledResult = service.backfillUntitledConversations()
+        await gate.waitUntilReached()
+        // 读取窗口内不改标题：复核仍应判定「无标题」，正常补写。
+        gate.release()
+        let backfilled = await backfilledResult
+
+        #expect(backfilled == 1)
+        #expect(conversations.title(of: conversationID) == "帮我排查登录超时的问题")
+        #expect(llm.receivedRequests.isEmpty, "回填不应消耗 LLM 额度")
+    }
+}
+
+/// 主 actor 门闩：让「取首条用户消息」读取挂起，测试在窗口内写入新标题后再放行，
+/// 构造 #466 的「旧读取晚到」时序。全部用 CheckedContinuation 异步让出，不阻塞主 actor。
+@MainActor
+private final class BackfillReadGate {
+    private var reached = false
+    private var released = false
+    private var reachedContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    func signalReached() {
+        reached = true
+        reachedContinuation?.resume()
+        reachedContinuation = nil
+    }
+
+    func waitUntilReached() async {
+        if reached { return }
+        await withCheckedContinuation { reachedContinuation = $0 }
+    }
+
+    func release() {
+        released = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+
+    func waitUntilReleased() async {
+        if released { return }
+        await withCheckedContinuation { releaseContinuation = $0 }
+    }
 }

@@ -150,12 +150,15 @@ struct ListV1View: View {
                     )
                 )
             }
-            .onChange(of: visibleRowIDs) { _ in
+            .onChange(of: visibleRowIDs) { oldIDs, newIDs in
                 // 发送后定位期间不跟随滚到底：此时 atBottomBox 是被"滚到占位
                 // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消
                 // 刚完成的"新回合停在视口上方"定位。定位结束后由
                 // handleTurnLifecycleChange 恢复常规跟随。
-                if runtime.atBottomBox.value, !usesPostSendPositioning {
+                // prepend（加载更早历史）只改头部、不改尾部：不是「新消息到达」，
+                // 不能触发跟随滚到底，否则视口会跳到会话末尾（#1330）。
+                if HistoryWindowChange.hasNewTail(oldLast: oldIDs.last, newLast: newIDs.last),
+                   runtime.atBottomBox.value, !usesPostSendPositioning {
                     scrollTick &+= 1
                 }
                 if !initialPositionGate.isReady, !messageListVM.isLoading {
@@ -347,7 +350,11 @@ struct ListV1View: View {
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
         guard let anchorID = await messageListVM.loadEarlier() else { return }
-        await runtime.scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+        await runtime.scrollCoordinator.pinToAnchor(
+            proxy: proxy,
+            anchorID: anchorID,
+            controller: runtime.bottomScrollController
+        )
     }
 
     // MARK: - Post-send positioning

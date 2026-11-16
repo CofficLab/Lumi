@@ -83,11 +83,19 @@ final class TitleService: SuperLog {
     /// - Returns: 实际补写了标题的对话数量。
     @discardableResult
     func backfillUntitledConversations() async -> Int {
-        let ids = await conversations.untitledConversationIDs(limit: Self.backfillLimit)
+        // 一次性取出**全库**无标题对话 ID（仅 ID，开销很小），再逐条复核。
+        //
+        // 不能只取前 `backfillLimit` 条：没有首条用户消息的条目会被永久跳过，
+        // 既不写标题也不推进任何游标。一旦这类条目填满查询窗口，窗口之外真正
+        // 可回填的对话在每次启动都轮不到，永远停在占位符（#799）。取全量 ID
+        // 后按「补满上限或耗尽列表」推进，跳过的条目不再阻塞后续有效记录。
+        let ids = await conversations.untitledConversationIDs(limit: Int.max)
         guard !ids.isEmpty else { return 0 }
 
         var backfilled = 0
         for id in ids {
+            // 已补满本轮上限：剩下的留到下次启动，保持启动开销有界。
+            if backfilled >= Self.backfillLimit { break }
             // 补缓存是为了复核 Store 中的最新标题；标题写入本身按 ID 落库，
             // 不要求这条摘要此刻仍留在有界缓存里（#996）。
             guard let summary = await conversations.fetchConversation(id: id) else { continue }
@@ -97,6 +105,12 @@ final class TitleService: SuperLog {
 
             let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
             guard !placeholder.isEmpty else { continue }
+            // 读取首条消息期间用户可能已通过 update_title 改了标题：写前再复核一次，
+            // 旧回填不得覆盖新写入的自定义标题（#466）。与正常生成/兜底路径的二次校验一致。
+            guard await shouldApplyGeneratedTitle(
+                conversationID: id,
+                firstUserMessageContent: firstUserMessage.content
+            ) else { continue }
             guard await conversations.updateConversationTitleAndWait(placeholder, for: id) else { continue }
             backfilled += 1
         }
@@ -107,10 +121,11 @@ final class TitleService: SuperLog {
         return backfilled
     }
 
-    /// 单次回填最多处理多少条无标题对话。
+    /// 单次回填最多**补写**多少条标题。
     ///
     /// 上限是为了让启动开销有界：回填是「启动时做一点」的工作，不是一次性的
-    /// 全库重写。剩下的会在下次启动继续处理。
+    /// 全库重写。剩下的会在下次启动继续处理。注意上限约束的是成功补写的条数，
+    /// 而不是查询窗口——被永久跳过的条目不计入上限，也不阻塞后续有效记录（#799）。
     private static let backfillLimit = 200
 
     private func installObserver() {
@@ -383,11 +398,20 @@ final class TitleService: SuperLog {
     /// ## 边界
     ///
     /// 只处理**开头**的提醒块：消息中间出现同名标签是用户自己的内容，不该动。
+    /// 开头允许有空白（换行/空格）——IDE 常在提醒块前注入换行，连续提醒块之间
+    /// 也可能有空行；这些空白必须跳过，否则清理失败、XML 噪声会被当成标题持久化
+    /// 并截断真正的用户请求（#783）。
     nonisolated static func strippingInjectedReminders(_ text: String) -> String {
         var result = text
-        while result.range(of: "<system-reminder", options: .caseInsensitive)?.lowerBound == result.startIndex,
-              let closeRange = result.range(of: "</system-reminder>", options: .caseInsensitive) {
-            result = String(result[closeRange.upperBound...])
+        while true {
+            // 跳过开头空白后再判断是否紧跟提醒块；只剥离「开头（含前导空白）」
+            // 的连续提醒块，遇到真实用户内容即停止。
+            let candidate = result.drop(while: { $0.isWhitespace })
+            guard candidate.range(of: "<system-reminder", options: .caseInsensitive)?.lowerBound == candidate.startIndex,
+                  let closeRange = candidate.range(of: "</system-reminder>", options: .caseInsensitive) else {
+                break
+            }
+            result = String(candidate[closeRange.upperBound...])
         }
         return result
     }

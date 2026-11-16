@@ -84,8 +84,8 @@ struct AppScreenshot: Identifiable, Decodable {
     }
 }
 
-struct PendingScreenshot: Identifiable, Equatable {
-    enum Status: Equatable {
+struct PendingScreenshot: Identifiable, Equatable, Sendable {
+    enum Status: Equatable, Sendable {
         case ready
         case invalid(String)
         case uploading

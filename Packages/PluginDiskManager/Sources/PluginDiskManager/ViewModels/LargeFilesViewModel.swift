@@ -10,6 +10,11 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: ScanProgress?
     @Published var errorMessage: String?
 
+    /// 扫描控制栏可见性（#849）：扫描中保留 Stop 入口（结果已在扫描开始时清空）。
+    var isScanControlBarVisible: Bool {
+        ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !largeFiles.isEmpty)
+    }
+
     private let service = LargeFilesService.shared
     private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var progressReceivedCount: Int = 0

@@ -96,6 +96,13 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
   **静默丢字**（聚合结果却正常，难排查）。`StreamingUTF8Decoder` 保留不完整的尾部字节、
   与下一 chunk 拼接，只输出完整标量；非法字节替换为 U+FFFD 以免卡死；EOF 时 `flush()`
   处理残留。字节回调与聚合缓冲不受影响。
+- **完成前必须等待已启动的输出回调**（ID 70-72，**回归 #171**）：readability 回调与
+  `terminationHandler` 并发执行，且 `stdoutHandler` 先调用外部 `onOutputData(data)`
+  **再** `stdoutBuffer.append(data)`。终止路径若只清 handler、排空、`state.complete`
+  而不等待**已经在执行**的回调，慢速消费者会让函数提前返回 `stdout == ""`（数据尚未
+  append），回调还会跨越返回边界访问调用方已重置/释放的状态。修复用一个 `DispatchGroup`
+  跟踪每次 readability 回调（enter/defer leave），`terminationHandler` 在排空前
+  `wait()` 所有在飞回调。改动 `runProcess` 的 readability/termination 路径时优先跑对应用例。
 
 ## 测试用例清单
 
@@ -170,8 +177,11 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 | 67 | UTF-8 解码 | 解码器遇到非法字节不得卡死，后续合法输入仍能解出 | 喂入非法字节 FF 与合法 A | decode 后再喂合法串 | 非法字节替换为 U+FFFD，后续正常解出 | P0 | ✅ 已覆盖 | `decoderDoesNotStallOnInvalidBytes` |
 | 68 | UTF-8 解码 | 解码器逐字节喂入多字符仍拼出完整文本 | 把「😀ok」逐字节 decode | 循环 decode + flush | 拼接结果 == 😀ok | P1 | ✅ 已覆盖 | `decoderHandlesManyChunksAndMultipleCharacters` |
 | 69 | UTF-8 解码 | 解码器保留拆分字符前的 ASCII 前缀，只缓冲不完整尾部 | 喂 a+F0，再喂 9F 98 80+b | decode 两次 | 第一次「a」，第二次「😀b」 | P1 | ✅ 已覆盖 | `decoderPreservesAsciiAroundSplitCharacter` |
+| 70 | 流式回调返回边界 | 慢速 onOutputData 不得让聚合 stdout 丢失已读数据，回调不得跨越返回边界（**回归 #171**） | 命令 `printf hello; sleep 0.2`，onOutputData 睡 0.5s 后置位完成标记 | executeStreaming 返回后读标记与 stdout | 回调已完成（标记 true），stdout == "hello" | P0 | ✅ 已覆盖 | `slowOutputDataCallbackDoesNotDropAggregatedStdout` |
+| 71 | 流式回调返回边界 | 慢速 onErrorData 不得让聚合 stderr 丢失已读数据，回调不得跨越返回边界（**回归 #171**） | 命令 `printf hello >&2; sleep 0.2`，onErrorData 睡 0.5s 后置位完成标记 | executeStreaming 返回后读标记与 stderr | 回调已完成（标记 true），stderr == "hello" | P0 | ✅ 已覆盖 | `slowErrorDataCallbackDoesNotDropAggregatedStderr` |
+| 72 | 流式回调返回边界 | 输出回调被阻塞时 executeStreaming 不得提前产生结果（**回归 #171**） | onOutputData 进入即阻塞在门闩上，进程 0.2s 后退出 | 等待回调进入阻塞 + 0.6s 后检查结果箱，再释放门闩 | 释放前结果箱为 nil（未提前返回）；释放后回调完成且 stdout == "hello" | P0 | ✅ 已覆盖 | `executeStreamingDoesNotReturnWhileOutputCallbackIsBlocked` |
 
-> 说明：全部 **69 条场景**（7 个 suite）已在 macOS 上实跑通过。
+> 说明：全部 **72 条场景**（8 个 suite）已在 macOS 上实跑通过。
 >
 > 本套件的价值集中在**故障复现而非功能断言**，三条易错约定已在用例里显式锁定：
 > - **管道 fd 泄漏的真实形态是「同 pool 内同步反复创建」**（ID 46）：不显式关闭时，
@@ -189,18 +199,26 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
 >   孤儿进程，`readDataToEndOfFile` 永远等不到 EOF——这正是 `outputDrainTimeout`
 >   存在的理由（ID 28）。
 
+> 变异验证（#171）：
+> - **M1** 移除 `terminationHandler` 里的 `outputCallbacksInFlight.wait()` →
+>   ID 70/71/72 全 RED（7 处断言）：`result.stdout → ""`、返回时 `callbackDone → false`、
+>   释放门闩前结果箱已经非 nil，精确复现「慢速消费者丢输出 + 回调跨越返回边界」。
+> - **M2** 移除两个 readability 回调里的 `enter()/defer leave()`（保留 `wait()`）→
+>   组恒空、`wait()` 立即返回，ID 70/71/72 同样全 RED（7 处断言）。
+> 两处机制缺一不可；恢复后全包 72 测试通过。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
+- P0: 已覆盖 40 / 40
 - P1: 已覆盖 23 / 23
 - P2: 已覆盖 9 / 9
-- **合计: 69 / 69**（仅表示清单场景，非源码覆盖率）
+- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 输出与退出码正确性、环境 PATH 保留、异常与非法可执行、超时语义（含
   `throwsOnError` 交互）、进程树终止、输出上限与截断边界、fd 泄漏根因与端到端验证、
-  流式 UTF-8 跨 chunk 不丢字
+  流式 UTF-8 跨 chunk 不丢字、流式回调返回边界（完成前等待在飞回调，不丢聚合输出）
 - **P1**: 管道/多级管道、shell 选择、工作目录与相对路径、自定义环境、流式回调、
   取消时序、`findCommand`、UTF-8 解码器边界
 - **P2**: 空追加边界、`duration` 记录、shell 别名、五个错误描述的文案
@@ -214,6 +232,8 @@ KitShell 是可复用的异步 Shell 命令执行工具包，封装 Foundation `
   跨平台行为一致
 - fd 泄漏相关用例标记 `.serialized`：它们测量的是**进程级** fd 水位，
   与同进程内其他测试并发会互相污染水位，因此必须串行执行
+- 流式回调返回边界套件（`ShellStreamingCallbackRaceTests`）也标记 `.serialized`：
+  每个用例都会把输出回调阻塞约 0.5s 来构造竞态，串行执行避免多个被阻塞的回调相互重叠
 
 ## 测试执行
 

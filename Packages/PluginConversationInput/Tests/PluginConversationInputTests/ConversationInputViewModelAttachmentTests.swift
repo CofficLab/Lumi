@@ -242,6 +242,119 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(capability.pendingFileAttachments.isEmpty)
     }
 
+    // MARK: - 拖放读取与会话绑定（#780）
+
+    @Test("读取期间切换会话，旧文件附件不落入新会话挂起池（#780）")
+    func staleFileDropDoesNotLeakIntoNewConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-stale-file-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("notes.txt")
+        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: Data("hello".utf8)))
+
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 在 A 拖入文件：同步捕获 A 并登记读取，随后挂起在后台读取上。
+        viewModel.attachFile(fileURL)
+        // 读取任务尚未运行（MainActor 让出前 Task body 不会执行），同步切到 B。
+        capability.selectedConversationID = b
+
+        // 等 A 的读取任务结束（endAttachmentRead 放行 waiter）。
+        _ = await capability.waitForAttachmentReads()
+
+        // 旧任务的结果不能进入 B 使用的全局挂起池，也不能聚焦/报错到 B。
+        #expect(capability.pendingFileAttachments.isEmpty)
+        #expect(viewModel.fileAttachments.isEmpty)
+        #expect(capability.errorMessage == nil)
+        #expect(!capability.isInputFocused)
+    }
+
+    @Test("读取期间切换会话，旧图片附件不落入新会话挂起池（#780）")
+    func staleImageDropDoesNotLeakIntoNewConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-stale-image-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("pixel.png")
+        let png = try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: png))
+
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attachImage(fileURL)
+        capability.selectedConversationID = b
+
+        _ = await capability.waitForAttachmentReads()
+
+        #expect(capability.pendingImageAttachments.isEmpty)
+        #expect(viewModel.imageAttachments.isEmpty)
+        #expect(capability.errorMessage == nil)
+        #expect(!capability.isInputFocused)
+    }
+
+    @Test("读取期间切换会话，旧文件读取失败不报错到新会话（#780）")
+    func staleFileDropErrorDoesNotLeakIntoNewConversation() async throws {
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        // 指向不存在的路径，读取必定抛错；错误分支同样要校验会话身份。
+        viewModel.attachFile(
+            URL(fileURLWithPath: "/tmp/definitely-missing-\(UUID().uuidString).txt")
+        )
+        capability.selectedConversationID = b
+
+        _ = await capability.waitForAttachmentReads()
+
+        #expect(capability.errorMessage == nil)
+        #expect(viewModel.errorMessage == nil)
+        #expect(capability.pendingFileAttachments.isEmpty)
+    }
+
+    @Test("读取期间切换会话，旧图片解码失败不报错到新会话（#780）")
+    func staleImageDropErrorDoesNotLeakIntoNewConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-stale-corrupt-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("fake.png")
+        #expect(
+            FileManager.default.createFile(
+                atPath: fileURL.path,
+                contents: Data("definitely not a png".utf8)
+            )
+        )
+
+        let a = UUID()
+        let b = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = a
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attachImage(fileURL)
+        capability.selectedConversationID = b
+
+        _ = await capability.waitForAttachmentReads()
+
+        #expect(capability.errorMessage == nil)
+        #expect(viewModel.errorMessage == nil)
+        #expect(capability.pendingImageAttachments.isEmpty)
+    }
+
     @Test("错误提示可被显式清除")
     func dismissErrorClearsMessage() {
         let capability = SendActionBarTestCapability()

@@ -81,6 +81,29 @@ func subdirectoryOnlyChangeStaysTargeted() {
 }
 
 @MainActor
+@Test("多个子目录变化合并成一次批量 reload")
+func multipleSubdirectoriesAreDispatchedAsOneBatch() {
+    let coordinator = FileTreeNSViewBridge.Coordinator()
+    let view = RecordingRefreshView()
+    let root = "/tmp/lumi-file-tree-root-refresh"
+
+    coordinator.applyTargetedRefresh(
+        token: 1,
+        changedPaths: [root + "/Sources", root + "/Tests", root + "/Sources/Views"],
+        projectRootPath: root,
+        to: view
+    )
+
+    #expect(view.fullRefreshCount == 0)
+    #expect(view.reloadBatches.count == 1, "K 个变化目录必须一次下发，由数据源合并扫描")
+    #expect(Set(view.reloadedURLs) == Set([
+        URL(fileURLWithPath: root + "/Sources"),
+        URL(fileURLWithPath: root + "/Tests"),
+        URL(fileURLWithPath: root + "/Sources/Views"),
+    ]))
+}
+
+@MainActor
 @Test("相同精准刷新令牌不会重复派发")
 func repeatedTargetedRefreshTokenIsDeduplicated() {
     let coordinator = FileTreeNSViewBridge.Coordinator()
@@ -156,13 +179,15 @@ func rootLevelExternalAdditionAppearsAfterRootRefresh() async throws {
 private final class RecordingRefreshView: FileTreeRefreshing {
     private(set) var fullRefreshCount = 0
     private(set) var reloadedURLs: [URL] = []
+    private(set) var reloadBatches: [[URL]] = []
 
     func fullRefresh() {
         fullRefreshCount += 1
     }
 
-    func reloadDirectory(at url: URL) {
-        reloadedURLs.append(url)
+    func reloadDirectories(at urls: [URL]) {
+        reloadedURLs.append(contentsOf: urls)
+        reloadBatches.append(urls)
     }
 }
 
@@ -178,8 +203,8 @@ private final class DataSourceRefreshAdapter: FileTreeRefreshing {
         dataSource.fullRefresh()
     }
 
-    func reloadDirectory(at url: URL) {
-        dataSource.reloadDirectory(at: url)
+    func reloadDirectories(at urls: [URL]) {
+        dataSource.reloadDirectories(at: urls)
     }
 }
 

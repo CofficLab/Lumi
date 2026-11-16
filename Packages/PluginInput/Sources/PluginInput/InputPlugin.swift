@@ -84,9 +84,50 @@ public final class InputPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             InputPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
         }
 
-        let inputService = InputService.shared
         let viewModel = InputSettingsViewModel()
         self.viewModel = viewModel
+        installRuntimeContributions(kernel: kernel, viewModel: viewModel)
+    }
+
+    /// 运行时启用：重新安装监听器与 ActivityBar 入口。
+    ///
+    /// 启动时被跳过、从未 Boot 的插件走 `onBoot` 完整初始化；曾 Boot 过
+    /// 再启用的插件只走本方法。viewModel 与运行时目录在禁用期间保持存活。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        guard let viewModel else { return }
+        installRuntimeContributions(kernel: kernel, viewModel: viewModel)
+    }
+
+    /// 运行时禁用：停止应用激活监听并撤回入口。
+    ///
+    /// 内核在运行时禁用插件时**不会**调用 `onShutdown`，也不会代撤 Provider 侧
+    /// 贡献。`InputEventObserver` 仍订阅 `NSWorkspace.didActivateApplicationNotification`，
+    /// 把激活转发给 `InputService.handleAppActivation`；后者只检查业务开关
+    /// `config.isEnabled`，不知道插件生命周期，因此禁用后仍会按旧规则切换
+    /// macOS 输入源（见 issue #365）。禁用必须立即取消监听，启用时再恢复。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        removeRuntimeContributions(kernel: kernel)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        removeRuntimeContributions(kernel: kernel)
+        viewModel = nil
+        InputPluginRuntimeBridge.dataRootDirectory = nil
+        InputPluginRuntimeBridge.pluginDirectory = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    /// 安装运行时贡献：设置/事件监听器与 ActivityBar 入口（或紧凑宿主激活）。
+    /// 幂等：重复安装前先取消既有监听器，避免重复订阅。
+    private func installRuntimeContributions(
+        kernel: KernelCoreContainer,
+        viewModel: InputSettingsViewModel
+    ) {
+        let inputService = InputService.shared
+        settingsObserver?.cancel()
         settingsObserver = InputSettingsObserver(viewModel: viewModel, service: inputService)
         eventObserver?.cancel()
         eventObserver = InputEventObserver(
@@ -144,12 +185,13 @@ public final class InputPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         }
     }
 
-    public func onShutdown(kernel: KernelCoreContainer) throws {
+    /// 撤回运行时贡献：取消监听器、移除 ActivityBar 入口并恢复工作区。
+    /// 保留 viewModel 与运行时目录，供 `onEnable` 恢复。
+    private func removeRuntimeContributions(kernel: KernelCoreContainer) {
         eventObserver?.cancel()
         eventObserver = nil
         settingsObserver?.cancel()
         settingsObserver = nil
-        viewModel = nil
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == activityItemID
         activityBar?.removeItems(ids: [activityItemID])
@@ -162,12 +204,11 @@ public final class InputPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                 toolbar: kernel.resolveProvider((any ToolbarProviding).self)
             )
         }
-        InputPluginRuntimeBridge.dataRootDirectory = nil
-        InputPluginRuntimeBridge.pluginDirectory = nil
     }
 
-    public func onUnregister(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    /// 事件监听器是否仍在订阅系统通知。仅供单元测试断言禁用生命周期。
+    var isEventObserverRunningForTesting: Bool {
+        eventObserver?.isObservingForTesting ?? false
     }
 
     private func activateInputWorkspace(

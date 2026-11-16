@@ -95,6 +95,11 @@ final class ConversationForkCoordinator {
 
         let summaryOutcome = await summarizer.summarize(conversationID: conversationID)
 
+        // 摘要生成可能耗时数秒，用户这期间完全可能点了 Cancel。摘要返回后、
+        // 建对话前必须复核取消状态：已取消的分叉不得再改动对话列表 / 选中态 /
+        // 消息，否则「取消」之后仍会凭空多出一个被选中并发出摘要的新对话（#579）。
+        try Task.checkCancellation()
+
         // 透传旧对话的标题 / 项目 / 模型到新对话。
         // 项目必须用显式绑定：源对话无项目时传 `.none`，否则旧接口会把
         // `nil` 解释成「沿用当前项目」，副本被悄悄挂到当前项目上。
@@ -127,7 +132,14 @@ final class ConversationForkCoordinator {
         conversations.setLanguage(conversations.language(for: conversationID), for: newID)
 
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
-        try? await sender.sendMessage(summaryOutcome.summary, conversationID: newID)
+        // 只发送摘要文本，必须走显式空附件入口：隐式 sendMessage 会快照全局挂起池，
+        // 把源对话里用户未发送的附件带进新对话的摘要消息，并从输入框清空（#578）。
+        try? await sender.sendMessage(
+            summaryOutcome.summary,
+            imageAttachments: [],
+            fileAttachments: [],
+            conversationID: newID
+        )
 
         return Outcome(
             newConversationID: newID,

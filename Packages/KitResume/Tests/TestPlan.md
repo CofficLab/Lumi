@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 60 条用例。
+KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 60
+测试文件: 5 个，用例总数: 65
 
 ## 公开 API
 
@@ -25,7 +25,7 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 60 条用
 - **综合**（12 条）：由 `paperPresetsMapCssPixelsToPdfPoints`、`pixelSizeScalesWithDpi`、`builtInTemplatesPassLintForEveryPaperAndTemplate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeAssetImporter**（9 条）：由 `importsImageSuccessfully`、`sanitizesPreferredFileName`、`avoidsOverwritingExistingFile` 等用例锁定。
 - **Resume models**（6 条）：由 `paperPresetDerivedSizes`、`documentCodableRoundTrip`、`resolvedDocumentDerivedURLs` 等用例锁定。
-- **ResumeHTMLLinter**（16 条）：由 `reportSplitsErrorsAndWarnings`、`rejectsOversizedHTML`、`rejectsMissingPageRule` 等用例锁定。
+- **ResumeHTMLLinter**（20 条）：由 `reportSplitsErrorsAndWarnings`、`rejectsOversizedHTML`、`rejectsMissingPageRule`、`rejectsInlineEventHandler` 等用例锁定；含内联事件处理器/javascript: URL 拒绝（#494）。
 - **ResumeDocumentStore**（7 条）：由 `fullLifecycle`、`fallsBackToSlugForEmptyTitle`、`pathAllowListChecks` 等用例锁定。
 - **ResumeExportError**（2 条）：由 `exportErrorDescriptions`、`inspectionSummarizesPages` 锁定。
 - **ResumeExporter**（8 条）：由 `exportPNGsRendersEveryPage`、`pngDataMatchesSinglePageExport`、`exportPNGRejectsOutOfRangePageIndex` 等用例锁定。
@@ -94,27 +94,33 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 60 条用
 | 58 | ResumeHTMLLinter | srcset 中的远程候选同样被拒绝（**回归 #1087**） | — | lint `srcset="assets/a.png 1x, https://… 2x"` | 报 `remote_resource` | P0 | ✅ 已覆盖 | `rejectsRemoteSrcsetCandidate` |
 | 59 | ResumeHTMLLinter | CSS url(...) 引用缺失本地资源时报 missing_asset（**回归 #1086**） | 临时目录没有 `assets/does-not-exist.png` | lint 以该背景图作为 `.resume-page` 背景的文档 | 报 `missing_asset`，消息含资源路径 | P0 | ✅ 已覆盖 | `reportsMissingCSSURLAsset` |
 | 60 | ResumeHTMLLinter | CSS url(...) 已存在的本地资源与 data/远程地址不误报（**回归 #1086**） | 临时目录存在 `assets/bg.png` | lint 同时引用该文件、data URI 与 `#` 片段的文档 | 无 `missing_asset` / `unsafe_asset_path` | P1 | ✅ 已覆盖 | `acceptsExistingAndNonLocalCSSURLAssets` |
+| 61 | ResumeHTMLLinter | 内联事件处理器不得通过校验（**回归 #494**） | — | lint 含 `onload=` 的合法文档 | 报 `inline_script_forbidden`，报告无效 | P0 | ✅ 已覆盖 | `rejectsInlineEventHandler` |
+| 62 | ResumeHTMLLinter | 任意标签上的事件处理器都被拒绝（**#494**） | — | lint 含 `onerror=` 的 img | 报 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `rejectsEventHandlerOnInnerTag` |
+| 63 | ResumeHTMLLinter | javascript: 伪协议 URL 被拒绝（**#494**） | — | lint 含 `href="javascript:…"` 的链接 | 报 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `rejectsJavaScriptURL` |
+| 64 | ResumeHTMLLinter | 正文里偶然出现的 on…= 文本不被误判（**#494 护栏**） | — | lint 纯文本含 “on light=” 的文档 | 无 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `doesNotFlagPlainText` |
+| 65 | ResumeExporter | pngData 在后台线程栅格化并编码出目标尺寸 PNG | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pngDataRunsOffMain` |
 
-> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证（#494）：停用 `containsInlineScript` 规则后，`rejectsInlineEventHandler` / `rejectsEventHandlerOnInnerTag` / `rejectsJavaScriptURL` 转红，`doesNotFlagPlainText` 与内置模板校验保持绿；恢复后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 39 / 39
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 11 / 11
-- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
+- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（39 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（43 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

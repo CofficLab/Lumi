@@ -13,7 +13,9 @@ import UniformTypeIdentifiers
 /// - 长边最大 1920px（典型 4K/Retina 截图可缩到 ~3-5MB → JPEG 后 ~300-500KB）；
 /// - JPEG quality 0.85（肉眼无损、显著小于 PNG）；
 /// - 任何 CGImage 输入均可。
-@MainActor
+///
+/// 缩放 / JPEG 编码 / Base64 均为纯计算，不触碰主线程状态，故整个类型 nonisolated，
+/// 可在后台 worker 调用（见 issue #1265）。
 public enum ScreenshotFileWriter {
     public enum WriteError: Error {
         case encodeFailed

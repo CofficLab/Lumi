@@ -39,6 +39,8 @@ final class ConversationRailTabController {
     private var conversationsObserver: (any ConversationObserverHandle)?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var pendingRefresh: Task<Void, Never>?
+    /// 每次调度刷新推进代次：被取消/被取代的旧刷新不得再发布可见性（#1170）。
+    private var refreshGeneration: UInt64 = 0
 
     init(
         context: ConversationListContext,
@@ -93,6 +95,7 @@ final class ConversationRailTabController {
 
     /// 停止全部订阅并清空状态（插件卸载时调用）。
     func stop() {
+        refreshGeneration &+= 1
         pendingRefresh?.cancel()
         pendingRefresh = nil
         conversationsObserver?.cancel()
@@ -106,17 +109,21 @@ final class ConversationRailTabController {
     /// 去抖调度：取消上一个待执行任务，延迟刷新。
     private func scheduleRefresh() {
         pendingRefresh?.cancel()
+        refreshGeneration &+= 1
+        let generation = refreshGeneration
         pendingRefresh = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 80_000_000)
             guard !Task.isCancelled else { return }
-            await self?.refresh()
+            await self?.refresh(generation: generation)
         }
     }
 
     /// 重新评估两个标签的注册状态并收敛到期望状态。
-    private func refresh() async {
+    private func refresh(generation: UInt64) async {
         // `chats`：全库顶层对话总数 >0 时才注册，避免出现空标签。
         let appCount = await context.conversations.conversationCount(projectPath: nil)
+        // 等待期间可能已有更新的刷新（或 stop）：旧快照不得再改动标签。
+        guard !Task.isCancelled, refreshGeneration == generation else { return }
         reconcile(
             tabID: chatsTabID,
             desiredVisible: appCount > 0,
@@ -129,8 +136,9 @@ final class ConversationRailTabController {
         let projectTabVisible: Bool
         if appCount > 0, let path = context.currentProjectPath {
             let currentCount = await context.conversations.conversationCount(projectPath: path)
-            // 等待期间切了项目：本轮结果已过期，交给下一次刷新收敛。
-            guard context.currentProjectPath == path else { return }
+            // 等待期间切了项目或来了更新的刷新：本轮结果已过期，交给下一次刷新收敛。
+            guard !Task.isCancelled, refreshGeneration == generation,
+                  context.currentProjectPath == path else { return }
             projectTabVisible = currentCount > 0 && appCount > currentCount
         } else {
             projectTabVisible = false

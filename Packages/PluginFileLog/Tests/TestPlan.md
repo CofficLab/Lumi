@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginFileLog 的实现包，包含 2 个主要类型；当前测试覆盖 26 条用例。
+PluginFileLog 的实现包，包含 2 个主要类型；当前测试覆盖 29 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 26
+测试文件: 4 个，用例总数: 29
 
 ## 公开 API
 
@@ -20,6 +20,7 @@ PluginFileLog 的实现包，包含 2 个主要类型；当前测试覆盖 26 �
 
 - **FileLogCoordinator**（12 条）：由 `preparesLogDirectory`、`matchesLumiAndKitLLMSubsystems`、`recordsReadyToWriteAreChronologicalStableAndRespectCutoff` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **FileLogDeduplicationWatermark**（4 条）：由 `evictedKeysAreNotRewrittenByCumulativeReads`、`boundaryTimestampRecordsAreDedupedAcrossPolls` 等用例锁定；用日期高水位兜底累计读取，保证每条 OSLog 记录最多持久化一次。
+- **FileLogStopDrain**（3 条）：由 `stopDrainsUnpolledWindowBeforeClosing`、`stopAndWaitIngestsInFlightPollResults` 等用例锁定；停止必须补最后一次 OSLog 读取并等在途轮询结果落盘后才关文件，`stopAndWait` 必须等收尾完成，补读不得重复写入已持久化记录（#472）。
 
 ## 测试用例清单
 
@@ -51,27 +52,34 @@ PluginFileLog 的实现包，包含 2 个主要类型；当前测试覆盖 26 �
 | 24 | Deduplication | 同一时间戳的边界记录跨轮询只写一次 | 边界时间戳含 3 条记录 | 连续两轮 ingest 同一批记录 | 每条边界记录只写一次 | P1 | ✅ 已覆盖 | `boundaryTimestampRecordsAreDedupedAcrossPolls` |
 | 25 | Deduplication | 累计读取中的新记录仍然只写一次 | 第二轮返回历史记录 + 1 条新记录 | 连续三轮 ingest | 历史与新记录各写一次 | P1 | ✅ 已覆盖 | `newRecordsAfterWatermarkAreWrittenExactlyOnce` |
 | 26 | Deduplication | 首轮仍收录早于启动读窗口的历史日志 | 记录时间早于启动时刻 | 启动后执行一轮 ingest | 历史日志被写入 | P1 | ✅ 已覆盖 | `firstPollStillCapturesHistoryOlderThanStartWindow` |
+| 27 | FileLogStopDrain | 停止前补最后一次读取，未轮询到的日志不丢失（**回归 #472**） | 假读取器返回一条「上一轮之后产生」的日志，长轮询间隔 | 启动后 `stopAndWait` | 日志文件包含该条记录 | P0 | ✅ 已覆盖 | `stopDrainsUnpolledWindowBeforeClosing` |
+| 28 | FileLogStopDrain | stopAndWait 等在途轮询结果落盘后才关闭文件（**回归 #472**） | 首轮读取被门闩卡住，停止发生在读取在途时 | 释放门闩并等 `stopAndWait` 返回 | 在途记录与收尾补读记录都已落盘 | P0 | ✅ 已覆盖 | `stopAndWaitIngestsInFlightPollResults` |
+| 29 | FileLogStopDrain | 停止时的补读不重复写入已持久化的记录 | 累计读取器反复返回同一条已写入记录 | ingest 一轮后 `stopAndWait` | 该记录在文件中只出现一次 | P1 | ✅ 已覆盖 | `stopDrainDoesNotDuplicatePersistedRecords` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#472）：① 去掉停止收尾的最终补读 → 用例 27 与 28 的补读断言红；
+> ② 停止不等在途读取、回调按 isRunning=false 丢弃结果 → 用例 28 的在途断言红。
+> 恢复修复后全部转绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 16 / 16
 - P2: 已覆盖 3 / 3
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（16 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

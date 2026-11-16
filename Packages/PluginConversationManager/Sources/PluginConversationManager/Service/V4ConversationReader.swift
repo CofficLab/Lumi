@@ -16,8 +16,9 @@ import SwiftData
 ///   只读打开会因「Cannot migrate store in-place」失败。操作的是临时副本，安全。
 /// - **错误交由迁移层处理**：打开或读取失败时抛出，让迁移层保留重试机会；
 ///   `ConversationLegacyMigration` 会捕获错误，不会阻塞 onBoot。
-@MainActor
-public final class V4ConversationReader: SuperLog {
+/// - **actor 隔离**：DB 复制、ModelContainer 打开与全量 fetch 都是重 IO，
+///   必须在主线程之外执行（见 issue #1285）。
+public actor V4ConversationReader: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation.v4-reader")
     nonisolated public static let emoji = "🗂️"
     nonisolated static let verbose = false
@@ -158,6 +159,10 @@ public final class V4ConversationReader: SuperLog {
             preview: entity.preview,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
+            // v4 没有独立的最后消息时间字段，updatedAt 是唯一可用的活跃时间。
+            // 与 ConversationSummary 解码器的回退一致；缺省会落到 createdAt，
+            // 使迁移后的会话排序与活跃时间显示错误（#836）。
+            lastMessageAt: entity.updatedAt,
             verbosity: entity.verbosity.flatMap { ResponseVerbosity(rawValue: $0) },
             language: entity.languagePreference.flatMap { ConversationLanguage(rawValue: $0) },
             // v4 的 chatMode 即 v5 的 automationLevel（均为 a1/a2/a3 编码）

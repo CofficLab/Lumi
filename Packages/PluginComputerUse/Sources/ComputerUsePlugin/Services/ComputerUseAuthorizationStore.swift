@@ -102,6 +102,26 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
         }
     }
 
+    /// 清理**全部**会话访问授权（#405）。
+    ///
+    /// 「Allow for This Task」的契约是**仅本次会话内有效、不跨重启**。但授权
+    /// 带 4 小时兜底 TTL 写进了 `authorization.plist`，正常退出 / 崩溃 / 强退
+    /// 都不会清掉它；重启后重开同一会话，`hasSessionAccess` 直接命中旧条目，
+    /// `ComputerUseAccessChecker` 返回 `.allowed`，用户不再被询问——授权对象
+    /// 与用户当初的「本任务内」语义不符。
+    ///
+    /// 插件启动时调用本方法把上一轮进程遗留的会话授权全部清空，保证「重启后
+    /// 必须重新授权」。放在启动而非仅退出时清理：退出路径可能因崩溃 / 强退
+    /// 根本不执行，启动清理才能覆盖所有重启情形。
+    ///
+    /// 只清会话授权（`grantKey`），**保留原生控制授权**（`nativeKey`）——后者
+    /// 是「Lumi 接管过鼠标键盘」的运行时确认，按设计应当跨重启延续。
+    func revokeAllSessionAccess() {
+        store.update { plist in
+            plist.removeValue(forKey: Self.grantKey)
+        }
+    }
+
     /// 会话授权条目的键。
     ///
     /// 会话 ID 在前，保证 `revokeSessionAccess(conversationID:)` 能按前缀批量清理。

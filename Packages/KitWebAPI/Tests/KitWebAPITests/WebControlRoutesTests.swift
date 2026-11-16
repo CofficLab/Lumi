@@ -358,6 +358,70 @@ struct WebControlRoutesTests {
         #expect(decoded.data.items.first?.content == "你好")
     }
 
+    @Test("会话消息端点按分页切片且总数为全量（#1284）")
+    func messagesRoutePaginatesSnapshot() async throws {
+        let (context, conversations, messages) = makeContext(conversationCount: 1)
+        let routes = makeRoutes(context: context)
+        let route = try #require(routes.first { $0.path == "/api/v1/conversations/:id/messages" })
+        let targetID = try #require(conversations.conversations.first?.id)
+
+        let base = Date(timeIntervalSince1970: 1_000)
+        for index in 0..<5 {
+            messages.insert(
+                Message(
+                    conversationID: targetID,
+                    role: .user,
+                    content: "消息 \(index)",
+                    createdAt: base.addingTimeInterval(TimeInterval(index))
+                ),
+                to: targetID
+            )
+        }
+
+        struct Envelope: Decodable {
+            struct Page: Decodable {
+                let total: Int
+                let offset: Int
+                let limit: Int
+                let hasMore: Bool
+                struct Item: Decodable { let content: String }
+                let items: [Item]
+            }
+            let data: Page
+        }
+
+        // 第二页：offset=1, limit=2 → 命中「消息 1」「消息 2」，仍有下一页。
+        let pageResponse = try await route.handler(
+            WebRouteRequest(
+                method: .get,
+                path: "/api/v1/conversations/\(targetID)/messages",
+                pathParameters: ["id": targetID.uuidString],
+                queryParameters: ["offset": "1", "limit": "2"]
+            )
+        )
+        #expect(pageResponse.statusCode == 200)
+        let page = try JSONDecoder().decode(Envelope.self, from: pageResponse.body).data
+        #expect(page.total == 5)
+        #expect(page.offset == 1)
+        #expect(page.limit == 2)
+        #expect(page.hasMore == true)
+        #expect(page.items.map(\.content) == ["消息 1", "消息 2"])
+
+        // 越过末尾：items 为空，total 仍为全量，hasMore=false。
+        let tailResponse = try await route.handler(
+            WebRouteRequest(
+                method: .get,
+                path: "/api/v1/conversations/\(targetID)/messages",
+                pathParameters: ["id": targetID.uuidString],
+                queryParameters: ["offset": "10", "limit": "2"]
+            )
+        )
+        let tail = try JSONDecoder().decode(Envelope.self, from: tailResponse.body).data
+        #expect(tail.total == 5)
+        #expect(tail.items.isEmpty)
+        #expect(tail.hasMore == false)
+    }
+
     @Test("缺少会话管理能力时返回 unavailable")
     func unavailableWithoutConversationManager() async throws {
         let context = WebControlContext()

@@ -197,10 +197,10 @@ public struct PrototypeDesignerView: View {
                     device: device
                 )
                 let filename = PrototypeExportNaming.filename(for: screen)
-                try data.write(
-                    to: directory.appendingPathComponent(filename),
-                    options: .atomic
-                )
+                let outputURL = directory.appendingPathComponent(filename)
+                try await Task.detached(priority: .userInitiated) {
+                    try data.write(to: outputURL, options: .atomic)
+                }.value
             }
             workspace.lastExportURL = directory
             workspace.lastError = nil

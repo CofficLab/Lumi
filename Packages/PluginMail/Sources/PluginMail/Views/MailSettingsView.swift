@@ -11,6 +11,7 @@ public struct MailSettingsView: View {
 
     private let sessionManager: MailSessionManager
     private let accountStore: MailAccountStore
+    private let cacheService: MailCacheService
 
     /// 当前展示的编辑草稿（非 nil 时展示表单）。
     @State private var editingDraft: MailAccountDraft?
@@ -21,9 +22,10 @@ public struct MailSettingsView: View {
     @State private var testingAccountID: UUID?
     @State private var errorMessage: String?
 
-    public init(sessionManager: MailSessionManager, accountStore: MailAccountStore) {
+    public init(sessionManager: MailSessionManager, accountStore: MailAccountStore, cacheService: MailCacheService) {
         self.sessionManager = sessionManager
         self.accountStore = accountStore
+        self.cacheService = cacheService
     }
 
     public var body: some View {
@@ -149,11 +151,22 @@ public struct MailSettingsView: View {
             errorMessage = "IMAP 与 SMTP 端口必须在 1–65535 之间。"
             return
         }
+        let identityChanged: Bool
+        if let old = accounts.first(where: { $0.id == id }) {
+            identityChanged = old.email != config.email
+                || old.username != config.username
+                || old.imapHost != config.imapHost
+                || old.smtpHost != config.smtpHost
+        } else {
+            identityChanged = false
+        }
         accountStore.upsertAccount(config)
         accountStore.setPassword(draft.password, for: id)
-        // 若编辑了已连接账户的凭据/主机，断开以强制下次重建会话。
         Task {
             await sessionManager.disconnect(accountID: id)
+            if identityChanged {
+                try? await cacheService.purge(accountID: id)
+            }
         }
         editingDraft = nil
         editingAccountID = nil
@@ -164,6 +177,7 @@ public struct MailSettingsView: View {
         accountStore.deleteAccount(id: account.id)
         Task {
             await sessionManager.disconnect(accountID: account.id)
+            try? await cacheService.purge(accountID: account.id)
         }
         reloadAccounts()
     }

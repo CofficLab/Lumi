@@ -394,6 +394,73 @@ extension SharedManagerSuite {
             #expect(goal.blockedReason == "missing credentials")
         }
 
+        @Test("update_goal_status blocked 时回显 suggested_actions（#857）")
+        @MainActor
+        func updateGoalStatusBlockedSurfacesSuggestedActions() async throws {
+            let harness = try makeHarness()
+            defer { harness.cleanup() }
+
+            _ = try await CreateGoalV2Tool().executeResult(context: harness.context, arguments: [
+                "title": ToolArgument("Suggested goal"),
+                "tasks": ToolArgument([["title": "T1"]]),
+            ])
+
+            let result = try await UpdateGoalStatusV2Tool().executeResult(context: harness.context, arguments: [
+                "status": ToolArgument("blocked"),
+                "blocked_reason": ToolArgument("Missing API key"),
+                "suggested_actions": ToolArgument(["Provide an API key", "Use mock credentials"]),
+            ])
+
+            #expect(result.isError == false)
+            #expect(result.content.contains("updated to **blocked**"))
+            #expect(result.content.contains("Suggested actions for the user:"))
+            #expect(result.content.contains("- Provide an API key"))
+            #expect(result.content.contains("- Use mock credentials"))
+        }
+
+        @Test("update_goal_status blocked 但无建议时不输出建议列表（#857）")
+        @MainActor
+        func updateGoalStatusBlockedWithoutSuggestionsHasNoList() async throws {
+            let harness = try makeHarness()
+            defer { harness.cleanup() }
+
+            _ = try await CreateGoalV2Tool().executeResult(context: harness.context, arguments: [
+                "title": ToolArgument("No suggestions"),
+                "tasks": ToolArgument([["title": "T1"]]),
+            ])
+
+            // 空白项被过滤后等价于无建议。
+            let result = try await UpdateGoalStatusV2Tool().executeResult(context: harness.context, arguments: [
+                "status": ToolArgument("blocked"),
+                "suggested_actions": ToolArgument(["   ", ""]),
+            ])
+
+            #expect(result.isError == false)
+            #expect(result.content.contains("updated to **blocked**"))
+            #expect(!result.content.contains("Suggested actions for the user:"))
+        }
+
+        @Test("update_goal_status 非 blocked 状态不输出建议列表（#857）")
+        @MainActor
+        func updateGoalStatusNonBlockedDoesNotSurfaceSuggestions() async throws {
+            let harness = try makeHarness()
+            defer { harness.cleanup() }
+
+            _ = try await CreateGoalV2Tool().executeResult(context: harness.context, arguments: [
+                "title": ToolArgument("Running goal"),
+                "tasks": ToolArgument([["title": "T1"]]),
+            ])
+
+            let result = try await UpdateGoalStatusV2Tool().executeResult(context: harness.context, arguments: [
+                "status": ToolArgument("in_progress"),
+                "suggested_actions": ToolArgument(["Should not appear"]),
+            ])
+
+            #expect(result.isError == false)
+            #expect(!result.content.contains("Suggested actions for the user:"))
+            #expect(!result.content.contains("Should not appear"))
+        }
+
         @Test("update_goal_status 拒绝非法状态值")
         func updateGoalStatusRejectsInvalidStatus() async throws {
             GoalTaskPluginSupport._sharedManager = nil
@@ -430,6 +497,19 @@ extension SharedManagerSuite {
             #expect(GoalTaskToolSupport.string(arguments, "blank") == "")
             #expect(GoalTaskToolSupport.string(arguments, "wrongType") == nil)
             #expect(GoalTaskToolSupport.string(arguments, "missing") == nil)
+        }
+
+        @Test("stringList 逐项 trim、丢弃空串与非字符串项，兼容 [Any]（#857）")
+        func testStringListParsing() {
+            let arguments: [String: ToolArgument] = [
+                "strings": ToolArgument(["  a  ", "b", "   ", ""]),
+                "any": ToolArgument(["c", 7, "  ", "d"] as [Any]),
+                "wrongType": ToolArgument("not an array"),
+            ]
+            #expect(GoalTaskToolSupport.stringList(arguments, "strings") == ["a", "b"])
+            #expect(GoalTaskToolSupport.stringList(arguments, "any") == ["c", "d"])
+            #expect(GoalTaskToolSupport.stringList(arguments, "wrongType").isEmpty)
+            #expect(GoalTaskToolSupport.stringList(arguments, "missing").isEmpty)
         }
 
         @Test("taskInputs 丢弃缺少标题或标题为空的项")

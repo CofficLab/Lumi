@@ -203,6 +203,43 @@ struct StoryWriterToolTests {
         }
     }
 
+    @Test func createChapterToolThrowsWhenSaveFailsAndLeavesNoDanglingID() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        let storyOutput = try await tool("create_story").execute(arguments: ["title": .init("Unwritable")])
+        let storyID = try #require(firstUUID(in: storyOutput))
+        let store = StoryStore(pluginDirectory: directory)
+        let story = try #require(await store.loadAllStories().first)
+
+        // 把 chapters 目录路径占成普通文件，saveChapter 的 createDirectory 必然失败。
+        // 回归 #431：工具不得把保存失败包装成成功文案，也不得在 story 里残留章节 ID。
+        let chaptersPath = directory
+            .appendingPathComponent("stories")
+            .appendingPathComponent(storyID)
+            .appendingPathComponent("chapters")
+        try Data("blocker".utf8).write(to: chaptersPath)
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("create_chapter").execute(arguments: [
+                "story_id": .init(storyID), "title": .init("Doomed"),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("import_markdown_as_chapter").execute(arguments: [
+                "story_id": .init(storyID), "title": .init("Doomed Import"), "content": .init("x"),
+            ])
+        }
+
+        let reloaded = try #require(await store.loadStory(id: story.id))
+        #expect(reloaded.chapterIDs.isEmpty, "保存失败后 story 不得残留章节 ID")
+        #expect(await store.loadChapters(storyID: story.id).isEmpty)
+    }
+
     @Test func chapterStatusRoundTripsThroughReadAndUpdate() async throws {
         let directory = try makeTemporaryDirectory()
         defer {
@@ -249,6 +286,74 @@ struct StoryWriterToolTests {
             "chapter_id": .init(chapterID),
             "status": .init("inProgress"),
         ])
+    }
+
+    @Test func chapterCreationHonorsExplicitStatusArgument() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        let storyOutput = try await tool("create_story").execute(arguments: ["title": .init("Status On Create")])
+        let storyID = try #require(firstUUID(in: storyOutput))
+        let store = StoryStore(pluginDirectory: directory)
+        let story = try #require(await store.loadAllStories().first)
+
+        func createdChapter(_ arguments: [String: ToolArgument]) async throws -> Chapter {
+            var merged: [String: ToolArgument] = ["story_id": .init(storyID)]
+            for (key, value) in arguments { merged[key] = value }
+            let output = try await tool("create_chapter").execute(arguments: merged)
+            let chapterIDString = try #require(firstUUID(in: output))
+            let chapterID = try #require(UUID(uuidString: chapterIDString))
+            return try #require(await store.loadChapter(id: chapterID, storyID: story.id))
+        }
+
+        // 回归 #820：显式 status 必须覆盖由正文推导的默认值。
+        let doneWithBody = try await createdChapter([
+            "title": .init("Done With Body"), "content": .init("Some prose."), "status": .init("done"),
+        ])
+        #expect(doneWithBody.status == .done)
+
+        let doneEmptyBody = try await createdChapter([
+            "title": .init("Done Empty"), "content": .init(""), "status": .init("done"),
+        ])
+        #expect(doneEmptyBody.status == .done)
+
+        let draftWithBody = try await createdChapter([
+            "title": .init("Draft With Body"), "content": .init("Some prose."), "status": .init("draft"),
+        ])
+        #expect(draftWithBody.status == .draft)
+
+        // 未提供 status 时保持既有默认（向后兼容）。
+        let defaultWithBody = try await createdChapter([
+            "title": .init("Default With Body"), "content": .init("Some prose."),
+        ])
+        #expect(defaultWithBody.status == .inProgress)
+
+        let defaultEmptyBody = try await createdChapter([
+            "title": .init("Default Empty"), "content": .init(""),
+        ])
+        #expect(defaultEmptyBody.status == .draft)
+
+        // import_markdown_as_chapter 共用创建分支，同样尊重 status。
+        let importOutput = try await tool("import_markdown_as_chapter").execute(arguments: [
+            "story_id": .init(storyID), "title": .init("Imported Done"),
+            "content": .init("# Heading"), "status": .init("done"),
+        ])
+        let importIDString = try #require(firstUUID(in: importOutput))
+        let importID = try #require(UUID(uuidString: importIDString))
+        let imported = try #require(await store.loadChapter(id: importID, storyID: story.id))
+        #expect(imported.status == .done)
+
+        // 非法 status 必须抛错，而不是静默忽略。
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("create_chapter").execute(arguments: [
+                "story_id": .init(storyID), "title": .init("Bad Status"),
+                "content": .init("x"), "status": .init("bogus"),
+            ])
+        }
     }
 }
 

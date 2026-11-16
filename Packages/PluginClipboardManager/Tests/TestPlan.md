@@ -5,7 +5,7 @@
 ClipboardManagerPlugin Manage clipboard history and snippets
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 89
+测试文件: 10 个，用例总数: 103
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,10 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 - **剪贴板回写保护**（3 条）：由 `failedImageWritePreservesExistingClipboard`、`corruptImageWritePreservesExistingClipboard`、`successfulWriteReplacesExistingClipboard` 锁定（**回归 #243**）：图片缺失/损坏导致回写失败时不得清空用户原有剪贴板内容，成功回写仍须清空并替换。改动 `ClipboardManagerViewModel.write` 的清空/加载顺序时优先跑对应测试文件。
 - **剪贴板上限裁剪**（2 条）：由 `pinnedRecordsDoNotDefeatUnpinnedLimit`、`trimsNonPinnedBeyondLimitKeepingPinned` 锁定（**回归 #245**）：按上限裁剪时只统计非固定项，固定项不得挤占计数窗口，超额非固定项被删除而固定项全部保留。改动 `ClipboardStorage.cleanupIfNeeded` 或 `ClipboardHistoryManager.trimNonPinnedHistory` 时优先跑对应测试文件。
 - **剪贴板图片文件清理**（7 条）：由 `deleteRemovesPluginOwnedImageFile`、`batchDeleteRemovesPluginOwnedImageFiles`、`clearAllRemovesUnpinnedImageFilesAndKeepsPinned`、`trimRemovesPluginOwnedImageFiles`、`expiryCleanupRemovesPluginOwnedImageFiles`、`deletePreservesExternalAndNonImagePaths`、`pluginOwnedImageFilenameMatching` 锁定（**回归 #244**）：删除/批量删除/清空/裁剪/过期清理移除记录时，须一并删除插件自有命名（`clipboard_<UUID>.png`）的图片文件，避免敏感图片残留磁盘；外部路径与非图片（file 类型）条目一律不得误删。改动 `ClipboardHistoryManager` 的任一删除路径或 `ownedImagePaths`/`isPluginOwnedImageFilename` 时优先跑对应测试文件。
+- **剪贴板禁止留存标记**（5 条）：由 `concealedTextIsNotCollected`、`transientTextIsNotCollected`、`concealedImageIsNotCollectedAndNoFileWritten`、`unmarkedTextIsStillCollected`、`detectsExclusionMarkers` 锁定（**回归 #774**）：剪贴板带 `org.nspasteboard.TransientType` 或 `org.nspasteboard.ConcealedType` 标记时，采集须整体跳过——不进历史、不写 SwiftData、不落盘图片文件；无标记内容仍正常采集。改动 `ClipboardMonitor.itemsAsync` 入口或 `isExcludedFromHistory`/`excludedMarkerTypes` 时优先跑对应测试文件。
+- **剪贴板刷新门控**（3 条）：由 `hiddenPanelIgnoresRefreshUntilVisible`、`visibleRefreshCoalescesBurst`、`hidingCancelsPendingRefresh` 锁定（**回归 #1305**）：隐藏面板时变化刷新被挡掉、重新可见后合并补上；可见面板的突发刷新合并成一次重发布；隐藏会取消待执行的防抖刷新。改动 `ClipboardManagerViewModel.refresh`/`setPanelVisible` 时优先跑对应测试文件。
+- **剪贴板图片复制后台加载**（3 条）：由 `loadRunsOffMain`、`missingFileReturnsNil`、`preloadedImageSkipsReload` 锁定（**回归 #1198**）：图片加载在后台线程执行；缺失文件返回 nil 且不清空原有剪贴板；预加载图片写入时不再重读文件。改动 `ClipboardManagerViewModel.loadImageBox`/`write` 的预加载分支时优先跑对应测试文件。
+- **剪贴板图片持久化**（3 条）：由 `imageDirectoryIsUnderPluginDataRoot`、`captureItemsWritesImageIntoPersistentDirectory`、`captureItemsCreatesImageDirectoryOnFirstUse` 锁定（**回归 #242**）：图片负载必须写进插件自有的持久目录 `ClipboardManagerRuntime.imageDirectory()`（`<dataRoot>/images`），而非系统临时目录，否则临时文件被清理后持久历史条目永久损坏；生产采集入口 `captureItems` 显式传该目录，首次采集落盘前先创建目录。改动 `ClipboardMonitor.captureItems`/`saveImage` 或 `ClipboardManagerRuntime.imageDirectory` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -153,26 +157,60 @@ ClipboardManagerPlugin Manage clipboard history and snippets
 | 88 | 剪贴板图片文件清理 | 删除图片记录不得误删外部路径或非图片条目的文件（回归 #244） | 外部命名图片 + file 类型条目指向 clipboard_<UUID>.png | 调用 `delete(ids:)` 删除两条 | 两个文件均保留，不被误删 | P0 | ✅ 已覆盖 | `deletePreservesExternalAndNonImagePaths` |
 | 89 | 剪贴板图片文件清理 | isPluginOwnedImageFilename 只认 clipboard_<UUID>.png | — | 执行该用例 | 合法命名通过；外部名/非 UUID/非 .png/空 UUID/其它扩展名一律拒绝 | P1 | ✅ 已覆盖 | `pluginOwnedImageFilenameMatching` |
 
-> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
+### 剪贴板禁止留存标记（回归 #774）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 90 | 剪贴板禁止留存标记 | 带 ConcealedType 标记的文本不得被采集（回归 #774） | 唯一命名剪贴板声明 .string + ConcealedType | 调用 `itemsAsync` | 返回空，密码类内容不进历史 | P0 | ✅ 已覆盖 | `concealedTextIsNotCollected` |
+| 91 | 剪贴板禁止留存标记 | 带 TransientType 标记的文本不得被采集（回归 #774） | 唯一命名剪贴板声明 .string + TransientType | 调用 `itemsAsync` | 返回空，临时内容不进历史 | P0 | ✅ 已覆盖 | `transientTextIsNotCollected` |
+| 92 | 剪贴板禁止留存标记 | 带 ConcealedType 标记的图片不得被采集，也不得落盘（回归 #774） | 唯一命名剪贴板声明 .tiff + ConcealedType，独立图片目录 | 调用 `itemsAsync` | 返回空且图片目录无任何文件写入 | P0 | ✅ 已覆盖 | `concealedImageIsNotCollectedAndNoFileWritten` |
+| 93 | 剪贴板禁止留存标记 | 无标记的普通文本仍正常采集 | 唯一命名剪贴板仅声明 .string | 调用 `itemsAsync` | 返回 1 条文本条目 | P1 | ✅ 已覆盖 | `unmarkedTextIsStillCollected` |
+| 94 | 剪贴板禁止留存标记 | isExcludedFromHistory 识别两种排除标记 | 分别构造带/不带标记的剪贴板 | 调用 `isExcludedFromHistory` | 带任一标记返回 true，无标记返回 false | P1 | ✅ 已覆盖 | `detectsExclusionMarkers` |
+
+### 剪贴板刷新门控（回归 #1305）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 95 | 剪贴板刷新门控 | 隐藏面板时变化刷新被挡掉，重新可见后补上（回归 #1305） | 临时存储 + 隐藏面板 | 隐藏期间新增 3 条并多次 refresh，再 setPanelVisible(true) | 隐藏期间不重拉，可见后合并刷新补上 3 条 | P1 | ✅ 已覆盖 | `hiddenPanelIgnoresRefreshUntilVisible` |
+| 96 | 剪贴板刷新门控 | 可见面板的突发刷新被合并成一次重发布（回归 #1305） | 临时存储预置 2 条 + 可见面板 | 连续 6 次 refresh | objectWillChange 只发布 1 次，列表 2 条 | P1 | ✅ 已覆盖 | `visibleRefreshCoalescesBurst` |
+| 97 | 剪贴板刷新门控 | 隐藏面板会取消待执行的刷新（回归 #1305） | 可见面板 + 待执行刷新 | 防抖窗口结束前 setPanelVisible(false) | 待执行刷新被取消，不再重拉 | P1 | ✅ 已覆盖 | `hidingCancelsPendingRefresh` |
+
+### 剪贴板图片复制后台加载（回归 #1198）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 98 | 剪贴板图片复制 | 图片加载在后台线程执行（回归 #1198） | 临时 PNG 文件 | 在 detached Task 中调用 loadImageBox | 加载成功且不在主线程 | P1 | ✅ 已覆盖 | `loadRunsOffMain` |
+| 99 | 剪贴板图片复制 | 缺失文件返回 nil 且不清空剪贴板（回归 #1198） | 唯一命名剪贴板预置文本 + 指向不存在 PNG 的条目 | 调用 loadImageBox 与 write | 返回 nil/false，原有文本仍在剪贴板 | P0 | ✅ 已覆盖 | `missingFileReturnsNil` |
+| 100 | 剪贴板图片复制 | 预加载图片写入时不再重读文件（回归 #1198） | 预加载 NSImage 后删除源文件 | 调用 write(item, to:, preloadedImage:) | 写入成功，剪贴板可读回图片 | P1 | ✅ 已覆盖 | `preloadedImageSkipsReload` |
+
+### 剪贴板图片持久化（回归 #242）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 101 | 剪贴板图片持久化 | 图片目录位于插件数据根目录下而非系统临时目录（回归 #242） | 注入临时数据根目录 | 调用 `ClipboardManagerRuntime.imageDirectory()` | 目录是数据根的直接子目录 images | P1 | ✅ 已覆盖 | `imageDirectoryIsUnderPluginDataRoot` |
+| 102 | 剪贴板图片持久化 | 生产采集入口把图片写进持久目录并返回该路径（回归 #242） | 注入数据根 + 唯一命名剪贴板含图片 | 调用 `captureItems` | 图片路径落在 imageDirectory 下且真实存在，不在临时目录根 | P0 | ✅ 已覆盖 | `captureItemsWritesImageIntoPersistentDirectory` |
+| 103 | 剪贴板图片持久化 | 首次采集图片目录尚不存在也能成功落盘（回归 #242） | 注入数据根，images 子目录未创建 | 调用 `captureItems` | 采集成功且落盘前创建图片目录 | P1 | ✅ 已覆盖 | `captureItemsCreatesImageDirectoryOnFirstUse` |
+
+> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 60 / 60
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 12 / 12
-- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
+- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（60 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P1**: 其余功能性用例（67 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 100 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

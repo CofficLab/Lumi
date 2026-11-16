@@ -29,6 +29,10 @@ public final class ProjectsStore: SuperLog, ObservableObject {
     @Published public private(set) var openedFilesRevision = 0
 
     private var openedFilesCache: [String: ProjectOpenedFiles]?
+    /// 打开文件记录的串行写入链：保证磁盘上最终是最新的一份快照。
+    private var openedFilesWriteTask: Task<Void, Never>?
+    /// 落盘实现，测试可注入门闩/线程记录替身。
+    private let openedFilesWriter: @Sendable ([String: ProjectOpenedFiles], URL) async -> Void
 
     // MARK: - Constants
 
@@ -46,11 +50,17 @@ public final class ProjectsStore: SuperLog, ObservableObject {
 
     // MARK: - Init
 
-    public init(pluginDirectory: URL? = nil) {
+    public init(
+        pluginDirectory: URL? = nil,
+        openedFilesWriter: (@Sendable ([String: ProjectOpenedFiles], URL) async -> Void)? = nil
+    ) {
         let directory = pluginDirectory ?? ProjectsStore.defaultPluginDirectory
         self.pluginDirectory = directory
         self.settingsDirectory = directory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
+        self.openedFilesWriter = openedFilesWriter ?? { snapshot, fileURL in
+            Self.write(snapshot, to: fileURL)
+        }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化完成, settingsDirectory: \(self.settingsDirectory.path)")
@@ -115,21 +125,31 @@ public final class ProjectsStore: SuperLog, ObservableObject {
     }
 
     /// 保存所有项目打开过的文件记录。
-    /// 内存缓存立即更新，磁盘写入在后台执行。
+    ///
+    /// 内存缓存立即更新，磁盘写入在后台串行执行：每份快照等上一份写完再落盘，
+    /// 还没开始写的旧快照被新快照取代，因此连续导航只留下最后一次写入，
+    /// 且晚到的旧快照不会覆盖磁盘上的新状态（见 issue #1238）。
     @discardableResult
     public func saveOpenedFiles(_ openedFiles: [String: ProjectOpenedFiles]) -> Task<Void, Never> {
         openedFilesCache = openedFiles
+        openedFilesRevision &+= 1
+
+        let previous = openedFilesWriteTask
+        previous?.cancel()
         let fileURL = openedFilesFileURL
         let directory = settingsDirectory
+        let writer = openedFilesWriter
         let task = Task.detached(priority: .utility) {
+            await previous?.value
+            guard !Task.isCancelled else { return }
             try? FileManager.default.createDirectory(
                 at: directory,
                 withIntermediateDirectories: true,
                 attributes: nil
             )
-            Self.write(openedFiles, to: fileURL)
+            await writer(openedFiles, fileURL)
         }
-        openedFilesRevision &+= 1
+        openedFilesWriteTask = task
         return task
     }
 

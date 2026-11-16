@@ -206,13 +206,13 @@ func selectionManagerCanStartAfterPermissionIsGranted() {
 
 @MainActor
 @Test
-func selectedTextProviderCanSimulateAXRetrySequence() {
+func selectedTextProviderCanSimulateAXRetrySequence() async {
     let provider = RecordingSelectedTextProvider(
         results: [nil, SelectedText(text: "selected", anchor: CGPoint(x: 10, y: 20))]
     )
 
-    let first = provider.readSelectedText(anchor: CGPoint(x: 10, y: 20))
-    let second = provider.readSelectedText(anchor: CGPoint(x: 10, y: 20))
+    let first = await provider.readSelectedText(anchor: CGPoint(x: 10, y: 20))
+    let second = await provider.readSelectedText(anchor: CGPoint(x: 10, y: 20))
 
     #expect(first == nil)
     #expect(second?.text == "selected")
@@ -247,7 +247,7 @@ private final class RecordingSelectedTextProvider: SelectedTextProviding {
         self.results = results
     }
 
-    func readSelectedText(anchor: CGPoint) -> SelectedText? {
+    func readSelectedText(anchor: CGPoint) async -> SelectedText? {
         guard !results.isEmpty else { return nil }
         return results.removeFirst()
     }

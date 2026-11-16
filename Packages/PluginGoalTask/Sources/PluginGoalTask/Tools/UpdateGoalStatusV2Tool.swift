@@ -27,6 +27,20 @@ public struct UpdateGoalStatusV2Tool: SuperAgentTool, @unchecked Sendable {
         case .success(let id): goalId = id
         case .failure(let error): throw error
         }
-        do { let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason")); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Goal **\(goal.title)** (Goal ID: `\(goal.id)`) updated to **\(status.rawValue)**" } catch { throw GoalTaskToolSupport.GoalTaskToolError(message: "failed to update goal: \(error.localizedDescription)") }
+        do {
+            let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason"))
+            GoalTaskToolSupport.changed(goal.conversationId)
+            var result = "✅ Goal **\(goal.title)** (Goal ID: `\(goal.id)`) updated to **\(status.rawValue)**"
+            // blocked 时把 suggested_actions 回显到用户可见结果，恢复重构中丢失的行为（#857）。
+            if status == .blocked {
+                let actions = GoalTaskToolSupport.stringList(arguments, "suggested_actions")
+                if !actions.isEmpty {
+                    result += "\n\nSuggested actions for the user:\n" + actions.map { "- \($0)" }.joined(separator: "\n")
+                }
+            }
+            return result
+        } catch {
+            throw GoalTaskToolSupport.GoalTaskToolError(message: "failed to update goal: \(error.localizedDescription)")
+        }
     }
 }

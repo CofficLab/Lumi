@@ -86,6 +86,8 @@ struct LanguageToolbarView: View {
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
+    @State private var refreshToken = 0
+    @State private var observer: (any ConversationObserverHandle)?
 
     init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
         self.conversations = conversations
@@ -93,6 +95,9 @@ struct LanguageToolbarView: View {
     }
 
     private var selectedLanguage: ConversationLanguage {
+        // 依赖 refreshToken：切换会话或语言偏好变化后必须重新读取，
+        // 否则 chip 与弹窗会停留在上一个会话的语言（#846）。
+        _ = refreshToken
         if let id = conversations.selectedConversationID {
             return conversations.language(for: id)
         }
@@ -147,6 +152,23 @@ struct LanguageToolbarView: View {
             }
             .padding(10)
             .frame(width: 200)
+        }
+        .onAppear {
+            // 与 ReasoningActionBarButton 一致：订阅会话事件驱动刷新。
+            // 仅在切换会话/语言变化时 bump，避免无关事件触发重渲染。
+            observer = conversations.addConversationObserver { event in
+                switch event {
+                case .providerChanged, .selected, .languageChanged, .created, .listChanged:
+                    refreshToken += 1
+                case .deleted, .updated, .markedActive, .verbosityChanged,
+                     .automationChanged, .reasoningChanged:
+                    break
+                }
+            }
+        }
+        .onDisappear {
+            observer?.cancel()
+            observer = nil
         }
     }
 

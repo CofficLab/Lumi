@@ -113,6 +113,25 @@ public struct HTMLPreviewView: View {
     }
 }
 
+// MARK: - WebView Configuration
+
+/// 预览 WKWebView 的配置工厂。
+///
+/// 独立出来便于回归测试直接构造与生产完全一致的 WebView。内容 JavaScript
+/// 必须禁用：简历 / promo / prototype / canvas 等设计器都声称「无脚本」，
+/// 它们的导出管线一律设 `allowsContentJavaScript = false`。预览若放行，
+/// `<body onload=…>` 这类内联事件处理器会执行（还能调用原生消息通道），
+/// 并与导出渲染出不同的 DOM（#494）。原生 `evaluateJavaScript` 注入的
+/// 选区 / 元素桥接脚本不受此开关影响，仍正常安装与触发。
+enum HTMLPreviewWebViewFactory {
+    static func makeConfiguration(userContentController: WKUserContentController) -> WKWebViewConfiguration {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        configuration.userContentController = userContentController
+        return configuration
+    }
+}
+
 // MARK: - WKWebView Wrapper
 
 private struct _WKWebViewWrapper: NSViewRepresentable {
@@ -134,7 +153,6 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
         let userContentController = WKUserContentController()
         // 注册消息通道：JS 把「选中区块 → 发送」事件回传给 Swift。
         // Coordinator 作为 messageHandler 必须以弱引用持有，避免 webview↔coordinator 保留环
@@ -151,7 +169,7 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
                 name: HTMLPreviewElementBridgeScript.messageHandlerName
             )
         }
-        config.userContentController = userContentController
+        let config = HTMLPreviewWebViewFactory.makeConfiguration(userContentController: userContentController)
 
         let webView = WKWebView(frame: CGRect(origin: .zero, size: containerSize), configuration: config)
         webView.allowsMagnification = true
@@ -183,24 +201,23 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         let didReload = context.coordinator.lastLoadKey != loadKey
         context.coordinator.lastLoadKey = loadKey
 
-        switch HTMLPreviewLoadPlanner().loadRequest(
+        // 加载键未变化时不会触发新加载，跳过 planner 的整文件磁盘读取与比较，
+        // 避免每次 SwiftUI 更新（含每帧 resize）都在主线程做无用 I/O（见 issue #1280）。
+        if let request = HTMLPreviewLoadPlanner().loadRequestIfNeeded(
+            didReload: didReload,
             html: html,
             fileURL: fileURL,
             readAccessRootURL: readAccessRootURL
         ) {
-        case .file(let fileURL, let readAccessURL):
-            // 仅在内容变化时触发新加载；导航完成后 coordinator 会在 didFinish 重新注入 JS。
-            if didReload {
+            switch request {
+            case .file(let fileURL, let readAccessURL):
+                // 仅在内容变化时触发新加载；导航完成后 coordinator 会在 didFinish 重新注入 JS。
                 webView.loadFileURL(fileURL, allowingReadAccessTo: readAccessURL)
-            }
-        case .html(let html, let baseURL):
-            if didReload {
+            case .html(let html, let baseURL):
                 webView.loadHTMLString(html, baseURL: baseURL)
             }
-        }
-
-        // 即使不重载（首次已由 didFinish 处理），也兜底确保 JS 至少注入一次。
-        if !didReload {
+        } else {
+            // 即使不重载（首次已由 didFinish 处理），也兜底确保 JS 至少注入一次。
             context.coordinator.injectEnabledScripts(into: webView)
         }
     }
@@ -295,7 +312,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     }
 
     func injectSelectionScript(into webView: WKWebView) {
-        webView.evaluateJavaScript(Self.selectionScript) { [weak self] _, _ in
+        webView.evaluateJavaScript(HTMLPreviewLegacySelectionScript.source) { [weak self] _, _ in
             self?.didInjectSelectionScript = true
         }
     }
@@ -318,7 +335,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     ///    `{ action:"send", blockID, label, outerHTML }`。
     /// 3. 切换选中时清除上一个高亮；点击区块外区域取消选中。
     /// 脚本幂等：重复注入会先移除旧实例（`window.__promoBlockBridge`）。
-    private static let selectionScript: String = """
+    fileprivate static let selectionScript: String = """
     (function () {
         if (window.__promoBlockBridge && window.__promoBlockBridge.dispose) {
             window.__promoBlockBridge.dispose();
@@ -350,6 +367,15 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
                 || el.tagName.toLowerCase();
         }
 
+        function cleanOuterHTML(el) {
+            // 浮动按钮已 appendChild 进 el，直接序列化会把它带进发给助手的源码；
+            // 克隆后剔除宿主注入的遮罩，只回传用户原始标记，且不改动实时 DOM。
+            var clone = el.cloneNode(true);
+            var overlays = clone.querySelectorAll('[data-promo-floating], [data-promo-highlight]');
+            for (var i = 0; i < overlays.length; i++) { overlays[i].remove(); }
+            return clone.outerHTML;
+        }
+
         function clearSelection() {
             if (highlighter) { highlighter.remove(); highlighter = null; }
             if (floating) { floating.remove(); floating = null; }
@@ -369,7 +395,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
                         action: 'send',
                         blockID: readBlockID(el),
                         label: readLabel(el),
-                        outerHTML: el.outerHTML
+                        outerHTML: cleanOuterHTML(el)
                     });
                 } catch (e) { /* 忽略 */ }
             });
@@ -450,6 +476,12 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
         }
     })();
     """
+}
+
+/// 存量选区脚本的内部入口：把 `fileprivate Coordinator.selectionScript` 桥接成可测试的 internal 常量，
+/// 与新版 `HTMLPreviewElementBridgeScript.source` 对齐，便于回归测试直接注入并捕获回传消息。
+enum HTMLPreviewLegacySelectionScript {
+    static var source: String { Coordinator.selectionScript }
 }
 
 fileprivate struct LoadKey: Equatable {

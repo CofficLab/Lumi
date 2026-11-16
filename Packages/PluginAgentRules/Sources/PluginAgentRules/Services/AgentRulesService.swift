@@ -236,6 +236,15 @@ public actor AgentRulesService {
         let finalFilename = filename.hasSuffix(".md") ? filename : "\(filename).md"
         let fileURL = try safeRuleFileURL(in: directoryURL, filename: finalFilename)
 
+        // 拒绝隐藏名：listRules 与 loadRuleDefinitions 都用 .skipsHiddenFiles，
+        // 任何以 . 开头的路径成分落盘后永远不会被列出或注入。创建却报告成功，
+        // 用户/模型以为约束已生效，Agent 实际不带这些约束执行（#810）。
+        guard !finalFilename.split(separator: "/").contains(where: { $0.hasPrefix(".") }) else {
+            throw AgentRulesError.invalidFileFormat(
+                "Rule filename must not be hidden (no path component may start with '.'): \(filename)"
+            )
+        }
+
         // 检查文件是否已存在
         guard !FileManager.default.fileExists(atPath: fileURL.path()) else {
             throw AgentRulesError.fileAlreadyExists(fileURL.path())

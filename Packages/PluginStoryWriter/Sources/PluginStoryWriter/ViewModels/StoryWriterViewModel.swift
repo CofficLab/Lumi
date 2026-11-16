@@ -12,7 +12,14 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📖"
     nonisolated static let verbose = false
 
-    private let store: StoryStore
+    private let store: any StoryWriting
+
+    /// 故事选择代次：每次装载故事内容（切换/重载故事）时递增。
+    ///
+    /// 创建章节/角色/导入是异步的，await 期间用户可能已切换故事；
+    /// 写回内存列表与选中节点前必须比对代次，否则旧故事的创建结果
+    /// 会污染新故事的大纲与选择（见 issue #432）。
+    private var storyGeneration = 0
 
     @Published public private(set) var stories: [Story] = []
     @Published public var currentStoryID: UUID?
@@ -29,7 +36,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     @Published public var selectedNodeID: UUID?
     @Published public var selectedNodeKind: StoryWriterNodeKind?
 
-    public init(store: StoryStore) {
+    public init(store: any StoryWriting) {
         self.store = store
     }
 
@@ -92,6 +99,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     private func loadStoryContent(id: UUID?) async {
+        storyGeneration += 1
         if let id {
             let loaded = await store.loadChapters(storyID: id)
             chapters = loaded
@@ -111,7 +119,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func createStory(title: String) async -> Story {
-        let story = await store.createStory(title: title)
+        let story = (try? await store.createStory(title: title)) ?? Story(title: title)
         stories.insert(story, at: 0)
         await selectStory(id: story.id)
         return story
@@ -130,7 +138,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateStory(_ story: Story) async {
-        await store.updateStory(story)
+        try? await store.updateStory(story)
         if let idx = stories.firstIndex(where: { $0.id == story.id }) {
             stories[idx] = story
         }
@@ -140,7 +148,11 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func createChapter(title: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
-        guard let chapter = await store.createChapter(storyID: storyID, title: title) else { return nil }
+        let generation = storyGeneration
+        guard let chapter = try? await store.createChapter(storyID: storyID, title: title) else { return nil }
+        // await 期间可能已切换故事：磁盘上章节仍归属原故事，但不得把
+        // 它追加进新故事的章节列表或改选中新故事里不存在的节点（#432）。
+        guard storyGeneration == generation, currentStoryID == storyID else { return chapter }
         chapters.append(chapter)
         refreshTotalWordCount()
         selectedNodeID = chapter.id
@@ -150,7 +162,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func deleteChapter(id: UUID) async {
         guard let storyID = currentStoryID else { return }
-        await store.deleteChapter(id: id, storyID: storyID)
+        _ = try? await store.deleteChapter(id: id, storyID: storyID)
         chapters.removeAll { $0.id == id }
         refreshTotalWordCount()
         if selectedNodeID == id {
@@ -160,18 +172,39 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateChapter(_ chapter: Chapter) async {
-        await store.updateChapter(chapter)
+        try? await store.updateChapter(chapter)
         if let idx = chapters.firstIndex(where: { $0.id == chapter.id }) {
             chapters[idx] = chapter
         }
         refreshTotalWordCount()
     }
 
+    /// 立即把章节快照写回内存列表，不等磁盘。
+    ///
+    /// 编辑器每次按键都调用它即时刷新 UI（大纲、字数），磁盘持久化则由
+    /// 防抖任务合并后只做一次（见 issue #1246）。同步执行，无 await 后写回。
+    public func applyChapterInMemory(_ chapter: Chapter) {
+        if let idx = chapters.firstIndex(where: { $0.id == chapter.id }) {
+            chapters[idx] = chapter
+        }
+        refreshTotalWordCount()
+    }
+
+    /// 只把章节快照持久化到磁盘，不回写内存列表。
+    ///
+    /// 内存列表已由 `applyChapterInMemory` 即时更新；这里不做 await 后的共享
+    /// 状态写回，避免旧的防抖快照覆盖用户刚输入的新内容（见 issue #1246）。
+    public func persistChapter(_ chapter: Chapter) async {
+        try? await store.updateChapter(chapter)
+    }
+
     // MARK: - Characters
 
     public func createCharacter(name: String) async -> Character? {
         guard let storyID = currentStoryID else { return nil }
-        guard let character = await store.createCharacter(storyID: storyID, name: name) else { return nil }
+        let generation = storyGeneration
+        guard let character = try? await store.createCharacter(storyID: storyID, name: name) else { return nil }
+        guard storyGeneration == generation, currentStoryID == storyID else { return character }
         characters.append(character)
         selectedNodeID = character.id
         selectedNodeKind = .character
@@ -180,7 +213,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func deleteCharacter(id: UUID) async {
         guard let storyID = currentStoryID else { return }
-        await store.deleteCharacter(id: id, storyID: storyID)
+        try? await store.deleteCharacter(id: id, storyID: storyID)
         characters.removeAll { $0.id == id }
         if selectedNodeID == id {
             selectedNodeID = currentStoryID
@@ -189,7 +222,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateCharacter(_ character: Character) async {
-        await store.updateCharacter(character)
+        try? await store.updateCharacter(character)
         if let idx = characters.firstIndex(where: { $0.id == character.id }) {
             characters[idx] = character
         }
@@ -199,9 +232,11 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func importMarkdownAsChapter(title: String, content: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
-        guard let chapter = await store.importMarkdownAsChapter(storyID: storyID, title: title, content: content) else {
+        let generation = storyGeneration
+        guard let chapter = try? await store.importMarkdownAsChapter(storyID: storyID, title: title, content: content) else {
             return nil
         }
+        guard storyGeneration == generation, currentStoryID == storyID else { return chapter }
         chapters.append(chapter)
         return chapter
     }

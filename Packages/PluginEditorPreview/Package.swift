@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginEditorPreview", targets: ["PluginEditorPreview"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(path: "../KitMarkdown"),
@@ -35,7 +35,10 @@ let package = Package(
             name: "PluginEditorPreviewTests",
             dependencies: [
                 "PluginEditorPreview",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderPanelBottom", package: "ProviderPanelBottom"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ]
         ),
     ]

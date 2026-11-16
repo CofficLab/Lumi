@@ -130,4 +130,124 @@ struct MLXDownloadProgressScanTests {
             #expect(state.cacheSizeBytes == 4096)
         }
     }
+
+    @Test("进度事件只读缓存，反复回调不触发磁盘扫描（#1125）")
+    func progressEventsDoNotRescan() {
+        withInjectedDirectories {
+            let manager = MLXDownloadManager.shared
+            let counter = ScanCounter()
+            let original = manager.cacheScanner
+            manager.cacheScanner = { counter.scan() }
+            manager.invalidateCacheSnapshot()
+            defer {
+                manager.cacheScanner = original
+                manager.activeOperationID = nil
+                manager.invalidateCacheSnapshot()
+            }
+
+            // 建立订阅：发布状态只在有订阅者时才求值（单例的 subject 可能已存在）。
+            let subscription = manager.downloadStatePublisher.sink { _ in }
+            defer { subscription.cancel() }
+            // 显式求值一次建立缓存快照（上面已作废缓存）。
+            _ = manager.downloadState
+            let baseline = counter.callCount
+            #expect(baseline == 1, "建立缓存时应扫描一次")
+
+            // 模拟底层每 64KB 一次的进度回调：同一 operationID 反复 publishProgress。
+            let operationID = UUID()
+            manager.activeOperationID = operationID
+            let totalBytes: Int64 = 4 * 1024 * 1024 * 1024
+            for tick in 0..<200 {
+                manager.publishProgress(
+                    operationID: operationID,
+                    completedBytes: Int64(tick) * 64 * 1024,
+                    currentBytes: 0,
+                    completedFiles: 0,
+                    totalFiles: 1,
+                    totalBytes: totalBytes,
+                    speed: 1_000_000
+                )
+            }
+
+            #expect(
+                counter.callCount == baseline,
+                "进度事件不应触发新的磁盘扫描，实际扫描 \(counter.callCount) 次"
+            )
+        }
+    }
+
+    @Test("进度事件仍然更新字节数与比例（#1125）")
+    func progressEventsStillUpdateBytesAndFraction() {
+        withInjectedDirectories {
+            let manager = MLXDownloadManager.shared
+            let counter = ScanCounter()
+            let original = manager.cacheScanner
+            manager.cacheScanner = { counter.scan() }
+            manager.invalidateCacheSnapshot()
+            defer {
+                manager.cacheScanner = original
+                manager.activeOperationID = nil
+                manager.invalidateCacheSnapshot()
+            }
+            let subscription = manager.downloadStatePublisher.sink { _ in }
+            defer { subscription.cancel() }
+
+            let operationID = UUID()
+            manager.activeOperationID = operationID
+            manager.publishProgress(
+                operationID: operationID,
+                completedBytes: 1024,
+                currentBytes: 0,
+                completedFiles: 0,
+                totalFiles: 1,
+                totalBytes: 4096,
+                speed: 2048
+            )
+
+            #expect(manager.progress.downloadedBytes == 1024)
+            #expect(manager.progress.totalBytes == 4096)
+            #expect(manager.progress.speed == 2048)
+            #expect(manager.progress.fractionCompleted > 0)
+            // 进度发布走缓存，不额外扫描。
+            #expect(counter.callCount == 1)
+        }
+    }
+
+    @Test("进度事件之后显式刷新仍会重新扫描（缓存不被永久冻结）")
+    func explicitRefreshAfterProgressRescans() {
+        withInjectedDirectories {
+            let manager = MLXDownloadManager.shared
+            let counter = ScanCounter()
+            let original = manager.cacheScanner
+            manager.cacheScanner = { counter.scan() }
+            manager.invalidateCacheSnapshot()
+            defer {
+                manager.cacheScanner = original
+                manager.activeOperationID = nil
+                manager.invalidateCacheSnapshot()
+            }
+            let subscription = manager.downloadStatePublisher.sink { _ in }
+            defer { subscription.cancel() }
+
+            let operationID = UUID()
+            manager.activeOperationID = operationID
+            manager.publishProgress(
+                operationID: operationID,
+                completedBytes: 64 * 1024,
+                currentBytes: 0,
+                completedFiles: 0,
+                totalFiles: 1,
+                totalBytes: 4096,
+                speed: nil
+            )
+            let scansAfterProgress = counter.callCount
+
+            manager.refreshDownloadState()
+
+            #expect(
+                counter.callCount == scansAfterProgress + 1,
+                "结构性刷新应重新扫描，进度缓存不得永久冻结"
+            )
+        }
+    }
 }

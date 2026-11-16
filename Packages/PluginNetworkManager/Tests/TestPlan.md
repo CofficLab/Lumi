@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 22 个，用例总数: 128
+测试文件: 27 个，用例总数: 151
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -59,6 +59,12 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **NetworkUsageSnapshot**（4 条）：由 `samplingTickPublishesExactlyOneAtomicSnapshot`、`usageRecordingWritesOneHistoryPointPerSnapshot`、`observerRecordsExactlyOneHistoryPointPerPublishedSnapshot` 等用例锁定（**回归 #216**）：每个 1Hz 采样 tick 只发布一个原子快照，历史边界每个快照只写一个点，订阅时重放的当前值不得再记录；改动 `NetworkService` 采样发布或 `NetworkMetricsObserver` 接线时优先跑 `NetworkUsageSnapshotTests.swift`（串行套件，共享进程级单例）。
 - **HTTPFailedRequestClassification**（2 条）：由 `networkFilterExcludesRecordsThatReceivedAnHTTPStatus`、`summaryAndDetailsDoNotDoubleCountHTTPStatusErrors` 锁定（**回归 #821**）：`get_http_failed_requests` 的 network 类别只保留「未取得 HTTP 状态码」的传输失败（`errorDescription != nil && responseStatusCode == nil`）；已收到 4xx/5xx 响应、同时带 errorDescription 的记录只归入 http_4xx/http_5xx，过滤、汇总与明细都不得把同一条请求重复计为 network。改动该工具的分类谓词时优先跑对应测试文件（串行套件，共享进程级单例）。
 - **HTTPExchangeDetailBody**（4 条）：由 `detailIncludesResponseBodyWhenRequested`、`detailOmitsBodiesWhenNotRequested`、`detailResponseBodyHonorsSameLengthLimitAsRequest`、`detailSkipsNonUTF8ResponseBodyLikeRequest` 锁定（**回归 #311**）：`get_http_exchange_detail` 的 `include_body=true` 必须同时输出请求与响应正文，响应正文沿用与请求相同的规则（UTF-8 解码、截断到 1000 字符、非 UTF-8 跳过），未请求时两者都不输出。改动该工具的正文装配时优先跑对应测试文件（串行套件，共享进程级单例）。
+- **HTTPPendingRequestClassification**（5 条）：由 `pendingRequestIsNotAbnormal`、`transportFailureWithoutStatusIsAbnormal`、`httpErrorStatusIsAbnormal`、`successIsNormalNotAbnormal`、`mixedRecordsClassifyCorrectly` 锁定（**回归 #823**）：`matchesStatus` 的 `.abnormal` 谓词对「无状态码」记录不得一律判异常——在途 Pending（既无 `responseStatusCode` 也无 `errorDescription`）必须排除，只有已带错误的终止失败（`errorDescription != nil`）或已收到非 2xx 状态码的记录才算异常；列表、计数与导出共用该谓词，三处都不得把 Pending 误报为异常。改动 `HTTPExchangeStore.matchesStatus` 时优先跑对应测试文件（串行套件，共享进程级单例）。
+- **HTTPExchangeBodyExportOffMain**（3 条）：由 `jsonExportOffMain`、`binaryExportOffMain`、`writeFailureThrows` 锁定（**回归 #1200**）：大体积 HTTP body 导出的格式化（JSON pretty + sortedKeys / 非 UTF-8 逐字节 hex 回退）与原子写入必须在后台线程完成，主线程不得参与；目标目录不存在时写出必须抛错而非静默失败。改动 `HTTPExchangeExportFormatter` 或导出线程模型时优先跑对应测试文件。
+- **HTTPExchangeExportFilenameBytes**（5 条）：由 `cjkFilenameWithinByteBudget`、`emojiGraphemeFilenameWithinByteBudget`、`batchContinuesPastFailure` 等锁定（**回归 #822**）：HTTP 日志批量导出文件名必须按最终 UTF-8 字节预算截断（序号/方法/host/ID/扩展名全部计入，APFS 单组件 ≤255 字节），逐字素簇累加不切断字符、ID 后缀完整保留，短名不被误截；`writeBatch` 每条写入独立 `do/catch`，单条失败只收集错误并继续整批，不得中止后续记录，进度只对成功写入推进。改动 `HTTPExchangeExportFormatter.exportFileName`/`writeBatch` 或导出循环时优先跑对应测试文件。
+- **HTTPExchangeQueryCancellation**（5 条）：由 `cancelledCountQueriesStopEarly`、`cancelledListPageStopsEarly`、`parentCancellationReachesDetachedQuery` 等锁定（**回归 #1247**）：HTTP 日志的列表/计数/图表/域名查询被新一轮重载取代时，取消必须传播到 detached 子查询并让 store 的批量扫描循环协作式停下（`Task.isCancelled`），不得把整段扫描跑完；被取代的每日计数不得写缓存。改动 `HTTPExchangeStore` 查询循环或 `HTTPExchangeSettingsView` 的重载/取消接线时优先跑对应测试文件（串行套件，独立本地 store）。
+- **NetworkHistoryConfigure**（4 条）：由 `configureReturnsBeforeDecodingAndPublishesInBackground`、`configureQuarantinesCorruptHistoryInBackground`、`staleInFlightPublishDoesNotOverwriteReconfiguredState` 等锁定（**回归 #1212**）：`NetworkHistoryService.configure` 不得在主 actor 同步解码 30 天历史（最多 43200 点），必须把目录创建/读取/解码/过滤放到后台任务，准备好后再回主 actor 发布，让 onBoot 的 UI/provider 注册不被阻塞；在途结果写回前必须比对代次与目标 URL，旧目录/旧代次的加载晚到不得覆盖重新配置后的新状态；后台路径遇损坏文件必须隔离；发布时合并保留加载期间已录制的分钟点。改动 `configure`/`publishLoadedHistory`/`readHistoryOffMain` 时优先跑对应测试文件。
+- **NetworkManager 禁用生命周期**（1 条）：由 `disableWithdrawsToolsAndStopsMonitoring` 锁定（**回归 #449**）：Kernel 运行时 `disablePlugin` 只调用 `onDisable` 并撤回经 `trackContribution` 注册的贡献（菜单栏 speed/popup），不会调用 `onShutdown`，也不会过滤插件直接写入 `ToolManager` 的工具或插件自持的采样/定时器/历史/交换存储。插件必须在 `onDisable` 停止 `NetworkMetricsObserver`（进而停掉 1Hz 采样与历史录制）、撤回全部 7 个 Agent 工具、移除设置入口、断开 `HTTPExchangeObserver` 并把 `NetworkService` 的交换存储置空；`onEnable` 幂等恢复上述贡献。Provider 与 viewModels/store 在禁用期间保持存活（Kernel 保留 Provider 注册）。改动 `NetworkManagerPlugin` 的 `onBoot`/`onEnable`/`onDisable`/`onShutdown` 或 `installRuntimeContributions`/`removeRuntimeContributions` 时优先跑对应测试文件（串行套件，共享进程级单例）。
 
 ## 测试用例清单
 
@@ -192,11 +198,44 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 126 | NetworkProvider URLError 码 | 非流式超时经真实 request 路径触发重试至上限（**回归 #310**） | 计数桩始终超时 | 经 LLMNetworkProviderAdapter+VendorAPIService 发送 | 请求计数为 3（maxAttempts），而非首次即止 | P0 | ✅ 已覆盖 | `nonStreamingTimeoutRetriesThroughRealRequestPath` |
 | 127 | NetworkProviderStreamStatus | 流式 529 带错误正文时 onChunk 一次都不调用且按状态码抛错（**回归 #163**） | URLProtocol 桩返回 529 + SSE 错误正文 | 调用真实 NetworkProvider.stream | onChunk 计数为 0，抛出 HTTPNetworkError.statusCode==529 | P0 | ✅ 已覆盖 | `streamRejects529BodyWithoutForwardingEvents` |
 | 128 | NetworkProviderStreamStatus | 流式 529 经真实 stream 路径触发重试至上限且不转发事件（**回归 #163**） | 计数桩返回 529 + SSE 错误正文 | 经 LLMNetworkProviderAdapter+VendorAPIService 流式发送 | 请求计数为 3（maxAttempts），onEvent 计数为 0 | P0 | ✅ 已覆盖 | `streaming529RetriesThroughRealStreamPath` |
+| 129 | HTTPPendingRequestClassification | 在途 Pending 请求不得计入 Abnormal（**回归 #823**） | 临时 store：只 begin 不 finish 的一条记录（无状态码、无错误） | 查询 `.abnormal`/`.normal`/`.all` 计数与 `.abnormal` 列表 | abnormal=0、normal=0、all=1，abnormal 列表为空 | P0 | ✅ 已覆盖 | `pendingRequestIsNotAbnormal` |
+| 130 | HTTPPendingRequestClassification | 无状态码但已带错误的传输失败仍归入 Abnormal（**回归 #823**） | 临时 store：一条 finish 带 URLError、无状态码的记录 | 查询 `.abnormal`/`.normal` 计数 | abnormal=1、normal=0 | P1 | ✅ 已覆盖 | `transportFailureWithoutStatusIsAbnormal` |
+| 131 | HTTPPendingRequestClassification | 已收到非 2xx 状态码的请求归入 Abnormal（**回归 #823**） | 临时 store：一条 404、无错误的记录 | 查询 `.abnormal`/`.normal` 计数 | abnormal=1、normal=0 | P1 | ✅ 已覆盖 | `httpErrorStatusIsAbnormal` |
+| 132 | HTTPPendingRequestClassification | 2xx 成功请求归入 Normal 而非 Abnormal（**回归 #823**） | 临时 store：一条 200、无错误的记录 | 查询 `.abnormal`/`.normal` 计数 | abnormal=0、normal=1 | P1 | ✅ 已覆盖 | `successIsNormalNotAbnormal` |
+| 133 | HTTPPendingRequestClassification | Pending/传输失败/4xx/2xx 混合时各分类计数与列表正确（**回归 #823**） | 临时 store：Pending + 传输失败 + 404 + 200 各一条 | 查询三类计数与 `.abnormal` 列表 URL 集合 | all=4、abnormal=2、normal=1，abnormal 仅含传输失败与 404 | P1 | ✅ 已覆盖 | `mixedRecordsClassifyCorrectly` |
+| 134 | HTTPExchangeBodyExportOffMain | JSON body 在后台线程格式化并写出（pretty + sortedKeys）（**回归 #1200**） | 乱序 JSON `{"b":2,"a":1}`，后台 Task 执行格式化+写入 | 调用 `exportBodyOffMain` 并读回文件 | 主线程标志为 false，输出中 a 排在 b 之前 | P1 | ✅ 已覆盖 | `jsonExportOffMain` |
+| 135 | HTTPExchangeBodyExportOffMain | 非 UTF-8 二进制 body 在后台线程回退为 hex（**回归 #1200**） | 字节 `[0x00,0xFF,0x10]`，后台 Task 执行 | 调用 `exportBodyOffMain` 并读回文件 | 主线程标志为 false，文件内容为 `00 ff 10` | P1 | ✅ 已覆盖 | `binaryExportOffMain` |
+| 136 | HTTPExchangeBodyExportOffMain | 目标目录不存在时导出抛出错误而非静默失败（**回归 #1200**） | 写入路径指向不存在的子目录 | 后台 Task 执行原子写入 | 抛出错误，不静默成功 | P0 | ✅ 已覆盖 | `writeFailureThrows` |
+| 137 | HTTPExchangeExportFilenameBytes | CJK 长 URL 文件名 ≤ APFS 255 字节且保留 ID 后缀（**回归 #822**） | URL 含 80×测，序号/方法/host/ID/扩展名计入预算 | 调用 `exportFileName` 量最终 UTF-8 字节 | 字节 ≤255，ID 后缀完整，字素簇不切断 | P0 | ✅ 已覆盖 | `cjkFilenameWithinByteBudget` |
+| 138 | HTTPExchangeExportFilenameBytes | ZWJ emoji 长 URL 按字节截断且字素簇完整（**回归 #822**） | URL 含 40×家庭 emoji（多标量字素簇） | 调用 `exportFileName` | 字节 ≤255，多标量字素簇整体保留 | P1 | ✅ 已覆盖 | `emojiGraphemeFilenameWithinByteBudget` |
+| 139 | HTTPExchangeExportFilenameBytes | 短 multibyte URL 不被字节预算误截（**回归 #822**） | URL 含 5×测，远低于预算 | 调用 `exportFileName` | 文件名与未截断形式完全一致 | P1 | ✅ 已覆盖 | `shortMultibyteFilenameUnchanged` |
+| 140 | HTTPExchangeExportFilenameBytes | 单条写入失败不中止整批，其余记录仍导出（**回归 #822**） | 第 0 条目标路径预建为目录，共 3 条记录 | 调用 `writeBatch` | 仅第 0 条失败，第 1/2 条仍写出，进度只推进成功项 | P0 | ✅ 已覆盖 | `batchContinuesPastFailure` |
+| 141 | HTTPExchangeExportFilenameBytes | 全部成功时写出所有记录并逐条推进进度（**回归 #822**） | 3 条记录，目标目录可写 | 调用 `writeBatch` | 无失败，3 文件均存在，进度为 [0,1,2] | P1 | ✅ 已覆盖 | `batchWritesAllOnSuccess` |
+| 142 | HTTPExchangeQueryCancellation | 被取消的计数查询协作式停下，不得跑完整段扫描（**回归 #1247**） | 播种 1100 条记录（近期时间戳，避开保留期清理） | 对照未取消计数为 1100；已取消的 `loadSnapshotCount`/`loadListCount` | 快照计数返回 0，列表计数 < 1100 | P0 | ✅ 已覆盖 | `cancelledCountQueriesStopEarly` |
+| 143 | HTTPExchangeQueryCancellation | 被取消的分页扫描在循环顶部即停，不返回匹配（**回归 #1247**） | 播种 300 条记录 | 对照 `loadListPage(limit:40)` 返回 40；已取消的同查询 | 未取消返回 40，已取消 records 为空 | P0 | ✅ 已覆盖 | `cancelledListPageStopsEarly` |
+| 144 | HTTPExchangeQueryCancellation | 被取消的近期域名收集提前返回空（**回归 #1247**） | 播种 300 条不同域名记录 | 对照 `loadRecentDomains` 为 300；已取消的同查询 | 未取消 300，已取消为空 | P1 | ✅ 已覆盖 | `cancelledRecentDomainsStopsEarly` |
+| 145 | HTTPExchangeQueryCancellation | 被取消的每日计数返回空且不污染缓存（**回归 #1247**） | 播种 120 条跨 3 天记录 | 已取消 `loadDailyCountSeries`；随后完整查询 | 取消返回空点集，后续完整序列 total 仍为 120 | P0 | ✅ 已覆盖 | `cancelledDailySeriesReturnsEmptyAndKeepsCacheIntact` |
+| 146 | HTTPExchangeQueryCancellation | 父任务取消必须传播到 detached 子查询（**回归 #1247**） | 播种 1100 条记录 | 对照完整计数 1100；取消包裹 detached 查询的父任务 | 父取消后 detached 计数 < 1100 | P0 | ✅ 已覆盖 | `parentCancellationReachesDetachedQuery` |
+| 147 | NetworkHistoryConfigure | configure 立即返回不在主 actor 同步解码，后台准备好后才发布历史（**回归 #1212**） | 临时目录预置 2 个近期历史点 | configure 后未让出主 actor 即检查，再等待后台恢复 | configure 同步返回后 longTermHistory 仍为空；等待后等于播种的 2 点，存储目录已创建 | P0 | ✅ 已覆盖 | `configureReturnsBeforeDecodingAndPublishesInBackground` |
+| 148 | NetworkHistoryConfigure | configure 后台加载遇损坏文件必须隔离，不得阻塞或抛出（**回归 #1212**） | history.json 内容为非法 JSON | configure 后等待后台恢复 | longTermHistory 为空，history.corrupt.json 保留非法内容，原 history.json 被移走 | P0 | ✅ 已覆盖 | `configureQuarantinesCorruptHistoryInBackground` |
+| 149 | NetworkHistoryConfigure | 重新配置后旧代次或旧目录的在途加载晚到不得覆盖新状态（**回归 #1212**） | 先 configure(dirA) 再 configure(dirB)，各自加载完成 | 以旧代次旧目录、旧代次新目录、新代次旧目录三种组合模拟晚到发布 | 三种 stale 发布均被丢弃，longTermHistory 始终为 dirB 的点 | P0 | ✅ 已覆盖 | `staleInFlightPublishDoesNotOverwriteReconfiguredState` |
+| 150 | NetworkHistoryConfigure | 后台加载期间已录制的分钟点发布时必须保留，不得被旧加载覆盖丢失（**回归 #1212**） | configure 空目录后手动置入一个已录制分钟点 | 以当前代次与目录发布一段更旧的历史 | 合并后两点都在，按时间先后排列（旧历史在前、录制点在后） | P0 | ✅ 已覆盖 | `publishPreservesPointsRecordedDuringInFlightLoad` |
+| 151 | NetworkManager 禁用生命周期 | 运行时禁用撤回 7 个工具、停止采样并清空交换存储，重新启用恢复（**回归 #449**） | 真实 kernel 启停插件，注册 MenuBar/ToolManager/SettingView/Storage | 禁用/启用插件 | 禁用后 7 工具撤回、采样停止、交换存储清空、设置入口撤回、菜单栏空；启用后全部恢复；stop 后同样清空 | P0 | ✅ 已覆盖 | `disableWithdrawsToolsAndStopsMonitoring` |
 
-> 说明：全部 **128 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **151 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
+> ID 134–136 为既有但漏登记的 HTTP body 后台导出用例
+> （`HTTPExchangeBodyExportOffMainTests`，见 #1200），本轮一并补齐。
+> ID 137–141 为本轮新增的导出文件名字节预算与批量写入隔离回归用例
+> （`HTTPExchangeExportFilenameBytesTests`，见 #822）。
+> ID 142–146 为本轮新增的 HTTP 日志查询协作式取消回归用例
+> （`HTTPExchangeQueryCancellationTests`，见 #1247）。
+> ID 147–150 为本轮新增的网络历史后台配置与身份校验回归用例
+> （`NetworkHistoryConfigureTests`，见 #1212）。
+> ID 151 为本轮新增的运行时禁用生命周期回归用例
+> （`NetworkManagerDisableLifecycleTests`，见 #449）。
 >
 > **鉴别力验证（#448）**：本轮用三处独立变异确认用例不是「恒绿」——
 > （1）删除标准化包含性守卫后，`../victim` 真的写出目录外文件、
@@ -223,25 +262,71 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > （ID 128 仍绿，因适配层 onResponse 元数据后置检查兜底抛 529，证明 ID 127 守的是传输层本身）；
 > （3）整体退回原始顺序（删早期检查、恢复方法末尾检查）→ 错误正文经正常 SSE 路径先转发、
 > 末尾才抛 529，ID 127 onChunk 计数为 1、ID 128 只请求 1 次，3 issues。三处变异均已还原。
+>
+> **鉴别力验证（#823）**：对 `HTTPExchangeStore.matchesStatus` 的 `.abnormal` 谓词施加三处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）把无状态码分支的 `return record.errorDescription != nil` 退回 `return true`（原始 bug）→
+> 在途 Pending 被误判异常，ID 129 `pendingRequestIsNotAbnormal` 失败；
+> （2）把同一分支改成 `return false`（恒不异常）→ 已带错误的传输失败被漏判，
+> ID 130 `transportFailureWithoutStatusIsAbnormal` 失败；
+> （3）把有状态码分支的 `!(200..<300)` 放宽成 `!(200..<500)`→ 404 落入「正常」区间被漏判，
+> ID 131 `httpErrorStatusIsAbnormal` 失败。三处变异分别由不同用例捕获，均已还原。
+>
+> **鉴别力验证（#822）**：对导出文件名截断与批量写入隔离施加两处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）把 `exportFileName` 的字节预算截断退回纯字符数拼接（`return cleaned + "-" + uuid + ".md"`）→
+> 80×测 的 CJK 文件名占 266 UTF-8 字节超 APFS 255 限，ID 137 `cjkFilenameWithinByteBudget` 失败；
+> （2）把 `writeBatch` 的逐条 `do/catch` 改成首条失败即 `return failures`（中止整批）→
+> 第 0 条目标为目录写入失败后第 1/2 条不再写出，ID 140 `batchContinuesPastFailure` 失败。
+> 两处变异分别由不同用例捕获，均已还原。
+>
+> **鉴别力验证（#1247）**：对 store 查询循环的协作式取消检查施加两处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）禁用 `loadListCount` 循环顶部的 `Task.isCancelled` 检查（被取代的计数扫描跑完整段）→
+> ID 142 `cancelledCountQueriesStopEarly` 与 ID 146 `parentCancellationReachesDetachedQuery`
+> 的已取消计数仍为 1100（未提前停下），两例变红；
+> （2）禁用 `loadListPage` 扫描循环顶部的 `Task.isCancelled` 检查 →
+> ID 143 `cancelledListPageStopsEarly` 的已取消分页仍返回匹配，变红。
+> 两处变异分别由不同用例捕获，均已还原。视图层的防抖/保留单一重载任务/代次守卫
+> 属 SwiftUI 装配，由 `swift build` 与上述 store/取消传播机制用例共同锁定。
+>
+> **鉴别力验证（#1212）**：对 configure 的后台化与发布守卫施加四处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）在 configure 中恢复同步 `loadHistory()`（旧实现）→ ID 147 的「configure 返回后
+> longTermHistory 仍为空」断言失败（历史被同步填满，随后后台合并又产生重复点），4 issues；
+> （2）删除 `publishLoadedHistory` 的代次/URL 身份守卫 → ID 149 三种 stale 发布把
+> dirB 的状态污染成 [999,999,999,222]，3 issues；
+> （3）删除 `readHistoryOffMain` catch 中的 `quarantineCorruptHistory` → ID 148 损坏文件
+> 未被隔离（history.json 仍在、corrupt 文件缺失），2 issues；
+> （4）把发布的合并 `loaded + longTermHistory` 退回纯覆盖 `loaded` → ID 150 已录制分钟点
+> 丢失（count 1 而非 2），2 issues。四处变异分别由不同用例捕获，均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> **鉴别力验证（#449）**：把 `NetworkManagerPlugin.onDisable` 的实现掏空
+> （不再调用 `removeRuntimeContributions`），跑
+> `swift test --filter NetworkManagerDisableLifecycleTests` 确认 RED 再还原——
+> 禁用后 7 个 Agent 工具仍可查到、`NetworkService` 采样定时器仍在运行、
+> 交换存储未置空、设置入口未撤回，共 10 处断言失败；菜单栏 speed/popup 仍被
+> Kernel 的 `cancelContributions` 自动撤回（证明这两类贡献的清理路径不同）。
+> 还原后全套 151 条绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 56 / 56
-- P1: 已覆盖 64 / 64
+- P0: 已覆盖 69 / 69
+- P1: 已覆盖 74 / 74
 - P2: 已覆盖 8 / 8
-- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
+- **合计: 151 / 151**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（56 条）
-- **P1**: 其余功能性用例（64 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（69 条）
+- **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 151 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

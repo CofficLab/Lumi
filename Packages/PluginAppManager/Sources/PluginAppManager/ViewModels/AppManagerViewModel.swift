@@ -7,7 +7,7 @@ protocol AppManagerServicing: Sendable {
     func scanInstalledApps(force: Bool) async -> [AppModel]
     func calculateAppSize(for app: AppModel) async -> Int64
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile]
-    func deleteFiles(_ files: [RelatedFile]) async throws
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult
     func saveCache() async
     func revealInFinder(_ app: AppModel)
     func openApp(_ app: AppModel)
@@ -26,6 +26,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var installedApps: [AppModel] = []
     @Published var filteredApps: [AppModel] = []
     @Published var isLoading = false
+    /// 应用列表已发布、正在后台逐个回填大小（#1221）。
+    /// 与 `isLoading`（仅覆盖初始枚举的阻塞态）分离，使列表在计算大小期间即可见、可选。
+    @Published var isCalculatingSizes = false
     @Published var searchText = ""
     @Published var selectedApp: AppModel? = nil
     @Published var relatedFiles: [RelatedFile] = []
@@ -39,6 +42,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     private var activeScanID: UUID?
     private var relatedFilesTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
+    private let searchMembership = AppSearchMembership()
 
     init(appService: any AppManagerServicing = AppService()) {
         self.appService = appService
@@ -47,12 +51,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         $searchText
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .combineLatest($installedApps)
-            .map { (text, apps) -> [AppModel] in
-                if text.isEmpty { return apps }
-                return apps.filter { app in
-                    app.displayName.localizedCaseInsensitiveContains(text) ||
-                    (app.bundleIdentifier?.localizedCaseInsensitiveContains(text) ?? false)
-                }
+            .map { [searchMembership] (text, apps) -> [AppModel] in
+                searchMembership.filtered(query: text, apps: apps)
             }
             .sink { [weak self] apps in
                 self?.filteredApps = apps
@@ -119,9 +119,11 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     private func performScan(force: Bool, scanID: UUID) async {
         isLoading = true
+        isCalculatingSizes = false
         defer {
             if activeScanID == scanID {
                 isLoading = false
+                isCalculatingSizes = false
                 activeScanID = nil
                 scanTask = nil
             }
@@ -133,6 +135,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
+        // 新批次的 AppModel 每个 id 都是新 UUID，行高亮按 id 比较会与实际选中脱节；
+        // 按稳定的 bundle 路径把选中项映射到新模型，应用已被外部移除时清空选择与详情（#795）。
+        reconcileSelection(with: apps)
+        // 列表已就绪：结束「扫描应用」阻塞态，大小计算改用独立进度态，
+        // 让用户在逐个回填大小期间即可看到并选择应用，而非等全部遍历完成（#1221）。
+        isLoading = false
+        isCalculatingSizes = apps.contains { $0.size == 0 }
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)App list loaded: \(self.installedApps.count) apps")
@@ -179,6 +188,18 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 列表被新批次替换后，按稳定的 bundle 路径协调选中项（#795）。
+    /// 仍存在 → 映射到新模型，使行高亮（`selectedApp?.id == app.id`）与详情恢复一致；
+    /// 已被外部移除 → 清空选择、详情、关联文件与待删除勾选，不留矛盾状态。
+    private func reconcileSelection(with apps: [AppModel]) {
+        guard let selected = selectedApp else { return }
+        if let refreshed = apps.first(where: { $0.bundleURL.path == selected.bundleURL.path }) {
+            selectedApp = refreshed
+        } else {
+            cancelSelection()
+        }
+    }
+
     /// 扫描关联文件
     func scanRelatedFiles(for app: AppModel) {
         if AppManagerPluginSupport.verbose {
@@ -208,8 +229,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                 }
 
                 self.relatedFiles = files
-                // 默认全选
-                self.selectedFileIds = Set(files.map { $0.id })
+                // 默认只勾选能可靠确认归属的条目；仅凭同名匹配到的目录
+                // （ownershipVerified == false）不得默认删除，避免误删其它厂商数据（#647）。
+                self.selectedFileIds = Set(files.filter { $0.ownershipVerified }.map { $0.id })
                 self.isScanningFiles = false
                 self.relatedFilesTask = nil
             }
@@ -228,51 +250,56 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     func deleteSelectedFiles() {
         guard !selectedFileIds.isEmpty else { return }
         let filesToDelete = relatedFiles.filter { selectedFileIds.contains($0.id) }
+        // 捕获身份：await 期间用户可能切换/取消选择，旧删除结果不得污染新上下文。
+        let appPath = selectedApp?.bundleURL.path
         if AppManagerPluginSupport.verbose {
                     AppManagerPluginSupport.logger.info("\(self.t)开始删除选中的 \(filesToDelete.count) 个文件")
         }
         isDeleting = true
 
         Task {
-            do {
-                try await appService.deleteFiles(filesToDelete)
-
-                await MainActor.run {
-                    self.isDeleting = false
-                    self.showUninstallConfirmation = false
-
-                    // 检查主 App 是否被删除
-                    if let app = self.selectedApp, self.selectedFileIds.contains(where: { id in
-                        if let file = self.relatedFiles.first(where: { $0.id == id }) {
-                            return file.type == .app
-                        }
-                        return false
-                    }) {
-                        // 如果删除了 App 本体，则从列表中移除 App
-                        self.installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
-                        self.selectedApp = nil
-                        self.relatedFiles = []
-                        if AppManagerPluginSupport.verbose {
-                                                    AppManagerPluginSupport.logger.info("\(self.t)应用已卸载：\(app.displayName)")
-                        }
-                    } else {
-                        // 仅移除了部分文件，重新扫描以刷新状态（或者手动从 relatedFiles 移除）
-                        if let app = self.selectedApp {
-                            self.scanRelatedFiles(for: app)
-                        }
-                    }
-
-                    self.errorMessage = nil
-                }
-            } catch {
-                await MainActor.run {
-                    self.isDeleting = false
-                    if AppManagerPluginSupport.verbose {
-                                            AppManagerPluginSupport.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
-                    }
-                    self.errorMessage = error.localizedDescription
-                }
+            let result = await appService.deleteFiles(filesToDelete)
+            await MainActor.run {
+                self.isDeleting = false
+                guard self.selectedApp?.bundleURL.path == appPath else { return }
+                self.applyDeletionResult(result)
             }
+        }
+    }
+
+    /// 应用逐项删除结果：立即移除已删除项、刷新选择；部分失败时保留剩余项供重试（#410）。
+    private func applyDeletionResult(_ result: DeleteFilesResult) {
+        let deletedIds = Set(result.deleted.map { $0.id })
+        // 已成功删除的项（含 App 本体）立即从 UI 移除，不等整批成功。
+        relatedFiles.removeAll { deletedIds.contains($0.id) }
+        selectedFileIds.subtract(deletedIds)
+
+        // App 本体被移入废纸篓 → 从已安装列表移除（它已不在磁盘上）。
+        if result.deleted.contains(where: { $0.type == .app }), let app = selectedApp {
+            installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
+        }
+
+        showUninstallConfirmation = false
+
+        if !result.failed.isEmpty {
+            // 部分失败：成功项已移除，保留失败项与选中状态。用户修复权限/锁定后
+            // 可重试，重试只针对剩余项，不会被已删除的首项（通常是 App 本体）阻塞。
+            let names = result.failed.map { $0.file.name }.joined(separator: "、")
+            errorMessage = PluginAppManagerLocalization.format("Failed to move to Trash: %@", names)
+            return
+        }
+
+        errorMessage = nil
+        guard let app = selectedApp else { return }
+        // relatedFiles 中是否仍有 App 本体条目：本体被删除后该条目已随成功项移除。
+        if relatedFiles.contains(where: { $0.type == .app }) {
+            // App 仍在磁盘上：仅删除了部分关联文件，重新扫描刷新状态。
+            scanRelatedFiles(for: app)
+        } else {
+            // App 本体已删除且无剩余失败项：卸载完成，清空选择与详情。
+            selectedApp = nil
+            relatedFiles = []
+            selectedFileIds = []
         }
     }
 

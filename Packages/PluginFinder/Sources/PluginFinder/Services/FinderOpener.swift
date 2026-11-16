@@ -22,10 +22,10 @@ enum FinderOpener {
     /// 只有真实存在的目录才允许打开——避免把 Finder 指向一个不存在的路径，
     /// 那只会弹出一个空窗口或一条报错。
     static func validatedURL(for path: String) -> URL? {
-        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
+        // 路径原样使用：首尾空格是合法文件名字符，trim 会指向另一个目录（#571）。
+        guard !path.isEmpty else { return nil }
 
-        let url = URL(fileURLWithPath: trimmed)
+        let url = URL(fileURLWithPath: path)
         guard url.isFileURL else { return nil }
 
         var isDirectory: ObjCBool = false

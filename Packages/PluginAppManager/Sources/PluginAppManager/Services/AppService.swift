@@ -9,13 +9,25 @@ final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let verbose: Bool = false
     // 懒加载：避免 AppManagerPluginSupport 实例化时（onReady 之前）就触发 CacheManager
     // 单例构建，保证首次使用时数据目录已按项目约定解析。
-    private lazy var cacheManager = CacheManager.shared
+    private lazy var cacheManager = injectedCacheManager ?? CacheManager.shared
 
     /// 用户主目录；测试可注入临时目录，生产环境使用 NSHomeDirectory()。
     private let homeDirectory: String
 
-    init(homeDirectory: String = NSHomeDirectory()) {
+    /// 扫描根目录；测试可注入临时目录，nil 时使用标准安装路径。
+    private let applicationRoots: [String]?
+
+    /// 缓存管理器；测试可注入独立数据库，nil 时使用共享单例。
+    private let injectedCacheManager: CacheManager?
+
+    init(
+        homeDirectory: String = NSHomeDirectory(),
+        applicationRoots: [String]? = nil,
+        cacheManager: CacheManager? = nil
+    ) {
         self.homeDirectory = homeDirectory
+        self.applicationRoots = applicationRoots
+        self.injectedCacheManager = cacheManager
     }
 
     // 标准应用安装路径
@@ -28,6 +40,7 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     // 用户特定的应用路径
     private func getUserApplicationPaths() -> [String] {
+        if let applicationRoots { return applicationRoots }
         var paths = standardPaths
 
         // 添加其他可能的路径
@@ -43,6 +56,41 @@ final class AppService: @unchecked Sendable, SuperLog {
     static func directoryURL(forPath path: String) -> URL {
         let expandedPath = NSString(string: path).expandingTildeInPath
         return URL(fileURLWithPath: expandedPath, isDirectory: true)
+    }
+
+    /// 标准应用容器子目录名（小写比较）。macOS 把 Terminal、活动监视器、控制台等
+    /// 放在 `/System/Applications/Utilities`，用户也常把工具放进 `/Applications/Utilities`。
+    private static let applicationContainerDirectoryNames: Set<String> = ["utilities"]
+
+    /// 枚举 root 下的 .app 包：直接子项，外加标准容器子目录（如 Utilities）内的一层。
+    ///
+    /// 只下降这一层，且不进入 .app 包内部、不递归任意目录树，
+    /// 否则系统工具永远扫不到，而 Downloads 之类的根又会被整棵遍历（#648）。
+    static func appBundleURLs(under root: URL) -> [URL] {
+        let fileManager = FileManager.default
+        guard let children = try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+
+        var bundles: [URL] = []
+        for child in children {
+            if child.pathExtension == "app" {
+                bundles.append(child)
+                continue
+            }
+            guard applicationContainerDirectoryNames.contains(child.lastPathComponent.lowercased()),
+                  (try? child.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true,
+                  let nested = try? fileManager.contentsOfDirectory(
+                      at: child,
+                      includingPropertiesForKeys: nil,
+                      options: [.skipsHiddenFiles]
+                  )
+            else { continue }
+            bundles.append(contentsOf: nested.filter { $0.pathExtension == "app" })
+        }
+        return bundles
     }
 
     private let libraryPaths = [
@@ -80,33 +128,27 @@ final class AppService: @unchecked Sendable, SuperLog {
                         for path in paths {
                             let url = Self.directoryURL(forPath: path)
 
-                            if let directoryContents = try? FileManager.default.contentsOfDirectory(
-                                at: url,
-                                includingPropertiesForKeys: [.contentModificationDateKey],
-                                options: [.skipsHiddenFiles]
-                            ) {
-                                for appURL in directoryContents where appURL.pathExtension == "app" {
-                                    validPaths.insert(appURL.path)
+                            for appURL in Self.appBundleURLs(under: url) {
+                                validPaths.insert(appURL.path)
 
-                                    // 获取文件修改时间
-                                    let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
-                                    let modDate = resourceValues?.contentModificationDate ?? Date()
+                                // 获取文件修改时间
+                                let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
+                                let modDate = resourceValues?.contentModificationDate ?? Date()
 
-                                    // 尝试从缓存加载 (如果未强制刷新)
-                                    if !force, let cachedItem = await cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
-                                        let app = AppModel(
-                                            bundleURL: appURL,
-                                            name: cachedItem.name,
-                                            identifier: cachedItem.identifier,
-                                            version: cachedItem.version,
-                                            iconFileName: cachedItem.iconFileName,
-                                            size: cachedItem.size
-                                        )
-                                        apps.append(app)
-                                    } else {
-                                        let app = AppModel(bundleURL: appURL)
-                                        apps.append(app)
-                                    }
+                                // 尝试从缓存加载 (如果未强制刷新)
+                                if !force, let cachedItem = await cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
+                                    let app = AppModel(
+                                        bundleURL: appURL,
+                                        name: cachedItem.name,
+                                        identifier: cachedItem.identifier,
+                                        version: cachedItem.version,
+                                        iconFileName: cachedItem.iconFileName,
+                                        size: cachedItem.size
+                                    )
+                                    apps.append(app)
+                                } else {
+                                    let app = AppModel(bundleURL: appURL)
+                                    apps.append(app)
                                 }
                             }
                         }
@@ -188,27 +230,30 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 扫描应用的关联文件
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
-        guard let bundleId = app.bundleIdentifier else {
-            if Self.verbose {
-                if AppManagerPluginSupport.verbose {
-                                    AppManagerPluginSupport.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
-                }
-            }
-            return []
-        }
-        if Self.verbose {
-            if AppManagerPluginSupport.verbose {
-                            AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
-            }
-        }
         let home = homeDirectory
         var relatedFiles: [RelatedFile] = []
 
         // 1. 添加 App 本身
         // 注意：AppModel 可能还没有计算大小，或者已经计算了。为了准确，这里重新获取（或者直接用 AppModel 的如果已存在）
         // 这里为了确保一致性，我们重新计算或直接使用 app.size
+        // 即使没有 Bundle ID 也要先列出 App 本身，否则卸载入口拿不到任何条目、
+        // 无法删除这个应用（#794）。Bundle ID 只用于后续 Library 关联文件扫描。
         let appSize = app.size > 0 ? app.size : await Self.calculateSize(for: app.bundleURL)
         relatedFiles.append(RelatedFile(path: app.bundleURL.path, size: appSize, type: .app))
+
+        guard let bundleId = app.bundleIdentifier else {
+            if Self.verbose {
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)跳过 Library 扫描：无 Bundle ID (\(app.displayName))")
+                }
+            }
+            return relatedFiles
+        }
+        if Self.verbose {
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+            }
+        }
 
         // 2. 扫描 Library
         await withTaskGroup(of: RelatedFile?.self) { group in
@@ -239,9 +284,10 @@ final class AppService: @unchecked Sendable, SuperLog {
                         // 或空名称把候选路径折叠成 Application Support 根目录本身。
                         if AppService.isContained(path: candidatePath2, in: fullPath),
                            fileManager.fileExists(atPath: candidatePath2) {
-                            // 简单匹配
+                            // 仅凭同名无法证明归属：不同厂商可能共用 CFBundleName。
+                            // 标记为未确认，卸载时不得默认勾选（#647）。
                             let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath2))
-                            return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath))
+                            return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath), ownershipVerified: false)
                         }
                     }
 
@@ -304,28 +350,53 @@ final class AppService: @unchecked Sendable, SuperLog {
         return .other
     }
 
-    /// 删除指定的文件列表
-    func deleteFiles(_ files: [RelatedFile]) async throws {
+    /// 删除指定的文件列表（逐项移入废纸篓）。
+    ///
+    /// 不再「首个失败即整批中断」：每个文件独立尝试，失败项记录原因后继续删除
+    /// 其余项，成功项与失败项分别返回。删除前已不存在的项（例如上一次部分成功
+    /// 已移入废纸篓的 App 本体）视为已删除并跳过，使重试不会被这个已消失的首项
+    /// 永久阻塞（#410）。ViewModel 据此立即从 UI 移除已删除项并刷新选择。
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult {
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)开始删除 \(files.count) 个文件")
             }
         }
         let fileManager = FileManager.default
+        var deleted: [RelatedFile] = []
+        var failed: [DeleteFilesResult.FailedFile] = []
         for file in files {
-            // 使用 trashItem 放入废纸篓，比较安全
-            try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
-            if Self.verbose {
-                if AppManagerPluginSupport.verbose {
+            // 删除前已不存在：视为已删除并跳过。重试时首项（通常是 App 本体）
+            // 往往已被上一次部分成功移入废纸篓，不得让它阻塞其余项的清理（#410）。
+            guard fileManager.fileExists(atPath: file.path) else {
+                deleted.append(file)
+                continue
+            }
+            do {
+                // 使用 trashItem 放入废纸篓，比较安全。
+                try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
+                deleted.append(file)
+                if Self.verbose {
+                    if AppManagerPluginSupport.verbose {
                                     AppManagerPluginSupport.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+                    }
+                }
+            } catch {
+                // 单项失败不中断整批：记录原因后继续删除其余文件（#410）。
+                failed.append(DeleteFilesResult.FailedFile(file: file, message: error.localizedDescription))
+                if Self.verbose {
+                    if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.error("\(self.t)  └─ 删除失败：\((file.path as NSString).lastPathComponent) — \(error.localizedDescription)")
+                    }
                 }
             }
         }
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
-                            AppManagerPluginSupport.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+                            AppManagerPluginSupport.logger.info("\(self.t)删除完成：成功 \(deleted.count) 个，失败 \(failed.count) 个")
             }
         }
+        return DeleteFilesResult(deleted: deleted, failed: failed)
     }
 
     /// 保存缓存
@@ -415,5 +486,22 @@ enum AppError: LocalizedError {
         case let .uninstallFailed(reason):
             return "Uninstall failed: \(reason)"
         }
+    }
+}
+
+/// 批量删除（移入废纸篓）的逐项结果（#410）。
+///
+/// 卸载按顺序删除 App 本体与关联文件；某一项失败不得让整批中断，也不得把已
+/// 成功的项当作未删除。返回成功/失败明细，供 ViewModel 立即从 UI 移除已删除项、
+/// 刷新选择，并让重试只针对剩余失败项。
+struct DeleteFilesResult: Sendable {
+    /// 已成功移入废纸篓（或删除前已不存在）的文件。
+    let deleted: [RelatedFile]
+    /// 删除失败的文件及原因。
+    let failed: [FailedFile]
+
+    struct FailedFile: Sendable {
+        let file: RelatedFile
+        let message: String
     }
 }

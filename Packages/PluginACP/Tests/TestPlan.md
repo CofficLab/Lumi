@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条用例。
+PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条用例。
 
 平台: macOS 14+
-测试文件: 6 个，用例总数: 86
+测试文件: 6 个，用例总数: 101
 
 核心组件（源码目录）:
 - `Views/`
@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条�
 - **ACPFileClient**（13 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；路径越权判定必须解析符号链接，workspace 内指向外部的 symlink 读写不得放行，workspace 内及经符号链接到达的 root 下的合法文件不得误拒（**回归 #356**）；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（39 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。
+- **ACPTurnCoordinator**（54 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。首响应超时拒绝必须同时取消底层回合，超时后不得再执行或上报新的工具副作用（**#222**）。流式增量桥按底层流式消息身份（每次 `start` 新建消息）使用独立发送偏移：一个回合内「LLM → 工具 → LLM」的第二段正文必须完整且恰好发送一次，不得沿用第一段偏移被截断或整段丢弃（**#351**）。任何流式通知（正文或思考 token）都证明 LLM 正在产出，必须据此解除首响应 watchdog：健康的长流式回答（含纯思考阶段）不得被误判为「无 LLM 进展」而拒绝并取消底层回合；但装配流式桥本身不解除 watchdog，底层毫无流式活动时仍须照常超时拒绝（**#352**）。`session/cancel` 与 `session/prompt` 同一 burst 到达、runner Task 尚未启动（AgentLoop runtime 未创建、`cancelTurn` 为 no-op）时，取消必须仍然生效：持有并取消 runner Task 句柄，`runTurnTask` 启动前据此跳过模型/工具，由 `cancel()` 的 finalize 以 cancelled 收尾；取消标志随该回合 Task 存续，不得污染同一会话的下一回合，也不得误跳过已合法启动的运行中回合（**#480**）。
 
 ## 测试用例清单
 
@@ -129,32 +129,69 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 86 条�
 | 84 | ACPFileClient | 指向 workspace 外的符号链接写入必须被拒绝（**回归 #356**） | 真实临时 workspace，project/link 指向同级 outside | `writeTextFile(link/secret.txt)` | 抛 pathOutsideWorkspace，且不发起 fs 请求 | P0 | ✅ 已覆盖 | `testSymlinkEscapeWriteRejected` |
 | 85 | ACPFileClient | workspace 内的符号链接正常放行（**回归 #356**） | project/inner 指向 workspace 内的 realdir | `readTextFile(inner/file.txt)` | 正常返回内容并发起 fs 请求，不误拒 | P1 | ✅ 已覆盖 | `testSymlinkInsideWorkspaceStillAllowed` |
 | 86 | ACPFileClient | cwd 经符号链接到达时解析 root 后合法文件不误拒（**回归 #356**） | 会话 cwd 为指向 project 的 alias 符号链接 | `readTextFile(alias/file.txt)` | root 与 candidate 均解析后判定包含，正常放行 | P1 | ✅ 已覆盖 | `testRootSymlinkResolvedForContainment` |
+| 87 | ACPTurnCoordinator | 两会话同名 toolCallId 时授权弹窗展示本会话入参/类别（**回归 #353**） | 两个独立会话各上报相同 toolCallId、不同工具与入参 | A 进入工具授权 | 弹窗 rawInput/kind 为 A 自己的，不被后上报的 B 覆盖 | P0 | ✅ 已覆盖 | `testToolPermissionMetadataIsolatedPerSession` |
+| 88 | ACPTurnCoordinator | 本会话未登记该调用时不得借用其它会话元数据（**回归 #353**） | 仅 B 上报某 toolCallId，A 未上报 | A 以该 id 进入授权 | 回退到问题文本，rawInput/kind 为 nil，不泄漏 B 的入参 | P0 | ✅ 已覆盖 | `testToolPermissionDoesNotLeakOtherSessionMetadata` |
+| 89 | ACPTurnCoordinator | 取消会话只收尾本会话未决工具，同名工具不跨会话串扰（**回归 #353**） | 两会话各上报相同 toolCallId 的未决工具 | 取消 A | A 收到 cancelled，B 的同名工具不受影响 | P1 | ✅ 已覆盖 | `testCancelledToolCallsIsolatedPerSession` |
+| 90 | ACPTurnCoordinator | 首响应超时必须同时取消底层回合，迟到 cancelled 事件不得重复响应（**#222**） | 看门狗超时无 LLM 进展 | 等待 refusal 响应后再发 cancelled 事件 | cancelTurn 恰好调用一次，响应唯一且保持 refusal | P0 | ✅ 已覆盖 | `testWatchdogTimeoutCancelsUnderlyingTurn` |
+| 91 | ACPTurnCoordinator | 超时拒绝后不得再向客户端上报迟到的工具调用（**#222**） | 看门狗超时后模型才回包带工具调用 | 发出 toolCallsReceived 事件 | 不再产生任何新通知或响应 | P0 | ✅ 已覆盖 | `testWatchdogTimeoutIgnoresLateToolCalls` |
+| 92 | ACPTurnCoordinator | 第二段更短正文必须完整发出，不得被旧偏移整段丢弃（**回归 #351**） | 一个回合内先流式较长第一段，再 start 新消息 | 流式更短的第二段最终正文 | 两段正文都完整发出 | P0 | ✅ 已覆盖 | `testSecondStreamShorterBodyIsSentFully` |
+| 93 | ACPTurnCoordinator | 第二段更长正文必须整段发出，不得截断成后缀（**回归 #351**） | 同上 | 流式更长的第二段正文 | 第二段整段发出而非旧偏移后的后缀 | P0 | ✅ 已覆盖 | `testSecondStreamLongerBodyIsSentCompletely` |
+| 94 | ACPTurnCoordinator | 等长不同的第二段正文仍须完整发出（**回归 #351**） | 同上 | 流式与第一段等长但不同的第二段 | 按消息身份重置偏移，第二段完整发出 | P1 | ✅ 已覆盖 | `testSecondStreamEqualLengthBodyIsSentFully` |
+| 95 | ACPTurnCoordinator | 偏移按消息重置后收尾去重仍成立，最终正文恰好一次（**回归 #351**） | 两段流式后落库相同最终正文并收尾 | 触发 completed 收尾 | 第二段最终正文恰好流式发送一次，收尾不重发 | P1 | ✅ 已覆盖 | `testSecondStreamFinalBodyNotResentAtFinalize` |
+| 96 | ACPTurnCoordinator | 健康长流式正文必须解除首响应 watchdog，不得被误判拒绝（**回归 #352**） | 装配流式桥，turnStartTimeout=0.5s | 流式产出正文后越过超时窗口，再正常收尾 | 窗口内无 refusal、不取消底层回合，最终恰好一次 endTurn | P0 | ✅ 已覆盖 | `testStreamingBodyDisarmsWatchdog` |
+| 97 | ACPTurnCoordinator | 纯思考阶段（无正文增量）同样是 LLM 进展，必须解除 watchdog（**回归 #352**） | 装配流式桥，turnStartTimeout=0.5s | 只发思考通知（content 为 nil）后越过超时窗口，再产出正文收尾 | 窗口内无 refusal、不取消底层回合，最终恰好一次 endTurn | P0 | ✅ 已覆盖 | `testThinkingOnlyStreamDisarmsWatchdog` |
+| 98 | ACPTurnCoordinator | 装配流式桥但无流式活动时 watchdog 仍须超时拒绝并取消底层回合（**守卫 #352**） | 装配流式桥但底层无任何流式通知 | 等待首响应超时 | 返回 refusal 且 cancelTurn 恰好作用于本会话 | P1 | ✅ 已覆盖 | `testStreamingBridgeWithoutActivityStillTimesOut` |
+| 99 | ACPTurnCoordinator | prompt 与 cancel 同一 burst、runner 未启动时取消仍生效，不得跑模型/工具（**回归 #480**） | startTurn 调度 runner Task 后立即 cancel（runtime 未创建） | 等待原 prompt 响应 | runTurn 从未调用，响应唯一且 stopReason 为 cancelled | P0 | ✅ 已覆盖 | `testCancelBeforeRunnerStartDoesNotRunTurn` |
+| 100 | ACPTurnCoordinator | 启动前取消不得污染同一会话的下一回合（**守卫 #480**） | 第一回合启动前取消并收尾后，同会话再发新 prompt | 新回合启动并正常收尾 | 新回合 runner 正常启动，stopReason 为 endTurn | P0 | ✅ 已覆盖 | `testCancelBeforeStartDoesNotPoisonNextTurn` |
+| 101 | ACPTurnCoordinator | runner 已启动后再取消（运行中取消）仍正常生效，不被启动前判定误跳过（**守卫 #480/#233**） | 等 runner 真正启动后再 cancel | 等待原 prompt 响应 | runTurn 已调用，响应 stopReason 为 cancelled | P1 | ✅ 已覆盖 | `testCancelAfterRunnerStartStillCancelsRunningTurn` |
 
-> 说明：全部 **86 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#353**，`ACPTurnCoordinator.toolCallMetadata` 按 `(sessionID, toolCallID)` 隔离）：
+> - **M1** 还原为裸 `String` 键（`toolCallMetadata[call.id]`，元数据带 `sessionID`，授权按裸 ID 查询、收尾按 `value.sessionID` 过滤）→ `testToolPermissionMetadataIsolatedPerSession`、`testToolPermissionDoesNotLeakOtherSessionMetadata`、`testCancelledToolCallsIsolatedPerSession` 三条全部转红（B 覆盖 A：弹窗展示 B 的入参/类别、A 借用 B 的元数据、取消 A 时 A 的未决工具漏发 cancelled）。
+> - 还原完整修复（复合键 `ToolCallKey`，授权按 `(sessionID, toolCallID)` 查询、收尾按 `key.sessionID` 过滤）→ 89 条全绿。
 
 > 变异验证（**#356**，`ACPFileClient.resolvedPath`）：
 > - **M1** 去掉符号链接解析（直接按 `standardizedFileURL` 词法路径判定包含）→ `testSymlinkEscapeReadRejected`、`testSymlinkEscapeWriteRejected` 转红（越权 symlink 被放行），`testSymlinkInsideWorkspaceStillAllowed` 仍绿。
 > - **M2** 只解析 candidate、root 保持词法（`let realRoot = root`）→ `testRootSymlinkResolvedForContainment` 转红（cwd 经 alias symlink 到达时合法文件被误判越界），两条越权用例仍绿。
 > - 还原完整修复（candidate 与 root 均 `resolvingSymlinksInPath()`，返回值仍为归一化原路径）→ 86 条全绿。
 
+> 变异验证（**#222**，`armWatchdog` 超时路径）：
+> - **M1** 移除超时分支的 `agentLoop.cancelTurn`（只 finalize 发 refusal）→ `testWatchdogTimeoutCancelsUnderlyingTurn`、`testWatchdogTimeoutIgnoresLateToolCalls` 双双转红（底层回合未被取消）。
+> - 还原修复（先取消再收尾）→ 91 条全绿。
+
+> 变异验证（**#351**，`ACPStreamingBridge.flush` 按流式消息身份重置发送偏移）：
+> - **M1** 移除「检测到新消息 id 就把 `sentLength` 归零」整段（沿用每会话单一偏移）→ `testSecondStreamShorterBodyIsSentFully`（第二段 "Done" 被整段丢弃）、`testSecondStreamLongerBodyIsSentCompletely`（只发旧偏移后的后缀 " much longer final answer"）、`testSecondStreamEqualLengthBodyIsSentFully`（等长 "BBBB" 被丢弃）、`testSecondStreamFinalBodyNotResentAtFinalize`（最终正文 0 次发送）四条全部转红。
+> - 还原完整修复（按 `acpStreamingMessageID` 变化重置偏移）→ 95 条全绿。
+
+> 变异验证（**#352**，流式活动解除首响应 watchdog）：
+> - **M1** 去掉协调器 `streaming?.onProgress` 到 `markLLMProgress` 的接线（流式通知不再标记进展）→ `testStreamingBodyDisarmsWatchdog`、`testThinkingOnlyStreamDisarmsWatchdog` 双双转红（健康流式被 watchdog 误判 refusal 并取消底层回合）。
+> - **M2** 去掉 `ACPStreamingBridge.flush` 开头的 `onProgress?(conversationID)`（桥不再上报任何流式活动）→ 同样两条转红；`testStreamingBridgeWithoutActivityStillTimesOut` 保持绿（无活动仍照常超时）。
+> - 还原完整修复（flush 先上报进展再算增量，协调器据此 `markLLMProgress`）→ 98 条全绿。
+
+> 变异验证（**#480**，启动前取消不丢失）：
+> - **M1** 去掉 `runTurnTask` 开头的 `if Task.isCancelled { return }` 启动前判定 → `testCancelBeforeRunnerStartDoesNotRunTurn`、`testCancelBeforeStartDoesNotPoisonNextTurn` 转红（被取消的回合仍调用 runTurn 跑模型/工具）。
+> - **M2** 去掉 `cancel()` 里的 `runnerTasks[sessionID]?.cancel()`（不取消尚未启动的 runner Task）→ 同样两条转红（Task 未被取消，`Task.isCancelled` 为 false，runner 照常启动）。
+> - 还原完整修复（startTurn 持有句柄、cancel 取消句柄、runTurnTask 启动前据 `Task.isCancelled` 跳过）→ 101 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 63 / 63
+- P0: 已覆盖 32 / 32
+- P1: 已覆盖 68 / 68
 - P2: 已覆盖 1 / 1
-- **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
+- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（63 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
+- **P1**: 其余功能性用例（68 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

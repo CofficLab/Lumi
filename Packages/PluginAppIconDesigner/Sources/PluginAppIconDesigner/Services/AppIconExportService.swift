@@ -159,6 +159,18 @@ public struct AppIconExportService {
     /// Renders one square PNG for visual inspection by an Agent.
     @MainActor
     public func renderPreviewPNG(document: IconDocument, pixelSize: Int = 1024) throws -> Data {
+        let cgImage = try renderPreviewCGImage(document: document, pixelSize: pixelSize)
+        return try Self.encodePNG(cgImage: cgImage)
+    }
+
+    /// Rasterizes the icon document to a `CGImage` on the main actor.
+    ///
+    /// `ImageRenderer` is MainActor-only, so the SwiftUI capture must happen here.
+    /// PNG compression is separate (`encodePNG`) and can run off-main, so callers
+    /// in the agent loop only hold the main actor for the rasterization, not the
+    /// whole rasterize-then-encode pipeline (see issue #1289).
+    @MainActor
+    public func renderPreviewCGImage(document: IconDocument, pixelSize: Int = 1024) throws -> CGImage {
         let document = IconDocumentSanitizer.sanitized(document)
         let size = min(max(pixelSize, 1), 4096)
         let content = IconRenderedDocumentView(document: document)
@@ -169,7 +181,7 @@ public struct AppIconExportService {
         guard let cgImage = renderer.cgImage else {
             throw AppIconExportError.renderFailed(size)
         }
-        return try pngData(cgImage: cgImage)
+        return cgImage
     }
 
     /// Normalizes a source image to a square 1024px artwork for Icon Composer.
@@ -237,6 +249,12 @@ public struct AppIconExportService {
     }
 
     private func pngData(cgImage: CGImage) throws -> Data {
+        try Self.encodePNG(cgImage: cgImage)
+    }
+
+    /// PNG-compresses a `CGImage`. Pure ImageIO work with no actor affinity,
+    /// so it can run off the main actor (see issue #1289).
+    nonisolated public static func encodePNG(cgImage: CGImage) throws -> Data {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
             throw AppIconExportError.renderFailed(cgImage.width)

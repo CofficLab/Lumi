@@ -32,8 +32,19 @@ enum ConversationHTMLExporter {
         let exportedMessageCount: Int
         switch mode {
         case .debug:
-            exportedMessageCount = orderedMessages.count
-            renderedMessages = orderedMessages.map(renderDetailedMessage).joined(separator: "\n")
+            // 同一条工具结果会被生产流程同时写入嵌套 toolCalls 与独立 .tool 消息；按 toolCallID 去重避免导出重复（#580）。
+            let coveredToolCallIDs = Set(
+                orderedMessages
+                    .flatMap { $0.toolCalls ?? [] }
+                    .filter { $0.result != nil }
+                    .map(\.id)
+            )
+            let deduplicatedMessages = orderedMessages.filter { message in
+                guard message.role == .tool, let toolCallID = message.toolCallID else { return true }
+                return !coveredToolCallIDs.contains(toolCallID)
+            }
+            exportedMessageCount = deduplicatedMessages.count
+            renderedMessages = deduplicatedMessages.map(renderDetailedMessage).joined(separator: "\n")
         case .share:
             let shareableMessages = orderedMessages.compactMap(renderSharedMessage)
             exportedMessageCount = shareableMessages.count
@@ -290,7 +301,13 @@ enum ConversationHTMLExporter {
         dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         dateFormatter.dateFormat = "yyyyMMdd-HHmmss"
         let suffix = mode == .share ? "-share" : ""
-        return "\(safeFilenameComponent(title))\(suffix)-\(dateFormatter.string(from: date)).html"
+        let tail = "\(suffix)-\(dateFormatter.string(from: date)).html"
+        // 标题按最终文件名的 UTF-8 字节预算截断（含日期/扩展名），不切断字素簇（#513）。
+        let component = truncateToUTF8Bytes(
+            safeFilenameComponent(title),
+            budget: Self.maxFilenameBytes - tail.utf8.count
+        )
+        return component + tail
     }
 
     private static func safeFilenameComponent(_ title: String) -> String {
@@ -310,5 +327,23 @@ enum ConversationHTMLExporter {
         let trimmed = result.trimmingCharacters(in: CharacterSet(charactersIn: ".- "))
         let fallback = trimmed.isEmpty ? "Lumi-Conversation" : trimmed
         return String(fallback.prefix(80))
+    }
+
+    /// APFS 单个路径组件的 UTF-8 字节上限。
+    private static let maxFilenameBytes = 255
+
+    /// 按 UTF-8 字节预算截断：逐字素簇累加，超出预算即停，保证不切断字符、Unicode 有效。
+    private static func truncateToUTF8Bytes(_ value: String, budget: Int) -> String {
+        guard budget > 0 else { return "" }
+        if value.utf8.count <= budget { return value }
+        var result = ""
+        var bytes = 0
+        for character in value {
+            let size = String(character).utf8.count
+            if bytes + size > budget { break }
+            result.append(character)
+            bytes += size
+        }
+        return result
     }
 }

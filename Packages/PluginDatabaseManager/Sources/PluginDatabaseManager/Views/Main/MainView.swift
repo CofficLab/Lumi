@@ -70,7 +70,8 @@ public struct MainView: View {
     }
 
     private var toolbar: some View {
-        let statementCount = SQLStatementParser.split(viewModel.queryText).count
+        // 读取缓存的语句条数（O(1)），不在 body 求值时重新 split 整段脚本（#1254）。
+        let statementCount = viewModel.statementCount
         return AppToolbarContainer(height: 48) {
             HStack {
                 Spacer()

@@ -279,4 +279,114 @@ struct ConnectCacheInvalidatorTests {
 
         #expect(cache.get(logicalKey: otherKey, fetchPolicy: .cacheFirst) != nil)
     }
+
+    // MARK: - Xcode Cloud (#816)
+
+    @Test("启动 build 后失效 build runs 列表的内存缓存")
+    func ciBuildRunPostInvalidatesBuildRunsList() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // 生产读取路径：listCiBuildRuns GET /v1/ciWorkflows/{id}/buildRuns。
+        // startCiBuildRun POST /v1/ciBuildRuns 成功后必须失效它，
+        // 否则紧接着的重新列表会命中旧 L1，把刚插入的新 build 覆盖掉。
+        let listPath = "/v1/ciWorkflows/wf-1/buildRuns"
+        seed(cache, path: listPath)
+        #expect(isCached(cache, path: listPath))
+
+        invalidate(cache, method: "POST", path: "/v1/ciBuildRuns")
+
+        #expect(!isCached(cache, path: listPath))
+    }
+
+    @Test("更新工作流启用状态后失效工作流详情的内存缓存")
+    func ciWorkflowPatchInvalidatesWorkflowDetail() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // readCiWorkflow GET /v1/ciWorkflows/{id}；updateCiWorkflowEnabled PATCH 同路径。
+        let detailPath = "/v1/ciWorkflows/wf-1"
+        seed(cache, path: detailPath)
+        #expect(isCached(cache, path: detailPath))
+
+        invalidate(cache, method: "PATCH", path: "/v1/ciWorkflows/wf-1")
+
+        #expect(!isCached(cache, path: detailPath))
+    }
+
+    @Test("更新工作流启用状态后失效工作流列表的内存缓存")
+    func ciWorkflowPatchInvalidatesWorkflowList() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // listCiWorkflows GET /v1/ciProducts/{id}/workflows，路径不含 /ciWorkflows，
+        // 但同样承载 isEnabled，PATCH 后必须一并失效。
+        let listPath = "/v1/ciProducts/prod-1/workflows"
+        seed(cache, path: listPath)
+        #expect(isCached(cache, path: listPath))
+
+        invalidate(cache, method: "PATCH", path: "/v1/ciWorkflows/wf-1")
+
+        #expect(!isCached(cache, path: listPath))
+    }
+
+    @Test("更新工作流启用状态后失效 build runs 列表的内存缓存")
+    func ciWorkflowPatchInvalidatesBuildRunsList() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        let listPath = "/v1/ciWorkflows/wf-1/buildRuns"
+        seed(cache, path: listPath)
+        #expect(isCached(cache, path: listPath))
+
+        invalidate(cache, method: "PATCH", path: "/v1/ciWorkflows/wf-1")
+
+        #expect(!isCached(cache, path: listPath))
+    }
+
+    // MARK: - 本地化集合 (#817)
+
+    @Test("本地化 PATCH 后失效所属版本的本地化集合缓存")
+    func localizationPatchInvalidatesVersionCollection() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // 集合读取路径 listLocalizations GET /v1/appStoreVersions/{id}/appStoreVersionLocalizations，
+        // 被 policy resolver 打成 .version 标签而非 .localization，且路径不含 localizationID。
+        // PATCH 成功后必须失效它（L1 与磁盘两层），否则列表仍返回旧描述。
+        let collectionPath = "/v1/appStoreVersions/version-1/appStoreVersionLocalizations"
+        seed(cache, path: collectionPath)
+        #expect(isCached(cache, path: collectionPath))
+
+        invalidate(cache, method: "PATCH", path: "/v1/appStoreVersionLocalizations/loc-1")
+
+        #expect(!isCached(cache, path: collectionPath))
+    }
+
+    @Test("本地化 PATCH 后失效该本地化的直接读取缓存")
+    func localizationPatchInvalidatesDirectLocalizationRead() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        let detailPath = "/v1/appStoreVersionLocalizations/loc-1"
+        seed(cache, path: detailPath)
+        #expect(isCached(cache, path: detailPath))
+
+        invalidate(cache, method: "PATCH", path: "/v1/appStoreVersionLocalizations/loc-1")
+
+        #expect(!isCached(cache, path: detailPath))
+    }
+
+    @Test("本地化 PATCH 不影响无关的缓存条目")
+    func localizationPatchKeepsUnrelatedEntries() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        let unrelated = "/v1/apps"
+        seed(cache, path: unrelated)
+
+        invalidate(cache, method: "PATCH", path: "/v1/appStoreVersionLocalizations/loc-1")
+
+        #expect(isCached(cache, path: unrelated))
+    }
 }

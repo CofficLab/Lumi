@@ -34,9 +34,18 @@ final class ScrollViewBottomController {
 
     private weak var scrollView: NSScrollView?
 
+    /// 锚点恢复（prepend 后钉回旧首行）进行中。
+    ///
+    /// 期间 tracker 必须抑制「文档长高 → 钉底」：prepend 的高度增长不是
+    /// 新消息到达，钉底会把用户拽到新的底部（#1330）。
+    /// 由 `MessageListScrollCoordinator.pinToAnchor` 置位/复位。
+    var isRestoringAnchor = false
+
     var isAttached: Bool { scrollView != nil }
 
     fileprivate func attach(to scrollView: NSScrollView) {
+        // 绑定新的滚动视图（会话切换重建 List）时，旧的恢复状态一律作废。
+        isRestoringAnchor = false
         self.scrollView = scrollView
     }
 
@@ -45,10 +54,9 @@ final class ScrollViewBottomController {
         self.scrollView = nil
     }
 
-    /// 钉住底层滚动视图的真实 document 底边，并返回当前几何快照。
-    /// SwiftUI proxy 可能使用尚未完成的 List 行布局；直接调整 clip view
-    /// 可以让调用方在 document 高度继续增长时重复收敛到真正的底部。
-    func pinToBottom() -> Snapshot? {
+    /// 只读当前几何快照，不改变滚动位置。
+    /// 返回 `nil` 表示当前不可用（未附着 / documentView 缺失 / 几何非法）。
+    func geometrySnapshot() -> Snapshot? {
         guard let scrollView,
               let documentView = scrollView.documentView else { return nil }
 
@@ -60,15 +68,29 @@ final class ScrollViewBottomController {
               visibleHeight > 0,
               documentHeight < 10_000_000 else { return nil }
 
-        let maxOffsetY = max(0, documentHeight - visibleHeight)
+        return Snapshot(
+            documentHeight: documentHeight,
+            visibleHeight: visibleHeight,
+            offsetY: clipView.bounds.origin.y
+        )
+    }
+
+    /// 钉住底层滚动视图的真实 document 底边，并返回当前几何快照。
+    /// SwiftUI proxy 可能使用尚未完成的 List 行布局；直接调整 clip view
+    /// 可以让调用方在 document 高度继续增长时重复收敛到真正的底部。
+    func pinToBottom() -> Snapshot? {
+        guard let scrollView, let snapshot = geometrySnapshot() else { return nil }
+
+        let clipView = scrollView.contentView
+        let maxOffsetY = max(0, snapshot.documentHeight - snapshot.visibleHeight)
         var bounds = clipView.bounds
         bounds.origin.y = maxOffsetY
         clipView.bounds = bounds
         scrollView.reflectScrolledClipView(clipView)
 
         return Snapshot(
-            documentHeight: documentHeight,
-            visibleHeight: visibleHeight,
+            documentHeight: snapshot.documentHeight,
+            visibleHeight: snapshot.visibleHeight,
             offsetY: clipView.bounds.origin.y
         )
     }
@@ -374,6 +396,11 @@ final class TrackerView: NSView {
         lastObservedDocumentHeight = newHeight
         lastKnownMaxOffsetY = currentMaxOffsetY()
 
+        // 锚点恢复（prepend）期间的高度增长是预期内的：只更新簿记、不钉底，
+        // 否则用户会被拽到新的底部（#1330）。簿记必须照常更新，否则恢复
+        // 结束后累积的高度差会被当成一次新增长，用陈旧的 maxOffset 误判钉底。
+        if bottomController?.isRestoringAnchor == true { return }
+
         guard wasAtBottomBeforeGrowth else { return }
 
         // 推迟到下一个主线程回合：此刻正处于 AppKit 布局过程中，
@@ -390,6 +417,8 @@ final class TrackerView: NSView {
     /// 后续新消息不再跟随滚动。
     private func pinBottomAfterDocumentGrowth() {
         guard !isPinningToBottom else { return }
+        // 排队期间可能已进入锚点恢复：prepend 的增长不允许钉底（#1330）。
+        guard bottomController?.isRestoringAnchor != true else { return }
         guard let scrollView = observedScrollView,
               let documentView = scrollView.documentView else { return }
 

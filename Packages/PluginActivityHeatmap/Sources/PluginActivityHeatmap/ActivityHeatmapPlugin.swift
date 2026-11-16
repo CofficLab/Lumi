@@ -48,6 +48,18 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public init() {}
 
+    /// 提交活动只随「当前分支提交历史」变化而重算：refs 变化或 HEAD 变化都要刷新。
+    /// 切到已存在的分支只改 HEAD 符号引用、refs 不变，故 headChanged 也必须触发；
+    /// index/stash/workingTree 不影响提交历史，不刷新以免无谓重算。
+    nonisolated static func shouldRefreshCommitActivity(for event: GitRepositoryWatchingEvent) -> Bool {
+        switch event {
+        case .refsChanged, .headChanged:
+            return true
+        case .started, .stopped, .indexChanged, .stashChanged, .workingTreeChanged:
+            return false
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let provider = LocalGitActivityHeatmapProvider(
@@ -59,7 +71,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
 
             if let gitWatch = kernel.resolveProvider((any GitRepositoryWatching).self) {
                 gitWatchHandle = gitWatch.addObserver { [weak provider, weak gitWatch] event in
-                    guard case .refsChanged = event,
+                    guard Self.shouldRefreshCommitActivity(for: event),
                           let repository = gitWatch?.watchingRepositoryURL else { return }
                     provider?.refresh(for: repository)
                 }
@@ -117,7 +129,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         if let messages {
             insertionObserver = MessageObserver(messages: messages) { [weak self] in
                 Task { @MainActor in
-                    await self?.viewModel?.reload()
+                    self?.viewModel?.scheduleReload()
                 }
             }
         }
@@ -271,7 +283,12 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         await reloadNow()
     }
 
-    private func scheduleReload() {
+    /// Debounced entry point for change-driven refreshes (e.g. message insertion).
+    ///
+    /// A burst of insertions cancels and restarts a single retained task, so only
+    /// the latest reload runs once the window settles. This avoids launching one
+    /// overlapping reload pipeline per inserted message (see issue #1262).
+    public func scheduleReload() {
         reloadTask?.cancel()
         reloadTask = Task(priority: .utility) { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(250))
@@ -305,6 +322,7 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         let historicalDates = (0..<(heatmapDayCount - 1)).compactMap {
             calendar.date(byAdding: .day, value: $0, to: start)
         }
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
         let cached = await cache?.counts(for: historicalDates) ?? [:]
         guard !Task.isCancelled, generation == reloadGeneration else { return }
         let missingDates = historicalDates.filter { cached[$0] == nil }

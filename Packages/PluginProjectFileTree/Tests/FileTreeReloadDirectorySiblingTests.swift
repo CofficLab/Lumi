@@ -47,6 +47,9 @@ func reloadDirectoryKeepsFollowingSiblings() async throws {
     reader.updateChildren(of: dirA, to: [a1, a2])
     dataSource.reloadDirectory(at: dirA)
 
+    try await siblingWaitUntil(timeout: 2) {
+        dataSource.fileItems.contains { $0.url == a2 }
+    }
     #expect(dataSource.fileItems.contains { $0.url == a2 }, "A 的新文件应出现")
     #expect(dataSource.fileItems.contains { $0.url == dirB }, "兄弟目录 B 不应被删除")
     #expect(dataSource.fileItems.contains { $0.url == b1 }, "B 的子节点不应被删除")

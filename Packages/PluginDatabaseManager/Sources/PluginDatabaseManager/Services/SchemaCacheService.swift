@@ -76,7 +76,7 @@ public final class SchemaCacheService: ObservableObject {
     public func loadSchemas(for config: DatabaseConfig, database: String?, connection: any DatabaseConnection, refresh: Bool = false) async throws -> [String] {
         let introspector = config.type.introspector
         let result = try await introspector.loadSchemas(in: connection, database: database)
-        databasesByConfig[config.id] = result
+        schemasByConfig[config.id] = result
         return result
     }
 

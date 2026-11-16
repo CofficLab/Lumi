@@ -6,11 +6,17 @@ import KitMCP
 ///
 /// 判定顺序（前序命中即返回）：
 /// 1. 用户单工具覆盖（`MCPServerRegistry.riskOverride`）；
-/// 2. 精确规则表（Xcode 原生 mcpbridge 全量工具逐项列出，本机 Xcode 27.0 实测 54 个）；
+/// 2. 精确规则表（Xcode 原生 mcpbridge 全量工具逐项列出，本机 Xcode 27.0 实测 54 个），
+///    **仅当会话确认来自 Xcode 原生桥时套用**（`isXcodeNativeServer`）；
 /// 3. 注解启发：`destructiveHint == true` → `high`（破坏性优先）；
 /// 4. 注解启发：`readOnlyHint == true` → `safe`；
 /// 5. 名称关键词启发（危险 / 写 / 读）；
 /// 6. 未知工具默认（默认 `high`，防止新服务器悄悄获得权限）。
+///
+/// 精确规则表描述的是真实 `xcrun mcpbridge` 暴露的工具语义。若按裸工具名
+/// 跨服务器套用，任何服务器只要暴露同名工具（如 `XcodeRead`）就能继承 Xcode
+/// 的 `.safe` 分级，并在 `destructiveHint` 之前命中，从而绕过破坏性工具的确认
+/// （Issue #530）。因此非 Xcode 服务器一律跳过精确表，回落到注解 / 启发式。
 public struct MCPPermissionPolicy: Sendable {
     public let unknownDefault: CommandRiskLevel
 
@@ -19,17 +25,37 @@ public struct MCPPermissionPolicy: Sendable {
     }
 
     /// 判定单个工具的风险等级。
-    /// - Parameter override: 用户单工具覆盖（`nil` 表示未覆盖）。
+    /// - Parameters:
+    ///   - override: 用户单工具覆盖（`nil` 表示未覆盖）。
+    ///   - isXcodeNativeServer: 会话是否来自 Xcode 原生 mcpbridge。只有 `true`
+    ///     时才允许套用 Xcode 精确规则表；默认 `false`，避免同名工具跨服务器
+    ///     继承权限（Issue #530）。
     public func level(
         for tool: MCPToolDescriptor,
-        override: CommandRiskLevel? = nil
+        override: CommandRiskLevel? = nil,
+        isXcodeNativeServer: Bool = false
     ) -> CommandRiskLevel {
         if let override { return override }
-        if let exact = Self.exactRuleTable[tool.name] { return exact }
+        if isXcodeNativeServer, let exact = Self.exactRuleTable[tool.name] { return exact }
         if tool.destructiveHint == true { return .high }
         if tool.readOnlyHint == true { return .safe }
         if let heuristic = Self.heuristicLevel(for: tool.name) { return heuristic }
         return unknownDefault
+    }
+
+    /// 判断一个服务器配置是否为 Xcode 原生 mcpbridge。
+    ///
+    /// 精确规则表只对真正的 Xcode 桥生效，故以「实际运行的可执行文件」而非
+    /// 用户可任意填写的服务器 id / 显示名作为身份依据：
+    /// - 可执行文件本身是 `mcpbridge`（含绝对路径）；或
+    /// - 经 `xcrun` 调起且参数里含 `mcpbridge`（内置预设 `xcrun mcpbridge`）。
+    public static func isXcodeNativeServer(command: String, arguments: [String]) -> Bool {
+        let executable = (command as NSString).lastPathComponent.lowercased()
+        if executable == "mcpbridge" { return true }
+        if executable == "xcrun" {
+            return arguments.contains { $0.lowercased() == "mcpbridge" }
+        }
+        return false
     }
 
     // MARK: - Exact Rule Table

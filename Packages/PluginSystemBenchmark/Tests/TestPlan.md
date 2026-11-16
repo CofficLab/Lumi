@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆盖 4 条用例。
+PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆盖 11 条用例。
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 6
+测试文件: 3 个，用例总数: 11
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,7 +29,9 @@ PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **Benchmark**（4 条）：由 `pluginRegistersActivityBarEntry`、`progressFractions`、`smallBenchmarkRuns` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Benchmark**（6 条）：由 `pluginRegistersActivityBarEntry`、`progressFractions`、`smallBenchmarkRuns` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MemoryReadThroughput**（2 条）：由 `readThroughputReflectsSampledBytes`、`writeAndCopyReportFullBuffer` 等用例锁定；read 吞吐必须按实际采样字节数计算，改动该模块时优先跑对应测试文件。
+- **SystemBenchmarkCancellation**（3 条）：由 `cancelledCPURunStopsPromptly`、`cancelResetsIsRunningPromptlyWithRealCPU`、`uncancelledSmallRunStillProducesCPUReport` 锁定（**回归 #257**）：CPU 基准的单核与多核 worker 必须在循环内周期性检查取消（`cpuWork` 每 65536 次迭代 `try Task.checkCancellation()`），多核用可抛出任务组传播取消；Cancel/shutdown 后负载在毫秒级停下并以 `CancellationError` 告终、`isRunning` 尽快复位，不得跑完整段剩余迭代。用真实 `SystemBenchmarkRunner` + 大迭代数驱动（既有取消用例用的是会 sleep 的替身，不覆盖真实 CPU 循环）。改动 `SystemBenchmarkRunner.runCPU`/`cpuWork` 或取消接线时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -41,27 +43,41 @@ PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆�
 | 4 | Benchmark | invalid configuration is rejected | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidConfiguration` |
 | 5 | Benchmark | 用户主动取消显示中性的已取消状态，而不是失败 | 测试运行到 CPU 阶段 | 调用 `cancel()` | `cancellationMessage` 非空，`errorMessage` 为空，无报告 | P1 | ✅ 已覆盖 | `cancellingReportsNeutralState` |
 | 6 | Benchmark | 真实测试错误仍显示为失败 | 运行器直接抛错 | 启动测试 | `errorMessage` 为错误描述，`cancellationMessage` 为空 | P1 | ✅ 已覆盖 | `failureStillReportsError` |
+| 7 | MemoryReadThroughput | read throughput reflects the actually sampled bytes, not the whole buffer | 64 KiB 缓冲区、2 趟 | 运行 `run()` 反推 read 字节数 | 约 16384 字节（采样量），而非 131072（整缓冲区） | P0 | ✅ 已覆盖 | `readThroughputReflectsSampledBytes` |
+| 8 | MemoryReadThroughput | write and copy still report the full buffer size | 64 KiB 缓冲区、2 趟 | 运行 `run()` 反推 write/copy 字节数 | 各约 131072 字节（整缓冲区） | P1 | ✅ 已覆盖 | `writeAndCopyReportFullBuffer` |
+| 9 | SystemBenchmarkCancellation | 取消后真实 CPU 负载在毫秒级停下，不跑完整段迭代（**回归 #257**） | 真实 runner，cpuIterations=4e9（完整跑需数十秒） | 进入单核循环 50ms 后取消，测量取消到结束的耗时 | 以 `CancellationError` 告终，耗时 < 2000ms | P0 | ✅ 已覆盖 | `cancelledCPURunStopsPromptly` |
+| 10 | SystemBenchmarkCancellation | 真实 CPU 负载下取消后 isRunning 尽快复位且为中性已取消状态（**回归 #257**） | 真实 runner 注入 ViewModel，大迭代数 | 进入 `.cpu` 后 `cancel()`，2s 内轮询 isRunning | isRunning 复位，`cancellationMessage` 非空、`errorMessage` 为空、无报告 | P0 | ✅ 已覆盖 | `cancelResetsIsRunningPromptlyWithRealCPU` |
+| 11 | SystemBenchmarkCancellation | 未取消时小配置仍正常产出单核与多核 CPU 测量（**回归 #257**） | cpuIterations=200_000 小配置 | 运行 `run()` | 含 single-core 与 multi-core 测量且 value > 0 | P1 | ✅ 已覆盖 | `uncancelledSmallRunStillProducesCPUReport` |
 
-> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
+> ID 9–11 为本轮新增的 CPU 基准负载协作式取消回归用例
+> （`SystemBenchmarkCancellationTests`，见 #257）。
+>
+> **鉴别力验证（#257）**：对 `cpuWork` 的周期性取消检查施加变异，
+> 跑 `swift test --filter SystemBenchmarkCancellationTests` 确认 RED 再还原——
+> 删除分块循环顶部的 `try Task.checkCancellation()`（被取消的 CPU 负载跑完整段迭代）→
+> ID 9 `cancelledCPURunStopsPromptly` 取消后耗时约 27569ms（远超 2000ms 上限）、
+> ID 10 `cancelResetsIsRunningPromptlyWithRealCPU` 的 isRunning 在 2s 轮询窗口内不复位，
+> 两例变红（3 issues）；ID 11 小配置对照仍绿。变异已还原，还原后全包 11 例通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 5 / 5
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 7 / 7
 - P2: 已覆盖 0 / 0
-- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（7 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 6 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

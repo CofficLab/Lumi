@@ -174,6 +174,105 @@ struct ToolActivityViewModelTests {
         #expect(viewModel.formatDuration(12) == "12.0s")
         viewModel.cancel()
     }
+
+    /// 回归 #1260：高频 output 事件就地更新既有 Job，不应每条事件都全量重排，
+    /// 排序与运行中计数必须保持稳定。
+    @Test("高频 output 事件保持有序与运行计数（**回归 #1260**）")
+    func outputBurstKeepsOrderAndActiveCount() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = ToolActivityViewModel(conversations: conversations, toolManager: toolManager)
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        let t1 = Date(timeIntervalSince1970: 2_000)
+        let jobA = makeJob(id: "a", conversationID: conversationID, createdAt: t0)
+        let jobB = makeJob(id: "b", conversationID: conversationID, createdAt: t1)
+
+        // 乱序到达：先 B 后 A，仍应按 createdAt 升序排列。
+        toolManager.emit(.started(jobB))
+        toolManager.emit(.started(jobA))
+        #expect(viewModel.jobs.map(\.id) == ["a", "b"])
+        #expect(viewModel.activeCount == 2)
+
+        var updated = jobA
+        for i in 0..<100 {
+            updated.latestOutput = "chunk-\(i)"
+            updated.updatedAt = t0.addingTimeInterval(Double(i))
+            toolManager.emit(.output(jobID: "a", stream: .stdout, chunk: "chunk-\(i)", snapshot: updated))
+        }
+        #expect(viewModel.jobs.map(\.id) == ["a", "b"])
+        #expect(viewModel.jobs.first?.latestOutput == "chunk-99")
+        #expect(viewModel.activeCount == 2)
+        #expect(viewModel.activeCount == viewModel.activeJobs.count)
+
+        updated.status = .completed
+        updated.completedAt = t0.addingTimeInterval(120)
+        toolManager.emit(.completed(jobID: "a", result: ToolCallResult(content: "ok"), snapshot: updated))
+        #expect(viewModel.jobs.map(\.id) == ["a", "b"])
+        #expect(viewModel.activeCount == 1)
+        #expect(viewModel.activeCount == viewModel.activeJobs.count)
+        viewModel.cancel()
+    }
+
+    /// 回归 #1260：新 Job 按创建时间插入到正确位置，与事件到达顺序无关。
+    @Test("新 Job 按创建时间插入，与到达顺序无关（**回归 #1260**）")
+    func newJobsInsertInSortedPosition() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = ToolActivityViewModel(conversations: conversations, toolManager: toolManager)
+
+        let j0 = makeJob(id: "j0", conversationID: conversationID, createdAt: Date(timeIntervalSince1970: 1_000))
+        let j1 = makeJob(id: "j1", conversationID: conversationID, createdAt: Date(timeIntervalSince1970: 2_000))
+        let j2 = makeJob(id: "j2", conversationID: conversationID, createdAt: Date(timeIntervalSince1970: 3_000))
+
+        toolManager.emit(.created(j2))
+        toolManager.emit(.created(j0))
+        toolManager.emit(.created(j1))
+
+        #expect(viewModel.jobs.map(\.id) == ["j0", "j1", "j2"])
+        #expect(viewModel.activeCount == 3)
+        viewModel.cancel()
+    }
+
+    /// 回归 #1260：排序键 createdAt 理论上可变，一旦变化必须恢复有序。
+    @Test("createdAt 变化时恢复有序（**回归 #1260**）")
+    func createdAtChangeRestoresOrder() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = ToolActivityViewModel(conversations: conversations, toolManager: toolManager)
+        let jobA = makeJob(id: "a", conversationID: conversationID, createdAt: Date(timeIntervalSince1970: 1_000))
+        let jobB = makeJob(id: "b", conversationID: conversationID, createdAt: Date(timeIntervalSince1970: 2_000))
+        toolManager.emit(.started(jobA))
+        toolManager.emit(.started(jobB))
+        #expect(viewModel.jobs.map(\.id) == ["a", "b"])
+
+        var moved = jobA
+        moved.createdAt = Date(timeIntervalSince1970: 3_000)
+        toolManager.emit(.output(jobID: "a", stream: .stdout, chunk: "x", snapshot: moved))
+        #expect(viewModel.jobs.map(\.id) == ["b", "a"])
+        viewModel.cancel()
+    }
+
+    private func makeJob(
+        id: String,
+        conversationID: UUID,
+        createdAt: Date,
+        status: ToolJobStatus = .running
+    ) -> ToolJob {
+        ToolJob(
+            id: id,
+            conversationID: conversationID,
+            toolCall: KitAgentTool.ToolCall(id: "call-\(id)", name: "run_command", arguments: "{}"),
+            status: status,
+            createdAt: createdAt,
+            startedAt: createdAt
+        )
+    }
 }
 
 @MainActor

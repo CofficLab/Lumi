@@ -113,10 +113,13 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         }
 
         // 恢复当前项目必须通过 ProjectProviding 执行，observer 会负责同步 ViewModel。
-        if projectProvider.currentProject == nil, let storedCurrentProject {
+        if let storedCurrentProject {
             Task { @MainActor in
                 do {
-                    try await projectProvider.openProject(at: storedCurrentProject.path, reason: .appRestore)
+                    try await Self.restoreCurrentProjectIfNeeded(
+                        projectProvider,
+                        storedPath: storedCurrentProject.path
+                    )
                 } catch {
                     Self.logger.error("\(Self.t)Failed to restore current project: \(error.localizedDescription)")
                 }
@@ -166,6 +169,19 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                 },
             ])
         }
+    }
+
+    /// 启动恢复当前项目（`.appRestore`）。
+    ///
+    /// nil 判定必须在真正写入前重新校验：onBoot 同步阶段当前项目为空，但恢复
+    /// Task 真正执行时外部打开（`.externalOpen`）可能已设置当前项目，无条件恢复
+    /// 会把用户显式打开的项目覆盖掉（#131）。
+    static func restoreCurrentProjectIfNeeded(
+        _ projectProvider: any ProjectProviding,
+        storedPath: String
+    ) async throws {
+        guard projectProvider.currentProject == nil else { return }
+        try await projectProvider.openProject(at: storedPath, reason: .appRestore)
     }
 
     /// 构建设置页的项目 RAG 状态区块。

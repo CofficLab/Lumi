@@ -1879,7 +1879,10 @@ public final class EditorState: ObservableObject, SuperLog {
     ///   光标/多光标/滚动/折叠状态。不能等到加载结束再读 live session：
     ///   期间诊断等观察者会触发 `syncActiveSessionState()`，把尚未恢复的
     ///   当前视图状态写进目标 Session。
-    func loadFile(from url: URL?, restoringSession: EditorSession? = nil) {
+    /// - Parameter replacingBuffer: 强制用磁盘内容替换当前 buffer（reload / revert）。
+    ///   常规加载对「同一 URL 且 buffer 已就绪」会跳过替换，以免切换标签时覆盖
+    ///   未保存正文；但 reload / revert 的语义就是重新应用磁盘内容（#589）。
+    func loadFile(from url: URL?, restoringSession: EditorSession? = nil, replacingBuffer: Bool = false) {
         let restoreSnapshot = restoringSession.map { session in
             EditorSessionSnapshotBuilder.snapshot(
                 preserving: session.id,
@@ -1887,12 +1890,17 @@ public final class EditorState: ObservableObject, SuperLog {
                 multiCursorState: session.multiCursorState,
                 panelState: session.panelState,
                 isDirty: session.isDirty,
+                dirtyBody: session.dirtyBody,
                 findReplaceState: session.findReplaceState,
                 scrollState: session.scrollState,
                 viewState: session.viewState,
                 foldingState: session.foldingState
             )
         }
+        // 目标会话的未保存正文（#396）：加载完成后用它替代磁盘内容，
+        // 否则 Auto Save 关闭时切回文件会静默丢掉未保存的编辑。
+        // 在 Task 外捕获为值类型，避免跨隔离域读 MainActor 会话。
+        let restoredDirtyBody = restoringSession?.dirtyBody
 
         // 清理旧状态
         referencesRequestGeneration.invalidate()
@@ -1961,7 +1969,8 @@ public final class EditorState: ObservableObject, SuperLog {
                 // 长行检测与总行数统计都要完整扫描正文，放在后台完成（见 issue #1277）。
                 let derivedScan = await Task.detached(priority: .utility) { () -> DocumentDerivedScan? in
                     guard case let .text(document) = loadedDocument else { return nil }
-                    let content = document.content
+                    // 会话里有未保存正文时按它统计，保证行数/长行与最终载入的内容一致（#396）。
+                    let content = restoredDirtyBody ?? document.content
                     return DocumentDerivedScan(
                         longestLine: LongLineDetector.findLongestLine(in: content),
                         totalLines: EditorTextMetrics.totalLineCount(in: content)
@@ -1973,7 +1982,7 @@ public final class EditorState: ObservableObject, SuperLog {
                     guard self.fileLoadRequestGeneration.isCurrent(loadGeneration) else { return }
                     let standardizedLoadingURL = loadingURL.standardizedFileURL
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
-                    let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
+                    let shouldReplaceCurrentBuffer = replacingBuffer || !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
                         if Self.verbose {
                                                     self.logger.info("\(self.t)loadFile: shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path)")
@@ -1990,14 +1999,18 @@ public final class EditorState: ObservableObject, SuperLog {
                         self.isFileLoadInProgress = false
                         self.fileLoadErrorMessage = nil
                     case .text(let document):
-                        let content = document.content
+                        let diskContent = document.content
+                        // 会话保存的未保存正文优先于磁盘内容（#396）；与磁盘一致则视为干净。
+                        let dirtyBody = restoredDirtyBody.flatMap { $0 != diskContent ? $0 : nil }
+                        let content = dirtyBody ?? diskContent
                         let longestLine = derivedScan?.longestLine
                         self.withoutSessionSync {
                             self.currentFileURL = loadingURL
                             _ = self.documentController.load(text: content)
                             // 整体替换无法用增量更新推导，丢弃行偏移表缓存（见 issue #1278）。
                             self.invalidateLineTableCache()
-                            self.documentController.markPersistedText(content)
+                            // 持久化基线始终是磁盘内容，脏正文的差异才能被保存流程识别。
+                            self.documentController.markPersistedText(diskContent)
                             self.content = self.documentController.textStorage
                             self.canPreview = true
                             self.isBinaryFile = false
@@ -2008,8 +2021,8 @@ public final class EditorState: ObservableObject, SuperLog {
                             self.fileExtension = document.fileExtension
                             self.fileName = document.fileName
                             self.originalFileEncoding = document.encoding
-                            self.hasUnsavedChanges = false
-                            self.saveState = .idle
+                            self.hasUnsavedChanges = dirtyBody != nil
+                            self.saveState = dirtyBody != nil ? .editing : .idle
                             self.autoSaveScheduler.cancel()
 
                             self.detectedLanguage = LanguageRegistry.shared.detectLanguage(
@@ -2093,6 +2106,16 @@ public final class EditorState: ObservableObject, SuperLog {
         guard let currentFileURL else { return }
         fullLoadOverrides.insert(currentFileURL.standardizedFileURL)
         loadFile(from: currentFileURL)
+    }
+
+    /// 重新应用磁盘内容（`editor.documents.reload` / `revert`，#589）。
+    ///
+    /// 加载收尾把持久化基线设为磁盘内容、清掉脏标记，并经
+    /// `syncActiveSessionState()` 清空会话的脏正文快照：revert 之后切走再切回
+    /// 也不会把已丢弃的编辑恢复回来。
+    func reloadCurrentFileFromDisk() {
+        guard let currentFileURL else { return }
+        loadFile(from: currentFileURL, replacingBuffer: true)
     }
 
     func applySessionRestore(_ session: EditorSession) {
@@ -2275,6 +2298,16 @@ public final class EditorState: ObservableObject, SuperLog {
 
     /// 真正执行查找匹配扫描。
     private func performFindMatchRefresh() {
+        // 查找面板关闭时匹配结果无人消费，跳过全文档正则扫描（见 issue #1279）。
+        // findText 在关闭面板后仍保留，若不加此守卫，每次按键仍会全文档扫描。
+        // 重新打开面板会触发 refreshFindMatches 重新扫描。
+        guard activeSession.findReplaceState.isFindPanelVisible else {
+            applyFindMatchesResult(
+                EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
+            )
+            return
+        }
+
         guard let text = content?.string else {
             applyFindMatchesResult(
                 EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
@@ -3462,6 +3495,9 @@ public final class EditorState: ObservableObject, SuperLog {
             multiCursorState: multiCursorState,
             panelState: panelController.sessionState,
             isDirty: hasUnsavedChanges,
+            // 脏正文随会话同步持续落快照：Auto Save 关闭时切走文件，
+            // 未保存的编辑必须能从会话恢复，而不是被磁盘内容覆盖（#396）。
+            dirtyBody: hasUnsavedChanges ? (documentController.currentText ?? content?.string) : nil,
             bridgeState: bridgeState,
             scrollState: scrollState,
             foldingState: foldingState,

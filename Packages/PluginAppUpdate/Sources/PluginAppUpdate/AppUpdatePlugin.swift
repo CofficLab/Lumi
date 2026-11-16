@@ -72,6 +72,6 @@ public enum AppUpdateBootstrap {
         }
         let settingsFile = directory.appendingPathComponent("settings.plist")
         guard !FileManager.default.fileExists(atPath: settingsFile.path) else { return }
-        AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(channel)
+        try? AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(channel)
     }
 }

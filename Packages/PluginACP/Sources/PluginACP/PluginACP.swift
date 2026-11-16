@@ -314,6 +314,10 @@ private final class MessageStreamingAdapter: ACPStreamObserving {
         guard let message = stream.streamingMessage(for: conversationID) else { return nil }
         return message.content
     }
+
+    func acpStreamingMessageID(for conversationID: UUID) -> UUID? {
+        stream.streamingMessage(for: conversationID)?.id
+    }
 }
 
 /// 令牌适配：把 MessageStreaming 的注销令牌转成 ACP 侧协议。

@@ -36,7 +36,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onArrowDown: (() -> Void)?
     private let onEnter: (() -> Void)?
     private let onEscape: (() -> Void)?
-    private let onFileDrop: ((URL) -> Void)?
+    private let onFileDrop: (([URL]) -> Void)?
     /// 编辑器插入完折叠块后的回调，ViewModel 据此清空待插入状态。
     private let onBlockInserted: ((UUID) -> Void)?
     /// 编辑器内容里的折叠块区间变化时回调。
@@ -62,7 +62,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onArrowDown: (() -> Void)? = nil,
         onEnter: (() -> Void)? = nil,
         onEscape: (() -> Void)? = nil,
-        onFileDrop: ((URL) -> Void)? = nil,
+        onFileDrop: (([URL]) -> Void)? = nil,
         onBlockInserted: ((UUID) -> Void)? = nil,
         onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)? = nil,
         isFocused: Binding<Bool>,
@@ -110,8 +110,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
             guard let coordinator, let textView else { return false }
             return coordinator.handlePaste(pasteboard, in: textView)
         }
-        textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
-            coordinator?.handleFileDrop(url)
+        textView.fileDropHandler = { [weak coordinator = context.coordinator] urls in
+            coordinator?.handleFileDrop(urls)
         }
         textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
             guard let coordinator else { return }
@@ -121,6 +121,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
                     coordinator.parent.isImageDragHovering = hovering
                 }
             }
+        }
+        textView.focusLossHandler = { [weak coordinator = context.coordinator] in
+            coordinator?.noteFocusLost()
         }
         textView.drawsBackground = false
         textView.font = font
@@ -139,6 +142,16 @@ public struct ChatInputEditorView: NSViewRepresentable {
         )
         textView.textContainerInset = NSSize(width: 4, height: 4)
         textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
+
+        // 重建输入框时必须用 binding 里的现有草稿初始化原生编辑器，并把这次
+        // 「binding → 编辑器」的下发记入协调器。否则新建的 EditorTextView 是空的，
+        // 而协调器的 lastSyncedBindingText 为 nil，首次 updateNSView 会把空串误判成
+        // 「编辑器侧 binding 不知情的新内容」回写 binding，静默清空用户未发送的
+        // 草稿——隐藏再恢复聊天区（终端/数据库等）就会触发这条路径（#601）。
+        textView.delegate = nil
+        textView.string = text
+        textView.delegate = context.coordinator
+        context.coordinator.noteBindingTextPushedDown(text)
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
@@ -190,6 +203,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
             updatePlaceholder(for: textView)
             return
         }
+
+        syncFocus(in: textView, coordinator: context.coordinator)
 
         let resolved = resolvedContent(from: textView)
         let currentText = resolved.text
@@ -258,6 +273,26 @@ public struct ChatInputEditorView: NSViewRepresentable {
         context.coordinator.lastInsertedBlockID = block.id
         context.coordinator.insert(block, in: textView)
         onBlockInserted?(block.id)
+    }
+
+    /// 把「应当聚焦」真正落实为第一响应者。
+    ///
+    /// `isFocused` binding 此前只被存储、从不被消费，`updateNSView` 处理了文本、
+    /// 光标与折叠块却从不请求焦点，于是「发送到对话」把 `isInputFocused` 置 true
+    /// 后键盘焦点仍留在代码编辑器，后续字符写进源码而非草稿（#803）。
+    ///
+    /// 只在 false→true 边沿请求一次：尚未挂到 window 时不标记已同步，留待下轮
+    /// 刷新重试；焦点离开时由 `noteFocusLost` 复位边沿，再次发送才能重新聚焦。
+    private func syncFocus(in textView: EditorTextView, coordinator: Coordinator) {
+        guard isFocused else {
+            coordinator.lastSyncedFocus = false
+            return
+        }
+        guard !coordinator.lastSyncedFocus, let window = textView.window else { return }
+        coordinator.lastSyncedFocus = true
+        if window.firstResponder !== textView {
+            window.makeFirstResponder(textView)
+        }
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -510,6 +545,9 @@ extension ChatInputEditorView {
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
+        /// 最近一次已消费的 `isFocused` binding 值。只在 false→true 边沿请求
+        /// 第一响应者，避免每次刷新都从代码编辑器抢回焦点（#803）。
+        var lastSyncedFocus = false
         /// 最近一次已插入的折叠块 ID。用于在多次 `updateNSView` 之间去重。
         var lastInsertedBlockID: UUID?
         /// 最近一次已同步的文本，无论同步方向是「binding → 编辑器」还是
@@ -552,6 +590,18 @@ extension ChatInputEditorView {
 
         func accepts(_ textView: NSTextView) -> Bool {
             isActive && representedTextView === textView
+        }
+
+        /// 编辑器失去第一响应者（用户点到代码编辑器等）时复位焦点边沿，并把
+        /// binding 写回 false，使下一次「发送到对话」的 false→true 边沿能重新
+        /// 聚焦（#803）。不复位则 `lastSyncedFocus` 永远停在 true，再次发送不生效。
+        @MainActor
+        func noteFocusLost() {
+            guard isActive else { return }
+            lastSyncedFocus = false
+            if parent.isFocused {
+                parent.isFocused = false
+            }
         }
 
         // MARK: - 文本方向判定（binding ⇄ 编辑器）
@@ -816,7 +866,7 @@ extension ChatInputEditorView {
         public func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if ChatInputEditorRules.isEnterCommand(commandSelector) {
                 if let event = NSApp.currentEvent,
-                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.option)
+                   ChatInputEditorRules.shouldDeferReturnCommandToLineBreak(modifierFlags: event.modifierFlags)
                 {
                     return false
                 }
@@ -867,8 +917,8 @@ extension ChatInputEditorView {
         }
 
         @MainActor
-        func handleFileDrop(_ url: URL) {
-            parent.onFileDrop?(url)
+        func handleFileDrop(_ urls: [URL]) {
+            parent.onFileDrop?(urls)
         }
 
         @MainActor
@@ -915,7 +965,9 @@ final class EditorTextView: NSTextView {
     var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
-    var fileDropHandler: ((URL) -> Void)?
+    var fileDropHandler: (([URL]) -> Void)?
+    /// 编辑器失去第一响应者时回调，协调器据此复位焦点边沿并写回 binding（#803）。
+    var focusLossHandler: (() -> Void)?
     private var pastePreviewPopover: NSPopover?
 
     /// 当前鼠标悬停的粘贴折叠按钮，供 cell 绘制高亮态时查询。
@@ -978,6 +1030,14 @@ final class EditorTextView: NSTextView {
     /// 以当前存储版本缓存一份拍平结果。
     func storeResolvedContent(_ content: ChatInputEditorView.ResolvedEditorContent) {
         resolvedCache = (storageRevision, content)
+    }
+
+    // MARK: - 焦点
+
+    override func resignFirstResponder() -> Bool {
+        let accepted = super.resignFirstResponder()
+        if accepted { focusLossHandler?() }
+        return accepted
     }
 
     // MARK: - 粘贴折叠按钮 hover
@@ -1203,9 +1263,8 @@ final class EditorTextView: NSTextView {
             // 附件错误；它们应当落到下面的字符串分支或默认拖放处理（#882）。
             let fileURLs = urls.filter { ChatInputEditorRules.isFileAttachmentURL($0) }
             if !fileURLs.isEmpty {
-                for url in fileURLs {
-                    fileDropHandler?(url)
-                }
+                // 整批按原始顺序交付，由 ViewModel 保持入池顺序（#804）。
+                fileDropHandler?(fileURLs)
                 return true
             }
         }
@@ -1215,9 +1274,7 @@ final class EditorTextView: NSTextView {
             guard !urls.isEmpty else {
                 return super.performDragOperation(sender)
             }
-            for url in urls {
-                fileDropHandler?(url)
-            }
+            fileDropHandler?(urls)
             return true
         }
 

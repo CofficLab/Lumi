@@ -11,6 +11,7 @@ struct CacheHitRatePopover: View {
     let unavailabilityReason: CacheHitRateUnavailability
 
     @State private var isExporting = false
+    @State private var exportErrorMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -28,6 +29,17 @@ struct CacheHitRatePopover: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
+        .alert(
+            pluginLocalization.string("Export Failed"),
+            isPresented: Binding(
+                get: { exportErrorMessage != nil },
+                set: { if !$0 { exportErrorMessage = nil } }
+            )
+        ) {
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "")
+        }
     }
 
     // MARK: - Header
@@ -278,12 +290,54 @@ struct CacheHitRatePopover: View {
             return
         }
 
-        let bitmap = NSBitmapImageRep(cgImage: cgImage)
-        if let pngData = bitmap.representation(using: .png, properties: [:]) {
-            try? pngData.write(to: url)
+        // 光栅化（ImageRenderer.cgImage）与保存面板必须留在主线程；
+        // PNG 编码与落盘是 CPU/IO 密集操作，移到后台线程，避免卡住 UI（#1225）。
+        let image = ExportableCGImage(cgImage)
+        Task { @MainActor in
+            if let message = await Self.exportPNG(image, to: url) {
+                exportErrorMessage = message
+            }
+            isExporting = false
         }
+    }
 
-        isExporting = false
+    /// 在后台线程把已光栅化的 CGImage 编码为 PNG 并写入磁盘。
+    nonisolated static func writePNG(_ cgImage: CGImage, to url: URL) throws {
+        let bitmap = NSBitmapImageRep(cgImage: cgImage)
+        guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            throw MetricImageExportError.encodingFailed
+        }
+        try pngData.write(to: url)
+    }
+
+    /// 编码并落盘，失败时带回错误文案而非静默成功（#515）；抽成 seam 供回归测试锁定报错链路。
+    nonisolated static func exportPNG(_ image: ExportableCGImage, to url: URL) async -> String? {
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                try writePNG(image.cgImage, to: url)
+            }.value
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+}
+
+/// CGImage 不可变、可安全跨线程读取；包一层以越过 Swift 6 的 Sendable 检查，
+/// 让主线程光栅化得到的图像能交给后台线程编码。
+struct ExportableCGImage: @unchecked Sendable {
+    let cgImage: CGImage
+    init(_ cgImage: CGImage) { self.cgImage = cgImage }
+}
+
+enum MetricImageExportError: LocalizedError {
+    case encodingFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .encodingFailed:
+            return "Failed to encode the image as PNG."
+        }
     }
 }
 

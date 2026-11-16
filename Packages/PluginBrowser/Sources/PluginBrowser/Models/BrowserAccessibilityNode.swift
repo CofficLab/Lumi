@@ -126,6 +126,23 @@ extension BrowserAccessibilityNode {
     }
 }
 
+// MARK: - 筛选
+
+extension BrowserAccessibilityNode {
+    /// 对 find 路径返回的扁平匹配列表应用 interactive_only 过滤。
+    ///
+    /// 快照树用 `BrowserAccessibilitySnapshot.filteredNodes` 保留仍含交互后代的分支；
+    /// find 返回的是已命中的扁平元素，每个元素自身必须可交互才保留，使 role/name/text
+    /// 过滤与 interactive_only 同时生效，不再因走了 find 分支而丢掉 interactive_only（回归 #834）。
+    static func filterInteractive(
+        _ nodes: [BrowserAccessibilityNode],
+        interactiveOnly: Bool
+    ) -> [BrowserAccessibilityNode] {
+        guard interactiveOnly else { return nodes }
+        return nodes.filter { $0.isInteractive }
+    }
+}
+
 // MARK: - 渲染
 
 extension BrowserAccessibilityNode {

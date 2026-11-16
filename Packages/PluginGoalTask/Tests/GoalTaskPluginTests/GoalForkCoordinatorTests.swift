@@ -33,7 +33,25 @@ extension SharedManagerSuite {
             var committedTexts: [(text: String, conversationID: UUID)] = []
             var startedTurns = 0
 
+            /// 源对话自动化等级（#772）；默认 Chat，供继承用例改写。
+            var sourceLevel: AutomationLevel = .chat
+            /// 应用到新对话的自动化等级记录（#772）。
+            var appliedLevels: [(level: AutomationLevel, conversationID: UUID)] = []
+            /// 调用顺序，用于断言「先读源等级 → 建对话 → 应用等级 → 启动回合」。
+            var callOrder: [String] = []
+
+            func sourceAutomationLevel() -> AutomationLevel {
+                callOrder.append("sourceAutomationLevel")
+                return sourceLevel
+            }
+
+            func applyAutomationLevel(_ level: AutomationLevel, to conversationID: UUID) {
+                callOrder.append("applyAutomationLevel")
+                appliedLevels.append((level, conversationID))
+            }
+
             func createConversation(title: String) throws -> UUID {
+                callOrder.append("createConversation")
                 if let createError { throw createError }
                 createdConversations.append(title)
                 return UUID()
@@ -44,6 +62,7 @@ extension SharedManagerSuite {
             }
 
             func forkGoal(id: String, into conversationID: UUID) async throws -> ForkedGoal {
+                callOrder.append("forkGoal")
                 forkedGoalIDs.append((id, conversationID))
                 if let forkError { throw forkError }
                 return ForkedGoal(
@@ -58,6 +77,7 @@ extension SharedManagerSuite {
             }
 
             func commitUserMessage(_ text: String, conversationID: UUID) throws -> MessageSendCommit? {
+                callOrder.append("commitUserMessage")
                 if let commitError { throw commitError }
                 committedTexts.append((text, conversationID))
                 return commitReturnsNil
@@ -66,6 +86,7 @@ extension SharedManagerSuite {
             }
 
             func startTurn(for commit: MessageSendCommit) async {
+                callOrder.append("startTurn")
                 startedTurns += 1
             }
         }
@@ -218,6 +239,69 @@ extension SharedManagerSuite {
             let prompt = try #require(capability.committedTexts.first?.text)
             #expect(prompt.contains("成功标准：") == false)
             #expect(capability.startedTurns == 1)
+        }
+
+        // MARK: - 自动化等级继承（#772）
+
+        @Test("分叉继承源对话的自主模式，首轮可用工具（#772）")
+        func testForkInheritsAutonomousLevel() async throws {
+            let capability = SpyCapability()
+            capability.sourceLevel = .autonomous
+            let coordinator = GoalForkCoordinator(capability: capability)
+
+            try await coordinator.forkAndStart(goal: makeGoal())
+
+            let newConversation = try #require(capability.forkedGoalIDs.first?.into)
+            #expect(capability.appliedLevels.count == 1)
+            #expect(capability.appliedLevels.first?.level == .autonomous)
+            #expect(capability.appliedLevels.first?.conversationID == newConversation)
+            #expect(capability.appliedLevels.first?.level.allowsTools == true)
+        }
+
+        @Test("分叉继承源对话的构建模式（#772）")
+        func testForkInheritsBuildLevel() async throws {
+            let capability = SpyCapability()
+            capability.sourceLevel = .build
+            let coordinator = GoalForkCoordinator(capability: capability)
+
+            try await coordinator.forkAndStart(goal: makeGoal())
+
+            #expect(capability.appliedLevels.first?.level == .build)
+            #expect(capability.appliedLevels.first?.level.allowsTools == true)
+        }
+
+        @Test("源对话无工具时分叉至少升到 Build，绝不退化成无工具回合（#772）")
+        func testForkUpgradesToollessSourceToBuild() async throws {
+            let capability = SpyCapability()
+            capability.sourceLevel = .chat
+            let coordinator = GoalForkCoordinator(capability: capability)
+
+            try await coordinator.forkAndStart(goal: makeGoal())
+
+            let applied = try #require(capability.appliedLevels.first)
+            #expect(applied.level == .build)
+            #expect(applied.level.allowsTools == true)
+        }
+
+        @Test("先捕获源等级再建对话，应用等级落在新对话且早于启动回合（#772）")
+        func testAutomationCaptureAndApplyOrdering() async throws {
+            let capability = SpyCapability()
+            capability.sourceLevel = .autonomous
+            let coordinator = GoalForkCoordinator(capability: capability)
+
+            try await coordinator.forkAndStart(goal: makeGoal())
+
+            let order = capability.callOrder
+            let sourceIdx = try #require(order.firstIndex(of: "sourceAutomationLevel"))
+            let createIdx = try #require(order.firstIndex(of: "createConversation"))
+            let applyIdx = try #require(order.firstIndex(of: "applyAutomationLevel"))
+            let turnIdx = try #require(order.firstIndex(of: "startTurn"))
+            // 源等级必须在建对话之前读（建对话可能改变选中态）。
+            #expect(sourceIdx < createIdx)
+            // 应用等级必须早于启动回合，首轮才拿得到工具 schema。
+            #expect(applyIdx < turnIdx)
+            let newConversation = try #require(capability.forkedGoalIDs.first?.into)
+            #expect(capability.appliedLevels.first?.conversationID == newConversation)
         }
 
         // MARK: - 失败回收

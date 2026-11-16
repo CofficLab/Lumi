@@ -5,9 +5,12 @@ struct ImageListRow: View {
     let item: ImageItem
     let onRemove: () -> Void
 
+    /// 缩略图异步加载，首帧先显示占位图（#1196）。
+    @State private var thumbnail: NSImage?
+
     var body: some View {
         HStack(spacing: 12) {
-            thumbnail
+            thumbnailView
                 .frame(width: 36, height: 36)
                 .background(Color.secondary.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -34,12 +37,18 @@ struct ImageListRow: View {
             .help(ImageToPDFLocalization.string("Remove"))
         }
         .padding(.vertical, 6)
+        // 行消失或换条目时 .task 自动取消；写回前再校验一次，避免旧结果覆盖。
+        .task(id: item.id) {
+            let image = await ImageThumbnailLoader.thumbnail(for: item.url)
+            guard !Task.isCancelled else { return }
+            thumbnail = image
+        }
     }
 
     @ViewBuilder
-    private var thumbnail: some View {
-        if let nsImage = NSImage(contentsOf: item.url) {
-            Image(nsImage: nsImage)
+    private var thumbnailView: some View {
+        if let thumbnail {
+            Image(nsImage: thumbnail)
                 .resizable()
                 .scaledToFill()
         } else {

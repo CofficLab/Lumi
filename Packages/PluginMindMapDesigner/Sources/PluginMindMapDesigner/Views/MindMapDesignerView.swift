@@ -231,19 +231,7 @@ public struct MindMapDesignerView: View {
         }
     }
 
-    private enum ExportFormat {
-        case markdown
-        case json
-
-        var fileExtension: String {
-            switch self {
-            case .markdown: "md"
-            case .json: "json"
-            }
-        }
-    }
-
-    private func export(_ map: MindMap, format: ExportFormat) {
+    private func export(_ map: MindMap, format: MindMapFileExporter.Format) {
         let panel = NSSavePanel()
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = "\(map.title).\(format.fileExtension)"
@@ -252,22 +240,19 @@ public struct MindMapDesignerView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         isExporting = true
 
-        do {
-            let data: Data
-            switch format {
-            case .markdown:
-                data = MindMapMarkdownCodec.encode(map).data(using: .utf8) ?? Data()
-            case .json:
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                encoder.dateEncodingStrategy = .iso8601
-                data = try encoder.encode(map)
+        // 编码与文件写入放到后台执行器，主线程只保留进度态转换（#1202）。
+        Task { @MainActor [store] in
+            // 先让出一轮主线程，使 isExporting 的进度态得以渲染，再开始阻塞性工作。
+            await Task.yield()
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try MindMapFileExporter.write(map, format: format, to: url)
+                }.value
+                isExporting = false
+            } catch {
+                isExporting = false
+                store.setError(error.localizedDescription)
             }
-            try data.write(to: url, options: .atomic)
-            isExporting = false
-        } catch {
-            isExporting = false
-            store.setError(error.localizedDescription)
         }
     }
 

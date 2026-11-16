@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 48 条用例。
+KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 58 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 48
+测试文件: 6 个，用例总数: 58
 
 ## 公开 API
 
@@ -27,10 +27,17 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 48 条
 - **LumiWebServerPipelineTests**（8 条）：由 `testAuthRejectsBeforeRouteMatching`、`testAuthErrorBodyIsUnified`、`testCrossOriginWriteRejectedBeforeRoute` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Body**（14 条）：由 `testAnonymousAccessAllowed`、`testResponseCarriesRequestID` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StartGate**（4 条）：由 `testEarlySuccessIsDeliveredWhenArmed`、`testEarlyFailureIsDeliveredWhenArmed`、`testOnlyFirstTerminalStateIsDelivered`、`testSuccessAfterArmIsDelivered` 锁定（**回归 #201**）：启动终态（绑定成功/失败）可能早于 `arm` 到达，`StartGate` 必须缓存早到的终态并在 `arm` 时立即投递，且只投递首个终态，否则 `start()` 永久挂起。改动 `StartGate` 的 arm/succeed/fail 时优先跑对应测试文件。
+- **HostValidation**（10 条）：由 `testReboundHostReadIsRejected`、`testReboundHostSameOriginWriteIsRejected`、`testLoopbackHostFormsAreAllowed` 等用例锁定（**回归 #1162**）：`Host` 不在回环白名单内时必须在鉴权/CORS/路由之前 403。改动 `dispatch` 的前置校验或 `isLoopbackHost` 时优先跑对应测试文件。
 
 ### 跨源写保护契约
 
 写方法（POST/PUT/PATCH/DELETE）在鉴权之后、路由匹配之前校验来源：`Origin` 命中 CORS 白名单放行；`Sec-Fetch-Site` 为 `cross-site`/`same-site` 拒绝；`Origin` 与 `Host` 不同源拒绝。无 `Origin` 的非浏览器客户端保持兼容。拒绝时返回 403 与统一错误信封，且处理器不得执行。
+
+### 回环 Host 校验契约（回归 #1162）
+
+回环监听不是信任边界：DNS rebinding 之后浏览器把攻击者域名解析到 `127.0.0.1`，`Origin` 与 `Host` 两边都成了攻击者可控值，上面的跨源写保护因此失效，GET 更是完全不进那条检查。因此 `dispatch` 必须在**方法解析、CORS 预检、鉴权、路由匹配之前**校验 `Host`：只有直接指向回环（`127.0.0.1` / `localhost` / `::1`，可带监听端口）的值放行，其余一律 403 与统一错误信封，且不附带任何 CORS 允许头、不记录归属插件。
+
+`Host` 的读取位置是契约的一部分：NIOHTTPTypesHTTP1 把**第一个** `Host` 提升成 `:authority` 伪头，它不在 `request.headers` 里，必须读 `request.head.authority`；重复的 `Host` 仍留在普通字段中，两者都要校验，任一非回环即拒绝。缺失或空 `Host` 放行（HTTP/1.0 与部分原生客户端），浏览器一定带 `Host`，rebinding 无法借此绕过。
 
 ## 测试用例清单
 
@@ -90,26 +97,43 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 48 条
 | 47 | StartGate | 只投递首个终态，后续终态被忽略（回归 #201） | 先后发出 succeed 与 fail | succeed 后 fail 再 arm | 仅投递首个成功端口，第二个终态被忽略 | P0 | ✅ 已覆盖 | `testOnlyFirstTerminalStateIsDelivered` |
 | 48 | StartGate | arm 之后到达的成功终态正常投递 | arm 先安装 continuation | arm 后 succeed(port) | 等待者收到该端口 | P1 | ✅ 已覆盖 | `testSuccessAfterArmIsDelivered` |
 
-> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
+### 回环 Host 校验（回归 #1162）
+
+用例通过 POSIX socket 发送原始 HTTP/1.1 请求：URLSession 会按 URL 自行改写 `Host`，用它无法构造「连到回环、但 Host 是攻击者域名」的 rebinding 请求。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 49 | HostValidation | rebinding 域名的读请求必须在进入路由前被拒绝（回归 #1162） | 匿名服务器 + `GET /ping` | 原始 socket 发 Host 为攻击者域名的 GET | 403 `forbidden`，处理器不执行，日志无归属插件 | P0 | ✅ 已覆盖 | `testReboundHostReadIsRejected` |
+| 50 | HostValidation | rebinding 域名不得借发现端点枚举路由（回归 #1162） | 匿名服务器 | 原始 socket 发 Host 为攻击者域名的 `GET /api/v1/routes` | 403，不返回任何路由清单 | P0 | ✅ 已覆盖 | `testReboundHostDiscoveryIsRejected` |
+| 51 | HostValidation | Host/Origin/Sec-Fetch-Site 全为攻击者域名时写请求仍被拒绝（回归 #1162） | 匿名服务器 + `POST /state` | 三者同时伪造成 same-origin 的攻击者域名 | 403，跨源写保护不被 rebinding 绕过 | P0 | ✅ 已覆盖 | `testReboundHostSameOriginWriteIsRejected` |
+| 52 | HostValidation | Host 校验早于鉴权，正确凭证也不能放行 rebinding（回归 #1162） | 开启 authToken 的服务器 | 带合法 Bearer + 攻击者域名 Host | 403 而非 200/401 | P0 | ✅ 已覆盖 | `testReboundHostRejectedBeforeAuthentication` |
+| 53 | HostValidation | Host 校验早于 CORS 预检，拒绝响应不带允许头（回归 #1162） | 配置 CORS 白名单的服务器 | 攻击者域名 Host + Origin 的 OPTIONS | 403，且无 `Access-Control-Allow-Origin` | P0 | ✅ 已覆盖 | `testReboundHostPreflightIsRejected` |
+| 54 | HostValidation | 重复 Host 头只要有一个非回环就拒绝（回归 #1162） | 匿名服务器 | 先发回环 Host 再发攻击者域名 Host | 403，不留「取第一个还是最后一个」的歧义 | P0 | ✅ 已覆盖 | `testDuplicateHostWithNonLoopbackIsRejected` |
+| 55 | HostValidation | 回环 Host 的各种合法写法保持可用 | 匿名服务器 | 分别用 `127.0.0.1:p`、`localhost:p`、`[::1]:p`、`LOCALHOST:p` | 全部 200 | P1 | ✅ 已覆盖 | `testLoopbackHostFormsAreAllowed` |
+| 56 | HostValidation | 回环同源写请求不受新校验影响 | 匿名服务器 + `POST /state` | Host 与 Origin 均为 `127.0.0.1:p` | 200，处理器执行 | P1 | ✅ 已覆盖 | `testLoopbackSameOriginWriteStillAllowed` |
+| 57 | HostValidation | 不带 Host 的非浏览器调用方保持兼容 | 匿名服务器 | 原始请求省略 Host 头 | 200 | P1 | ✅ 已覆盖 | `testRequestWithoutHostIsAllowed` |
+| 58 | HostValidation | 回环白名单按裸地址与监听端口精确比对 | 纯函数 `isLoopbackHost` | 表驱动覆盖合法/混淆/非回环写法 | 仅回环且端口匹配（或缺省）返回 true | P1 | ✅ 已覆盖 | `testLoopbackHostAllowlist` |
+
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 38 / 38
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 3 / 3
-- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

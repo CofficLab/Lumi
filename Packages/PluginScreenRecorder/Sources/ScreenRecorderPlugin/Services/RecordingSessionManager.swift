@@ -16,11 +16,16 @@ public final class RecordingSessionManager {
     public private(set) var currentSession: RecordingSession?
     public private(set) var elapsedSeconds: Int = 0
 
-    private var recorder: ScreenCaptureRecorder?
+    private var recorder: (any RecordingEngine)?
     private var resolvedWindow: RecordableWindow?
     private var elapsedTimer: Task<Void, Never>?
     private var survivalPollTask: Task<Void, Never>?
     private var isStopping = false
+    /// start 的准入互斥：从进入启动流程一直持有到会话建立（或失败退出）。
+    /// `currentSession` 要到引擎启动成功后才写入，期间的每个 await 都是
+    /// MainActor 重入窗口；只查 `hasActiveSession` 会让并发 start 全部通过，
+    /// 后到者覆盖先到者的 recorder / session（#224）。
+    private var isStarting = false
     private var observers: [UUID: (RecordingActivity) -> Void] = [:]
 
     public var hasActiveSession: Bool { currentSession?.isActive == true }
@@ -30,6 +35,17 @@ public final class RecordingSessionManager {
 
     /// 当前系统主版本号；测试注入以覆盖 macOS 14 分支。
     var osMajorVersionProvider: () -> Int = { RecordingMicrophoneCapability.currentMajorVersion }
+
+    /// 权限预检注入点；测试注入以绕过真实系统权限。
+    var screenRecordingPermissionProvider: () -> Bool = { RecordingPermissionService.hasScreenRecordingPermission }
+    var microphonePermissionProvider: () -> Bool = { RecordingPermissionService.hasMicrophonePermission }
+    var microphonePermissionRequester: @MainActor (@escaping @Sendable (Bool) -> Void) -> Void = {
+        RecordingPermissionService.requestMicrophonePermission($0)
+    }
+    /// 目标解析注入点；nil 时走真实 ScreenCaptureKit 解析。
+    var targetResolver: ((RecordingConfig) async throws -> (filter: SCContentFilter, description: String, window: RecordableWindow?))?
+    /// 录制引擎工厂注入点；测试注入以替换真实采集引擎。
+    var recorderFactory: () -> any RecordingEngine = { ScreenCaptureRecorder() }
 
     @discardableResult
     public func addObserver(
@@ -60,33 +76,45 @@ public final class RecordingSessionManager {
             majorVersion: osMajorVersionProvider()
         )
 
-        // 2) 权限。
-        guard RecordingPermissionService.hasScreenRecordingPermission else {
+        // 2) 互斥：必须在任何 await（权限弹窗、目标解析、引擎启动）之前占有。
+        //    会话建立前 currentSession 尚未写入，只查 hasActiveSession 会让
+        //    并发 start 全部通过检查，后到者覆盖先到者的 recorder / session（#224）。
+        if hasActiveSession || isStarting {
+            throw RecordingError.alreadyRecording(currentSession?.targetDescription ?? "")
+        }
+        isStarting = true
+        defer { isStarting = false }
+
+        // 3) 权限。
+        guard screenRecordingPermissionProvider() else {
             RecordingPermissionService.requestScreenRecordingPermission()
             throw RecordingError.permissionDenied
         }
-        if config.includeMicrophone, !RecordingPermissionService.hasMicrophonePermission {
+        if config.includeMicrophone, !microphonePermissionProvider() {
             let granted = await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
-                RecordingPermissionService.requestMicrophonePermission { cont.resume(returning: $0) }
+                microphonePermissionRequester { cont.resume(returning: $0) }
             }
             if !granted { throw RecordingError.microphonePermissionDenied }
         }
 
-        // 3) 互斥：同一时刻仅一个活跃会话。
-        if hasActiveSession {
-            throw RecordingError.alreadyRecording(currentSession?.targetDescription ?? "")
-        }
-
         // 4) 解析目标 → 过滤器。
-        let (filter, targetDescription, window) = try await resolveTarget(for: config)
+        let resolved: (filter: SCContentFilter, description: String, window: RecordableWindow?)
+        if let targetResolver {
+            resolved = try await targetResolver(config)
+        } else {
+            resolved = try await resolveTarget(for: config)
+        }
+        let (filter, targetDescription, window) = resolved
         if let window { RecordableWindowProvider.activate(window) }
 
         // 5) 准备引擎与临时文件。
         currentSession = nil
+        // 新会话开始即清除上一轮结果：本轮失败时不得复用旧的成功反馈（#851）。
+        lastResult = nil
         elapsedSeconds = 0
         resolvedWindow = window
         let tempURL = RecordingFileWriter.tempURL(for: config.sessionID, in: ScreenRecorderRuntime.dataDirectory)
-        let recorder = ScreenCaptureRecorder()
+        let recorder = recorderFactory()
         recorder.onError = { [weak self] error in
             Task { @MainActor in self?.handleStreamError(error) }
         }
@@ -176,6 +204,24 @@ public final class RecordingSessionManager {
         }
     }
 
+    /// 插件关闭：停止并落盘活动录制，失败时回退取消以释放采集资源。
+    /// 单例不随插件生命周期结束，若不显式停止，禁用后采集仍会继续，
+    /// 而 stop 工具已被移除，用户既不能停止也观察不到（#223）。
+    public func shutdown() async {
+        if hasActiveSession {
+            do {
+                _ = try await stop()
+            } catch {
+                await cancel()
+            }
+        } else {
+            cancelTimers()
+            await recorder?.cancel()
+            recorder = nil
+            resolvedWindow = nil
+        }
+    }
+
     // MARK: - Target resolution
 
     private func resolveTarget(for config: RecordingConfig) async throws -> (filter: SCContentFilter, description: String, window: RecordableWindow?) {
@@ -231,7 +277,7 @@ public final class RecordingSessionManager {
                 self.elapsedSeconds += 1
                 self.postActivity(state: self.currentSession?.state ?? .idle)
                 if let maxDuration, self.elapsedSeconds >= maxDuration {
-                    _ = try? await self.stop()
+                    self.scheduleAutoStop()
                     return
                 }
             }
@@ -249,7 +295,7 @@ public final class RecordingSessionManager {
                         RecordableWindowProvider.windowExists(id: window.id)
                     }.value
                     if !stillPresent {
-                        _ = try? await self.stop()
+                        self.scheduleAutoStop()
                         return
                     }
                 }
@@ -260,6 +306,17 @@ public final class RecordingSessionManager {
     private func cancelTimers() {
         elapsedTimer?.cancel(); elapsedTimer = nil
         survivalPollTask?.cancel(); survivalPollTask = nil
+    }
+
+    /// 自动停止（计时到期 / 目标窗口消失）必须在独立 Task 中执行 `stop()`。
+    /// 计时器 Task 直接 `await stop()` 时，`stop()` 内的 `cancelTimers()` 会取消计时器
+    /// 自身，而 Swift 的取消状态跨 `await` 保留，`RecordingFileWriter.finalize` 入口的
+    /// `Task.checkCancellation()` 随即抛 `CancellationError`，自动停止无法落盘、录制丢失
+    /// （#377）。非结构化 Task 不继承创建者的取消状态，落盘得以正常完成。
+    private func scheduleAutoStop() {
+        Task { @MainActor [weak self] in
+            _ = try? await self?.stop()
+        }
     }
 
     // MARK: - Stream error

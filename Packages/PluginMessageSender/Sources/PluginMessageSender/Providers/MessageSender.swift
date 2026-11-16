@@ -206,6 +206,38 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         notify(.pendingMessagesChanged(conversationID: conversationID))
     }
 
+    /// 所有会话待发消息的稳定快照，供持久化落盘（#596）。
+    ///
+    /// 按会话 ID 排序后逐队展开，保证同一份队列每次编码顺序一致；每条消息
+    /// 自带 `conversationID`，恢复时据此重新分组。
+    public var allPendingMessages: [PendingChatMessage] {
+        pendingQueues.keys
+            .sorted { $0.uuidString < $1.uuidString }
+            .flatMap { pendingQueues[$0] ?? [] }
+    }
+
+    /// 重启后恢复上次未排空的待发队列（#596）。
+    ///
+    /// 会话忙碌时提交的消息只进入内存队列，输入框却已清空；退出前若不落盘，
+    /// 重启后这些已提交的内容与附件会彻底丢失。启动时把持久化的快照重新装回
+    /// `pendingQueues`，让它们回到可见的 Pending 列表，由正常排空时机或用户
+    /// 取消处理，**不自动拉起回合**。
+    ///
+    /// 只跳过运行时已标记删除的会话；不按 `conversations` 列表过滤——启动时
+    /// 会话列表可能仍在异步加载，按空列表过滤会把所有恢复内容误删。
+    public func restorePendingQueues(_ messages: [PendingChatMessage]) {
+        guard !messages.isEmpty else { return }
+        var restored: [UUID: [PendingChatMessage]] = [:]
+        for message in messages {
+            guard !deletedConversations.contains(message.conversationID) else { continue }
+            restored[message.conversationID, default: []].append(message)
+        }
+        for (conversationID, queue) in restored {
+            pendingQueues[conversationID] = queue
+            notify(.pendingMessagesChanged(conversationID: conversationID))
+        }
+    }
+
     // MARK: - Send
 
     public func sendMessage(_ content: String, conversationID: UUID?) async throws {
@@ -685,16 +717,30 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
     }
 
-    /// 清空已随消息送出的附件挂起池（仅当池未被用户在等待期间修改过）。
+    /// 移除已随消息送出的附件，保留用户在编码等待期间新加入的附件（#517）。
+    ///
+    /// 旧实现要求挂起池与送出快照「完全相等」才清空：编码途中新增 Y 会让
+    /// `[X,Y] != [X]`，于是已送出的 X 也留在池里，下次发送被重复带上。
+    /// 这里按 id 精确移除快照内的附件，后来者不受影响。
     private func clearSentAttachments(
         _ sentImages: [UserImageAttachment],
         _ sentFiles: [UserFileAttachment]
     ) {
-        if pendingImageAttachments == sentImages {
-            clearImageAttachments()
+        let sentImageIDs = Set(sentImages.map(\.id))
+        if !sentImageIDs.isEmpty {
+            let oldCount = pendingImageAttachments.count
+            pendingImageAttachments.removeAll { sentImageIDs.contains($0.id) }
+            if pendingImageAttachments.count != oldCount {
+                notify(.attachmentsChanged)
+            }
         }
-        if pendingFileAttachments == sentFiles {
-            clearFileAttachments()
+        let sentFileIDs = Set(sentFiles.map(\.id))
+        if !sentFileIDs.isEmpty {
+            let oldCount = pendingFileAttachments.count
+            pendingFileAttachments.removeAll { sentFileIDs.contains($0.id) }
+            if pendingFileAttachments.count != oldCount {
+                notify(.attachmentsChanged)
+            }
         }
     }
 

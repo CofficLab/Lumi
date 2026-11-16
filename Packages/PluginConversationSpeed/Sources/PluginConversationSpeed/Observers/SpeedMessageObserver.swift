@@ -28,12 +28,19 @@ final class SpeedMessageObserver {
         guard viewModel.selectedConversationID == conversationID else { return }
 
         refreshTask?.cancel()
+        // 事件发生时同步记录代次：此后任何选择 / 插入事件都会使本次快照过时（#1156）。
+        let generation = viewModel.beginRefresh()
         refreshTask = Task(priority: .utility) { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled, let self,
-                  self.viewModel.selectedConversationID == conversationID else { return }
+                  self.viewModel.selectedConversationID == conversationID,
+                  self.viewModel.refreshGeneration == generation else { return }
 
             let snapshot = await self.messages.messagesSnapshot(in: conversationID)
+            // 快照读取期间可能又发生了选择 / 插入事件，写回前必须再次比对。
+            guard !Task.isCancelled,
+                  self.viewModel.selectedConversationID == conversationID,
+                  self.viewModel.refreshGeneration == generation else { return }
             self.viewModel.refresh(conversationID: conversationID, messages: snapshot)
         }
     }

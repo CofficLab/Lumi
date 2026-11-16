@@ -9,8 +9,8 @@ let package = Package(
         .package(path: "../FactoryLumi"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../PluginCADDesigner"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 "FactoryCADDesigner",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
-                "ProviderToolManager",
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),
     ]

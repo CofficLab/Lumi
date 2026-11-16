@@ -371,6 +371,120 @@ private final class RecordingProjectObserverHandle: ProjectProvidingObserverHand
     #expect(FileSearchResultRow.iconName(for: "Archive.zip") == "archivebox")
 }
 
+// MARK: - Detached Worker Cancellation (#1219)
+
+/// 回归 #1219：searchInFiles 必须协作式响应取消。注入「立即取消」后，
+/// 即便索引里有大量可匹配文件，也不得返回完整结果（证明扫描被提前停止）。
+@Test func searchInFilesReturnsEmptyWhenCancelledUpFront() {
+    let files = (0..<1000).map {
+        FileResult(name: "App\($0).swift", path: "/p/App\($0).swift", relativePath: "App\($0).swift", isDirectory: false, score: 0)
+    }
+    let full = FileSearchHelpers.searchInFiles(files, query: "app")
+    #expect(full.count == 100)
+
+    let cancelled = FileSearchHelpers.searchInFiles(files, query: "app", isCancelled: { true })
+    #expect(cancelled.isEmpty)
+}
+
+/// 回归 #1219：取消检查必须在扫描循环内周期性发生，而不是扫完才检查。
+/// 第 3 次检查即取消时立即退出，检查次数远小于完整扫描所需。
+@Test func searchInFilesCancellationBailsMidScan() {
+    final class Counter: @unchecked Sendable { var checks = 0 }
+    let counter = Counter()
+    let files = (0..<2000).map {
+        FileResult(name: "App\($0).swift", path: "/p/App\($0).swift", relativePath: "App\($0).swift", isDirectory: false, score: 0)
+    }
+
+    let results = FileSearchHelpers.searchInFiles(files, query: "app") {
+        counter.checks += 1
+        return counter.checks >= 3
+    }
+
+    #expect(results.isEmpty)
+    // 检查发生在 index 0/128/256…，第 3 次（index 256）即取消退出。
+    #expect(counter.checks == 3)
+}
+
+/// 回归 #1219：查询变化必须取消已持有的 detached worker，而不仅是外层 searchTask。
+@Test @MainActor func queryChangeCancelsRetainedDetachedWorker() {
+    let service = FileSearchService.shared
+    service.clearIndex()
+
+    let worker = Task.detached(priority: .userInitiated) { () -> [FileResult] in
+        var accumulator = 0
+        for i in 0..<50_000_000 {
+            accumulator &+= i
+            if Task.isCancelled { break }
+        }
+        return []
+    }
+    service.searchWorkerTask = worker
+
+    service.searchQuery = "newquery"
+    service.onSearchQueryChanged()
+
+    #expect(worker.isCancelled)
+    service.clearIndex()
+}
+
+/// 回归 #1219：切换项目（invalidateSearchState）同样要取消过时的 detached worker。
+@Test @MainActor func projectSwitchCancelsRetainedDetachedWorker() {
+    let service = FileSearchService.shared
+    service.clearIndex()
+
+    let worker = Task.detached(priority: .userInitiated) { () -> [FileResult] in
+        var accumulator = 0
+        for i in 0..<50_000_000 {
+            accumulator &+= i
+            if Task.isCancelled { break }
+        }
+        return []
+    }
+    service.searchWorkerTask = worker
+
+    service.updateProject(path: "/tmp/qfs-1219-other-\(UUID().uuidString)")
+
+    #expect(worker.isCancelled)
+    service.clearIndex()
+}
+
+/// 回归 #1219：performSearch 必须把实际扫描索引的 detached worker 句柄持有起来，
+/// 后续查询变化才能取消它。用真实索引驱动生产路径，捕获句柄后断言其被取消。
+@Test @MainActor func performSearchRetainsAndCancelsDetachedWorker() async throws {
+    let service = FileSearchService.shared
+    service.clearIndex()
+
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("QFS1219-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: root)
+        service.clearIndex()
+    }
+    for i in 0..<300 {
+        try "x".write(to: root.appendingPathComponent("App\(i).swift"), atomically: true, encoding: .utf8)
+    }
+    _ = service.quickOpenResults(matching: "app", projectPath: root.path, limit: 5)
+
+    service.searchQuery = "app"
+    service.onSearchQueryChanged()
+
+    var worker: Task<[FileResult], Never>?
+    for _ in 0..<2000 {
+        if let current = service.searchWorkerTask {
+            worker = current
+            break
+        }
+        await Task.yield()
+    }
+    let captured = try #require(worker, "performSearch 未持有 detached worker 句柄")
+
+    service.searchQuery = "app1"
+    service.onSearchQueryChanged()
+
+    #expect(captured.isCancelled)
+}
+
 // MARK: - Localization
 
 /// 回归 #939：搜索面板的占位、索引中与无结果文案，en 条目曾被填成中文

@@ -577,7 +577,10 @@ public final class HTTPExchangeStore {
             guard let statusCode = record.responseStatusCode else { return false }
             return (200..<300).contains(statusCode)
         case .abnormal:
-            guard let statusCode = record.responseStatusCode else { return true }
+            guard let statusCode = record.responseStatusCode else {
+                // 无状态码时只有已带错误的终止失败才算异常；在途 Pending（无错误）不算（#823）。
+                return record.errorDescription != nil
+            }
             return !(200..<300).contains(statusCode)
         }
     }
@@ -761,6 +764,8 @@ public final class HTTPExchangeStore {
         var hasMore = false
 
         while matches.count < limit {
+            // 被取代的查询应尽快停下，而不是把整段扫描跑完（#1247）。
+            if Task.isCancelled { break }
             let rawRecords = fetchListRecords(
                 context: context,
                 limit: fetchWindow,
@@ -815,6 +820,8 @@ public final class HTTPExchangeStore {
         var cursor: Date?
 
         while true {
+            // 被取代的计数扫描应尽快停下（#1247）。
+            if Task.isCancelled { break }
             let rawRecords = fetchListRecords(
                 context: context,
                 limit: batchSize,
@@ -886,6 +893,7 @@ public final class HTTPExchangeStore {
     /// Total number of stored exchanges, without materializing bodies.
     nonisolated func loadSnapshotCount() -> Int {
         guard let context = makeBackgroundContext() else { return 0 }
+        guard !Task.isCancelled else { return 0 }
         return (try? context.fetchCount(FetchDescriptor<HTTPExchangeRecord>())) ?? 0
     }
 
@@ -894,6 +902,7 @@ public final class HTTPExchangeStore {
     /// Mirrors `fetchDomains(limit:)`, run off the main actor.
     nonisolated func loadRecentDomains(limit: Int = 5_000) -> [String] {
         guard limit > 0, let context = makeBackgroundContext() else { return [] }
+        guard !Task.isCancelled else { return [] }
         var descriptor = FetchDescriptor<HTTPExchangeRecord>(
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
@@ -902,6 +911,7 @@ public final class HTTPExchangeStore {
         let records = (try? context.fetch(descriptor)) ?? []
         var domains = Set<String>()
         for record in records {
+            if Task.isCancelled { break }
             guard let host = URL(string: record.requestURL)?.host?.lowercased() else { continue }
             domains.insert(host)
         }
@@ -920,6 +930,7 @@ public final class HTTPExchangeStore {
         guard days > 0, let context = makeBackgroundContext() else {
             return HTTPExchangeDailyCountSeries(points: [])
         }
+        guard !Task.isCancelled else { return HTTPExchangeDailyCountSeries(points: []) }
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: date)
@@ -960,7 +971,10 @@ public final class HTTPExchangeStore {
             // The chart only needs timestamps. In particular, do not load the
             // request/response BLOBs from this multi-gigabyte store.
             descriptor.propertiesToFetch = [\.startedAt]
+            // 被取代时不再发起刷新查询，也不写缓存，避免把半截计数持久化（#1247）。
+            if Task.isCancelled { return HTTPExchangeDailyCountSeries(points: []) }
             let records = (try? context.fetch(descriptor)) ?? []
+            if Task.isCancelled { return HTTPExchangeDailyCountSeries(points: []) }
             let refreshKeys = Set(daysToRefresh.map(\.key))
             var refreshedCounts = Dictionary(
                 uniqueKeysWithValues: refreshKeys.map { ($0, 0) }

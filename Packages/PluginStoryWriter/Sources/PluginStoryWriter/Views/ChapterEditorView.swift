@@ -65,7 +65,14 @@ struct ChapterEditorView: View {
             .border(.separator)
         }
         .onChange(of: chapter.content) { _ in
-            saveChapter()
+            // 内存列表即时刷新；磁盘写入防抖合并，避免每次按键都全量编码 + 原子写
+            // （见 issue #1246）。
+            viewModel.applyChapterInMemory(chapter)
+            scheduleSave()
+        }
+        .onDisappear {
+            // 离开编辑器（含切换章节，视图按 chapter.id 重建）时立即落盘最新快照。
+            flushSave()
         }
     }
 
@@ -73,13 +80,30 @@ struct ChapterEditorView: View {
         isEditingTitle = false
         if !editTitle.isEmpty && editTitle != chapter.title {
             chapter.title = editTitle
-            saveChapter()
+            viewModel.applyChapterInMemory(chapter)
+            flushSave()
         }
     }
 
-    private func saveChapter() {
-        Task {
-            await viewModel.updateChapter(chapter)
+    /// 防抖保存任务：每次内容变化取消上一个、只保留最新快照，空闲窗口后落盘一次。
+    @State private var saveTask: Task<Void, Never>?
+    private static let saveDebounce: Duration = .milliseconds(500)
+
+    private func scheduleSave() {
+        let snapshot = chapter
+        saveTask?.cancel()
+        saveTask = Task { @MainActor in
+            try? await Task.sleep(for: Self.saveDebounce)
+            guard !Task.isCancelled else { return }
+            await viewModel.persistChapter(snapshot)
+        }
+    }
+
+    private func flushSave() {
+        let snapshot = chapter
+        saveTask?.cancel()
+        saveTask = Task { @MainActor in
+            await viewModel.persistChapter(snapshot)
         }
     }
 }

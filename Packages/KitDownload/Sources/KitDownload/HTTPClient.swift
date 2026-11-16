@@ -196,6 +196,21 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         let httpResp = response as? HTTPURLResponse
         let statusCode = httpResp?.statusCode ?? 0
 
+        // 416 Range Not Satisfiable：续传起点已到达文件末尾。规范服务器会带
+        // Content-Range: bytes */<total>；当本地已有字节恰好等于服务器声明的总长度时，
+        // 文件其实已完整，应视为完成而非失败（#374）。其余 416（未发 Range、缺
+        // Content-Range、本地字节与总长不符）仍按错误处理，避免把损坏/过期文件伪装成完成。
+        if statusCode == 416 {
+            if canResume,
+               let contentRange = httpResp?.value(forHTTPHeaderField: "Content-Range"),
+               let total = parseContentRangeTotal(contentRange),
+               total == existingBytes {
+                ResumeValidatorStore.remove(for: destination)
+                return 0
+            }
+            throw DownloadError.httpError(statusCode)
+        }
+
         // 检查 HTTP 状态码：非 200/206 表示服务器错误（如 403 Forbidden、404 Not Found）。
         // LFS 文件重定向失败时，HuggingFace 可能返回 HTML 错误页面而非文件内容，
         // 若不检查状态码，错误页面会被写入磁盘伪装成模型文件。
@@ -240,6 +255,15 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         var remainingTotal: Int64? = nil
 
         if supportsResume {
+            // 206 的 Content-Range 起始偏移必须等于本地续传起点：服务器若返回了
+            // 不同区间（如请求 bytes=4- 却回 bytes 0-3/4），直接追加会把本地前缀
+            // 与错误区间拼成损坏文件并伪装成成功（#486）。仅在 Content-Range 存在
+            // 时校验，缺失时保留 Content-Length 回退行为。
+            if let contentRange = httpResp?.value(forHTTPHeaderField: "Content-Range"),
+               let start = parseContentRangeStart(contentRange),
+               start != existingBytes {
+                throw DownloadError.unknown("服务器返回的部分内容起始偏移与续传起点不一致")
+            }
             resumeBaseBytes = existingBytes
             // Content-Range 形如 "bytes 500-999/2000"，末段是完整文件总大小
             if let contentRange = httpResp?.value(forHTTPHeaderField: "Content-Range"),
@@ -358,6 +382,14 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         guard let slash = value.lastIndex(of: "/") else { return nil }
         let totalPart = String(value[value.index(after: slash)...])
         return Int64(totalPart)
+    }
+
+    /// 解析 `Content-Range: bytes <start>-<end>/<total>` 中的 start；无法解析返回 nil。
+    private func parseContentRangeStart(_ value: String) -> Int64? {
+        // 形如 "bytes 500-999/2000"：取首个 "-" 之前、"bytes " 之后的起始偏移。
+        guard let dash = value.firstIndex(of: "-") else { return nil }
+        guard let token = value[..<dash].split(separator: " ").last else { return nil }
+        return Int64(token)
     }
 }
 

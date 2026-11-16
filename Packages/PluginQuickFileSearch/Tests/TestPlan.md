@@ -5,7 +5,7 @@
 QuickFileSearchPlugin Fast file search with Cmd+P
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 33
+测试文件: 3 个，用例总数: 46
 
 核心组件（源码目录）:
 - `Models/`
@@ -34,8 +34,10 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（28 条）：由 `v2PluginPreservesQuickOpenIdentity`、`fileIndexStoreNeedsReindexWhenNeverUpdated`、`fileIndexStoreDoesNotNeedReindexAfterFreshUpdate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（33 条）：由 `v2PluginPreservesQuickOpenIdentity`、`fileIndexStoreNeedsReindexWhenNeverUpdated`、`fileIndexStoreDoesNotNeedReindexAfterFreshUpdate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **设置项目状态**（5 条）：由 `settingsStatusShowsProjectActiveAtStartup`、`settingsStatusFollowsProjectSwitch`、`settingsStatusRecoversAfterStartingWithoutProject`、`settingsStatusClearsPathAfterProjectClose`、`settingsStatusIgnoresUnrelatedProjectEvents` 锁定。设置页必须订阅 `ProjectProviding` 的 `.currentProjectChanged` 并更新当前路径，不得把插件启动时的项目路径冻结成不可变字符串（**回归 #937**）。
+- **索引过期重建**（3 条）：由 `openingPanelRebuildsExpiredIndex`、`openingPanelKeepsFreshIndex`、`openingPanelWithoutProjectDoesNothing` 锁定。面板每次打开（`onAppear`）必须调用 `FileSearchService.refreshIndexIfExpired()` 补查当前项目索引 TTL，过期则重建，不得无限沿用过期索引（**回归 #376**）。
+- **提交选中项**（5 条）：由 `submitOpensHighlightedNotFirst`、`submitOpensFirstWhenFirstHighlighted`、`submitOpensLastHighlighted`、`submitWithNoResultsOpensNothing`、`submitWithOutOfRangeIndexOpensNothing` 锁定。面板按 Return（`TextField.onSubmit`）必须打开箭头键高亮的 `selectedIndex` 对应条目，经纯函数 `FileSearchSubmitSelection.indexToOpen(selectedIndex:resultCount:)` 决策，不得无条件硬编码打开第一条；高亮越界或无结果时返回 `nil`、不打开任何文件（**回归 #839**）。
 
 ## 测试用例清单
 
@@ -74,27 +76,41 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 | 31 | 设置项目状态 | 非当前项目事件不改变状态 | 初始项目 A | 发出 `.openFilesChanged` | 路径仍为 A | P2 | ✅ 已覆盖 | `settingsStatusIgnoresUnrelatedProjectEvents` |
 | 32 | 综合 | shouldSkipPath 仅匹配项目根内部的相对路径段（**#375**） | 项目根为 `/Users/alice/build/Demo` | 对根内源码与根内 build 目录调用 `shouldSkipPath(_:root:)` | 祖先 build 不触发跳过；根内 build 仍跳过 | P1 | ✅ 已覆盖 | `shouldSkipPathIgnoresAncestorDirectoryNames` |
 | 33 | 综合 | 项目位于忽略名祖先目录下时源码不得被整体排除（**#375**） | 项目根 `<tmp>/build/Demo` 含 Sources/App.swift 与 build/Generated.swift | 调用 `scanProjectFiles(at:)` | 搜到 Sources/App.swift，跳过根内 build/Generated.swift | P0 | ✅ 已覆盖 | `scanProjectFilesFindsFilesUnderIgnoredAncestorDirectory` |
+| 34 | 综合 | 注入立即取消后 searchInFiles 不得返回完整结果（**回归 #1219**） | 1000 个可匹配文件 | 分别以默认与 `isCancelled:{true}` 调用 `searchInFiles` | 默认返回 100 条；取消返回空 | P0 | ✅ 已覆盖 | `searchInFilesReturnsEmptyWhenCancelledUpFront` |
+| 35 | 综合 | 取消检查在扫描循环内周期性发生而非扫完才检查（**回归 #1219**） | 2000 个可匹配文件，第 3 次检查即取消 | 调用 `searchInFiles` 并计数取消检查 | 结果为空且检查次数恰为 3（index 256 处退出） | P0 | ✅ 已覆盖 | `searchInFilesCancellationBailsMidScan` |
+| 36 | 综合 | 查询变化必须取消已持有的 detached worker（**回归 #1219**） | 服务持有一个长运行 detached worker | 设置新查询并调用 `onSearchQueryChanged` | 旧 worker `isCancelled` 为真 | P0 | ✅ 已覆盖 | `queryChangeCancelsRetainedDetachedWorker` |
+| 37 | 综合 | 切换项目必须取消过时的 detached worker（**回归 #1219**） | 服务持有一个长运行 detached worker | 调用 `updateProject` 切到新路径 | 旧 worker `isCancelled` 为真 | P0 | ✅ 已覆盖 | `projectSwitchCancelsRetainedDetachedWorker` |
+| 38 | 综合 | performSearch 持有 detached worker 句柄并在查询变化时取消（**回归 #1219**） | 真实临时索引（300 文件） | 触发搜索捕获句柄后再改查询 | 捕获的 worker 被取消 | P0 | ✅ 已覆盖 | `performSearchRetainsAndCancelsDetachedWorker` |
+| 39 | 索引过期重建 | 重开面板时过期索引必须重建，不得无限沿用（**回归 #376**） | 独立服务实例，构建索引后注入 301 秒前的过期索引 | 调用 refreshIndexIfExpired | 触发重建（isLoading 为真） | P0 | ✅ 已覆盖 | `openingPanelRebuildsExpiredIndex` |
+| 40 | 索引过期重建 | 重开面板时新鲜索引不重建（**回归 #376**） | 独立服务实例，索引刚构建完成 | 调用 refreshIndexIfExpired | 不重建，lastUpdated 不变 | P1 | ✅ 已覆盖 | `openingPanelKeepsFreshIndex` |
+| 41 | 索引过期重建 | 无当前项目时重开面板不触发索引（**回归 #376**） | 独立服务实例，无项目 | 调用 refreshIndexIfExpired | 不加载，currentProjectPath 仍为空 | P1 | ✅ 已覆盖 | `openingPanelWithoutProjectDoesNothing` |
+| 42 | 提交选中项 | Return 必须打开箭头高亮项，不得总打开第一项（**回归 #839**） | 2 条结果，高亮 index 1 | `indexToOpen(selectedIndex:1,resultCount:2)` | 返回 1（非 0） | P0 | ✅ 已覆盖 | `submitOpensHighlightedNotFirst` |
+| 43 | 提交选中项 | 高亮第一项时 Return 仍打开第一项（**回归 #839**） | 2 条结果，高亮 index 0 | `indexToOpen(selectedIndex:0,resultCount:2)` | 返回 0 | P1 | ✅ 已覆盖 | `submitOpensFirstWhenFirstHighlighted` |
+| 44 | 提交选中项 | 高亮最后一项时 Return 打开最后一项（**回归 #839**） | 3 条结果，高亮 index 2 | `indexToOpen(selectedIndex:2,resultCount:3)` | 返回 2 | P1 | ✅ 已覆盖 | `submitOpensLastHighlighted` |
+| 45 | 提交选中项 | 无结果时 Return 不打开任何文件（**回归 #839**） | 0 条结果 | `indexToOpen(selectedIndex:0,resultCount:0)` | 返回 nil | P1 | ✅ 已覆盖 | `submitWithNoResultsOpensNothing` |
+| 46 | 提交选中项 | 高亮越界（过大或负）时 Return 不打开任何文件（**回归 #839**） | 2 条结果 | `indexToOpen(5,2)` 与 `indexToOpen(-1,2)` | 均返回 nil | P1 | ✅ 已覆盖 | `submitWithOutOfRangeIndexOpensNothing` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> **#839 变异验证**：对 `FileSearchSubmitSelection.indexToOpen` 注入 3 个变异均被相应用例捕获——M1 `return selectedIndex`→`return 0`（旧 bug，被 `submitOpensHighlightedNotFirst`/`submitOpensLastHighlighted` 捕获）；M2 去掉上界 `selectedIndex < resultCount`（被 `submitWithNoResultsOpensNothing`/`submitWithOutOfRangeIndexOpensNothing` 捕获）；M3 去掉下界 `selectedIndex >= 0`（被 `submitWithOutOfRangeIndexOpensNothing` 负值断言捕获）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 25 / 25
 - P2: 已覆盖 7 / 7
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（25 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 46 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

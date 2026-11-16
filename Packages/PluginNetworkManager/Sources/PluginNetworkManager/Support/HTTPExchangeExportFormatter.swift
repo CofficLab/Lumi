@@ -156,7 +156,11 @@ enum HTTPExchangeExportFormatter {
         if cleaned.count > 90 {
             cleaned = String(cleaned.prefix(90))
         }
-        return cleaned + "-" + snapshot.id.uuidString + ".md"
+        // 90 个字符可能是 270+ UTF-8 字节（CJK/emoji），仍超 APFS 单组件 255 字节限；
+        // 再按最终文件名的字节预算截断，不切断字素簇（#822）。
+        let tail = "-" + snapshot.id.uuidString + ".md"
+        let component = truncateToUTF8Bytes(cleaned, budget: maxFilenameBytes - tail.utf8.count)
+        return component + tail
     }
 
     static func text(_ data: Data?) -> String {
@@ -178,5 +182,59 @@ enum HTTPExchangeExportFormatter {
 
     private static func fenced(_ value: String, language: String) -> String {
         "```\(language)\n\(value)\n```"
+    }
+
+    /// APFS 单个路径组件的 UTF-8 字节上限。
+    private static let maxFilenameBytes = 255
+
+    /// 按 UTF-8 字节预算截断：逐字素簇累加，超出预算即停，保证不切断字符、Unicode 有效。
+    private static func truncateToUTF8Bytes(_ value: String, budget: Int) -> String {
+        guard budget > 0 else { return "" }
+        if value.utf8.count <= budget { return value }
+        var result = ""
+        var bytes = 0
+        for character in value {
+            let size = String(character).utf8.count
+            if bytes + size > budget { break }
+            result.append(character)
+            bytes += size
+        }
+        return result
+    }
+
+    /// One record that could not be written during a batch export.
+    struct ExportWriteFailure: Sendable {
+        let index: Int
+        let fileName: String
+        let errorDescription: String
+    }
+
+    /// Writes one markdown file per snapshot into `directory`, each inside its
+    /// own `do/catch` so a single failure is collected and the batch continues
+    /// rather than discarding the remaining records (#822). `onWritten` runs
+    /// after each successful write to let the caller advance progress.
+    static func writeBatch(
+        _ snapshots: [HTTPExchangeExportSnapshot],
+        to directory: URL,
+        onWritten: (@Sendable (Int) async -> Void)? = nil
+    ) async -> [ExportWriteFailure] {
+        var failures: [ExportWriteFailure] = []
+        for (index, snapshot) in snapshots.enumerated() {
+            let fileName = exportFileName(for: snapshot, index: index)
+            do {
+                let document = document(for: snapshot)
+                try document.write(
+                    to: directory.appendingPathComponent(fileName),
+                    atomically: true,
+                    encoding: .utf8
+                )
+                await onWritten?(index)
+            } catch {
+                failures.append(
+                    ExportWriteFailure(index: index, fileName: fileName, errorDescription: error.localizedDescription)
+                )
+            }
+        }
+        return failures
     }
 }

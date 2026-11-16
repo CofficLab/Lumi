@@ -103,6 +103,7 @@ public actor DiskSpeedTester {
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         let write = try Self.measureWrite(to: fileURL, testBytes: testBytes)
+        try Task.checkCancellation()
         let read = try Self.measureRead(from: fileURL, testBytes: testBytes)
         return (write, read)
     }
@@ -130,6 +131,8 @@ public actor DiskSpeedTester {
         let startedAt = Date()
 
         while remaining > 0 {
+            // 取消必须能中断剩余的写入，而不是等整个测试跑完（#1230）。
+            try Task.checkCancellation()
             let count = Int(min(Int64(chunkSize), remaining))
             let slice = count == chunkSize ? buffer : buffer.prefix(count)
             do {
@@ -141,6 +144,9 @@ public actor DiskSpeedTester {
         }
 
         let duration = Date().timeIntervalSince(startedAt)
+
+        // 已取消时不再做 fsync，避免取消后仍阻塞在刷盘上。
+        try Task.checkCancellation()
 
         // 强制刷盘：让读测试测到的是磁盘而不是缓存。
         // 刷盘失败不改变写测试结果（写已经完成了），因此只记录不抛错。
@@ -175,6 +181,8 @@ public actor DiskSpeedTester {
         var remaining = testBytes
         let startedAt = Date()
         while remaining > 0 {
+            // 取消同样必须能中断剩余的读取（#1230）。
+            try Task.checkCancellation()
             let count = Int(min(Int64(chunkSize), remaining))
             do {
                 let data = try handle.read(upToCount: count) ?? Data()

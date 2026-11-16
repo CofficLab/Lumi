@@ -69,6 +69,9 @@ final class ToolManagerViewModel: ObservableObject {
     @Published private(set) var stats: [ToolStatEntry] = []
     @Published private(set) var selectedStatToolName: String?
     @Published private(set) var totalCallCount = 0
+    @Published private(set) var isLoadingStats = false
+    /// 统计代次：每次整体刷新递增，迟到的聚合结果据此丢弃。
+    private var statsGeneration = 0
 
     init(capability: any ToolManagerCapability) {
         self.capability = capability
@@ -220,10 +223,23 @@ final class ToolManagerViewModel: ObservableObject {
     }
 
     func reloadStats() async {
-        await Task.yield()
-        totalCallCount = await capability.countRecords()
+        // 与 refreshLog 一致：重入守卫挡住重叠触发，代次令牌丢弃迟到结果。
+        // 没有守卫时，切到统计 Tab / 刷新按钮 / reloadStatsRequested 的每次触发
+        // 都会各自重新拉取并聚合整段历史，快速触发会彼此重叠（issue #1302）。
+        guard !isLoadingStats else { return }
+        isLoadingStats = true
+        defer { isLoadingStats = false }
+        statsGeneration += 1
+        let generation = statsGeneration
 
-        var all: [ToolCallRecord] = []
+        let total = await capability.countRecords()
+        guard statsGeneration == generation else { return }
+        totalCallCount = total
+
+        // 逐页聚合，不再把整段历史（含 argumentsJSON / resultContent / resultJSON
+        // 全量载荷）驻留内存：峰值只有一页 + 每工具的小累加器。每页的 O(pageSize)
+        // 归约放到后台任务，主 actor 只做 O(工具数) 的合并，不再有无界的同步聚合块。
+        var map: [String: Accumulator] = [:]
         var beforeCreatedAt: Date?
         var beforeID: String?
         var hasMore = true
@@ -233,7 +249,18 @@ final class ToolManagerViewModel: ObservableObject {
                 beforeCreatedAt: beforeCreatedAt,
                 beforeID: beforeID
             )
-            all.append(contentsOf: page)
+            guard statsGeneration == generation else { return }
+            let partial = await Task.detached(priority: .utility) {
+                Self.reduce(page)
+            }.value
+            guard statsGeneration == generation else { return }
+            for (name, acc) in partial {
+                var existing = map[name] ?? Accumulator()
+                existing.totalCount += acc.totalCount
+                existing.errorCount += acc.errorCount
+                existing.totalDuration += acc.totalDuration
+                map[name] = existing
+            }
             guard let last = page.last else {
                 hasMore = false
                 break
@@ -243,15 +270,7 @@ final class ToolManagerViewModel: ObservableObject {
             hasMore = page.count >= statsPageSize
         }
 
-        var map: [String: Accumulator] = [:]
-        for record in all {
-            var acc = map[record.toolName] ?? Accumulator()
-            acc.totalCount += 1
-            if record.resultIsError { acc.errorCount += 1 }
-            if let duration = record.duration { acc.totalDuration += duration }
-            map[record.toolName] = acc
-        }
-        stats = map.map { name, acc in
+        let entries = map.map { name, acc in
             ToolStatEntry(
                 toolName: name,
                 errorCount: acc.errorCount,
@@ -260,6 +279,8 @@ final class ToolManagerViewModel: ObservableObject {
             )
         }
         .sorted { $0.totalCount > $1.totalCount }
+        guard statsGeneration == generation else { return }
+        stats = entries
 
         // 选中的统计项若已不存在，回落到调用次数最多的那一项。
         if let selectedStatToolName,
@@ -267,6 +288,19 @@ final class ToolManagerViewModel: ObservableObject {
             return
         }
         selectedStatToolName = stats.first?.toolName
+    }
+
+    /// 把一页记录归约为每工具累加器。纯函数，在后台任务执行，不触碰主 actor 状态。
+    nonisolated private static func reduce(_ page: [ToolCallRecord]) -> [String: Accumulator] {
+        var map: [String: Accumulator] = [:]
+        for record in page {
+            var acc = map[record.toolName] ?? Accumulator()
+            acc.totalCount += 1
+            if record.resultIsError { acc.errorCount += 1 }
+            if let duration = record.duration { acc.totalDuration += duration }
+            map[record.toolName] = acc
+        }
+        return map
     }
 }
 
@@ -285,7 +319,7 @@ struct ToolStatEntry: Identifiable {
     }
 }
 
-private struct Accumulator {
+private struct Accumulator: Sendable {
     var totalCount = 0
     var errorCount = 0
     var totalDuration: TimeInterval = 0

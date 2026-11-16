@@ -116,6 +116,31 @@ public final class CADSceneController: ObservableObject {
         updateSelectionHighlight()
     }
 
+    /// 增量更新单个组件的变换（位置/旋转/缩放），不重建任何几何体。
+    /// 选中高亮是该节点的子节点，会随父节点一起移动，无需重建。
+    /// 返回 false 表示节点不存在（调用方应回退到全量同步）。
+    @discardableResult
+    public func updateComponentTransform(id: String, transform: Transform3D) -> Bool {
+        guard let node = nodeMap[id] else { return false }
+        renderer.applyTransform(transform, to: node)
+        return true
+    }
+
+    /// 仅重建单个组件节点（如型材长度变化需要重新拉伸截面），其余节点保持不变。
+    /// 返回 false 表示节点不存在（调用方应回退到全量同步）。
+    @discardableResult
+    public func rebuildComponent(_ component: CADComponent) -> Bool {
+        guard let existing = nodeMap[component.id] else { return false }
+        let node = makeNode(for: component)
+        existing.removeFromParentNode()
+        assemblyNode.addChildNode(node)
+        nodeMap[component.id] = node
+        if selectedComponentId == component.id {
+            updateSelectionHighlight()
+        }
+        return true
+    }
+
     private func makeNode(for component: CADComponent) -> SCNNode {
         switch component {
         case .profile(let instance):

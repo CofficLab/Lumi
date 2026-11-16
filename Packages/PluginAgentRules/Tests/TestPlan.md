@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
+PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 51 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 43
+测试文件: 10 个，用例总数: 51
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -45,9 +45,11 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 4
 - **AgentRulesRuntimeDirectory**（2 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentRulesConversationScope**（3 条）：由 `listToolUsesConversationProject`、`createToolWritesIntoConversationProject`、`explicitProjectPathBeatsConversationProject` 锁定；工具必须按调用所属会话的项目读写，显式参数优先。
 - **AgentRulesViewModel**（2 条）：由 `removingLastProjectClearsLoadedRules`、`removingLastProjectClearsErrorMessage` 锁定；项目列表变化后，若已无选中项目必须立即清空 `rules` 与 `errorMessage`，不能保留已移除项目的状态。
+- **AgentRulesViewModel 晚到加载**（3 条）：由 `lateSuccessDoesNotOverwriteNewSelection`、`lateErrorDoesNotOverwriteNewSelection`、`currentSelectionStillLoadsRules` 锁定。设置页 `AgentRulesViewModel.reload` 在 `await listRules` 之后写回 `rules` / `errorMessage` 前必须比对 `selectedProjectPath == 捕获的 projectPath`，旧项目的晚到成功或失败结果都不得覆盖新选中项目的状态（**回归 #465**，与工具栏侧 `staleProjectLoadIsIgnored` 互补）；选中项目未变化时正常加载仍须写入。改动 `reload` 的 await 后写回逻辑时优先跑对应测试文件。
 - **AgentRuleInjectionConversationScope**（1 条）：由 `injectsConversationProjectRules` 锁定；注入钩子必须按请求所属会话绑定项目取规则，不得读全局当前项目，否则切换会话后会把别的 projects 的规则注入旧会话（与工具侧 #619 同根）。
 - **AgentRuleCreateFileSize**（3 条）：由 `createRuleFileSizeIsUTF8ByteCount`、`createRuleFileSizeCountsEmojiBytes`、`createRuleFileSizeMatchesDiskForASCII` 锁定。`createRule` 返回的 `fileSize` 必须是 UTF-8 字节数而非字符数，且与列表路径读到的落盘大小一致（**回归 #779**）；改动 `createRule` 返回值构造时优先跑对应测试文件。
 - **AgentRuleCreatePathTraversal**（5 条）：由 `createRuleRejectsParentDirectoryTraversal`、`createRuleRejectsAbsolutePath`、`createRuleRejectsEmbeddedParentComponent`、`createRuleRejectsSymlinkEscape`、`createRuleStillCreatesValidNameInsideRules` 锁定。`createRule` 必须把写入目标限制在 `.lumi/rules` 根目录内：绝对路径、`..` 成分与经符号链接目录的逃逸都要抛 `pathTraversal`，正常文件名仍落在根目录内（**回归 #347**）；改动 `createRule` 文件名拼接或 `safeRuleFileURL` 时优先跑对应测试文件。
+- **AgentRuleCreateHiddenName**（5 条）：由 `createRuleRejectsHiddenFilename`、`createRuleRejectsHiddenFilenameWithExtension`、`createRuleRejectsHiddenDirectoryComponent`、`createdVisibleRuleIsListedAndInjected`、`readChainsSkipHiddenFileOnDisk` 锁定。`createRule` 必须拒绝任何以 `.` 开头的路径成分：`listRules` 与 `loadRuleDefinitions` 都用 `.skipsHiddenFiles`，隐藏名落盘后永远不会被列出或注入，创建却报告成功会让用户/模型以为约束已生效、Agent 实际不带约束执行（**回归 #810**）；正常文件名创建后必须同时出现在两条读取链中。改动 `createRule` 文件名校验时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -96,27 +98,39 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 4
 | 41 | AgentRuleCreatePathTraversal | 文件名内部嵌入的 .. 成分必须被拒绝（**回归 #347**） | 临时项目 | `createRule(filename: "sub/../../escaped")` | 抛 `pathTraversal` | P0 | ✅ 已覆盖 | `createRuleRejectsEmbeddedParentComponent` |
 | 42 | AgentRuleCreatePathTraversal | 经符号链接目录的逃逸必须被拒绝（**回归 #347**） | 规则目录内有指向外层的符号链接 | `createRule(filename: "escape/pwned")` | 抛 `pathTraversal`，外层无 pwned.md | P0 | ✅ 已覆盖 | `createRuleRejectsSymlinkEscape` |
 | 43 | AgentRuleCreatePathTraversal | 正常 kebab-case 文件名仍创建在规则根目录内 | 临时项目 | `createRule(filename: "my-rule")` | 文件落在 `.lumi/rules/my-rule.md` | P1 | ✅ 已覆盖 | `createRuleStillCreatesValidNameInsideRules` |
+| 44 | AgentRuleCreateHiddenName | 以 . 开头的隐藏文件名被拒绝且不落盘（**回归 #810**） | 临时项目 | `createRule(filename: ".hidden")` | 抛 `invalidFileFormat`，`.lumi/rules/.hidden.md` 不存在 | P0 | ✅ 已覆盖 | `createRuleRejectsHiddenFilename` |
+| 45 | AgentRuleCreateHiddenName | 自带 .md 扩展名的隐藏文件名同样被拒绝（**回归 #810**） | 临时项目 | `createRule(filename: ".hidden.md")` | 抛 `invalidFileFormat`，不落盘 | P0 | ✅ 已覆盖 | `createRuleRejectsHiddenFilenameWithExtension` |
+| 46 | AgentRuleCreateHiddenName | 隐藏目录成分下的文件名被拒绝 | 临时项目 | `createRule(filename: ".config/rule")` | 抛 `invalidFileFormat`，`.config/rule.md` 不存在 | P0 | ✅ 已覆盖 | `createRuleRejectsHiddenDirectoryComponent` |
+| 47 | AgentRuleCreateHiddenName | 正常文件名创建后必须同时出现在列表与注入两条读取链中 | 临时项目 | `createRule(filename: "my-rule")` 后调用 `listRules` 与 `loadRuleDefinitions` | 两条读取链都含该规则（创建成功即可见） | P0 | ✅ 已覆盖 | `createdVisibleRuleIsListedAndInjected` |
+| 48 | AgentRuleCreateHiddenName | 两条读取链都跳过磁盘上的隐藏规则文件 | 直接写 `.lumi/rules/.hidden.md` | 调用 `listRules` 与 `loadRuleDefinitions` | 两者都不含该隐藏规则（拒绝创建的根因） | P1 | ✅ 已覆盖 | `readChainsSkipHiddenFileOnDisk` |
+| 49 | AgentRulesViewModel | 旧项目晚到成功结果不得覆盖新选中项目的规则列表（**回归 #465**） | 项目 A 有规则目录、B 无；注入受控 `listRules` 门闩 | `selectProject(A)` 停在门闩 → `selectProject(B)` 清空 → 放行 A | 选中仍为 B，`rules` 保持空 | P0 | ✅ 已覆盖 | `lateSuccessDoesNotOverwriteNewSelection` |
+| 50 | AgentRulesViewModel | 旧项目晚到错误不得写入新选中项目的 errorMessage（**回归 #465**） | 项目 A 有规则目录、B 无；A 的加载抛错 | `selectProject(A)` 停在门闩 → `selectProject(B)` → 放行 A 抛错 | `errorMessage` 为 nil、`rules` 空 | P0 | ✅ 已覆盖 | `lateErrorDoesNotOverwriteNewSelection` |
+| 51 | AgentRulesViewModel | 选中项目未变化时正常加载仍写入规则 | 项目 A 有规则目录，注入返回 1 条规则 | `selectProject(A)` 等待加载完成 | `rules.count == 1`、`errorMessage` 为 nil | P1 | ✅ 已覆盖 | `currentSelectionStillLoadsRules` |
 
-> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **51 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#810）：移除 `createRule` 中的隐藏名 guard（`finalFilename.split(separator: "/").contains(where: { $0.hasPrefix(".") })`）后，`createRuleRejectsHiddenFilename`、`createRuleRejectsHiddenFilenameWithExtension` 转红（`.hidden`/`.hidden.md` 落盘并报告成功），`createRuleRejectsHiddenDirectoryComponent` 转红（`.config/rule` 改为抛底层写入错误而非 `invalidFileFormat`）；`createdVisibleRuleIsListedAndInjected` 与 `readChainsSkipHiddenFileOnDisk` 保持绿。恢复 guard 后全部 48 条通过。
+
+> 变异验证（#465）：移除 `reload()` 成功与 catch 分支的 `guard selectedProjectPath == projectPath else { return }` 后，`lateSuccessDoesNotOverwriteNewSelection`、`lateErrorDoesNotOverwriteNewSelection` 转红（旧项目 A 的晚到结果/错误覆盖了新选中项目 B），`currentSelectionStillLoadsRules` 保持绿；恢复 guard 后全部 51 条通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 26 / 26
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 1 / 1
-- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
+- **合计: 51 / 51**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（26 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 51 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

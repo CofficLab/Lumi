@@ -718,25 +718,59 @@ private struct ToolDetailPopoverView<Content: View>: View {
 
 // MARK: - ToolCallArgumentsView
 
-private struct ToolCallArgumentsView: View {
+// 内部可见以便测试直接求值 body（参数格式化不得发生在 body，Issue #1186）。
+struct ToolCallArgumentsView: View {
     let toolCall: MessageToolCall
 
-    var body: some View {
-        if let formattedArguments {
-            ToolTextSectionView(content: formattedArguments)
-        } else {
-            EmptyToolSectionView(systemImage: "info.circle", text: "没有可显示的调用参数")
-        }
+    /// 已准备好的展示文本；`arguments` 是它对应的参数版本。
+    @State private var prepared: PreparedArguments?
+
+    struct PreparedArguments {
+        let arguments: String
+        let formatted: String?
     }
 
-    private var formattedArguments: String? {
-        MessageViewHelpers.formatToolCallArguments(toolCall.arguments)
+    init(toolCall: MessageToolCall, prepared: PreparedArguments? = nil) {
+        self.toolCall = toolCall
+        _prepared = State(initialValue: prepared)
+    }
+
+    var body: some View {
+        content
+            // 参数版本变化（流式追加）时重新准备；同一次呈现内 body 反复
+            // 求值只读已准备好的值，不再解析/序列化 payload。
+            .task(id: toolCall.arguments) {
+                let id = toolCall.id
+                let arguments = toolCall.arguments
+                let outcome = await ToolCallArgumentsFormatting.prepare(
+                    id: id,
+                    arguments: arguments
+                ) {
+                    toolCall.id == id && toolCall.arguments == arguments
+                }
+                guard case .ready(let formatted) = outcome else { return }
+                prepared = PreparedArguments(arguments: arguments, formatted: formatted)
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let prepared, prepared.arguments == toolCall.arguments {
+            if let formatted = prepared.formatted {
+                ToolTextSectionView(content: formatted)
+            } else {
+                EmptyToolSectionView(systemImage: "info.circle", text: "没有可显示的调用参数")
+            }
+        } else {
+            LoadingToolSectionView()
+        }
     }
 }
 
 // MARK: - ToolCallResultView
 
-private struct ToolCallResultView: View {
+// 内部可见以便测试直接求值 body（图片解码次数契约，Issue #1185）。
+struct ToolCallResultView: View {
     let result: MessageToolResult?
     let isLoading: Bool
     let visualState: ToolCallResultVisualState
@@ -745,6 +779,8 @@ private struct ToolCallResultView: View {
         if isLoading {
             LoadingToolSectionView()
         } else if let result {
+            // 单次取用：判定、网格与空输出分支共用同一份解码结果。
+            let imageData = resultImageData
             VStack(alignment: .leading, spacing: 8) {
                 // 执行耗时整合在此:行内不再单独显示,打开结果 popover 即可看到。
                 if let duration = result.duration {
@@ -756,12 +792,12 @@ private struct ToolCallResultView: View {
                 }
 
                 // 工具返回的图片附件(如截图/抓图工具),在文本之前以网格展示
-                if !resultImageData.isEmpty {
-                    AppImagePreviewGrid(imageDataList: resultImageData)
+                if !imageData.isEmpty {
+                    AppImagePreviewGrid(imageDataList: imageData)
                 }
 
                 if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    if resultImageData.isEmpty {
+                    if imageData.isEmpty {
                         ToolResultEmptyStateView(
                             systemImage: "info.circle",
                             text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
@@ -780,8 +816,9 @@ private struct ToolCallResultView: View {
     }
 
     /// 把工具结果的图片附件解码为 `[Data]`,供 `AppImagePreviewGrid` 展示。
+    /// 命中进程级解码缓存,重复打开弹层不再重付 base64 解码。
     private var resultImageData: [Data] {
-        result?.imageAttachments.compactMap { Data(base64Encoded: $0.data) } ?? []
+        MessageImageDecoding.imageData(from: result?.imageAttachments ?? [])
     }
 }
 

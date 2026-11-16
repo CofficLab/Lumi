@@ -71,6 +71,13 @@ public final class GitChatToolbarViewModel: ObservableObject {
         selectedCommitChanges
     }
 
+    /// 错误横幅是否应置顶展示（#390）。
+    ///
+    /// 只要存在读取错误就必须可见：status 失败但 commits 成功、或选中 commit 的
+    /// diff 失败时，errorMessage 非空而列表可能非空，不能用「工作区干净 / 0 文件」
+    /// 等正常空态掩盖失败。
+    public var shouldShowErrorBanner: Bool { errorMessage != nil }
+
     /// 当前分支名（工作区状态里的 branch）。
     public var branchName: String {
         let branch = status?.branch.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

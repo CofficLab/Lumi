@@ -40,6 +40,10 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         policy: .required
     )
 
+    /// 持有已注册的 manager，供 `onShutdown` 排空 write-behind 落盘队列（#152）。
+    /// 强引用：内核在 `onShutdown` 之后才移除 Provider，shutdown 时 manager 必须仍存活。
+    private var messageManager: MessageManager?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -62,13 +66,35 @@ public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         )
         kernel.unregisterProvider((any MessageManaging).self)
         try kernel.registerProvider((any MessageManaging).self, manager)
+        self.messageManager = manager
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 SwiftData MessageManager，数据库路径：\(databaseRootURL.path)")
         }
+
+        // 4. 后台启动 v4 历史消息迁移（#394，不 await，onBoot 立即返回）。
+        //    会话摘要由 ConversationManagerPlugin 迁移，但消息实体不在其 schema 内；
+        //    不迁消息则升级后旧会话打开是空列表。marker 独立于会话迁移，
+        //    已完成会话迁移的用户重启后仍会补迁消息。
+        let migration = MessageLegacyMigration(
+            reader: V4MessageReader(
+                v4DataRootDirectory: V4MessageDataDirectoryLocator.locate(
+                    currentDataRootDirectory: storage?.dataRootDirectory ?? databaseRootURL
+                )
+            ),
+            store: store,
+            destinationRootURL: databaseRootURL
+        )
+        Task.detached(priority: .utility) {
+            await migration.run()
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        // 恢复默认内存实现？不：进程退出，无需恢复。
+        // 进程退出前排空 write-behind 落盘队列：否则最后一条用户消息 / 助手回复 /
+        // 工具结果只存在于内存 pending，正常退出后重启即丢失（#152）。
+        // 同步排空即可——内核 sync stop() 与 async stopAsync()（默认转调 onShutdown）
+        // 都会经过这里，无需迁移到异步生命周期。
+        messageManager?.flushPendingWrites()
     }
 }

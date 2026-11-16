@@ -5,7 +5,7 @@
 PluginConversationExport 为 Lumi 当前聊天会话提供独立的 HTML 导出能力。 ## 功能 - 在 ChatToolbar 尾部贡献“导出”按钮。 - 异步读取当前会话的完整消息快照，不阻塞聊天界面。 - 生成不依赖网络资源的单文件 HTML，包含消息角色、时间、模型、推理与工具调用信息。 - 使用系统文件导出界面选择保存位置。 ## 验证 ```sh swift test --package-path Packages/PluginConversationExport ```
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 13
+测试文件: 5 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Export/`
@@ -26,9 +26,11 @@ PluginConversationExport 为 Lumi 当前聊天会话提供独立的 HTML 导出�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ConversationExportPlugin**（4 条）：由 `registersToolbarItem`、`exportsSafeOrderedHTML`、`exportsToolDetailsAndImages`、`shareExportKeepsOnlyVisibleContent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationExportPlugin**（6 条）：由 `registersToolbarItem`、`runtimeDisableWithdrawsExportEntryAndEnableRestores`、`repeatedEnableDoesNotDuplicateEntry`、`exportsSafeOrderedHTML`、`exportsToolDetailsAndImages`、`shareExportKeepsOnlyVisibleContent` 等用例锁定；运行时禁用必须在 `onDisable` 自行撤回直接写进 ChatSection 的导出按钮并停掉 ViewModel（内核只撤回显式登记的贡献），重新启用须恢复入口且不重复登记（#797）；改动该模块时优先跑对应测试文件。
 - **ConversationExportWhitespace**（5 条）：由 `toolResultKeepsSurroundingWhitespace`、`messageContentKeepsSurroundingWhitespace`、`reasoningAndArgumentsKeepSurroundingWhitespace` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationExportLanguage**（4 条）：由 `englishConversationDeclaresEn`、`chineseConversationDeclaresZhCN`、`unsetLanguageFallsBackToZhCN` 等用例锁定；HTML 导出的 `<html lang>` 必须跟随对话回复语言，改动该模块时优先跑对应测试文件。
+- **ConversationExportFilename**（6 条）：由 `emojiTitleStaysWithinAPFSByteLimit`、`truncationKeepsGraphemeClustersIntact`、`shortUnicodeTitleFilenameUnchanged` 等用例锁定；建议文件名必须按最终 UTF-8 字节长度（含日期/扩展名）截断到 APFS 255 字节上限，截断不切断字素簇，短标题与空标题回退行为保持不变（#513）。
+- **ConversationExportToolDedup**（5 条）：由 `duplicateToolResultRenderedOnce`、`uncoveredStandaloneToolMessageStillRendered`、`multipleToolResultsDedupedIndependently` 等用例锁定；debug 导出须按 `toolCallID` 去重——已被助手嵌套结果覆盖的独立 `.tool` 消息不得重复渲染，未覆盖、无 `toolCallID` 或嵌套调用尚为 pending 的独立结果仍须保留（#580）。
 
 ## 测试用例清单
 
@@ -47,27 +49,44 @@ PluginConversationExport 为 Lumi 当前聊天会话提供独立的 HTML 导出�
 | 11 | ConversationExportLanguage | Chinese conversation exports lang=zh-CN | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chineseConversationDeclaresZhCN` |
 | 12 | ConversationExportLanguage | Unset language falls back to zh-CN | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unsetLanguageFallsBackToZhCN` |
 | 13 | ConversationExportLanguage | htmlLanguage maps each language to its declaration | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `htmlLanguageMapsEachLanguage` |
+| 14 | ConversationExportFilename | 多字节标题的最终文件名不得超过 APFS 255 字节上限（**回归 #513**） | 标题为 64 个 🙂（256 字节） | 以 debug 模式导出取建议文件名 | UTF-8 字节数 ≤ 255，保留日期/扩展名后缀，标题部分由完整 🙂 组成 | P0 | ✅ 已覆盖 | `emojiTitleStaysWithinAPFSByteLimit` |
+| 15 | ConversationExportFilename | share 模式含 -share 后缀时文件名仍不得超过字节上限（**回归 #513**） | 标题为 64 个 🙂 | 以 share 模式导出取建议文件名 | UTF-8 字节数 ≤ 255，后缀为 -share-日期.html | P0 | ✅ 已覆盖 | `shareModeEmojiTitleStaysWithinByteLimit` |
+| 16 | ConversationExportFilename | 截断不得切断多标量字素簇（**回归 #513**） | 标题为 60 个 keycap emoji 1️⃣（每个 7 字节/3 标量，不含 ZWJ 可完整通过清洗） | 导出取建议文件名并去掉日期后缀 | 字节数 ≤ 255，标题部分为 33 个完整字素簇（231 字节），按标量截断会多出孤立 "1" 故可区分 | P0 | ✅ 已覆盖 | `truncationKeepsGraphemeClustersIntact` |
+| 17 | ConversationExportFilename | 短 Unicode 标题文件名保持不变 | 标题「设计 <讨论>」 | 导出取建议文件名 | 等于「设计-讨论-日期.html」且 ≤ 255 字节 | P1 | ✅ 已覆盖 | `shortUnicodeTitleFilenameUnchanged` |
+| 18 | ConversationExportFilename | 空标题回退到 Lumi-Conversation 且不超字节上限 | 标题为纯空白 | 导出取建议文件名 | 等于「Lumi-Conversation-日期.html」且 ≤ 255 字节 | P1 | ✅ 已覆盖 | `emptyTitleFallsBackWithinLimit` |
+| 19 | ConversationExportFilename | 长 ASCII 标题仍保留 80 字符上限且不超字节预算 | 标题为 200 个 a | 导出取建议文件名并去掉日期后缀 | 标题部分恰为 80 字符，整体 ≤ 255 字节 | P1 | ✅ 已覆盖 | `longASCIITitleKeepsCharacterCap` |
+| 20 | ConversationExportToolDedup | 同源工具结果不得重复渲染（**回归 #580**） | 助手嵌套 call-1 结果与独立 .tool(call-1) 同含 TOOL_RESULT_MARKER | 以 debug 模式导出 | 标记只出现 1 次，保留嵌套 Tool calls，消息计数为 1 | P0 | ✅ 已覆盖 | `duplicateToolResultRenderedOnce` |
+| 21 | ConversationExportToolDedup | 未被嵌套结果覆盖的独立 .tool 消息仍照常渲染 | 嵌套 call-1 结果 + 独立 .tool(call-orphan) | 以 debug 模式导出 | 孤儿结果 ORPHAN_OUTPUT 仍渲染，消息计数为 2 | P1 | ✅ 已覆盖 | `uncoveredStandaloneToolMessageStillRendered` |
+| 22 | ConversationExportToolDedup | 没有 toolCallID 的独立 .tool 消息无法关联仍渲染 | 嵌套 call-1 结果 + 独立 .tool(toolCallID=nil) | 以 debug 模式导出 | NO_ID_OUTPUT 仍渲染，消息计数为 2 | P1 | ✅ 已覆盖 | `standaloneToolMessageWithoutToolCallIDStillRendered` |
+| 23 | ConversationExportToolDedup | 嵌套调用尚无结果时不抑制同 ID 的独立 .tool 消息 | 嵌套 call-1 result=nil + 独立 .tool(call-1) | 以 debug 模式导出 | PENDING_STANDALONE 仍渲染，消息计数为 2 | P1 | ✅ 已覆盖 | `pendingNestedCallDoesNotSuppressStandalone` |
+| 24 | ConversationExportToolDedup | 多条工具结果各自按 toolCallID 去重孤儿保留 | 嵌套 call-a/call-b 结果 + 独立 .tool(call-a/call-b/call-c) | 以 debug 模式导出 | MARKER_A/B 各 1 次，MARKER_C 保留，消息计数为 2 | P1 | ✅ 已覆盖 | `multipleToolResultsDedupedIndependently` |
+| 25 | ConversationExportPlugin | 运行时禁用撤回导出入口，重新启用后恢复（**回归 #797**） | 插件已 onBoot，ChatSection 含导出按钮 | 依次调用 `onDisable`、`onEnable` | 禁用后 `barItems` 为空（按钮被撤回），启用后恢复唯一入口且 order=90 | P0 | ✅ 已覆盖 | `runtimeDisableWithdrawsExportEntryAndEnableRestores` |
+| 26 | ConversationExportPlugin | 重复启用不产生重复导出入口 | 插件已 onBoot | 连续两次 `onEnable`，再连续两次 `onDisable` | 启用后仍只有一个入口，禁用后 `barItems` 为空 | P1 | ✅ 已覆盖 | `repeatedEnableDoesNotDuplicateEntry` |
 
-> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#797）：把 `ConversationExportPlugin.onDisable` 改回空实现（不撤回
+> 导出入口），用例 25、26 立即转红（禁用后 `chat.barItems.isEmpty` 仍为 false，
+> 导出按钮残留，2 条断言失败）；恢复 `removeExportEntry` 调用后 26 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 10 / 10
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 18 / 18
 - P2: 已覆盖 1 / 1
-- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

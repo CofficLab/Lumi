@@ -25,6 +25,7 @@ struct MessageSenderPluginTests {
         // 走真实装配路径：`start(plugins:)` 会设置 activePluginID，
         // 使 `registerProvider` 记录 provider 归属（ownedByPlugin）。
         let plugin = MessageSenderPlugin()
+        plugin.pendingQueueStore = PendingQueueStore(fileURL: Self.temporaryQueueFile())
         try kernel.start(plugins: [plugin])
 
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
@@ -55,6 +56,7 @@ struct MessageSenderPluginTests {
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
         let plugin = MessageSenderPlugin()
+        plugin.pendingQueueStore = PendingQueueStore(fileURL: Self.temporaryQueueFile())
         try plugin.onBoot(kernel: kernel)
 
         let messageObserver = messages.addMessageInsertedObserver { message, conversationID in
@@ -112,5 +114,11 @@ struct MessageSenderPluginTests {
 
         #expect(completedOutcomes.isEmpty)
         observer.cancel()
+    }
+
+    /// 每个测试独立的临时落盘文件，避免污染生产 App Support 目录。
+    static func temporaryQueueFile() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("pending-queue-\(UUID().uuidString).json")
     }
 }

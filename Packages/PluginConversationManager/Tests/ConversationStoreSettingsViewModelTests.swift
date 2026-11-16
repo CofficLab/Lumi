@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import ProviderConversation
 import ProviderMessage
@@ -213,29 +214,297 @@ struct ConversationStoreSettingsViewModelTests {
         ]
         let viewModel = ConversationStoreSettingsViewModel(capability: capability)
         await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
         await viewModel.loadMessages()
         #expect(viewModel.messageCounts[selectedID] == 2)
         #expect(viewModel.messagesForSelected.count == 2)
 
-        // 新消息不会改变会话摘要身份，只能靠消息变化事件驱动刷新。
+        // inserted：消息仍在 pending，预览要立即能看到它，但磁盘计数不变。
         let inserted = Message(conversationID: selectedID, role: .assistant, content: "m2")
-        capability.messageCounts[selectedID] = 3
         capability.messagesByConversation[selectedID]?.append(inserted)
         viewModel.handleMessageChange(.inserted(inserted, conversationID: selectedID))
-
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: .seconds(1))
-        while viewModel.messagesForSelected.count != 3, clock.now < deadline {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-
-        #expect(viewModel.messageCounts[selectedID] == 3)
+        await waitUntil { viewModel.messagesForSelected.count == 3 }
         #expect(viewModel.messagesForSelected.last?.content == "m2")
+        #expect(viewModel.messageCounts[selectedID] == 2, "inserted 未落盘，磁盘计数不应变化")
 
-        // 非选中会话：只更新计数，不刷新当前预览。
+        // persisted：落盘后磁盘计数才 +1，且走防抖合并刷新。
+        capability.messageCounts[selectedID] = 3
+        viewModel.handleMessageChange(.persisted(inserted, conversationID: selectedID))
+        await waitUntil { viewModel.messageCounts[selectedID] == 3 }
+        #expect(viewModel.messageCounts[selectedID] == 3)
+
+        // 非选中会话：只可能更新计数，不刷新当前预览。
         viewModel.handleMessageChange(.updated(conversationID: backgroundID))
+        try await Task.sleep(for: .milliseconds(200))
         #expect(viewModel.messageCounts[backgroundID] == 1)
         #expect(viewModel.messagesForSelected.count == 3)
+    }
+
+    @Test func insertedAndUpdatedEventsDoNotQueryDiskCount() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 5]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        // 等可见性触发的合并刷新落地，再取基线。
+        try await Task.sleep(for: .milliseconds(250))
+        let baseline = capability.messageCountRequests.count
+
+        for _ in 0..<10 {
+            let message = Message(conversationID: id, role: .assistant, content: "x")
+            viewModel.handleMessageChange(.inserted(message, conversationID: id))
+            viewModel.handleMessageChange(.updated(conversationID: id))
+        }
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(
+            capability.messageCountRequests.count == baseline,
+            "inserted/updated 不改变磁盘计数，不应触发任何 COUNT 查库"
+        )
+    }
+
+    @Test func closedSettingsPageDoesNoCountIO() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        viewModel.setSettingsVisible(false)
+        let baseline = capability.messageCountRequests.count
+        capability.messageCounts[id] = 99
+        let message = Message(conversationID: id, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: id))
+        viewModel.handleMessageChange(.deleted(messageID: message.id, conversationID: id))
+        viewModel.handleMessageChange(.cleared(conversationID: id))
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(capability.messageCountRequests.count == baseline, "页面关闭期间不做计数 I/O")
+        #expect(viewModel.messageCounts[id] == 2, "关闭期间不写回计数")
+    }
+
+    @Test func untrackedConversationIsNotCounted() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+        let baseline = capability.messageCountRequests.count
+
+        // 不在已加载列表里的会话：没人显示它的计数，不应查库也不应写入字典。
+        let strangerID = UUID()
+        capability.messageCounts[strangerID] = 42
+        let message = Message(conversationID: strangerID, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: strangerID))
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(capability.messageCountRequests.count == baseline)
+        #expect(viewModel.messageCounts[strangerID] == nil)
+    }
+
+    @Test func unchangedCountDoesNotRepublish() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 2)
+        let selectedID = initial[0].id
+        let otherID = initial[1].id
+        capability.initialPage = initial
+        capability.selectedConversationID = selectedID
+        capability.messageCounts = [selectedID: 1, otherID: 7]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        var publishCount = 0
+        let cancellable = viewModel.objectWillChange.sink { _ in publishCount += 1 }
+        // 非选中会话 + 计数未变：既不应刷新预览，也不应触发 objectWillChange。
+        let message = Message(conversationID: otherID, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: otherID))
+        try await Task.sleep(for: .milliseconds(300))
+        cancellable.cancel()
+
+        #expect(publishCount == 0, "计数未变不应重新发布 @Published messageCounts")
+        #expect(viewModel.messageCounts[otherID] == 7)
+    }
+
+    @Test func reopeningRefreshesStaleCounts() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 1)
+        let id = initial[0].id
+        capability.initialPage = initial
+        capability.selectedConversationID = id
+        capability.messageCounts = [id: 2]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.setSettingsVisible(true)
+        try await Task.sleep(for: .milliseconds(250))
+
+        // 关闭期间计数变化被忽略，缓存保持旧值。
+        viewModel.setSettingsVisible(false)
+        capability.messageCounts[id] = 10
+        let message = Message(conversationID: id, role: .assistant, content: "x")
+        viewModel.handleMessageChange(.persisted(message, conversationID: id))
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(viewModel.messageCounts[id] == 2)
+
+        // 重新打开：把落后的计数补齐。
+        viewModel.setSettingsVisible(true)
+        await waitUntil { viewModel.messageCounts[id] == 10 }
+        #expect(viewModel.messageCounts[id] == 10)
+    }
+
+    // MARK: - 事件刷新必须覆盖已加载范围（回归 #537）
+
+    @Test func eventReloadKeepsLoadedPagesAndSelection() async throws {
+        let capability = StubConversationStoreCapability()
+        let original = makeConversations(count: 45)
+        capability.pageSource = original
+        capability.totalCount = 45
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMoreIfNeeded()
+        #expect(viewModel.conversations.count == 45)
+        let selectedID = original[42].id
+        viewModel.selectConversation(id: selectedID)
+
+        // 新建会话顶到最前：已加载范围整体下移一位。
+        let created = makeConversations(count: 1, offset: 1000)
+        capability.pageSource = created + original
+        capability.totalCount = 46
+        viewModel.handleConversationEvent(.created(created[0].id))
+        await waitUntil { viewModel.conversations.first?.id == created[0].id }
+
+        // 分页是原子的：续页可能略超过原数量，但绝不能只剩第一页。
+        #expect(viewModel.conversations.count == 46)
+        #expect(viewModel.conversations.map(\.id) == (created + original).map(\.id))
+        #expect(viewModel.selectedConversationID == selectedID, "第二页的选中会话不得被改选为第一条")
+        let refill = capability.pageRequests.last
+        #expect(refill?.beforeID == original[38].id, "续页必须沿用原分页游标")
+        #expect(refill?.beforeUpdatedAt == original[38].lastMessageAt)
+        #expect(refill?.limit == 40)
+        #expect(refill?.includingChildConversations == true)
+    }
+
+    @Test func eventReloadStopsAtLoadedRangeWithoutOverfetch() async throws {
+        let capability = StubConversationStoreCapability()
+        let all = makeConversations(count: 120)
+        capability.pageSource = all
+        capability.totalCount = 120
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        viewModel.selectConversation(id: all[30].id)
+        let baseline = capability.pageRequests.count
+
+        viewModel.handleConversationEvent(.updated(all[10].id))
+        await waitUntil { capability.pageRequests.count == baseline + 1 }
+        try await Task.sleep(for: .milliseconds(150))
+
+        #expect(capability.pageRequests.count == baseline + 1, "只加载过第一页时刷新不得额外翻页")
+        #expect(viewModel.conversations.map(\.id) == Array(all.prefix(40)).map(\.id))
+        #expect(viewModel.selectedConversationID == all[30].id)
+        #expect(viewModel.hasMoreConversations)
+    }
+
+    @Test func eventReloadRefreshesSummariesAcrossLoadedRange() async throws {
+        let capability = StubConversationStoreCapability()
+        let all = makeConversations(count: 80)
+        capability.pageSource = all
+        capability.totalCount = 80
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMoreIfNeeded()
+        #expect(viewModel.conversations.count == 80)
+
+        var updated = all[60]
+        updated.verbosity = .brief
+        capability.pageSource = all.map { $0.id == updated.id ? updated : $0 }
+        viewModel.handleConversationEvent(.updated(updated.id))
+        await waitUntil { viewModel.conversations[60].verbosity == .brief }
+
+        #expect(viewModel.conversations.count == 80, "第二页的摘要也必须被刷新，而不是只刷新第一页")
+        #expect(viewModel.conversations[60] == updated)
+        #expect(viewModel.conversations[0] == all[0])
+    }
+
+    @Test func staleReloadDoesNotDropPageAppendedDuringRefresh() async throws {
+        let capability = StubConversationStoreCapability()
+        let all = makeConversations(count: 120)
+        capability.pageSource = all
+        capability.totalCount = 120
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMoreIfNeeded()
+        #expect(viewModel.conversations.count == 80)
+        let selectedID = all[70].id
+        viewModel.selectConversation(id: selectedID)
+
+        // 第三页翻页与事件刷新同时在飞行中：翻页先落地，刷新的旧范围结果晚到。
+        capability.gatedPageRequests = [3, 4]
+        let more = Task { await viewModel.loadMoreIfNeeded() }
+        await waitUntil { capability.pageRequests.count == 3 }
+        viewModel.handleConversationEvent(.created(all[0].id))
+        await waitUntil { capability.pageRequests.count == 4 }
+
+        capability.releasePageGate(3)
+        await more.value
+        #expect(viewModel.conversations.count == 120)
+
+        capability.releasePageGate(4)
+        await waitUntil { viewModel.conversations.count == 120 && capability.pageRequests.count == 8 }
+
+        #expect(viewModel.conversations.map(\.id) == all.map(\.id), "晚到的旧范围刷新不得吃掉刚追加的分页")
+        #expect(viewModel.selectedConversationID == selectedID)
+        #expect(!viewModel.hasMoreConversations)
+    }
+
+    @Test func refillDeduplicatesConversationBumpedBetweenPages() async throws {
+        let capability = StubConversationStoreCapability()
+        let all = makeConversations(count: 120)
+        capability.pageSource = all
+        capability.totalCount = 120
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMoreIfNeeded()
+        #expect(viewModel.conversations.count == 80)
+
+        // 续页途中 all[5] 被顶进第二页：两页含同一条记录。
+        capability.pageOverrides = [4: Array(all[5..<45])]
+        viewModel.handleConversationEvent(.listChanged)
+        await waitUntil { capability.pageRequests.count == 4 }
+        try await Task.sleep(for: .milliseconds(100))
+
+        let ids = viewModel.conversations.map(\.id)
+        #expect(Set(ids).count == ids.count, "跨页重复的会话必须去重，否则列表 ID 冲突")
+        #expect(ids == Array(all.prefix(45)).map(\.id))
+    }
+
+    @Test func reloadHidesLoadMoreWhenRangeCoversStore() async throws {
+        let capability = StubConversationStoreCapability()
+        let all = makeConversations(count: 40)
+        capability.pageSource = all
+        capability.totalCount = 40
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        #expect(!viewModel.hasMoreConversations, "总数正好等于已加载数时不应再显示翻页入口")
+
+        viewModel.handleConversationEvent(.listChanged)
+        await waitUntil { capability.pageRequests.count == 2 }
+        #expect(viewModel.conversations.count == 40)
+        #expect(!viewModel.hasMoreConversations)
     }
 
     private func makeConversations(count: Int, offset: Int = 0, childOf parentID: UUID? = nil) -> [ConversationSummary] {
@@ -248,6 +517,15 @@ struct ConversationStoreSettingsViewModelTests {
                 lastMessageAt: date,
                 parentConversationID: parentID
             )
+        }
+    }
+
+    /// 轮询直到条件成立或超时。计数/预览刷新都带 120ms 防抖，MainActor 被并行
+    /// 测试抢占时固定 sleep 可能不够，用轮询更稳。
+    private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
         }
     }
 }
@@ -270,11 +548,24 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var messageCounts: [UUID: Int] = [:]
     var summariesByID: [UUID: ConversationSummary] = [:]
     var pageRequests: [PageRequest] = []
+    /// 记录每次 `messageCount(for:)` 查库的会话 id，用于断言冗余 I/O 是否被消除（#1311）。
+    private(set) var messageCountRequests: [UUID] = []
     /// 首屏/刷新页与翻页的注入延迟，用于构造「旧分页晚到」场景。
     var pageDelay: Duration?
     var nextPageDelay: Duration?
+    /// 按游标真实分页的数据源（#537）：设置后取代 initialPage/nextPage 的固定返回。
+    var pageSource: [ConversationSummary]?
+    /// 按请求序号（从 1 开始）覆盖分页结果，用于构造重叠页。
+    var pageOverrides: [Int: [ConversationSummary]] = [:]
+    /// 需要挂起的请求序号：门闩精确控制刷新与翻页的交错顺序。
+    var gatedPageRequests: Set<Int> = []
+    private var pageGates: [Int: CheckedContinuation<Void, Never>] = [:]
     private var conversationObserver: ((ConversationEvent) -> Void)?
     private var messageChangeObserver: ((MessageChange) -> Void)?
+
+    func releasePageGate(_ index: Int) {
+        pageGates.removeValue(forKey: index)?.resume()
+    }
 
     func fetchConversationPage(
         limit: Int,
@@ -288,8 +579,18 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         ))
+        let index = pageRequests.count
+        if gatedPageRequests.contains(index) {
+            await withCheckedContinuation { pageGates[index] = $0 }
+        }
         let delay = beforeID == nil ? pageDelay : nextPageDelay
         if let delay { try? await Task.sleep(for: delay) }
+        if let override = pageOverrides[index] { return override }
+        if let pageSource {
+            guard let beforeID else { return Array(pageSource.prefix(limit)) }
+            guard let cursorIndex = pageSource.firstIndex(where: { $0.id == beforeID }) else { return [] }
+            return Array(pageSource.suffix(from: cursorIndex + 1).prefix(limit))
+        }
         return beforeID == nil ? initialPage : nextPage
     }
 
@@ -310,7 +611,8 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     }
 
     func messageCount(for conversationID: UUID) -> Int {
-        messageCounts[conversationID] ?? 0
+        messageCountRequests.append(conversationID)
+        return messageCounts[conversationID] ?? 0
     }
 
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {

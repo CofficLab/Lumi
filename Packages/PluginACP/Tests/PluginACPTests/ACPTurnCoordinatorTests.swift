@@ -107,14 +107,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     @MainActor
     private final class MockConversationFactory: ACPSessionCreating {
-        var nextID = UUID()
         func createConversation(
             title: String?,
             projectPath: String?,
             providerID: String?,
             modelName: String?
         ) throws -> UUID {
-            nextID
+            // 每个会话映射到独立会话 ID，才能构造多会话并发的隔离回归。
+            UUID()
         }
     }
 
@@ -872,6 +872,179 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(decoded?.stopReason, .endTurn)
     }
 
+    func testWatchdogTimeoutCancelsUnderlyingTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let shortCoordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/wd-cancel")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+
+        // 超时拒绝必须同时取消底层回合，否则模型晚回包后工具仍会执行（#222）。
+        XCTAssertEqual(runner.cancelCalls, [conversationID])
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望 watchdog 超时响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
+
+        // 取消产生的 cancelled 事件晚到：不得重复响应，也不得把 refusal 改成 cancelled。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let only = responses.first, case .response(_, let result) = only else {
+            return XCTFail("期望唯一响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
+    }
+
+    func testWatchdogTimeoutIgnoresLateToolCalls() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let shortCoordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/wd-late")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertFalse(runner.cancelCalls.isEmpty)
+
+        // 模型在超时拒绝之后才回包带工具调用：不得再向客户端上报任何副作用。
+        let countBefore = box.messages.count
+        runner.emit(.toolCallsReceived(
+            conversationID: conversationID,
+            turnID: UUID(),
+            assistantMessageID: UUID(),
+            toolCalls: [MessageToolCall(id: "late", name: "bash", arguments: #"{}"#)]
+        ))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertEqual(box.messages.count, countBefore)
+    }
+
+    // MARK: - 启动前取消（#480）
+
+    /// 回归 #480：prompt 与 cancel 同一 burst 到达，runner Task 尚未启动、
+    /// AgentLoop runtime 还没创建（cancelTurn 是 no-op）。取消必须仍然生效：
+    /// 绝不能启动模型/工具，且原 prompt 以 cancelled 收尾。
+    func testCancelBeforeRunnerStartDoesNotRunTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-prestart")
+        _ = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        // startTurn 调度 runner Task 后立即 cancel：此刻 Task 尚未在主 actor 执行。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        coordinator.cancel(sessionID: sessionID)
+
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        // 被取消的回合绝不能启动模型/工具（这是 #480 的核心副作用）。
+        XCTAssertTrue(runner.runCalls.isEmpty, "取消先于 runner 启动时不得调用 runTurn")
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望取消响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .cancelled)
+    }
+
+    /// 守卫 #480：启动前取消不得污染同一会话的下一回合——新 prompt 的 runner
+    /// 必须正常启动并 end_turn（取消标志随旧 Task 存续，不能泄漏到新 Task）。
+    func testCancelBeforeStartDoesNotPoisonNextTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-then-new")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        // 第一回合：prompt 后立即 cancel（runner 未启动）。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.isEmpty)
+        // 排空主 actor，确保被取消的旧 runner Task 已执行完毕。
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        // 同一会话发起新回合：必须正常启动 runner，不被上一回合的取消污染。
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(2), prompt: [.text("again")])
+        waitUntil({ runner.runCalls.contains(conversationID) }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.contains(conversationID), "新回合必须正常启动 runner")
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "ok")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil({ box.messages.contains { $0.id == .number(2) } }, timeout: 3.0)
+        guard let response = box.messages.first(where: { $0.id == .number(2) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望第二回合响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 守卫 #480：runner 已启动后再取消（运行中取消，#233）仍须正常生效，
+    /// 启动前取消的判定不得误跳过已经合法启动的回合。
+    func testCancelAfterRunnerStartStillCancelsRunningTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/cancel-running")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        // 等 runner 真正启动后再取消。
+        waitUntil { runner.runCalls.contains(conversationID) }
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertTrue(runner.runCalls.contains(conversationID), "已启动的回合不应被启动前判定跳过")
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望取消响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .cancelled)
+    }
+
     // MARK: - 流式输出
 
     /// 可手动推进的流式 store mock。
@@ -879,6 +1052,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     private final class MockStream: ACPStreamObserving {
         var observer: ((UUID) -> Void)?
         var contentByConversation: [UUID: String] = [:]
+        var messageIDByConversation: [UUID: UUID] = [:]
 
         func addACPStreamObserver(_ callback: @escaping (UUID) -> Void) -> any ACPStreamObserverHandle {
             observer = callback
@@ -889,9 +1063,30 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             contentByConversation[conversationID]
         }
 
+        func acpStreamingMessageID(for conversationID: UUID) -> UUID? {
+            messageIDByConversation[conversationID]
+        }
+
         /// 模拟内核追加一段 token。
         func append(_ text: String, to conversationID: UUID) {
+            if messageIDByConversation[conversationID] == nil {
+                messageIDByConversation[conversationID] = UUID()
+            }
             contentByConversation[conversationID, default: ""] += text
+            observer?(conversationID)
+        }
+
+        /// 模拟底层 `streaming.start`：新建一条流式消息（正文清空、id 变化）。
+        func startNewMessage(for conversationID: UUID) {
+            contentByConversation[conversationID] = ""
+            messageIDByConversation[conversationID] = UUID()
+            observer?(conversationID)
+        }
+
+        /// 模拟纯思考阶段的流式通知：底层触发观察者，但此刻还没有正文
+        /// （`acpStreamingContent` 返回 nil）。用于验证「思考 token 也算 LLM
+        /// 进展」，不得被首响应 watchdog 误判为无进展（#352）。
+        func emitThinkingSignal(for conversationID: UUID) {
             observer?(conversationID)
         }
     }
@@ -973,6 +1168,270 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             return text == "完整答复"
         }
         XCTAssertEqual(fullSends.count, 1, "收尾不应重发已流式发送过的整段文本")
+    }
+
+    /// 回归 #352：健康的长流式正文必须解除首响应 watchdog，
+    /// 不得因「无 LLM 进展」被误判拒绝并取消底层回合。
+    func testStreamingBodyDisarmsWatchdog() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-wd")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 正文开始流式产出：这就是 LLM 进展，watchdog 必须解除。
+        stream.append("正在输出", to: conversationID)
+        // 越过 watchdog 超时窗口：不得产生 refusal，也不得取消底层回合。
+        RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "健康流式不应触发超时响应")
+        XCTAssertTrue(runner.cancelCalls.isEmpty, "健康流式不应取消底层回合")
+
+        // 回合正常收尾：恰好一次 end_turn 响应。
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "正在输出")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 回归 #352：纯思考阶段（只有思考 token、尚无正文增量）同样是 LLM 进展，
+    /// 必须解除 watchdog，否则长思考的健康回合会被误判拒绝。
+    func testThinkingOnlyStreamDisarmsWatchdog() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-think")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 只有思考通知，没有正文（acpStreamingContent 仍为 nil）。
+        stream.emitThinkingSignal(for: conversationID)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "纯思考流式不应触发超时响应")
+        XCTAssertTrue(runner.cancelCalls.isEmpty, "纯思考流式不应取消底层回合")
+
+        // 思考结束后正文产出并正常收尾。
+        stream.append("最终答复", to: conversationID)
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "最终答复")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        let responses = box.messages.filter { $0.id == .number(1) }
+        XCTAssertEqual(responses.count, 1)
+        guard let response = responses.first, case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
+    }
+
+    /// 守卫 #352：装配了流式桥但底层毫无流式活动时，watchdog 仍须照常超时拒绝
+    /// 并取消底层回合——进展判定不能被「桥存在」本身过度解除。
+    func testStreamingBridgeWithoutActivityStillTimesOut() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) },
+            turnStartTimeout: 0.5
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-idle")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+
+        // 没有任何流式活动：watchdog 必须照常触发。
+        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        XCTAssertEqual(runner.cancelCalls, [conversationID])
+        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望 watchdog 超时响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .refusal)
+    }
+
+    /// 回归 #351：一个回合内「LLM → 工具 → LLM」，第二段正文比第一段短时
+    /// 必须完整发出，不得沿用第一段偏移被整段丢弃。
+    func testSecondStreamShorterBodyIsSentFully() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-short")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 第一段较长的正文，随后工具完成，底层 start 新消息并流式更短的最终正文。
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("Done", to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["Checking...", "Done"], "第二段更短正文必须完整发出，不得被旧偏移丢弃")
+    }
+
+    /// 回归 #351：第二段正文比第一段长时必须整段发出，不得只发旧偏移之后的后缀。
+    func testSecondStreamLongerBodyIsSentCompletely() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-long")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        let finalBody = "Done with a much longer final answer"
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append(finalBody, to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["Checking...", finalBody], "第二段更长正文必须整段发出，不得截断成后缀")
+    }
+
+    /// 回归 #351：第二段与第一段等长但内容不同时，仍须完整发出（按消息身份而非长度判定）。
+    func testSecondStreamEqualLengthBodyIsSentFully() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-equal")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        stream.append("AAAA", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("BBBB", to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        XCTAssertEqual(texts, ["AAAA", "BBBB"], "等长不同的第二段正文必须完整发出")
+    }
+
+    /// 回归 #351：偏移按消息重置后，收尾去重约定仍成立——第二段最终正文恰好发送一次。
+    func testSecondStreamFinalBodyNotResentAtFinalize() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream-final")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        stream.append("Checking...", to: conversationID)
+        stream.startNewMessage(for: conversationID)
+        stream.append("Done", to: conversationID)
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "Done")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+
+        let doneSends = box.messages.filter { message in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text == "Done"
+        }
+        XCTAssertEqual(doneSends.count, 1, "第二段最终正文应恰好流式发送一次，收尾不得整段重发")
     }
 
     // MARK: - 失败回合的 stopReason
@@ -1252,6 +1711,101 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // labels 同时用作 optionId 与 answersByOptionID 的键；重复会让
         // Dictionary(uniqueKeysWithValues:) 运行时陷阱崩溃，故必须唯一。
         XCTAssertEqual(labels.count, Set(labels).count)
+    }
+
+    // MARK: - #353 工具授权元数据按会话隔离
+
+    /// 两个会话上报相同 toolCallId 时，A 的授权弹窗必须展示 A 自己的入参/类别，
+    /// 不能被后上报的 B 覆盖（裸 ID 键会让 B 覆盖 A）。
+    func testToolPermissionMetadataIsolatedPerSession() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        XCTAssertNotEqual(convA, convB)
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convA, id: "call_shared", name: "write_file", arguments: #"{"path":"/tmp/A.swift"}"#)
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"rm -rf B"}"#)
+
+        runner.emit(.suspended(conversationID: convA, turnID: UUID(), suspension: AgentLoopSuspension(
+            suspensionID: "userInput:call_shared",
+            conversationID: convA,
+            toolCallID: "call_shared",
+            kind: "userInput",
+            payload: #"{"kind":"permission","question":"允许吗?"}"#
+        )))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        let params = try XCTUnwrap(try permissionParams())
+        XCTAssertEqual(params.sessionId, sessionA)
+        XCTAssertEqual(params.toolCall.toolCallId, "call_shared")
+        XCTAssertEqual(params.toolCall.kind, .edit)
+        XCTAssertEqual(params.toolCall.rawInput, ACPTurnCoordinator.json(from: #"{"path":"/tmp/A.swift"}"#))
+    }
+
+    /// A 未登记某 toolCallId、只有 B 登记时，A 的授权不得借用 B 的入参/类别，
+    /// 应回退到问题文本（裸 ID 查询会命中 B 的元数据造成跨会话泄漏）。
+    func testToolPermissionDoesNotLeakOtherSessionMetadata() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"rm -rf B"}"#)
+
+        runner.emit(.suspended(conversationID: convA, turnID: UUID(), suspension: AgentLoopSuspension(
+            suspensionID: "userInput:call_shared",
+            conversationID: convA,
+            toolCallID: "call_shared",
+            kind: "userInput",
+            payload: #"{"kind":"permission","question":"允许吗?"}"#
+        )))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        let params = try XCTUnwrap(try permissionParams())
+        XCTAssertEqual(params.sessionId, sessionA)
+        XCTAssertNil(params.toolCall.rawInput)
+        XCTAssertNil(params.toolCall.kind)
+        XCTAssertEqual(params.toolCall.title, "允许吗?")
+    }
+
+    /// 取消 A 时，只把 A 的未决工具标记 cancelled；B 的同名工具不受影响，
+    /// 且 A 的未决工具必须真的被收尾（裸 ID 键会让 B 覆盖 A，导致 A 漏发 cancelled）。
+    func testCancelledToolCallsIsolatedPerSession() throws {
+        let sessionA = try makeSessionID()
+        let sessionB = try makeSessionID()
+        let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
+        let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
+
+        reportToolCall(conversationID: convA, id: "call_shared", name: "bash", arguments: #"{"cmd":"a"}"#)
+        reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"b"}"#)
+
+        coordinator.cancel(sessionID: sessionA)
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let u = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  u.sessionId == sessionA,
+                  case .toolCallUpdate(let tc) = u.update else { return false }
+            return tc.toolCallId == "call_shared" && tc.status == .cancelled
+        })
+        XCTAssertFalse(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let u = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  u.sessionId == sessionB,
+                  case .toolCallUpdate(let tc) = u.update else { return false }
+            return tc.toolCallId == "call_shared" && tc.status == .cancelled
+        })
     }
 }
 

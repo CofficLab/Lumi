@@ -111,6 +111,62 @@ struct ActivityHeatmapViewModelTests {
         #expect(viewModel.trendDays.contains { calendar.isDate($0.date, inSameDayAs: staleHeavyDay) } == false)
         #expect(viewModel.peakTokenDay?.date == recentDay)
     }
+
+    @Test("a burst of insertions coalesces into one debounced reload (#1262)")
+    func burstInsertionsCoalesceIntoSingleReload() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let manager = HeatmapMessageManager(
+            messageCounts: [today: 3],
+            tokenCounts: [today: 30]
+        )
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
+
+        for _ in 0..<10 {
+            viewModel.scheduleReload()
+        }
+
+        // 防抖窗口内不发起任何查询，避免每条插入消息都启动一条重载流水线。
+        #expect(manager.messageQueryDates.isEmpty)
+        #expect(manager.tokenQueryDates.isEmpty)
+
+        try? await Task.sleep(for: .milliseconds(400))
+
+        // 一次重载 = 历史查询 + 当日查询，各一条 message/token 查询。
+        #expect(manager.messageQueryDates.count == 2)
+        #expect(manager.tokenQueryDates.count == 2)
+        #expect(viewModel.heatmapDays.last?.messages == 3)
+    }
+
+    @Test("an immediate reload cancels a pending debounced reload (#1262)")
+    func immediateReloadCancelsPendingDebounce() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let manager = HeatmapMessageManager(
+            messageCounts: [today: 1],
+            tokenCounts: [today: 10]
+        )
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
+
+        viewModel.scheduleReload()
+        await viewModel.reload()
+
+        let messageQueriesAfterReload = manager.messageQueryDates.count
+        #expect(messageQueriesAfterReload == 2)
+
+        // 越过防抖窗口后，被取消的延迟重载不应再追加查询。
+        try? await Task.sleep(for: .milliseconds(400))
+        #expect(manager.messageQueryDates.count == messageQueriesAfterReload)
+        #expect(manager.tokenQueryDates.count == 2)
+    }
 }
 
 @MainActor

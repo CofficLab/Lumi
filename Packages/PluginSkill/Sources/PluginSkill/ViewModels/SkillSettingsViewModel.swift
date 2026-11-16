@@ -114,6 +114,8 @@ final class SkillSettingsViewModel: ObservableObject {
         // 项目层技能（不叠加通用底座，避免混入插件贡献 / 内置技能）。
         // 目录不存在时由 service 层（SkillDirectoryLoader）返回空列表。
         let skills = await service.listSkills(projectPath: projectPath, baseSkills: [])
+        // 扫描期间项目可能已被移除或切换：旧项目的结果不得写回（#791）。
+        guard selectedProjectPath == projectPath else { return }
         projectSkills = skills
     }
 
@@ -122,9 +124,14 @@ final class SkillSettingsViewModel: ObservableObject {
             return
         }
         selectedProjectPath = projects.first?.path
-        if selectedProjectPath != nil {
-            Task { await reload() }
+        guard selectedProjectPath != nil else {
+            // 最后一个项目被移除：立刻清空项目层技能。只在非 nil 时 reload 会让
+            // 已删除项目的技能留在列表里，顶部计数继续把它们算进去（#791）。
+            projectSkills = []
+            errorMessage = nil
+            return
         }
+        Task { await reload() }
     }
 
     private func getSkillsDirectory(for projectPath: String) -> URL {

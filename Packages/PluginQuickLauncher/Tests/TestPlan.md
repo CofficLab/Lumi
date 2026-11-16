@@ -5,7 +5,7 @@
 QuickLauncherPlugin Quick launcher plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 26
+测试文件: 1 个，用例总数: 32
 
 核心组件（源码目录）:
 - `Observers/`
@@ -39,6 +39,7 @@ QuickLauncherPlugin Quick launcher plugin for Lumi.
 - **应用扫描根目录**（2 条）：由 `searchDirectoriesIncludeUtilitiesRoots`、`productionRootsDiscoverUtilitiesApp` 锁定（**回归 #299**）：扫描只取各根目录的直接 `.app` 子项、不递归，因此 `/System/Applications/Utilities` 与 `/Applications/Utilities` 必须显式列为扫描根，否则 Terminal/Activity Monitor/Console 等系统自带应用永远扫不到；既有标准根不得丢失。改动 `AppSearchService.searchDirectories` 或 `scanDirectories` 枚举逻辑时优先跑对应用例。
 - **热键提示**（2 条）：由 `hotkeyHintReflectsConfiguredCombo`、`hotkeyHintTracksComboAcrossChanges` 锁定（**回归 #302**）：启动器顶部热键提示必须读取 `GlobalHotkeyManager.currentCombo.displayString`，随设置改键/恢复默认实时刷新，不得硬编码 `⌥Space`。改动 `LauncherView.hotkeyHint`/`searchHeader` 或热键展示逻辑时优先跑对应用例。
 - **应用检索排序先于截断**（2 条）：由 `appSearchSortsByPriorityBeforeApplyingLimit`、`appSearchPrefixOutranksShorterContainsHit` 锁定（**回归 #301**）：`searchItems(matching:limit:)` 必须扫描全部条目、按「前缀 > 包含 > 模糊」分类并在同类内按名称长度稳定排序后，再截断到 limit；不得边扫边在达到 limit 时按字母扫描序提前 break（会丢掉排在后面的精确/前缀命中），也不得只用非稳定的长度排序让短的包含命中越级排到前缀命中之前。归一化键仍预计算缓存（#1218），改动 `AppSearchService.searchItems`/`byLengthStable` 时优先跑对应用例。
+- **查询文件结果归属**（6 条）：由 `changingQueryDropsStaleFileResultsBeforeNewSearch`、`executeUnderNewQueryNeverOpensPreviousQueryFile`、`currentQueryFileResultsRemainVisibleAndExecutable` 等用例锁定（**回归 #445**）：`FileSearchService.results` 必须随结果记录其所属查询词 `resultsQuery`（提交/取消/测试注入均经 `commitResults` 维护，按 trim 后存储）；`LauncherSearchModel.rebuildResults` 只在 `fileSearch.resultsQuery == 当前 trimmed 查询` 时合并文件结果。查询切换后、新 Spotlight 搜索（模型 200ms + 服务 200ms 防抖）返回前，上一查询的旧文件不得展示，更不得被 Return/`execute(at:)` 打开；属于当前查询的文件仍须可见可执行。改动 `FileSearchService.commitResults/search/cancelSearch/runSpotlightQuery`、`resultsQuery` 或 `LauncherSearchModel.rebuildResults` 的文件合并 gate 时优先跑对应用例。
 
 ## 测试用例清单
 
@@ -70,27 +71,38 @@ QuickLauncherPlugin Quick launcher plugin for Lumi.
 | 24 | 热键提示 | 热键提示随组合多次变化与恢复默认始终跟随当前生效组合（**回归 #302**） | 独立 defaults 的热键管理器 + 构造 `LauncherView` | `updateCombo(⇧⌘Space)` 后 `resetToDefault()`，读取 `hotkeyHint` | 依次为 ⇧⌘Space、⌥Space | P1 | ✅ 已覆盖 | `hotkeyHintTracksComboAcrossChanges` |
 | 25 | 应用检索排序先于截断 | 精确/前缀命中必须先于 limit 截断排到最前，不得被字母序提前丢掉（**回归 #301**） | 六个「X Safari N」按字母序排在 "Safari" 之前 | `searchItems(matching:"safari", limit:6)` | 返回 6 条，首条为 Safari，且结果含 Safari | P0 | ✅ 已覆盖 | `appSearchSortsByPriorityBeforeApplyingLimit` |
 | 26 | 应用检索排序先于截断 | 前缀命中必须排在更短的包含命中之前，非稳定长度排序不得越级（**回归 #301**） | "XSaf"（包含、更短）与 "Safari"（前缀、更长） | `searchItems(matching:"saf", limit:10)` | 返回 2 条，首条为 Safari | P0 | ✅ 已覆盖 | `appSearchPrefixOutranksShorterContainsHit` |
+| 27 | 查询文件结果归属 | 查询切换后、新搜索返回前必须立即剔除上一查询的文件结果（**回归 #445**） | 注入属于 alpha 的文件结果，query=alpha | 改 query=beta（新 Spotlight 搜索仍在防抖窗口内） | 结果不含 alpha 文件，且无任何文件结果残留 | P0 | ✅ 已覆盖 | `changingQueryDropsStaleFileResultsBeforeNewSearch` |
+| 28 | 查询文件结果归属 | 切换查询后回车不得打开上一查询遗留的文件（**回归 #445**） | 注入属于 alpha 的文件 + 记录打开路径，query=alpha | 改 query=beta 后 `execute(at: selectedIndex)` | 返回 false，打开路径列表为空，不含 alpha 文件 | P0 | ✅ 已覆盖 | `executeUnderNewQueryNeverOpensPreviousQueryFile` |
+| 29 | 查询文件结果归属 | 属于当前查询的文件结果仍须可见且可执行 | 注入属于 beta 的文件 + 记录打开路径，query=beta | 取文件下标调用 `execute(at:)` | 返回 true，按原始路径打开该文件 | P1 | ✅ 已覆盖 | `currentQueryFileResultsRemainVisibleAndExecutable` |
+| 30 | 查询文件结果归属 | 新查询文件结果异步到达后必须纳入，旧文件不得回潮（**回归 #445**） | alpha 文件→query alpha→beta，再注入属于 beta 的文件 | 调用 `rebuildResults()` | 结果含 beta 新文件、不含 alpha 旧文件 | P1 | ✅ 已覆盖 | `newQueryFileResultsArrivingAsyncAreIncluded` |
+| 31 | 查询文件结果归属 | 取消搜索后结果与所属查询词都必须清空 | 注入属于 cancel 的文件结果 | 调用 `cancelSearch()` | results 为空且 resultsQuery 为空 | P1 | ✅ 已覆盖 | `cancelSearchClearsResultsQuery` |
+| 32 | 查询文件结果归属 | 文件结果归属按 trim 后的查询比对 | 注入属于 "  trim  " 的文件结果，query=trim | 读取聚合 `results` | 含该文件（空白归一后仍匹配当前查询） | P2 | ✅ 已覆盖 | `fileResultsGateUsesTrimmedQuery` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#445**，`LauncherSearchModel.rebuildResults` 文件 gate 与 `FileSearchService.commitResults` 归属标记）：
+> - **M1** 去掉 gate，恢复无条件合并 `fileSearch.results`（复现原 bug）→ `changingQueryDropsStaleFileResultsBeforeNewSearch`、`executeUnderNewQueryNeverOpensPreviousQueryFile`、`newQueryFileResultsArrivingAsyncAreIncluded` 转红（共 6 处断言：旧文件在 beta 下仍展示，回车打开 `/tmp/alpha-secret.txt`）；`currentQueryFileResultsRemainVisibleAndExecutable`、`cancelSearchClearsResultsQuery`、`fileResultsGateUsesTrimmedQuery` 仍绿。
+> - **M2** `commitResults` 不再写 `resultsQuery`（结果与所属查询脱钩）→ 六条新用例全部转红（当前查询文件被 gate 误排除、`resultsQuery` 恒为空）。
+> - 还原完整修复（gate `resultsQuery == trimmed` + `commitResults` 记录归属）→ 32 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 16 / 16
-- P2: 已覆盖 1 / 1
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 19 / 19
+- P2: 已覆盖 2 / 2
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（16 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（19 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

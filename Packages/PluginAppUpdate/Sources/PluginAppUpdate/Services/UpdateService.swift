@@ -52,17 +52,17 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// preferences so switching channels never changes updater internals.
     public private(set) var channel: AppUpdateChannel
 
-    private static func loadChannel() -> AppUpdateChannel {
-        AppUpdatePluginLocalStore.shared.channel
-    }
+    /// 通道持久化存储。可注入隔离实例以测试落盘失败路径（#524）。
+    private let store: AppUpdatePluginLocalStore
 
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
         updaterController?.updater
     }
 
-    override init() {
-        channel = Self.loadChannel()
+    init(store: AppUpdatePluginLocalStore = .shared) {
+        self.store = store
+        channel = store.channel
         super.init()
     }
 
@@ -82,11 +82,20 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     }
 
     /// Persist and immediately apply the selected update channel.
+    ///
+    /// 先落盘再应用：持久化失败时保留旧选择并记录错误，UI（绑定 `channel`）
+    /// 不会把未保存的通道当作已生效，重启后也不会悄悄回退（#524）。
     public func setChannel(_ channel: AppUpdateChannel) {
         guard self.channel != channel else { return }
 
+        do {
+            try store.setChannel(channel)
+        } catch {
+            Self.logger.error("\(Self.t)Failed to persist update channel: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
         self.channel = channel
-        AppUpdatePluginLocalStore.shared.setChannel(channel)
         resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
         feedPreparationTask?.cancel()
         feedPreparationTask = nil

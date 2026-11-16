@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ProviderMessageSender", targets: ["ProviderMessageSender"]),
     ],
     dependencies: [
-        .package(path: "../ProviderConversation"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
@@ -18,7 +18,7 @@ let package = Package(
         .target(
             name: "ProviderMessageSender",
             dependencies: [
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),

@@ -5,7 +5,7 @@
 KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ## Overview `KitHTMLPreview` provides a ready-to-use `HTMLPreviewView` that renders HTML content inside a SwiftUI view hierarchy. It supports two loading modes: - **File-based loading** — pass a `fileURL` to load a local `.html`/`.htm` file. Relative resources (CSS, JS, images) are resolved against the file's directory. - **String-based loading** — pass an `htmlText` string directly. When a `fileURL` is also provided, relative resources are resolved against the file's parent directory as the base URL. The view automatically detects whether the in-memory HTML string is still in sync with the on-disk file and loads
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 52
+测试文件: 12 个，用例总数: 62
 
 ## 公开 API
 
@@ -27,9 +27,12 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **HTMLPreviewContextMenuRequest**（7 条）：由 `decodesValidRequest`、`rejectsUnsupportedVersion`、`rejectsUnknownAction` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HTMLPreviewContentJavaScript**（3 条）：预览与导出一致地禁用内容 JavaScript，内联事件处理器/script 不得执行，原生注入的选区桥接仍触发（issue #494）；改动预览 WebView 配置时优先跑对应测试文件。
+- **HTMLScreenshotterOffMain**（2 条）：由 `rasterizesOffMain`、`rejectsOversizedOffMain` 锁定 PDF 栅格化在主 actor 之外执行且先拒超限；改动快照栅格化路径时优先跑对应测试文件。
 - **HTMLPreviewElementBridge**（4 条）：由 `resolvesInteractiveTargetAndParent`、`buildsUniqueSelectors`、`boundsHTMLAndIsolatesOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLPreviewElementContextMenu**（7 条）：由 `ordersCandidates`、`distinguishesRepeatedLabels`、`truncatesLabels` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLPreviewLegacyCompatibility**（3 条）：由 `legacyInitializerRemainsAvailable`、`legacyMessageDecoding`、`newInitializerKeepsLegacyDisabled` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HTMLPreviewLegacySelectionScript**（2 条）：存量选区桥点击「发给助手」时，回传源码须剔除宿主注入的浮动按钮/描边遮罩、只保留用户原始区块标记（issue #495）；由 `serializedBlockExcludesHostOverlays`、`serializedBlockKeepsOriginalDocumentMarkup` 锁定；改动 `selectionScript` 序列化路径时优先跑对应测试文件。
 - **HTMLPreviewLoadPlanner**（13 条）：由 `rawHTMLWithoutFileURL`、`matchingUTF8FileLoadsFileURL`、`matchingUTF16FileLoadsFileURL`、`emptyHTMLWithReadableFileLoadsFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLScreenshotterCapture**（5 条）：由 `capturesFullPage`、`throwsForEmptyDocument`、`rejectsOversizedDocument` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLScreenshotterLimits**（6 条）：页数、总像素与单边尺寸的独立上限，在分配位图前拒绝超限文档（issue #1055）；改动快照资源边界时优先跑对应测试文件。
@@ -91,27 +94,39 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 | 50 | HTMLPreviewLoadPlanner | 空 HTML 且文件不可读时回退为空 HTML 文档 | 读取文件抛错 | 调用同一入口 | 返回 `.html`，base URL 为文件父目录 | P1 | ✅ 已覆盖 | `emptyHTMLWithUnreadableFileFallsBackToHTML` |
 | 51 | HTMLPreviewLoadPlanner | 空 HTML 且无文件时保持空 HTML 文档 | — | 调用同一入口 | 返回 `.html(html: "", baseURL: nil)` | P2 | ✅ 已覆盖 | `emptyHTMLWithoutFileURLStaysHTML` |
 | 52 | HTMLPreviewView | 仅在既无文本也无文件时显示空状态（**回归 #1052**） | — | 调用 `hasNoContent(htmlText:fileURL:)` | 仅 `("", nil)` 为真，其余组合为假 | P1 | ✅ 已覆盖 | `viewEmptyStateRequiresNoTextAndNoFile` |
+| 53 | HTMLPreviewContentJavaScript | 预览配置禁用内容 JavaScript（**回归 #494**） | — | 调用 `HTMLPreviewWebViewFactory.makeConfiguration` | `allowsContentJavaScript == false` | P1 | ✅ 已覆盖 | `configurationDisablesContentJavaScript` |
+| 54 | HTMLPreviewContentJavaScript | 内联事件处理器与 script 标签不得执行（**回归 #494**） | 用生产配置工厂构造 WebView | 加载含 onload / script 的 HTML | 两者均未执行 | P0 | ✅ 已覆盖 | `inlineHandlersAndScriptTagsDoNotRun` |
+| 55 | HTMLPreviewContentJavaScript | 原生注入的选区桥接监听器仍正常触发（**#494 护栏**） | 内容 JS 已禁用 | 经 evaluateJavaScript 安装监听器并派发事件 | 监听器触发 | P1 | ✅ 已覆盖 | `nativeInjectedBridgeStillWorks` |
+| 56 | HTMLPreviewLoadPlanner | 加载键未变化时跳过整文件读取（**回归 #1280**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unchangedLoadKeySkipsFileRead` |
+| 57 | HTMLPreviewLoadPlanner | 加载键变化时正常规划加载（**#1280**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `changedLoadKeyPlansLoad` |
+| 58 | HTMLPreviewLoadPlanner | 加载键未变化时 Canvas 回退也不读盘（**#1280**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unchangedCanvasFallbackSkipsFileRead` |
+| 59 | HTMLScreenshotterOffMain | 在主 actor 之外把 PDF 栅格化为尺寸正确的位图 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rasterizesOffMain` |
+| 60 | HTMLScreenshotterOffMain | 在主 actor 之外分配位图前拒绝超限 PDF | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectsOversizedOffMain` |
+| 61 | HTMLPreviewLegacySelectionScript | 发给助手的区块源码剔除宿主浮动按钮与遮罩（**回归 #495**） | 右键命中 data-block 区块后点击浮动按钮 | 捕获真实脚本回传载荷并检查 outerHTML | 不含 data-promo-floating / data-promo-highlight / 按钮文案 | P0 | ✅ 已覆盖 | `serializedBlockExcludesHostOverlays` |
+| 62 | HTMLPreviewLegacySelectionScript | 发给助手的区块源码保留用户原始标记（**#495 护栏**） | 同上 | 经 `decodeLegacyMessageBody` 解码后检查 outerHTML | 以 section 标签开头、含 data-block="hero" 与原始 span | P1 | ✅ 已覆盖 | `serializedBlockKeepsOriginalDocumentMarkup` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证（#494）：移除 `HTMLPreviewWebViewFactory` 的 `allowsContentJavaScript = false` 后，`configurationDisablesContentJavaScript` 与 `inlineHandlersAndScriptTagsDoNotRun` 转红（内联 onload 重新执行），`nativeInjectedBridgeStillWorks` 保持绿（桥接独立于该开关）；恢复后全绿。
+> 变异验证（#495）：M1 把点击回传的 `cleanOuterHTML(el)` 改回 `el.outerHTML` 后，`serializedBlockExcludesHostOverlays` 转红（浮动按钮 `data-promo-floating` 与文案混入源码），`serializedBlockKeepsOriginalDocumentMarkup` 保持绿；M2 把 `cleanOuterHTML` 的返回值由 `clone.outerHTML` 改为 `clone.innerHTML` 后，`serializedBlockKeepsOriginalDocumentMarkup` 转红（丢失 section 外层标签与 `data-block`），`serializedBlockExcludesHostOverlays` 保持绿；两处恢复后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 31 / 31
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 11 / 11
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（31 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

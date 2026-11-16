@@ -131,11 +131,34 @@ public actor SkillCreationService {
             version: existing.version
         )
 
-        if title != nil || description != nil || triggers != nil {
+        let willWriteMetadata = title != nil || description != nil || triggers != nil
+        let metadataURL = directoryURL.appendingPathComponent("metadata.json")
+        let bodyURL = directoryURL.appendingPathComponent("SKILL.md")
+
+        // 写入前校验两个目标：路径被目录占用时 write 必然失败，提前拒绝，
+        // 避免「元数据已改、正文写失败」的半成品更新（#526）。
+        if willWriteMetadata {
+            try Self.ensureWritableTarget(metadataURL)
+        }
+        if content != nil {
+            try Self.ensureWritableTarget(bodyURL)
+        }
+
+        // 记录旧元数据原始字节：正文写失败时回滚，保证更新要么全成要么全不变（#526）。
+        let previousMetadataData = willWriteMetadata ? try? Data(contentsOf: metadataURL) : nil
+
+        if willWriteMetadata {
             try Self.writeMetadata(updated, to: directoryURL)
         }
         if let content {
-            try Self.writeBody(content, to: directoryURL)
+            do {
+                try Self.writeBody(content, to: directoryURL)
+            } catch {
+                if let previousMetadataData {
+                    try? previousMetadataData.write(to: metadataURL, options: .atomic)
+                }
+                throw error
+            }
         }
         return Self.loadMetadata(name: name, from: directoryURL) ?? updated
     }
@@ -287,6 +310,18 @@ public actor SkillCreationService {
     private static func writeBody(_ body: String, to directoryURL: URL) throws {
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         try body.write(to: directoryURL.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+    }
+
+    /// 写入前校验目标路径可写：路径被目录占用时 `write` 必然失败。
+    ///
+    /// 扫描器的完整性判定只看 `fileExists`，同名目录也能通过，因此必须在
+    /// 落盘前单独拦截，否则会出现「元数据已改、正文写失败」的半成品更新（#526）。
+    private static func ensureWritableTarget(_ url: URL) throws {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+           isDirectory.boolValue {
+            throw SkillCreationError.invalidFile(url.path)
+        }
     }
 
     /// `metadata.json` 的路径。

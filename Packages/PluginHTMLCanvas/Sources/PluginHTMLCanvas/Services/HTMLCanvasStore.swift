@@ -58,11 +58,6 @@ enum HTMLCanvasStore {
         }
         try Task.checkCancellation()
 
-        try FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true
-        )
-
         let identifier = UUID().uuidString
         let htmlURL = directory.appendingPathComponent("\(identifier).html", isDirectory: false)
         let snapshotURL = directory.appendingPathComponent("\(identifier).png", isDirectory: false)
@@ -76,8 +71,16 @@ enum HTMLCanvasStore {
             }
         }
 
+        // 建目录与整段 HTML 落盘都是同步文件 IO，移到后台线程，
+        // 不占主 actor（见 issue #1263）。
         do {
-            try html.write(to: htmlURL, atomically: true, encoding: .utf8)
+            try await Task.detached(priority: .userInitiated) {
+                try FileManager.default.createDirectory(
+                    at: directory,
+                    withIntermediateDirectories: true
+                )
+                try html.write(to: htmlURL, atomically: true, encoding: .utf8)
+            }.value
         } catch {
             throw StoreError.writeFailed(error.localizedDescription)
         }
@@ -93,8 +96,16 @@ enum HTMLCanvasStore {
         ) {
             // 渲染期间可能已被取消：不要再写出图片。
             try Task.checkCancellation()
-            try? data.write(to: snapshotURL, options: .atomic)
-            if FileManager.default.fileExists(atPath: snapshotURL.path) {
+            // PNG 落盘与存在性探测同样移到后台线程（见 issue #1263）。
+            let wrote = await Task.detached(priority: .userInitiated) { () -> Bool in
+                do {
+                    try data.write(to: snapshotURL, options: .atomic)
+                } catch {
+                    return false
+                }
+                return FileManager.default.fileExists(atPath: snapshotURL.path)
+            }.value
+            if wrote {
                 snapshotPath = snapshotURL.path
             }
         }
@@ -145,11 +156,14 @@ enum HTMLCanvasStore {
         }
 
         let image = try await HTMLScreenshotter.capture(webView, timeout: timeout)
-        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              let data = NSBitmapImageRep(cgImage: sourceImage).representation(
-                using: .png,
-                properties: [:]
-              ) else {
+        guard let sourceImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw StoreError.snapshotFailed("failed to encode PNG")
+        }
+        // PNG 编码是 CPU 重活，移到后台线程；CGImage 可跨 actor 传递（见 issue #1263）。
+        let data = await Task.detached(priority: .userInitiated) {
+            NSBitmapImageRep(cgImage: sourceImage).representation(using: .png, properties: [:])
+        }.value
+        guard let data else {
             throw StoreError.snapshotFailed("failed to encode PNG")
         }
         return data

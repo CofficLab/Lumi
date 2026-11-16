@@ -7,6 +7,15 @@ import SwiftUI
 
 private typealias L = ResumeDesignerLocalization
 
+/// 导出期间 PDF 文档/页面只读，装箱后可安全跨线程序列化与栅格化。
+private struct ExportablePDFDocument: @unchecked Sendable {
+    let document: PDFDocument
+}
+
+private struct ExportablePDFPage: @unchecked Sendable {
+    let page: PDFPage
+}
+
 /// 简历设计师主面板：展示当前选中简历的预览 / HTML 源码，
 /// 支持导出矢量 PDF、分 DPI PNG 与系统打印。
 public struct DesignerView: View {
@@ -207,18 +216,30 @@ public struct DesignerView: View {
                     in: directory
                 )
                 guard conflicts.isEmpty || confirmOverwrite(conflicts) else { return }
-                if !pngOnly, let data = document.dataRepresentation() {
-                    try data.write(to: directory.appendingPathComponent("\(selected.document.id).pdf"), options: .atomic)
+                let resumeID = selected.document.id
+                let paper = selected.document.paper
+                if !pngOnly {
+                    let pdfURL = directory.appendingPathComponent("\(resumeID).pdf")
+                    let documentBox = ExportablePDFDocument(document: document)
+                    try await Task.detached(priority: .userInitiated) {
+                        if let data = documentBox.document.dataRepresentation() {
+                            try data.write(to: pdfURL, options: .atomic)
+                        }
+                    }.value
                 }
                 for pageIndex in 0..<document.pageCount {
                     guard let page = document.page(at: pageIndex) else { continue }
-                    let data = try ResumeHTMLExporter.pngData(
-                        page: page,
-                        paper: selected.document.paper,
-                        dpi: ResumeExportResolution.print.rawValue
-                    )
-                    let filename = String(format: "%@-p%02d.png", selected.document.id, pageIndex + 1)
-                    try data.write(to: directory.appendingPathComponent(filename), options: .atomic)
+                    let filename = String(format: "%@-p%02d.png", resumeID, pageIndex + 1)
+                    let outputURL = directory.appendingPathComponent(filename)
+                    let pageBox = ExportablePDFPage(page: page)
+                    try await Task.detached(priority: .userInitiated) {
+                        let data = try ResumeHTMLExporter.pngData(
+                            page: pageBox.page,
+                            paper: paper,
+                            dpi: ResumeExportResolution.print.rawValue
+                        )
+                        try data.write(to: outputURL, options: .atomic)
+                    }.value
                 }
                 workspace.lastExportURL = directory
                 workspace.lastError = nil

@@ -1,5 +1,7 @@
+import Combine
 import Foundation
 import ProviderConversation
+import ProviderConversationState
 import ProviderProject
 import Testing
 @testable import PluginConversationList
@@ -348,6 +350,75 @@ private func englishTableLocalizedString(_ key: String) -> String {
     contextObserver.cancel()
 }
 
+/// #1258：运行时状态更新只刷新对应可见行，不得触发分页摘要列表的全量 reload。
+@Test @MainActor func stateUpdateRefreshesVisibleRowWithoutReloadingSummaries() async throws {
+    let base = Date()
+    let first = ConversationSummary(id: UUID(), title: "First", createdAt: base, updatedAt: base, projectPath: nil)
+    let second = ConversationSummary(
+        id: UUID(), title: "Second", createdAt: base, updatedAt: base.addingTimeInterval(-60), projectPath: nil
+    )
+    let conversations = DelayedConversationManager(summaries: [first, second])
+    let state = StubConversationStateProvider()
+    let context = makeListContext(conversations: conversations, conversationState: state)
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: state,
+        context: context
+    )
+    let viewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+    let baselineRequests = conversations.pageRequestCount
+    let baselineSummaries = viewModel.conversations
+
+    var publishCount = 0
+    let cancellable = viewModel.objectWillChange.sink { _ in publishCount += 1 }
+    state.emit(.updated(first.id))
+    cancellable.cancel()
+
+    #expect(conversations.pageRequestCount == baselineRequests, "状态更新不得重新读取分页摘要")
+    #expect(publishCount > 0, "状态更新应让可见行重新渲染")
+    #expect(viewModel.conversations == baselineSummaries, "状态更新不得改动摘要列表数据")
+    viewModel.cancel()
+    contextObserver.cancel()
+}
+
+/// #1258：隐藏/未初始化的列表面不得因状态事件启动任何加载。
+@Test @MainActor func stateUpdateDoesNotStartLoadForUninitializedSurface() async throws {
+    let summary = ConversationSummary(id: UUID(), title: "Only", createdAt: Date(), updatedAt: Date(), projectPath: nil)
+    let conversations = DelayedConversationManager(summaries: [summary])
+    let state = StubConversationStateProvider()
+    let context = makeListContext(conversations: conversations, conversationState: state)
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: state,
+        context: context
+    )
+    // 从未调用 loadInitialIfNeeded/reload 的隐藏面（如未弹出的 popover）。
+    let hiddenViewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    #expect(conversations.pageRequestCount == 0)
+
+    var publishCount = 0
+    let cancellable = hiddenViewModel.objectWillChange.sink { _ in publishCount += 1 }
+    state.emit(.updated(summary.id))
+    try await Task.sleep(for: .milliseconds(100))
+    cancellable.cancel()
+
+    #expect(conversations.pageRequestCount == 0, "隐藏面不得因状态事件启动加载")
+    #expect(publishCount == 0, "隐藏面没有可见行，无需发布刷新")
+    hiddenViewModel.cancel()
+    contextObserver.cancel()
+}
+
 /// 旧项目的 reload 结果不能写进切换后的项目列表。
 @Test @MainActor func reloadDiscardsSnapshotFromPreviousProject() async throws {
     let project = DefaultProjectProvider()
@@ -422,6 +493,49 @@ private func englishTableLocalizedString(_ key: String) -> String {
     #expect(await waitUntil { viewModel.conversations.map(\.id) == [other.id] })
 }
 
+/// #1168：同项目 reload 替换了首屏但条数不变时，旧翻页请求不得追加。
+@Test @MainActor func sameCountReloadInvalidatesStaleNextPage() async throws {
+    let base = Date()
+    let many = (0..<60).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "C\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: nil
+        )
+    }
+    let conversations = DelayedConversationManager(summaries: many)
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+    #expect(viewModel.conversations.count == 40)
+    #expect(viewModel.hasMore)
+
+    // 下一页 300ms 返回；刷新首屏 50ms 返回。
+    conversations.setPageDelays(firstPage: .milliseconds(50), nextPage: .milliseconds(300))
+    let nextPage = Task { await viewModel.loadNextPage() }
+    #expect(await waitUntil { conversations.pageRequestCount == 2 })
+
+    // 插入一条更新的对话，使 reload 的首屏内容变化但条数仍为 40。
+    _ = try conversations.createConversation(
+        title: "New", projectPath: nil, providerID: nil, modelName: nil
+    )
+    let refresh = Task { await viewModel.reload() }
+    await refresh.value
+
+    // 旧翻页请求返回后必须被丢弃，不得追加到已替换的列表上。
+    await nextPage.value
+    #expect(viewModel.conversations.count == 40, "旧页不得追加到同条数的新快照上")
+    #expect(viewModel.hasMore, "丢弃旧页后仍应保留分页能力")
+    #expect(viewModel.conversations.first?.title == "New")
+    viewModel.cancel()
+}
+
 /// #896：切到条数更多的新项目后，reload 不能拿旧列表条数给新项目判「没有下一页」。
 @Test @MainActor func projectSwitchReloadKeepsPagingUntilNewProjectIsExhausted() async throws {
     let project = DefaultProjectProvider()
@@ -479,13 +593,14 @@ private func englishTableLocalizedString(_ key: String) -> String {
 @MainActor
 private func makeListContext(
     conversations: any ConversationManaging,
-    project: (any ProjectProviding)? = nil
+    project: (any ProjectProviding)? = nil,
+    conversationState: (any ConversationStateProviding)? = nil
 ) -> ConversationListContext {
     ConversationListContext(
         conversations: conversations,
         project: project,
         agentTurn: nil,
-        conversationState: nil,
+        conversationState: conversationState,
         chat: nil
     )
 }
@@ -705,3 +820,41 @@ private final class NoopObserverHandle: SelectedConversationObserverHandle {
 }
 
 private struct TestPageLoadError: Error {}
+
+/// 可手动发射状态事件的会话状态提供者，用于验证状态事件的列表刷新行为（#1258）。
+@MainActor
+private final class StubConversationStateProvider: ConversationStateProviding {
+    private var snapshots: [UUID: ConversationStateSnapshot] = [:]
+    private var observers: [UUID: (ConversationStateEvent) -> Void] = [:]
+
+    var states: [UUID: ConversationStateSnapshot] { snapshots }
+
+    func state(for conversationID: UUID) -> ConversationStateSnapshot {
+        snapshots[conversationID] ?? ConversationStateSnapshot(conversationID: conversationID)
+    }
+
+    func addConversationStateObserver(
+        _ callback: @escaping (ConversationStateEvent) -> Void
+    ) -> any ConversationStateObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in self?.observers.removeValue(forKey: id) }
+    }
+
+    func emit(_ event: ConversationStateEvent) {
+        for callback in Array(observers.values) {
+            callback(event)
+        }
+    }
+
+    private final class Handle: ConversationStateObserverHandle {
+        private let cancelAction: () -> Void
+        private var isCancelled = false
+        init(_ cancelAction: @escaping () -> Void) { self.cancelAction = cancelAction }
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+}

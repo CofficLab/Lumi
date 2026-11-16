@@ -1,6 +1,7 @@
 import os
 import KernelCore
 import ProviderChatSection
+import ProviderConversation
 import ProviderConversationInput
 import ProviderMessageSender
 import LumiLoggingKit
@@ -50,7 +51,8 @@ public final class ChatFileAttachmentPlugin: SuperPlugin, SuperLog {
         // order 82 排在截图按钮（81）之后）。
         let capability = ChatFileAttachmentCapabilityAdapter(
             sender: kernel.resolveProvider((any MessageSendingProviding).self),
-            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
+            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self),
+            conversations: kernel.resolveProvider((any ConversationManaging).self)
         )
         chat.addBarItems([
             ChatSectionBarItem(

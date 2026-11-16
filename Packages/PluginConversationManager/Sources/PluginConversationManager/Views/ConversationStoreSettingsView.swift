@@ -80,6 +80,10 @@ public struct ConversationStoreSettingsView: View {
         }
         .onAppear {
             viewModel.seedSelectionIfNeeded()
+            viewModel.setSettingsVisible(true)
+        }
+        .onDisappear {
+            viewModel.setSettingsVisible(false)
         }
         .onChange(of: viewModel.conversationIDs) { _, _ in
             viewModel.syncSelectionAfterConversationChange()

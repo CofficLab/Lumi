@@ -33,9 +33,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 缓存数组之外的会话推理强度；后台回合被挤出有界缓存后，下一次 LLM 请求
     /// 仍须携带用户为它保存的档位，而不是把「未加载」当成「未设置」（issue #892）。
     var reasoningEffortOverrides: [UUID: ReasoningEffort] = [:]
+    /// 正在异步落库删除的会话 ID（含连带子会话）的墓碑集合。
+    ///
+    /// 删除是「乐观移除内存 + 异步清理持久化」两段式：清理完成前数据库里仍有该行，
+    /// 此刻任何列表重载都会把它读回来「复活」，用户还能点选这个幽灵 ID。把这些 ID
+    /// 记为墓碑，分页读取与选中入口都据此排除，直到落库删除真正完成（成功或失败
+    /// 还原）才解除（issue #535）。
+    var pendingDeletionIDs: Set<UUID> = []
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
+            conversationMutationGeneration &+= 1
             // Publish selection only after the cached title reflects the new
             // conversation. Observers commonly read `currentTitle` from the
             // `.selected` callback to refresh their UI.
@@ -55,6 +63,18 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 会话列表刷新去抖任务。消息写入会高频更新 lastMessageAt，侧栏排序不需要同步跟随每一次变化。
     private var conversationsChangeTask: Task<Void, Never>?
 
+    /// 本地结构性改动（创建/选中/删除/活跃）的代次。
+    ///
+    /// 启动加载是「await 读快照 → 写回内存」两段式：await 期间用户可能已经
+    /// 新建或选中会话。写回前比对该代次，若已变化说明快照是旧请求的结果，
+    /// 必须合并而非覆盖，否则会抹掉加载期间的新会话并劫持选中态（#439，
+    /// 仓库异步写回约定）。
+    var conversationMutationGeneration = 0
+
+    /// 启动加载读取快照的注入点（测试用门闩延迟旧快照，构造「加载期间新建会话」
+    /// 的竞态）。生产路径为 nil，直接读 store。
+    var loadSnapshotProvider: (@MainActor (Int) async -> [ConversationSummary])?
+
     /// 按最后消息时间倒序排序
     public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
@@ -73,10 +93,24 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public let dataDirectory: URL
     let project: (any ProjectProviding)?
     let llmProviderManager: (any LLMManaging)?
-    let messageManager: (any MessageManaging)?
     let toolManager: (any ToolManagerProviding)?
-    let agentTurn: (any AgentLoopProviding)?
     let eventBus: KernelCoreEventBus?
+
+    /// 创建时捕获的默认 Provider，仅在没有解析器时兜底。
+    private let capturedMessageManager: (any MessageManaging)?
+    private let capturedAgentTurn: (any AgentLoopProviding)?
+    /// 动态解析当前生产 Provider。order 7 创建本管理器时解析到的默认
+    /// Message/AgentLoop 会被 order 8 插件替换，删除/统计必须作用于替换后的
+    /// 生产实例，否则取消回合/清消息落在无人使用的默认实例上（#640）。
+    private let messageManagerResolver: (@MainActor () -> (any MessageManaging)?)?
+    private let agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)?
+
+    var messageManager: (any MessageManaging)? {
+        messageManagerResolver?() ?? capturedMessageManager
+    }
+    var agentTurn: (any AgentLoopProviding)? {
+        agentTurnResolver?() ?? capturedAgentTurn
+    }
 
     /// 项目切换观察者：监听当前项目变化，清空对话选择。
     private var projectObserver: (any ProjectProvidingObserverHandle)?
@@ -91,21 +125,30 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         messageManager: (any MessageManaging)? = nil,
         toolManager: (any ToolManagerProviding)? = nil,
         agentTurn: (any AgentLoopProviding)? = nil,
-        eventBus: KernelCoreEventBus? = nil
+        eventBus: KernelCoreEventBus? = nil,
+        messageManagerResolver: (@MainActor () -> (any MessageManaging)?)? = nil,
+        agentTurnResolver: (@MainActor () -> (any AgentLoopProviding)?)? = nil
     ) {
         self.store = store
         self.dataDirectory = dataDirectory
         self.project = project
         self.llmProviderManager = llmProviderManager
-        self.messageManager = messageManager
+        self.capturedMessageManager = messageManager
         self.toolManager = toolManager
-        self.agentTurn = agentTurn
+        self.capturedAgentTurn = agentTurn
         self.eventBus = eventBus
+        self.messageManagerResolver = messageManagerResolver
+        self.agentTurnResolver = agentTurnResolver
 
-        // 监听项目切换，仅在用户主动切换时清空对话选择
+        // 监听项目切换，在用户主动切换或外部打开时清空对话选择
         projectObserver = project?.addObserver { [weak self] event in
-            guard case .currentProjectChanged(_, reason: .userSelected) = event else { return }
-            self?.deselectConversation()
+            guard case .currentProjectChanged(_, reason: let reason) = event else { return }
+            switch reason {
+            case .userSelected, .externalOpen:
+                self?.deselectConversation()
+            default:
+                break
+            }
         }
     }
 
@@ -125,10 +168,19 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
         // Synchronous load on MainActor - the store.fetchConversations is async but we await it
         Task { @MainActor in
+            // 捕获身份：await 期间用户可能新建/选中/删除会话。写回前比对代次与
+            // 选中态，旧快照不得覆盖更新的本地状态（#439，仓库异步写回约定）。
+            let startGeneration = self.conversationMutationGeneration
+            let selectionAtStart = self.selectedConversationID
             _ = await store.migrateLegacyModelSelections()
             let persistedState = self.loadPersistedState()
             let persistedSelectedID = persistedState?.selectedConversationID
-            var loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
+            var loaded: [ConversationSummary]
+            if let loadSnapshotProvider {
+                loaded = await loadSnapshotProvider(Self.initialPageSize)
+            } else {
+                loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
+            }
 
             if let persistedSelectedID,
                !loaded.contains(where: { $0.id == persistedSelectedID }),
@@ -138,37 +190,52 @@ public final class ConversationManager: ConversationManaging, SuperLog {
             }
 
             await MainActor.run {
-                self.conversations = loaded
-                if self.selectedConversationID == nil {
-                    self.selectedConversationID = persistedSelectedID
-                }
+                if self.conversationMutationGeneration == startGeneration {
+                    // 加载期间没有任何本地改动：快照即最新状态，沿用原有恢复逻辑。
+                    self.conversations = loaded
+                    if self.selectedConversationID == nil {
+                        self.selectedConversationID = persistedSelectedID
+                    }
 
-                // Restore selected conversation if it still exists
-                if let selectedID = self.selectedConversationID,
-                   !loaded.contains(where: { $0.id == selectedID }) {
-                    self.selectedConversationID = loaded.first?.id
+                    // Restore selected conversation if it still exists
+                    if let selectedID = self.selectedConversationID,
+                       !loaded.contains(where: { $0.id == selectedID }) {
+                        self.selectedConversationID = loaded.first?.id
+                    }
+                } else {
+                    // 加载期间用户已创建/修改/选中会话：启动快照是旧请求的结果，
+                    // 只能合并，不能覆盖。保留本地更新的版本，补入快照里本地没有
+                    // 的会话，加载期间新建、尚未进入快照的会话原样保留（#439）。
+                    var merged = self.conversations
+                    for summary in loaded {
+                        if let index = merged.firstIndex(where: { $0.id == summary.id }) {
+                            if summary.updatedAt > merged[index].updatedAt {
+                                merged[index] = summary
+                            }
+                        } else {
+                            merged.append(summary)
+                        }
+                    }
+                    self.conversations = merged
+
+                    // 选中态交给加载期间的用户操作：只有用户尚未做出新选择时，
+                    // 才恢复持久化选择，绝不把选中项劫持回快照首项。
+                    if self.selectedConversationID == selectionAtStart,
+                       self.selectedConversationID == nil {
+                        self.selectedConversationID = persistedSelectedID
+                    }
                 }
-                // New Chat 的默认语言独立于选中会话，必须跨重启保留；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                // New Chat 的全局默认值独立于选中会话，只能从单独落盘的全局值恢复。
+                // 不能用选中会话的配置反写全局默认，否则新建会话会继承上一个会话的
+                // 设置，并跨重启持续污染（issue #786）。
                 if let persistedLanguage = persistedState?.globalLanguage {
                     self.globalLanguage = persistedLanguage
                 }
-                // New Chat 的默认详细度同样独立于选中会话，必须先恢复；有选中会话时
-                // 下面的会话级复制仍会覆盖它。
                 if let persistedVerbosity = persistedState?.globalVerbosity {
                     self.globalVerbosity = persistedVerbosity
                 }
-                // New Chat 的默认自动化级别同样独立于选中会话，必须先恢复；
-                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
                 if let persistedAutomation = persistedState?.globalAutomationLevel {
                     self.globalAutomationLevel = persistedAutomation
-                }
-                if self.selectedConversationID != nil {
-                    // 初始化全局详细程度为当前选中对话的详细程度
-                    self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
-                    self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
-                    self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
-                    self.globalLanguage = self.language(for: self.selectedConversationID)
                 }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
@@ -261,6 +328,7 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
     func cache(_ summary: ConversationSummary) {
         guard summary.parentConversationID == nil else { return }
+        conversationMutationGeneration &+= 1
         // 摘要一旦进入过缓存，就记住它的显式语言；后续被裁剪出窗口时，
         // `language(for:)` 仍能读到会话自己的设置（issue #984）。
         if let language = summary.language {
@@ -285,6 +353,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
             conversations[index] = summary
         } else {
             conversations.append(summary)
+        }
+
+        // 分页/项目同步补载的摘要此刻才进缓存：选中项的标题必须重算并通知，
+        // 否则标题栏停在选中瞬间算出的 "No conversation"（#641）。
+        // 只在标题真的变化时发事件，避免整页补载造成通知风暴。
+        if summary.id == selectedConversationID {
+            let previousTitle = currentTitle
+            updateCurrentTitle()
+            if currentTitle != previousTitle {
+                notifyConversationObservers(.updated(summary.id))
+            }
         }
 
         guard conversations.count > Self.initialPageSize * 2 else { return }

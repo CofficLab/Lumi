@@ -201,17 +201,17 @@ public struct PromoDesignerView: View {
                         preset: preset
                     )
                     let localeDirectory = targetDirectory.appendingPathComponent(localeIdentifier, isDirectory: true)
-                    try FileManager.default.createDirectory(at: localeDirectory, withIntermediateDirectories: true)
                     let filename = String(
                         format: "%02d-%@-%@.png",
                         imageMeta.order + 1,
                         imageMeta.id,
                         preset.displayType
                     )
-                    try data.write(
-                        to: localeDirectory.appendingPathComponent(filename),
-                        options: .atomic
-                    )
+                    let outputURL = localeDirectory.appendingPathComponent(filename)
+                    try await Task.detached(priority: .userInitiated) {
+                        try FileManager.default.createDirectory(at: localeDirectory, withIntermediateDirectories: true)
+                        try data.write(to: outputURL, options: .atomic)
+                    }.value
                 }
             }
             workspace.lastExportURL = targetDirectory

@@ -72,7 +72,7 @@ struct GitChatPopoverView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let errorMessage = viewModel.errorMessage, viewModel.workingChangeCount == 0 && viewModel.commits.isEmpty {
+        if viewModel.shouldShowErrorBanner, let errorMessage = viewModel.errorMessage {
             GitChatErrorBanner(message: errorMessage)
         } else if segment == 0 {
             changesSection

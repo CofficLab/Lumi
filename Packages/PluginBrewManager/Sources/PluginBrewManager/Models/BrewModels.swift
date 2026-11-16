@@ -147,3 +147,42 @@ public struct InstalledVersion: Codable, Sendable {
         self.installed_on_request = installed_on_request
     }
 }
+
+/// `brew outdated --json=v2` 的真实 schema（#847）。
+///
+/// 与 `brew info` 的 `BrewInfo` 完全不同：outdated 条目用 `current_version`
+/// 表示可更新到的目标版本、`installed_versions`（字符串数组）表示已装版本，
+/// formula 与 cask 形状一致，`name` 对 Tap formula 已含 tap 前缀、对 cask 即 token。
+/// 这里没有 `versions`/`version`/`full_name`/`desc`/`homepage`/`installed`。
+/// 早前 `getOutdated` 误用 `BrewInfo` 解码，目标版本永远读成 "unknown"。
+public struct BrewOutdated: Codable, Sendable {
+    public let formulae: [BrewOutdatedPackage]
+    public let casks: [BrewOutdatedPackage]
+
+    public init(formulae: [BrewOutdatedPackage], casks: [BrewOutdatedPackage]) {
+        self.formulae = formulae
+        self.casks = casks
+    }
+}
+
+public struct BrewOutdatedPackage: Codable, Sendable {
+    public let name: String
+    public let installed_versions: [String]
+    public let current_version: String
+    public let pinned: Bool?
+    public let pinned_version: String?
+
+    public init(
+        name: String,
+        installed_versions: [String],
+        current_version: String,
+        pinned: Bool?,
+        pinned_version: String?
+    ) {
+        self.name = name
+        self.installed_versions = installed_versions
+        self.current_version = current_version
+        self.pinned = pinned
+        self.pinned_version = pinned_version
+    }
+}

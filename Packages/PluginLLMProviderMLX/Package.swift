@@ -6,18 +6,18 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(path: "../KitDownload"),
         .package(url: "https://github.com/ml-explore/mlx-swift-lm.git", from: "3.32.3"),
         .package(
             url: "https://github.com/huggingface/swift-transformers.git",
             exact: "1.4.0"
         ),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
@@ -37,7 +37,7 @@ let package = Package(
                 // `qwen3_vl` 这类只在 VLM 注册表提供的架构无法加载。
                 .product(name: "MLXVLM", package: "mlx-swift-lm"),
                 .product(name: "Tokenizers", package: "swift-transformers"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/PluginLLMProviderMLX"
         ),
@@ -48,8 +48,8 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                .product(name: "KitTestSupport", package: "KitTestSupport"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitTestSupport", package: "LumiKitTestSupport"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Tests/PluginLLMProviderMLXTests"
         ),

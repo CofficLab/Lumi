@@ -72,6 +72,11 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         // 存储目录注入必须早于 ComputerUseAuthorizationStore.shared 的首次访问。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             ComputerUseRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
+            // 「Allow for This Task」仅本次会话内有效、不跨重启（#405）。
+            // 授权带 4 小时 TTL 写进了 plist，崩溃 / 强退也不会清掉；启动时
+            // 清空上一轮进程遗留的会话授权，保证重启后必须重新授权。
+            // 只清会话授权，原生控制授权按设计跨重启延续。
+            ComputerUseAuthorizationStore.shared.revokeAllSessionAccess()
         }
         let settingsState = ComputerUseSettingsState()
         self.settingsState = settingsState
@@ -126,6 +131,9 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         ComputerUseAutomationLevelProvider.shared.stop()
+        // 正常退出时立即清掉会话授权（#405）：与启动清理互为兜底，
+        // 退出后 plist 里不留任何「本任务内」授权。崩溃 / 强退由启动清理覆盖。
+        ComputerUseAuthorizationStore.shared.revokeAllSessionAccess()
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         tools?.remove(id: ComputerObserveV2Tool.toolName)
         tools?.remove(id: ComputerActV2Tool.toolName)

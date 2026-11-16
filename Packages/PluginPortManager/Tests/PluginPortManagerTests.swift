@@ -51,3 +51,52 @@ import Testing
 
     #expect(ports.isEmpty)
 }
+
+// 回归 #523：lsof 异常退出（信号终止等）必须报 scanFailed，
+// 只有退出码 1 且 stderr 为空才是合法的「无监听端口」。
+@Test func scanSucceedsOnExitZero() {
+    #expect(throws: Never.self) {
+        try PortScanner.ensureScanSucceeded(exitCode: 0, stderr: "")
+    }
+}
+
+@Test func scanTreatsExitOneWithEmptyStderrAsNoMatch() {
+    #expect(throws: Never.self) {
+        try PortScanner.ensureScanSucceeded(exitCode: 1, stderr: "")
+    }
+}
+
+@Test func scanThrowsOnExitOneWithStderrMessage() {
+    do {
+        try PortScanner.ensureScanSucceeded(exitCode: 1, stderr: "lsof: permission denied")
+        Issue.record("expected scanFailed")
+    } catch PortScannerError.scanFailed(let message) {
+        #expect(message == "lsof: permission denied")
+    } catch {
+        Issue.record("unexpected error: \(error)")
+    }
+}
+
+@Test func scanThrowsOnSignalTerminationWithEmptyStderr() {
+    // SIGTERM 终止的 lsof：KitShell 以 terminationStatus(15) 上报，stderr 为空。
+    do {
+        try PortScanner.ensureScanSucceeded(exitCode: 15, stderr: "")
+        Issue.record("expected scanFailed for signal exit")
+    } catch PortScannerError.scanFailed(let message) {
+        #expect(message.contains("15"))
+    } catch {
+        Issue.record("unexpected error: \(error)")
+    }
+}
+
+@Test func scanThrowsOnCancelledNegativeSignalExit() {
+    #expect(throws: PortScannerError.self) {
+        try PortScanner.ensureScanSucceeded(exitCode: -15, stderr: "")
+    }
+}
+
+@Test func scanThrowsOnOtherNonZeroExitWithEmptyStderr() {
+    #expect(throws: PortScannerError.self) {
+        try PortScanner.ensureScanSucceeded(exitCode: 2, stderr: "")
+    }
+}

@@ -8,15 +8,14 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderConversation"),
-        .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/lumi-softworks/KitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
-        .package(url: "https://github.com/lumi-softworks/ProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.23.0")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0")
     ],
     targets: [
         .target(
@@ -25,12 +24,13 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                "KitAgentTool",
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
-                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
@@ -41,10 +41,11 @@ let package = Package(
             dependencies: [
                 "PluginConversationNew",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderConversation", package: "ProviderConversation"),
-                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
             ]
         ),
     ]

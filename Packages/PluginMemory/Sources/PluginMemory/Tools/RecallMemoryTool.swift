@@ -63,7 +63,17 @@ public struct RecallMemoryTool: SuperAgentTool, @unchecked Sendable {
             conversationProjectPath: conversationProjectPath,
             capability: projectCapability
         )
-        guard let item = try await storage.load(id: id, type: .project, scope: scope, projectPath: scope == .project ? projectPath : nil) else {
+        let loaded: MemoryItem?
+        do {
+            loaded = try await storage.load(id: id, type: .project, scope: scope, projectPath: scope == .project ? projectPath : nil)
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            // 既有文件不可读（权限/IO/UTF-8）必须作为工具失败抛出，文案区别于「不存在」，
+            // 避免 Agent 据此重建或覆盖记忆（#788）。
+            throw ToolExecutionError.executionFailed(toolName: name, reason: error.localizedDescription)
+        }
+        guard let item = loaded else {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "Memory not found: \(id)"

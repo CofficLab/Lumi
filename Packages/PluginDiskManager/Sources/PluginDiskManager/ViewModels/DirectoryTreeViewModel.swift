@@ -10,6 +10,11 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: ScanProgress?
     @Published var errorMessage: String?
 
+    /// 扫描控制栏可见性（#849）：扫描中保留 Stop 入口。
+    var isScanControlBarVisible: Bool {
+        ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !rootEntries.isEmpty)
+    }
+
     private let service = DirectoryTreeService.shared
     private nonisolated let scanTasks = DiskManagerScanTaskHolder()
 

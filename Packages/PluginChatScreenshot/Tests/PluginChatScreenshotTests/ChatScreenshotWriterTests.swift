@@ -150,6 +150,20 @@ struct ScreenshotEncodeTests {
         #expect(data.isEmpty == false)
         #expect(attachment.mimeType == "image/jpeg")
     }
+
+    @Test("编码可在后台 worker 执行（nonisolated，见 #1265）")
+    func attachmentEncodesOffMainActor() async throws {
+        let image = makeImage(width: 4000, height: 2000)
+
+        let attachment = try await Task.detached(priority: .userInitiated) {
+            try ScreenshotFileWriter.makeAttachment(image)
+        }.value
+
+        #expect(attachment.mimeType == "image/jpeg")
+        #expect(attachment.fileName?.hasSuffix(".jpg") == true)
+        let data = try #require(Data(base64Encoded: attachment.base64Data))
+        #expect(data.isEmpty == false)
+    }
 }
 
 // MARK: - 裁剪边界

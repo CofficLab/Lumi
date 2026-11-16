@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 61
+测试文件: 19 个，用例总数: 92
 
 核心组件（源码目录）:
 - `Models/`
@@ -47,6 +47,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 - **BrowserPlugin**（5 条）：由 `browserManagesRailLifecycle`、`browserSuppressesContentHeaderWhileActive`、`browserRestoresHiddenContentHeaderOnDeactivate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Browser 可访问性快照**（8 条）：由 `buildsTreeFromFlatList`、`rendersRoleNameAndState`、`escapesForgedNodeLinesInName` 等用例锁定；快照的树结构、渲染格式与 interactive_only 过滤语义不得随意变更，否则 LLM 侧解析会失效。
+- **Browser find 路径 interactive_only 过滤**（6 条）：由 `interactiveFilterDropsHeadingWhenInteractiveOnly`、`interactiveFilterDisabledKeepsAllMatches`、`interactiveFilterKeepsOnlyInteractiveRoles`、`interactiveFilterKeepsAllWhenAllInteractive`、`interactiveFilterReturnsEmptyWhenNoneInteractive`、`interactiveFilterOnEmptyMatchesReturnsEmpty` 锁定。`browser_snapshot` 带 role/name/text 过滤走 find 分支时，必须经 `BrowserAccessibilityNode.filterInteractive` 同样应用 interactive_only，与快照树过滤共用 `isInteractive` 判据；非交互匹配（如 heading）不得漏出，全部非交互时返回空匹配提示（**回归 #834**）。
 - **Browser ref 登记簿**（5 条）：由 `normalizesRefFormats`、`staleMessageIncludesLastKnownSignature` 等用例锁定；ref 规范化规则与失效提示的措辞是 LLM 恢复动作的依据。
 - **Browser 内容边界**（6 条）：由 `wrapsContentInMarkers`、`neutralizesForgedMarkers` 等用例锁定；nonce 机制是防提示注入的核心，任何削弱都会造成安全问题。
 - **Browser 工具本地化**（3 条）：由 `allToolsDescribeInChinese`、`interactExposesEveryAction` 等用例锁定；工具描述与参数说明必须覆盖 4 种语言。
@@ -57,7 +58,12 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 - **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
 - **Browser ref 分配与唯一性**（3 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。
+- **browser_evaluate 结果解析**（6 条）：由 `stringValueReturnsAsIs`、`errorEnvelopeMapsToScriptFailed`、`largeResultDecodesOffMain` 等用例锁定；信封到 `.success` / `.scriptFailed` / `.noPage` 的映射是模型判断脚本成败的依据，数 MB 结果的解析必须在后台完成（issue #1297）。
+- **截图 PNG 编码**（3 条）：由 `encodesValidPNGFromCGImage`、`directEncodingMatchesTIFFRoundTrip`、`encodingRunsOffMainThread` 锁定；直接从 CGImage 建位图并在后台编码，去掉 TIFF 往返，像素尺寸不得丢失（issue #1282）。
+- **browser_wait 取消行为**（4 条）：由 `cancellationThrowsImmediately`、`cancellationStopsPolling`、`timeoutReturnsFalse` 锁定；取消必须立刻向上传播并停止轮询，否则 load / navigation 分支会在主线程忙轮询到超时（issue #418）。
+- **Browser DNS 根点归一化**（8 条）：由 `trailingRootDotLocalHostsAreStillLocal`、`openAndNavigateToolsRequireApprovalForTrailingDot`、`openWithoutApprovalIsBlocked`、`approvedHostKeyIsNormalized` 锁定；`localhost.` 与 `localhost` 解析到同一个回环地址，分类与审批键都必须先去掉 DNS 根点，否则等价 host 就能绕过本地访问审批（issue #830）。
 - **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
+- **back/forward/reload 导航失败传播**（4 条）：由 `backNavigationCancellationPropagates`、`reloadNavigationFailurePropagates`、`successfulNavigationReturns`、`blockedLocalNavigationPropagates` 锁定；back/forward/reload 必须通过 continuation 等待导航结果，WebKit 报错或策略取消时必须抛出错误，不得静默返回成功（issue #833）。
 
 ## 测试用例清单
 
@@ -124,16 +130,48 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 59 | Browser 脚本重复执行 | 交互脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript 滚动脚本 | 均无 SyntaxError，ok=true | P0 | ✅ 已覆盖 | `interactionScriptRunsRepeatedly` |
 | 60 | Browser 脚本重复执行 | 先快照后交互不重复声明全局 | 同一 JS 全局环境 | 先快照再交互 | 两者均成功，无 __OPTS 重复声明 | P0 | ✅ 已覆盖 | `snapshotThenInteractionSharePage` |
 | 61 | Browser 脚本重复执行 | find 脚本可在同一页面重复执行 | 同一 JS 全局环境 | 连续两次 evaluateScript find 脚本 | 均无 SyntaxError，total=0 | P1 | ✅ 已覆盖 | `findScriptRunsRepeatedly` |
+| 62 | Browser DNS 根点归一化 | 带 DNS 根点的本地主机必须仍判为内网（**回归 #830**） | — | 对 `localhost.`/`printer.local.`/`127.0.0.1.` 等调用 `isLocalHost` 与 `requiresLocalAccessApproval` | 均返回 true，本地访问审批不被绕过 | P0 | ✅ 已覆盖 | `trailingRootDotLocalHostsAreStillLocal` |
+| 63 | Browser DNS 根点归一化 | 带根点的公网域名不得被误判为内网 | — | 对 `example.com.`/`8.8.8.8.`/`fdic.gov.` 调用分类器 | 均返回 false，不触发多余的本地网络审批 | P0 | ✅ 已覆盖 | `trailingRootDotKeepsPublicHostsPublic` |
+| 64 | Browser DNS 根点归一化 | 多个根点同样归一化，方向偏保守 | — | 对 `localhost..`/`localhost...` 调用分类器与 `normalizedHost` | 判为内网，归一化结果为 `localhost` | P1 | ✅ 已覆盖 | `repeatedRootDotsAreNormalized` |
+| 65 | Browser DNS 根点归一化 | 既有归一化行为保持不变 | — | 对 `[::1]`/`LOCALHOST`/空串调用 `normalizedHost`，并复核既有本地与公网分类 | 方括号与大小写归一化不变，既有分类结果不变 | P1 | ✅ 已覆盖 | `existingNormalizationIsPreserved` |
+| 66 | Browser DNS 根点归一化 | 带根点的回环地址在打开与导航工具上必须是高风险（**回归 #830**） | — | 对 `http://localhost.:3000` 等调用 `browser_open` / `browser_navigate(goto)` 的 `permissionRiskLevel` | 均为 `.high`；`https://example.com.` 仍为 `.low` | P0 | ✅ 已覆盖 | `openAndNavigateToolsRequireApprovalForTrailingDot` |
+| 67 | Browser DNS 根点归一化 | 未获批准时带根点的回环地址必须被拦下，且不创建会话（**回归 #830**） | localAccessApproved=false | 调用 `BrowserSessionManager.open("http://localhost.:3000")` | 抛出 `blockedLocalNavigation`，且 `hasSession` 为 false | P0 | ✅ 已覆盖 | `openWithoutApprovalIsBlocked` |
+| 68 | Browser DNS 根点归一化 | 审批键按归一化主机记录，未批准时不留键 | — | 对 `http://localhost.:3000`/`http://[::1]:8080/`/`http://PRINTER.LOCAL./` 调用 `approvedHostKey` | 分别得到 `localhost`/`::1`/`printer.local`；未批准时为 nil | P1 | ✅ 已覆盖 | `approvedHostKeyIsNormalized` |
+| 69 | Browser DNS 根点归一化 | 批准 localhost 后等价写法都算已批准，无关主机不算 | 会话已批准 localhost | 对 `localhost.`/`LOCALHOST.`/`localhost..` 与 `evil.com`/`localhost.evil.com` 调用 `hasApprovedLocalHost` | 等价写法为 true，无关主机为 false；无审批记录时全为 false | P1 | ✅ 已覆盖 | `approvedLocalHostCoversEquivalentForms` |
+| 70 | browser_evaluate 结果解析 | 字符串结果原样返回，不做二次转义 | — | 对 `{"ok":true,"value":"hello"}` 调用 `decodeEvaluateResult` | 得到 `.success("hello")` | P1 | ✅ 已覆盖 | `stringValueReturnsAsIs` |
+| 71 | browser_evaluate 结果解析 | 对象结果被美化输出，便于模型阅读 | — | 对含嵌套对象与数组的信封调用 `decodeEvaluateResult` | 输出含换行与键名 | P1 | ✅ 已覆盖 | `objectValueIsPrettyPrinted` |
+| 72 | browser_evaluate 结果解析 | 缺失 value 时返回 null 占位 | — | 对 `{"ok":true}` 调用 `decodeEvaluateResult` | 得到 `.success("null")` | P2 | ✅ 已覆盖 | `missingValueReturnsNull` |
+| 73 | browser_evaluate 结果解析 | 错误信封映射为 scriptFailed 并带上原因 | — | 对 `{"ok":false,"error":"boom"}` 调用 `decodeEvaluateResult` | 得到 `.scriptFailed("boom")` | P1 | ✅ 已覆盖 | `errorEnvelopeMapsToScriptFailed` |
+| 74 | browser_evaluate 结果解析 | 非法 JSON 映射为 noPage，不得当成脚本结果 | — | 对 `not json` 调用 `decodeEvaluateResult` | 得到 `.noPage` | P1 | ✅ 已覆盖 | `malformedJSONMapsToNoPage` |
+| 75 | browser_evaluate 结果解析 | 数 MB 结果必须在后台解析，不得占用主 actor（**回归 #1297**） | — | 在 `Task.detached` 里解析约 2 MB 的字符串信封 | 解析成功且内容完整，不依赖主 actor | P0 | ✅ 已覆盖 | `largeResultDecodesOffMain` |
+| 76 | 截图 PNG 编码 | 从 CGImage 直接编码得到有效 PNG | — | 用 `NSBitmapImageRep(cgImage:)` 编码 40×30 图片 | 字节非空且以 PNG magic 开头 | P1 | ✅ 已覆盖 | `encodesValidPNGFromCGImage` |
+| 77 | 截图 PNG 编码 | 直接编码与 TIFF 往返编码的像素尺寸不得丢失 | — | 比较两条路径 PNG 解码后的 `pixelsWide` / `pixelsHigh` | 两者一致（不受屏幕缩放影响） | P1 | ✅ 已覆盖 | `directEncodingMatchesTIFFRoundTrip` |
+| 78 | 截图 PNG 编码 | PNG 编码必须在后台线程执行（**回归 #1282**） | — | 在 `Task.detached` 的同步闭包里编码并检查 `Thread.isMainThread` | 编码成功且不在主线程 | P0 | ✅ 已覆盖 | `encodingRunsOffMainThread` |
+| 79 | browser_wait 取消行为 | 取消后必须立刻抛出 CancellationError（**回归 #418**） | 等待循环运行中 | 启动 `BrowserWaitLoop.run`，50 ms 后 `task.cancel()` | 抛出 `CancellationError`，而不是空转到超时 | P0 | ✅ 已覆盖 | `cancellationThrowsImmediately` |
+| 80 | browser_wait 取消行为 | 取消后不得继续轮询（**回归 #418**） | 等待循环运行中 | 取消后再等 400 ms，比较 actor 计数器的轮询次数 | 计数停止增长 | P0 | ✅ 已覆盖 | `cancellationStopsPolling` |
+| 81 | browser_wait 取消行为 | 条件成立时正常返回 true | — | 以 `isSatisfied: { true }` 运行等待循环 | 返回 true | P1 | ✅ 已覆盖 | `satisfiedConditionReturns` |
+| 82 | browser_wait 取消行为 | 超时返回 false 而不是抛错 | deadline 为 50 ms 后 | 以 `isSatisfied: { false }` 运行等待循环 | 返回 false | P0 | ✅ 已覆盖 | `timeoutReturnsFalse` |
+| 83 | 导航失败传播 | back 导航被策略取消时抛出错误而非返回成功（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFailProvisionalNavigation` 回调 | 抛出 WebKit 错误，不静默返回成功 | P0 | ✅ 已覆盖 | `backNavigationCancellationPropagates` |
+| 84 | 导航失败传播 | reload 导航失败时抛出错误而非返回成功（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFail` 回调 | 抛出 WebKit 错误，不静默返回成功 | P0 | ✅ 已覆盖 | `reloadNavigationFailurePropagates` |
+| 85 | 导航失败传播 | 导航成功时正常返回 | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFinish` 回调 | 正常返回，不抛错 | P1 | ✅ 已覆盖 | `successfulNavigationReturns` |
+| 86 | 导航失败传播 | 本地审批策略取消导航时抛出 blockedLocalNavigation（**回归 #833**） | 会话已创建 | 启动 `performAndWaitNavigation`，模拟 `didFailProvisionalNavigation` 带 `blockedLocalNavigation` | 抛出 `blockedLocalNavigation` 错误 | P0 | ✅ 已覆盖 | `blockedLocalNavigationPropagates` |
+| 87 | find 交互过滤 | 带过滤时 interactive_only 必须丢掉非交互 heading 匹配（**回归 #834**） | matches 为 heading "Welcome" 与 button "Submit" | 以 interactiveOnly=true 调用 `filterInteractive` | 只剩 button（lumi-2），heading 被剔除 | P0 | ✅ 已覆盖 | `interactiveFilterDropsHeadingWhenInteractiveOnly` |
+| 88 | find 交互过滤 | interactive_only 关闭时保留全部匹配 | matches 为 heading/button/link | 以 interactiveOnly=false 调用 `filterInteractive` | 三条原样保留，顺序不变 | P1 | ✅ 已覆盖 | `interactiveFilterDisabledKeepsAllMatches` |
+| 89 | find 交互过滤 | 只保留可交互角色 | matches 为 button/link/textbox/paragraph/heading | 以 interactiveOnly=true 调用 `filterInteractive` | 只剩 button/link/textbox | P1 | ✅ 已覆盖 | `interactiveFilterKeepsOnlyInteractiveRoles` |
+| 90 | find 交互过滤 | 全部可交互时全部保留 | matches 为 button/link | 以 interactiveOnly=true 调用 `filterInteractive` | 两条都保留 | P1 | ✅ 已覆盖 | `interactiveFilterKeepsAllWhenAllInteractive` |
+| 91 | find 交互过滤 | 全部非交互时返回空（触发空匹配提示） | matches 为 heading/paragraph | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P1 | ✅ 已覆盖 | `interactiveFilterReturnsEmptyWhenNoneInteractive` |
+| 92 | find 交互过滤 | 空匹配列表过滤后仍为空 | matches 为空 | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P2 | ✅ 已覆盖 | `interactiveFilterOnEmptyMatchesReturnsEmpty` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 42 / 42
-- P2: 已覆盖 13 / 13
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 58 / 58
+- P2: 已覆盖 15 / 15
+- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -146,14 +184,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（42 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（58 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

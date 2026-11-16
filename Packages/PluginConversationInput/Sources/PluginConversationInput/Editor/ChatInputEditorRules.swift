@@ -39,6 +39,14 @@ public enum ChatInputEditorRules {
         keyCode == 36 || keyCode == 76 || charactersIgnoringModifiers == "\r"
     }
 
+    /// Return 键上「插入换行而非发送」的修饰键集合。
+    ///
+    /// 直接 keyDown 规则（`shouldHandleReturnKey`）与 AppKit 命令派发
+    /// （`shouldDeferReturnCommandToLineBreak`）必须共用同一集合：Control+Return
+    /// 在直接规则里被交给 AppKit，若命令派发层只豁免 Shift/Option，就会把它当成
+    /// 发送命令清掉输入（#644）。
+    public static let lineBreakReturnModifiers: NSEvent.ModifierFlags = [.shift, .option, .command, .control]
+
     public static func shouldHandleReturnKey(
         keyCode: UInt16,
         charactersIgnoringModifiers: String?,
@@ -47,7 +55,14 @@ public enum ChatInputEditorRules {
         guard isReturnKey(keyCode: keyCode, charactersIgnoringModifiers: charactersIgnoringModifiers) else {
             return false
         }
-        return modifierFlags.intersection([.shift, .option, .command, .control]).isEmpty
+        return modifierFlags.intersection(lineBreakReturnModifiers).isEmpty
+    }
+
+    /// AppKit 命令派发层判定：Return 命令带任一改行修饰键时，应交回 AppKit 插入换行
+    /// （返回 true 表示「不发送」），而不是走发送逻辑。与 `shouldHandleReturnKey`
+    /// 共用 `lineBreakReturnModifiers`，保证两条路径对同一修饰键给出一致结论（#644）。
+    public static func shouldDeferReturnCommandToLineBreak(modifierFlags: NSEvent.ModifierFlags) -> Bool {
+        !modifierFlags.intersection(lineBreakReturnModifiers).isEmpty
     }
 
     public static func isEnterCommand(_ commandSelector: Selector) -> Bool {

@@ -5,19 +5,20 @@ import Testing
 
 /// 回归 #1097：视图消失时 `stop()` 会关闭 watcher，但同一根路径再次出现时
 /// 旧的相等 guard 直接返回，监听不会重启，外部变更从此不再刷新文件树。
+@MainActor
 @Test("同一根路径在视图重新出现时重新挂载监听")
-func sameRootPathReappearanceRestartsWatching() throws {
+func sameRootPathReappearanceRestartsWatching() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("lumi-file-tree-refresh-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let watcher = RecordingFileTreeWatcher()
-    let coordinator = RefreshCoordinator()
+    let coordinator = RefreshCoordinator(gitStatusEnabled: false)
     coordinator.attach(observer: watcher)
 
     coordinator.setProjectRootPath(root.path)
-    #expect(watcher.updatedDirectorySets.count == 1)
+    #expect(await waitUntil { watcher.updatedDirectorySets.count == 1 })
 
     let stopsBeforeDisappear = watcher.stopCount
     coordinator.stop()
@@ -25,12 +26,13 @@ func sameRootPathReappearanceRestartsWatching() throws {
 
     coordinator.setProjectRootPath(root.path)
 
-    #expect(watcher.updatedDirectorySets.count == 2)
+    #expect(await waitUntil { watcher.updatedDirectorySets.count == 2 })
     #expect(watcher.updatedDirectorySets.last?.contains(root.standardizedFileURL) == true)
 }
 
+@MainActor
 @Test("视图重新出现时仍使用此前展开的目录")
-func sameRootPathReappearanceKeepsExpandedPaths() throws {
+func sameRootPathReappearanceKeepsExpandedPaths() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("lumi-file-tree-refresh-\(UUID().uuidString)", isDirectory: true)
     let expanded = root.appendingPathComponent("Sources", isDirectory: true)
@@ -38,22 +40,24 @@ func sameRootPathReappearanceKeepsExpandedPaths() throws {
     defer { try? FileManager.default.removeItem(at: root) }
 
     let watcher = RecordingFileTreeWatcher()
-    let coordinator = RefreshCoordinator()
+    let coordinator = RefreshCoordinator(gitStatusEnabled: false)
     coordinator.attach(observer: watcher)
     coordinator.setProjectRootPath(root.path)
+    #expect(await waitUntil { watcher.updatedDirectorySets.count == 1 })
     coordinator.addExpandedPath("Sources")
+    #expect(await waitUntil { watcher.updatedDirectorySets.count == 2 })
 
     coordinator.stop()
     coordinator.setProjectRootPath(root.path)
 
-    #expect(watcher.updatedDirectorySets.count == 3)
+    #expect(await waitUntil { watcher.updatedDirectorySets.count == 3 })
     #expect(watcher.updatedDirectorySets.last?.contains(expanded.standardizedFileURL) == true)
 }
 
 @Test("空根路径重复设置不会启动监听")
 func emptyRootPathDoesNotStartWatching() {
     let watcher = RecordingFileTreeWatcher()
-    let coordinator = RefreshCoordinator()
+    let coordinator = RefreshCoordinator(gitStatusEnabled: false)
     coordinator.attach(observer: watcher)
 
     coordinator.setProjectRootPath("")
@@ -72,7 +76,7 @@ func fullRefreshDoesNotStallTargetedRefresh() async throws {
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
-    let coordinator = RefreshCoordinator()
+    let coordinator = RefreshCoordinator(gitStatusEnabled: false)
     coordinator.attach(observer: RecordingFileTreeWatcher())
     coordinator.setProjectRootPath(root.path)
 

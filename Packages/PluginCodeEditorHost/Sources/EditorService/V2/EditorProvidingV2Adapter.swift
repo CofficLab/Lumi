@@ -449,22 +449,23 @@ private final class DocumentCapability: EditorDocumentProviding {
     }
 
     func revert(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
     func reload(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
-    private func reloadFromDisk(documentID: EditorDocumentID) throws {
+    private func reloadFromDisk(documentID: EditorDocumentID) async throws {
         guard let adapter, let service = adapter.service,
-              let session = adapter.session(for: documentID), let url = session.fileURL else {
+              let session = adapter.session(for: documentID), session.fileURL != nil else {
             throw EditorContractError.documentNotFound(documentID)
         }
         guard adapter.isActiveSession(session.id) else {
             throw EditorContractError.capabilityUnavailable(feature: "editor.documents.reload")
         }
-        service.files.loadFile(from: url)
+        service.files.reloadCurrentFileFromDisk()
+        await adapter.waitForFileLoad()
     }
 
     func loadFullDocument(documentID: EditorDocumentID) async throws {
@@ -677,22 +678,25 @@ private final class SessionCapability: EditorSessionProviding {
                 break
             }
         }
+        // 关闭活跃 Session 后的替补恢复由 EditorSessionService 统一处理（#588）；
+        // 这里等待加载收尾，调用方随后读到的正文/URL 已属于替补 Tab。
         service.sessions.closeSession(id: sessionID.rawValue)
-        if service.sessionStore.activeSessionID == nil {
-            service.files.loadFile(from: nil)
-        }
+        await adapter?.waitForFileLoad()
     }
 
     func closeOthers(keeping sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeOtherSessions(keeping: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func closeToLeft(of sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeTabsToLeft(of: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func closeToRight(of sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeTabsToRight(of: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func setPinned(_ pinned: Bool, sessionID: EditorSessionID) {
@@ -1594,21 +1598,33 @@ private final class DiffCapability: EditorDiffProviding {
             let replacement = hunk.addedContents.joined(separator: "\n")
             if let removed = hunk.oldChangeRange {
                 // 替换：removed 首行行首 → 末行下一行行首（含末行换行）。
+                // 删除范围吞掉末行换行，替换文本须补回避免粘连下一行；纯删除保持空文本（#586）。
+                let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+                let lineCount = normalized.split(separator: "\n", omittingEmptySubsequences: false).count
+                let removedEndsInNewline = removed.upperBound < lineCount
+                // 末行无尾换行时「下一行行首」越界，范围终点钳到末行行尾。
+                let end = removedEndsInNewline
+                    ? EditorPosition(line: removed.upperBound, character: 0)
+                    : EditorPosition(line: removed.upperBound - 1, character: (hunk.removedContents.last ?? "").utf16.count)
+                let newText = (!hunk.addedContents.isEmpty && removedEndsInNewline)
+                    ? replacement + "\n"
+                    : replacement
                 return EditorTextEdit(
                     range: EditorV2Range(
                         start: EditorPosition(line: removed.lowerBound - 1, character: 0),
-                        end: EditorPosition(line: removed.upperBound, character: 0)
+                        end: end
                     ),
-                    newText: replacement
+                    newText: newText
                 )
             }
             if hunk.addedContents.isEmpty {
                 return nil
             }
-            // 纯新增：插在 oldStart（1-based）前一行的行尾之后 = 该行行首位置。
+            // 纯新增：oldStart 含前导上下文行，跳过它们才是真实插入点（#587）。
+            let leadingContext = hunk.lines.prefix { $0.kind == .unchanged }.count
             return EditorTextEdit(
                 range: EditorV2Range(
-                    at: EditorPosition(line: max(0, hunk.oldStart - 1), character: 0)
+                    at: EditorPosition(line: max(0, hunk.oldStart - 1 + leadingContext), character: 0)
                 ),
                 newText: replacement + "\n"
             )

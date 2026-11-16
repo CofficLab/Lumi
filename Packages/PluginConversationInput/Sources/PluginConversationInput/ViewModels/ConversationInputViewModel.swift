@@ -32,14 +32,33 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     @Published private(set) var canSend = false
     /// 待插入编辑器的折叠块。生产方递交后由编辑器消费（插入 chip），
     /// 消费完成后清空，避免同一个块被重复插入。
-    @Published private(set) var pendingBlock: ConversationInputBlockRequest?
+    ///
+    /// 块严格归属递交时选中的对话：只有该对话仍被选中时才暴露给编辑器。
+    /// 否则 A 的未消费选区会在切到 B 后被 B 的编辑器插入，造成跨对话泄漏
+    /// （#518）。判定读的是实时选中态，切换通知与清空判定之间的窗口也安全。
+    var pendingBlock: ConversationInputBlockRequest? {
+        guard let entry = pendingBlockQueue.first,
+              entry.conversationID == capability.selectedConversationID else { return nil }
+        return entry.request
+    }
     /// 启动补投会同步连续 enqueue 多个块，单槽 pendingBlock 会让后者覆盖前者。
     /// 用 FIFO 暂存未消费的块，pendingBlock 始终指向队首，消费一个再推进到下一个（#204）。
-    private var pendingBlockQueue: [ConversationInputBlockRequest] = []
+    private var pendingBlockQueue: [PendingBlockEntry] = []
+
+    /// 队列条目：块请求 + 递交时选中的对话（#518）。
+    private struct PendingBlockEntry {
+        let request: ConversationInputBlockRequest
+        let conversationID: UUID?
+    }
 
     private let capability: any ConversationInputCapability
     /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
     private var isWaitingForAttachmentReads = false
+
+    /// 当前草稿归属的对话；nil 表示「新建会话」未选中态。
+    /// 切换判定延迟到下一主 actor 轮次时，用它识别瞬时的选中往返（#781）。
+    private var draftConversationID: UUID?
+    private var conversationSwitchTask: Task<Void, Never>?
 
     /// 待发送图片附件的位图解码缓存。
     ///
@@ -58,6 +77,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     init(capability: any ConversationInputCapability) {
         self.capability = capability
+        self.draftConversationID = capability.selectedConversationID
         refresh()
     }
 
@@ -125,9 +145,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             systemImage: block.systemImage,
             collapseThreshold: block.collapseThreshold
         )
-        pendingBlockQueue.append(request)
-        // 已有块在等待编辑器消费时只入队、不覆盖，消费后由 consumePendingBlock 推进。
-        if pendingBlock == nil { pendingBlock = pendingBlockQueue.first }
+        pendingBlockQueue.append(PendingBlockEntry(
+            request: request,
+            conversationID: capability.selectedConversationID
+        ))
         capability.isInputFocused = true
         revision &+= 1
     }
@@ -144,15 +165,32 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
     func consumePendingBlock(id: UUID) {
         guard pendingBlock?.id == id else { return }
-        pendingBlockQueue.removeAll { $0.id == id }
-        pendingBlock = pendingBlockQueue.first
+        pendingBlockQueue.removeAll { $0.request.id == id }
+        // pendingBlock 是计算属性，推进队首要靠 revision 广播给视图。
+        revision &+= 1
     }
 
-    /// 对话切换：清空输入与未提交附件。
+    /// 对话切换：清空输入、未提交附件与未消费的折叠块。
+    ///
+    /// 判定延迟到下一主 actor 轮次：`create_new_conversation` 会在同一主 actor
+    /// 连续段里做「创建即选中 B → 恢复 A」的瞬时往返，发出两次切换通知（#781）。
+    /// 只有选中态真正落定到别的对话时才清空草稿；回到草稿归属对话则保留
+    /// 未发送内容。连续多次切换只保留最后一次判定。
     func handleConversationSwitched() {
-        capability.clearInput()
-        capability.clearAttachments()
-        refresh()
+        conversationSwitchTask?.cancel()
+        conversationSwitchTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let current = self.capability.selectedConversationID
+            guard current != self.draftConversationID else { return }
+            self.draftConversationID = current
+            self.capability.clearInput()
+            self.capability.clearAttachments()
+            // 未消费的折叠块同样属于旧草稿：归属别的对话的块一律丢弃，
+            // 切回原对话也不复活，避免 A 的代码选区插进 B 的输入框（#518）。
+            // 只丢弃不匹配的条目：切换窗口内为新对话递交的块要保留。
+            self.pendingBlockQueue.removeAll { $0.conversationID != current }
+            self.refresh()
+        }
     }
 
     // MARK: - 输入绑定（写 Provider，由 Observer 回读）
@@ -436,6 +474,47 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 把同一批拖入的多个文件按类型分流，并**保持原始拖放顺序**入池（#804）。
+    ///
+    /// 输入框与附件预览两条拖放链都先拿到有序 URL 数组，再整批调用本方法。
+    /// 单个 URL 仍走 `attach(droppedURL:)` 的既有路径；多个 URL 时并发读取，
+    /// 但结果按原始批次顺序收集后再入池——否则文件大小与 I/O 时长会决定最终
+    /// 顺序，用户拖 A、B 却可能得到 B、A，且该乱序会被直接编码进消息 metadata。
+    func attach(droppedURLs urls: [URL]) {
+        // 只有本地文件才进入附件链（#882）。
+        let fileURLs = urls.filter { ChatInputEditorRules.isFileAttachmentURL($0) }
+        guard !fileURLs.isEmpty else { return }
+        if fileURLs.count == 1 {
+            attach(droppedURL: fileURLs[0])
+            return
+        }
+
+        // 目录路径同步按序插入编辑器文本通道；图片/文件并发读取后按序入池。
+        var attachmentURLs: [URL] = []
+        for url in fileURLs {
+            if ChatInputEditorRules.isDirectoryURL(url) {
+                insertDirectoryPath(url)
+            } else {
+                attachmentURLs.append(url)
+            }
+        }
+        guard !attachmentURLs.isEmpty else { return }
+
+        // 挂起池是发送器级全局数组，读取期间切换会话后整批旧结果都不能落入新会话（#780）。
+        let conversationID = capability.selectedConversationID
+        // 为整批同步登记读取：读取窗口内触发的发送会等全部结束（#1023）。
+        for _ in attachmentURLs { capability.beginAttachmentRead() }
+        Task { @MainActor in
+            defer { for _ in attachmentURLs { capability.endAttachmentRead() } }
+            // 先全部启动后台读取，再按索引顺序 await：并发读取，但按原始顺序收集（#804）。
+            let outcomes = await Self.readAttachmentsInOrder(attachmentURLs)
+            guard capability.selectedConversationID == conversationID else { return }
+            for outcome in outcomes {
+                applyAttachmentOutcome(outcome)
+            }
+        }
+    }
+
     /// 将拖入目录的路径作为文本插入输入框。
     ///
     /// 不能直接改写 `capability.text`：binding 是拍平后的正文，编辑器发现
@@ -455,6 +534,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     /// 将拖入的非图片文件加入发送器挂起池。
     func attachFile(_ url: URL) {
+        // 挂起池是发送器级全局数组，读取期间切换会话后，旧任务的结果不能落到新会话（#780）。
+        let conversationID = capability.selectedConversationID
         // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
         capability.beginAttachmentRead()
         Task { @MainActor in
@@ -463,9 +544,11 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 let attachment = try await Task.detached(priority: .userInitiated) {
                     try UserFileAttachmentLoader.load(from: url)
                 }.value
+                guard capability.selectedConversationID == conversationID else { return }
                 capability.addFileAttachment(attachment)
                 capability.isInputFocused = true
             } catch {
+                guard capability.selectedConversationID == conversationID else { return }
                 capability.recordAttachmentReadFailure()
                 capability.errorMessage = error.localizedDescription
                 refresh()
@@ -476,33 +559,135 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 将拖入的图片加入发送器挂起池。
     func attachImage(_ url: URL) {
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+        let fileName = url.lastPathComponent
+        // 挂起池是发送器级全局数组，读取期间切换会话后，旧任务的结果不能落到新会话（#780）。
+        let conversationID = capability.selectedConversationID
         // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
         capability.beginAttachmentRead()
         Task { @MainActor in
             defer { capability.endAttachmentRead() }
-            let data = await Task.detached(priority: .userInitiated, operation: {
-                try? Data(contentsOf: url)
-            }).value
-
-            // 空文件保持静默忽略（见 #520），但非空字节必须能解码才算图片。
-            guard let data, !data.isEmpty else { return }
-            guard ChatInputEditorRules.isDecodableImageData(data) else {
+            // 读取 + ImageIO 校验 + Base64 编码整体放到后台 worker，
+            // 主 actor 只做入池/报错（见 issue #1259）。
+            let outcome = await Task.detached(priority: .userInitiated) {
+                Self.loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName)
+            }.value
+            guard capability.selectedConversationID == conversationID else { return }
+            switch outcome {
+            case .empty:
+                // 空文件保持静默忽略（见 #520）。
+                return
+            case .undecodable:
                 capability.recordAttachmentReadFailure()
                 capability.errorMessage = String(
                     format: pluginLocalization.string("Could not read image: %@"),
-                    url.lastPathComponent
+                    fileName
                 )
                 refresh()
-                return
+            case .loaded(let attachment):
+                capability.addImageAttachment(attachment)
+                capability.isInputFocused = true
             }
+        }
+    }
 
-            let attachment = UserImageAttachment(
-                mimeType: mimeType,
-                base64Data: data.base64EncodedString(),
-                fileName: url.lastPathComponent
-            )
+    /// 图片附件后台加载结果（跨 actor 传回主线程）。
+    private enum ImageAttachmentLoadOutcome: Sendable {
+        case empty
+        case undecodable
+        case loaded(UserImageAttachment)
+    }
+
+    /// 在后台 worker 读取字节、做 ImageIO 可解码性校验并 Base64 编码。
+    /// 这些都不触碰主线程状态，故 nonisolated（见 issue #1259）。
+    nonisolated private static func loadImageAttachment(
+        from url: URL,
+        mimeType: String,
+        fileName: String
+    ) -> ImageAttachmentLoadOutcome {
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return .empty }
+        guard ChatInputEditorRules.isDecodableImageData(data) else { return .undecodable }
+        return .loaded(UserImageAttachment(
+            mimeType: mimeType,
+            base64Data: data.base64EncodedString(),
+            fileName: fileName
+        ))
+    }
+
+    /// 批次附件读取结果（跨 actor 传回主线程，按原始顺序入池）。
+    enum AttachmentReadOutcome: Sendable {
+        case image(UserImageAttachment)
+        case file(UserFileAttachment)
+        /// 空图片：静默忽略（#520）。
+        case emptyImage
+        case undecodableImage(fileName: String)
+        case fileError(message: String)
+    }
+
+    /// 批次附件读取入口（可注入）。
+    ///
+    /// 生产实现按 URL 类型分流到图片/文件加载器；测试注入带门闩的读取器，
+    /// 确定性构造「后拖入的先读完」，验证入池仍按原始批次顺序（#804）。
+    nonisolated(unsafe) static var batchAttachmentReader: @Sendable (URL) async -> AttachmentReadOutcome = { url in
+        if ChatInputEditorRules.isChatImageFileURL(url) {
+            let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+            let fileName = url.lastPathComponent
+            switch loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName) {
+            case .empty: return .emptyImage
+            case .undecodable: return .undecodableImage(fileName: fileName)
+            case .loaded(let attachment): return .image(attachment)
+            }
+        }
+        return loadFileAttachment(from: url)
+    }
+
+    /// 并发读取整批附件，但**按索引顺序**收集结果（#804）。
+    ///
+    /// 先把每个 URL 的后台读取任务全部启动，再按原始顺序逐个 await：读取是
+    /// 并发的，收集顺序却与拖放顺序一致，不受 I/O 完成时序影响。
+    nonisolated private static func readAttachmentsInOrder(_ urls: [URL]) async -> [AttachmentReadOutcome] {
+        let reader = batchAttachmentReader
+        let tasks = urls.map { url in
+            Task.detached(priority: .userInitiated) { await reader(url) }
+        }
+        var outcomes: [AttachmentReadOutcome] = []
+        outcomes.reserveCapacity(tasks.count)
+        for task in tasks {
+            outcomes.append(await task.value)
+        }
+        return outcomes
+    }
+
+    /// 在后台 worker 读取文件字节并构造附件；失败时带回本地化错误文案。
+    nonisolated private static func loadFileAttachment(from url: URL) -> AttachmentReadOutcome {
+        do {
+            return .file(try UserFileAttachmentLoader.load(from: url))
+        } catch {
+            return .fileError(message: error.localizedDescription)
+        }
+    }
+
+    /// 把一个读取结果落到能力层（入池 / 报错 / 聚焦），批次按序逐个调用。
+    private func applyAttachmentOutcome(_ outcome: AttachmentReadOutcome) {
+        switch outcome {
+        case .image(let attachment):
             capability.addImageAttachment(attachment)
             capability.isInputFocused = true
+        case .file(let attachment):
+            capability.addFileAttachment(attachment)
+            capability.isInputFocused = true
+        case .emptyImage:
+            break
+        case .undecodableImage(let fileName):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = String(
+                format: pluginLocalization.string("Could not read image: %@"),
+                fileName
+            )
+            refresh()
+        case .fileError(let message):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = message
+            refresh()
         }
     }
 

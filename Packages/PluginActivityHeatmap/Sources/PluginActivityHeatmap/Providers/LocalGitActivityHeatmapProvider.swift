@@ -19,6 +19,8 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
     )
 
     typealias CommitLoader = @Sendable (String, Int, Int) async throws -> [GitCommitLog]
+    /// 缓存写入钩子：默认实现编码并原子写盘。注入点用于断言写盘所在的 executor。
+    typealias CacheWriter = @Sendable (ActivityHeatmapSnapshot, URL) -> Void
 
     nonisolated private static let historyMonths = 12
     nonisolated private static let pageSize = 50
@@ -26,6 +28,7 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
 
     private let directory: URL
     private let loadCommits: CommitLoader
+    private let writeCache: CacheWriter
     private let calendar: Calendar
     private let now: @Sendable () -> Date
     private var refreshToken = 0
@@ -41,7 +44,8 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         git: (any GitRepositoryReading)? = nil,
         calendar: Calendar = .current,
         now: @escaping @Sendable () -> Date = Date.init,
-        commitLoader: CommitLoader? = nil
+        commitLoader: CommitLoader? = nil,
+        cacheWriter: CacheWriter? = nil
     ) {
         self.directory = directory
         self.calendar = calendar
@@ -49,6 +53,9 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         self.loadCommits = commitLoader ?? { repositoryPath, limit, offset in
             guard let git else { throw GitReadError.repositoryNotFound(path: repositoryPath) }
             return try await git.log(atPath: repositoryPath, count: limit, skip: offset)
+        }
+        self.writeCache = cacheWriter ?? { snapshot, directory in
+            Self.persist(snapshot, in: directory)
         }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
@@ -75,22 +82,31 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         let loadCommits = self.loadCommits
         let calendar = self.calendar
         let now = self.now()
+        let directory = self.directory
+        let writeCache = self.writeCache
         Task { [weak self] in
             do {
-                let commits = try await Self.loadRecentCommits(
-                    repositoryPath: repository.path,
-                    now: now,
-                    calendar: calendar,
-                    loadCommits: loadCommits
-                )
-                let snapshot = Self.makeSnapshot(
-                    repositoryPath: repository.path,
-                    commits: commits,
-                    calendar: calendar,
-                    now: now
-                )
+                // Git I/O 之后的聚合与缓存写入同样不能留在主线程：`nonisolated static`
+                // 只是解除隔离声明，从主 actor 的 Task 里同步调用仍在主 actor 上执行。
+                // 整段（分页加载 → 日期解析 → 按天聚合 → JSON 编码 → 原子写盘）
+                // 放进 detached 任务，主线程只做 token 校验与状态发布（#1203）。
+                let snapshot = try await Task.detached(priority: .userInitiated) {
+                    let dates = try await Self.loadRecentCommitDates(
+                        repositoryPath: repository.path,
+                        now: now,
+                        calendar: calendar,
+                        loadCommits: loadCommits
+                    )
+                    let snapshot = Self.makeSnapshot(
+                        repositoryPath: repository.path,
+                        commitDates: dates,
+                        calendar: calendar,
+                        now: now
+                    )
+                    writeCache(snapshot, directory)
+                    return snapshot
+                }.value
                 guard let self, token == self.refreshToken else { return }
-                self.persist(snapshot)
                 self.setSnapshot(snapshot)
                 self.setLoading(false)
             } catch {
@@ -130,36 +146,48 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         observers.values.forEach { $0(event) }
     }
 
-    nonisolated private static func loadRecentCommits(
+    /// 分页加载 12 个月内的提交，**每个提交的日期只解析一次**并把解析结果带到聚合阶段。
+    ///
+    /// 旧实现返回 `[GitCommitLog]`，过滤时解析一次、判断是否越界再解析一次、
+    /// `makeSnapshot` 聚合时又解析一次；每次解析都会新建一个 `ISO8601DateFormatter`。
+    /// 直接返回 `[Date]` 让后续阶段零解析（#1203）。
+    nonisolated static func loadRecentCommitDates(
         repositoryPath: String,
         now: Date,
         calendar: Calendar,
         loadCommits: CommitLoader
-    ) async throws -> [GitCommitLog] {
+    ) async throws -> [Date] {
         guard let cutoff = calendar.date(byAdding: .month, value: -historyMonths, to: now) else { return [] }
 
         var offset = 0
-        var commits: [GitCommitLog] = []
+        var dates: [Date] = []
         while true {
             let page = try await loadCommits(repositoryPath, pageSize, offset)
-            commits.append(contentsOf: page.filter { Self.date(from: $0.date) ?? .distantPast >= cutoff })
+            var reachedCutoff = false
+            for commit in page {
+                let parsed = date(from: commit.date) ?? .distantPast
+                guard parsed >= cutoff else {
+                    reachedCutoff = true
+                    continue
+                }
+                dates.append(parsed)
+            }
             offset += page.count
-            if page.isEmpty || page.count < pageSize || page.contains(where: { (Self.date(from: $0.date) ?? .distantPast) < cutoff }) {
+            if page.isEmpty || page.count < pageSize || reachedCutoff {
                 break
             }
         }
-        return commits
+        return dates
     }
 
     nonisolated static func makeSnapshot(
         repositoryPath: String,
-        commits: [GitCommitLog],
+        commitDates: [Date],
         calendar: Calendar,
         now: Date,
         generatedAt: Date? = nil
     ) -> ActivityHeatmapSnapshot {
-        let counts = commits.reduce(into: [Date: Int]()) { result, commit in
-            guard let date = date(from: commit.date) else { return }
+        let counts = commitDates.reduce(into: [Date: Int]()) { result, date in
             result[calendar.startOfDay(for: date), default: 0] += 1
         }
         return ActivityHeatmapSnapshot(
@@ -173,7 +201,7 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         GitDateFormatting.date(from: value)
     }
 
-    private func cacheURL(for repository: URL) -> URL {
+    nonisolated private static func cacheURL(in directory: URL, for repository: URL) -> URL {
         let encodedPath = Data(repository.standardizedFileURL.path.utf8)
             .base64EncodedString()
             .replacingOccurrences(of: "/", with: "_")
@@ -181,24 +209,25 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
             .replacingOccurrences(of: "=", with: "")
         return directory
             .appendingPathComponent(encodedPath, isDirectory: true)
-            .appendingPathComponent(Self.cacheFileName)
+            .appendingPathComponent(cacheFileName)
     }
 
     private func loadCachedSnapshot(for repository: URL) -> ActivityHeatmapSnapshot? {
-        let url = cacheURL(for: repository)
+        let url = Self.cacheURL(in: directory, for: repository)
         guard let data = try? Data(contentsOf: url),
               let snapshot = try? JSONDecoder().decode(ActivityHeatmapSnapshot.self, from: data),
               snapshot.repositoryPath == repository.standardizedFileURL.path else { return nil }
         return snapshot
     }
 
-    private func persist(_ snapshot: ActivityHeatmapSnapshot) {
-        let url = cacheURL(for: URL(fileURLWithPath: snapshot.repositoryPath))
+    /// 编码并原子写入缓存。在后台 executor 上调用，不占主线程（#1203）。
+    nonisolated private static func persist(_ snapshot: ActivityHeatmapSnapshot, in directory: URL) {
+        let url = cacheURL(in: directory, for: URL(fileURLWithPath: snapshot.repositoryPath))
         do {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(snapshot).write(to: url, options: .atomic)
         } catch {
-            Self.logger.error("Failed to persist Git activity cache: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to persist Git activity cache: \(error.localizedDescription, privacy: .public)")
         }
     }
 

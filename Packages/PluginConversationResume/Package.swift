@@ -9,11 +9,10 @@ let package = Package(
         .library(name: "PluginConversationResume", targets: ["PluginConversationResume"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
@@ -26,8 +25,8 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderAgentLoop",
-                "ProviderChatSection",
-                "ProviderConversation",
+                .product(name: "ProviderChatSection", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderLifecycleHooks",
                 "ProviderMessage",
                 "LumiUI",
@@ -41,7 +40,7 @@ let package = Package(
             dependencies: [
                 "PluginConversationResume",
                 "ProviderAgentLoop",
-                "ProviderConversation",
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderMessage",
             ],
             path: "Tests/PluginConversationResumeTests"

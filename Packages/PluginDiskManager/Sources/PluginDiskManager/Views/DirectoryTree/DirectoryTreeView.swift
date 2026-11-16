@@ -7,8 +7,8 @@ struct DirectoryTreeView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // 扫描控制区域
-            if viewModel.isScanning == false && viewModel.rootEntries.isEmpty == false {
+            // 扫描控制区域：扫描中保留 Stop 入口（#849）
+            if viewModel.isScanControlBarVisible {
                 DirectoryTreeScanControlBar(viewModel: viewModel)
             }
 
@@ -43,9 +43,9 @@ struct DirectoryTreeRow: View {
     let entry: DirectoryEntry
     @ObservedObject var viewModel: DirectoryTreeViewModel
 
-    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
-    private var icon: NSImage {
-        NSWorkspace.shared.icon(forFile: entry.path)
+    // 图标按路径缓存，避免每次 body 求值重复同步 workspace 查询（#1223）。
+    @MainActor private var icon: NSImage {
+        WorkspaceIconCache.shared.icon(forPath: entry.path)
     }
 
     var body: some View {

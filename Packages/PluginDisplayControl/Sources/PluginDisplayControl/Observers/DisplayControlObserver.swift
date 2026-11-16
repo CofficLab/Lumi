@@ -20,4 +20,7 @@ final class DisplayControlObserver {
         timer = nil
         cancellables.removeAll()
     }
+
+    /// 刷新定时器是否在运行（测试用于断言运行时禁用已停止周期刷新，#460）。
+    var isRunningForTesting: Bool { timer != nil }
 }

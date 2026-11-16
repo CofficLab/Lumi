@@ -6,8 +6,8 @@ struct LargeFilesListView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // 扫描控制区域
-            if viewModel.largeFiles.isEmpty == false {
+            // 扫描控制区域：扫描中保留 Stop 入口（结果已在扫描开始时清空，#849）
+            if viewModel.isScanControlBarVisible {
                 LargeFilesScanControlBar(viewModel: viewModel)
             }
 

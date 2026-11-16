@@ -35,6 +35,8 @@ final class GeneralSettingsViewModel: ObservableObject {
     private let diagnosticsCapability: any GeneralSettingsDiagnosticsCapability
     private let storageCapability: any GeneralSettingsStorageCapability
     private let uninstallCapability: any GeneralSettingsUninstallCapability
+    /// 退出应用的动作注入点（测试用 spy）；nil 时走真实终止流程。
+    private let quitApplicationHandler: (@MainActor () -> Void)?
 
     // MARK: - Published State (供 View 展示)
 
@@ -77,13 +79,15 @@ final class GeneralSettingsViewModel: ObservableObject {
         updateChannelCapability: any GeneralSettingsUpdateChannelCapability,
         diagnosticsCapability: any GeneralSettingsDiagnosticsCapability,
         storageCapability: any GeneralSettingsStorageCapability,
-        uninstallCapability: any GeneralSettingsUninstallCapability
+        uninstallCapability: any GeneralSettingsUninstallCapability,
+        quitApplication: (@MainActor () -> Void)? = nil
     ) {
         self.docsCapability = docsCapability
         self.updateChannelCapability = updateChannelCapability
         self.diagnosticsCapability = diagnosticsCapability
         self.storageCapability = storageCapability
         self.uninstallCapability = uninstallCapability
+        self.quitApplicationHandler = quitApplication
         refreshManuals()
         selectedUpdateChannel = updateChannelCapability.updateChannel
         refreshStorageUsage()
@@ -154,7 +158,14 @@ final class GeneralSettingsViewModel: ObservableObject {
 
             do {
                 let archive = try await diagnosticsCapability.makeDiagnosticsArchive()
-                defer { try? FileManager.default.removeItem(at: archive.url) }
+                // 记录最终保存位置：若用户把位置选成 archive 本身，该文件就是导出
+                // 成果，defer 不能再把它当临时文件清理掉（#416）。
+                var exportDestination: URL?
+                defer {
+                    if Self.shouldCleanUpTemporaryArchive(at: archive.url, exportedTo: exportDestination) {
+                        try? FileManager.default.removeItem(at: archive.url)
+                    }
+                }
                 let panel = NSSavePanel()
                 panel.allowedContentTypes = [.zip]
                 panel.canCreateDirectories = true
@@ -165,8 +176,19 @@ final class GeneralSettingsViewModel: ObservableObject {
                     diagnosticsFeedback = "已取消导出。"
                     return
                 }
+                exportDestination = destination
 
-                try Self.installDiagnosticsArchive(from: archive.url, to: destination)
+                // 保存位置就是本轮生成的 archive：文件已在目标位置，跳过复制，
+                // 直接视为成功并保留该文件（不清理，否则刚导出的文件会被删除）。
+                if Self.isSameArchiveLocation(destination, as: archive.url) {
+                    diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
+                    return
+                }
+
+                let sourceURL = archive.url
+                try await Task.detached(priority: .userInitiated) {
+                    try Self.installDiagnosticsArchive(from: sourceURL, to: destination)
+                }.value
                 diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
             } catch {
                 diagnosticsFeedback = "导出失败：\(error.localizedDescription)"
@@ -179,7 +201,7 @@ final class GeneralSettingsViewModel: ObservableObject {
     /// 先在同目录复制出临时文件，确认写入成功后才替换目标。复制阶段（空间不足、
     /// I/O 错误）失败时目标文件完全没被触碰；替换阶段失败则把原文件移回原位。
     /// 不能先 `removeItem(destination)` 再 copy——那会在失败时直接丢掉用户数据（#997）。
-    static func installDiagnosticsArchive(from source: URL, to destination: URL) throws {
+    nonisolated static func installDiagnosticsArchive(from source: URL, to destination: URL) throws {
         let fileManager = FileManager.default
         let directory = destination.deletingLastPathComponent()
         let staging = directory.appendingPathComponent(".lumi-diagnostics-\(UUID().uuidString).zip")
@@ -202,6 +224,25 @@ final class GeneralSettingsViewModel: ObservableObject {
             throw error
         }
         try? fileManager.removeItem(at: backup)
+    }
+
+    /// 用户选择的保存位置是否就是本轮生成的临时 archive 本身。
+    ///
+    /// 用解析符号链接 + 标准化后的路径比较，兼容 `/tmp` 与 `/private/tmp`、
+    /// 尾随斜杠、`..` 等等价写法，避免把同一文件误判成两个位置。
+    nonisolated static func isSameArchiveLocation(_ destination: URL, as archiveURL: URL) -> Bool {
+        destination.resolvingSymlinksInPath().standardizedFileURL.path
+            == archiveURL.resolvingSymlinksInPath().standardizedFileURL.path
+    }
+
+    /// 导出结束后是否需要清理临时 archive。
+    ///
+    /// 取消导出（`destination == nil`）或已复制到别处时清理临时文件；若用户把
+    /// 保存位置选成 archive 本身，则该文件就是导出成果，必须保留——否则 defer
+    /// 会删掉用户刚导出的文件（#416）。
+    nonisolated static func shouldCleanUpTemporaryArchive(at archiveURL: URL, exportedTo destination: URL?) -> Bool {
+        guard let destination else { return true }
+        return !isSameArchiveLocation(destination, as: archiveURL)
     }
 
     func beginUninstall() {
@@ -257,14 +298,11 @@ final class GeneralSettingsViewModel: ObservableObject {
 
         // 关闭确认弹窗，隐藏设置窗口，切换到与主窗口解耦的独立卸载浮层。
         // 内核停止后设置窗口可能暂时失去内容，浮层负责承载后续所有阶段。
-        NSApp.windows.forEach { $0.orderOut(nil) }
+        NSApplication.shared.windows.forEach { $0.orderOut(nil) }
         UninstallOverlayWindowController.shared.show(
             phase: .running,
             onExit: { [weak self] in self?.terminateAfterUninstall() },
-            onClose: {
-                UninstallOverlayWindowController.shared.close()
-                self.restoreApplicationAfterUninstallFailure()
-            }
+            onClose: { [weak self] in self?.handleUninstallFailureClose() }
         )
         NotificationCenter.default.post(name: .lumiWillUninstall, object: nil)
 
@@ -313,9 +351,17 @@ final class GeneralSettingsViewModel: ObservableObject {
         }
     }
 
-    private func restoreApplicationAfterUninstallFailure() {
-        NSApp.unhide(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first(where: { $0.canBecomeKey })?.makeKeyAndOrderFront(nil)
+    /// 卸载失败浮层的「退出应用」回调（#304）。
+    ///
+    /// 卸载前内核已停止、插件与 Provider 全部注销，而插件侧不持有完整插件
+    /// 目录，无法在进程内重新装配内核。只恢复窗口会留下一个看似可用、
+    /// 实则所有服务都不可用的空壳，因此必须显式退出，由用户重新启动应用。
+    func handleUninstallFailureClose() {
+        UninstallOverlayWindowController.shared.close()
+        if let quitApplicationHandler {
+            quitApplicationHandler()
+        } else {
+            terminateAfterUninstall()
+        }
     }
 }

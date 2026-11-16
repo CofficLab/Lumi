@@ -122,6 +122,20 @@ final class ChatScreenshotOverlayView: NSView {
         return intersection.offsetBy(dx: -screenFrame.minX, dy: -screenFrame.minY)
     }
 
+    /// 更新全局选区；仅当本屏可见选区（交集）实际变化时才标记重绘。
+    ///
+    /// 拖选时大量更新并不改变其它屏幕的交集（多为空），无条件 `needsDisplay`
+    /// 会让每块全屏遮罩反复重绘（见 issue #1266）。
+    /// 返回是否触发了重绘，便于单元测试断言判定逻辑。
+    @discardableResult
+    func updateSelectionRect(_ rect: CGRect) -> Bool {
+        let before = localSelectionRect
+        selectionRect = rect
+        guard localSelectionRect != before else { return false }
+        needsDisplay = true
+        return true
+    }
+
     private func drawSizeLabel(for rect: CGRect) {
         let label = "\(Int(selectionRect.width)) × \(Int(selectionRect.height))"
         let attributes: [NSAttributedString.Key: Any] = [

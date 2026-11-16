@@ -5,7 +5,7 @@
 PluginConversationCacheHitRate Lumi 编辑器插件。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 63
+测试文件: 9 个，用例总数: 74
 
 核心组件（源码目录）:
 - `Models/`
@@ -32,6 +32,10 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 - **CacheHitRateHistory**（15 条）：由 `historyBuildsOneSamplePerUsableAssistantMessage`、`historyAssignsSequentialIndexesInChronologicalOrder`、`historyCumulativeHitRateIsTokenWeighted` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CacheHitRateObserverAndLifecycle**（26 条）：由 `observerReplaysCurrentSelectionOnInit`、`observerForwardsSelectionChanges`、`observerForwardsEveryMessageChangeKind` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CacheHitRateRefreshGate**（4 条）：由 `latestRevisionForCurrentConversationIsPublished`、`supersededRevisionIsDropped`、`cancelledRefreshIsDropped` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CacheHitRateHistoryGate**（3 条）：由 `closedPopoverSkipsHistoryBuild`、`openPopoverBuildsHistoryFromSnapshot`、`openPopoverWithEmptySnapshotIsEmpty` 锁定——趋势历史只在弹窗打开时构建，关闭时返回空历史，工具栏数值（stats）不受影响（**#1226**）。
+- **CacheHitRateSelectionGate**（4 条）：由 `selectionResetClearsStats`、`selectionResetClearsHistory`、`selectionResetShowsWaitingForNewConversation` 等用例锁定——切换选中会话时立即清空命中率/历史/不可用原因，旧会话数据不得归到新会话名下（**#599**）。
+- **CacheHitRateExportOffMain**（2 条）：由 `writesOffMain`、`writeFailureThrows` 锁定——卡片导出 PNG 的编码与落盘必须在后台线程完成，失败时抛出而非静默（**#1225**）。
+- **CacheHitRateExportErrorReporting**（2 条）：由 `exportFailureReportsErrorMessage`、`exportSuccessReportsNoError` 锁定——导出 PNG 落盘失败必须把错误文案带回 UI（弹窗报错），不得静默当作成功；成功则返回 nil（**#515**）。
 - **综合**（16 条）：由 `cacheHitRatePluginInstantiates`、`cacheHitRateToolbarStateForwardsTypedEvents`、`cacheHitRateStatsUseTypedTokenFields` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -101,27 +105,49 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 | 61 | 综合 | cacheHitRateSkipsRequestsWithNonPositiveTotal | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateSkipsRequestsWithNonPositiveTotal` |
 | 62 | 综合 | cacheHitRateSkipsRequestsWithNegativeCachedTokens | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateSkipsRequestsWithNegativeCachedTokens` |
 | 63 | 综合 | cacheHitRateFallsBackToInputTokenCountWhenTotalIsMissing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateFallsBackToInputTokenCountWhenTotalIsMissing` |
+| 64 | CacheHitRateExportOffMain | writePNG 在后台线程编码并写出可解码的 PNG（**#1225**） | 有效 8×8 CGImage | 后台调用 writePNG 后解码文件 | 非主线程编码、PNG 可解码、尺寸 8×8 | P1 | ✅ 已覆盖 | `writesOffMain` |
+| 65 | CacheHitRateExportOffMain | 目标目录不存在时 writePNG 抛出错误而非静默失败（**#1225**） | 不存在的目标目录 | 后台调用 writePNG | 抛出错误 | P1 | ✅ 已覆盖 | `writeFailureThrows` |
+| 66 | CacheHitRateHistoryGate | 弹窗关闭时不得构建趋势历史（**#1226**） | 含 2 条有效 assistant 的快照，弹窗关闭 | 调用 `resolve(isPopoverPresented: false, …)` | 返回空历史 | P0 | ✅ 已覆盖 | `closedPopoverSkipsHistoryBuild` |
+| 67 | CacheHitRateHistoryGate | 弹窗打开时用快照构建历史，与直接 build 一致（**#1226**） | 同上快照，弹窗打开 | 调用 `resolve(isPopoverPresented: true, …)` | 等于 `CacheHitRateHistory.build`、2 个采样点 | P1 | ✅ 已覆盖 | `openPopoverBuildsHistoryFromSnapshot` |
+| 68 | CacheHitRateHistoryGate | 弹窗打开但快照为空时历史为空（**#1226**） | 空快照，弹窗打开 | 调用 `resolve(isPopoverPresented: true, snapshot: [])` | 返回空历史 | P2 | ✅ 已覆盖 | `openPopoverWithEmptySnapshotIsEmpty` |
+| 69 | CacheHitRateSelectionGate | 切到新会话时立即清空命中率统计（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | stats 为空、sampleCount=0 | P0 | ✅ 已覆盖 | `selectionResetClearsStats` |
+| 70 | CacheHitRateSelectionGate | 切到新会话时立即清空趋势历史（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | history 为空 | P1 | ✅ 已覆盖 | `selectionResetClearsHistory` |
+| 71 | CacheHitRateSelectionGate | 切到新会话时显示等待态而非上一会话的不可用原因（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | 原因为 waitingForResponse | P1 | ✅ 已覆盖 | `selectionResetShowsWaitingForNewConversation` |
+| 72 | CacheHitRateSelectionGate | 切到无会话时显示未选择态（**#599**） | 无选中会话 | 调用 `reset(forConversationID: nil)` | 原因为 noConversationSelected | P2 | ✅ 已覆盖 | `selectionResetShowsNoSelectionForNil` |
+| 73 | CacheHitRateExportErrorReporting | 落盘失败必须带回错误文案而非静默成功（**#515**） | 有效 8×8 CGImage，目标目录不存在 | 调用 `exportPNG(image, to: 坏URL)` | 返回非空错误文案 | P0 | ✅ 已覆盖 | `exportFailureReportsErrorMessage` |
+| 74 | CacheHitRateExportErrorReporting | 成功落盘返回 nil 且写出可解码 PNG（**#515**） | 有效 8×8 CGImage，可写临时 URL | 调用 `exportPNG(image, to: url)` 后解码文件 | 返回 nil、PNG 可解码、尺寸 8×8 | P1 | ✅ 已覆盖 | `exportSuccessReportsNoError` |
 
-> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#1226）：把 `CacheHitRateHistoryGate.resolve` 改回无条件 `build`（去掉弹窗判断），
+> `closedPopoverSkipsHistoryBuild` 立即变红（关闭时历史非空）；恢复门禁后全绿。
+
+> 变异验证（#599）：M1 把 `CacheHitRateSelectionGate.reset` 的 stats 改为非空（`compute(previewMessages)`）→
+> `selectionResetClearsStats` 变红；M2 把 history 改为非空（`build(previewMessages)`）→ `selectionResetClearsHistory` 变红；
+> M3 把原因写死为 `.noConversationSelected` → `selectionResetShowsWaitingForNewConversation` 变红；还原后 72 条全绿。
+
+> 变异验证（#515）：M1 把 `exportPNG` 的 catch 改为 `return nil`（吞掉错误，复现旧 `try?` 缺陷）→
+> `exportFailureReportsErrorMessage` 变红（失败却返回 nil）；M2 把成功路径改为返回非空文案 →
+> `exportSuccessReportsNoError` 变红（成功却误报）；还原后 74 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 50 / 50
-- P2: 已覆盖 5 / 5
-- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 56 / 56
+- P2: 已覆盖 7 / 7
+- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（50 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（56 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

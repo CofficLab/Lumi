@@ -140,11 +140,13 @@ public struct ShowFolderCardTool: SuperAgentTool, @unchecked Sendable {
 
     // MARK: - Arguments
 
-    /// 读取 `path` 参数并去掉首尾空白。
+    /// 读取 `path` 参数，原样保留首尾空白。
+    ///
+    /// 空格是合法的文件名字符：`/tmp/demo ` 与 `/tmp/demo` 是两个不同的目录，
+    /// trim 会把卡片指向另一个真实目录（#571）。只有真正的空字符串才算缺失参数。
     static func path(from arguments: [String: ToolArgument]) -> String? {
-        guard let raw = string(from: arguments, key: "path") else { return nil }
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        guard let raw = arguments["path"]?.value as? String else { return nil }
+        return raw.isEmpty ? nil : raw
     }
 
     /// 读取一个字符串参数并去掉首尾空白。

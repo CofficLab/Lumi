@@ -7,9 +7,9 @@ struct LargeFileRow: View {
     @ObservedObject var viewModel: LargeFilesViewModel
     @State private var showDeleteConfirm = false
 
-    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
-    private var icon: NSImage {
-        NSWorkspace.shared.icon(forFile: item.path)
+    // 图标按路径缓存，避免每次 body 求值重复同步 workspace 查询（#1223）。
+    @MainActor private var icon: NSImage {
+        WorkspaceIconCache.shared.icon(forPath: item.path)
     }
 
     var body: some View {

@@ -124,6 +124,19 @@ public struct DiskSpeedTestTool: SuperAgentTool, @unchecked Sendable {
         do {
             let measurements = try await tester.measure(in: workingDirectory)
             result = .success(measurements)
+        } catch is CancellationError {
+            // 取消不是普通的测速失败：把卡片收尾后沿取消路径上抛，
+            // 让执行运行时把本次调用标记为 cancelled（#1230）。
+            if let timeline, let cardMessageID {
+                await MainActor.run {
+                    bridge.update(
+                        messageID: cardMessageID,
+                        conversationID: timeline.conversationID,
+                        payload: .failed(directory: directory, reason: "Cancelled")
+                    )
+                }
+            }
+            throw CancellationError()
         } catch {
             result = .failure(error)
         }

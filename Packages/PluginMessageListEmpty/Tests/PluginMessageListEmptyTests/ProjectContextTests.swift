@@ -356,6 +356,96 @@ struct ProjectContextTests {
         #expect(row.action == .openGit)
     }
 
+    // MARK: - #808 Git 改动计数：含未跟踪、按路径去重
+
+    @Test func untrackedOnlyRepositoryShowsOneChangedFile() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let git = InMemoryGitRepositoryReading()
+        // 只有一个未跟踪文件：旧实现漏掉 untracked，算出 0 → 根本不渲染 Git 行（#808）。
+        git.setStatus(GitStatus(branch: "main", untracked: ["new.swift"]), forPath: root.path)
+
+        let model = ProjectContextViewModel(project: provider, conversations: nil, projectRAG: nil, git: git)
+        await model.loadIfNeeded()
+
+        let row = try #require(model.rows.first { $0.id == "git" }, "未跟踪文件也算未提交改动，必须出现 Git 行")
+        #expect(row.title.contains("1"))
+        #expect(row.action == .openGit)
+    }
+
+    @Test func partiallyStagedFileCountsOnce() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let git = InMemoryGitRepositoryReading()
+        // 同一文件既在暂存区又有未暂存改动：是一个路径，不是两个（#808）。
+        git.setStatus(
+            GitStatus(branch: "main", modified: ["a.swift"], staged: ["a.swift"]),
+            forPath: root.path
+        )
+
+        let model = ProjectContextViewModel(project: provider, conversations: nil, projectRAG: nil, git: git)
+        await model.loadIfNeeded()
+
+        let row = try #require(model.rows.first { $0.id == "git" })
+        #expect(row.title.contains("1"), "部分暂存的同一文件只能算一个")
+        #expect(!row.title.contains("2"), "不得把同一路径重复计数")
+    }
+
+    @Test func allBucketsAreMergedAndDeduplicated() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let git = InMemoryGitRepositoryReading()
+        // 六个桶都覆盖：m 同时在 modified 与 staged（去重），u1/u2 是未跟踪。
+        // 唯一路径 {m,a,d,r,s,u1,u2} = 7；旧实现累加各桶得 6（漏未跟踪、重复 m）。
+        git.setStatus(
+            GitStatus(
+                branch: "main",
+                modified: ["m"],
+                added: ["a"],
+                deleted: ["d"],
+                renamed: ["r"],
+                staged: ["m", "s"],
+                untracked: ["u1", "u2"]
+            ),
+            forPath: root.path
+        )
+
+        let model = ProjectContextViewModel(project: provider, conversations: nil, projectRAG: nil, git: git)
+        await model.loadIfNeeded()
+
+        let row = try #require(model.rows.first { $0.id == "git" })
+        #expect(row.title.contains("7"), "应合并所有桶并按路径去重")
+    }
+
+    @Test func cleanStatusShowsNoGitRow() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let git = InMemoryGitRepositoryReading()
+        // 真正干净的状态（能读到、各桶皆空）：不得渲染「0 个文件改动」的行。
+        git.setStatus(GitStatus(branch: "main"), forPath: root.path)
+
+        let model = ProjectContextViewModel(project: provider, conversations: nil, projectRAG: nil, git: git)
+        await model.loadIfNeeded()
+
+        #expect(model.rows.allSatisfy { $0.id != "git" }, "干净仓库不该出现未提交改动行")
+    }
+
     @Test("the last conversation row points at the most recent conversation")
     func lastConversationRowAppears() async throws {
         let root = try makeProject(files: ["Package.swift"])

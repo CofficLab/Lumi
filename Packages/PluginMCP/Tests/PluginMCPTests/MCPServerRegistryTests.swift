@@ -43,21 +43,21 @@ struct MCPServerRegistryTests {
     }
 
     @Test("CRUD：新增 / 更新 / 删除")
-    func crud() {
+    func crud() throws {
         let (registry, _) = makeRegistry()
-        let added = registry.addServer(MCPServerConfig(name: "Test", command: "/bin/echo"))
+        let added = try registry.addServer(MCPServerConfig(name: "Test", command: "/bin/echo"))
         #expect(!added.id.isEmpty)
         #expect(registry.server(id: added.id)?.command == "/bin/echo")
 
         var updated = added
         updated.command = "/usr/bin/true"
         updated.arguments = ["--flag"]
-        registry.updateServer(updated)
+        try registry.updateServer(updated)
         let stored = registry.server(id: added.id)
         #expect(stored?.command == "/usr/bin/true")
         #expect(stored?.arguments == ["--flag"])
 
-        registry.removeServer(id: added.id)
+        try registry.removeServer(id: added.id)
         #expect(registry.server(id: added.id) == nil)
         #expect(!registry.servers.contains { $0.id == added.id })
     }
@@ -66,7 +66,7 @@ struct MCPServerRegistryTests {
     func persistenceRoundTrip() throws {
         let dir = makeTempDirectory()
         let first = MCPServerRegistry(directory: dir)
-        let added = first.addServer(MCPServerConfig(
+        let added = try first.addServer(MCPServerConfig(
             name: "Persist",
             command: "npx",
             arguments: ["-y", "server"],
@@ -111,18 +111,18 @@ struct MCPServerRegistryTests {
     }
 
     @Test("更新时替换全部同 id 条目，不产生重复")
-    func updateReplacesAllSameId() {
+    func updateReplacesAllSameId() throws {
         let (registry, _) = makeRegistry()
         let dupID = UUID().uuidString
         let a = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["a.py"])
         let b = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["b.py"])
-        registry.addServer(a)
-        registry.addServer(b)
+        try registry.addServer(a)
+        try registry.addServer(b)
         #expect(registry.servers.filter { $0.id == dupID }.count == 2)
 
         var updated = a
         updated.command = "/opt/homebrew/bin/python3"
-        registry.updateServer(updated)
+        try registry.updateServer(updated)
         #expect(registry.servers.filter { $0.id == dupID }.count == 1)
         #expect(registry.servers.first { $0.id == dupID }?.command == "/opt/homebrew/bin/python3")
     }
@@ -158,7 +158,7 @@ struct MCPServerRegistryTests {
 
         let first = MCPServerRegistry(directory: dir, contributor: contributor)
         let xcode = try #require(first.servers.first { $0.command == "xcrun" && $0.arguments == ["mcpbridge"] })
-        first.removeServer(id: xcode.id)
+        try first.removeServer(id: xcode.id)
         #expect(first.server(id: xcode.id) == nil)
 
         // 模拟重启：同一数据目录 + 同一贡献者重新构建注册表。
@@ -175,10 +175,153 @@ struct MCPServerRegistryTests {
 
         let first = MCPServerRegistry(directory: dir, contributor: contributor)
         let xcode = try #require(first.servers.first { $0.command == "xcrun" })
-        first.removeServer(id: xcode.id)
+        try first.removeServer(id: xcode.id)
 
         let second = MCPServerRegistry(directory: dir, contributor: contributor)
         #expect(!second.servers.contains { $0.command == "xcrun" })
         #expect(second.servers.contains { $0.command == "docker" })
+    }
+
+    // MARK: - 解码失败不得清空写回（回归 #531）
+
+    @Test("解码失败保留原文件，不被 seed 覆盖")
+    func corruptFileIsPreservedOnLoad() throws {
+        let dir = makeTempDirectory()
+        let fileURL = dir.appendingPathComponent("mcp-servers.json")
+        // 合法 JSON 但类型不符（对象而非数组）→ 解码抛错。
+        let corrupt = Data(#"{ "unexpected": true }"#.utf8)
+        try corrupt.write(to: fileURL)
+
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        #expect(registry.loadFailed)
+        // 原文件字节必须原封不动：seed 不得原子覆盖用户配置。
+        let after = try Data(contentsOf: fileURL)
+        #expect(after == corrupt)
+    }
+
+    @Test("解码失败后 CRUD 报错且不覆盖原文件（回归 #531 / #532）")
+    func corruptFileSurvivesCRUD() throws {
+        let dir = makeTempDirectory()
+        let fileURL = dir.appendingPathComponent("mcp-servers.json")
+        // 截断/损坏的字节 → 读取或解码抛错。
+        let corrupt = Data("][ truncated".utf8)
+        try corrupt.write(to: fileURL)
+
+        let registry = MCPServerRegistry(directory: dir)
+        #expect(registry.loadFailed)
+
+        // 加载失败后禁止写回，但必须把失败抛给调用方，不能静默「保存成功」（#532）。
+        let config = MCPServerConfig(id: UUID().uuidString, name: "New", command: "/bin/echo")
+        #expect(throws: MCPServerRegistryError.self) { try registry.addServer(config) }
+        #expect(throws: MCPServerRegistryError.self) { try registry.updateServer(config) }
+        #expect(throws: MCPServerRegistryError.self) { try registry.removeServer(id: config.id) }
+        #expect(registry.servers.isEmpty)
+
+        let after = try Data(contentsOf: fileURL)
+        #expect(after == corrupt)
+    }
+
+    @Test("文件缺失视为首次运行，允许 seed 落库")
+    func missingFileAllowsSeed() throws {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        #expect(!registry.loadFailed)
+        #expect(registry.servers.contains { $0.command == "xcrun" })
+        // 落库成功：重建后仍在。
+        let second = MCPServerRegistry(directory: dir)
+        #expect(second.servers.contains { $0.command == "xcrun" })
+    }
+
+    @Test("合法文件加载不置 loadFailed")
+    func validFileDoesNotSetLoadFailed() throws {
+        let dir = makeTempDirectory()
+        let first = MCPServerRegistry(directory: dir)
+        try first.addServer(MCPServerConfig(name: "OK", command: "npx"))
+
+        let second = MCPServerRegistry(directory: dir)
+        #expect(!second.loadFailed)
+        #expect(second.servers.contains { $0.name == "OK" })
+    }
+
+    // MARK: - 写回失败必须抛出且不得污染内存（回归 #532）
+
+    /// 先正常加载一份配置，再把配置文件路径换成目录：之后的原子写必然失败，
+    /// 且与运行用户 / 目录权限无关。
+    private func makeRegistryWithExisting() throws -> (MCPServerRegistry, URL, MCPServerConfig) {
+        let dir = makeTempDirectory()
+        let existing = MCPServerConfig(id: UUID().uuidString, name: "Existing", command: "/bin/echo")
+        try JSONEncoder().encode([existing]).write(to: dir.appendingPathComponent("mcp-servers.json"))
+        return (MCPServerRegistry(directory: dir), dir, existing)
+    }
+
+    private func breakWritePath(in dir: URL) throws {
+        let fileURL = dir.appendingPathComponent("mcp-servers.json")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try FileManager.default.removeItem(at: fileURL)
+        }
+        try FileManager.default.createDirectory(at: fileURL, withIntermediateDirectories: true)
+    }
+
+    private func restoreWritePath(in dir: URL) throws {
+        try FileManager.default.removeItem(at: dir.appendingPathComponent("mcp-servers.json"))
+    }
+
+    @Test("新增写回失败必须抛出，内存列表与磁盘原配置都不变")
+    func addServerWriteFailureThrowsAndKeepsList() throws {
+        let (registry, dir, existing) = try makeRegistryWithExisting()
+        #expect(!registry.loadFailed)
+        try breakWritePath(in: dir)
+
+        #expect(throws: MCPServerRegistryError.self) {
+            try registry.addServer(MCPServerConfig(name: "New", command: "/bin/true"))
+        }
+        #expect(registry.servers.map(\.id) == [existing.id])
+
+        // 恢复可写后重试：新增确实落库，重启可见。
+        try restoreWritePath(in: dir)
+        let added = try registry.addServer(MCPServerConfig(name: "New", command: "/bin/true"))
+        let second = MCPServerRegistry(directory: dir)
+        #expect(second.server(id: added.id)?.command == "/bin/true")
+    }
+
+    @Test("更新写回失败必须抛出，列表保留原配置")
+    func updateServerWriteFailureKeepsStoredConfig() throws {
+        let (registry, dir, existing) = try makeRegistryWithExisting()
+        try breakWritePath(in: dir)
+
+        var edited = existing
+        edited.command = "/bin/true"
+        edited.enabled = false
+        #expect(throws: MCPServerRegistryError.self) { try registry.updateServer(edited) }
+        #expect(registry.server(id: existing.id)?.command == "/bin/echo")
+        #expect(registry.server(id: existing.id)?.enabled == true)
+        #expect(registry.servers.count == 1)
+    }
+
+    @Test("删除写回失败必须抛出，服务器与内置模板墓碑都保持不变")
+    func removeServerWriteFailureKeepsServerAndTemplate() throws {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+        let xcode = try #require(registry.servers.first { $0.command == "xcrun" })
+        try breakWritePath(in: dir)
+
+        #expect(throws: MCPServerRegistryError.self) { try registry.removeServer(id: xcode.id) }
+        #expect(registry.server(id: xcode.id) != nil)
+        // 墓碑只在删除确实落库后记录：失败的删除不得永久屏蔽该内置模板。
+        let tombstone = dir.appendingPathComponent("mcp-deleted-templates.json")
+        #expect(!FileManager.default.fileExists(atPath: tombstone.path))
+
+        try restoreWritePath(in: dir)
+        try registry.removeServer(id: xcode.id)
+        #expect(registry.server(id: xcode.id) == nil)
+        #expect(FileManager.default.fileExists(atPath: tombstone.path))
     }
 }

@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "ProviderConversation",
+    name: .product(name: "ProviderConversation", package: "LumiProviders"),
     defaultLocalization: "en",
     platforms: [
         .macOS("14.0"),
@@ -10,28 +10,29 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "ProviderConversation",
+            name: .product(name: "ProviderConversation", package: "LumiProviders"),
             targets: ["ProviderConversation"]
         ),
     ],
     dependencies: [
-        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../KitTestSupport"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
     ],
     targets: [
         .target(
-            name: "ProviderConversation",
+            name: .product(name: "ProviderConversation", package: "LumiProviders"),
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "KitLLM", package: "LumiKitLLM"),
+                .product(name: "KitTestIsolation", package: "LumiKitTestSupport"),
             ],
             path: "Sources/ProviderConversation"
         ),
         .testTarget(
             name: "ProviderConversationTests",
-            dependencies: ["ProviderConversation", .product(name: "KitTestSupport", package: "KitTestSupport")]
+            dependencies: ["ProviderConversation", .product(name: "KitTestSupport", package: "LumiKitTestSupport")]
         )
     ]
 )

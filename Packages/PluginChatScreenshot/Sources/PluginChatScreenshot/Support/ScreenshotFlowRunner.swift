@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import KernelCore
 import os
 import ProviderMessage
@@ -18,6 +19,12 @@ enum ScreenshotFlowRunner {
             return
         }
 
+        let capability = ScreenshotFlowCapabilityAdapter(kernel: kernel)
+        // 挂起池是发送器级全局数组：抓取 / 拖选 / 编码都是异步窗口，期间用户可能
+        // 切换会话。必须在流程启动时捕获会话身份，写回前比对，否则 A 发起的截图
+        // 会落入 B 的待发送池并随 B 的消息发出（#422，与文件选择路径 #161 同源）。
+        let conversationID = capability.selectedConversationID
+
         let result: ScreenCaptureService.Result
         do {
             result = try await ScreenCaptureService.captureAllScreens()
@@ -30,9 +37,15 @@ enum ScreenshotFlowRunner {
         ChatScreenshotState.shared.startSelection(
             image: result.image,
             captureFrame: result.frame
-        ) { [weak kernel] cropped in
-            guard let kernel, let cropped else { return }
-            insert(kernel: kernel, image: cropped)
+        ) { cropped in
+            guard let cropped else { return }
+            Task { @MainActor in
+                await insert(
+                    capability: capability,
+                    image: cropped,
+                    conversationID: conversationID
+                )
+            }
         }
     }
 
@@ -40,16 +53,25 @@ enum ScreenshotFlowRunner {
 
     /// 将裁剪结果编码为图片附件，加入发送器挂起池供输入框预览。
     ///
-    /// 可见性放宽到 internal 仅为便于单元测试覆盖「编码 → 挂起池」这条链路。
-    internal static func insert(kernel: KernelCoreContainer, image: CGImage) {
-        guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
-            logger.error("Failed to resolve MessageSendingProviding from kernel")
-            return
-        }
-
+    /// 缩放 / JPEG / Base64 是 CPU 与分配密集 work，放到后台 worker 执行，
+    /// 完成后再回到主 actor 发布附件（见 issue #1265）。
+    /// 写回前比对启动时捕获的 `conversationID` 与当前选中会话，不一致即丢弃（#422）。
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖「编码 → 会话校验 → 挂起池」这条链路。
+    internal static func insert(
+        capability: any ScreenshotFlowCapability,
+        image: CGImage,
+        conversationID: UUID?
+    ) async {
         do {
-            let attachment = try ScreenshotFileWriter.makeAttachment(image)
-            sender.addImageAttachment(attachment)
+            let attachment = try await Task.detached(priority: .userInitiated) {
+                try ScreenshotFileWriter.makeAttachment(image)
+            }.value
+            // 编码完成后会话可能已切换：旧截图不得落入新会话的挂起池（#422）。
+            guard capability.selectedConversationID == conversationID else {
+                logger.info("截图会话已切换，丢弃过期截图")
+                return
+            }
+            capability.addImageAttachment(attachment)
             logger.info("截图完成 ➡️ 已加入图片预览: \(attachment.fileName ?? "screenshot", privacy: .public)")
         } catch {
             logger.error("截图编码失败: \(error.localizedDescription, privacy: .public)")
