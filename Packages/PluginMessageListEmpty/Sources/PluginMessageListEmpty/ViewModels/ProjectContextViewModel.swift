@@ -238,8 +238,9 @@ final class ProjectContextViewModel: ObservableObject {
     private func fetchGitState(path: String) async -> GitState? {
         guard let git else { return nil }
         guard let status = try? await git.status(atPath: path) else { return nil }
-        let changed = status.modified.count + status.added.count + status.deleted.count
-            + status.renamed.count + status.staged.count
+        // 用 allChangedFiles 的既有契约：合并所有桶（含未跟踪）并按路径去重。
+        // 自己累加各桶会漏掉未跟踪文件，又把「已暂存 + 又改动」的同一文件算成两个（#808）。
+        let changed = status.allChangedFiles.count
         guard changed > 0 else { return nil }
         return GitState(changedFileCount: changed)
     }
