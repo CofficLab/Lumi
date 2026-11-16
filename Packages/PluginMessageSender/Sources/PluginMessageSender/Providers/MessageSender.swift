@@ -717,16 +717,30 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
     }
 
-    /// 清空已随消息送出的附件挂起池（仅当池未被用户在等待期间修改过）。
+    /// 移除已随消息送出的附件，保留用户在编码等待期间新加入的附件（#517）。
+    ///
+    /// 旧实现要求挂起池与送出快照「完全相等」才清空：编码途中新增 Y 会让
+    /// `[X,Y] != [X]`，于是已送出的 X 也留在池里，下次发送被重复带上。
+    /// 这里按 id 精确移除快照内的附件，后来者不受影响。
     private func clearSentAttachments(
         _ sentImages: [UserImageAttachment],
         _ sentFiles: [UserFileAttachment]
     ) {
-        if pendingImageAttachments == sentImages {
-            clearImageAttachments()
+        let sentImageIDs = Set(sentImages.map(\.id))
+        if !sentImageIDs.isEmpty {
+            let oldCount = pendingImageAttachments.count
+            pendingImageAttachments.removeAll { sentImageIDs.contains($0.id) }
+            if pendingImageAttachments.count != oldCount {
+                notify(.attachmentsChanged)
+            }
         }
-        if pendingFileAttachments == sentFiles {
-            clearFileAttachments()
+        let sentFileIDs = Set(sentFiles.map(\.id))
+        if !sentFileIDs.isEmpty {
+            let oldCount = pendingFileAttachments.count
+            pendingFileAttachments.removeAll { sentFileIDs.contains($0.id) }
+            if pendingFileAttachments.count != oldCount {
+                notify(.attachmentsChanged)
+            }
         }
     }
 

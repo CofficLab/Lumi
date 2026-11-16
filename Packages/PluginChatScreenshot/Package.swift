@@ -26,6 +26,7 @@ let package = Package(
                 "LumiUI",
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageSender",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -34,7 +35,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginChatScreenshotTests",
-            dependencies: ["PluginChatScreenshot"]
+            dependencies: [
+                "PluginChatScreenshot",
+                "ProviderMessage",
+            ]
         ),
     ]
 )
