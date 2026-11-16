@@ -10,7 +10,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public nonisolated static let verbose: Bool = false
     @Published var configs: [DatabaseConfig] = []
     @Published var selectedConfig: DatabaseConfig?
-    @Published var queryText: String = "SELECT * FROM sqlite_master;"
+    @Published var queryText: String = "SELECT * FROM sqlite_master;" {
+        didSet { refreshStatementCount() }
+    }
+    /// 工具栏「Run All (N)」的语句条数，仅在 `queryText` 变化时经 memo 缓存重算（#1254）。
+    /// 视图读取这个存储值（O(1)），不再在每次 body 求值时重新 split 整段脚本。
+    @Published public private(set) var statementCount: Int = 0
+    private var statementCountCache = StatementCountCache()
     @Published var queryResult: QueryResult?
     @Published var errorMessage: String?
     @Published var isConnected: Bool = false
@@ -72,6 +78,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         inspectorVisible.toggle()
     }
 
+    /// 重算语句条数；文本未变时缓存直接返回，不触发解析（#1254）。
+    /// 只有计数真正变化才发布，避免无关刷新引起多余的 objectWillChange。
+    private func refreshStatementCount() {
+        let newCount = statementCountCache.count(for: queryText)
+        if newCount != statementCount {
+            statementCount = newCount
+        }
+    }
+
     private let manager: DatabaseManagerCore
     /// 连接凭据的 Keychain 存储；可注入以便测试模拟写入失败。
     private let keychain: KeychainStore
@@ -118,6 +133,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 await DatabaseAgentConnectionRegistry.shared.upsert(config)
             }
         }
+        // didSet 不会在默认值初始化时触发，这里手动 seeding 一次（#1254）。
+        refreshStatementCount()
     }
 
     deinit {
