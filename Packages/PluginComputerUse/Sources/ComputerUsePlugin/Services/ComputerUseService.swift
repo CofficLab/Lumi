@@ -123,7 +123,7 @@ final class ComputerUseService: @unchecked Sendable {
         defer { coordinator.release(session) }
         let driver = NativeInputDriver(session: session) { [self] in
             guard ComputerUsePermissionService.hasAccessibilityPermission,
-                  authorizationStore.isNativeAllowed(currentWindow.bundleIdentifier) else { throw NativeControlInterruption.stopped }
+                  coordinator.isApproved(session) else { throw NativeControlInterruption.stopped }
             guard NSWorkspace.shared.frontmostApplication?.processIdentifier == currentWindow.processIdentifier,
                   let topWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.processIdentifier == currentWindow.processIdentifier }),
                   topWindow.id == currentWindow.id,

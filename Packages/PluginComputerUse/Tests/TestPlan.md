@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 123 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 119
+测试文件: 16 个，用例总数: 123
 
 核心组件（源码目录）:
 - `Models/`
@@ -63,6 +63,7 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **Computer Use 系统权限渲染器**（3 条）：由 `rendererClaimsSystemPermissionFailure`、`rendererIgnoresAuthorizationSuspension` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 访问上下文**（4 条）：由 `autonomousAllowsUnattendedAccess`、`autonomousSessionNeverRequestsAuthorization` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **None**（2 条）：由 `autonomousSessionSkipsNativeConsentButKeepsStopAvailable`、`legacyExplicitAllowlistIsPurged` 用例锁定；改动该模块时优先跑对应测试文件。
+- **原生控制租约授权**（4 条）：由 `unattendedLeaseIsApprovedWithoutPersistedWhitelist`、`attendedLeaseRequiresConsentBeforeApproval`、`stopRevokesLeaseApproval`、`releasedOrForeignLeaseIsNotApproved` 锁定输入前校验必须复用租约的 `approved` 语义——A3 自主租约即使持久白名单为空也已授权，停止/释放/外来会话立即撤销（**回归 #826**）；改动原生控制授权路径时优先跑对应测试文件。
 - **Computer Use 目标窗口可见区域**（17 条）：由 `cornerOccluderKeepsMostOfTarget`、`degenerateTargetHasNoVisibleRegion` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -189,27 +190,35 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 117 | Computer Use 会话授权不跨重启 | 重启并启动清理后，判定器对同一会话重新要求授权（#405） | A2 会话已授权，重开实例模拟重启 | 启动清理后用判定器判定同一会话 | 清理前放行（缺陷），清理后返回 needsAuthorization | P0 | ✅ 已覆盖 | `checkerRequiresReauthorizationAfterRestart` |
 | 118 | Computer Use 会话授权不跨重启 | 启动清理后本轮新授予的会话授权仍正常放行（#405） | 先启动清理再在本轮授予新授权 | 用判定器判定该会话 | 返回 allowed，清理不破坏本轮授权 | P1 | ✅ 已覆盖 | `grantsAfterStartupClearStillWorkWithinSession` |
 | 119 | Computer Use 会话授权不跨重启 | 空存储上的启动清理是安全的空操作（#405） | 仅有原生授权的空会话存储 | 连续两次 revokeAllSessionAccess | 不崩溃，无会话授权，原生授权保留 | P2 | ✅ 已覆盖 | `startupClearOnEmptyStoreIsSafe` |
+| 120 | 原生控制租约授权 | 自主租约即使持久白名单为空也必须被视为已授权，否则 A3 首个原生动作即被挡下（**回归 #826**） | 全新存储，unattended=true 获取租约 | 调用 `coordinator.isApproved(session)` | 返回 true（持久白名单从未写入） | P0 | ✅ 已覆盖 | `unattendedLeaseIsApprovedWithoutPersistedWhitelist` |
+| 121 | 原生控制租约授权 | 有人值守租约在用户同意前不得被视为已授权（**回归 #826**） | unattended=false 获取租约 | 同意前后分别调用 `isApproved` | 同意前 false（.permission），allow() 后 true | P0 | ✅ 已覆盖 | `attendedLeaseRequiresConsentBeforeApproval` |
+| 122 | 原生控制租约授权 | 停止必须立即撤销租约授权（**回归 #826**） | unattended 租约已授权 | 调用 `stop()` 后再查 `isApproved` | 返回 false | P0 | ✅ 已覆盖 | `stopRevokesLeaseApproval` |
+| 123 | 原生控制租约授权 | 释放后的租约与外来会话都不得被视为已授权（**回归 #826**） | unattended 租约 | 查外来会话；release 后再查原会话 | 两者均 false | P0 | ✅ 已覆盖 | `releasedOrForeignLeaseIsNotApproved` |
 
-> 说明：全部 **119 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **123 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#826**，`NativeControlCoordinator.isApproved` 统一授权语义）：
+> - **M1** 把 `isApproved` 还原为旧的持久白名单判定（`authorization.isNativeAllowed(bundleID)`，忽略内存 `approved`）→ `unattendedLeaseIsApprovedWithoutPersistedWhitelist`、`stopRevokesLeaseApproval` 转红（自主租约白名单为空被判未授权）；`attendedLeaseRequiresConsentBeforeApproval`、`releasedOrForeignLeaseIsNotApproved` 仍绿。
+> - 还原完整修复（`isApproved` 复用租约 `approved && !stopped`，`ComputerUseService` 的输入前校验改用它而非持久白名单）→ 123 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 17 / 17
 - P1: 已覆盖 93 / 93
 - P2: 已覆盖 13 / 13
-- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
+- **合计: 123 / 123**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
 - **P1**: 其余功能性用例（93 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 123 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
