@@ -206,6 +206,38 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         notify(.pendingMessagesChanged(conversationID: conversationID))
     }
 
+    /// 所有会话待发消息的稳定快照，供持久化落盘（#596）。
+    ///
+    /// 按会话 ID 排序后逐队展开，保证同一份队列每次编码顺序一致；每条消息
+    /// 自带 `conversationID`，恢复时据此重新分组。
+    public var allPendingMessages: [PendingChatMessage] {
+        pendingQueues.keys
+            .sorted { $0.uuidString < $1.uuidString }
+            .flatMap { pendingQueues[$0] ?? [] }
+    }
+
+    /// 重启后恢复上次未排空的待发队列（#596）。
+    ///
+    /// 会话忙碌时提交的消息只进入内存队列，输入框却已清空；退出前若不落盘，
+    /// 重启后这些已提交的内容与附件会彻底丢失。启动时把持久化的快照重新装回
+    /// `pendingQueues`，让它们回到可见的 Pending 列表，由正常排空时机或用户
+    /// 取消处理，**不自动拉起回合**。
+    ///
+    /// 只跳过运行时已标记删除的会话；不按 `conversations` 列表过滤——启动时
+    /// 会话列表可能仍在异步加载，按空列表过滤会把所有恢复内容误删。
+    public func restorePendingQueues(_ messages: [PendingChatMessage]) {
+        guard !messages.isEmpty else { return }
+        var restored: [UUID: [PendingChatMessage]] = [:]
+        for message in messages {
+            guard !deletedConversations.contains(message.conversationID) else { continue }
+            restored[message.conversationID, default: []].append(message)
+        }
+        for (conversationID, queue) in restored {
+            pendingQueues[conversationID] = queue
+            notify(.pendingMessagesChanged(conversationID: conversationID))
+        }
+    }
+
     // MARK: - Send
 
     public func sendMessage(_ content: String, conversationID: UUID?) async throws {
