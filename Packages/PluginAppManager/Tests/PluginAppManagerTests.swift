@@ -442,12 +442,88 @@ struct PluginAppManagerTests {
         #expect(viewModel.selectedFileIds.contains(precise.id))
     }
 
+    // MARK: - 无 Bundle ID 仍可卸载（回归 #794）
+
+    @Test
+    func nilBundleIdentifierStillListsAppItselfForUninstall() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-no-id-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeAppWithoutBundleID(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "NoID",
+            bundleName: "NoID"
+        )
+        let app = AppModel(bundleURL: appURL)
+        #expect(app.bundleIdentifier == nil)
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        // 没有 Bundle ID 也必须列出 App 本体，否则卸载入口为空、无法删除（#794）。
+        let appEntry = try #require(files.first { $0.type == .app })
+        #expect(appEntry.path == appURL.path)
+        #expect(appEntry.ownershipVerified == true)
+        // 无 Bundle ID 时跳过依赖标识符的 Library 扫描，只剩 App 本体。
+        #expect(files.count == 1)
+    }
+
+    @Test
+    func nilBundleIdentifierAppIsSelectedForUninstallByDefault() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-no-id-select-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeAppWithoutBundleID(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "NoID",
+            bundleName: "NoID"
+        )
+        let app = AppModel(bundleURL: appURL)
+        #expect(app.bundleIdentifier == nil)
+
+        let viewModel = AppManagerViewModel(appService: AppService(homeDirectory: home.path))
+        viewModel.selectedApp = app
+        viewModel.scanRelatedFiles(for: app)
+        try await Self.waitForScan(viewModel)
+
+        let appEntry = try #require(viewModel.relatedFiles.first { $0.type == .app })
+        // 默认勾选包含 App 本体，卸载按钮才可用（#794）。
+        #expect(viewModel.selectedFileIds.contains(appEntry.id))
+    }
+
     private static func waitForScan(_ viewModel: AppManagerViewModel) async throws {
         for _ in 0..<200 {
             if !viewModel.isScanningFiles { return }
             try await Task.sleep(for: .milliseconds(20))
         }
         #expect(!viewModel.isScanningFiles)
+    }
+
+    private static func makeAppWithoutBundleID(
+        in directory: URL,
+        name: String,
+        bundleName: String
+    ) throws -> URL {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let appURL = directory.appendingPathComponent("\(name).app", isDirectory: true)
+        let contents = appURL.appendingPathComponent("Contents", isDirectory: true)
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        // 故意不写 CFBundleIdentifier：模拟 Info.plist 缺少 Bundle ID 的应用。
+        let plist: [String: Any] = [
+            "CFBundleName": bundleName,
+            "CFBundlePackageType": "APPL",
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: contents.appendingPathComponent("Info.plist"))
+        return appURL
     }
 
     private static func makeApp(

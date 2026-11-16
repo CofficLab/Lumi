@@ -188,27 +188,30 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 扫描应用的关联文件
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
-        guard let bundleId = app.bundleIdentifier else {
-            if Self.verbose {
-                if AppManagerPluginSupport.verbose {
-                                    AppManagerPluginSupport.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
-                }
-            }
-            return []
-        }
-        if Self.verbose {
-            if AppManagerPluginSupport.verbose {
-                            AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
-            }
-        }
         let home = homeDirectory
         var relatedFiles: [RelatedFile] = []
 
         // 1. 添加 App 本身
         // 注意：AppModel 可能还没有计算大小，或者已经计算了。为了准确，这里重新获取（或者直接用 AppModel 的如果已存在）
         // 这里为了确保一致性，我们重新计算或直接使用 app.size
+        // 即使没有 Bundle ID 也要先列出 App 本身，否则卸载入口拿不到任何条目、
+        // 无法删除这个应用（#794）。Bundle ID 只用于后续 Library 关联文件扫描。
         let appSize = app.size > 0 ? app.size : await Self.calculateSize(for: app.bundleURL)
         relatedFiles.append(RelatedFile(path: app.bundleURL.path, size: appSize, type: .app))
+
+        guard let bundleId = app.bundleIdentifier else {
+            if Self.verbose {
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)跳过 Library 扫描：无 Bundle ID (\(app.displayName))")
+                }
+            }
+            return relatedFiles
+        }
+        if Self.verbose {
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+            }
+        }
 
         // 2. 扫描 Library
         await withTaskGroup(of: RelatedFile?.self) { group in
