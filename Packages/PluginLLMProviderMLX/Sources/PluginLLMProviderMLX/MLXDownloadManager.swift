@@ -25,7 +25,7 @@ public final class MLXDownloadManager: ObservableObject {
     private let cacheIndex = MLXDownloadCacheIndex()
     private var downloadTask: Task<Void, Never>?
     private var downloadKitCancellation: Task<Void, Never>?
-    private var activeOperationID: UUID?
+    var activeOperationID: UUID?
     private var pausedModelID: String?
     private var isPauseRequested = false
     private var isShutdown = false
@@ -349,7 +349,7 @@ public final class MLXDownloadManager: ObservableObject {
             .contains(where: { filename.hasSuffix($0) })
     }
 
-    private func publishProgress(
+    func publishProgress(
         operationID: UUID,
         completedBytes: Int64,
         currentBytes: Int64,
@@ -368,7 +368,18 @@ public final class MLXDownloadManager: ObservableObject {
             ? min(0.95, Double(progress.downloadedBytes) / Double(totalBytes) * 0.95)
             : (totalFiles > 0 ? Double(completedFiles) / Double(totalFiles) : 0)
         progress.fractionCompleted = max(resumeFloorFraction ?? 0, calculated)
-        refreshDownloadState()
+        // 进度事件只更新字节数与比例，发布状态时**不得**作废缓存扫描结果：
+        // 底层每 64KB 回调一次，若每次都 invalidate 会把进度放大成持续的全目录
+        // 扫描（#1125）。模型集合与缓存大小只在结构性变化时重算。
+        publishDownloadState()
+    }
+
+    /// 发布当前下载状态，读取缓存的磁盘扫描结果，不作废缓存。
+    ///
+    /// 与 ``refreshDownloadState()`` 的区别：后者用于结构性变化（完成 / 删除 /
+    /// 取消 / 显式刷新），会先作废缓存再求值；本方法供高频进度事件使用，只读缓存。
+    private func publishDownloadState() {
+        stateSubject?.send(downloadState)
     }
 
     private func makeDownloadState() -> LLMModelDownloadState {

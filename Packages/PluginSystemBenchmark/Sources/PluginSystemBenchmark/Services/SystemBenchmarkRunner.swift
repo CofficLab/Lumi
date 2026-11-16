@@ -67,22 +67,24 @@ public actor SystemBenchmarkRunner {
 
     private nonisolated static func runCPU(configuration: Configuration) async throws -> [BenchmarkMeasurement] {
         let singleStart = DispatchTime.now().uptimeNanoseconds
-        let singleChecksum = cpuWork(iterations: configuration.cpuIterations, seed: 0xA5A5_A5A5)
+        let singleChecksum = try cpuWork(iterations: configuration.cpuIterations, seed: 0xA5A5_A5A5)
         let singleMilliseconds = elapsedMilliseconds(since: singleStart)
 
         try Task.checkCancellation()
         let workerCount = max(1, min(ProcessInfo.processInfo.activeProcessorCount, 8))
         let iterationsPerWorker = max(1, configuration.cpuIterations / workerCount)
         let multiStart = DispatchTime.now().uptimeNanoseconds
-        let multiChecksum = await withTaskGroup(of: UInt64.self, returning: UInt64.self) { group in
+        // 用可抛出的任务组：任一 worker 因取消抛出时，组会取消其余 worker 并尽快返回，
+        // 而不是等非抛出的组把整段多核负载跑完（#257）。
+        let multiChecksum = try await withThrowingTaskGroup(of: UInt64.self, returning: UInt64.self) { group in
             for worker in 0..<workerCount {
                 group.addTask {
-                    cpuWork(iterations: iterationsPerWorker, seed: UInt64(worker + 1))
+                    try cpuWork(iterations: iterationsPerWorker, seed: UInt64(worker + 1))
                 }
             }
 
             var checksum: UInt64 = 0
-            for await value in group {
+            for try await value in group {
                 checksum ^= value
             }
             return checksum
@@ -115,13 +117,22 @@ public actor SystemBenchmarkRunner {
     }
 
     @inline(never)
-    private nonisolated static func cpuWork(iterations: Int, seed: UInt64) -> UInt64 {
+    private nonisolated static func cpuWork(iterations: Int, seed: UInt64) throws -> UInt64 {
         var value = seed
-        for index in 0..<iterations {
-            value = value &* 1_664_525 &+ 1_013_904_223 &+ UInt64(index)
-            value ^= value >> 13
-            value = value &* 2_862_933_555_777_941_757
-            value ^= value << 17
+        // 每 65536 次迭代检查一次取消：被取消时尽快退出，而不是把整段 CPU 负载跑完，
+        // 让 Cancel / shutdown 不必等待剩余迭代（#257）。分块以保持内层循环紧凑。
+        let blockSize = 65_536
+        var index = 0
+        while index < iterations {
+            try Task.checkCancellation()
+            let blockEnd = min(index + blockSize, iterations)
+            while index < blockEnd {
+                value = value &* 1_664_525 &+ 1_013_904_223 &+ UInt64(index)
+                value ^= value >> 13
+                value = value &* 2_862_933_555_777_941_757
+                value ^= value << 17
+                index += 1
+            }
         }
         return value
     }

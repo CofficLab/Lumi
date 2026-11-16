@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 41 条用例。
+PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 44 条用例。
 
 平台: iOS 17+
-测试文件: 11 个，用例总数: 41
+测试文件: 11 个，用例总数: 44
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -34,7 +34,7 @@ PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MLXDownloadCacheIndex**（4 条）：由 `firstReadScansOnce`、`repeatedReadsDoNotRescan`、`invalidateForcesRescan` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MLXDownloadProgressScan**（3 条）：由 `repeatedStateReadsScanOnce`、`explicitRefreshRescans`、`stateUsesCachedSnapshot` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MLXDownloadProgressScan**（6 条）：由 `repeatedStateReadsScanOnce`、`explicitRefreshRescans`、`stateUsesCachedSnapshot`、`progressEventsDoNotRescan` 等用例锁定——进度事件（底层每 64KB 一次）只读缓存扫描结果，**不得**作废缓存触发全目录扫描；模型集合与缓存大小只在结构性变化（完成 / 删除 / 取消 / 显式刷新）时重算（**回归 #1125**）。改动该模块时优先跑对应测试文件。
 - **MLXGenerateToolSchema**（3 条）：由 `toolSchemaEnablesTypedArgumentParsing`、`noToolSchemaLeavesArgumentsUntyped`、`toolSchemaRejectsUndeclaredFunctionName` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXGenerationInfo**（5 条）：由 `infoEventProvidesTokenUsage`、`infoEventProvidesStopReason`、`infoEventDoesNotDisturbContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MLXGenerationRejection**（5 条）：由 `rejectionEventIsCaptured`、`rejectionNeverBecomesContent`、`firstRejectionIsKept` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -89,27 +89,33 @@ PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆�
 | 39 | MLXGenerationRejection | 多个拒绝事件保留第一个诊断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRejectionIsKept` |
 | 40 | MLXGenerationRejection | 错误描述携带原因与工具名且不泄漏原始输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `errorDescriptionCarriesSafeDiagnostics` |
 | 41 | MLXGenerationRejection | 没有拒绝事件时保持为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `noRejectionKeepsNil` |
+| 42 | MLXDownloadProgressScan | 进度事件反复回调不得触发磁盘扫描（**回归 #1125**） | 建立缓存快照后设置活动 operationID | 模拟底层每 64KB 一次的 200 次 `publishProgress` | 扫描次数保持基线不变，进度不放大成全目录扫描 | P0 | ✅ 已覆盖 | `progressEventsDoNotRescan` |
+| 43 | MLXDownloadProgressScan | 进度事件仍然更新字节数、速度与比例 | 活动 operationID | 单次 `publishProgress` | `downloadedBytes`/`totalBytes`/`speed`/`fractionCompleted` 正确更新，且不额外扫描 | P1 | ✅ 已覆盖 | `progressEventsStillUpdateBytesAndFraction` |
+| 44 | MLXDownloadProgressScan | 进度事件之后显式刷新仍会重新扫描 | 先进度回调再 `refreshDownloadState` | 结构性刷新 | 扫描次数 +1，进度缓存不被永久冻结 | P1 | ✅ 已覆盖 | `explicitRefreshAfterProgressRescans` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#1125）：
+> - **M1**：把 `publishProgress` 末尾改回 `refreshDownloadState()`（作废缓存）→ `progressEventsDoNotRescan` 变红（`counter.callCount == baseline` 失败，200 次进度各触发一次扫描）；恢复 `publishDownloadState()` 后转绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 30 / 30
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 32 / 32
 - P2: 已覆盖 3 / 3
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（30 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（32 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 24 个，用例总数: 141
+测试文件: 26 个，用例总数: 150
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -62,6 +62,8 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **HTTPPendingRequestClassification**（5 条）：由 `pendingRequestIsNotAbnormal`、`transportFailureWithoutStatusIsAbnormal`、`httpErrorStatusIsAbnormal`、`successIsNormalNotAbnormal`、`mixedRecordsClassifyCorrectly` 锁定（**回归 #823**）：`matchesStatus` 的 `.abnormal` 谓词对「无状态码」记录不得一律判异常——在途 Pending（既无 `responseStatusCode` 也无 `errorDescription`）必须排除，只有已带错误的终止失败（`errorDescription != nil`）或已收到非 2xx 状态码的记录才算异常；列表、计数与导出共用该谓词，三处都不得把 Pending 误报为异常。改动 `HTTPExchangeStore.matchesStatus` 时优先跑对应测试文件（串行套件，共享进程级单例）。
 - **HTTPExchangeBodyExportOffMain**（3 条）：由 `jsonExportOffMain`、`binaryExportOffMain`、`writeFailureThrows` 锁定（**回归 #1200**）：大体积 HTTP body 导出的格式化（JSON pretty + sortedKeys / 非 UTF-8 逐字节 hex 回退）与原子写入必须在后台线程完成，主线程不得参与；目标目录不存在时写出必须抛错而非静默失败。改动 `HTTPExchangeExportFormatter` 或导出线程模型时优先跑对应测试文件。
 - **HTTPExchangeExportFilenameBytes**（5 条）：由 `cjkFilenameWithinByteBudget`、`emojiGraphemeFilenameWithinByteBudget`、`batchContinuesPastFailure` 等锁定（**回归 #822**）：HTTP 日志批量导出文件名必须按最终 UTF-8 字节预算截断（序号/方法/host/ID/扩展名全部计入，APFS 单组件 ≤255 字节），逐字素簇累加不切断字符、ID 后缀完整保留，短名不被误截；`writeBatch` 每条写入独立 `do/catch`，单条失败只收集错误并继续整批，不得中止后续记录，进度只对成功写入推进。改动 `HTTPExchangeExportFormatter.exportFileName`/`writeBatch` 或导出循环时优先跑对应测试文件。
+- **HTTPExchangeQueryCancellation**（5 条）：由 `cancelledCountQueriesStopEarly`、`cancelledListPageStopsEarly`、`parentCancellationReachesDetachedQuery` 等锁定（**回归 #1247**）：HTTP 日志的列表/计数/图表/域名查询被新一轮重载取代时，取消必须传播到 detached 子查询并让 store 的批量扫描循环协作式停下（`Task.isCancelled`），不得把整段扫描跑完；被取代的每日计数不得写缓存。改动 `HTTPExchangeStore` 查询循环或 `HTTPExchangeSettingsView` 的重载/取消接线时优先跑对应测试文件（串行套件，独立本地 store）。
+- **NetworkHistoryConfigure**（4 条）：由 `configureReturnsBeforeDecodingAndPublishesInBackground`、`configureQuarantinesCorruptHistoryInBackground`、`staleInFlightPublishDoesNotOverwriteReconfiguredState` 等锁定（**回归 #1212**）：`NetworkHistoryService.configure` 不得在主 actor 同步解码 30 天历史（最多 43200 点），必须把目录创建/读取/解码/过滤放到后台任务，准备好后再回主 actor 发布，让 onBoot 的 UI/provider 注册不被阻塞；在途结果写回前必须比对代次与目标 URL，旧目录/旧代次的加载晚到不得覆盖重新配置后的新状态；后台路径遇损坏文件必须隔离；发布时合并保留加载期间已录制的分钟点。改动 `configure`/`publishLoadedHistory`/`readHistoryOffMain` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -208,8 +210,17 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 139 | HTTPExchangeExportFilenameBytes | 短 multibyte URL 不被字节预算误截（**回归 #822**） | URL 含 5×测，远低于预算 | 调用 `exportFileName` | 文件名与未截断形式完全一致 | P1 | ✅ 已覆盖 | `shortMultibyteFilenameUnchanged` |
 | 140 | HTTPExchangeExportFilenameBytes | 单条写入失败不中止整批，其余记录仍导出（**回归 #822**） | 第 0 条目标路径预建为目录，共 3 条记录 | 调用 `writeBatch` | 仅第 0 条失败，第 1/2 条仍写出，进度只推进成功项 | P0 | ✅ 已覆盖 | `batchContinuesPastFailure` |
 | 141 | HTTPExchangeExportFilenameBytes | 全部成功时写出所有记录并逐条推进进度（**回归 #822**） | 3 条记录，目标目录可写 | 调用 `writeBatch` | 无失败，3 文件均存在，进度为 [0,1,2] | P1 | ✅ 已覆盖 | `batchWritesAllOnSuccess` |
+| 142 | HTTPExchangeQueryCancellation | 被取消的计数查询协作式停下，不得跑完整段扫描（**回归 #1247**） | 播种 1100 条记录（近期时间戳，避开保留期清理） | 对照未取消计数为 1100；已取消的 `loadSnapshotCount`/`loadListCount` | 快照计数返回 0，列表计数 < 1100 | P0 | ✅ 已覆盖 | `cancelledCountQueriesStopEarly` |
+| 143 | HTTPExchangeQueryCancellation | 被取消的分页扫描在循环顶部即停，不返回匹配（**回归 #1247**） | 播种 300 条记录 | 对照 `loadListPage(limit:40)` 返回 40；已取消的同查询 | 未取消返回 40，已取消 records 为空 | P0 | ✅ 已覆盖 | `cancelledListPageStopsEarly` |
+| 144 | HTTPExchangeQueryCancellation | 被取消的近期域名收集提前返回空（**回归 #1247**） | 播种 300 条不同域名记录 | 对照 `loadRecentDomains` 为 300；已取消的同查询 | 未取消 300，已取消为空 | P1 | ✅ 已覆盖 | `cancelledRecentDomainsStopsEarly` |
+| 145 | HTTPExchangeQueryCancellation | 被取消的每日计数返回空且不污染缓存（**回归 #1247**） | 播种 120 条跨 3 天记录 | 已取消 `loadDailyCountSeries`；随后完整查询 | 取消返回空点集，后续完整序列 total 仍为 120 | P0 | ✅ 已覆盖 | `cancelledDailySeriesReturnsEmptyAndKeepsCacheIntact` |
+| 146 | HTTPExchangeQueryCancellation | 父任务取消必须传播到 detached 子查询（**回归 #1247**） | 播种 1100 条记录 | 对照完整计数 1100；取消包裹 detached 查询的父任务 | 父取消后 detached 计数 < 1100 | P0 | ✅ 已覆盖 | `parentCancellationReachesDetachedQuery` |
+| 147 | NetworkHistoryConfigure | configure 立即返回不在主 actor 同步解码，后台准备好后才发布历史（**回归 #1212**） | 临时目录预置 2 个近期历史点 | configure 后未让出主 actor 即检查，再等待后台恢复 | configure 同步返回后 longTermHistory 仍为空；等待后等于播种的 2 点，存储目录已创建 | P0 | ✅ 已覆盖 | `configureReturnsBeforeDecodingAndPublishesInBackground` |
+| 148 | NetworkHistoryConfigure | configure 后台加载遇损坏文件必须隔离，不得阻塞或抛出（**回归 #1212**） | history.json 内容为非法 JSON | configure 后等待后台恢复 | longTermHistory 为空，history.corrupt.json 保留非法内容，原 history.json 被移走 | P0 | ✅ 已覆盖 | `configureQuarantinesCorruptHistoryInBackground` |
+| 149 | NetworkHistoryConfigure | 重新配置后旧代次或旧目录的在途加载晚到不得覆盖新状态（**回归 #1212**） | 先 configure(dirA) 再 configure(dirB)，各自加载完成 | 以旧代次旧目录、旧代次新目录、新代次旧目录三种组合模拟晚到发布 | 三种 stale 发布均被丢弃，longTermHistory 始终为 dirB 的点 | P0 | ✅ 已覆盖 | `staleInFlightPublishDoesNotOverwriteReconfiguredState` |
+| 150 | NetworkHistoryConfigure | 后台加载期间已录制的分钟点发布时必须保留，不得被旧加载覆盖丢失（**回归 #1212**） | configure 空目录后手动置入一个已录制分钟点 | 以当前代次与目录发布一段更旧的历史 | 合并后两点都在，按时间先后排列（旧历史在前、录制点在后） | P0 | ✅ 已覆盖 | `publishPreservesPointsRecordedDuringInFlightLoad` |
 
-> 说明：全部 **141 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
@@ -217,6 +228,10 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > （`HTTPExchangeBodyExportOffMainTests`，见 #1200），本轮一并补齐。
 > ID 137–141 为本轮新增的导出文件名字节预算与批量写入隔离回归用例
 > （`HTTPExchangeExportFilenameBytesTests`，见 #822）。
+> ID 142–146 为本轮新增的 HTTP 日志查询协作式取消回归用例
+> （`HTTPExchangeQueryCancellationTests`，见 #1247）。
+> ID 147–150 为本轮新增的网络历史后台配置与身份校验回归用例
+> （`NetworkHistoryConfigureTests`，见 #1212）。
 >
 > **鉴别力验证（#448）**：本轮用三处独立变异确认用例不是「恒绿」——
 > （1）删除标准化包含性守卫后，`../victim` 真的写出目录外文件、
@@ -260,25 +275,46 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > （2）把 `writeBatch` 的逐条 `do/catch` 改成首条失败即 `return failures`（中止整批）→
 > 第 0 条目标为目录写入失败后第 1/2 条不再写出，ID 140 `batchContinuesPastFailure` 失败。
 > 两处变异分别由不同用例捕获，均已还原。
+>
+> **鉴别力验证（#1247）**：对 store 查询循环的协作式取消检查施加两处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）禁用 `loadListCount` 循环顶部的 `Task.isCancelled` 检查（被取代的计数扫描跑完整段）→
+> ID 142 `cancelledCountQueriesStopEarly` 与 ID 146 `parentCancellationReachesDetachedQuery`
+> 的已取消计数仍为 1100（未提前停下），两例变红；
+> （2）禁用 `loadListPage` 扫描循环顶部的 `Task.isCancelled` 检查 →
+> ID 143 `cancelledListPageStopsEarly` 的已取消分页仍返回匹配，变红。
+> 两处变异分别由不同用例捕获，均已还原。视图层的防抖/保留单一重载任务/代次守卫
+> 属 SwiftUI 装配，由 `swift build` 与上述 store/取消传播机制用例共同锁定。
+>
+> **鉴别力验证（#1212）**：对 configure 的后台化与发布守卫施加四处独立变异，
+> 逐一跑 `swift test --filter <对应用例>` 确认 RED 再还原——
+> （1）在 configure 中恢复同步 `loadHistory()`（旧实现）→ ID 147 的「configure 返回后
+> longTermHistory 仍为空」断言失败（历史被同步填满，随后后台合并又产生重复点），4 issues；
+> （2）删除 `publishLoadedHistory` 的代次/URL 身份守卫 → ID 149 三种 stale 发布把
+> dirB 的状态污染成 [999,999,999,222]，3 issues；
+> （3）删除 `readHistoryOffMain` catch 中的 `quarantineCorruptHistory` → ID 148 损坏文件
+> 未被隔离（history.json 仍在、corrupt 文件缺失），2 issues；
+> （4）把发布的合并 `loaded + longTermHistory` 退回纯覆盖 `loaded` → ID 150 已录制分钟点
+> 丢失（count 1 而非 2），2 issues。四处变异分别由不同用例捕获，均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 60 / 60
-- P1: 已覆盖 73 / 73
+- P0: 已覆盖 68 / 68
+- P1: 已覆盖 74 / 74
 - P2: 已覆盖 8 / 8
-- **合计: 141 / 141**（仅表示清单场景，非源码覆盖率）
+- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（60 条）
-- **P1**: 其余功能性用例（73 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（68 条）
+- **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 141 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 150 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
