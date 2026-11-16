@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 113 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 113
+测试文件: 15 个，用例总数: 119
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -57,6 +57,8 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationProviderReplacement**（4 条，#640）：由 `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager`、`managerFallsBackToCapturedProvidersWithoutResolver` 锁定——`ConversationManager` 在 order 7 创建时捕获的默认 Message/AgentLoop 会被 order 8 插件替换；删除（单条/批量）的 `cancelTurn`/`clearMessages` 与设置页 Capability 的 count/snapshot 必须经解析器动态读取当前生产 Provider，不得停留在创建时的默认实例；无解析器时回退捕获值。改动 Provider 注入或删除/统计链路时必须优先跑该文件。
 
 - **ConversationStartupSnapshotMerge**（2 条，#439）：由 `startupSnapshotMergesConversationCreatedDuringLoad`、`loadWithoutLocalChangesRestoresPersistedSelection` 锁定——启动加载是「await 读快照 → 写回内存」两段式，写回前必须比对本地改动代次：加载期间用户新建/选中的会话不得被晚到的旧快照覆盖，选中态不得被劫持回快照首项；只有加载期间无本地改动时才沿用快照并恢复持久化选中。改动 `loadConversations()` 写回链路时必须优先跑该文件。
+
+- **ConversationStoreSettingsReloadRange**（6 条，#537）：由 `eventReloadKeepsLoadedPagesAndSelection`、`eventReloadStopsAtLoadedRangeWithoutOverfetch`、`eventReloadRefreshesSummariesAcrossLoadedRange`、`staleReloadDoesNotDropPageAppendedDuringRefresh`、`refillDeduplicatesConversationBumpedBetweenPages`、`reloadHidesLoadMoreWhenRangeCoversStore` 锁定——设置页的事件刷新（`.created`/`.updated`/`.deleted`/`.listChanged`）必须按原分页游标重新覆盖刷新前已加载的记录数，不得只重取第一页而丢掉用户翻过的分页、把第二页之后的选中会话误判为不存在并改选首项；只加载过第一页时不得额外翻页；刷新期间翻页已把列表变长时，旧范围结果必须丢弃并按新范围重取（异步写回身份校验）；续页重叠记录按 ID 去重保序；`hasMoreConversations` 以「已加载数 < 总数」判定，范围覆盖全库时不再显示翻页入口。改动 `ConversationStoreSettingsViewModel.performReload` / `refillLoadedRange` 时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -175,8 +177,14 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 111 | ConversationManagerCRUD | 门闩构造慢清理，墓碑持续生效直到清理完成（**回归 #535**） | 工具管理器替身在 `deleteToolCalls` 处被门闩挡住 | 删除后等清理停在门闩，重载一次，再放行 | 清理未完成期间墓碑仍生效、重载仍排除该 ID；放行后墓碑解除 | P0 | ✅ 已覆盖 | `slowCleanupHoldsTombstoneUntilCleanupFinishes` |
 | 112 | ConversationStartupSnapshotMerge | 加载期间新建的会话不被晚到的旧快照覆盖，选中态不被劫持（**回归 #439**） | 门闩把只含旧会话的快照挡在写回前，持久化选中指向旧会话 | 加载停在 await 时新建并选中一个会话，再放行旧快照 | 新会话存活、旧会话被合并进来，选中态与标题停在新会话 | P0 | ✅ 已覆盖 | `startupSnapshotMergesConversationCreatedDuringLoad` |
 | 113 | ConversationStartupSnapshotMerge | 加载期间无本地改动时仍恢复持久化选中（**回归 #439** 护栏） | 旧会话已落库，持久化选中指向它，无门闩无新建 | 新建 Manager 并 `loadConversations()` | 列表含旧会话，选中态恢复为旧会话 | P1 | ✅ 已覆盖 | `loadWithoutLocalChangesRestoresPersistedSelection` |
+| 114 | ConversationStoreSettingsViewModel | 事件刷新必须重新覆盖已加载分页并保留选中（**回归 #537**） | 45 条已加载（40+5），选中第二页第 43 条 | 新建一条会话顶到最前后投递 `.created` | 列表重新覆盖原范围（含被挤下移的选中会话），选中态不变，续页沿用原分页游标 | P0 | ✅ 已覆盖 | `eventReloadKeepsLoadedPagesAndSelection` |
+| 115 | ConversationStoreSettingsViewModel | 只加载过第一页时刷新不得额外翻页（**回归 #537** 护栏） | 库中 120 条，仅加载第一页 40 条并选中其中一条 | 投递 `.updated` 事件刷新 | 只发出一次分页请求，列表仍为前 40 条，选中态不变，仍可继续翻页 | P0 | ✅ 已覆盖 | `eventReloadStopsAtLoadedRangeWithoutOverfetch` |
+| 116 | ConversationStoreSettingsViewModel | 事件刷新必须刷新整个已加载范围的摘要（**回归 #537**） | 80 条已加载（两页），第二页某条详细度在库中已变更 | 投递 `.updated` 事件刷新 | 第二页摘要同步为新值，第一页不受影响，列表仍为 80 条 | P0 | ✅ 已覆盖 | `eventReloadRefreshesSummariesAcrossLoadedRange` |
+| 117 | ConversationStoreSettingsViewModel | 晚到的旧范围刷新不得吃掉刷新期间追加的分页（**回归 #537**） | 门闩同时挡住第三页翻页与事件刷新的首页请求，已选中第二页某条 | 先放行翻页（列表变 120 条），再放行刷新 | 旧范围结果被丢弃并按新范围重取，最终 120 条齐全、选中态保留 | P0 | ✅ 已覆盖 | `staleReloadDoesNotDropPageAppendedDuringRefresh` |
+| 118 | ConversationStoreSettingsViewModel | 续页重叠的会话必须按 ID 去重（**回归 #537**） | 80 条已加载，刷新续页返回与首页重叠的记录 | 投递 `.listChanged` 事件刷新 | 列表无重复 ID，保持首次出现顺序 | P0 | ✅ 已覆盖 | `refillDeduplicatesConversationBumpedBetweenPages` |
+| 119 | ConversationStoreSettingsViewModel | 已加载范围覆盖全库时不再显示翻页入口（**回归 #537**） | 库中正好 40 条，首屏已全部加载 | 投递 `.listChanged` 事件刷新 | `hasMoreConversations` 为假，列表仍为 40 条 | P1 | ✅ 已覆盖 | `reloadHidesLoadMoreWhenRangeCoversStore` |
 
-> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **119 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
@@ -184,24 +192,26 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 > 变异验证（#535）：① 把 `loadConversationPage`/`fetchConversationPage` 的墓碑过滤改为恒真 → `deletionTombstoneExcludesConversationFromReloadAndSelection` 转红（重载复活墓碑 ID）；② 移除 `selectConversation` 的墓碑守卫 → 同用例转红（幽灵 ID 被选中）；③ 移除 `deleteConversation` 的同步 `pendingDeletionIDs.insert` → `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` 转红；④ 移除清理成功后的 `pendingDeletionIDs.subtract` → `slowCleanupHoldsTombstoneUntilCleanupFinishes` 转红（墓碑永不解除）。变异单独施加并确认转红后还原，最终 111 条全绿。
 >
 > 变异验证（#439）：把 `loadConversations()` 写回处的代次判断 `if self.conversationMutationGeneration == startGeneration` 改为恒真（永远走覆盖分支）→ `startupSnapshotMergesConversationCreatedDuringLoad` 转红（新建会话被旧快照抹掉、选中态被劫持回旧会话、标题退回旧值），`loadWithoutLocalChangesRestoresPersistedSelection` 仍绿。变异确认转红后还原，最终 113 条全绿。
+>
+> 变异验证（#537）：① `performReload` 直接用首页结果、不调用 `refillLoadedRange` → `eventReloadKeepsLoadedPagesAndSelection`、`eventReloadRefreshesSummariesAcrossLoadedRange`、`refillDeduplicatesConversationBumpedBetweenPages`、`staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（分页与第二页选中态丢失）；② 移除写回前的列表身份守卫（`conversations.count == loadedCount && last?.id == loadedLastID`）→ `staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（晚到的旧范围刷新吃掉刚追加的第三页）；③ 续页游标改为 `beforeUpdatedAt: nil, beforeID: nil` → `eventReloadKeepsLoadedPagesAndSelection` 转红（续页重复取首页、游标断言失败）；④ 去掉按 ID 去重、直接返回 `loaded` → `refillDeduplicatesConversationBumpedBetweenPages` 转红（列表出现重复 ID）；⑤ `hasMoreConversations` 回退为 `page.count == conversationPageSize` → `reloadHidesLoadMoreWhenRangeCoversStore` 转红（正好 40 条时仍显示翻页入口）。变异单独施加并确认转红后还原，最终 119 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 82 / 82
+- P0: 已覆盖 28 / 28
+- P1: 已覆盖 83 / 83
 - P2: 已覆盖 8 / 8
-- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
+- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（82 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（83 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 113 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
