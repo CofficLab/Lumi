@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 239 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 247 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 27 个，用例总数: 239
+测试文件: 28 个，用例总数: 247
 
 核心组件（源码目录）:
 - `Editor/`
@@ -50,6 +50,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorConfigStore**（2 条）：由 `testSettingsDirectoryDoesNotDuplicateStorageDirectoryForDefaultRoot`、`testSettingsDirectoryUsesHostPersistenceRootWhenProvided` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorContributionRegistry**（7 条）：由 `installAndWithdraw`、`contextMenuContributionInstallAndWithdraw`、`replaceSwapsAtomically` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorDirtyBodyRetention**（5 条）：由 `testSwitchingBackRestoresUnsavedBody`、`testSavingClearsDirtyBodyAndSwitchBackLoadsDisk`、`testGoBackRestoresUnsavedBody` 等用例锁定 Auto Save 关闭时切换文件的未保存正文保留（**回归 #396**：脏正文随会话同步落快照、加载时优先于磁盘内容、持久化基线保持磁盘内容、与磁盘一致的快照判干净）；改动会话同步或 loadFile 时优先跑对应测试文件。
+- **EditorDocumentReloadRevert**（8 条）：由 `testRevertDiscardsUnsavedEditsAndClearsDirtySnapshot`、`testReloadAppliesExternalDiskChangeOverDirtyBuffer`、`testForcedReloadInFlightDoesNotPolluteSwitchedTab` 等用例锁定 V2 reload/revert 的强制重读语义（**回归 #589**：同一 URL 也必须替换 buffer、清脏标记与会话脏正文快照、清除过期外部冲突提示、等待加载完成、非活动/未知文档抛契约错误、在途强制重读不得污染切换后的标签）；改动 loadFile 或 V2 文档能力时优先跑对应测试文件。
 - **EditorExtensionRegistry**（2 条）：由 `testHighlightProvidersCachesResultsPerLanguage`、`testRegisterHighlightContributorViaKernelBridge` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorExternalReloadIdentity**（2 条）：由 `externalReloadDiscardedAfterTabSwitch`、`externalReloadAppliedWhenStillSameFile` 锁定外部重读续体的当前标签复核；改动该模块时优先跑对应测试文件。
 - **EditorFindMatchPerformance**（11 条）：由 `plainTextMatchesUnchanged`、`wholeWordMatchesUnchanged`、`regexMatchesUnchanged` 等用例锁定查找匹配性能修复不改变结果；改动该模块时优先跑对应测试文件。
@@ -313,27 +314,35 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 237 | EditorDirtyBodyRetention | 未编辑文件切回加载磁盘内容且保持干净（**回归 #396**） | A 未编辑 | 切到 B 再切回 A | 正文为磁盘内容，脏标记为 false | P1 | ✅ 已覆盖 | `testCleanFileSwitchKeepsDiskContent` |
 | 238 | EditorDirtyBodyRetention | 正文改回磁盘内容或与磁盘一致的过期快照，切回判定为干净（**回归 #396**） | A 编辑后改回原内容；另构造与磁盘一致的 dirtyBody | 切到 B 再切回 A | 正文为磁盘内容，脏标记为 false | P1 | ✅ 已覆盖 | `testRevertedEditIsTreatedAsCleanAfterSwitchBack` |
 | 239 | EditorDirtyBodyRetention | 后退到有未保存编辑的文件必须恢复脏正文不得丢失（**回归 #396**） | A 有未保存编辑，已打开 B | goBack 回到 A | 正文为脏快照，脏标记为 true | P0 | ✅ 已覆盖 | `testGoBackRestoresUnsavedBody` |
+| 240 | EditorDocumentReloadRevert | revert 必须丢弃未保存编辑、清脏标记与脏正文快照且不写磁盘（**回归 #589**） | A 已打开并有未保存编辑 | 调用 V2 documents.revert | 正文回到磁盘内容，脏标记 false，快照 nil，加载已结束，磁盘未变 | P0 | ✅ 已覆盖 | `testRevertDiscardsUnsavedEditsAndClearsDirtySnapshot` |
+| 241 | EditorDocumentReloadRevert | revert 丢弃的编辑不得在切走再切回时复活（**回归 #589**） | A revert 后已回到磁盘内容 | 切到 B 再切回 A | 正文为磁盘内容，脏标记 false | P0 | ✅ 已覆盖 | `testRevertThenSwitchBackDoesNotResurrectDiscardedEdits` |
+| 242 | EditorDocumentReloadRevert | reload 必须把磁盘上的外部改动应用到干净 buffer（**回归 #589**） | A 已打开且干净，磁盘被外部改写 | 调用 V2 documents.reload | 正文为磁盘新内容，脏标记 false，快照 nil | P1 | ✅ 已覆盖 | `testReloadAppliesExternalDiskChangeToCleanBuffer` |
+| 243 | EditorDocumentReloadRevert | reload 必须用磁盘内容替换脏 buffer 并重设持久化基线（**回归 #589**） | A 有未保存编辑，磁盘被外部改写 | 调用 reload 后再次编辑 | 正文为磁盘内容、脏标记 false；再次编辑重新判脏 | P0 | ✅ 已覆盖 | `testReloadAppliesExternalDiskChangeOverDirtyBuffer` |
+| 244 | EditorDocumentReloadRevert | reload 后过期的「磁盘已变更」冲突提示必须清除（**回归 #589**） | A 脏且已登记外部冲突 | 调用 V2 documents.reload | hasExternalFileConflict 为 false，正文为磁盘内容 | P1 | ✅ 已覆盖 | `testReloadClearsStaleExternalConflictFlag` |
+| 245 | EditorDocumentReloadRevert | 非活动文档的 revert 必须抛能力不可用且不动活动文档（**回归 #589**） | A、B 均已打开，活动为 B | 对 A 的 documentID 调用 revert | 抛 capabilityUnavailable(editor.documents.reload)，B 正文不变 | P1 | ✅ 已覆盖 | `testRevertOnBackgroundDocumentThrowsCapabilityUnavailable` |
+| 246 | EditorDocumentReloadRevert | 未知文档的 reload 必须抛文档不存在（**回归 #589**） | 已打开 A | 用未注册的 documentID 调用 reload | 抛 documentNotFound(该 ID) | P1 | ✅ 已覆盖 | `testReloadOnUnknownDocumentThrowsDocumentNotFound` |
+| 247 | EditorDocumentReloadRevert | 在途强制重读不得污染加载期间切换到的标签（**回归 #589 / #206**） | A 有未保存编辑并启动强制重读 | 重读返回前同步切到 B 并等待 | currentFileURL 仍为 B，正文为 B 的磁盘内容，脏标记 false | P0 | ✅ 已覆盖 | `testForcedReloadInFlightDoesNotPolluteSwitchedTab` |
 
-> 说明：全部 **239 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **247 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 198 / 198
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 202 / 202
 - P2: 已覆盖 19 / 19
-- **合计: 239 / 239**（仅表示清单场景，非源码覆盖率）
+- **合计: 247 / 247**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（198 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（202 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 239 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 247 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -449,22 +449,23 @@ private final class DocumentCapability: EditorDocumentProviding {
     }
 
     func revert(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
     func reload(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
-    private func reloadFromDisk(documentID: EditorDocumentID) throws {
+    private func reloadFromDisk(documentID: EditorDocumentID) async throws {
         guard let adapter, let service = adapter.service,
-              let session = adapter.session(for: documentID), let url = session.fileURL else {
+              let session = adapter.session(for: documentID), session.fileURL != nil else {
             throw EditorContractError.documentNotFound(documentID)
         }
         guard adapter.isActiveSession(session.id) else {
             throw EditorContractError.capabilityUnavailable(feature: "editor.documents.reload")
         }
-        service.files.loadFile(from: url)
+        service.files.reloadCurrentFileFromDisk()
+        await adapter.waitForFileLoad()
     }
 
     func loadFullDocument(documentID: EditorDocumentID) async throws {

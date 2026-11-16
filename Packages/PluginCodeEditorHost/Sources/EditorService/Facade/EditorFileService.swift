@@ -68,4 +68,10 @@ public final class EditorFileService {
     public func loadFullFile() {
         state.loadFullFileFromDisk()
     }
+
+    /// 重新读取磁盘并替换当前 buffer（reload / revert，#589）。
+    /// 与 `loadFile(from:)` 不同：同一 URL 也会替换，未保存编辑被丢弃、脏标记清空。
+    public func reloadCurrentFileFromDisk() {
+        state.reloadCurrentFileFromDisk()
+    }
 }

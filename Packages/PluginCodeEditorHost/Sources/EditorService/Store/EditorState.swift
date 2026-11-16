@@ -1879,7 +1879,10 @@ public final class EditorState: ObservableObject, SuperLog {
     ///   光标/多光标/滚动/折叠状态。不能等到加载结束再读 live session：
     ///   期间诊断等观察者会触发 `syncActiveSessionState()`，把尚未恢复的
     ///   当前视图状态写进目标 Session。
-    func loadFile(from url: URL?, restoringSession: EditorSession? = nil) {
+    /// - Parameter replacingBuffer: 强制用磁盘内容替换当前 buffer（reload / revert）。
+    ///   常规加载对「同一 URL 且 buffer 已就绪」会跳过替换，以免切换标签时覆盖
+    ///   未保存正文；但 reload / revert 的语义就是重新应用磁盘内容（#589）。
+    func loadFile(from url: URL?, restoringSession: EditorSession? = nil, replacingBuffer: Bool = false) {
         let restoreSnapshot = restoringSession.map { session in
             EditorSessionSnapshotBuilder.snapshot(
                 preserving: session.id,
@@ -1979,7 +1982,7 @@ public final class EditorState: ObservableObject, SuperLog {
                     guard self.fileLoadRequestGeneration.isCurrent(loadGeneration) else { return }
                     let standardizedLoadingURL = loadingURL.standardizedFileURL
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
-                    let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
+                    let shouldReplaceCurrentBuffer = replacingBuffer || !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
                         if Self.verbose {
                                                     self.logger.info("\(self.t)loadFile: shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path)")
@@ -2103,6 +2106,16 @@ public final class EditorState: ObservableObject, SuperLog {
         guard let currentFileURL else { return }
         fullLoadOverrides.insert(currentFileURL.standardizedFileURL)
         loadFile(from: currentFileURL)
+    }
+
+    /// 重新应用磁盘内容（`editor.documents.reload` / `revert`，#589）。
+    ///
+    /// 加载收尾把持久化基线设为磁盘内容、清掉脏标记，并经
+    /// `syncActiveSessionState()` 清空会话的脏正文快照：revert 之后切走再切回
+    /// 也不会把已丢弃的编辑恢复回来。
+    func reloadCurrentFileFromDisk() {
+        guard let currentFileURL else { return }
+        loadFile(from: currentFileURL, replacingBuffer: true)
     }
 
     func applySessionRestore(_ session: EditorSession) {
