@@ -71,12 +71,16 @@ public struct TreeView: View, SuperLog {
 
     // MARK: - Event Handlers
 
-    private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
+    func handleExpansionChange(relativePath: String, isExpanded: Bool) {
         let projectRoot = viewModel.currentProjectPath
         if isExpanded {
             FileTreeSettings.shared.addExpandedPath(relativePath, for: projectRoot)
+            // 持久化之外必须同步通知协调器，否则新展开的目录不会进入 watcher，
+            // 外部新增文件无法自动刷新（#570）。
+            coordinator.addExpandedPath(relativePath)
         } else {
             FileTreeSettings.shared.removeExpandedPath(relativePath, for: projectRoot)
+            coordinator.removeExpandedPath(relativePath)
         }
     }
 

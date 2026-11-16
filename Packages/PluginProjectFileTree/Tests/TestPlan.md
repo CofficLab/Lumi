@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 83 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 61
+测试文件: 21 个，用例总数: 83
 
 核心组件（源码目录）:
 - `Models/`
@@ -55,6 +55,12 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeCollectionViewController（批量删除）**（3 条）：由 `deleteMenuCarriesEverySelectedTarget`、`performDeleteTrashesEveryTarget`、`performDeleteKeepsFailedTargetSelected` 锁定。Move to Trash 菜单必须携带 `actionTargets(for:)` 的全部目标，删除后按成功项移除选择并刷新各自父目录；部分失败时保留失败项的选择并给出警告，不能只删除右键项（**回归 #1109**）。
 - **FileTreeFacade（终端路径）**（3 条）：由 `directoryUsesItself`、`fileUsesItsDirectory`、`missingPathUsesParentDirectory` 锁定（既有 `FileTreeTerminalTargetTests`，本次补登记）。`terminalTargetPath` 目录取自身、文件取父目录、不存在路径按文件处理（**issue #1296**）。
 - **FileTreeFacade（终端转义）**（4 条）：由 `plainPathIsSingleQuoted`、`doubleQuoteIsAppleScriptEscaped`、`backslashIsAppleScriptEscaped`、`shellRecoversOriginalPath` 锁定。`openInTerminal` 不得把路径裸拼进 `do script "cd '…'"`：`terminalDoScriptArgument` 必须先做 shell 单引号转义（`'` → `'\''`）再做 AppleScript 双引号转义（`\` → `\\`、`"` → `\"`），顺序不可颠倒，任意合法 POSIX 路径经真实 `/bin/sh` 解析后须逐字节还原（**回归 #446**）。
+- **FileTreeDataSource（精准刷新后台扫描）**（6 条）：由 `enumerationRunsOffMainThread`、`mainActorStaysResponsiveWhileScanning`、`nestedAndDuplicatePathsAreCoalesced`、`batchCommitsItemsOnce`、`directoriesArrivingDuringScanAreNotLost`、`staleScanDoesNotOverwriteNewProject` 锁定。watcher 一次下发 K 个变化目录时，枚举与节点构造必须在后台线程、嵌套/重复路径合并成一轮扫描、K 个结果只提交一次列表；在途扫描期间新到的目录不得丢失，切换项目后晚到的旧扫描结果不得覆盖新项目的树（**回归 #1235**）。
+- **FileTreeNSViewBridge（批量下发）**（1 条）：由 `multipleSubdirectoriesAreDispatchedAsOneBatch` 锁定。多个子目录变化必须一次批量下发给数据源合并扫描，不得逐目录派发或退化为全量重建（**回归 #1235**）。
+- **RefreshCoordinator（监听列表后台探测）**（7 条）：由 `probesRunOffMainThread`、`mainActorStaysResponsiveWhileProbing`、`supersededRebuildIsNotApplied`、`staleProbeDoesNotOverwriteNewProject`、`stoppedCoordinatorDoesNotRemountWatching`、`gitMetadataDirectoriesAreStillWatched`、`missingExpandedDirectoriesAreSkipped` 锁定。构造监听列表的展开目录探测、包清单枚举与 `.git` 元数据探测必须在后台线程；过期重建被取消且不应用、只应用最新一次结果；`stop()` 后在途探测不再挂载监听；`.git/refs` 与 `logs/refs` 仍纳入监听但不监听整个 `.git`；不存在的展开目录跳过（**回归 #1243**）。
+- **GitStatusProvider（采集取消）**（4 条）：由 `cancelledCaptureIsRejectedBeforeQueueing`、`captureCancelledWhileQueuedIsRejectedOnAcquire`、`captureAbortsBetweenSubprocesses`、`cancellingDuringSubprocessTerminatesGitEarly` 锁定。过期采集必须在排队前与取到队列后都拒绝、子进程之间检查取消、轮询期间取消立即终止 git 而不等满超时（**回归 #1244**）。
+- **RefreshCoordinator（采集取消）**（2 条）：由 `stopCancelsInFlightGitCapture`、`projectSwitchCancelsPreviousGitCapture` 锁定。协调器必须持有 Git 采集 worker 句柄，`stop()` 与切换项目时真正取消它，避免过期采集继续排在共享串行队列上挡住当前项目（**回归 #1244**）。
+- **TreeView（展开同步监听）**（2 条）：由 `expandRegistersDirectoryWithWatcher`、`collapseRemovesDirectoryFromWatcher` 锁定。展开/折叠回调除持久化 `FileTreeSettings` 外，必须同步调用 `RefreshCoordinator.addExpandedPath`/`removeExpandedPath`，使新展开目录进入 watcher、折叠目录移出 watcher，否则外部新增文件不会自动刷新（**回归 #570**）。
 
 ## 测试用例清单
 
@@ -121,8 +127,30 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 59 | ProjectFileTreePlugin | 中文命名文件的修改必须显示 modified 标记，不得因引号转义而丢失状态（**回归 #442**） | 临时 git 仓库已提交 `测试.txt` 后再修改，core.quotepath 默认 true | 调用 captureSnapshot | `statusForPath("测试.txt")` 为 `.modified` | P0 | ✅ 已覆盖 | `gitStatusMarksChineseNamedFile` |
 | 60 | ProjectFileTreePlugin | 含反斜杠与引号的合法文件名映射回原始相对路径（**回归 #442**） | 临时 git 仓库含 untracked 文件 `a\b"c.txt` | 调用 captureSnapshot | `statusForPath` 对该文件名返回 `.untracked` | P1 | ✅ 已覆盖 | `gitStatusPreservesSpecialCharacterFileName` |
 | 61 | ProjectFileTreePlugin | monorepo 子目录项目的 Git 状态必须以项目根为基准，且排除项目外文件（**回归 #443**） | 临时 monorepo 仓库根有 `top.txt`，子目录 `sub` 含 `child.txt`、`nested/deep.txt`，全部提交后再修改 | 以 `sub` 为项目根调用 captureSnapshot | `repoRootPath` 等于 `sub`；`statusForPath("child.txt")`、`statusForPath("nested/deep.txt")` 为 `.modified`，`aggregateStatusForDirectory("nested")` 为 `.modified`；旧键 `sub/child.txt` 与项目外 `top.txt` 均为 nil；UI 相对化后仍命中 `.modified` | P0 | ✅ 已覆盖 | `gitStatusUsesProjectRootBaseInMonorepoSubdirectory` |
+| 62 | FileTreeNSViewBridge | 多个子目录变化合并成一次批量 reload（**回归 #1235**） | 变化集合含 Sources、Tests、Sources/Views 三个子目录 | 派发精准刷新令牌 1 | 无 fullRefresh，reloadBatches 恰为 1，三个目录一次性下发由数据源合并扫描 | P1 | ✅ 已覆盖 | `multipleSubdirectoriesAreDispatchedAsOneBatch` |
+| 63 | FileTreeDataSource | 目录枚举与节点构造都不在主线程执行（**回归 #1235**） | 已展开 /A，后台 reader 记录线程标记 | 向 A 新增文件并 reloadDirectory(A) | 新文件出现，枚举与 Package.swift 探测均未在主线程执行 | P0 | ✅ 已覆盖 | `enumerationRunsOffMainThread` |
+| 64 | FileTreeDataSource | 扫描期间主线程仍可响应，旧列表保留到新结果就绪（**回归 #1235**） | A 的枚举被门闩阻塞在后台 | 门闩未放行时检查列表，随后放行 | 阻塞期间主线程可继续、旧文件仍在、新文件未现；放行后新文件出现 | P0 | ✅ 已覆盖 | `mainActorStaysResponsiveWhileScanning` |
+| 65 | FileTreeDataSource | 嵌套与重复目录合并成一轮扫描（**回归 #1235**） | 已展开 /A、/A/Sub、/B | reloadDirectories([A, Sub, A, B]) | A 只扫一次，Sub 随父一起扫不单独再扫，根目录不被重扫 | P1 | ✅ 已覆盖 | `nestedAndDuplicatePathsAreCoalesced` |
+| 66 | FileTreeDataSource | K 个目录的结果只提交一次列表更新（**回归 #1235**） | 已展开 /A、/B、/C，各自新增文件 | reloadDirectories([A, B, C]) | 三个新文件均出现，onItemsChanged 只触发一次 | P0 | ✅ 已覆盖 | `batchCommitsItemsOnce` |
+| 67 | FileTreeDataSource | 在途扫描期间新到的目录不会被丢掉（**回归 #1235**） | A 的扫描被门闩阻塞在途 | 阻塞期间 B 也变化并 reloadDirectory(B)，随后放行 | A、B 的新文件都出现，B 的刷新不因合并/取消而丢失 | P0 | ✅ 已覆盖 | `directoriesArrivingDuringScanAreNotLost` |
+| 68 | FileTreeDataSource | 切换项目后晚到的旧扫描结果不覆盖新项目的树（**回归 #1235**） | 旧项目 A 的扫描被门闩阻塞在途 | 切换到新项目并加载其文件，随后放行旧扫描 | 项目根为新路径，旧目录与旧新文件均被丢弃，新项目文件保留 | P0 | ✅ 已覆盖 | `staleScanDoesNotOverwriteNewProject` |
+| 69 | RefreshCoordinator | 展开目录与包清单探测都不在主线程执行（**回归 #1243**） | 注入记录型探测替身，已展开 Sources、Tests | setProjectRootPath 后连续展开两个目录 | 探测均在后台线程，最终监听集合含根与两个展开目录 | P0 | ✅ 已覆盖 | `probesRunOffMainThread` |
+| 70 | RefreshCoordinator | 探测期间主线程仍可响应，watcher 等新结果就绪才更新（**回归 #1243**） | Sources 探测被门闩阻塞在后台 | 门闩未放行时检查 watcher，随后放行 | 阻塞期间 watcher 不更新、主线程可继续；放行后 watcher 收到含 Sources 的新集合 | P0 | ✅ 已覆盖 | `mainActorStaysResponsiveWhileProbing` |
+| 71 | RefreshCoordinator | 连续展开只应用最新的监听列表（**回归 #1243**） | Sources 探测被门闩阻塞在途 | 在途时再展开 Tests，随后放行旧探测 | 只应用最新一次重建，被取代的结果不再额外应用，集合含 Sources 与 Tests | P0 | ✅ 已覆盖 | `supersededRebuildIsNotApplied` |
+| 72 | RefreshCoordinator | 切换项目后晚到的旧探测结果不覆盖新项目的监听列表（**回归 #1243**） | 旧项目 Sources 探测被门闩阻塞在途 | 切换到新项目并下发其监听集合，随后放行旧探测 | 旧项目探测结果被丢弃，最终集合含新根、不含旧 Sources | P0 | ✅ 已覆盖 | `staleProbeDoesNotOverwriteNewProject` |
+| 73 | RefreshCoordinator | stop() 之后在途探测不再重新挂载监听（**回归 #1243**） | Sources 探测被门闩阻塞在途 | stop() 后放行旧探测 | watcher 不再收到新监听集合，stopCount 递增一次 | P0 | ✅ 已覆盖 | `stoppedCoordinatorDoesNotRemountWatching` |
+| 74 | RefreshCoordinator | .git 元数据目录仍被纳入监听列表（**回归 #1243**） | 探测替身报告 .git/refs 与 .git/logs/refs 存在 | setProjectRootPath | 监听集合含 refs 与 logs/refs，不含整个 .git（避免 objects 写入无效刷新） | P1 | ✅ 已覆盖 | `gitMetadataDirectoriesAreStillWatched` |
+| 75 | RefreshCoordinator | 不存在的展开目录不会进入监听列表（**回归 #1243**） | 展开 Sources（存在）与 Gone（不存在） | 连续展开两个目录 | 最终集合含 Sources，不含 Gone | P2 | ✅ 已覆盖 | `missingExpandedDirectoriesAreSkipped` |
+| 76 | GitStatusProvider | 已取消的采集在进入串行队列前就被拒绝（**回归 #1244**） | 取消标记已置位，真实临时仓库 | captureSnapshot 传入已取消的检查闭包 | 返回 nil，检查只发生一次（排队前），不进入队列或启动 git | P0 | ✅ 已覆盖 | `cancelledCaptureIsRejectedBeforeQueueing` |
+| 77 | GitStatusProvider | 排队期间被取消的采集取到队列后立即放弃（**回归 #1244**） | 门闩占住共享串行队列，采集阻塞在 queue.sync | 排队后取消并放行队列 | 返回 nil，检查共两次（排队前+取到队列后），不再启动 git 子进程 | P0 | ✅ 已覆盖 | `captureCancelledWhileQueuedIsRejectedOnAcquire` |
+| 78 | GitStatusProvider | 采集在子进程之间检查取消，不再跑完后续命令（**回归 #1244**） | 前 3 次检查放行、之后一律取消 | captureSnapshot | 返回 nil 而非过期快照；对照组未取消时 tracked.txt 仍为 modified | P0 | ✅ 已覆盖 | `captureAbortsBetweenSubprocesses` |
+| 79 | GitStatusProvider | 子进程轮询期间取消会立即终止 git，而不是等满超时（**回归 #1244**） | 12000 个未跟踪文件拖慢 git status，命令超时 15s | 启动后 0.05s 取消 | 返回 nil，耗时远小于 15s（不等满子进程超时） | P0 | ✅ 已覆盖 | `cancellingDuringSubprocessTerminatesGitEarly` |
+| 80 | RefreshCoordinator | stop() 会取消在途的 Git 采集 worker（**回归 #1244**） | 门闩占住队列，gitStatusEnabled 协调器已发起采集 | stop() | 持有的 worker 句柄 isCancelled 为真（只取消外层 Task 停不掉排队采集） | P0 | ✅ 已覆盖 | `stopCancelsInFlightGitCapture` |
+| 81 | RefreshCoordinator | 切换项目会取消上一个项目的 Git 采集 worker（**回归 #1244**） | 门闩占住队列，旧项目采集在途 | setProjectRootPath 切到新项目 | 旧项目 worker 句柄 isCancelled 为真，让位给当前项目 | P0 | ✅ 已覆盖 | `projectSwitchCancelsPreviousGitCapture` |
+| 82 | TreeView | 展开目录会把该目录加入 watcher 监听列表（**回归 #570**） | 真实临时根含 Sources，TreeView 持真实 RefreshCoordinator + 记录 watcher | 驱动生产回调 handleExpansionChange(Sources, true) | watcher 收到含 Sources 的新监听集合 | P0 | ✅ 已覆盖 | `expandRegistersDirectoryWithWatcher` |
+| 83 | TreeView | 折叠目录会把该目录从 watcher 监听列表移除（**回归 #570**） | 已展开 Sources 并进入监听 | 驱动 handleExpansionChange(Sources, false) | watcher 新集合不含 Sources，根目录仍保留 | P1 | ✅ 已覆盖 | `collapseRemovesDirectoryFromWatcher` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > ID 50–52 为此前已实跑通过、但漏登记到清单的既有终端路径用例
 > （`FileTreeTerminalTargetTests`，见 #1296），本轮一并补齐，使
@@ -163,25 +191,39 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 > - M3 把 `normalizePath` 改成 `return path`（命中前缀但不剥掉）→
 >   5 条断言 RED：`child.txt`/`nested/deep.txt`/`nested` 聚合/旧键 `sub/child.txt`/UI 相对化，
 >   而 `top.txt` 排除仍绿，证明前缀剥离与项目外排除是两个独立 guard。
-> 三处变异各自被独立断言 discriminated，还原后该集成用例全绿（全包 61 条）。
+> 三处变异各自被独立断言 discriminated，还原后该集成用例全绿（全包 83 条）。
+
+> 变异验证（#570，`TreeView.handleExpansionChange`，逐一单独施加后跑
+> `swift test --filter TreeViewExpansionWatchTests`，确认 RED 再还原）：
+> - M1 去掉展开分支的 `coordinator.addExpandedPath(relativePath)` →
+>   `expandRegistersDirectoryWithWatcher` RED（watcher 停在仅含根目录的首次集合，
+>   新展开目录从不进入监听；折叠用例因前置展开失败连带 RED）。
+> - M2 去掉折叠分支的 `coordinator.removeExpandedPath(relativePath)` →
+>   仅 `collapseRemovesDirectoryFromWatcher` RED（折叠后 Sources 仍留在监听集合），
+>   展开用例仍绿，证明 add/remove 是两个独立 guard。
+> 两处变异各自被独立断言 discriminated，还原后 2 条用例全绿。
+
+> 登记补全：ID 62–81 为此前已实跑通过、但漏登记到清单的既有后台化/取消用例
+> （#1235 精准刷新后台扫描、#1243 监听列表后台探测、#1244 Git 采集取消），
+> 本轮随 #570 一并补齐，使 `verify-testplan.py` 的双向方法核对恢复绿色。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 30 / 30
-- P1: 已覆盖 21 / 21
-- P2: 已覆盖 10 / 10
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 47 / 47
+- P1: 已覆盖 25 / 25
+- P2: 已覆盖 11 / 11
+- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
-- **P1**: 其余功能性用例（21 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（47 条）
+- **P1**: 其余功能性用例（25 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
