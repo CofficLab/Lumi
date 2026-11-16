@@ -191,6 +191,15 @@
       }
     },
     {
+      "identity": "lumiplugincachemanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginCacheManager.git",
+      "state": {
+        "revision": "804813e2e329447d2c2f5a2cd54fa66a69ae9c5b",
+        "version": "1.0.0"
+      }
+    },
+    {
       "identity": "lumiplugincaffeinate",
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",

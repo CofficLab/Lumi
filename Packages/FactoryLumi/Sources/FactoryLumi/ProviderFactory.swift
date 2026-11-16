@@ -19,6 +19,7 @@ import ProviderSettingView
 import ProviderSkill
 import ProviderAgentRules
 import ProviderStorage
+import ProviderDiskCache
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
@@ -65,6 +66,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider(dataRootDirectory: dataRootDirectory)
+    }
+
+    /// 产出 `DiskCacheProviding` 实现（默认 ~/Library/Caches 磁盘缓存）。
+    public func makeDiskCacheProvider() -> any DiskCacheProviding {
+        DefaultDiskCacheProvider()
     }
 
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
@@ -274,6 +280,7 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 内核生命周期（`start(plugins:)`）与插件装配留在 KernelFactory。
     public func registerProviders(into kernel: KernelCoreContainer) throws {
         try kernel.registerProvider((any StorageProviding).self, makeStorageProvider())
+        try kernel.registerProvider((any DiskCacheProviding).self, makeDiskCacheProvider())
 
         // 必须在启动插件之前注入，使 registerPlugin 能读取用户的禁用状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {

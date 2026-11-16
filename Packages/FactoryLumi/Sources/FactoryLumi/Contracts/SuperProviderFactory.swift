@@ -31,6 +31,7 @@ import ProviderSettingView
 import ProviderSkill
 import ProviderAgentRules
 import ProviderStorage
+import ProviderDiskCache
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
@@ -47,6 +48,9 @@ import ProviderLifecycleHooks
 public protocol ProviderFactory {
     /// 产出 `StorageProviding` 实现。
     func makeStorageProvider() -> any StorageProviding
+
+    /// 产出 `DiskCacheProviding` 实现（可删除的磁盘加速缓存）。
+    func makeDiskCacheProvider() -> any DiskCacheProviding
 
     /// 产出 `ContentViewProviding` 实现。
     func makeContentViewProvider() -> any ContentViewProviding

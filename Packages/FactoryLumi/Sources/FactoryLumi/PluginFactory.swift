@@ -57,6 +57,7 @@ import PluginSubagent
 import PluginHTMLCanvas
 import PluginDiskSpeedTest
 import PluginCaffeinate
+import PluginCacheManager
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
@@ -250,6 +251,7 @@ public struct DefaultPluginFactory: PluginFactory {
             SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
+            CacheManagerPlugin(),
             NetworkManagerPlugin(),
             ServerManagerPlugin(),
             DocxReadPlugin(),
