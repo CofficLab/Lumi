@@ -1,841 +1,841 @@
 {
-  "originHash" : "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
-  "pins" : [
+  "originHash": "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
+  "pins": [
     {
-      "identity" : "async-http-client",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-server/async-http-client.git",
-      "state" : {
-        "revision" : "d2dfb39bcb0fafd1834ec6e6334c1755360f856e",
-        "version" : "1.37.0"
+      "identity": "async-http-client",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swift-server/async-http-client.git",
+      "state": {
+        "revision": "d2dfb39bcb0fafd1834ec6e6334c1755360f856e",
+        "version": "1.37.0"
       }
     },
     {
-      "identity" : "beautiful-mermaid-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukilabs/beautiful-mermaid-swift",
-      "state" : {
-        "revision" : "6a23a29e91af8f5b3e9fc09945332ca193bd69ec",
-        "version" : "1.0.4"
+      "identity": "beautiful-mermaid-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lukilabs/beautiful-mermaid-swift",
+      "state": {
+        "revision": "6a23a29e91af8f5b3e9fc09945332ca193bd69ec",
+        "version": "1.0.4"
       }
     },
     {
-      "identity" : "elk-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukilabs/elk-swift",
-      "state" : {
-        "revision" : "32f8042e3509a4819f00ff9cd46e829ec2b26da0",
-        "version" : "1.0.2"
+      "identity": "elk-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lukilabs/elk-swift",
+      "state": {
+        "revision": "32f8042e3509a4819f00ff9cd46e829ec2b26da0",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "eventsource",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattt/eventsource.git",
-      "state" : {
-        "revision" : "bb4b61273b5a976bb571859c17f903ebc3439df1",
-        "version" : "1.6.0"
+      "identity": "eventsource",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/mattt/eventsource.git",
+      "state": {
+        "revision": "bb4b61273b5a976bb571859c17f903ebc3439df1",
+        "version": "1.6.0"
       }
     },
     {
-      "identity" : "fseventswrapper",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Frizlab/FSEventsWrapper",
-      "state" : {
-        "revision" : "70bbea4b108221fcabfce8dbced8502831c0ae04",
-        "version" : "2.1.0"
+      "identity": "fseventswrapper",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/Frizlab/FSEventsWrapper",
+      "state": {
+        "revision": "70bbea4b108221fcabfce8dbced8502831c0ae04",
+        "version": "2.1.0"
       }
     },
     {
-      "identity" : "hummingbird",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/hummingbird-project/hummingbird.git",
-      "state" : {
-        "revision" : "341e11f65d8e24cf87e9aae427c040f0084ada4e",
-        "version" : "2.28.1"
+      "identity": "hummingbird",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/hummingbird-project/hummingbird.git",
+      "state": {
+        "revision": "341e11f65d8e24cf87e9aae427c040f0084ada4e",
+        "version": "2.28.1"
       }
     },
     {
-      "identity" : "jsonrpc",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/JSONRPC",
-      "state" : {
-        "revision" : "29987f721374f30e686af40ccffd0b13b14dde1f",
-        "version" : "0.9.2"
+      "identity": "jsonrpc",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/JSONRPC",
+      "state": {
+        "revision": "29987f721374f30e686af40ccffd0b13b14dde1f",
+        "version": "0.9.2"
       }
     },
     {
-      "identity" : "languageclient",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/LanguageClient",
-      "state" : {
-        "revision" : "4f28cc3cad7512470275f65ca2048359553a86f5",
-        "version" : "0.8.2"
+      "identity": "languageclient",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/LanguageClient",
+      "state": {
+        "revision": "4f28cc3cad7512470275f65ca2048359553a86f5",
+        "version": "0.8.2"
       }
     },
     {
-      "identity" : "languageserverprotocol",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/LanguageServerProtocol",
-      "state" : {
-        "revision" : "48ab36295c56c6cc5ba783a37a0c1324fef54ff6",
-        "version" : "0.14.2"
+      "identity": "languageserverprotocol",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/LanguageServerProtocol",
+      "state": {
+        "revision": "48ab36295c56c6cc5ba783a37a0c1324fef54ff6",
+        "version": "0.14.2"
       }
     },
     {
-      "identity" : "libgit2swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nookery/LibGit2Swift.git",
-      "state" : {
-        "revision" : "5cc1b96e18c39ad1bd0e81c9b5d80865dd8038f7",
-        "version" : "1.1.1"
+      "identity": "libgit2swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/nookery/LibGit2Swift.git",
+      "state": {
+        "revision": "5cc1b96e18c39ad1bd0e81c9b5d80865dd8038f7",
+        "version": "1.1.1"
       }
     },
     {
-      "identity" : "lumikernel",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKernel.git",
-      "state" : {
-        "revision" : "c0aace6a4b0b428f3b059020327a558c470538ed",
-        "version" : "1.1.1"
+      "identity": "lumikernel",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKernel.git",
+      "state": {
+        "revision": "c0aace6a4b0b428f3b059020327a558c470538ed",
+        "version": "1.1.1"
       }
     },
     {
-      "identity" : "lumikitagenttool",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
-      "state" : {
-        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
-        "version" : "1.0.3"
+      "identity": "lumikitagenttool",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKitAgentTool.git",
+      "state": {
+        "revision": "344dc0884b423ac46e049825f12f2723d435ed86",
+        "version": "1.0.3"
       }
     },
     {
-      "identity" : "lumikitkeychain",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKitKeychain.git",
-      "state" : {
-        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
-        "version" : "1.0.1"
+      "identity": "lumikitkeychain",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKitKeychain.git",
+      "state": {
+        "revision": "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "lumikitllm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
-      "state" : {
-        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
-        "version" : "1.0.1"
+      "identity": "lumikitllm",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKitLLM.git",
+      "state": {
+        "revision": "32b68d88408b627f075e36d04aca9d5629af3494",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "lumikitreminder",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKitReminder.git",
-      "state" : {
-        "revision" : "ac8f7b2dd5d7ffab9c7c53d726f9da238f7a1695",
-        "version" : "1.1.0"
+      "identity": "lumikitreminder",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKitReminder.git",
+      "state": {
+        "revision": "ac8f7b2dd5d7ffab9c7c53d726f9da238f7a1695",
+        "version": "1.1.0"
       }
     },
     {
-      "identity" : "lumikittestsupport",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiKitTestSupport.git",
-      "state" : {
-        "revision" : "3d43b467db654c19c7535fca8067f979d800dff4",
-        "version" : "1.0.1"
+      "identity": "lumikittestsupport",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiKitTestSupport.git",
+      "state": {
+        "revision": "3d43b467db654c19c7535fca8067f979d800dff4",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "lumilocalization",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiLocalization.git",
-      "state" : {
-        "revision" : "da8ca9d0cc77e9c1f979680f9cb79e87f79a3f87",
-        "version" : "1.0.2"
+      "identity": "lumilocalization",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiLocalization.git",
+      "state": {
+        "revision": "da8ca9d0cc77e9c1f979680f9cb79e87f79a3f87",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumilogging",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiLogging.git",
-      "state" : {
-        "revision" : "ed01ea8d6e95c627be241a01924c75999b6d8256",
-        "version" : "1.0.2"
+      "identity": "lumilogging",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiLogging.git",
+      "state": {
+        "revision": "ed01ea8d6e95c627be241a01924c75999b6d8256",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumipluginabout",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginAbout.git",
-      "state" : {
-        "revision" : "6b67ef27dcdbedab57a475aff2fe9c86fe26cc83",
-        "version" : "3.0.4"
+      "identity": "lumipluginabout",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginAbout.git",
+      "state": {
+        "revision": "6b67ef27dcdbedab57a475aff2fe9c86fe26cc83",
+        "version": "3.0.4"
       }
     },
     {
-      "identity" : "lumipluginactivitybar",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginActivityBar.git",
-      "state" : {
-        "revision" : "070b7ca5d1cf5f8956c732051b074d34dbd2fd73",
-        "version" : "1.0.5"
+      "identity": "lumipluginactivitybar",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginActivityBar.git",
+      "state": {
+        "revision": "070b7ca5d1cf5f8956c732051b074d34dbd2fd73",
+        "version": "1.0.5"
       }
     },
     {
-      "identity" : "lumipluginbookletmaker",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginBookletMaker.git",
-      "state" : {
-        "revision" : "4bd43742ac15ff6860a183fa94878fc9dd9ea6c6",
-        "version" : "2.1.1"
+      "identity": "lumipluginbookletmaker",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginBookletMaker.git",
+      "state": {
+        "revision": "4bd43742ac15ff6860a183fa94878fc9dd9ea6c6",
+        "version": "2.1.1"
       }
     },
     {
-      "identity" : "lumiplugincaffeinate",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",
-      "state" : {
-        "revision" : "e213650f943fd853af49bf349fb2d26c96ee19ee",
-        "version" : "1.1.6"
+      "identity": "lumiplugincaffeinate",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginCaffeinate.git",
+      "state": {
+        "revision": "e213650f943fd853af49bf349fb2d26c96ee19ee",
+        "version": "1.1.6"
       }
     },
     {
-      "identity" : "lumiplugincommand",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginCommand.git",
-      "state" : {
-        "revision" : "cbf25032b899d23e3619bc2403543bdca9afda22",
-        "version" : "1.0.2"
+      "identity": "lumiplugincommand",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginCommand.git",
+      "state": {
+        "revision": "cbf25032b899d23e3619bc2403543bdca9afda22",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumiplugindevice",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginDevice.git",
-      "state" : {
-        "revision" : "8e766434b01d7af9d99bedba680a0a8c8e009982",
-        "version" : "1.1.0"
+      "identity": "lumiplugindevice",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginDevice.git",
+      "state": {
+        "revision": "677dc2f42cce9a9f4a03345bc5270e50246f00c2",
+        "version": "1.1.1"
       }
     },
     {
-      "identity" : "lumiplugindiskmanager",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginDiskManager.git",
-      "state" : {
-        "revision" : "332b9ac8dc1bb2be5b9f1686a71cfaa07ebdac5a",
-        "version" : "1.0.2"
+      "identity": "lumiplugindiskmanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginDiskManager.git",
+      "state": {
+        "revision": "332b9ac8dc1bb2be5b9f1686a71cfaa07ebdac5a",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumipluginhydrationreminder",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginHydrationReminder.git",
-      "state" : {
-        "revision" : "f11ccf58342e3b01913673453e01ea7893a1d95f",
-        "version" : "1.0.3"
+      "identity": "lumipluginhydrationreminder",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginHydrationReminder.git",
+      "state": {
+        "revision": "f11ccf58342e3b01913673453e01ea7893a1d95f",
+        "version": "1.0.3"
       }
     },
     {
-      "identity" : "lumipluginidletime",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginIdleTime.git",
-      "state" : {
-        "revision" : "d22499fadfcb21e4a7f768d371c316a5f579e614",
-        "version" : "1.0.1"
+      "identity": "lumipluginidletime",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginIdleTime.git",
+      "state": {
+        "revision": "d22499fadfcb21e4a7f768d371c316a5f579e614",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "lumipluginlogos",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginLogos.git",
-      "state" : {
-        "revision" : "76d2c7a01f54b03e5fb6ae9af33d7baec7c1e37c",
-        "version" : "1.0.1"
+      "identity": "lumipluginlogos",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginLogos.git",
+      "state": {
+        "revision": "76d2c7a01f54b03e5fb6ae9af33d7baec7c1e37c",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "lumipluginpluginmanager",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginPluginManager.git",
-      "state" : {
-        "revision" : "29f1ada0b17b99e960cf86da1d330e65e831963e",
-        "version" : "1.7.1"
+      "identity": "lumipluginpluginmanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginPluginManager.git",
+      "state": {
+        "revision": "29f1ada0b17b99e960cf86da1d330e65e831963e",
+        "version": "1.7.1"
       }
     },
     {
-      "identity" : "lumipluginrootview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginRootView.git",
-      "state" : {
-        "revision" : "3ff9eeef9bb850f16dec21d42706fefff8768e2f",
-        "version" : "1.3.2"
+      "identity": "lumipluginrootview",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginRootView.git",
+      "state": {
+        "revision": "3ff9eeef9bb850f16dec21d42706fefff8768e2f",
+        "version": "1.3.2"
       }
     },
     {
-      "identity" : "lumipluginsettingview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginSettingView.git",
-      "state" : {
-        "revision" : "32c903d27c7bb91622d229e331e77b950f234c53",
-        "version" : "1.0.4"
+      "identity": "lumipluginsettingview",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginSettingView.git",
+      "state": {
+        "revision": "32c903d27c7bb91622d229e331e77b950f234c53",
+        "version": "1.0.4"
       }
     },
     {
-      "identity" : "lumipluginstorage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginStorage.git",
-      "state" : {
-        "revision" : "dc857098d1b7d44536100b0b579b34c057e0dcbe",
-        "version" : "1.2.2"
+      "identity": "lumipluginstorage",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginStorage.git",
+      "state": {
+        "revision": "dc857098d1b7d44536100b0b579b34c057e0dcbe",
+        "version": "1.2.2"
       }
     },
     {
-      "identity" : "lumipluginthememanager",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginThemeManager.git",
-      "state" : {
-        "revision" : "10e0e84793a39438f171efd9c7cbefefd095b2a0",
-        "version" : "1.0.2"
+      "identity": "lumipluginthememanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginThemeManager.git",
+      "state": {
+        "revision": "10e0e84793a39438f171efd9c7cbefefd095b2a0",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumipluginthemepack",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginThemePack.git",
-      "state" : {
-        "revision" : "f9b778eb97d863e98134b95f493055789a2a391e",
-        "version" : "1.2.2"
+      "identity": "lumipluginthemepack",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginThemePack.git",
+      "state": {
+        "revision": "f9b778eb97d863e98134b95f493055789a2a391e",
+        "version": "1.2.2"
       }
     },
     {
-      "identity" : "lumiplugintoast",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiPluginToast.git",
-      "state" : {
-        "revision" : "aa69f0a61ebc8ada94f13a06fe7452adf5af4f08",
-        "version" : "1.2.4"
+      "identity": "lumiplugintoast",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiPluginToast.git",
+      "state": {
+        "revision": "aa69f0a61ebc8ada94f13a06fe7452adf5af4f08",
+        "version": "1.2.4"
       }
     },
     {
-      "identity" : "lumiproviders",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiProviders.git",
-      "state" : {
-        "revision" : "218327a2a2268a759d0c064bbbcd4b46c400a9d4",
-        "version" : "1.24.1"
+      "identity": "lumiproviders",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiProviders.git",
+      "state": {
+        "revision": "06272ae385bcad8993e199cbd4b957f4f65c2a6c",
+        "version": "1.25.0"
       }
     },
     {
-      "identity" : "lumiprovidertoolmanager",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiProviderToolManager.git",
-      "state" : {
-        "revision" : "e19e919316824ee5a4db6ab38898b36cbe3d6b65",
-        "version" : "1.0.2"
+      "identity": "lumiprovidertoolmanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiProviderToolManager.git",
+      "state": {
+        "revision": "e19e919316824ee5a4db6ab38898b36cbe3d6b65",
+        "version": "1.0.2"
       }
     },
     {
-      "identity" : "lumisettings",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiSettings.git",
-      "state" : {
-        "revision" : "e66207de1d7664177a2914b2c982245aa0f01035",
-        "version" : "1.1.1"
+      "identity": "lumisettings",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiSettings.git",
+      "state": {
+        "revision": "e66207de1d7664177a2914b2c982245aa0f01035",
+        "version": "1.1.1"
       }
     },
     {
-      "identity" : "lumithemepack",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiThemePack.git",
-      "state" : {
-        "revision" : "8830a960ea6ca0bbce59cd301c2c81bb269b1d10",
-        "version" : "1.0.13"
+      "identity": "lumithemepack",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiThemePack.git",
+      "state": {
+        "revision": "8830a960ea6ca0bbce59cd301c2c81bb269b1d10",
+        "version": "1.0.13"
       }
     },
     {
-      "identity" : "lumiui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lumi-softworks/LumiUI.git",
-      "state" : {
-        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
-        "version" : "1.17.1"
+      "identity": "lumiui",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/lumi-softworks/LumiUI.git",
+      "state": {
+        "revision": "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
+        "version": "1.17.1"
       }
     },
     {
-      "identity" : "magicalert",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nookery/MagicAlert.git",
-      "state" : {
-        "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
-        "version" : "1.0.1"
+      "identity": "magicalert",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/nookery/MagicAlert.git",
+      "state": {
+        "revision": "c01ea99ac87530ecc804f082c9311d884bc53418",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "magiclog",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nookery/MagicLog.git",
-      "state" : {
-        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5",
-        "version" : "1.0.0"
+      "identity": "magiclog",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/nookery/MagicLog.git",
+      "state": {
+        "revision": "f3680135b72e6c2158d21fba5769f17ba77798e5",
+        "version": "1.0.0"
       }
     },
     {
-      "identity" : "mlx-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ml-explore/mlx-swift",
-      "state" : {
-        "revision" : "19601207e9a0de51e03ee6ec0c3c5f3784275075",
-        "version" : "0.32.3"
+      "identity": "mlx-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ml-explore/mlx-swift",
+      "state": {
+        "revision": "19601207e9a0de51e03ee6ec0c3c5f3784275075",
+        "version": "0.32.3"
       }
     },
     {
-      "identity" : "mlx-swift-lm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ml-explore/mlx-swift-lm.git",
-      "state" : {
-        "revision" : "3b339ad6e3b3f44c8121ecff5131c7fd55e075e6",
-        "version" : "3.32.3"
+      "identity": "mlx-swift-lm",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ml-explore/mlx-swift-lm.git",
+      "state": {
+        "revision": "3b339ad6e3b3f44c8121ecff5131c7fd55e075e6",
+        "version": "3.32.3"
       }
     },
     {
-      "identity" : "mysql-nio",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/vapor/mysql-nio",
-      "state" : {
-        "revision" : "3cd7153792ab259a217507b775c14d9ddba3f79f",
-        "version" : "1.9.3"
+      "identity": "mysql-nio",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/vapor/mysql-nio",
+      "state": {
+        "revision": "3cd7153792ab259a217507b775c14d9ddba3f79f",
+        "version": "1.9.3"
       }
     },
     {
-      "identity" : "postgres-nio",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/vapor/postgres-nio",
-      "state" : {
-        "revision" : "c7320acff7ba4034d8eb7acac2daf200855996d3",
-        "version" : "1.33.3"
+      "identity": "postgres-nio",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/vapor/postgres-nio",
+      "state": {
+        "revision": "c7320acff7ba4034d8eb7acac2daf200855996d3",
+        "version": "1.33.3"
       }
     },
     {
-      "identity" : "processenv",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/ProcessEnv",
-      "state" : {
-        "revision" : "552f611479a4f28243a1ef2a7376a216d6899f42",
-        "version" : "1.0.1"
+      "identity": "processenv",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/ProcessEnv",
+      "state": {
+        "revision": "552f611479a4f28243a1ef2a7376a216d6899f42",
+        "version": "1.0.1"
       }
     },
     {
-      "identity" : "queue",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/Queue",
-      "state" : {
-        "revision" : "38826d0b8838ce5edcdafa1ffb2f507693d5abcb",
-        "version" : "0.2.2"
+      "identity": "queue",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/mattmassicotte/Queue",
+      "state": {
+        "revision": "38826d0b8838ce5edcdafa1ffb2f507693d5abcb",
+        "version": "0.2.2"
       }
     },
     {
-      "identity" : "rearrange",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/Rearrange",
-      "state" : {
-        "revision" : "4de8be41dba304192e87dc0a11e0aa39e72aa2e8",
-        "version" : "2.1.1"
+      "identity": "rearrange",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/Rearrange",
+      "state": {
+        "revision": "4de8be41dba304192e87dc0a11e0aa39e72aa2e8",
+        "version": "2.1.1"
       }
     },
     {
-      "identity" : "semaphore",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/groue/Semaphore",
-      "state" : {
-        "revision" : "2543679282aa6f6c8ecf2138acd613ed20790bc2",
-        "version" : "0.1.0"
+      "identity": "semaphore",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/groue/Semaphore",
+      "state": {
+        "revision": "2543679282aa6f6c8ecf2138acd613ed20790bc2",
+        "version": "0.1.0"
       }
     },
     {
-      "identity" : "sparkle",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sparkle-project/Sparkle",
-      "state" : {
-        "revision" : "ab7d71291238df6e0492143b120c9b696a35f603",
-        "version" : "2.10.1"
+      "identity": "sparkle",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/sparkle-project/Sparkle",
+      "state": {
+        "revision": "ab7d71291238df6e0492143b120c9b696a35f603",
+        "version": "2.10.1"
       }
     },
     {
-      "identity" : "swift-algorithms",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-algorithms.git",
-      "state" : {
-        "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
-        "version" : "1.2.1"
+      "identity": "swift-algorithms",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-algorithms.git",
+      "state": {
+        "revision": "87e50f483c54e6efd60e885f7f5aa946cee68023",
+        "version": "1.2.1"
       }
     },
     {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
-      "state" : {
-        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
-        "version" : "1.8.2"
+      "identity": "swift-argument-parser",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-argument-parser",
+      "state": {
+        "revision": "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+        "version": "1.8.2"
       }
     },
     {
-      "identity" : "swift-asn1",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-asn1.git",
-      "state" : {
-        "revision" : "917b472dbe53ba699cbb0495f9a95a084bc6364d",
-        "version" : "1.7.4"
+      "identity": "swift-asn1",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-asn1.git",
+      "state": {
+        "revision": "917b472dbe53ba699cbb0495f9a95a084bc6364d",
+        "version": "1.7.4"
       }
     },
     {
-      "identity" : "swift-async-algorithms",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-async-algorithms.git",
-      "state" : {
-        "revision" : "13713a4ffdee8abd929f92568ee9462a46ae26e0",
-        "version" : "1.1.7"
+      "identity": "swift-async-algorithms",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-async-algorithms.git",
+      "state": {
+        "revision": "13713a4ffdee8abd929f92568ee9462a46ae26e0",
+        "version": "1.1.7"
       }
     },
     {
-      "identity" : "swift-atomics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-atomics.git",
-      "state" : {
-        "revision" : "0442cb5a3f98ab802acb777929fdb446bda11a34",
-        "version" : "1.3.1"
+      "identity": "swift-atomics",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-atomics.git",
+      "state": {
+        "revision": "0442cb5a3f98ab802acb777929fdb446bda11a34",
+        "version": "1.3.1"
       }
     },
     {
-      "identity" : "swift-certificates",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-certificates.git",
-      "state" : {
-        "revision" : "84f03fafeca28c19f5fc4b528df3d22ce8896bd7",
-        "version" : "1.21.1"
+      "identity": "swift-certificates",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-certificates.git",
+      "state": {
+        "revision": "84f03fafeca28c19f5fc4b528df3d22ce8896bd7",
+        "version": "1.21.1"
       }
     },
     {
-      "identity" : "swift-cmark",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-cmark.git",
-      "state" : {
-        "revision" : "08ddb528923cc1a6527e02b7a1aee9e516ca749a",
-        "version" : "0.9.0"
+      "identity": "swift-cmark",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swiftlang/swift-cmark.git",
+      "state": {
+        "revision": "08ddb528923cc1a6527e02b7a1aee9e516ca749a",
+        "version": "0.9.0"
       }
     },
     {
-      "identity" : "swift-collections",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-collections.git",
-      "state" : {
-        "revision" : "88754449ab766a739610b660e117762115fabc9c",
-        "version" : "1.7.6"
+      "identity": "swift-collections",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-collections.git",
+      "state": {
+        "revision": "88754449ab766a739610b660e117762115fabc9c",
+        "version": "1.7.6"
       }
     },
     {
-      "identity" : "swift-configuration",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-configuration.git",
-      "state" : {
-        "revision" : "0b0c23215764302f7db752b079c024fbaff12e62",
-        "version" : "1.5.0"
+      "identity": "swift-configuration",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-configuration.git",
+      "state": {
+        "revision": "0b0c23215764302f7db752b079c024fbaff12e62",
+        "version": "1.5.0"
       }
     },
     {
-      "identity" : "swift-crypto",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-crypto.git",
-      "state" : {
-        "revision" : "da9d28d69ebe3894b18376c8f2395c2f37b8448f",
-        "version" : "4.5.2"
+      "identity": "swift-crypto",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-crypto.git",
+      "state": {
+        "revision": "da9d28d69ebe3894b18376c8f2395c2f37b8448f",
+        "version": "4.5.2"
       }
     },
     {
-      "identity" : "swift-distributed-tracing",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-distributed-tracing.git",
-      "state" : {
-        "revision" : "9f982a7ec8dd815bf57024e39de592813ca14399",
-        "version" : "1.7.4"
+      "identity": "swift-distributed-tracing",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-distributed-tracing.git",
+      "state": {
+        "revision": "9f982a7ec8dd815bf57024e39de592813ca14399",
+        "version": "1.7.4"
       }
     },
     {
-      "identity" : "swift-glob",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/davbeck/swift-glob",
-      "state" : {
-        "revision" : "07ba6f47d903a0b1b59f12ca70d6de9949b975d6",
-        "version" : "0.2.0"
+      "identity": "swift-glob",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/davbeck/swift-glob",
+      "state": {
+        "revision": "07ba6f47d903a0b1b59f12ca70d6de9949b975d6",
+        "version": "0.2.0"
       }
     },
     {
-      "identity" : "swift-http-structured-headers",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-http-structured-headers.git",
-      "state" : {
-        "revision" : "933538faa42c432d385f02e07df0ace7c5ecfc47",
-        "version" : "1.7.0"
+      "identity": "swift-http-structured-headers",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-http-structured-headers.git",
+      "state": {
+        "revision": "933538faa42c432d385f02e07df0ace7c5ecfc47",
+        "version": "1.7.0"
       }
     },
     {
-      "identity" : "swift-http-types",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-http-types.git",
-      "state" : {
-        "revision" : "bff4b6903cdc99dda49649dd52f46c11cfd3ed50",
-        "version" : "1.8.0"
+      "identity": "swift-http-types",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-http-types.git",
+      "state": {
+        "revision": "bff4b6903cdc99dda49649dd52f46c11cfd3ed50",
+        "version": "1.8.0"
       }
     },
     {
-      "identity" : "swift-huggingface",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/huggingface/swift-huggingface.git",
-      "state" : {
-        "revision" : "c30143a4616f3fa994ee3ab3e3464f752845c07c",
-        "version" : "1.0.0"
+      "identity": "swift-huggingface",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/huggingface/swift-huggingface.git",
+      "state": {
+        "revision": "c30143a4616f3fa994ee3ab3e3464f752845c07c",
+        "version": "1.0.0"
       }
     },
     {
-      "identity" : "swift-jinja",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/huggingface/swift-jinja.git",
-      "state" : {
-        "revision" : "66042420a9225c98ea9382d705e2285769dfdbe5",
-        "version" : "3.1.0"
+      "identity": "swift-jinja",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/huggingface/swift-jinja.git",
+      "state": {
+        "revision": "66042420a9225c98ea9382d705e2285769dfdbe5",
+        "version": "3.1.0"
       }
     },
     {
-      "identity" : "swift-log",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-log.git",
-      "state" : {
-        "revision" : "e3da04078777e6a1b72ce19981fbd6539b0847d8",
-        "version" : "1.17.0"
+      "identity": "swift-log",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-log.git",
+      "state": {
+        "revision": "e3da04078777e6a1b72ce19981fbd6539b0847d8",
+        "version": "1.17.0"
       }
     },
     {
-      "identity" : "swift-markdown",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-markdown.git",
-      "state" : {
-        "revision" : "25cb61d3482054b09ae76ca4f281b1bfe7fe5a43",
-        "version" : "0.9.0"
+      "identity": "swift-markdown",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swiftlang/swift-markdown.git",
+      "state": {
+        "revision": "25cb61d3482054b09ae76ca4f281b1bfe7fe5a43",
+        "version": "0.9.0"
       }
     },
     {
-      "identity" : "swift-metrics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-metrics.git",
-      "state" : {
-        "revision" : "2c13e7385089ea705ee3009ea6cbe41db843930e",
-        "version" : "2.13.0"
+      "identity": "swift-metrics",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-metrics.git",
+      "state": {
+        "revision": "2c13e7385089ea705ee3009ea6cbe41db843930e",
+        "version": "2.13.0"
       }
     },
     {
-      "identity" : "swift-nio",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio.git",
-      "state" : {
-        "revision" : "2f58d8ef84438d6517fc78bcea2f8527e3c72936",
-        "version" : "2.105.0"
+      "identity": "swift-nio",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio.git",
+      "state": {
+        "revision": "2f58d8ef84438d6517fc78bcea2f8527e3c72936",
+        "version": "2.105.0"
       }
     },
     {
-      "identity" : "swift-nio-extras",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio-extras.git",
-      "state" : {
-        "revision" : "8e1249b29f92574e05e0d91637f239e378a9a95b",
-        "version" : "1.35.2"
+      "identity": "swift-nio-extras",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio-extras.git",
+      "state": {
+        "revision": "8e1249b29f92574e05e0d91637f239e378a9a95b",
+        "version": "1.35.2"
       }
     },
     {
-      "identity" : "swift-nio-http2",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio-http2.git",
-      "state" : {
-        "revision" : "0f3e54e29c944c2e835ad52159da7d9e1c94ac69",
-        "version" : "1.46.0"
+      "identity": "swift-nio-http2",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio-http2.git",
+      "state": {
+        "revision": "0f3e54e29c944c2e835ad52159da7d9e1c94ac69",
+        "version": "1.46.0"
       }
     },
     {
-      "identity" : "swift-nio-ssl",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio-ssl.git",
-      "state" : {
-        "revision" : "15e0b9e495786807272dd4891fa4bac76aa43034",
-        "version" : "2.37.6"
+      "identity": "swift-nio-ssl",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio-ssl.git",
+      "state": {
+        "revision": "15e0b9e495786807272dd4891fa4bac76aa43034",
+        "version": "2.37.6"
       }
     },
     {
-      "identity" : "swift-nio-transport-services",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio-transport-services.git",
-      "state" : {
-        "revision" : "67787bb645a5e67d2edcdfbe48a216cc549222d5",
-        "version" : "1.28.0"
+      "identity": "swift-nio-transport-services",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio-transport-services.git",
+      "state": {
+        "revision": "67787bb645a5e67d2edcdfbe48a216cc549222d5",
+        "version": "1.28.0"
       }
     },
     {
-      "identity" : "swift-numerics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-numerics",
-      "state" : {
-        "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
-        "version" : "1.1.1"
+      "identity": "swift-numerics",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-numerics",
+      "state": {
+        "revision": "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version": "1.1.1"
       }
     },
     {
-      "identity" : "swift-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/modelcontextprotocol/swift-sdk.git",
-      "state" : {
-        "revision" : "a0ae212ebf6eab5f754c3129608bc5557637e605",
-        "version" : "0.12.1"
+      "identity": "swift-sdk",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/modelcontextprotocol/swift-sdk.git",
+      "state": {
+        "revision": "a0ae212ebf6eab5f754c3129608bc5557637e605",
+        "version": "0.12.1"
       }
     },
     {
-      "identity" : "swift-service-context",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-service-context.git",
-      "state" : {
-        "revision" : "853ba3d9ce78851b9cc20108e8bd4f13f7fa546c",
-        "version" : "1.5.1"
+      "identity": "swift-service-context",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-service-context.git",
+      "state": {
+        "revision": "853ba3d9ce78851b9cc20108e8bd4f13f7fa546c",
+        "version": "1.5.1"
       }
     },
     {
-      "identity" : "swift-service-lifecycle",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-server/swift-service-lifecycle.git",
-      "state" : {
-        "revision" : "a18ee16b8039866fd919bdb4e8e906882d4ecc75",
-        "version" : "2.13.0"
+      "identity": "swift-service-lifecycle",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swift-server/swift-service-lifecycle.git",
+      "state": {
+        "revision": "a18ee16b8039866fd919bdb4e8e906882d4ecc75",
+        "version": "2.13.0"
       }
     },
     {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax.git",
-      "state" : {
-        "revision" : "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
-        "version" : "603.0.2"
+      "identity": "swift-syntax",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swiftlang/swift-syntax.git",
+      "state": {
+        "revision": "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
+        "version": "603.0.2"
       }
     },
     {
-      "identity" : "swift-system",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-system.git",
-      "state" : {
-        "revision" : "640e5755b5826f4437eaeedd366fd776737db62c",
-        "version" : "1.9.0"
+      "identity": "swift-system",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-system.git",
+      "state": {
+        "revision": "640e5755b5826f4437eaeedd366fd776737db62c",
+        "version": "1.9.0"
       }
     },
     {
-      "identity" : "swift-transformers",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/huggingface/swift-transformers.git",
-      "state" : {
-        "revision" : "402a8a1105f52038b0949d9596981fc9e32bed17",
-        "version" : "1.4.0"
+      "identity": "swift-transformers",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/huggingface/swift-transformers.git",
+      "state": {
+        "revision": "402a8a1105f52038b0949d9596981fc9e32bed17",
+        "version": "1.4.0"
       }
     },
     {
-      "identity" : "swiftterm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/migueldeicaza/SwiftTerm",
-      "state" : {
-        "revision" : "5d14406844143538cd8f8851d2d8a67c1fe443e5",
-        "version" : "1.20.0"
+      "identity": "swiftterm",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/migueldeicaza/SwiftTerm",
+      "state": {
+        "revision": "5d14406844143538cd8f8851d2d8a67c1fe443e5",
+        "version": "1.20.0"
       }
     },
     {
-      "identity" : "swifttreesitter",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter.git",
-      "state" : {
-        "revision" : "08ef81eb8620617b55b08868126707ad72bf754f",
-        "version" : "0.25.0"
+      "identity": "swifttreesitter",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/SwiftTreeSitter.git",
+      "state": {
+        "revision": "08ef81eb8620617b55b08868126707ad72bf754f",
+        "version": "0.25.0"
       }
     },
     {
-      "identity" : "textformation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/TextFormation",
-      "state" : {
-        "revision" : "b1ce9a14bd86042bba4de62236028dc4ce9db6a1",
-        "version" : "0.9.0"
+      "identity": "textformation",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/TextFormation",
+      "state": {
+        "revision": "b1ce9a14bd86042bba4de62236028dc4ce9db6a1",
+        "version": "0.9.0"
       }
     },
     {
-      "identity" : "textstory",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/TextStory",
-      "state" : {
-        "revision" : "a52db1a2eca74d37c8c19bf3165416941632ed45",
-        "version" : "0.9.2"
+      "identity": "textstory",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ChimeHQ/TextStory",
+      "state": {
+        "revision": "a52db1a2eca74d37c8c19bf3165416941632ed45",
+        "version": "0.9.2"
       }
     },
     {
-      "identity" : "tree-sitter",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter",
-      "state" : {
-        "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
-        "version" : "0.25.10"
+      "identity": "tree-sitter",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/tree-sitter/tree-sitter",
+      "state": {
+        "revision": "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
+        "version": "0.25.10"
       }
     },
     {
-      "identity" : "tree-sitter-bash",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-bash.git",
-      "state" : {
-        "revision" : "a06c2e4415e9bc0346c6b86d401879ffb44058f7",
-        "version" : "0.25.1"
+      "identity": "tree-sitter-bash",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/tree-sitter/tree-sitter-bash.git",
+      "state": {
+        "revision": "a06c2e4415e9bc0346c6b86d401879ffb44058f7",
+        "version": "0.25.1"
       }
     },
     {
-      "identity" : "tree-sitter-json",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-json.git",
-      "state" : {
-        "revision" : "ee35a6ebefcef0c5c416c0d1ccec7370cfca5a24",
-        "version" : "0.24.8"
+      "identity": "tree-sitter-json",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/tree-sitter/tree-sitter-json.git",
+      "state": {
+        "revision": "ee35a6ebefcef0c5c416c0d1ccec7370cfca5a24",
+        "version": "0.24.8"
       }
     },
     {
-      "identity" : "tree-sitter-markdown",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git",
-      "state" : {
-        "revision" : "41ff24a6c775492c543b09228aeb98d1cd2b3a0f",
-        "version" : "0.5.4"
+      "identity": "tree-sitter-markdown",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git",
+      "state": {
+        "revision": "41ff24a6c775492c543b09228aeb98d1cd2b3a0f",
+        "version": "0.5.4"
       }
     },
     {
-      "identity" : "tree-sitter-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alex-pinkus/tree-sitter-swift.git",
-      "state" : {
-        "revision" : "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
+      "identity": "tree-sitter-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/alex-pinkus/tree-sitter-swift.git",
+      "state": {
+        "revision": "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
       }
     },
     {
-      "identity" : "tree-sitter-typescript",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-typescript.git",
-      "state" : {
-        "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
+      "identity": "tree-sitter-typescript",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/tree-sitter/tree-sitter-typescript.git",
+      "state": {
+        "revision": "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
       }
     },
     {
-      "identity" : "yyjson",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ibireme/yyjson.git",
-      "state" : {
-        "revision" : "6447536015f3d600f3d65323b10976103b337ca7",
-        "version" : "0.13.0"
+      "identity": "yyjson",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ibireme/yyjson.git",
+      "state": {
+        "revision": "6447536015f3d600f3d65323b10976103b337ca7",
+        "version": "0.13.0"
       }
     }
   ],
-  "version" : 3
+  "version": 3
 }
