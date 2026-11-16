@@ -394,8 +394,8 @@ struct MemorySettingsView: View {
     private func reloadItems() async {
         isLoading = true
         defer { isLoading = false }
-        let global = await storage.list(scope: .global, projectPath: nil)
-        let project = await storage.list(scope: .project, projectPath: nil)
+        let global = (try? await storage.list(scope: .global, projectPath: nil)) ?? []
+        let project = (try? await storage.list(scope: .project, projectPath: nil)) ?? []
         globalItems = global
         projectItems = project
     }

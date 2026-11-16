@@ -97,15 +97,23 @@ public actor MemoryFileStorage {
         return parse(raw, filePath: fileURL.path, id: id)
     }
 
-    public func list(scope: MemoryScope, projectPath: String?) -> [MemoryItem] {
+    public func list(scope: MemoryScope, projectPath: String?) throws -> [MemoryItem] {
         let directory = scope == .global
             ? memoryRoot.appendingPathComponent("global")
             : projectsDirectory(for: projectPath)
-        guard let contents = try? fileManager.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ) else { return [] }
+        // 目录确实不存在时尚无记忆，返回空列表；存在但枚举失败（权限/IO，或路径被普通文件占位）
+        // 必须抛出，否则 list_memories 会把文件系统错误误报为「暂无记忆」（#529）。
+        guard fileManager.fileExists(atPath: directory.path) else { return [] }
+        let contents: [URL]
+        do {
+            contents = try fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            throw MemoryError.storageUnavailable(error.localizedDescription)
+        }
 
         return contents
             .filter { $0.pathExtension == "md" }
