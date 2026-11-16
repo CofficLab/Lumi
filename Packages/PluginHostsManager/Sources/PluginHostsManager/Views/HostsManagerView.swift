@@ -82,7 +82,7 @@ public struct HostsManagerView: View, SuperLog {
                         message: LocalizedStringKey(error),
                         retryTitle: LocalizedStringKey(pluginLocalization.string("Retry"))
                     ) {
-                        Task { await viewModel.loadHosts() }
+                        Task { await viewModel.retry() }
                     }
                     .frame(maxWidth: 420)
                 }

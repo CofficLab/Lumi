@@ -13,6 +13,10 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     @Published var searchText = ""
     @Published var selectedGroup: String?
 
+    /// Retry 的目标操作：保存失败时重试保存以保留未落盘编辑，加载失败时重新加载（#458）。
+    enum RetryAction { case load, save }
+    private var retryAction: RetryAction = .load
+
     private let readHostsFile: () async throws -> String
     private let writeHostsFile: (String) async throws -> Void
 
@@ -127,6 +131,7 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
             }.value
             guard generation == loadGeneration else { return }
             self.entries = parsed
+            retryAction = .load
             // 导入/外部刷新后分组集合可能变化：旧分组若已不存在，继续用它过滤会让全部条目隐藏。
             if let selectedGroup, !groups.contains(selectedGroup) {
                 self.selectedGroup = nil
@@ -143,6 +148,7 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to load hosts file: \(error.localizedDescription)")
             }
             errorMessage = "Load failed: \(error.localizedDescription)"
+            retryAction = .load
         }
         isLoading = false
     }
@@ -161,6 +167,17 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         }
         saveChain = task
         await task.value
+    }
+
+    /// 错误横幅的 Retry：按最近一次失败的操作类型重试。保存失败重试保存
+    /// （保留内存中未落盘的编辑），加载失败重新从磁盘加载（#458）。
+    public func retry() async {
+        switch retryAction {
+        case .save:
+            await saveHosts()
+        case .load:
+            await loadHosts()
+        }
     }
 
     private func performSave(entries snapshot: [HostEntry], generation: Int) async {
@@ -195,6 +212,9 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                             HostsManagerPlugin.logger.error("\(self.t)Failed to save hosts file: \(error.localizedDescription)")
             }
             errorMessage = "Save failed: \(error.localizedDescription)"
+            // 保存失败时内存里仍是未落盘的编辑：Retry 必须重试保存，而不是 reload
+            // 磁盘旧内容把这些编辑静默丢弃（#458）。
+            retryAction = .save
         }
     }
     

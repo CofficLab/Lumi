@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 25 条用例。
+PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 34 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 25
+测试文件: 8 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,10 +29,12 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **HostsFileService**（4 条）：由 `readsAndBacksUpHostsFile`、`reportsMissingHostsFile`、`removesTemporaryFileWhenInstallFails`、`removesTemporaryFileAfterSuccessfulInstall` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HostsFileService**（7 条）：由 `readsAndBacksUpHostsFile`、`reportsMissingHostsFile`、`removesTemporaryFileWhenInstallFails`、`removesTemporaryFileAfterSuccessfulInstall`、`backupRunsOffMain`、`backupWriteFailureThrows`、`importReadRunsOffMain` 锁定备份/导入 I/O 必须在后台线程执行、备份写入失败必须抛错而不是静默失败（**回归 #1208**）；改动该模块时优先跑对应测试文件。
 - **HostsManagerFileFlow**（2 条）：由 `loadsAndSavesThroughInjectedFileOperations`、`reportsFileOperationFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsManagerViewModel**（4 条）：由 `filtersByGroupAndSearch`、`rejectsInvalidEntry`、`mutatesEntriesAndPersists`、`reloadReconcilesSelectedGroup` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsManagerViewModel 保存串行化**（2 条）：由 `newestSnapshotWinsWhenFirstWriteIsDelayed`、`staleSaveSkipsReload` 锁定并发保存按请求顺序串行落盘（最新快照最后写入）、过期世代不得用旧内容 reload 覆盖最新 entries（**回归 #254**）；改动保存/重载路径时优先跑对应测试文件。
+- **HostsToggleOffMain**（3 条）：由 `parseAndSerializeRunOffMain`、`staleLoadDoesNotOverwriteNewerEntries`、`toggleWritesToggledSnapshot` 锁定解析/序列化在后台线程执行且往返一致、晚到的旧加载不得覆盖最新 entries、切换条目后落盘的是切换后的快照（**回归 #1205**）；改动开关/加载/保存路径时优先跑对应测试文件。
+- **HostsManagerViewModel Retry**（3 条）：由 `retryAfterFailedSaveResavesAndKeepsEdits`、`retryAfterFailedLoadReloadsFromDisk`、`validationErrorDoesNotDowngradePendingSaveRetry` 锁定。错误横幅的 Retry 必须按最近一次失败的操作类型分派：保存失败重试保存以保留内存中未落盘的编辑，不得 reload 磁盘旧内容把它们静默丢弃；加载失败才重新加载（**回归 #458**）。改动保存/重载/错误横幅路径时优先跑对应测试文件。
 - **HostsParser**（9 条）：由 `parsesActiveEntries`、`parsesCommentsAndGroups`、`preservesBlankLines`、`parsesAbsoluteDomainAsActiveEntry`、`acceptsAbsoluteDomainWithTrailingRootDot`、`preservesUnrecognizedActiveLineVerbatim` 等用例锁定合法绝对域名（末尾根点）必须解析为启用条目、ASCII 语法外的活动行必须逐字保留且不得在保存时被注释禁用（**回归 #255**）；改动该模块时优先跑对应测试文件。
 - **综合**（3 条）：由 `pluginMetadataIsStable`、`localizationCatalogIsPackaged`、`activatingPluginHidesChatSectionAndDeactivatingRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -65,27 +67,39 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 | 23 | HostsParser | keeps an unrecognized active line verbatim and enabled across save (must not comment it out)（**回归 #255**） | hosts 含 ASCII 语法外的合法别名（如 IDN `例子.com`） | 解析→序列化→再解析 | 原文逐字保留、不加 `# ` 前缀、保持启用，往返稳定 | P0 | ✅ 已覆盖 | `preservesUnrecognizedActiveLineVerbatim` |
 | 24 | HostsManagerViewModel | serializes concurrent saves so the newest snapshot is written last（**回归 #254**） | 注入可挂起首次写入的 hosts 文件 | E1 写入挂起时做 E2，再放行 E1 的迟到写入 | 磁盘最终内容含 first.test 与 second.test（最新快照最后落盘），entries 含两条 | P0 | ✅ 已覆盖 | `newestSnapshotWinsWhenFirstWriteIsDelayed` |
 | 25 | HostsManagerViewModel | a stale save does not reload old content over the newest entries（**回归 #254**） | 注入挂起每次写入的 hosts 文件 | E1 挂起→E2→放行 S1（S2 随即挂起） | 过期保存跳过 reload，entries 仍含 second.test 与 first.test | P0 | ✅ 已覆盖 | `staleSaveSkipsReload` |
+| 26 | HostsManagerViewModel | 保存失败后 Retry 必须重试保存，不得用磁盘旧内容丢弃未落盘编辑（**回归 #458**） | 注入首次写入失败的 hosts 文件替身 | 加载→addEntry 触发保存失败→调用 `retry()` | 再次写入（writes=2）、磁盘含 kept.test、entries 保留该编辑、errorMessage 清空 | P0 | ✅ 已覆盖 | `retryAfterFailedSaveResavesAndKeepsEdits` |
+| 27 | HostsManagerViewModel | 加载失败后 Retry 重新从磁盘加载，不触发保存 | 注入首次读取失败的 hosts 文件替身 | 加载失败→调用 `retry()` | 第二次读取成功（reads=2）、无写入、entries 含 disk.test、errorMessage 清空 | P1 | ✅ 已覆盖 | `retryAfterFailedLoadReloadsFromDisk` |
+| 28 | HostsManagerViewModel | 校验错误不得把待重试的保存降级为重新加载（**回归 #458**） | 保存失败后内存仍有未落盘编辑 | 再触发一次非法 addEntry 校验错误→调用 `retry()` | 仍重试保存（writes=2）、磁盘含 kept.test、编辑不丢失 | P0 | ✅ 已覆盖 | `validationErrorDoesNotDowngradePendingSaveRetry` |
+| 29 | HostsFileService | 备份读取/写入在后台线程执行，不占用主线程（**回归 #1208**） | 临时 hosts 源文件与备份目标 | 在 `Task.detached` 中调用 `backupSync`，同步 helper 记录 `Thread.isMainThread` | 标志为 false（非主线程），备份内容与源一致 | P1 | ✅ 已覆盖 | `backupRunsOffMain` |
+| 30 | HostsFileService | 备份写入失败必须抛错而不是静默失败（**回归 #1208**） | 备份目标位于不存在的目录 | 调用 `backupSync` | 抛出错误，不静默吞掉 | P0 | ✅ 已覆盖 | `backupWriteFailureThrows` |
+| 31 | HostsFileService | 导入内容读取/解码在后台线程执行（**回归 #1208**） | 临时备份文件 | 在 `Task.detached` 中调用 `readTextFile`，记录是否主线程 | 标志为 false，读取内容与文件一致 | P1 | ✅ 已覆盖 | `importReadRunsOffMain` |
+| 32 | HostsToggleOffMain | 解析与序列化在后台线程执行且往返一致（**回归 #1205**） | 含分组/启用/禁用条目的 hosts 文本 | 在 `Task.detached` 中 parse→serialize，记录是否主线程 | 标志为 false，往返结果与原文一致 | P1 | ✅ 已覆盖 | `parseAndSerializeRunOffMain` |
+| 33 | HostsToggleOffMain | 晚到的旧加载不得覆盖最新 entries（**回归 #1205**） | 注入首次读取挂起的 hosts 文件 | L1 挂起时发起 L2 并先完成，再放行 L1 | entries 仍含 second.test、不含 first.test，isLoading 为 false | P0 | ✅ 已覆盖 | `staleLoadDoesNotOverwriteNewerEntries` |
+| 34 | HostsToggleOffMain | 切换条目后落盘的是切换后的快照（**回归 #1205**） | 注入记录写入的 hosts 文件，含一条启用条目 | 加载后调用 `toggleEntry` | 首次写入为该条目被注释禁用后的序列化（`# 127.0.0.1 app.test`） | P1 | ✅ 已覆盖 | `toggleWritesToggledSnapshot` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 第 29–34 行为补登记：#1205/#1208 的 off-main 用例此前已在源码中实跑，但漏登记到本表，一并补齐以通过校验闸门。
+
+> 变异验证（#458）：把 `retry()` 改回修复前的「无条件 `await loadHosts()`」后，`retryAfterFailedSaveResavesAndKeepsEdits`、`validationErrorDoesNotDowngradePendingSaveRetry` 转红（Retry 用磁盘旧内容覆盖内存，writes 停在 1、kept.test 编辑丢失），`retryAfterFailedLoadReloadsFromDisk` 保持绿；恢复按 `retryAction` 分派后全部 34 条通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 14 / 14
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 2 / 2
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
