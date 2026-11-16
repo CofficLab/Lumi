@@ -5,7 +5,7 @@
 StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**: story picker dropdown + chapter tree - **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata) - **AI assistance**: via a dedicated ChatSection flow (configured separately) - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 38
+测试文件: 9 个，用例总数: 45
 
 核心组件（源码目录）:
 - `Models/`
@@ -44,6 +44,7 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 - **StoryWriterViewModel**（4 条）：由 `selectionCrudAndMarkdownFlowsStayInSyncWithStore`、`reloadPreservesExistingSelectionAndFallsBackAfterDeletion`、`reloadKeepsSelectedChapterAndRefreshesItsContent`、`changeObserverBroadcastsAndCancellationIsIdempotent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryEditorIdentity**（3 条）：由 `storyEditorIdentityFollowsSelectedStory`、`storyEditorIdentityIsStableAcrossRendersForSameStory`、`reMaterializedEditorDraftBindsToNewStory` 用例锁定；改动 `StoryWriterView` 故事分支或 `StoryEditorView` 时优先跑对应测试文件。
 - **StoryWriterCreationIdentity**（4 条）：由 `lateChapterCreationDoesNotPolluteSwitchedStory`、`lateMarkdownImportDoesNotPolluteSwitchedStory`、`lateCharacterCreationDoesNotPolluteSwitchedStory`、`creationWithoutStorySwitchStillAppendsAndSelects` 用例锁定；改动 `StoryWriterViewModel` 创建类方法或 `loadStoryContent` 的代次逻辑时优先跑对应测试文件。
+- **StoryStoreSaveFailure**（6 条）：由 `createChapterThrowsAndLeavesNoDanglingID`、`createCharacterThrowsAndLeavesNoDanglingID`、`importMarkdownThrowsAndLeavesNoDanglingID`、`createStoryThrowsWhenStoriesDirUnwritable`、`createChapterRollsBackChapterFileWhenStorySaveFails`、`updateChapterThrowsWhenChapterFileUnwritable` 用例锁定；改动 `StoryStore` 保存/创建/更新路径的错误传播或回滚逻辑时优先跑对应测试文件（**回归 #431**）。
 
 ## 测试用例清单
 
@@ -87,31 +88,40 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 | 36 | StoryWriterCreationIdentity | 切换故事后晚到的 Markdown 导入不得进入新故事章节列表与字数（**回归 #432**） | 门闩 stub 挂起 A 的 importMarkdownAsChapter | 挂起期间切到 B 再放行导入 | 导入章节落盘在 A 且正文完整；B 的 chapters 为空、totalWordCount==0、选择仍为 B/.story | P0 | ✅ 已覆盖 | `lateMarkdownImportDoesNotPolluteSwitchedStory` |
 | 37 | StoryWriterCreationIdentity | 切换故事后晚到的角色创建只落盘原故事，不得污染新故事角色列表与选择（**回归 #432**） | 门闩 stub 挂起 A 的 createCharacter | 挂起期间切到 B 再放行创建 | 角色落盘在 A；B 的 characters 为空、选择仍为 B/.story | P0 | ✅ 已覆盖 | `lateCharacterCreationDoesNotPolluteSwitchedStory` |
 | 38 | StoryWriterCreationIdentity | 故事未切换时创建章节/角色仍追加进列表并选中（**回归 #432**） | 门闩 stub 不挂起，单一故事 | 依次 createChapter、createCharacter | 章节/角色进入列表，选择指向最新创建的角色 | P1 | ✅ 已覆盖 | `creationWithoutStorySwitchStillAppendsAndSelects` |
+| 39 | StoryStoreSaveFailure | chapters 目录不可写时 createChapter 抛出，story 不得残留悬空章节 ID（**回归 #431**） | 已有故事，chapters 路径被普通文件占用 | 调用 createChapter | 抛出错误；重载 story.chapterIDs 为空、loadChapters 为空 | P0 | ✅ 已覆盖 | `createChapterThrowsAndLeavesNoDanglingID` |
+| 40 | StoryStoreSaveFailure | characters 目录不可写时 createCharacter 抛出，story 不得残留悬空角色 ID（**回归 #431**） | 已有故事，characters 路径被普通文件占用 | 调用 createCharacter | 抛出错误；重载 story.characterIDs 为空、loadCharacters 为空 | P0 | ✅ 已覆盖 | `createCharacterThrowsAndLeavesNoDanglingID` |
+| 41 | StoryStoreSaveFailure | chapters 目录不可写时 importMarkdownAsChapter 抛出，不得残留悬空章节 ID（**回归 #431**） | 已有故事，chapters 路径被普通文件占用 | 调用 importMarkdownAsChapter | 抛出错误；重载 story.chapterIDs 为空、loadChapters 为空 | P0 | ✅ 已覆盖 | `importMarkdownThrowsAndLeavesNoDanglingID` |
+| 42 | StoryStoreSaveFailure | stories 目录不可写时 createStory 抛出而非伪装成功（**回归 #431**） | stories 路径被普通文件占用 | 调用 createStory | 抛出错误，不返回未落盘的故事 | P1 | ✅ 已覆盖 | `createStoryThrowsWhenStoriesDirUnwritable` |
+| 43 | StoryStoreSaveFailure | story 引用写失败时 createChapter 必须回滚章节文件，二者保持一致（**回归 #431**，macOS） | 已有故事，story.json 置 immutable 使引用写失败 | 调用 createChapter | 抛出错误；chapters 目录无残留章节文件，story.chapterIDs 为空 | P0 | ✅ 已覆盖 | `createChapterRollsBackChapterFileWhenStorySaveFails` |
+| 44 | StoryStoreSaveFailure | 章节文件不可写时 updateChapter 抛出，不得伪装成功（**回归 #431**，macOS） | 已有章节，章节文件置 immutable | 调用 updateChapter | 抛出错误，磁盘内容保持原样 | P0 | ✅ 已覆盖 | `updateChapterThrowsWhenChapterFileUnwritable` |
+| 45 | StoryWriterTool | 保存失败时 create_chapter/import 工具必须抛 ToolExecutionError，不得包装成成功文案（**回归 #431**） | 有效存储目录与故事，chapters 路径被普通文件占用 | 调用 create_chapter、import_markdown_as_chapter | 两者均抛 ToolExecutionError；story.chapterIDs 为空、loadChapters 为空 | P0 | ✅ 已覆盖 | `createChapterToolThrowsWhenSaveFailsAndLeavesNoDanglingID` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#289）：`StoryWriterView` 的 `.story` 分支原先直接渲染 `StoryEditorView(viewModel:story:)` 而无 `.id(story.id)`（相邻 `.chapter` 分支已正确加 `.id(chapter.id)`）。切换故事时 SwiftUI 复用同一编辑器 identity，`@State draft` 不重新初始化，简介更新/标题保存经 `draft.storyToSave()` 仍带旧故事 id，误写原文档；导出正文来自 ViewModel 新选择而文件名取自旧故事。修复为给 `.story` 分支补 `.id(story.id)`，切换故事即重新物化编辑器。M1 移除该 `.id(story.id)`（还原裸 `StoryEditorView`）→ `storyEditorIdentityFollowsSelectedStory`（identity 查找返回 nil，3 处断言）、`storyEditorIdentityIsStableAcrossRendersForSameStory`（2 处断言）转红，`reMaterializedEditorDraftBindsToNewStory` 仍绿（草稿 init 契约未变）。变异施加并确认转红后还原，最终 34 条全绿。
 >
 > 变异验证（#432）：`createChapter` / `importMarkdownAsChapter` / `createCharacter` 原先在 `await store.…` 后无条件把结果追加进共享 `chapters`/`characters` 并改写选择；await 期间切换故事时，旧故事的创建结果晚到污染新故事大纲。修复为 `loadStoryContent` 递增 `storyGeneration`，三个创建方法写回前比对代次与 `currentStoryID`（不匹配只返回已创建对象，磁盘操作仍归属原故事）；存储依赖经 `StoryWriting` 协议注入以便门闩测试。M1 移除 createChapter 的守卫 → 用例 35 转红（3 处断言）；M2 移除 createCharacter 的守卫 → 用例 37 转红（3 处断言）；M3 移除 importMarkdownAsChapter 的守卫 → 用例 36 转红（chapters.isEmpty）。三处变异各自独立命中对应用例，用例 38 始终绿；还原后 38 条全绿。
+>
+> 变异验证（#431）：`StoryStore` 的 `saveStory`/`saveChapter`/`saveCharacter` 原先用 `try?` 吞掉写盘错误，`createChapter` 等在落盘失败后仍把 ID 追加进 `story.chapterIDs`，留下悬空引用；工具层把失败当成功文案返回。修复为保存助手与全部变更方法 `throws`（创建路径在 `saveStory` 失败时回滚已落盘的实体文件），协议同步 `throws`，工具 `execute` 用 `try` 传播并以 `do/catch` 把底层错误统一包成 `ToolExecutionError.executionFailed`（ViewModel 公开 API 经 `try?` 保持稳定，#432 代次守卫不变）。M1 移除 createChapter 的章节文件回滚 → 用例 43 转红（chapters 目录残留文件）；M2 把 `try saveChapter` 还原为 `try?`（吞错并追加 ID）→ 用例 39 转红（未抛错且 chapterIDs 非空）；M3 工具 catch 改为透传原始 NSError → 用例 45 转红（错误类型非 ToolExecutionError）。三处变异各自独立命中对应用例；还原后 45 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 28 / 28
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 29 / 29
 - P2: 已覆盖 0 / 0
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（28 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（29 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

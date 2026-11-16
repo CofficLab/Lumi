@@ -58,16 +58,16 @@ public actor StoryStore: SuperLog {
         return try? decoder.decode(Story.self, from: data)
     }
 
-    public func createStory(title: String) -> Story {
+    public func createStory(title: String) throws -> Story {
         let story = Story(title: title)
-        saveStory(story)
+        try saveStory(story)
         return story
     }
 
-    public func updateStory(_ story: Story) {
+    public func updateStory(_ story: Story) throws {
         var updated = story
         updated.updatedAt = .now
-        saveStory(updated)
+        try saveStory(updated)
     }
 
     @discardableResult
@@ -110,32 +110,35 @@ public actor StoryStore: SuperLog {
         return try? decoder.decode(Chapter.self, from: data)
     }
 
-    public func createChapter(storyID: UUID, title: String) -> Chapter? {
+    public func createChapter(storyID: UUID, title: String) throws -> Chapter? {
         guard var story = loadStory(id: storyID) else { return nil }
         let chapter = Chapter(storyID: storyID, title: title)
-        saveChapter(chapter)
+        // 先落章节文件：失败直接抛出，此时尚未追加 ID，不会留下悬空引用（#431）。
+        try saveChapter(chapter)
         story.chapterIDs.append(chapter.id)
-        saveStory(story)
+        do {
+            try saveStory(story)
+        } catch {
+            // story 引用写失败：回滚已落盘的章节文件，保持两者一致（#431）。
+            try? FileManager.default.removeItem(at: chapterFile(id: chapter.id, storyID: storyID))
+            throw error
+        }
         return chapter
     }
 
-    public func updateChapter(_ chapter: Chapter) {
+    public func updateChapter(_ chapter: Chapter) throws {
         var updated = chapter
         updated.updatedAt = .now
-        saveChapter(updated)
+        try saveChapter(updated)
     }
 
     @discardableResult
-    public func deleteChapter(id: UUID, storyID: UUID) -> Bool {
+    public func deleteChapter(id: UUID, storyID: UUID) throws -> Bool {
         guard loadChapter(id: id, storyID: storyID) != nil else { return false }
-        do {
-            try FileManager.default.removeItem(at: chapterFile(id: id, storyID: storyID))
-        } catch {
-            return false
-        }
+        try FileManager.default.removeItem(at: chapterFile(id: id, storyID: storyID))
         if var story = loadStory(id: storyID) {
             story.chapterIDs.removeAll { $0 == id }
-            saveStory(story)
+            try saveStory(story)
         }
         return true
     }
@@ -168,38 +171,50 @@ public actor StoryStore: SuperLog {
         return try? decoder.decode(Character.self, from: data)
     }
 
-    public func createCharacter(storyID: UUID, name: String) -> Character? {
+    public func createCharacter(storyID: UUID, name: String) throws -> Character? {
         guard var story = loadStory(id: storyID) else { return nil }
         let character = Character(storyID: storyID, name: name)
-        saveCharacter(character)
+        // 先落角色文件：失败直接抛出，尚未追加 ID，不会留下悬空引用（#431）。
+        try saveCharacter(character)
         story.characterIDs.append(character.id)
-        saveStory(story)
+        do {
+            try saveStory(story)
+        } catch {
+            try? FileManager.default.removeItem(at: characterFile(id: character.id, storyID: storyID))
+            throw error
+        }
         return character
     }
 
-    public func updateCharacter(_ character: Character) {
+    public func updateCharacter(_ character: Character) throws {
         var updated = character
         updated.updatedAt = .now
-        saveCharacter(updated)
+        try saveCharacter(updated)
     }
 
-    public func deleteCharacter(id: UUID, storyID: UUID) {
+    public func deleteCharacter(id: UUID, storyID: UUID) throws {
         let file = characterFile(id: id, storyID: storyID)
-        try? FileManager.default.removeItem(at: file)
+        try FileManager.default.removeItem(at: file)
         if var story = loadStory(id: storyID) {
             story.characterIDs.removeAll { $0 == id }
-            saveStory(story)
+            try saveStory(story)
         }
     }
 
     // MARK: - Import / Export
 
-    public func importMarkdownAsChapter(storyID: UUID, title: String, content: String) -> Chapter? {
+    public func importMarkdownAsChapter(storyID: UUID, title: String, content: String) throws -> Chapter? {
         guard var story = loadStory(id: storyID) else { return nil }
         let chapter = Chapter(storyID: storyID, title: title, content: content)
-        saveChapter(chapter)
+        // 与 createChapter 同一 consistency 约定：先落文件再追加引用（#431）。
+        try saveChapter(chapter)
         story.chapterIDs.append(chapter.id)
-        saveStory(story)
+        do {
+            try saveStory(story)
+        } catch {
+            try? FileManager.default.removeItem(at: chapterFile(id: chapter.id, storyID: storyID))
+            throw error
+        }
         return chapter
     }
 
@@ -251,30 +266,27 @@ public actor StoryStore: SuperLog {
             .appendingPathComponent("\(id.uuidString).json")
     }
 
-    private func saveStory(_ story: Story) {
+    private func saveStory(_ story: Story) throws {
         let dir = storyDirectory(for: story.id)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let file = dir.appendingPathComponent("story.json")
-        if let data = try? encoder.encode(story) {
-            try? data.write(to: file, options: [.atomic])
-        }
+        let data = try encoder.encode(story)
+        try data.write(to: file, options: [.atomic])
     }
 
-    private func saveChapter(_ chapter: Chapter) {
+    private func saveChapter(_ chapter: Chapter) throws {
         let dir = storyDirectory(for: chapter.storyID).appendingPathComponent("chapters")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let file = dir.appendingPathComponent("\(chapter.id.uuidString).json")
-        if let data = try? encoder.encode(chapter) {
-            try? data.write(to: file, options: [.atomic])
-        }
+        let data = try encoder.encode(chapter)
+        try data.write(to: file, options: [.atomic])
     }
 
-    private func saveCharacter(_ character: Character) {
+    private func saveCharacter(_ character: Character) throws {
         let dir = storyDirectory(for: character.storyID).appendingPathComponent("characters")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let file = dir.appendingPathComponent("\(character.id.uuidString).json")
-        if let data = try? encoder.encode(character) {
-            try? data.write(to: file, options: [.atomic])
-        }
+        let data = try encoder.encode(character)
+        try data.write(to: file, options: [.atomic])
     }
 }

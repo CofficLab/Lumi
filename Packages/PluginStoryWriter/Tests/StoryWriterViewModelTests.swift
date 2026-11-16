@@ -88,7 +88,7 @@ struct StoryWriterViewModelTests {
         var updated = chapter
         updated.title = "Revised by agent"
         updated.content = "New body"
-        await store.updateChapter(updated)
+        try await store.updateChapter(updated)
 
         await viewModel.reloadFromDisk()
 
@@ -99,7 +99,7 @@ struct StoryWriterViewModelTests {
         #expect(viewModel.chapters.first?.content == "New body")
 
         // 只有原选中节点确实不存在时才回退到故事概览。
-        await store.deleteChapter(id: chapter.id, storyID: story.id)
+        try await store.deleteChapter(id: chapter.id, storyID: story.id)
         await viewModel.reloadFromDisk()
 
         #expect(viewModel.selectedNodeID == story.id)

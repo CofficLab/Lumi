@@ -119,7 +119,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func createStory(title: String) async -> Story {
-        let story = await store.createStory(title: title)
+        let story = (try? await store.createStory(title: title)) ?? Story(title: title)
         stories.insert(story, at: 0)
         await selectStory(id: story.id)
         return story
@@ -138,7 +138,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateStory(_ story: Story) async {
-        await store.updateStory(story)
+        try? await store.updateStory(story)
         if let idx = stories.firstIndex(where: { $0.id == story.id }) {
             stories[idx] = story
         }
@@ -149,7 +149,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     public func createChapter(title: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
         let generation = storyGeneration
-        guard let chapter = await store.createChapter(storyID: storyID, title: title) else { return nil }
+        guard let chapter = try? await store.createChapter(storyID: storyID, title: title) else { return nil }
         // await 期间可能已切换故事：磁盘上章节仍归属原故事，但不得把
         // 它追加进新故事的章节列表或改选中新故事里不存在的节点（#432）。
         guard storyGeneration == generation, currentStoryID == storyID else { return chapter }
@@ -162,7 +162,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func deleteChapter(id: UUID) async {
         guard let storyID = currentStoryID else { return }
-        await store.deleteChapter(id: id, storyID: storyID)
+        _ = try? await store.deleteChapter(id: id, storyID: storyID)
         chapters.removeAll { $0.id == id }
         refreshTotalWordCount()
         if selectedNodeID == id {
@@ -172,7 +172,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateChapter(_ chapter: Chapter) async {
-        await store.updateChapter(chapter)
+        try? await store.updateChapter(chapter)
         if let idx = chapters.firstIndex(where: { $0.id == chapter.id }) {
             chapters[idx] = chapter
         }
@@ -195,7 +195,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     /// 内存列表已由 `applyChapterInMemory` 即时更新；这里不做 await 后的共享
     /// 状态写回，避免旧的防抖快照覆盖用户刚输入的新内容（见 issue #1246）。
     public func persistChapter(_ chapter: Chapter) async {
-        await store.updateChapter(chapter)
+        try? await store.updateChapter(chapter)
     }
 
     // MARK: - Characters
@@ -203,7 +203,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     public func createCharacter(name: String) async -> Character? {
         guard let storyID = currentStoryID else { return nil }
         let generation = storyGeneration
-        guard let character = await store.createCharacter(storyID: storyID, name: name) else { return nil }
+        guard let character = try? await store.createCharacter(storyID: storyID, name: name) else { return nil }
         guard storyGeneration == generation, currentStoryID == storyID else { return character }
         characters.append(character)
         selectedNodeID = character.id
@@ -213,7 +213,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func deleteCharacter(id: UUID) async {
         guard let storyID = currentStoryID else { return }
-        await store.deleteCharacter(id: id, storyID: storyID)
+        try? await store.deleteCharacter(id: id, storyID: storyID)
         characters.removeAll { $0.id == id }
         if selectedNodeID == id {
             selectedNodeID = currentStoryID
@@ -222,7 +222,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     public func updateCharacter(_ character: Character) async {
-        await store.updateCharacter(character)
+        try? await store.updateCharacter(character)
         if let idx = characters.firstIndex(where: { $0.id == character.id }) {
             characters[idx] = character
         }
@@ -233,7 +233,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     public func importMarkdownAsChapter(title: String, content: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
         let generation = storyGeneration
-        guard let chapter = await store.importMarkdownAsChapter(storyID: storyID, title: title, content: content) else {
+        guard let chapter = try? await store.importMarkdownAsChapter(storyID: storyID, title: title, content: content) else {
             return nil
         }
         guard storyGeneration == generation, currentStoryID == storyID else { return chapter }

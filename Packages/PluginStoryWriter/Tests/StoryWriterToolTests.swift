@@ -203,6 +203,43 @@ struct StoryWriterToolTests {
         }
     }
 
+    @Test func createChapterToolThrowsWhenSaveFailsAndLeavesNoDanglingID() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        let storyOutput = try await tool("create_story").execute(arguments: ["title": .init("Unwritable")])
+        let storyID = try #require(firstUUID(in: storyOutput))
+        let store = StoryStore(pluginDirectory: directory)
+        let story = try #require(await store.loadAllStories().first)
+
+        // 把 chapters 目录路径占成普通文件，saveChapter 的 createDirectory 必然失败。
+        // 回归 #431：工具不得把保存失败包装成成功文案，也不得在 story 里残留章节 ID。
+        let chaptersPath = directory
+            .appendingPathComponent("stories")
+            .appendingPathComponent(storyID)
+            .appendingPathComponent("chapters")
+        try Data("blocker".utf8).write(to: chaptersPath)
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("create_chapter").execute(arguments: [
+                "story_id": .init(storyID), "title": .init("Doomed"),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("import_markdown_as_chapter").execute(arguments: [
+                "story_id": .init(storyID), "title": .init("Doomed Import"), "content": .init("x"),
+            ])
+        }
+
+        let reloaded = try #require(await store.loadStory(id: story.id))
+        #expect(reloaded.chapterIDs.isEmpty, "保存失败后 story 不得残留章节 ID")
+        #expect(await store.loadChapters(storyID: story.id).isEmpty)
+    }
+
     @Test func chapterStatusRoundTripsThroughReadAndUpdate() async throws {
         let directory = try makeTemporaryDirectory()
         defer {
