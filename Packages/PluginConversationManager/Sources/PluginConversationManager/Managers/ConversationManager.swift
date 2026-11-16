@@ -355,6 +355,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
             conversations.append(summary)
         }
 
+        // 分页/项目同步补载的摘要此刻才进缓存：选中项的标题必须重算并通知，
+        // 否则标题栏停在选中瞬间算出的 "No conversation"（#641）。
+        // 只在标题真的变化时发事件，避免整页补载造成通知风暴。
+        if summary.id == selectedConversationID {
+            let previousTitle = currentTitle
+            updateCurrentTitle()
+            if currentTitle != previousTitle {
+                notifyConversationObservers(.updated(summary.id))
+            }
+        }
+
         guard conversations.count > Self.initialPageSize * 2 else { return }
 
         let selectedID = selectedConversationID
