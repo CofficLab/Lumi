@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 9 个，用例总数: 50
+测试文件: 10 个，用例总数: 65
 
 核心组件（源码目录）:
 - `Managers/`
@@ -25,6 +25,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - `MCPToolAdapter`
 - `MCPServerContributor`
 - `MCPText`
+- `MCPArgumentsCodec`
 - `MCPSettingsView`
 
 ## 关键行为契约（实现约定，非协议要求）
@@ -39,6 +40,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（13 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回）；改动该模块时优先跑对应测试文件。
 - **MCPToolAdapter**（12 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定（含 #178 取消透传）；改动该模块时优先跑对应测试文件。
+- **MCPArgumentsCodec**（15 条）：由 `roundTripPreservesArgumentWithSpaces`、`parseDoubleQuotedInputKeepsSpaces`、`emptyArgumentRoundTrips` 等用例锁定；参数编辑框的拼接/拆分必须可逆（`parse(join(args)) == args`），含空格/引号/反斜杠的单个参数不得被拆坏或丢失（#534）。
 
 ## 测试用例清单
 
@@ -94,28 +96,44 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 48 | MCPServerRegistry | 合法文件加载不置 loadFailed | 已写入合法配置 | 同目录重建注册表 | loadFailed 不置位，配置完整恢复 | P1 | ✅ 已覆盖 | `validFileDoesNotSetLoadFailed` |
 | 49 | MCPToolAdapter | CancellationError 必须原样透传，不得包装为执行失败（**#178**） | 会话替身抛 CancellationError | 调用 executeResult | 抛出 CancellationError 而非 ToolExecutionError | P0 | ✅ 已覆盖 | `cancellationErrorPassesThrough` |
 | 50 | MCPToolAdapter | 调用返回后任务已取消时不得产出成功结果（**#178**） | 任务先取消再进入 executeResult，会话替身正常回包 | 等待任务结果 | 抛出 CancellationError，不落成功结果 | P0 | ✅ 已覆盖 | `cancelledAfterCallReturnsThrowsCancellation` |
+| 51 | MCPArgumentsCodec | 含空格的参数经拼接→拆分往返后边界不变（**回归 #534**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `roundTripPreservesArgumentWithSpaces` |
+| 52 | MCPArgumentsCodec | 含空格的参数拼接时被双引号包裹 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `joinQuotesArgumentWithSpaces` |
+| 53 | MCPArgumentsCodec | 双引号输入拆分后保留内部空格 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `parseDoubleQuotedInputKeepsSpaces` |
+| 54 | MCPArgumentsCodec | 单引号输入拆分后保留内部空格 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `parseSingleQuotedInputKeepsSpaces` |
+| 55 | MCPArgumentsCodec | 无特殊字符的参数拼接/拆分原样不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainArgumentsAreUnchanged` |
+| 56 | MCPArgumentsCodec | 空字符串参数往返后仍是一个空参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyArgumentRoundTrips` |
+| 57 | MCPArgumentsCodec | 参数内嵌双引号往返不丢失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `embeddedDoubleQuoteRoundTrips` |
+| 58 | MCPArgumentsCodec | 参数内嵌反斜杠往返不丢失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `embeddedBackslashRoundTrips` |
+| 59 | MCPArgumentsCodec | 参数内嵌单引号往返不丢失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `embeddedSingleQuoteRoundTrips` |
+| 60 | MCPArgumentsCodec | 参数内部的制表符/换行/空格被保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `whitespaceInsideArgumentIsPreserved` |
+| 61 | MCPArgumentsCodec | 空文本与纯空白文本拆不出参数 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyAndWhitespaceTextYieldNoArguments` |
+| 62 | MCPArgumentsCodec | 空数组拼接为空文本 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyArrayJoinsToEmptyText` |
+| 63 | MCPArgumentsCodec | 相邻引号片段拼接为同一个参数 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `adjacentQuotedSegmentsConcatenate` |
+| 64 | MCPArgumentsCodec | 引号外的反斜杠转义空格 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backslashEscapesSpaceOutsideQuotes` |
+| 65 | MCPArgumentsCodec | 多组参数语料往返不变量恒成立 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `roundTripHoldsForVariedCorpus` |
 
-> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
+> 变异验证（#534）：① 去掉 join 的引号包裹（含空格参数原样输出）→ `joinQuotesArgumentWithSpaces` 失败；② parse 把双引号当普通字符（不进入引号态）→ `parseDoubleQuotedInputKeepsSpaces` 失败；③ 用 `current.isEmpty` 取代 `hasToken` 标志（空引号 token 被丢弃）→ `emptyArgumentRoundTrips` 失败；恢复后重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 32 / 32
-- P2: 已覆盖 4 / 4
-- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 41 / 41
+- P2: 已覆盖 7 / 7
+- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（32 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（41 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

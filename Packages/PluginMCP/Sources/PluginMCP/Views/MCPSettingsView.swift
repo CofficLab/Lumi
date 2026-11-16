@@ -144,7 +144,7 @@ struct MCPSettingsView: View {
                         .font(.appCaptionEmphasized)
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
-                    Text(server.command + (server.arguments.isEmpty ? "" : " " + server.arguments.joined(separator: " ")))
+                    Text(server.command + (server.arguments.isEmpty ? "" : " " + MCPArgumentsCodec.join(server.arguments)))
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
@@ -192,7 +192,7 @@ struct MCPSettingsView: View {
                             .font(.title3.weight(.semibold))
                         statusBadge(state)
                     }
-                    Text(server.command + (server.arguments.isEmpty ? "" : " " + server.arguments.joined(separator: " ")))
+                    Text(server.command + (server.arguments.isEmpty ? "" : " " + MCPArgumentsCodec.join(server.arguments)))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -408,7 +408,7 @@ struct MCPServerEditSheet: View {
         guard let server else { return }
         name = server.name
         command = server.command
-        argumentsText = server.arguments.joined(separator: " ")
+        argumentsText = MCPArgumentsCodec.join(server.arguments)
         transport = server.transport
         url = server.url ?? ""
         environmentText = server.environment.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
@@ -456,9 +456,7 @@ struct MCPServerEditSheet: View {
 
         var arguments: [String] = []
         if transport == .stdio {
-            arguments = argumentsText
-                .split(whereSeparator: { $0 == " " || $0 == "\n" })
-                .map(String.init)
+            arguments = MCPArgumentsCodec.parse(argumentsText)
         }
 
         var environment: [String: String] = [:]
