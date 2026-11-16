@@ -84,21 +84,17 @@ final class ScreenCaptureRecorder: NSObject, RecordingEngine, @unchecked Sendabl
         self.tempURL = tempOutputURL
 
         // 1) 配置 SCStream。
-        let streamConfig = SCStreamConfiguration()
-        streamConfig.width = width
-        streamConfig.height = height
-        streamConfig.showsCursor = config.showCursor
-        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.frameRate))
-        streamConfig.queueDepth = 6
         var captureMicrophone = false
         if config.includeMicrophone {
             // 兜底：调用方若绕过会话管理器，也不能在 macOS 14 上静默降级成无声录制。
             try RecordingMicrophoneCapability.validate(includeMicrophone: true)
             if #available(macOS 15.0, *) {
-                streamConfig.captureMicrophone = true
                 captureMicrophone = true
             }
         }
+        let streamConfig = Self.makeStreamConfiguration(
+            config: config, width: width, height: height, captureMicrophone: captureMicrophone
+        )
 
         let stream = SCStream(filter: filter, configuration: streamConfig, delegate: self)
         try await stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: writerQueue)
@@ -220,6 +216,34 @@ final class ScreenCaptureRecorder: NSObject, RecordingEngine, @unchecked Sendabl
         width = max(RecordingResolution.minimumDimension, width)
         height = max(RecordingResolution.minimumDimension, height)
         return (width, height)
+    }
+
+    // MARK: - Stream configuration
+
+    /// 构建 `SCStreamConfiguration`。
+    ///
+    /// `capturesAudio` 是应用音频的总开关，默认 `false`：只注册 `.audio` 输出而不打开它，
+    /// ScreenCaptureKit 不会投递应用音频样本，录制会沿成功路径静默缺少声音（#819）。
+    /// 必须在创建 `SCStream` 之前按 `includeAppAudio` 设置。
+    static func makeStreamConfiguration(
+        config: RecordingConfig,
+        width: Int,
+        height: Int,
+        captureMicrophone: Bool
+    ) -> SCStreamConfiguration {
+        let streamConfig = SCStreamConfiguration()
+        streamConfig.width = width
+        streamConfig.height = height
+        streamConfig.showsCursor = config.showCursor
+        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.frameRate))
+        streamConfig.queueDepth = 6
+        streamConfig.capturesAudio = config.includeAppAudio
+        if captureMicrophone {
+            if #available(macOS 15.0, *) {
+                streamConfig.captureMicrophone = true
+            }
+        }
+        return streamConfig
     }
 
     // MARK: - Codec settings

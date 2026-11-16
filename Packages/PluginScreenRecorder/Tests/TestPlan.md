@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 34 条用例。
+PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 37 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 34
+测试文件: 8 个，用例总数: 37
 
 核心组件（源码目录）:
 - `Models/`
@@ -44,6 +44,7 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 - **ScreenRecorderPlugin**（9 条）：由 `modelsInitialize`、`frameRateClamping`、`resolutionHeightAndDurationClamping` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RecordingSessionManagerConcurrency**（3 条）：由 `secondStartDuringTargetResolutionIsRejected`、`secondStartDuringMicrophonePermissionIsRejected`、`activeSessionRejectsSecondStartWithoutOverwrite` 锁定 start 的启动互斥必须从进入流程持有到会话建立（**#224**）；改动该模块时优先跑对应测试文件。
 - **ScreenRecorderPluginShutdown**（3 条）：由 `shutdownStopsAndFinalizesActiveRecording`、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 锁定插件关闭必须停止并落盘活动录制、隐藏指示器（**#223**）；改动该模块时优先跑对应测试文件。
+- **ScreenCaptureConfiguration**（3 条）：由 `appAudioEnablesCapturesAudio`、`withoutAppAudioCapturesAudioStaysOff`、`preservesDimensionsAndMicrophoneFlag` 锁定请求应用音频时必须打开 `capturesAudio` 总开关、未请求时不得打开（**回归 #819**）；改动流配置路径时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -83,8 +84,11 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 | 32 | ScreenRecorderPluginShutdown | 关闭时必须停止并落盘活动录制，隐藏指示器（**回归 #223**） | 注入可落盘引擎桩建立活动录制并显示指示器 | 调用 plugin.onShutdown 并等待异步清理 | 会话 finished、输出 mp4 落盘、指示器隐藏 | P0 | ✅ 已覆盖 | `shutdownStopsAndFinalizesActiveRecording` |
 | 33 | ScreenRecorderPluginShutdown | 关闭时 stop 失败必须回退取消，会话不得残留活跃态（**回归 #223**） | 注入 stop 必失败的引擎桩建立活动录制 | 调用 plugin.onShutdown 并等待异步清理 | 会话 error、不再活跃、指示器隐藏 | P0 | ✅ 已覆盖 | `shutdownFallsBackToCancelWhenStopFails` |
 | 34 | ScreenRecorderPluginShutdown | 无活动录制时关闭也必须隐藏指示器（**回归 #223**） | 无活动录制，指示器处于显示态 | 调用 plugin.onShutdown | 指示器同步隐藏，无活跃会话 | P0 | ✅ 已覆盖 | `shutdownWithoutRecordingHidesIndicator` |
+| 35 | ScreenCaptureConfiguration | 请求应用音频时必须打开 capturesAudio 总开关，否则录制静默丢失应用声音（**回归 #819**） | includeAppAudio=true | 调用 `makeStreamConfiguration` | `capturesAudio == true` | P0 | ✅ 已覆盖 | `appAudioEnablesCapturesAudio` |
+| 36 | ScreenCaptureConfiguration | 未请求应用音频时 capturesAudio 不得被打开（**回归 #819**） | includeAppAudio=false | 调用 `makeStreamConfiguration` | `capturesAudio == false` | P0 | ✅ 已覆盖 | `withoutAppAudioCapturesAudioStaysOff` |
+| 37 | ScreenCaptureConfiguration | 流配置保留尺寸/光标/帧率，麦克风开关按解析结果设置 | frameRate=24, showCursor=false, captureMicrophone=true | 调用 `makeStreamConfiguration` | 宽高/光标/帧率间隔一致，capturesAudio=true，macOS 15+ captureMicrophone=true | P1 | ✅ 已覆盖 | `preservesDimensionsAndMicrophoneFlag` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#224**，`RecordingSessionManager.start` 启动互斥）：
@@ -96,23 +100,27 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 > - **M1** 还原旧关闭路径（只注销工具/观察者/设置页，不调度 `manager.shutdown()`、不隐藏指示器）→ `shutdownStopsAndFinalizesActiveRecording`（会话仍活跃、无落盘、指示器仍显示）、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 三条全部转红。
 > - 还原完整修复（fire-and-forget 调度 shutdown：活动录制 stop 落盘、失败回退 cancel；同步隐藏指示器）→ 34 条全绿。
 
+> 变异验证（**#819**，`ScreenCaptureRecorder.makeStreamConfiguration` 应用音频总开关）：
+> - **M1** 删除 `streamConfig.capturesAudio = config.includeAppAudio`（还原旧路径：只注册 `.audio` 输出却不开总开关）→ `appAudioEnablesCapturesAudio`、`preservesDimensionsAndMicrophoneFlag` 转红（capturesAudio 仍为默认 false）；`withoutAppAudioCapturesAudioStaysOff` 仍绿。
+> - 还原完整修复（按 includeAppAudio 设置 capturesAudio，再创建 SCStream）→ 37 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 20 / 20
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 21 / 21
 - P2: 已覆盖 3 / 3
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
