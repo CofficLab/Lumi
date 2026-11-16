@@ -82,29 +82,7 @@ public actor MySQLConnection: DatabaseConnection {
         }
 
         for row in rows {
-            var values: [DatabaseValue] = []
-            for colDef in row.columnDefinitions {
-                let data = row.column(colDef.name)
-                if let data {
-                    if let s = data.string { values.append(.string(s)) }
-                    else if let i = data.int { values.append(.integer(i)) }
-                    else if let f = data.double { values.append(.double(f)) }
-                    else if let b = data.bool { values.append(.bool(b)) }
-                    else if let buffer = data.buffer {
-                        var buffer = buffer
-                        if let bytes = buffer.readBytes(length: buffer.readableBytes) {
-                            values.append(.data(Data(bytes)))
-                        } else {
-                            values.append(.null)
-                        }
-                    } else {
-                        values.append(.null)
-                    }
-                } else {
-                    values.append(.null)
-                }
-            }
-            resultRows.append(values)
+            resultRows.append(Self.decodeRow(row))
         }
 
         if columns.isEmpty, let probeSQL = Self.normalizedSelectForColumnProbe(sql) {
@@ -112,6 +90,38 @@ public actor MySQLConnection: DatabaseConnection {
         }
 
         return QueryResult(columns: columns, rows: resultRows, rowsAffected: 0)
+    }
+
+    /// 按位置解码一行。
+    ///
+    /// SQL 允许结果集中出现重复列名（如 `SELECT a.id, b.id` 或多表 JOIN），而
+    /// mysql-nio 的 `row.column(name)` 按名字返回**首个**匹配列，会让后面的同名列
+    /// 错显首列的值，界面静默展示错误数据（#585）。这里改用 `columnDefinitions`
+    /// 与 `values` 的位置对应关系逐列构造 `MySQLData`，与列名是否重复无关。
+    static func decodeRow(_ row: MySQLRow) -> [DatabaseValue] {
+        var values: [DatabaseValue] = []
+        for (colDef, buffer) in zip(row.columnDefinitions, row.values) {
+            let data = MySQLData(
+                type: colDef.columnType,
+                format: row.format,
+                buffer: buffer,
+                isUnsigned: colDef.flags.contains(.COLUMN_UNSIGNED)
+            )
+            if let s = data.string { values.append(.string(s)) }
+            else if let i = data.int { values.append(.integer(i)) }
+            else if let f = data.double { values.append(.double(f)) }
+            else if let b = data.bool { values.append(.bool(b)) }
+            else if var buf = data.buffer {
+                if let bytes = buf.readBytes(length: buf.readableBytes) {
+                    values.append(.data(Data(bytes)))
+                } else {
+                    values.append(.null)
+                }
+            } else {
+                values.append(.null)
+            }
+        }
+        return values
     }
 
     public func beginTransaction() async throws -> any DatabaseTransaction {
