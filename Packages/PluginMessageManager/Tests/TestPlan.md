@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆盖 74 条用例。
+PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆盖 78 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 74
+测试文件: 16 个，用例总数: 78
 
 核心组件（源码目录）:
 - `Errors/`
@@ -46,6 +46,8 @@ PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆�
 - **MessageManager 停止排空 write-behind**（3 条）：由 `flushWaitsForBlockedWriteThenDurable`、`flushDrainsToolResultWriteBehind`、`flushConvergesBatchAndEmptiesPending` 锁定——内核停止/插件卸载时 `flushPendingWrites()` 必须排空串行落盘队列，用受控阻塞队列证明「停止调用返回后所有已接受写入（含工具结果写回）都已落盘、pending 清空」，否则正常退出会丢失最后一条消息（#152）。变异验证：把 `flushPendingWrites()` 改成 no-op（空 `sync` 不等待队列），三条用例全部转红——前两条在「flush 提前返回」断言（`!flushReturned.isSet`）失败，第三条在批量落盘断言失败。
 - **MessageManager 更新落盘失败保留 pending**（3 条）：由 `updateRetainsPendingWhenNoDiskRecord`、`updateRetainsPendingWhenSaveFails`、`updateDequeuesPendingWhenSaveSucceeds` 锁定——`persistUpdatedMessage` 只有在 `store.updateMessage` 确认落盘成功（返回 true）后才能撤掉 pending；磁盘无记录或 save 失败时必须保留缓冲并暴露可观察错误（`logger.error`），否则消息既不在磁盘也不在内存，从所有读路径静默消失；成功路径仍须 dequeue，避免过度保留堵死 write-behind 窗口（#151）。
 > 变异验证（#151）：把 `persistUpdatedMessage` 改回忽略 Bool、无条件 `dequeuePending`，前两条用例转红——pending 不再保留 B、`messages(for:)` 读不到消息（场景 A 彻底消失 / 场景 B 退回旧 A）；成功路径用例仍绿。恢复后 3 条全绿。
+- **MessageManager 写回代次门控**（4 条）：由 `writeBackKeepsLatestContentAcrossABCInterleaving`、`toolCallMissStillDrainsPendingGeneration`、`gatedDequeueOnlyRemovesMatchingGeneration`、`duplicateUpdateStillResolvesLatestGeneration` 锁定——pending 按代次（generation）门控 dequeue：insert/更新落盘闭包只能撤掉自己实际写入的那一代，旧写回不得撤掉已更新的新 pending；后续更新在队列里的旧更新完成前必须仍走队列（命中 pending），不得绕过队列同步写磁盘而被旧内容覆盖。用「可挂起队列 + 受控存储锁」确定性复现 A→B→C 交错，断言磁盘最终是 C；工具调用未命中也要把原 toolCalls 原样入队消费掉被 bump 的代次，避免 pending 泄漏；重复同值更新仍推进代次，最新一代写回后 pending 清空（#150）。
+> 变异验证（#150）：把 `PendingMessageBuffer.dequeue(id:conversationID:generation:)` 的代次 guard 去掉、改回按 id 无条件移除，A→B→C 用例转红（磁盘最终退回 B）、`gatedDequeueOnlyRemovesMatchingGeneration` 与 `duplicateUpdateStillResolvesLatestGeneration` 转红（旧代次撤掉了新 pending）；`toolCallMissStillDrainsPendingGeneration` 仍绿（它守的是泄漏而非门控）。恢复后 4 条全绿。
 - **v4 历史消息迁移**（6 条）：由 `migrationImportsMessagesWithOrderAndContent`、`repeatMigrationDoesNotDuplicate`、`oncePolicySkipsAfterSuccessMarker`、`corruptLegacyDatabaseDoesNotWriteMarker`、`unknownRoleRowsAreSkippedWithoutFailingMigration`、`locatorFindsSiblingV4Directory` 锁定——v4 升级必须把历史消息随会话迁入 v5 消息库：保留会话关联、时间顺序、正文、工具调用（v4 `base64Data` 图片形状须映射成 v5 `data`）、推理内容与用户图片附件；重复迁移不得产生重复数据；marker 只在全部成功后写入（损坏旧库吞错不写 marker，下次启动重试）；未知 role 行跳过不阻塞其余消息（#394）。
 > 变异验证（#394）：① 把 `createdAt` 映射改成时间戳取反，顺序/字段断言转红；② 把 toolCallsJSON 直接解码成 v5 `[MessageToolCall]`（v4 图片附件字段不兼容），工具调用断言转红；③ 在迁移开始前预写 marker，损坏旧库用例的「不写 marker」断言转红。恢复后 6 条全绿。
 
@@ -127,27 +129,31 @@ PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆�
 | 72 | MessageManager 更新落盘失败保留 pending | insert 失败后 update 找不到磁盘记录时保留 pending，消息不从读路径消失（#151） | 磁盘无记录，pending 持有消息 A | 更新到 B 后排空落盘队列 | pending 仍含 B，磁盘为空，`messages(for:)` 仍读到 B | P0 | ✅ 已覆盖 | `updateRetainsPendingWhenNoDiskRecord` |
 | 73 | MessageManager 更新落盘失败保留 pending | update save 失败时保留 pending，磁盘旧内容不被误删（#151） | 磁盘已有 A，触发器使 UPDATE 落盘失败 | 更新到 B 后排空落盘队列 | pending 仍含 B，磁盘仍为 A，`messages(for:)` 读到 B | P0 | ✅ 已覆盖 | `updateRetainsPendingWhenSaveFails` |
 | 74 | MessageManager 更新落盘失败保留 pending | update 落盘成功时撤掉 pending，磁盘更新为最新内容（#151） | 磁盘已有 A，pending 持有 A | 更新到 B 后排空落盘队列 | pending 清空，磁盘为 B，`messages(for:)` 读到 B | P1 | ✅ 已覆盖 | `updateDequeuesPendingWhenSaveSucceeds` |
+| 75 | MessageManager 写回代次门控 | A→B→C 交错：旧 insert 不得撤掉新 pending，磁盘最终是 C（#150） | 占住存储锁，insert(A)、update(B) 入队后挂起队列再放行锁 | insert(A) 落盘后更新到 C，放行队列排空 | 磁盘最终为 C，pending 清空 | P0 | ✅ 已覆盖 | `writeBackKeepsLatestContentAcrossABCInterleaving` |
+| 76 | MessageManager 写回代次门控 | 工具调用未命中也排空被 bump 的代次，pending 不泄漏（#150） | assistant 仍在 pending，写回不存在的 toolCallID | 放行存储锁并排空落盘队列 | pending 清空，磁盘 toolCalls 保持原样、result 为 nil | P0 | ✅ 已覆盖 | `toolCallMissStillDrainsPendingGeneration` |
+| 77 | MessageManager 写回代次门控 | 代次门控 dequeue：旧代次不撤新 pending，匹配代次才撤（#150） | enqueue A(gen1) 后 update 到 B(gen2) | 先按 gen1 dequeue，再按 gen2 dequeue | gen1 不撤（pending 仍 B），gen2 撤掉（pending 空） | P0 | ✅ 已覆盖 | `gatedDequeueOnlyRemovesMatchingGeneration` |
+| 78 | MessageManager 写回代次门控 | 重复同值更新仍推进代次，最新一代写回后 pending 清空（#150） | enqueue A 后连续两次 update 到同值 B | 按第一代 dequeue，再按最新代 dequeue | 第一代不撤，最新代撤掉后 pending 空 | P1 | ✅ 已覆盖 | `duplicateUpdateStillResolvesLatestGeneration` |
 
-> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 50 / 50
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 51 / 51
 - P2: 已覆盖 1 / 1
-- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
+- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（50 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（51 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
