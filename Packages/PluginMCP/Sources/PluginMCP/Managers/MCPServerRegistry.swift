@@ -103,37 +103,44 @@ public final class MCPServerRegistry: ObservableObject {
 
     // MARK: - Server CRUD
 
-    /// 新增服务器（自动生成 id）。
+    /// 新增服务器（自动生成 id）。写入失败抛出，内存列表保持不变（#532）。
     @discardableResult
-    public func addServer(_ config: MCPServerConfig) -> MCPServerConfig {
+    public func addServer(_ config: MCPServerConfig) throws -> MCPServerConfig {
         var resolved = config
         if resolved.id.isEmpty {
             resolved.id = UUID().uuidString
         }
-        servers.append(resolved)
-        persist()
+        var updated = servers
+        updated.append(resolved)
+        try persist(updated)
+        servers = updated
         return resolved
     }
 
-    /// 更新服务器（按 id 匹配；不存在则新增）。
+    /// 更新服务器（按 id 匹配；不存在则新增）。写入失败抛出，内存列表保持不变（#532）。
     /// 同 id 的历史重复条目一并替换，保证 `id` 在列表中唯一。
-    public func updateServer(_ config: MCPServerConfig) {
+    public func updateServer(_ config: MCPServerConfig) throws {
         guard let index = servers.firstIndex(where: { $0.id == config.id }) else {
-            addServer(config)
+            try addServer(config)
             return
         }
-        servers.removeAll { $0.id == config.id }
-        servers.insert(config, at: index)
-        persist()
+        var updated = servers
+        updated.removeAll { $0.id == config.id }
+        updated.insert(config, at: min(index, updated.count))
+        try persist(updated)
+        servers = updated
     }
 
-    /// 按 id 移除服务器。
-    public func removeServer(id: String) {
+    /// 按 id 移除服务器。写入失败抛出，内存列表与模板墓碑都保持不变（#532）。
+    public func removeServer(id: String) throws {
+        var updated = servers
+        updated.removeAll { $0.id == id }
+        try persist(updated)
+        // 墓碑只在删除确实落库后记录：否则一次失败的删除会永久屏蔽该内置模板。
         if let removed = servers.first(where: { $0.id == id }) {
             recordDeletedTemplate(removed)
         }
-        servers.removeAll { $0.id == id }
-        persist()
+        servers = updated
     }
 
     public func server(id: String) -> MCPServerConfig? {
@@ -142,18 +149,29 @@ public final class MCPServerRegistry: ObservableObject {
 
     // MARK: - Persistence
 
+    /// 启动期自愈 / seed 的尽力写回：失败只记录，不阻断插件启动。
     private func persist() {
+        do {
+            try persist(servers)
+        } catch {
+            print("[MCPServerRegistry] persist failed: \(error)")
+        }
+    }
+
+    /// 用户操作的写回：失败必须抛出，让 UI 保留编辑页并显示错误（#532）。
+    private func persist(_ configs: [MCPServerConfig]) throws {
         // 加载失败时拒绝写回：原文件可能是用户的全部配置，
         // 不能用内存里的空列表/seed 模板原子覆盖它（#531）。
         guard !loadFailed else {
             print("[MCPServerRegistry] skip persist: load failed, refusing to overwrite original file")
-            return
+            throw MCPServerRegistryError.loadFailed
         }
         do {
-            let data = try JSONEncoder().encode(servers)
+            let data = try JSONEncoder().encode(configs)
             try data.write(to: fileURL, options: .atomic)
         } catch {
             print("[MCPServerRegistry] persist failed: \(error)")
+            throw MCPServerRegistryError.writeFailed(underlying: error)
         }
     }
 
@@ -171,6 +189,24 @@ public final class MCPServerRegistry: ObservableObject {
             try data.write(to: deletedTemplatesFileURL, options: .atomic)
         } catch {
             print("[MCPServerRegistry] persist deleted templates failed: \(error)")
+        }
+    }
+}
+
+/// 注册表写回失败（#532）。CRUD 必须把它抛给调用方：
+/// 只打印日志会让 UI 把「没写进磁盘」当成保存成功，重启后配置消失。
+public enum MCPServerRegistryError: LocalizedError {
+    /// 配置文件加载失败（#531）：拒绝写回，避免覆盖用户原始配置。
+    case loadFailed
+    /// 编码或原子写入失败。
+    case writeFailed(underlying: any Error)
+
+    public var errorDescription: String? {
+        switch self {
+        case .loadFailed:
+            return "The MCP configuration file could not be read, so saving is disabled to protect it."
+        case .writeFailed(let error):
+            return error.localizedDescription
         }
     }
 }

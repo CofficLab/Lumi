@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 10 个，用例总数: 65
+测试文件: 11 个，用例总数: 76
 
 核心组件（源码目录）:
 - `Managers/`
@@ -21,6 +21,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - `MCPPlugin`
 - `MCPServerConnectionState`
 - `MCPServerRegistry`
+- `MCPServerRegistryError`
 - `MCPPermissionPolicy`
 - `MCPToolAdapter`
 - `MCPServerContributor`
@@ -32,13 +33,14 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **MCPLocalization**（3 条）：由 `zhHansResolves`、`connectionStateKeys`、`miscKeys` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPLocalization**（4 条）：由 `zhHansResolves`、`connectionStateKeys`、`miscKeys`、`saveFailureKey` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPermissionPolicy**（6 条）：由 `xcodeExactTable`、`unknownDefault`、`overrideWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPermissionServerScope**（8 条）：由 `foreignDestructiveSameNameIsHigh`、`rejectsForeignCommands`、`foreignAdapterDestructiveSameName` 等用例锁定 Xcode 精确规则的服务器身份边界（#530）；改动该模块时优先跑对应测试文件。
 - **MCPPluginBoot**（2 条）：由 `bootResolvesPluginDataDirectory`、`refusesWithoutStorageProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPluginShutdown**（1 条）：由 `shutdownDisconnectsSessions` 用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MCPServerRegistry**（13 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回）；改动该模块时优先跑对应测试文件。
+- **MCPServerRegistry**（16 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回、#532 写回失败必须抛出且不污染内存列表）；改动该模块时优先跑对应测试文件。
+- **MCPSaveFailure**（7 条）：由 `editorSaveThrowsWhenWriteFails`、`toggleFailureReportsErrorAndKeepsState`、`deleteFailureReportsErrorAndKeepsServer` 等用例锁定（#532：编辑页/启停/删除都以「确实写进磁盘」为成功前提，失败必须给出错误文案且不改状态）；改动该模块时优先跑对应测试文件。
 - **MCPToolAdapter**（12 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定（含 #178 取消透传）；改动该模块时优先跑对应测试文件。
 - **MCPArgumentsCodec**（15 条）：由 `roundTripPreservesArgumentWithSpaces`、`parseDoubleQuotedInputKeepsSpaces`、`emptyArgumentRoundTrips` 等用例锁定；参数编辑框的拼接/拆分必须可逆（`parse(join(args)) == args`），含空格/引号/反斜杠的单个参数不得被拆坏或丢失（#534）。
 
@@ -91,7 +93,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 43 | MCPPermissionServerScope | foreign 适配器暴露同名破坏性工具时判 high 且串行（#530） | 以 foreign 命令配置构造适配器，工具名 XcodeRead+destructive | 读取 permissionRiskLevel/executionCapability | high 且 serialSideEffect | P0 | ✅ 已覆盖 | `foreignAdapterDestructiveSameName` |
 | 44 | MCPPermissionServerScope | Xcode 原生适配器的只读同名工具仍判 safe 且可并行 | 以 xcrun mcpbridge 配置构造适配器，XcodeRead+readOnly | 读取 permissionRiskLevel/executionCapability | safe 且 parallelReadOnly | P1 | ✅ 已覆盖 | `nativeAdapterReadOnlySameName` |
 | 45 | MCPServerRegistry | 解码失败保留原文件，不被 seed 覆盖（回归 #531） | mcp-servers.json 为合法 JSON 但类型不符 | 贡献 Xcode 模板后构建注册表 | loadFailed 置位，原文件字节不变 | P0 | ✅ 已覆盖 | `corruptFileIsPreservedOnLoad` |
-| 46 | MCPServerRegistry | 解码失败后 CRUD 也不覆盖原文件（回归 #531） | mcp-servers.json 为截断/损坏字节 | 加载后执行 add/update/remove | loadFailed 置位，原文件字节不变 | P0 | ✅ 已覆盖 | `corruptFileSurvivesCRUD` |
+| 46 | MCPServerRegistry | 解码失败后 CRUD 报错且不覆盖原文件（回归 #531 / #532） | mcp-servers.json 为截断/损坏字节 | 加载后执行 add/update/remove | 三者均抛出 MCPServerRegistryError，列表为空，原文件字节不变 | P0 | ✅ 已覆盖 | `corruptFileSurvivesCRUD` |
 | 47 | MCPServerRegistry | 文件缺失视为首次运行，允许 seed 落库 | 数据目录无 mcp-servers.json | 贡献 Xcode 模板后构建注册表 | loadFailed 不置位，seed 落库且重启后仍在 | P1 | ✅ 已覆盖 | `missingFileAllowsSeed` |
 | 48 | MCPServerRegistry | 合法文件加载不置 loadFailed | 已写入合法配置 | 同目录重建注册表 | loadFailed 不置位，配置完整恢复 | P1 | ✅ 已覆盖 | `validFileDoesNotSetLoadFailed` |
 | 49 | MCPToolAdapter | CancellationError 必须原样透传，不得包装为执行失败（**#178**） | 会话替身抛 CancellationError | 调用 executeResult | 抛出 CancellationError 而非 ToolExecutionError | P0 | ✅ 已覆盖 | `cancellationErrorPassesThrough` |
@@ -111,29 +113,41 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 63 | MCPArgumentsCodec | 相邻引号片段拼接为同一个参数 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `adjacentQuotedSegmentsConcatenate` |
 | 64 | MCPArgumentsCodec | 引号外的反斜杠转义空格 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `backslashEscapesSpaceOutsideQuotes` |
 | 65 | MCPArgumentsCodec | 多组参数语料往返不变量恒成立 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `roundTripHoldsForVariedCorpus` |
+| 66 | MCPServerRegistry | 新增写回失败必须抛出，内存列表与磁盘原配置都不变（**#532**） | 正常加载后把 mcp-servers.json 路径换成目录 | 调用 addServer | 抛出 MCPServerRegistryError，列表仍只含原条目；恢复路径后重试可落库 | P0 | ✅ 已覆盖 | `addServerWriteFailureThrowsAndKeepsList` |
+| 67 | MCPServerRegistry | 更新写回失败必须抛出，列表保留原配置（**#532**） | 同上 | 调用 updateServer 改 command/enabled | 抛出错误，command 与 enabled 均保持原值 | P0 | ✅ 已覆盖 | `updateServerWriteFailureKeepsStoredConfig` |
+| 68 | MCPServerRegistry | 删除写回失败必须抛出，服务器与内置模板墓碑都保持不变（**#532**） | 已 seed Xcode 模板后破坏写回路径 | 调用 removeServer | 抛出错误，服务器仍在，墓碑文件不生成；恢复后删除成功才写墓碑 | P0 | ✅ 已覆盖 | `removeServerWriteFailureKeepsServerAndTemplate` |
+| 69 | MCPSaveFailure | 编辑页保存：写回失败必须抛出，新增与编辑都不得改动列表（**#532**） | 写回路径为目录 | 调用 MCPServerEditSheet.save（isEditing 两种取值） | 均抛出错误，列表与磁盘原配置不变，编辑页得以保留 | P0 | ✅ 已覆盖 | `editorSaveThrowsWhenWriteFails` |
+| 70 | MCPSaveFailure | 编辑页保存：只有落库成功才返回配置 | 可写数据目录 | 调用 save 新增 | 返回带 id 的配置，重建注册表后仍可见 | P1 | ✅ 已覆盖 | `editorSaveReturnsConfigOnlyAfterDiskWrite` |
+| 71 | MCPSaveFailure | 启停开关：写回失败返回错误文案，enabled 保持原值（**#532**） | 写回路径为目录 | 调用 MCPSettingsView.setEnabled(false) | 返回非空错误文案，enabled 仍为 true，不触发连接 | P0 | ✅ 已覆盖 | `toggleFailureReportsErrorAndKeepsState` |
+| 72 | MCPSaveFailure | 启停开关：写回成功返回 nil 且 enabled 落库 | 可写数据目录 | 调用 setEnabled(false) | 返回 nil，重建注册表后 enabled 为 false | P1 | ✅ 已覆盖 | `toggleSuccessPersistsEnabled` |
+| 73 | MCPSaveFailure | 删除：写回失败返回错误文案，服务器与模板墓碑都保留（**#532**） | 写回路径为目录 | 调用 MCPSettingsView.deleteServer | 返回非空错误文案，服务器仍在，墓碑文件不生成 | P0 | ✅ 已覆盖 | `deleteFailureReportsErrorAndKeepsServer` |
+| 74 | MCPSaveFailure | 删除：写回成功返回 nil 且服务器不再出现 | 可写数据目录 | 调用 deleteServer | 返回 nil，重建注册表后服务器不存在 | P1 | ✅ 已覆盖 | `deleteSuccessRemovesServer` |
+| 75 | MCPSaveFailure | 错误文案带上底层原因，加载失败也有可显示的说明 | 构造 writeFailed / loadFailed 错误 | 调用 persistenceFailureMessage | 文案含底层 localizedDescription；loadFailed 文案非空 | P1 | ✅ 已覆盖 | `failureMessageIncludesUnderlyingReason` |
+| 76 | MCPLocalization | 保存失败提示文案翻译（**#532**） | — | 以 zh-Hans 解析新增 key | 命中「保存 MCP 配置失败：%@」 | P2 | ✅ 已覆盖 | `saveFailureKey` |
 
-> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **76 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
 > 变异验证（#534）：① 去掉 join 的引号包裹（含空格参数原样输出）→ `joinQuotesArgumentWithSpaces` 失败；② parse 把双引号当普通字符（不进入引号态）→ `parseDoubleQuotedInputKeepsSpaces` 失败；③ 用 `current.isEmpty` 取代 `hasToken` 标志（空引号 token 被丢弃）→ `emptyArgumentRoundTrips` 失败；恢复后重新通过。
+> 变异验证（#532）：① `persist(_:)` 把写入错误重新吞掉（`throw writeFailed` → `return`）→ 6 条写回失败用例失败；② `loadFailed` 守卫改回静默 `return` → `corruptFileSurvivesCRUD` 失败；③ addServer 先提交内存再写盘 → 新增/编辑页两条用例失败（列表被污染）；④ removeServer 先记墓碑再写盘 → 两条删除失败用例失败；⑤⑥ 启停/删除 helper 的 catch 返回 nil → 对应用例失败；⑦ 编辑页 save 用 `try?` 吞掉编辑模式失败 → `editorSaveThrowsWhenWriteFails` 失败；恢复后全部重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 41 / 41
-- P2: 已覆盖 7 / 7
-- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 23 / 23
+- P1: 已覆盖 45 / 45
+- P2: 已覆盖 8 / 8
+- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（41 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P1**: 其余功能性用例（45 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 76 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -43,4 +43,9 @@ struct MCPLocalizationTests {
         #expect(zh("High") == "高风险")
         #expect(zh("Auto") == "自动")
     }
+
+    @Test("保存失败提示文案翻译（#532）")
+    func saveFailureKey() {
+        #expect(zh("Failed to save MCP configuration: %@") == "保存 MCP 配置失败：%@")
+    }
 }
