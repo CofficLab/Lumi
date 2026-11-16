@@ -72,6 +72,25 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
         toolManager.add(tool, pluginID: id)
     }
 
+    /// 运行时启用：重新注册工具栏按钮与 Agent 工具。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        try onBoot(kernel: kernel)
+    }
+
+    /// 运行时禁用：撤回 Agent 工具与工具栏按钮。
+    ///
+    /// 内核运行时禁用只调用 `onDisable`（不调用 `onShutdown`），也不会代撤
+    /// Provider 侧贡献。此前工具一直留在注册表里，禁用后仍可被 Agent 执行
+    /// （见 issue #297）。禁用必须立即撤回，启用时再恢复。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).toolbar"])
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
+        toolManager.remove(id: OpenInTool.antigravity.toolName)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).toolbar"])

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginOpenInCursor 的实现包，包含 4 个主要类型；当前测试覆盖 3 条用例。
+PluginOpenInCursor 的实现包，包含 4 个主要类型；当前测试覆盖 4 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 3
+测试文件: 2 个，用例总数: 4
 
 核心组件（源码目录）:
 - `ViewModels/`
@@ -24,7 +24,7 @@ PluginOpenInCursor 的实现包，包含 4 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **OpenInCursorPlugin**（2 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInCursorPlugin**（3 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders`、`disableWithdrawsToolAndEnableRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **OpenInCursorToolbarViewModel**（1 条）：由 `failureIsReportedToUser` 锁定；打开失败必须交给失败反馈，不能只记日志。
 
 ## 测试用例清单
@@ -34,27 +34,28 @@ PluginOpenInCursor 的实现包，包含 4 个主要类型；当前测试覆盖 
 | 1 | OpenInCursorPlugin | 启动时注册对应工具、文档和左侧工具栏贡献，关闭时一并撤回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersAndRemovesToolDocumentationAndToolbarItem` |
 | 2 | OpenInCursorPlugin | 缺少可选 Provider 时生命周期回调安全降级 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pluginToleratesMissingProviders` |
 | 3 | OpenInCursorToolbarViewModel | 打开失败时把错误交给失败反馈（**回归 #549**） | 当前项目存在，目标 App 路径不存在 | 点击按钮执行打开 | 反馈器收到 1 次失败，包含标题与原因；`isOpening` 复位 | P1 | ✅ 已覆盖 | `failureIsReportedToUser` |
+| 4 | OpenInCursorPlugin | 运行时禁用撤回 Agent 工具与工具栏按钮，启用时恢复（**回归 #297**） | 已注册 ToolManager 与 Toolbar Provider | onBoot 后 onDisable，再 onEnable | 禁用后工具与按钮均撤回，启用后恢复 | P1 | ✅ 已覆盖 | `disableWithdrawsToolAndEnableRestoresIt` |
 
-> 说明：全部 **3 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 2 / 2
+- P1: 已覆盖 3 / 3
 - P2: 已覆盖 0 / 0
-- **合计: 3 / 3**（仅表示清单场景，非源码覆盖率）
+- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（1 条）
+- **P1**: 其余功能性用例（3 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 3 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 4 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

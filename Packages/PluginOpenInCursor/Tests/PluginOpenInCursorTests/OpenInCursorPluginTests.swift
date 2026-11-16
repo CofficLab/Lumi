@@ -56,3 +56,26 @@ func pluginToleratesMissingProviders() throws {
 
     #expect(plugin.id == plugin.metadata.id)
 }
+
+@MainActor
+@Test("运行时禁用撤回 Agent 工具与工具栏按钮，启用时恢复（回归 #297）")
+func disableWithdrawsToolAndEnableRestoresIt() async throws {
+    let kernel = KernelCoreContainer()
+    let tools = DefaultToolManagerProviding()
+    let toolbar = DefaultToolbarProviding()
+    try kernel.registerProvider((any ToolManagerProviding).self, tools)
+    try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+    let plugin = OpenInCursorPlugin()
+
+    try plugin.onBoot(kernel: kernel)
+    #expect(tools.allTools().map(\.name) == [OpenInTool.cursor.toolName])
+    #expect(toolbar.toolbarItems.map(\.id) == ["\(plugin.id).toolbar"])
+
+    try await plugin.onDisable(kernel: kernel)
+    #expect(tools.allTools().isEmpty)
+    #expect(toolbar.toolbarItems.isEmpty)
+
+    try await plugin.onEnable(kernel: kernel)
+    #expect(tools.allTools().map(\.name) == [OpenInTool.cursor.toolName])
+    #expect(toolbar.toolbarItems.map(\.id) == ["\(plugin.id).toolbar"])
+}
