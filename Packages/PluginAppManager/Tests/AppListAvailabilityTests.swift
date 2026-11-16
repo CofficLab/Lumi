@@ -200,7 +200,9 @@ private final class GatedAppService: AppManagerServicing, @unchecked Sendable {
     }
 
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] { [] }
-    func deleteFiles(_ files: [RelatedFile]) async throws {}
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult {
+        DeleteFilesResult(deleted: files, failed: [])
+    }
     func saveCache() async {}
     func revealInFinder(_ app: AppModel) {}
     func openApp(_ app: AppModel) {}

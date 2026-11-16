@@ -308,28 +308,53 @@ final class AppService: @unchecked Sendable, SuperLog {
         return .other
     }
 
-    /// 删除指定的文件列表
-    func deleteFiles(_ files: [RelatedFile]) async throws {
+    /// 删除指定的文件列表（逐项移入废纸篓）。
+    ///
+    /// 不再「首个失败即整批中断」：每个文件独立尝试，失败项记录原因后继续删除
+    /// 其余项，成功项与失败项分别返回。删除前已不存在的项（例如上一次部分成功
+    /// 已移入废纸篓的 App 本体）视为已删除并跳过，使重试不会被这个已消失的首项
+    /// 永久阻塞（#410）。ViewModel 据此立即从 UI 移除已删除项并刷新选择。
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult {
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)开始删除 \(files.count) 个文件")
             }
         }
         let fileManager = FileManager.default
+        var deleted: [RelatedFile] = []
+        var failed: [DeleteFilesResult.FailedFile] = []
         for file in files {
-            // 使用 trashItem 放入废纸篓，比较安全
-            try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
-            if Self.verbose {
-                if AppManagerPluginSupport.verbose {
+            // 删除前已不存在：视为已删除并跳过。重试时首项（通常是 App 本体）
+            // 往往已被上一次部分成功移入废纸篓，不得让它阻塞其余项的清理（#410）。
+            guard fileManager.fileExists(atPath: file.path) else {
+                deleted.append(file)
+                continue
+            }
+            do {
+                // 使用 trashItem 放入废纸篓，比较安全。
+                try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
+                deleted.append(file)
+                if Self.verbose {
+                    if AppManagerPluginSupport.verbose {
                                     AppManagerPluginSupport.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+                    }
+                }
+            } catch {
+                // 单项失败不中断整批：记录原因后继续删除其余文件（#410）。
+                failed.append(DeleteFilesResult.FailedFile(file: file, message: error.localizedDescription))
+                if Self.verbose {
+                    if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.error("\(self.t)  └─ 删除失败：\((file.path as NSString).lastPathComponent) — \(error.localizedDescription)")
+                    }
                 }
             }
         }
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
-                            AppManagerPluginSupport.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+                            AppManagerPluginSupport.logger.info("\(self.t)删除完成：成功 \(deleted.count) 个，失败 \(failed.count) 个")
             }
         }
+        return DeleteFilesResult(deleted: deleted, failed: failed)
     }
 
     /// 保存缓存
@@ -419,5 +444,22 @@ enum AppError: LocalizedError {
         case let .uninstallFailed(reason):
             return "Uninstall failed: \(reason)"
         }
+    }
+}
+
+/// 批量删除（移入废纸篓）的逐项结果（#410）。
+///
+/// 卸载按顺序删除 App 本体与关联文件；某一项失败不得让整批中断，也不得把已
+/// 成功的项当作未删除。返回成功/失败明细，供 ViewModel 立即从 UI 移除已删除项、
+/// 刷新选择，并让重试只针对剩余失败项。
+struct DeleteFilesResult: Sendable {
+    /// 已成功移入废纸篓（或删除前已不存在）的文件。
+    let deleted: [RelatedFile]
+    /// 删除失败的文件及原因。
+    let failed: [FailedFile]
+
+    struct FailedFile: Sendable {
+        let file: RelatedFile
+        let message: String
     }
 }

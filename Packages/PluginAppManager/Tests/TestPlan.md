@@ -5,7 +5,7 @@
 AppManagerPlugin Manage installed applications for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 27
+测试文件: 3 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Models/`
@@ -42,6 +42,7 @@ AppManagerPlugin Manage installed applications for Lumi.
 - **无 Bundle ID 仍可卸载**（2 条）：由 `nilBundleIdentifierStillListsAppItselfForUninstall`、`nilBundleIdentifierAppIsSelectedForUninstallByDefault` 锁定（**回归 #794**）：`AppService.scanRelatedFiles` 必须先加入 App 本体再判断 Bundle ID；缺少 Bundle ID 时跳过依赖标识符的 Library 扫描，但仍须返回 App 本体（`type == .app`、`ownershipVerified == true`），使 `AppManagerViewModel` 默认勾选包含它、卸载入口可用（此前早返回 `[]` 导致无 Bundle ID 的应用无法卸载）。改动 `scanRelatedFiles` 的早返回分支或默认勾选时优先跑对应测试。
 - **搜索成员缓存**（5 条）：由 `sizeOnlyUpdatesDoNotRerunLocalizedSearch`、`queryChangeRerunsLocalizedSearch`、`membershipChangeRerunsLocalizedSearch`、`emptyQueryReturnsAllAppsAndReflectsSizes`、`searchMatchesNameAndBundleIDCaseInsensitively` 锁定（**回归 #1220**）：刷新时 `performScan` 逐个回填 App 大小并多次重发 `installedApps`，搜索过滤不得在每次「仅大小变化」的重发上重跑 N 次本地化名称/Bundle ID 匹配（此前 O(N²) 主线程卡顿）。`AppSearchMembership.filtered(query:apps:)` 以「查询串 + 可搜索投影（path/displayName/bundleIdentifier，**不含 size**）」为键缓存命中集合：仅大小变化时复用缓存（`recomputeCount` 不增），输出仍按 path 成员重建并反映最新 size；查询串或成员变化时才重算；空查询返回全部并反映 size；名称与 Bundle ID 均大小写不敏感匹配。改动 `AppSearchMembership` 的键、缓存判定或 `AppManagerViewModel` 搜索管道时优先跑对应测试。
 - **列表可用性**（3 条）：由 `listLoadingEndsWhenAppsPublishedWhileSizingContinues`、`initialEnumerationKeepsBlockingLoadingUntilAppsPublished`、`staleSizingCompletionDoesNotClobberNewerScanState` 锁定（**回归 #1221**）：`performScan` 枚举完成、发布 `installedApps` 后必须立即结束阻塞态 `isLoading`（`AppRailView` 仅在 `isLoading` 时用 overlay 替换整个列表），大小计算改用独立的 `isCalculatingSizes` 进度态，使已就绪的应用在逐个回填大小期间即可见、可选；阻塞 overlay 只保留给初始枚举阶段。`isLoading`/`isCalculatingSizes` 的写回与清理都受 `activeScanID == scanID` 身份校验保护：被取消的旧扫描晚到完成时不得覆盖新扫描的列表/加载/计算状态。改动 `performScan` 的加载态切换、`isCalculatingSizes` 或 `AppRailView` 列表 gating 时优先跑对应测试。
+- **部分删除失败与重试**（7 条）：由 `deleteFilesSkipsAlreadyMissingItemsSoRetryIsNotBlocked`、`deleteFilesContinuesPastFailureAndReportsPartial`、`partialDeletionRemovesDeletedItemsAndKeepsFailedForRetry`、`retryAfterPartialFailureClearsRemainingAndCompletes`、`successfulExtraOnlyDeletionKeepsAppAndRescans`、`completeAppDeletionRemovesAppAndClearsSelection`、`staleDeletionResultDoesNotPolluteNewSelection` 锁定（**回归 #410**）：`AppService.deleteFiles` 必须逐项处理、不再「首错即抛」——已不存在的条目视为删除成功（跳过），单项 `trashItem` 失败只记入 `DeleteFilesResult.failed` 并继续处理后续条目，返回 `deleted`/`failed` 两组结果而非抛错。`AppManagerViewModel.deleteSelectedFiles` 拿到结果后立即从 `relatedFiles`/`selectedFileIds` 移除已删项、App 本体被删时从 `installedApps` 移除；失败项保留勾选以便重试（此前整批抛错后 UI 仍显示已删的 App 与文件，重试指向不存在的 App 路径而永久卡死）。写回受 `selectedApp?.bundleURL.path == appPath` 身份校验保护：删除进行中切换到别的 App 后，旧结果不得污染新选中项。改动 `deleteFiles` 的逐项/跳过/结果聚合或 `deleteSelectedFiles`/`applyDeletionResult` 的写回与身份校验时优先跑对应测试。
 
 ## 测试用例清单
 
@@ -95,7 +96,19 @@ AppManagerPlugin Manage installed applications for Lumi.
 | 26 | 列表可用性 | 初始枚举阶段仍保留阻塞 overlay（回归 #1221） | 枚举门闩挂起，单个未缓存 App | 枚举未完成时观察，再依次释放枚举/大小门闩 | 枚举期 `isLoading=true`、列表空、`isCalculatingSizes=false`；枚举完成后 `isLoading=false`、`isCalculatingSizes=true`；大小完成后归位 | P1 | ✅ 已覆盖 | `initialEnumerationKeepsBlockingLoadingUntilAppsPublished` |
 | 27 | 列表可用性 | 旧扫描大小计算晚到不得覆盖新扫描状态（回归 #1221） | 旧/新扫描各有枚举与大小门闩 | 旧扫描进入大小计算后启动新扫描接管，再释放旧大小门闩 | 旧扫描晚到完成后 `installedApps` 仍为 `["Fresh"]`（size 未被写入 100）、`isLoading=false`、`isCalculatingSizes=true`；新扫描完成后 size=200 | P0 | ✅ 已覆盖 | `staleSizingCompletionDoesNotClobberNewerScanState` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+### 部分删除失败与重试（回归 #410）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 28 | 部分删除失败与重试 | 已不存在的条目视为删除成功，重试不被阻塞（回归 #410） | 真实 AppService，首项路径已缺失、尾项存在 | 调用 deleteFiles | 全部计入 deleted、failed 为空，不抛错 | P0 | ✅ 已覆盖 | `deleteFilesSkipsAlreadyMissingItemsSoRetryIsNotBlocked` |
+| 29 | 部分删除失败与重试 | 单项失败不中断整批，逐项报告部分结果（回归 #410） | 真实 AppService，appDir + 置 immutable 的 lockedFile + tailFile | 调用 deleteFiles | deleted=[app,tail]、failed=[locked]，失败后续项仍被处理 | P0 | ✅ 已覆盖 | `deleteFilesContinuesPastFailureAndReportsPartial` |
+| 30 | 部分删除失败与重试 | 部分失败后移除已删项、保留失败项供重试（回归 #410） | fake：deleted=[appFile,support]、failed=[cache] | ViewModel 删除选中项 | installedApps 失去 App、relatedFiles=[cache]、selectedFileIds=Set([cache.id])、selectedApp 保留、errorMessage 非空 | P0 | ✅ 已覆盖 | `partialDeletionRemovesDeletedItemsAndKeepsFailedForRetry` |
+| 31 | 部分删除失败与重试 | 重试仅针对剩余失败项并完成清理（回归 #410） | fake handler 按是否含 .app 分支 | 部分失败后再次删除 | 第二次 deleteFiles 入参==[cache]，最终 selectedApp=nil、relatedFiles 空、errorMessage=nil | P0 | ✅ 已覆盖 | `retryAfterPartialFailureClearsRemainingAndCompletes` |
+| 32 | 部分删除失败与重试 | 仅删附加项成功时保留 App 并重扫（回归 #410） | 仅勾选 support，App 本体仍在 | ViewModel 删除选中项 | App 保留，relatedFiles 重扫为 refreshed=[appFile] | P1 | ✅ 已覆盖 | `successfulExtraOnlyDeletionKeepsAppAndRescans` |
+| 33 | 部分删除失败与重试 | 完整删除 App 后移除 App 并清空选中（回归 #410） | 勾选含 App 本体且全部删除成功 | ViewModel 删除选中项 | installedApps 失去 App、selectedApp=nil、relatedFiles 空、selectedFileIds 空 | P1 | ✅ 已覆盖 | `completeAppDeletionRemovesAppAndClearsSelection` |
+| 34 | 部分删除失败与重试 | 删除进行中切换 App，旧结果不得污染新选中（回归 #410） | DeletionGate 挂起，selectedApp A→B | 释放旧删除门闩 | B 的 relatedFiles/selectedFileIds/installedApps 不被旧结果改写 | P0 | ✅ 已覆盖 | `staleDeletionResultDoesNotPolluteNewSelection` |
+
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#794）：把 `AppService.scanRelatedFiles` 无 Bundle ID 分支的 `return relatedFiles` 改回 `return []`（恢复缺陷），`nilBundleIdentifierStillListsAppItselfForUninstall`、`nilBundleIdentifierAppIsSelectedForUninstallByDefault` 两条转红（扫描结果为空、拿不到 App 本体），其余 17 条（合法 Bundle ID / 路径穿越 / 归属保护 / 缓存 / 插件状态）保持绿；还原后 19 条全绿。
@@ -112,23 +125,30 @@ AppManagerPlugin Manage installed applications for Lumi.
 > - **M3** 发布后把 `isCalculatingSizes = apps.contains { $0.size == 0 }` 改为 `isCalculatingSizes = false`（不进入大小进度态）→ 三条全部转红（中间态 `isCalculatingSizes == true` 断言失败）。
 > - 还原完整修复 → 27 条全绿。
 
+> 变异验证（#410，`AppService.deleteFiles` / `AppManagerViewModel.applyDeletionResult`）：
+> - **M1** 在 `failed.append(...)` 后加 `break`（恢复「首错即中断整批」缺陷）→ `deleteFilesContinuesPastFailureAndReportsPartial` 转红（失败项之后的 tailFile 未被处理，deleted 缺失），其余仍绿。
+> - **M2** 删除「已不存在则视为删除成功」的 guard-skip 分支（缺失项落入 trashItem 失败）→ `deleteFilesSkipsAlreadyMissingItemsSoRetryIsNotBlocked` 转红（缺失首项被记入 failed），其余仍绿。
+> - **M3** 删除 `applyDeletionResult` 中 `relatedFiles.removeAll { deletedIds.contains($0.id) }` 与 `selectedFileIds.subtract(deletedIds)`（已删项不从 UI 移除）→ `partialDeletionRemovesDeletedItemsAndKeepsFailedForRetry` 转红（relatedFiles/selectedFileIds 仍含已删项），其余仍绿。
+> - **M4** 删除写回前的 `guard self.selectedApp?.bundleURL.path == appPath else { return }` 身份校验（旧结果无条件写回）→ `staleDeletionResultDoesNotPolluteNewSelection` 转红（切换到 B 后旧删除结果污染 B 的状态），其余仍绿。
+> - 还原完整修复 → 34 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 17 / 17
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 1 / 1
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（17 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
