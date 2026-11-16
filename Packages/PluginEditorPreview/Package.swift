@@ -35,7 +35,10 @@ let package = Package(
             name: "PluginEditorPreviewTests",
             dependencies: [
                 "PluginEditorPreview",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderPanelBottom", package: "ProviderPanelBottom"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ]
         ),
     ]
