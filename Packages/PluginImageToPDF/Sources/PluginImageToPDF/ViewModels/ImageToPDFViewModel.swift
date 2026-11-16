@@ -36,11 +36,16 @@ final class ImageToPDFViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let service: ImageToPDFService
+    private let service: any ImageToPDFConverting
+
+    /// 转换回合代号：每次开始转换递增，Clear 也递增。Task 内所有写回前比对代号，
+    /// 旧回合的迟到进度/状态/完成态一律拒绝，不得把已清空的列表重新填回（#380）。
+    private var conversionGeneration = 0
+    private var conversionTask: Task<Void, Never>?
 
     // MARK: Init
 
-    init(service: ImageToPDFService = ImageToPDFService()) {
+    init(service: any ImageToPDFConverting = ImageToPDFService()) {
         self.service = service
     }
 
@@ -82,7 +87,14 @@ final class ImageToPDFViewModel: ObservableObject {
     }
 
     /// Clear every input image and every output PDF.
+    ///
+    /// 转换进行中 Clear 必须作废旧回合：递增代号拒绝其迟到写回，并取消底层 Task，
+    /// 否则旧 Task 持有的 `runningItems` 会把已清空的输入/输出整批填回（#380）。
     func clearAll() {
+        conversionGeneration += 1
+        conversionTask?.cancel()
+        conversionTask = nil
+        isConverting = false
         inputImages.removeAll()
         outputItems.removeAll()
         lastErrorMessage = nil
@@ -105,11 +117,14 @@ final class ImageToPDFViewModel: ObservableObject {
         outputItems = zip(images, names).map { PDFOutputItem(source: $0, outputName: $1) }
         isConverting = true
         lastErrorMessage = nil
+        conversionGeneration += 1
+        let generation = conversionGeneration
 
-        Task {
+        conversionTask = Task {
             var runningItems = outputItems
 
             for index in runningItems.indices {
+                guard generation == conversionGeneration else { return }
                 runningItems[index].status = .processing
                 runningItems[index].progress = 0
                 outputItems = runningItems
@@ -120,10 +135,12 @@ final class ImageToPDFViewModel: ObservableObject {
                 let stream = service.convert(source: item.source, to: outputURL)
                 do {
                     for try await value in stream {
+                        guard generation == conversionGeneration else { return }
                         runningItems[index].progress = value
                         outputItems = runningItems
                     }
 
+                    guard generation == conversionGeneration else { return }
                     if FileManager.default.fileExists(atPath: outputURL.path) {
                         runningItems[index].status = .done(outputURL)
                         runningItems[index].progress = 1
@@ -133,13 +150,16 @@ final class ImageToPDFViewModel: ObservableObject {
                         )
                     }
                 } catch {
+                    guard generation == conversionGeneration else { return }
                     // 失败时清掉可能残留的旧目标，避免用户导出上一轮的内容。
                     try? FileManager.default.removeItem(at: outputURL)
                     runningItems[index].status = .failed(error.localizedDescription)
                 }
+                guard generation == conversionGeneration else { return }
                 outputItems = runningItems
             }
 
+            guard generation == conversionGeneration else { return }
             isConverting = false
 
             let failureCount = outputItems.filter {
@@ -147,6 +167,7 @@ final class ImageToPDFViewModel: ObservableObject {
                 return false
             }.count
             if failureCount > 0 {
+                guard generation == conversionGeneration else { return }
                 lastErrorMessage = String(
                     format: ImageToPDFLocalization.string("%ld file(s) failed to convert"),
                     failureCount
