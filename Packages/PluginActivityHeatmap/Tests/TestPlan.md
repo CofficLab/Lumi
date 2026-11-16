@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 24 条用例。
+PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 24
+测试文件: 9 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -43,12 +43,20 @@ PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆
 - **综合**（2 条）：由 `activityPeriodHasLegacyRanges`、`activityCachePersistsHistoricalCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TokenCountFormat**（5 条）：由 `keepsSmallValues`、`compactsThousands`、`compactsMillions` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LocalGitActivityHeatmapProviderOffMain**（3 条）：由 `cacheWriteRunsOffMainActor`、`mainActorStaysResponsiveWhileCacheWriteIsBlocked`、`loadingCarriesParsedDatesForward` 锁定（**回归 #1203**）：Git I/O 之后的聚合与缓存写入必须在后台 executor 上执行，主 actor 只做 token 校验与状态发布。改动 `refresh` 的任务结构或 `makeSnapshot`/`persist` 的调用位置时优先跑对应测试文件。
+- **ActivityHeatmapGitWatchRefreshGate**（3 条）：由 `headChangeRefreshesCommitActivity`、`refsChangeRefreshesCommitActivity`、`nonHistoryEventsDoNotRefresh` 锁定（**回归 #505**）：提交活动刷新门控须在 HEAD 变化（含同 commit 切分支）与 refs 变化时返回 true，对 index/stash/workingTree/started/stopped 返回 false。改动 `ActivityHeatmapPlugin` 的 gitWatch 观察者或 `shouldRefreshCommitActivity` 时优先跑对应测试文件。
 
 ### Git activity 刷新的 executor 契约（回归 #1203）
 
 `LocalGitActivityHeatmapProvider` 是 `@MainActor`。`nonisolated static` 只是解除隔离声明，**从主 actor 的 Task 里同步调用并不会换 executor**：旧实现在 `await` 加载之后直接同步调用 `makeSnapshot` 与 `persist`，于是「按天聚合 + JSON 编码 + 建目录 + 原子写盘」整段留在主线程，仓库刷新时 UI 正好在等这份数据。
 
 契约：分页加载 → 日期解析 → 按天聚合 → 编码写盘整段放进 `Task.detached`，主 actor 只在 `await` 之后校验 `refreshToken` 并发布 `currentSnapshot` / `isLoading`。日期在加载/过滤阶段解析一次并以 `[Date]` 带到聚合阶段（`loadRecentCommitDates` → `makeSnapshot(commitDates:)`），聚合阶段不再接触字符串日期。缓存写入通过 `CacheWriter` 注入点可断言其 executor；等待方必须异步轮询，在 MainActor 上同步 wait 会挡住被测任务本身。
+
+### 提交活动刷新门控的变异验证（回归 #505）
+
+`shouldRefreshCommitActivity(for:)` 以穷举 switch 锁定「哪些 Git 监听事件触发提交活动重算」。两处独立变异各被一条用例捕获：
+
+- **M1**：把 `.headChanged` 移到 false 分支（只剩 `.refsChanged` 返回 true，复现原 bug）→ `headChangeRefreshesCommitActivity` RED（3 条 headChanged 断言全失败），`refsChangeRefreshesCommitActivity` / `nonHistoryEventsDoNotRefresh` 仍 GREEN。
+- **M2**：把 `.workingTreeChanged` 翻到 true 分支（非历史事件误触发刷新）→ `nonHistoryEventsDoNotRefresh` RED（workingTreeChanged 断言失败），`headChangeRefreshesCommitActivity` / `refsChangeRefreshesCommitActivity` 仍 GREEN。
 
 ## 测试用例清单
 
@@ -78,27 +86,30 @@ PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆
 | 22 | LocalGitActivityHeatmapProviderOffMain | 缓存写入不得在主 actor 上执行（回归 #1203） | 注入 CacheWriter 探针记录所在线程 | refresh 后异步轮询探针 | 写盘线程非主线程，且探针快照与最终发布的一致 | P0 | ✅ 已覆盖 | `cacheWriteRunsOffMainActor` |
 | 23 | LocalGitActivityHeatmapProviderOffMain | 缓存写入被挡住时主 actor 仍能继续跳板（回归 #1203） | 探针门闩阻塞写盘（5s 安全网） | 门闩期间在主 actor 上连续跳板 | 主 actor 正常推进，loading 未提前结束，释放后正常收尾 | P0 | ✅ 已覆盖 | `mainActorStaysResponsiveWhileCacheWriteIsBlocked` |
 | 24 | LocalGitActivityHeatmapProviderOffMain | 加载阶段返回解析好的日期，越界即停止分页（回归 #1203） | 两页提交，第二页混入越界与非法日期 | 调用 loadRecentCommitDates 后聚合 | 每个日期只解析一次并带到聚合，越界提交被丢弃且分页停止 | P1 | ✅ 已覆盖 | `loadingCarriesParsedDatesForward` |
+| 25 | ActivityHeatmapGitWatchRefreshGate | HEAD 变化必须刷新提交活动，含同 commit 切分支（**回归 #505**） | — | 以不同/相同 hash 及 nil 的 headChanged 调用门控 | 均返回 true | P0 | ✅ 已覆盖 | `headChangeRefreshesCommitActivity` |
+| 26 | ActivityHeatmapGitWatchRefreshGate | refs 变化仍刷新提交活动（**#505 护栏**） | — | 以 refsChanged 调用门控 | 返回 true | P1 | ✅ 已覆盖 | `refsChangeRefreshesCommitActivity` |
+| 27 | ActivityHeatmapGitWatchRefreshGate | 不改变提交历史的事件不触发刷新（**#505 护栏**） | — | 以 index/stash/workingTree/started/stopped 调用门控 | 均返回 false | P1 | ✅ 已覆盖 | `nonHistoryEventsDoNotRefresh` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 18 / 18
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 20 / 20
 - P2: 已覆盖 0 / 0
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（18 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（20 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
