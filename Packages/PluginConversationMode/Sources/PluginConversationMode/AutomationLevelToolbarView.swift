@@ -60,11 +60,14 @@ struct AutomationLevelToolbarView: View {
         }
     }
 
-    private func updateAutomationLevel(_ level: AutomationLevel) {
+    func updateAutomationLevel(_ level: AutomationLevel) {
         if let conversationID = conversations.selectedConversationID {
+            // 已有会话只改该会话；全局默认是新建会话的初始模式，不能被
+            // 一次临时切换污染（#608）。
             conversations.setAutomationLevel(level, for: conversationID)
+        } else {
+            conversations.setGlobalAutomationLevel(level)
         }
-        conversations.setGlobalAutomationLevel(level)
     }
 
     private var foregroundColor: Color {
