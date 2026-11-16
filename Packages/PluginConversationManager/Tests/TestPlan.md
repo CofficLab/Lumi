@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 111 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 113 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 111
+测试文件: 15 个，用例总数: 113
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -55,6 +55,8 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
 
 - **ConversationProviderReplacement**（4 条，#640）：由 `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager`、`managerFallsBackToCapturedProvidersWithoutResolver` 锁定——`ConversationManager` 在 order 7 创建时捕获的默认 Message/AgentLoop 会被 order 8 插件替换；删除（单条/批量）的 `cancelTurn`/`clearMessages` 与设置页 Capability 的 count/snapshot 必须经解析器动态读取当前生产 Provider，不得停留在创建时的默认实例；无解析器时回退捕获值。改动 Provider 注入或删除/统计链路时必须优先跑该文件。
+
+- **ConversationStartupSnapshotMerge**（2 条，#439）：由 `startupSnapshotMergesConversationCreatedDuringLoad`、`loadWithoutLocalChangesRestoresPersistedSelection` 锁定——启动加载是「await 读快照 → 写回内存」两段式，写回前必须比对本地改动代次：加载期间用户新建/选中的会话不得被晚到的旧快照覆盖，选中态不得被劫持回快照首项；只有加载期间无本地改动时才沿用快照并恢复持久化选中。改动 `loadConversations()` 写回链路时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -171,31 +173,35 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 109 | ConversationManagerCRUD | 删除进行中的复活窗口里重载与选中都排除墓碑 ID（**回归 #535**） | 会话已落库且仍在库中，标记 `pendingDeletionIDs` 模拟删除进行中 | 调用 `loadConversationPage` 与 `selectConversation(id:)` | 分页结果不含墓碑 ID（存活会话仍在），选中被拒绝；解除墓碑后该 ID 重新可见 | P0 | ✅ 已覆盖 | `deletionTombstoneExcludesConversationFromReloadAndSelection` |
 | 110 | ConversationManagerCRUD | 删除同步标记墓碑、窗口内拒绝选中、清理后解除（**回归 #535**） | 会话已落库并被选中 | 调用 `deleteConversation(id:)`，同步断言后等后台清理完成 | 墓碑与乐观移除立即生效，窗口内选中幽灵 ID 被拒绝；库行消失后墓碑解除 | P0 | ✅ 已覆盖 | `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` |
 | 111 | ConversationManagerCRUD | 门闩构造慢清理，墓碑持续生效直到清理完成（**回归 #535**） | 工具管理器替身在 `deleteToolCalls` 处被门闩挡住 | 删除后等清理停在门闩，重载一次，再放行 | 清理未完成期间墓碑仍生效、重载仍排除该 ID；放行后墓碑解除 | P0 | ✅ 已覆盖 | `slowCleanupHoldsTombstoneUntilCleanupFinishes` |
+| 112 | ConversationStartupSnapshotMerge | 加载期间新建的会话不被晚到的旧快照覆盖，选中态不被劫持（**回归 #439**） | 门闩把只含旧会话的快照挡在写回前，持久化选中指向旧会话 | 加载停在 await 时新建并选中一个会话，再放行旧快照 | 新会话存活、旧会话被合并进来，选中态与标题停在新会话 | P0 | ✅ 已覆盖 | `startupSnapshotMergesConversationCreatedDuringLoad` |
+| 113 | ConversationStartupSnapshotMerge | 加载期间无本地改动时仍恢复持久化选中（**回归 #439** 护栏） | 旧会话已落库，持久化选中指向它，无门闩无新建 | 新建 Manager 并 `loadConversations()` | 列表含旧会话，选中态恢复为旧会话 | P1 | ✅ 已覆盖 | `loadWithoutLocalChangesRestoresPersistedSelection` |
 
-> 说明：全部 **111 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
 >
 > 变异验证（#535）：① 把 `loadConversationPage`/`fetchConversationPage` 的墓碑过滤改为恒真 → `deletionTombstoneExcludesConversationFromReloadAndSelection` 转红（重载复活墓碑 ID）；② 移除 `selectConversation` 的墓碑守卫 → 同用例转红（幽灵 ID 被选中）；③ 移除 `deleteConversation` 的同步 `pendingDeletionIDs.insert` → `deleteConversationMarksTombstoneSynchronouslyAndClearsAfterCleanup` 转红；④ 移除清理成功后的 `pendingDeletionIDs.subtract` → `slowCleanupHoldsTombstoneUntilCleanupFinishes` 转红（墓碑永不解除）。变异单独施加并确认转红后还原，最终 111 条全绿。
+>
+> 变异验证（#439）：把 `loadConversations()` 写回处的代次判断 `if self.conversationMutationGeneration == startGeneration` 改为恒真（永远走覆盖分支）→ `startupSnapshotMergesConversationCreatedDuringLoad` 转红（新建会话被旧快照抹掉、选中态被劫持回旧会话、标题退回旧值），`loadWithoutLocalChangesRestoresPersistedSelection` 仍绿。变异确认转红后还原，最终 113 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 81 / 81
+- P0: 已覆盖 23 / 23
+- P1: 已覆盖 82 / 82
 - P2: 已覆盖 8 / 8
-- **合计: 111 / 111**（仅表示清单场景，非源码覆盖率）
+- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（81 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P1**: 其余功能性用例（82 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 108 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 113 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

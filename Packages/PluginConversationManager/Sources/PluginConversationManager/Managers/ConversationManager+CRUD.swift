@@ -373,6 +373,7 @@ extension ConversationManager {
     /// - 持久化：异步写入数据库，保证重启后排序一致。
     public func markConversationActive(id: UUID, messageDate: Date) {
         if let index = conversations.firstIndex(where: { $0.id == id }) {
+            conversationMutationGeneration &+= 1
             conversations[index].lastMessageAt = messageDate
             conversations[index].updatedAt = Date()
             scheduleConversationsChangedNotification()
@@ -396,6 +397,7 @@ extension ConversationManager {
         // 不再要求缓存命中：分页展示的历史会话可能不在内存窗口里，
         // 但删除必须以持久化记录为准（issue #965）。
         // 乐观移除前先捕获状态：落库失败时按身份还原，避免内存与数据库分叉（#801）。
+        conversationMutationGeneration &+= 1
         let removedIndex = conversations.firstIndex { $0.id == id }
         let removedSummary = removedIndex.map { conversations[$0] }
         let removedLanguage = languageOverrides[id]
