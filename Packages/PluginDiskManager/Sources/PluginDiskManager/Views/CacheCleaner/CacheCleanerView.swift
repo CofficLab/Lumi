@@ -10,8 +10,8 @@ struct CacheCleanerView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // 扫描控制区域
-            if viewModel.categories.isEmpty == false && viewModel.isScanning == false {
+            // 扫描控制区域：扫描中保留 Stop 入口（#849）
+            if viewModel.isScanControlBarVisible {
                 CacheScanControlBar(viewModel: viewModel)
             }
 

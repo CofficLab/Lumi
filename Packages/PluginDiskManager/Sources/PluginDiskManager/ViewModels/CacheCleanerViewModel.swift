@@ -19,6 +19,11 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var hasCompletedInitialScan = false
 
+    /// 扫描控制栏可见性（#849）：扫描中保留 Stop 入口。
+    var isScanControlBarVisible: Bool {
+        ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !categories.isEmpty)
+    }
+
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
         for category in categories {
