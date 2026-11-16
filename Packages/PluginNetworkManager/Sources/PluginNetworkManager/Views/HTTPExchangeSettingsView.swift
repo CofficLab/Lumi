@@ -74,6 +74,9 @@ public struct HTTPExchangeSettingsView: View {
     @State private var selectedRecordID: UUID?
     @State private var selectedDetail: HTTPExchangeExportSnapshot?
     @State private var reloadGeneration = 0
+    /// 唯一保留的重载任务：每次修订/过滤变化先取消上一个，再防抖发起新的。
+    /// 取消会传播到列表与统计子查询，被取代的扫描不再继续（#1247）。
+    @State private var reloadTask: Task<Void, Never>?
     @State private var selectedFilter: LogFilter = .all
     @State private var selectedDomain: String?
     @State private var selectedTimeRange: TimeRangeFilter = .all
@@ -101,7 +104,7 @@ public struct HTTPExchangeSettingsView: View {
                         Spacer()
                         totalCountButton
                         AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                            Task { await reloadAsync() }
+                            scheduleReload()
                         }
                     }
                     .padding(.horizontal, 24)
@@ -139,19 +142,22 @@ public struct HTTPExchangeSettingsView: View {
             }
         }
         .task {
-            await reloadAsync()
+            scheduleReload()
+        }
+        .onDisappear {
+            reloadTask?.cancel()
         }
         .onChange(of: state.revision) { _ in
-            Task { await reloadAsync() }
+            scheduleReload()
         }
         .onChange(of: selectedDomain) { _ in
-            Task { await reloadAsync() }
+            scheduleReload()
         }
         .onChange(of: selectedFilter) { _ in
-            Task { await reloadAsync() }
+            scheduleReload()
         }
         .onChange(of: selectedTimeRange) { _ in
-            Task { await reloadAsync() }
+            scheduleReload()
         }
         .onChange(of: HTTPExportProgress.shared.errorMessage) { newValue in
             if let newValue {
@@ -650,6 +656,37 @@ public struct HTTPExchangeSettingsView: View {
         return record.errorDescription == nil ? "clock" : "exclamationmark.triangle"
     }
 
+    /// 合并修订/过滤突发：取消上一个重载任务，短暂防抖后再发起新的。
+    ///
+    /// 底层每记录一个请求就递增 `state.revision`，突发时会有大量通知。
+    /// 防抖窗口内被取消的任务不会发起任何查询，因此 R 次修订不再放大成
+    /// R 次列表查询 + 3R 次统计查询（#1247）。
+    private func scheduleReload() {
+        reloadTask?.cancel()
+        reloadTask = Task(priority: .userInitiated) { @MainActor in
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            guard !Task.isCancelled else { return }
+            await reloadAsync()
+        }
+    }
+
+    /// 在后台执行查询，并把上层任务的取消传播到 detached 子任务。
+    ///
+    /// `Task.detached` 不继承取消，单独使用会让被取代的查询继续跑完。
+    /// 这里用 `withTaskCancellationHandler` 把上层取消转发给 detached 任务，
+    /// 配合 store 内部的 `Task.isCancelled` 检查，被取代的扫描会真正停下。
+    private func runCancellableQuery<T: Sendable>(
+        priority: TaskPriority,
+        _ operation: @escaping @Sendable () -> T
+    ) async -> T {
+        let task = Task.detached(priority: priority, operation: operation)
+        return await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
     private func reloadAsync() async {
         reloadGeneration += 1
         let generation = reloadGeneration
@@ -664,16 +701,16 @@ public struct HTTPExchangeSettingsView: View {
         let pageSize = self.pageSize
         let store = self.store
 
-        let page = await Task.detached(priority: .userInitiated) {
+        let page = await runCancellableQuery(priority: .userInitiated) {
             store.loadListPage(
                 limit: pageSize,
                 status: status,
                 domain: domain,
                 startedAtAfter: startedAtAfter
             )
-        }.value
+        }
 
-        guard generation == reloadGeneration else { return }
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
 
         records = page.records
         nextPageCursor = page.nextCursor
@@ -684,52 +721,48 @@ public struct HTTPExchangeSettingsView: View {
         }
         isLoading = false
 
+        // 发起统计前先确认本轮仍然有效：被取代/取消时不再启动任何聚合查询。
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
+
         // These values are useful but not required to render the first page.
-        // Run them after the list is on screen and discard stale results when a
-        // filter changes while they are still running.
-        Task { [store] in
+        // Run them concurrently as structured children so cancelling the reload
+        // task reaches every aggregate query, and recheck the generation after
+        // each await before publishing (#1247).
+        let isUnfiltered: Bool
+        switch status {
+        case .all:
+            isUnfiltered = domain == nil && startedAtAfter == nil
+        case .normal, .abnormal:
+            isUnfiltered = false
+        }
+
+        async let countResult: Int = runCancellableQuery(priority: .utility) {
             // The default view needs the total number of stored exchanges only.
             // Use SwiftData's count query directly instead of paging through all
-            // records and rebuilding list snapshots. Filtered counts still need
-            // the metadata scan because status/domain matching is performed in
-            // Swift.
-            let countTask = Task.detached(priority: .utility) {
-                let isUnfiltered: Bool
-                switch status {
-                case .all:
-                    isUnfiltered = domain == nil && startedAtAfter == nil
-                case .normal, .abnormal:
-                    isUnfiltered = false
-                }
-
-                if isUnfiltered {
-                    return store.loadSnapshotCount()
-                }
-                return store.loadListCount(
-                    status: status,
-                    domain: domain,
-                    startedAtAfter: startedAtAfter
-                )
-            }
-
-            let seriesTask = Task.detached(priority: .utility) {
-                store.loadDailyCountSeries()
-            }
-            let domainsTask = Task.detached(priority: .utility) {
-                store.loadRecentDomains()
-            }
-
-            // Publish the total independently. It should not wait for the chart
-            // or domain aggregation to finish.
-            let loadedCount = await countTask.value
-            guard generation == self.reloadGeneration else { return }
-            self.totalRecordCount = loadedCount
-
-            let loadedSeries = await seriesTask.value
-            let loadedDomains = await domainsTask.value
-            self.dailyCountSeries = loadedSeries
-            self.domains = loadedDomains
+            // records. Filtered counts still need the metadata scan because
+            // status/domain matching is performed in Swift.
+            isUnfiltered
+                ? store.loadSnapshotCount()
+                : store.loadListCount(status: status, domain: domain, startedAtAfter: startedAtAfter)
         }
+        async let seriesResult = runCancellableQuery(priority: .utility) {
+            store.loadDailyCountSeries()
+        }
+        async let domainsResult = runCancellableQuery(priority: .utility) {
+            store.loadRecentDomains()
+        }
+
+        // Publish the total independently. It should not wait for the chart
+        // or domain aggregation to finish.
+        let loadedCount = await countResult
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
+        totalRecordCount = loadedCount
+
+        let loadedSeries = await seriesResult
+        let loadedDomains = await domainsResult
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
+        dailyCountSeries = loadedSeries
+        domains = loadedDomains
     }
 
     private func loadMoreAsync() async {
