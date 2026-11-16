@@ -94,6 +94,9 @@ public class NetworkService: SuperLog, ObservableObject {
     /// 是否有一次采样仍在进行（测试用于等待 tick 完成）。
     var isSampling: Bool { samplingTask != nil }
 
+    /// 采样定时器是否在运行（测试用于断言运行时禁用已停止监控，#449）。
+    var isMonitoringForTesting: Bool { monitoringTimer != nil }
+
     /// 获取当前配置的 HTTPExchangeStore 实例
     public var currentExchangeStore: HTTPExchangeStore? {
         exchangeStore

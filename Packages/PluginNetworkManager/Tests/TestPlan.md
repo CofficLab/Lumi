@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 26 个，用例总数: 150
+测试文件: 27 个，用例总数: 151
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -64,6 +64,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 - **HTTPExchangeExportFilenameBytes**（5 条）：由 `cjkFilenameWithinByteBudget`、`emojiGraphemeFilenameWithinByteBudget`、`batchContinuesPastFailure` 等锁定（**回归 #822**）：HTTP 日志批量导出文件名必须按最终 UTF-8 字节预算截断（序号/方法/host/ID/扩展名全部计入，APFS 单组件 ≤255 字节），逐字素簇累加不切断字符、ID 后缀完整保留，短名不被误截；`writeBatch` 每条写入独立 `do/catch`，单条失败只收集错误并继续整批，不得中止后续记录，进度只对成功写入推进。改动 `HTTPExchangeExportFormatter.exportFileName`/`writeBatch` 或导出循环时优先跑对应测试文件。
 - **HTTPExchangeQueryCancellation**（5 条）：由 `cancelledCountQueriesStopEarly`、`cancelledListPageStopsEarly`、`parentCancellationReachesDetachedQuery` 等锁定（**回归 #1247**）：HTTP 日志的列表/计数/图表/域名查询被新一轮重载取代时，取消必须传播到 detached 子查询并让 store 的批量扫描循环协作式停下（`Task.isCancelled`），不得把整段扫描跑完；被取代的每日计数不得写缓存。改动 `HTTPExchangeStore` 查询循环或 `HTTPExchangeSettingsView` 的重载/取消接线时优先跑对应测试文件（串行套件，独立本地 store）。
 - **NetworkHistoryConfigure**（4 条）：由 `configureReturnsBeforeDecodingAndPublishesInBackground`、`configureQuarantinesCorruptHistoryInBackground`、`staleInFlightPublishDoesNotOverwriteReconfiguredState` 等锁定（**回归 #1212**）：`NetworkHistoryService.configure` 不得在主 actor 同步解码 30 天历史（最多 43200 点），必须把目录创建/读取/解码/过滤放到后台任务，准备好后再回主 actor 发布，让 onBoot 的 UI/provider 注册不被阻塞；在途结果写回前必须比对代次与目标 URL，旧目录/旧代次的加载晚到不得覆盖重新配置后的新状态；后台路径遇损坏文件必须隔离；发布时合并保留加载期间已录制的分钟点。改动 `configure`/`publishLoadedHistory`/`readHistoryOffMain` 时优先跑对应测试文件。
+- **NetworkManager 禁用生命周期**（1 条）：由 `disableWithdrawsToolsAndStopsMonitoring` 锁定（**回归 #449**）：Kernel 运行时 `disablePlugin` 只调用 `onDisable` 并撤回经 `trackContribution` 注册的贡献（菜单栏 speed/popup），不会调用 `onShutdown`，也不会过滤插件直接写入 `ToolManager` 的工具或插件自持的采样/定时器/历史/交换存储。插件必须在 `onDisable` 停止 `NetworkMetricsObserver`（进而停掉 1Hz 采样与历史录制）、撤回全部 7 个 Agent 工具、移除设置入口、断开 `HTTPExchangeObserver` 并把 `NetworkService` 的交换存储置空；`onEnable` 幂等恢复上述贡献。Provider 与 viewModels/store 在禁用期间保持存活（Kernel 保留 Provider 注册）。改动 `NetworkManagerPlugin` 的 `onBoot`/`onEnable`/`onDisable`/`onShutdown` 或 `installRuntimeContributions`/`removeRuntimeContributions` 时优先跑对应测试文件（串行套件，共享进程级单例）。
 
 ## 测试用例清单
 
@@ -219,8 +220,9 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 148 | NetworkHistoryConfigure | configure 后台加载遇损坏文件必须隔离，不得阻塞或抛出（**回归 #1212**） | history.json 内容为非法 JSON | configure 后等待后台恢复 | longTermHistory 为空，history.corrupt.json 保留非法内容，原 history.json 被移走 | P0 | ✅ 已覆盖 | `configureQuarantinesCorruptHistoryInBackground` |
 | 149 | NetworkHistoryConfigure | 重新配置后旧代次或旧目录的在途加载晚到不得覆盖新状态（**回归 #1212**） | 先 configure(dirA) 再 configure(dirB)，各自加载完成 | 以旧代次旧目录、旧代次新目录、新代次旧目录三种组合模拟晚到发布 | 三种 stale 发布均被丢弃，longTermHistory 始终为 dirB 的点 | P0 | ✅ 已覆盖 | `staleInFlightPublishDoesNotOverwriteReconfiguredState` |
 | 150 | NetworkHistoryConfigure | 后台加载期间已录制的分钟点发布时必须保留，不得被旧加载覆盖丢失（**回归 #1212**） | configure 空目录后手动置入一个已录制分钟点 | 以当前代次与目录发布一段更旧的历史 | 合并后两点都在，按时间先后排列（旧历史在前、录制点在后） | P0 | ✅ 已覆盖 | `publishPreservesPointsRecordedDuringInFlightLoad` |
+| 151 | NetworkManager 禁用生命周期 | 运行时禁用撤回 7 个工具、停止采样并清空交换存储，重新启用恢复（**回归 #449**） | 真实 kernel 启停插件，注册 MenuBar/ToolManager/SettingView/Storage | 禁用/启用插件 | 禁用后 7 工具撤回、采样停止、交换存储清空、设置入口撤回、菜单栏空；启用后全部恢复；stop 后同样清空 | P0 | ✅ 已覆盖 | `disableWithdrawsToolsAndStopsMonitoring` |
 
-> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **151 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
@@ -232,6 +234,8 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > （`HTTPExchangeQueryCancellationTests`，见 #1247）。
 > ID 147–150 为本轮新增的网络历史后台配置与身份校验回归用例
 > （`NetworkHistoryConfigureTests`，见 #1212）。
+> ID 151 为本轮新增的运行时禁用生命周期回归用例
+> （`NetworkManagerDisableLifecycleTests`，见 #449）。
 >
 > **鉴别力验证（#448）**：本轮用三处独立变异确认用例不是「恒绿」——
 > （1）删除标准化包含性守卫后，`../victim` 真的写出目录外文件、
@@ -297,24 +301,32 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 > （4）把发布的合并 `loaded + longTermHistory` 退回纯覆盖 `loaded` → ID 150 已录制分钟点
 > 丢失（count 1 而非 2），2 issues。四处变异分别由不同用例捕获，均已还原。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> **鉴别力验证（#449）**：把 `NetworkManagerPlugin.onDisable` 的实现掏空
+> （不再调用 `removeRuntimeContributions`），跑
+> `swift test --filter NetworkManagerDisableLifecycleTests` 确认 RED 再还原——
+> 禁用后 7 个 Agent 工具仍可查到、`NetworkService` 采样定时器仍在运行、
+> 交换存储未置空、设置入口未撤回，共 10 处断言失败；菜单栏 speed/popup 仍被
+> Kernel 的 `cancelContributions` 自动撤回（证明这两类贡献的清理路径不同）。
+> 还原后全套 151 条绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 68 / 68
+- P0: 已覆盖 69 / 69
 - P1: 已覆盖 74 / 74
 - P2: 已覆盖 8 / 8
-- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
+- **合计: 151 / 151**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（68 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（69 条）
 - **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 150 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 151 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
