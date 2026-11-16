@@ -109,6 +109,8 @@ public final class RecordingSessionManager {
 
         // 5) 准备引擎与临时文件。
         currentSession = nil
+        // 新会话开始即清除上一轮结果：本轮失败时不得复用旧的成功反馈（#851）。
+        lastResult = nil
         elapsedSeconds = 0
         resolvedWindow = window
         let tempURL = RecordingFileWriter.tempURL(for: config.sessionID, in: ScreenRecorderRuntime.dataDirectory)

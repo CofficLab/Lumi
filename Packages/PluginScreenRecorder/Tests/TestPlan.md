@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 37 条用例。
+PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆盖 41 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 37
+测试文件: 9 个，用例总数: 41
 
 核心组件（源码目录）:
 - `Models/`
@@ -45,6 +45,7 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 - **RecordingSessionManagerConcurrency**（3 条）：由 `secondStartDuringTargetResolutionIsRejected`、`secondStartDuringMicrophonePermissionIsRejected`、`activeSessionRejectsSecondStartWithoutOverwrite` 锁定 start 的启动互斥必须从进入流程持有到会话建立（**#224**）；改动该模块时优先跑对应测试文件。
 - **ScreenRecorderPluginShutdown**（3 条）：由 `shutdownStopsAndFinalizesActiveRecording`、`shutdownFallsBackToCancelWhenStopFails`、`shutdownWithoutRecordingHidesIndicator` 锁定插件关闭必须停止并落盘活动录制、隐藏指示器（**#223**）；改动该模块时优先跑对应测试文件。
 - **ScreenCaptureConfiguration**（3 条）：由 `appAudioEnablesCapturesAudio`、`withoutAppAudioCapturesAudioStaysOff`、`preservesDimensionsAndMicrophoneFlag` 锁定请求应用音频时必须打开 `capturesAudio` 总开关、未请求时不得打开（**回归 #819**）；改动流配置路径时优先跑对应测试文件。
+- **RecordingTestFeedback**（4 条）：由 `startClearsPreviousResult`、`feedbackShowsErrorNotStaleSaved`、`feedbackIgnoresMismatchedSessionID` 等用例锁定测试录制反馈只认本轮会话真正产生的结果——新会话启动清除上一轮 `lastResult`、失败显示本轮错误、会话 ID 不符不复用（**#851**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -87,8 +88,12 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 | 35 | ScreenCaptureConfiguration | 请求应用音频时必须打开 capturesAudio 总开关，否则录制静默丢失应用声音（**回归 #819**） | includeAppAudio=true | 调用 `makeStreamConfiguration` | `capturesAudio == true` | P0 | ✅ 已覆盖 | `appAudioEnablesCapturesAudio` |
 | 36 | ScreenCaptureConfiguration | 未请求应用音频时 capturesAudio 不得被打开（**回归 #819**） | includeAppAudio=false | 调用 `makeStreamConfiguration` | `capturesAudio == false` | P0 | ✅ 已覆盖 | `withoutAppAudioCapturesAudioStaysOff` |
 | 37 | ScreenCaptureConfiguration | 流配置保留尺寸/光标/帧率，麦克风开关按解析结果设置 | frameRate=24, showCursor=false, captureMicrophone=true | 调用 `makeStreamConfiguration` | 宽高/光标/帧率间隔一致，capturesAudio=true，macOS 15+ captureMicrophone=true | P1 | ✅ 已覆盖 | `preservesDimensionsAndMicrophoneFlag` |
+| 38 | RecordingTestFeedback | 新会话启动必须清除上一轮 lastResult，失败本轮不得复用旧成功（**回归 #851**） | 注入权限放行与空操作引擎桩，预置上一轮 lastResult | 调用 RecordingSessionManager.start | start 后 lastResult 为 nil | P0 | ✅ 已覆盖 | `startClearsPreviousResult` |
+| 39 | RecordingTestFeedback | 本轮 finished 会话（ID 相符）显示已保存文件名 | 构造 id 相符的 finished 会话与本轮结果 | 调用 testFeedback | 文案含本轮输出文件名 | P1 | ✅ 已覆盖 | `feedbackShowsSavedForMatchingFinishedSession` |
+| 40 | RecordingTestFeedback | 本轮 error 会话显示本轮错误，不得复用上一轮已保存（**回归 #851**） | 构造 error 会话并保留上一轮 lastResult | 调用 testFeedback | 文案为本轮错误，不含上一轮文件名 | P0 | ✅ 已覆盖 | `feedbackShowsErrorNotStaleSaved` |
+| 41 | RecordingTestFeedback | 会话 ID 不符时不得复用结果（**回归 #851**） | 构造 id 与期望不符的 finished 会话 | 调用 testFeedback | 返回 nil | P0 | ✅ 已覆盖 | `feedbackIgnoresMismatchedSessionID` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#224**，`RecordingSessionManager.start` 启动互斥）：
@@ -104,23 +109,29 @@ PluginScreenRecorder 的实现包，包含 14 个主要类型；当前测试覆�
 > - **M1** 删除 `streamConfig.capturesAudio = config.includeAppAudio`（还原旧路径：只注册 `.audio` 输出却不开总开关）→ `appAudioEnablesCapturesAudio`、`preservesDimensionsAndMicrophoneFlag` 转红（capturesAudio 仍为默认 false）；`withoutAppAudioCapturesAudioStaysOff` 仍绿。
 > - 还原完整修复（按 includeAppAudio 设置 capturesAudio，再创建 SCStream）→ 37 条全绿。
 
+> 变异验证（**#851**，测试录制反馈会话隔离）：
+> - **M1** 删除 `RecordingSessionManager.start` 中的 `lastResult = nil`（退回不清除上一轮结果）→ `startClearsPreviousResult` 转红（start 后 lastResult 仍为上一轮 old.mp4）。
+> - **M2** 把 `testFeedback` 的 `case .error` 分支改为 `return nil`（失败不给反馈）→ `feedbackShowsErrorNotStaleSaved` 转红（msg 为 nil 而非本轮错误 "capture failed"）。
+> - **M3** 去掉 `testFeedback` 的 `session.id == expectedSessionID` 守卫（不校验会话身份）→ `feedbackIgnoresMismatchedSessionID` 转红（id 不符的 finished 会话仍返回已保存文案而非 nil）。
+> - 三处变异分别由不同用例捕获，均已还原；完整修复下 41 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 21 / 21
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 22 / 22
 - P2: 已覆盖 3 / 3
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（22 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -188,17 +188,40 @@ struct ScreenRecorderSettingsView: View {
                     try? await Task.sleep(for: .milliseconds(200))
                     if Task.isCancelled { break }
                 }
-                if let result = RecordingSessionManager.shared.lastResult {
-                    testMessage = ScreenRecorderLocalization.ui(
-                        "Saved \(result.outputURL.lastPathComponent).",
-                        "已保存 \(result.outputURL.lastPathComponent)。"
-                    )
-                }
+                let manager = RecordingSessionManager.shared
+                testMessage = Self.testFeedback(
+                    session: manager.currentSession,
+                    expectedSessionID: config.sessionID,
+                    lastResult: manager.lastResult
+                )
             } catch {
                 testMessage = error.localizedDescription
             }
             testing = false
             revision += 1
+        }
+    }
+
+    /// 测试录制反馈：只认本轮会话（ID 相符）真正产生的结果。
+    /// `.finished` 才显示已保存，`.error` 显示本轮错误；会话不符或仍在进行
+    /// 时返回 nil，绝不复用上一轮成功留下的 `lastResult`（#851）。
+    static func testFeedback(
+        session: RecordingSession?,
+        expectedSessionID: UUID,
+        lastResult: RecordingResult?
+    ) -> String? {
+        guard let session, session.id == expectedSessionID else { return nil }
+        switch session.state {
+        case .finished:
+            guard let result = lastResult else { return nil }
+            return ScreenRecorderLocalization.ui(
+                "Saved \(result.outputURL.lastPathComponent).",
+                "已保存 \(result.outputURL.lastPathComponent)。"
+            )
+        case .error:
+            return session.error ?? ScreenRecorderLocalization.ui("Test recording failed.", "测试录制失败。")
+        default:
+            return nil
         }
     }
 }
