@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 51 条用例。
+PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 51
+测试文件: 5 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Support/`
@@ -28,6 +28,7 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 51 �
 - **AskUserLifecycle**（6 条）：由 `yesNoSuspendThenResume`、`choiceSuspendThenResume`、`freeTextSuspendThenResume` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AskUserToolArgument**（23 条）：由 `validModes`、`invalidModes`、`yesNoIgnoresOptions` 等用例锁定；改动该模块时优先跑对应测试文件。choice 选项标签必须互异，重复标签抛错而非挂起后崩溃 ACP（**#221**）；纯空白标签必须在参数阶段丢弃，与 UI submit 的 trim 守卫一致，不得渲染出无法提交的空按钮（**#328**）。
 - **综合**（11 条）：由 `pendingInteractionVisibility`、`suspensionPayloadDecoding`、`yesNoMode` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AskUserViewIdentity**（3 条）：由 `sameToolCallIDAcrossConversationsHasDistinctViewIdentity`、`sameConversationAndToolCallIDKeepsStableViewIdentity`、`distinctToolCallIDInSameConversationHasDistinctViewIdentity` 锁定；`AskUserPendingInteraction.viewIdentity` 必须同时含 `conversationID` 与 `toolCallID`，跨会话切换必然改变身份、重建 `AskUserPendingView` 并清零其 `@State`（`answer`/`responded`），否则会话 B 的问题卡片会继承会话 A 的未发送草稿甚至 `responded=true` 而错误禁用输入（**#483**）。
 
 ## 测试用例清单
 
@@ -84,27 +85,32 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 51 �
 | 49 | 综合 | choice 模式缺 options 抛出错误 | 无 | 调用 `executeResult(mode: choice)` 不传 options | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `choiceMissingOptions` |
 | 50 | 综合 | 插件注册 ask_user 工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersTool` |
 | 51 | 综合 | ask_user 工具经 AgentLoop 挂起后可恢复（端到端） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `endToEndSuspension` |
+| 52 | AskUserViewIdentity | 同一 toolCallID 在不同会话必须产生不同视图身份，不得复用 @State（**#483**） | 无 | 构造两个不同 conversationID、相同 toolCallID 的交互，比较 `viewIdentity` | 两者 `viewIdentity` 不相等 | P0 | ✅ 已覆盖 | `sameToolCallIDAcrossConversationsHasDistinctViewIdentity` |
+| 53 | AskUserViewIdentity | 同一会话同一 toolCallID 的视图身份稳定，重新 synchronize 不清草稿（**#483**） | 无 | 构造相同 conversationID + toolCallID 的两个交互，比较 `viewIdentity` | 两者 `viewIdentity` 相等 | P1 | ✅ 已覆盖 | `sameConversationAndToolCallIDKeepsStableViewIdentity` |
+| 54 | AskUserViewIdentity | 同一会话内不同 toolCallID 产生不同视图身份，新问题重置状态（**#483**） | 无 | 构造相同 conversationID、不同 toolCallID 的两个交互，比较 `viewIdentity` | 两者 `viewIdentity` 不相等 | P1 | ✅ 已覆盖 | `distinctToolCallIDInSameConversationHasDistinctViewIdentity` |
 
-> 说明：全部 **51 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#483）：把 `AskUserPendingInteraction.viewIdentity` 从 `"\(conversationID.uuidString)|\(toolCallID)"` 退回为仅 `toolCallID` 后，`sameToolCallIDAcrossConversationsHasDistinctViewIdentity` 转红（跨会话身份相同 → @State 复用），另两条（同会话稳定 / 同会话不同 tool）保持绿；恢复修复后 54 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 32 / 32
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 34 / 34
 - P2: 已覆盖 5 / 5
-- **合计: 51 / 51**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（32 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（34 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 51 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

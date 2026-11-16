@@ -48,6 +48,18 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public init() {}
 
+    /// 提交活动只随「当前分支提交历史」变化而重算：refs 变化或 HEAD 变化都要刷新。
+    /// 切到已存在的分支只改 HEAD 符号引用、refs 不变，故 headChanged 也必须触发；
+    /// index/stash/workingTree 不影响提交历史，不刷新以免无谓重算。
+    nonisolated static func shouldRefreshCommitActivity(for event: GitRepositoryWatchingEvent) -> Bool {
+        switch event {
+        case .refsChanged, .headChanged:
+            return true
+        case .started, .stopped, .indexChanged, .stashChanged, .workingTreeChanged:
+            return false
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let provider = LocalGitActivityHeatmapProvider(
@@ -59,7 +71,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
 
             if let gitWatch = kernel.resolveProvider((any GitRepositoryWatching).self) {
                 gitWatchHandle = gitWatch.addObserver { [weak provider, weak gitWatch] event in
-                    guard case .refsChanged = event,
+                    guard Self.shouldRefreshCommitActivity(for: event),
                           let repository = gitWatch?.watchingRepositoryURL else { return }
                     provider?.refresh(for: repository)
                 }

@@ -14,6 +14,11 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: String = ""
     @Published var scanStats: XcodeCleanService.ScanStats = XcodeCleanService.ScanStats()
 
+    /// 扫描控制栏可见性（#849）：扫描中保留 Stop 入口。
+    var isScanControlBarVisible: Bool {
+        ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !itemsByCategory.isEmpty)
+    }
+
     // Statistics
     var totalSize: Int64 {
         itemsByCategory.values.flatMap { $0 }.reduce(0) { $0 + $1.size }

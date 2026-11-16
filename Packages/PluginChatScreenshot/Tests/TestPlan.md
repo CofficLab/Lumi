@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆盖 28 条用例。
+PluginChatScreenshot 的实现包，包含 12 个主要类型；当前测试覆盖 37 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 28
+测试文件: 7 个，用例总数: 37
 
 核心组件（源码目录）:
 - `Capture/`
@@ -27,6 +27,8 @@ PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆�
 - `ChatScreenshotOverlayView`
 - `ChatScreenshotOverlayWindow`
 - `ScreenshotFlowRunner`
+- `ScreenshotFlowCapability`
+- `ScreenshotFlowCapabilityAdapter`
 - `ChatScreenshotButtonView`
 
 ## 关键行为契约（实现约定，非协议要求）
@@ -39,6 +41,8 @@ PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆�
 - **Chat Screenshot 插件生命周期**（6 条）：锁定按钮与命令组的注册/注销。
 - **Chat Screenshot 权限请求**（3 条）：锁定 `ScreenCapturePermissionPrompter.ensurePermission` 必须先 preflight、未授权时补发系统授权请求。
 - **遮罩视图引用环**（1 条）：锁定 `ChatScreenshotOverlayController.wireCallbacks` 的闭包对视图弱捕获，装配回调后视图仍可释放。
+- **遮罩拖选重绘**（4 条）：锁定 `ChatScreenshotOverlayView.updateSelectionRect` 仅在本屏可见选区交集实际变化时返回 true（#1266），不相交 / 交集持续为空不重绘，交集由非空变空重绘一次以清除旧高亮。
+- **截图流程会话绑定**（4 条）：锁定 `ScreenshotFlowRunner.insert` 写回挂起池前比对启动时捕获的 `conversationID` 与当前选中会话；抓取 / 拖选 / 编码期间切换会话后旧截图必须丢弃，不得落入新会话的全局挂起池（**#422**，与文件选择路径 #161 同源）。
 
 ## 测试用例清单
 
@@ -72,27 +76,38 @@ PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆�
 | 26 | 权限请求 | skipsRequestWhenAlreadyAuthorized | TCC 已授权 | preflight=true 时调用 ensurePermission | 不触发 request 并返回 true | P1 | ✅ 已覆盖 | `skipsRequestWhenAlreadyAuthorized` |
 | 27 | 权限请求 | returnsFalseWhenRequestDenied | 用户拒绝授权 | preflight=false、request=false | 返回 false | P1 | ✅ 已覆盖 | `returnsFalseWhenRequestDenied` |
 | 28 | 遮罩视图引用环 | overlayViewDeallocatesAfterCallbacksAreWired | 控制器与视图均为局部强引用 | 装配回调后离开作用域并 drain 自动释放池 | 视图弱引用为 nil（无泄漏） | P0 | ✅ 已覆盖 | `overlayViewDeallocatesAfterCallbacksAreWired` |
+| 29 | 遮罩拖选重绘 | 选区不与本屏相交时不触发重绘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonIntersectingSelectionDoesNotInvalidate` |
+| 30 | 遮罩拖选重绘 | 选区与本屏相交时触发重绘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `intersectingSelectionInvalidates` |
+| 31 | 遮罩拖选重绘 | 交集保持为空的连续拖动不重复触发重绘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unchangedEmptyIntersectionDoesNotReinvalidate` |
+| 32 | 遮罩拖选重绘 | 选区离开本屏后交集变化触发一次重绘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `intersectionBecomingEmptyInvalidatesOnce` |
+| 33 | 截图文件写入器编码 | 编码可在后台 worker 执行（nonisolated，见 #1265） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachmentEncodesOffMainActor` |
+| 34 | 截图流程会话绑定 | 编码期间切换会话，旧截图不落入新会话挂起池（**#422**） | 无 | 在 A 启动 insert 后同步切到 B，await 编码完成 | 挂起池为空，旧截图被丢弃 | P0 | ✅ 已覆盖 | `staleScreenshotDoesNotLeakIntoNewConversation` |
+| 35 | 截图流程会话绑定 | 未切换会话时截图正常进入挂起池（**#422**） | 无 | 选中会话保持 A，await insert | 挂起池新增 1 张 JPEG 附件 | P1 | ✅ 已覆盖 | `screenshotInSameConversationAttaches` |
+| 36 | 截图流程会话绑定 | 启动时无选中会话且写回时仍无会话，截图按全局池处理（**#422**） | 无 | 选中会话保持 nil，await insert | 挂起池新增 1 张附件 | P2 | ✅ 已覆盖 | `nilConversationStaysConsistent` |
+| 37 | 截图流程会话绑定 | 启动时无会话但写回时已选中新会话，旧截图被丢弃（**#422**） | 无 | 以 nil 启动 insert 后同步选中 B，await 编码完成 | 挂起池为空 | P1 | ✅ 已覆盖 | `nilToSelectedDiscardsStaleScreenshot` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#422）：删除 `ScreenshotFlowRunner.insert` 中写回前的 `guard capability.selectedConversationID == conversationID` 后，`staleScreenshotDoesNotLeakIntoNewConversation` 与 `nilToSelectedDiscardsStaleScreenshot` 转红（旧截图落入新会话挂起池），另两条（同会话正常入池 / nil→nil 一致）保持绿；恢复守卫后 37 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 24 / 24
-- P2: 已覆盖 2 / 2
-- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 31 / 31
+- P2: 已覆盖 3 / 3
+- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（24 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（31 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

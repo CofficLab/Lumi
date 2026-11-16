@@ -90,6 +90,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - **对话切换草稿保留**（4 条）：由 `transientRoundTripPreservesDraft`、`realSwitchStillClearsDraft` 等用例锁定（**回归 #781**）：切换清空判定延迟到下一主 actor 轮次，选中态落定到草稿归属对话之外的对话才清空；`create_new_conversation` 的瞬时选中往返不得清空未发送草稿与附件；改动 `handleConversationSwitched` 时优先跑 `ConversationSwitchDraftRetentionTests.swift`。
 - **折叠块跨对话隔离**（5 条）：由 `unconsumedBlockIsHiddenImmediatelyAfterSwitch`、`settledSwitchDiscardsBlockEvenAfterReturning` 等用例锁定（**回归 #518**）：待插入块绑定递交时选中的对话，归属对话之外不暴露、落定切换即丢弃；改动 `pendingBlock` / `enqueue` / `consumePendingBlock` / `handleConversationSwitched` 时优先跑 `PendingBlockConversationBindingTests.swift`。
 - **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **回车命令派发一致性**（3 条）：由 `returnCommandDefersToLineBreakForAllModifiers`、`returnCommandWithoutModifiersSubmits`、`commandDispatchMatchesDirectKeyRule` 锁定——AppKit 命令派发层与直接按键规则共用 `lineBreakReturnModifiers`，Shift/Option/Command/Control + 回车都插换行而非发送（**#644**）。
+- **焦点移交必须落地**（3 条）：由 `handoverMovesFirstResponderToComposer`、`refocusesAfterFocusLoss`、`doesNotStealFocusWhenNotRequested` 锁定（**回归 #803**）：`updateNSView` 必须在 `isFocused` 的 false→true 边沿真正调 `window.makeFirstResponder`，而非只存储 binding；编辑器失去第一响应者时复位边沿并把 binding 写回 false，未请求聚焦时不得抢占；改动 `syncFocus` / `EditorTextView.resignFirstResponder` 时优先跑 `ChatInputEditorFocusTests.swift`。
 - **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CollapsedContentChip 配色一致性**（4 条）：由 `usesInjectedFillColor`、`usesInjectedTitleColor` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -595,6 +597,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 221 | 折叠块 | 切换窗口内为新对话递交的块不被落定清空误删 | 选中 A + 已入队 A 的块 | 发 B 的通知后不等落定再入队 B 的块，然后等落定 | A 的块被丢弃，B 的块暴露且可消费 | P1 | ✅ 已覆盖 | `blockEnqueuedDuringSwitchWindowForNewConversationSurvives` |
 | 222 | 回归 | 重建输入框时用 binding 草稿初始化编辑器，首次刷新不清空草稿（**回归 #601**） | 真实 NSHostingView 渲染生产编辑器 + binding 持有草稿 | 宿主渲染后检查原生编辑器与 binding | 编辑器显示草稿且 binding 草稿保留，不被空编辑器回写清空 | P0 | ✅ 已覆盖 | `rebuiltEditorInitializesFromBindingAndKeepsDraft` |
 | 223 | 回归 | 隐藏再恢复聊天区后草稿仍在（**回归 #601**） | binding 持有草稿 | 渲染→移除宿主→用同一 binding 重建并渲染 | 恢复后编辑器重新显示草稿，binding 草稿未被清空 | P0 | ✅ 已覆盖 | `hideAndReshowPreservesDraft` |
+| 224 | 回车 | 命令派发层对 Shift/Option/Command/Control + 回车都交回 AppKit 插换行（**回归 #644**） | 回车命令选择器 + 各修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags:)` | 四种修饰键均返回 true（不发送） | P0 | ✅ 已覆盖 | `returnCommandDefersToLineBreakForAllModifiers` |
+| 225 | 回车 | 无修饰键的回车命令仍走发送（**回归 #644**） | 回车命令选择器、无修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags: [])` | 返回 false（发送） | P1 | ✅ 已覆盖 | `returnCommandWithoutModifiersSubmits` |
+| 226 | 回车 | 命令派发与直接按键规则对同一修饰键结论一致（**回归 #644**） | 6 组修饰键组合 | 对每组比较 `shouldDeferReturnCommandToLineBreak` 与 `!shouldHandleReturnKey` | 两者恒相等，两条路径不分叉 | P0 | ✅ 已覆盖 | `commandDispatchMatchesDirectKeyRule` |
+| 227 | 回归 | 拖入目录插入路径后光标移到末尾，后续输入不插到路径之前（**回归 #645**） | 真实编辑器 Coordinator + Input Provider；草稿 "look at"，光标在末尾 offset 7 | `insertDirectoryPath` 入队纯文本块后走 `coordinator.insert` 同一入口 | 正文变为 "look at\n/tmp/pkg"；编辑器选区与 `capability.inputCursorPosition` 均落在末尾（> 旧 offset 7） | P1 | ✅ 已覆盖 | `directoryDropAdvancesCaretPastInsertedPath` |
 
 > **#601 变异验证**（恢复后 GREEN）：去掉 `makeNSView` 里「用 binding 文本初始化
 > 编辑器 + `noteBindingTextPushedDown`」这段 → ID 222 / 223 RED（重建后的空编辑器
@@ -609,25 +615,65 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > （切回 A 后旧块复活；窗口内新块被旧块压在队尾），ID 217 仍 GREEN（暴露
 > 守卫兜底）。两处变异分别锁定「实时暴露守卫」与「落定丢弃」互为补充。
 
+> **#644 变异验证**（恢复后 GREEN）：M1 把 `shouldDeferReturnCommandToLineBreak`
+> 改回只豁免 Shift/Option（忽略 Command/Control）→ ID 224 RED（Control+Return 命令
+> 被当成发送）；M2 把它写死为恒 true → ID 225 RED（无修饰键回车也不发送）；
+> M3 把 `shouldHandleReturnKey` 的修饰键集合改窄为 [.shift, .option]（与命令派发分叉）
+> → ID 226 RED（两条路径结论不再一致）。三处变异分别锁定「命令派发豁免全部改行修饰键」
+> 「无修饰键仍发送」「两条路径共用同一集合」。
+
+> **#645 变异验证**（恢复后 GREEN）：在 `Coordinator.insert` 的纯文本分支末尾补
+> `textView.setSelectedRange(insertionRange)`，把光标还原到插入前的旧位置 → ID 227 RED
+> （编辑器选区与 `capability.inputCursorPosition` 都停在旧 offset 7，后续输入会插到
+> 目录路径之前）。变异锁定「插入路径后必须把光标推进到末尾并经 binding 发布回能力层」
+> 这一契约；其余 14 条编辑器用例仍 GREEN，说明变异精确落在目录拖放的光标推进路径。
+
+### 补充轮次（ID 228–230）：焦点移交（回归 #803）
+
+> 「发送到对话」把代码选区递交给输入框后，生产代码（`SendSelectionToConversationContributor`
+> / `ConversationInputViewModel`）把 `isInputFocused` 置 true，但 `ChatInputEditorView.updateNSView`
+> 从不消费该 binding、从不请求第一响应者——布尔变 true ≠ 焦点真的移动，用户不点 Composer
+> 继续打字仍写进代码编辑器。修复在 false→true 边沿调 `window.makeFirstResponder`，并在编辑器
+> 失去第一响应者时复位边沿、把 binding 写回 false，使再次发送能重新聚焦。三条用例在真实
+> `NSWindow` + `NSHostingView` 里渲染生产组件、检查 `window.firstResponder`（代码编辑器替身
+> 用直接接受第一响应者的普通视图，避免 NSTextField 共享 field editor 带来的断言歧义）。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 228 | 回归 | 发送到对话置 isFocused=true 后 Composer 成为第一响应者（**回归 #803**） | 真实 NSWindow + NSHostingView 渲染生产编辑器；焦点先移到代码编辑器替身 | 把 binding 的 isFocused 置 true 触发 updateNSView | `window.firstResponder` 变为 Composer 编辑器，而非只把布尔置 true | P0 | ✅ 已覆盖 | `handoverMovesFirstResponderToComposer` |
+| 229 | 回归 | 焦点离开后再次发送能重新聚焦，且离开时 binding 写回 false（**回归 #803**） | 同上；已聚焦 Composer 一次 | 把焦点移回代码编辑器替身 → 再次置 isFocused=true | 失去焦点时 binding 写回 false；再次发送后 `window.firstResponder` 重新变为 Composer | P0 | ✅ 已覆盖 | `refocusesAfterFocusLoss` |
+| 230 | 回归 | isFocused=false 时不抢占焦点（**回归 #803**） | 同上；焦点在代码编辑器替身 | 保持 isFocused=false 多轮刷新 | `window.firstResponder` 始终留在代码编辑器替身，不被抢回 | P1 | ✅ 已覆盖 | `doesNotStealFocusWhenNotRequested` |
+
+> **#803 变异验证**（恢复后 GREEN）：M1 去掉 `updateNSView` 里的 `syncFocus` 调用
+> （还原「从不消费焦点 binding」的旧行为）→ ID 228 RED（焦点停在代码编辑器替身）、
+> ID 229 RED；M2 去掉 `EditorTextView.resignFirstResponder` 里的 `focusLossHandler`
+> 回调 → ID 229 RED（失去焦点后 binding 不写回 false、`lastSyncedFocus` 停在 true，
+> 再次发送不重新聚焦），ID 228 仍 GREEN；M3 去掉 `syncFocus` 的 `guard isFocused`
+> （无条件请求焦点）→ ID 230 RED（未请求聚焦时也从代码编辑器抢回焦点），ID 228 仍
+> GREEN。三处变异分别锁定「必须真正请求第一响应者」「失去焦点必须复位边沿并写回
+> binding」「未请求时不得抢占焦点」。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 81 / 81
-- P1: 已覆盖 124 / 124
+- P0: 已覆盖 85 / 85
+- P1: 已覆盖 127 / 127
 - P2: 已覆盖 18 / 18
-- **合计: 223 / 223**（仅表示清单场景，非源码覆盖率）
+- **合计: 230 / 230**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 装配降级、可发送判定、发送/停止按钮形态切换、提交失败上报、
   直写路径（`setText` / 回车 / 拖放清空）的回归、Observer 退订、UTF-16 索引换算、
   附件预览 ✕ 的端到端链路（ID 89–90）、本地化缺失（ID 97–98 / 163）、
-  中文 IME 组合态的状态写入与上屏发布次数（ID 115–116）
+  中文 IME 组合态的状态写入与上屏发布次数（ID 115–116）、
+  发送到对话后的焦点移交与失去焦点后的重新聚焦（ID 228–229）
 - **P1**: 会话切换与状态刷新、附件生命周期与拖放、Observer 事件路由与初始快照、
   折叠块、拖放路径解析、错误提示、附件 ✕ 的幂等与陈旧 ID 容错（ID 91–95）、
   全表语言完整性与占位符一致性（ID 99–100）、Composer 占位文案的英文回退
   （ID 161）、复制按钮反馈与恢复标题的本地化（ID 162）、逐键失效广播的次数上界
   （ID 105–109）、输入框悬浮卡片的间距 / 圆角 / 投影 / 内部内容内边距
-  （ID 112–114 / 122）、中文 IME 单次按键的应用侧耗时预算（ID 117）
+  （ID 112–114 / 122）、中文 IME 单次按键的应用侧耗时预算（ID 117）、
+  未请求聚焦时不从代码编辑器抢占焦点（ID 230）
 - **P2**: Observer cancel 释放、编辑器延迟绑定与布局测量、placeholder 命中测试、
   localhost 归一化、空文件容错、退订后的关闭行为（ID 96）、非法高度与同值写入
   （ID 104 / 108）、观察者回灌去重（ID 111）
@@ -635,7 +681,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 跨平台说明
 
 - Package 声明 macOS 14+ / iOS 17+，但编辑器基于 AppKit `NSTextView`，
-  **ID 33–42 的编辑器用例为 macOS 专属**，iOS 上不适用
+  **ID 33–42 的编辑器用例与 ID 228–230 的焦点移交用例为 macOS 专属**
+  （后者依赖 `NSWindow` / `NSHostingView` 与第一响应者），iOS 上不适用
 - `SendActionBarViewModel` / `ConversationInputViewModel` / Observer 为纯 Foundation 逻辑，
   macOS 与 iOS 行为一致
 - 所有被测类型标注 `@MainActor`，测试套件同样标注 `@MainActor` 并在主线程执行；

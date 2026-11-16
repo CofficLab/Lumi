@@ -44,6 +44,7 @@ let package = Package(
             dependencies: [
                 "PluginActivityHeatmap",
                 .product(name: "ProviderGit", package: "ProviderGit"),
+                .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
             ]
         ),
     ]

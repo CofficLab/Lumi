@@ -11,6 +11,18 @@ struct AskUserPendingInteraction: Equatable, Sendable {
     let conversationID: UUID
     let initialAnswer: String?
 
+    /// SwiftUI 视图身份（供 `.id` 使用），必须同时含 `conversationID` 与 `toolCallID`。
+    ///
+    /// 同一个 `toolCallID`（如 `call_0`）在不同会话里都合法。若只用 `toolCallID`
+    /// 作 `.id`，从会话 A 切到 B 时 SwiftUI 会复用旧视图实例及其 `@State`
+    /// （`answer`/`responded`），让 B 的问题卡片继承 A 的未发送草稿，甚至继承
+    /// A 的 `responded=true` 而错误禁用 B 的输入（#483）。含会话 ID 后跨会话切换
+    /// 必然改变身份，SwiftUI 重建视图、状态归零；同一会话同一 tool call 的身份
+    /// 保持稳定，重新 synchronize 不会清掉用户正在输入的草稿。
+    var viewIdentity: String {
+        "\(conversationID.uuidString)|\(toolCallID)"
+    }
+
     /// Suspension payloads are owned by the agent loop, so the chat UI does not
     /// need to inspect the message list or duplicate tool-call lookup logic.
     static func from(suspension: AgentLoopSuspension) -> Self? {
@@ -123,7 +135,7 @@ struct AskUserChatSectionView: View {
                interaction: interaction
            ) {
             AskUserPendingView(interaction: interaction)
-                .id(interaction.toolCallID)
+                .id(interaction.viewIdentity)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
         } else {

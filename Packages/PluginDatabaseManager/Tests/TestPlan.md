@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 178
+测试文件: 21 个，用例总数: 182
 
 核心组件（源码目录）:
 - `Agent/`
@@ -66,6 +66,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **结构变更与未保存数据编辑的冲突**（#583，5 条）：`saveSchemaChanges` 应用 DDL 前必须检查暂存的结构变更（`renameColumn` 的旧列名、`dropColumn` 的列名）是否与未保存数据编辑引用的列（`TableChangeManager.referencedColumnNames`：UPDATE 的 SET 列与主键 WHERE 列、INSERT 的列、DELETE 的主键列）相交；相交则明确报错并阻止，不得静默执行 DDL——否则数据变更管理器持有的旧 schema 快照会生成引用已不存在列名的 SQL（如 `UPDATE ... SET "name"`），保存必失败。不相交（重命名未被编辑引用的列）或无数据编辑时照常应用，且保留无关数据编辑。由 `DatabaseViewModelSchemaChangeConflictTests` 锁定；改动 `saveSchemaChanges` 的冲突守卫或 `referencedColumnNames` 时优先跑对应测试文件。
 - **连接凭据持久化的失败传播**（#569，7 条）：`DatabaseConnectionStore.saveConfigs` 必须先完成全部密码的 Keychain 写入（`setReportingErrors`，失败抛出 `KeychainStoreError`），最后才把脱敏配置写入 `UserDefaults`；不得用吞错的 `set` 无论成败都落盘——否则 Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，界面把「密码已丢失」的配置呈现为保存成功，重启后 `loadConfigs` 无法恢复凭据。`DatabaseViewModel.addConfig`/`updateConfig`/`removeConfig` 改为 `throws` 且持久化成功才更新内存 `configs`，表单据此保留输入并报错；`KeychainStore` 可注入以便测试替换后端。由 `DatabaseConnectionCredentialPersistenceTests` 锁定；改动 `saveConfigs` 的落盘时机或视图模型的凭据保存链路时优先跑对应测试文件。
 - **工具栏语句计数的 memo 与发布门禁**（#1254，9 条）：`MainView.toolbar` 不得在每次 body 求值时同步 `SQLStatementParser.split(queryText).count`——普通编辑与无关的 ViewModel 发布（`isLoading`/`queryResult`/`errorMessage`）都会在主线程重复整段词法解析，长脚本下卡顿。修复为 `StatementCountCache` 按文本 memo（文本不变命中缓存、不重复解析，文本变化才重算），`DatabaseViewModel.queryText` 的 `didSet` 经 `refreshStatementCount()` 更新存储值 `statementCount`（仅当计数变化才发布），init 手动 seeding 一次；工具栏读取 O(1) 的 `viewModel.statementCount`。由 `StatementCountCacheTests`（缓存语义）与 `DatabaseViewModelStatementCountTests`（VM 集成）锁定；改动 `StatementCountCache`、`queryText` 的 `didSet` 或工具栏计数来源时优先跑对应测试文件。
+- **MySQL 重复列名按位置解码**（#585，4 条）：`MySQLConnection.query` 解码结果行时必须按 `columnDefinitions` 与 `values` 的位置对应逐列构造 `MySQLData`（`decodeRow`），不得对每个列定义调用 mysql-nio 的 `row.column(name)`——SQL 允许重复列名（`SELECT a.id, b.id`、多表 JOIN），而 `row.column(name)` 按名字返回**首个**匹配列，会让后面的同名列错显首列的值，界面静默展示错误数据；NULL 列也须按位置解码为 `.null`，不得回填首列值。唯一列名的正常路径行为须保持。由 `MySQLDuplicateColumnDecodingTests` 用手工拼装的 `ColumnDefinition41` 协议包构造重复列名 `MySQLRow` 锁定；改动 `decodeRow` 或结果行解码循环时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -346,7 +347,16 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 177 | 语句计数 VM 集成 | 无关的 ViewModel 发布不得改变 statementCount（回归 #1254） | 同上，queryText 为两语句脚本 | 设 isLoading/queryResult/errorMessage 后读取 statementCount | 仍为 2，不被无关发布触发重算 | P0 | ✅ 已覆盖 | `unrelatedPublicationDoesNotChangeStatementCount` |
 | 178 | 语句计数 VM 集成 | 重置为相同 queryText 时计数保持不变 | 同上 | 连续两次设 queryText 为同一两语句脚本 | statementCount 仍为 2 | P1 | ✅ 已覆盖 | `resettingSameQueryTextKeepsCount` |
 
-> 说明：全部 **178 条场景**已在本包 `swift test` 中实跑通过。
+### MySQL 重复列名按位置解码（回归 #585）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|--------|------|----------|
+| 179 | MySQL 重复列名解码 | 重复列名按位置保留各自的值，不得都显示首列（回归 #585） | 两个同名 "id" 列，text 格式，值 "1"/"2" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .string("2")]`，而非两列都 "1" | P0 | ✅ 已覆盖 | `duplicateColumnNamesKeepPositionalValues` |
+| 180 | MySQL 重复列名解码 | JOIN 形态首尾同名列夹一个异名列，三列各按位置解码 | "id"/"name"/"id" 三列，值 "10"/"alice"/"20" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("10"), .string("alice"), .string("20")]` | P0 | ✅ 已覆盖 | `joinLikeDuplicateNamesAcrossThreeColumnsDecodeByPosition` |
+| 181 | MySQL 重复列名解码 | 重复列名中第二列为 NULL 时按位置解码为 null，不得回填首列值 | 两个同名 "id" 列，值 ["1", nil] | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .null]`，而非两列都 "1" | P0 | ✅ 已覆盖 | `duplicateColumnNameWithNullSecondValueDecodesPositionally` |
+| 182 | MySQL 重复列名解码 | 唯一列名仍按位置正确解码（重构不回归正常路径） | "id"/"name" 两列，值 "1"/"alice" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .string("alice")]` | P1 | ✅ 已覆盖 | `uniqueColumnNamesStillDecodeCorrectly` |
+
+> 说明：全部 **182 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -372,24 +382,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 > 变异验证（#569）：`DatabaseConnectionStore.saveConfigs` 原先调用吞错的 `keychain.set`，无论密码是否写入成功都把脱敏配置落盘，表单随后无条件关闭；Keychain 写入失败（如锁定的 `errSecInteractionNotAllowed`）被静默忽略，重启后凭据无法恢复且界面无提示。修复为先完成全部 `setReportingErrors` 写入（失败抛出 `KeychainStoreError`）、最后才写 `UserDefaults`，并把 `addConfig`/`updateConfig`/`removeConfig` 改为 `throws`、持久化成功才更新内存列表。M1 把 `try keychain.setReportingErrors(...)` 还原为吞错的 `keychain.set(...)`（原 bug）→ `saveConfigsPropagatesKeychainWriteFailureAndDoesNotPersist`、`saveConfigsFailureKeepsPreviouslySavedConfigs`、`addConfigPropagatesKeychainFailureAndKeepsConfigsUnchanged`、`updateConfigPropagatesKeychainFailureAndKeepsOriginal` 转红（不抛错且配置被落盘/内存列表被更新），`saveConfigsSuccessSanitizesPasswordAndStoresInKeychain`、`loadConfigsRestoresPasswordFromKeychain`、`addConfigSuccessAppendsAndPersists` 仍绿。变异施加并确认转红后还原，最终 169 条全绿。
 >
 > 变异验证（#1254）：`MainView.toolbar` 原先在每次 body 求值时同步 `SQLStatementParser.split(viewModel.queryText).count`，普通编辑与无关的 ViewModel 发布都在主线程重复整段词法解析。修复为 `StatementCountCache` 按文本 memo + `queryText.didSet → refreshStatementCount()` 更新存储值 `statementCount`（仅计数变化才发布），工具栏改读 O(1) 的 `viewModel.statementCount`。M1 删除缓存的 memo 命中分支（每次都 `parseCount += 1` 并重新 `split`）→ `repeatedSameTextDoesNotReparse` 转红（同文本三次调用 parseCount 变 3），其余缓存/VM 用例仍绿；M2 删除 `queryText` 的 `didSet { refreshStatementCount() }`（计数不再随文本更新）→ `statementCountTracksQueryTextChanges`、`unrelatedPublicationDoesNotChangeStatementCount`、`resettingSameQueryTextKeepsCount` 转红（statementCount 停在 init seeding 值不跟随编辑），`statementCountSeededOnInit` 仍绿。两处变异均单独施加并确认转红后还原，最终 178 条全绿。
+>
+> 变异验证（#585）：`MySQLConnection.query` 原先对每个 `columnDefinitions` 调用 mysql-nio 的 `row.column(colDef.name)` 取值，而该方法按名字返回首个匹配列，重复列名（`SELECT a.id, b.id`、JOIN）时后面的同名列错显首列的值。修复为 `decodeRow` 按 `columnDefinitions` 与 `values` 的位置对应逐列构造 `MySQLData`。M1 把 `decodeRow` 的取值还原为按名字 `row.column(colDef.name) ?? MySQLData(...)`（原 bug）→ `duplicateColumnNamesKeepPositionalValues`、`joinLikeDuplicateNamesAcrossThreeColumnsDecodeByPosition`、`duplicateColumnNameWithNullSecondValueDecodesPositionally` 转红（同名列都拿到首列值、NULL 列被回填首列值），`uniqueColumnNamesStillDecodeCorrectly` 仍绿（唯一列名不受影响）。变异施加并确认转红后还原，最终 182 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 89 / 89
-- P1: 已覆盖 86 / 86
+- P0: 已覆盖 92 / 92
+- P1: 已覆盖 87 / 87
 - P2: 已覆盖 3 / 3
-- **合计: 178 / 178**（仅表示清单场景，非源码覆盖率）
+- **合计: 182 / 182**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（89 条）
-- **P1**: 其余功能性用例（86 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（92 条）
+- **P1**: 其余功能性用例（87 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 178 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 182 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -5,7 +5,7 @@
 StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**: story picker dropdown + chapter tree - **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata) - **AI assistance**: via a dedicated ChatSection flow (configured separately) - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 34
+测试文件: 8 个，用例总数: 38
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,7 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 - **StoryWriterTool**（6 条）：由 `publicToolsExposeConsistentSchemasDescriptionsAndRisks`、`deletingMissingStoryOrChapterReportsNotFound`、`listingChaptersDistinguishesMissingStoryFromEmptyStory`、`toolsValidateArgumentsAndSupportStoryChapterLifecycle`、`toolsReportUnavailableStorage`、`validationFailuresThrowThroughExecuteResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryWriterViewModel**（4 条）：由 `selectionCrudAndMarkdownFlowsStayInSyncWithStore`、`reloadPreservesExistingSelectionAndFallsBackAfterDeletion`、`reloadKeepsSelectedChapterAndRefreshesItsContent`、`changeObserverBroadcastsAndCancellationIsIdempotent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryEditorIdentity**（3 条）：由 `storyEditorIdentityFollowsSelectedStory`、`storyEditorIdentityIsStableAcrossRendersForSameStory`、`reMaterializedEditorDraftBindsToNewStory` 用例锁定；改动 `StoryWriterView` 故事分支或 `StoryEditorView` 时优先跑对应测试文件。
+- **StoryWriterCreationIdentity**（4 条）：由 `lateChapterCreationDoesNotPolluteSwitchedStory`、`lateMarkdownImportDoesNotPolluteSwitchedStory`、`lateCharacterCreationDoesNotPolluteSwitchedStory`、`creationWithoutStorySwitchStillAppendsAndSelects` 用例锁定；改动 `StoryWriterViewModel` 创建类方法或 `loadStoryContent` 的代次逻辑时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -82,29 +83,35 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 | 32 | StoryEditorIdentity | 切换故事后编辑器 identity 必须换成新故事，不得复用旧草稿误写/误删原文档（**回归 #289**） | 故事 A、B 均已创建 | 选中 A 求值 body 取编辑器 identity，再切到 B 求值 | identity 分别为 A.id、B.id 且互不相同（Mirror 查找包裹 StoryEditorView 的 IDView.id） | P0 | ✅ 已覆盖 | `storyEditorIdentityFollowsSelectedStory` |
 | 33 | StoryEditorIdentity | 同一故事多次渲染编辑器 identity 保持稳定，不清空用户草稿（**回归 #289**） | 已选中故事 A 并创建章节 | 求值 body 取 identity，更新章节后再求值 | 两次 identity 均等于 A.id（防止 .id(UUID()) 之类不稳定标识） | P1 | ✅ 已覆盖 | `storyEditorIdentityIsStableAcrossRendersForSameStory` |
 | 34 | StoryEditorIdentity | 切换故事重建的草稿必须绑定新故事，不得继承旧故事未保存简介或误写旧故事（**回归 #289**） | A 草稿有未保存简介，B 为另一故事 | 以 B 全新初始化 StoryEditorDraft（.id 强制重建）后 storyToSave | 草稿基线/简介为 B、无未保存标记，落盘 id==B.id 且 !=A.id | P0 | ✅ 已覆盖 | `reMaterializedEditorDraftBindsToNewStory` |
+| 35 | StoryWriterCreationIdentity | 切换故事后晚到的章节创建只落盘原故事，不得污染新故事大纲与选择（**回归 #432**） | 门闩 stub 挂起 A 的 createChapter | 挂起期间切到 B 再放行创建 | 章节落盘在 A；B 的 chapters 为空、选择仍为 B/.story；切回 A 可见该章节 | P0 | ✅ 已覆盖 | `lateChapterCreationDoesNotPolluteSwitchedStory` |
+| 36 | StoryWriterCreationIdentity | 切换故事后晚到的 Markdown 导入不得进入新故事章节列表与字数（**回归 #432**） | 门闩 stub 挂起 A 的 importMarkdownAsChapter | 挂起期间切到 B 再放行导入 | 导入章节落盘在 A 且正文完整；B 的 chapters 为空、totalWordCount==0、选择仍为 B/.story | P0 | ✅ 已覆盖 | `lateMarkdownImportDoesNotPolluteSwitchedStory` |
+| 37 | StoryWriterCreationIdentity | 切换故事后晚到的角色创建只落盘原故事，不得污染新故事角色列表与选择（**回归 #432**） | 门闩 stub 挂起 A 的 createCharacter | 挂起期间切到 B 再放行创建 | 角色落盘在 A；B 的 characters 为空、选择仍为 B/.story | P0 | ✅ 已覆盖 | `lateCharacterCreationDoesNotPolluteSwitchedStory` |
+| 38 | StoryWriterCreationIdentity | 故事未切换时创建章节/角色仍追加进列表并选中（**回归 #432**） | 门闩 stub 不挂起，单一故事 | 依次 createChapter、createCharacter | 章节/角色进入列表，选择指向最新创建的角色 | P1 | ✅ 已覆盖 | `creationWithoutStorySwitchStillAppendsAndSelects` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#289）：`StoryWriterView` 的 `.story` 分支原先直接渲染 `StoryEditorView(viewModel:story:)` 而无 `.id(story.id)`（相邻 `.chapter` 分支已正确加 `.id(chapter.id)`）。切换故事时 SwiftUI 复用同一编辑器 identity，`@State draft` 不重新初始化，简介更新/标题保存经 `draft.storyToSave()` 仍带旧故事 id，误写原文档；导出正文来自 ViewModel 新选择而文件名取自旧故事。修复为给 `.story` 分支补 `.id(story.id)`，切换故事即重新物化编辑器。M1 移除该 `.id(story.id)`（还原裸 `StoryEditorView`）→ `storyEditorIdentityFollowsSelectedStory`（identity 查找返回 nil，3 处断言）、`storyEditorIdentityIsStableAcrossRendersForSameStory`（2 处断言）转红，`reMaterializedEditorDraftBindsToNewStory` 仍绿（草稿 init 契约未变）。变异施加并确认转红后还原，最终 34 条全绿。
+>
+> 变异验证（#432）：`createChapter` / `importMarkdownAsChapter` / `createCharacter` 原先在 `await store.…` 后无条件把结果追加进共享 `chapters`/`characters` 并改写选择；await 期间切换故事时，旧故事的创建结果晚到污染新故事大纲。修复为 `loadStoryContent` 递增 `storyGeneration`，三个创建方法写回前比对代次与 `currentStoryID`（不匹配只返回已创建对象，磁盘操作仍归属原故事）；存储依赖经 `StoryWriting` 协议注入以便门闩测试。M1 移除 createChapter 的守卫 → 用例 35 转红（3 处断言）；M2 移除 createCharacter 的守卫 → 用例 37 转红（3 处断言）；M3 移除 importMarkdownAsChapter 的守卫 → 用例 36 转红（chapters.isEmpty）。三处变异各自独立命中对应用例，用例 38 始终绿；还原后 38 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 27 / 27
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 0 / 0
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（27 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

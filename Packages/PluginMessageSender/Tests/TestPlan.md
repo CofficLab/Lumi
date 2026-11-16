@@ -72,6 +72,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **MessageSender 恢复与全局发送状态**（2 条）：由 `resumeSuccessKeepsOtherConversationSending` 等用例锁定——恢复的收尾按账本重算全局 `isSending`，不得无条件复位（**回归 #166**）。
 - **MessageSender 会话删除失效**（3 条）：由 `deletionInvalidatesQueueAndTrackingTask` 等用例锁定——删除通知到达即清掉该会话的队列、账本与跟踪任务，迟到终态不得再落库或拉起回合（**回归 #167**）。
 - **MessageSender 待发队列持久化**（11 条）：由 `busySubmitPersistsAndSurvivesRestart`、`pluginBootRestoresPersistedQueue`、`restoreSkipsDeletedConversation` 等用例锁定——忙碌时提交的待发队列每次变化即落盘，重启后恢复到新 sender 且不自动拉起回合，跳过运行时已删除的会话（**回归 #596**）。
+- **MessageSender 已送出附件精确清理**（5 条）：由 `sentImageRemovedWhenAnotherAddedDuringEncode`、`laterAddedImageSurvivesBackgroundCommit` 等用例锁定——提交后按 id 精确移除「已送出的那一份」附件，编码途中新增的附件保留在挂起池，不被下一条消息重复带上（**回归 #517**）。
 
 ## 测试用例清单
 
@@ -136,11 +137,16 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 57 | MessageSender 待发队列持久化 | 多会话快照按会话 ID 稳定排序（#596） | 两个会话各有排队消息 | 读取 `allPendingMessages` 两次 | 会话间按 uuidString 升序、会话内 FIFO；两次读取一致 | P1 | ✅ 已覆盖 | `allPendingMessagesSnapshotIsStablyOrdered` |
 | 58 | MessageSender 待发队列持久化 | 插件启动时从落盘文件恢复待发队列（#596） | 预先写盘一条待发消息 | `kernel.start(plugins:)` 装配插件 | 解析出的 sender 队列含恢复内容，且不落库 | P0 | ✅ 已覆盖 | `pluginBootRestoresPersistedQueue` |
 | 59 | MessageSender 待发队列持久化 | 插件退出前兜底落盘当前队列（#596） | 已 boot 插件 + 忙碌入队 | `onShutdown` | 落盘文件含当前队列；AgentLoop 观察者归零 | P1 | ✅ 已覆盖 | `pluginShutdownFlushesQueueToDisk` |
+| 60 | 已送出附件精确清理 | 编码途中新增图片时，已送出的图片被精确移除、后来者保留（**回归 #517**） | 池为 [sent, addedLater]，送出快照 [sent] | 提交快照 [sent] | 消息 metadata 含 sent；池只剩 addedLater，sent 不残留导致重复发送 | P0 | ✅ 已覆盖 | `sentImageRemovedWhenAnotherAddedDuringEncode` |
+| 61 | 已送出附件精确清理 | 编码途中新增文件时，已送出的文件被精确移除、后来者保留（**回归 #517**） | 池为 [sent, addedLater]，送出快照 [sent] | 提交快照 [sent] | 消息 metadata 含 sent；文件池只剩 addedLater | P1 | ✅ 已覆盖 | `sentFileRemovedWhenAnotherAddedDuringEncode` |
+| 62 | 已送出附件精确清理 | 后台编码窗口内新增的附件，在异步提交后仍保留（**回归 #517**） | 后台提交任务挂起于编码窗口 | 窗口内新增 addedLater → 等待提交完成 | 消息含 sent；池只剩 addedLater | P1 | ✅ 已覆盖 | `laterAddedImageSurvivesBackgroundCommit` |
+| 63 | 已送出附件精确清理 | 池未被改动时送出快照被整体清空（正常路径不变） | 池恰为送出快照 | 提交快照 | 图片/文件池均清空 | P1 | ✅ 已覆盖 | `unchangedPoolIsFullyCleared` |
+| 64 | 已送出附件精确清理 | 送出的附件已被用户手动移除时不再重复广播变化 | sent 已被手动移除，池只剩 addedLater | 提交快照 [sent] | 池保持 [addedLater]，attachmentsChanged 零广播 | P2 | ✅ 已覆盖 | `alreadyRemovedSentAttachmentDoesNotNotify` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
 > ID 35–45 为 #165 / #164 / #166 / #167 的回归套件。
-> 本表 59 行覆盖 70 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 64 行覆盖 75 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -152,15 +158,18 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
-- P1: 已覆盖 29 / 29
-- P2: 已覆盖 3 / 3
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 28 / 28
+- P1: 已覆盖 32 / 32
+- P2: 已覆盖 4 / 4
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 > 变异验证（#596，待发队列持久化）：
 > - M1 把 `PendingQueuePersistence.startObserving` 的回调改成不落盘（去掉 `self?.persist()`）→ `busySubmitPersistsAndSurvivesRestart`、`observationPersistsCancelRemoval`、`terminalDrainRemovesPersistedFile` 变红（入队/取消/排空都不再写盘）；恢复后转绿。
 > - M2 去掉 `MessageSenderPlugin.onBoot` 里的 `persistence.restore()` → `pluginBootRestoresPersistedQueue` 变红（启动不再恢复）；恢复后转绿。
 > - M3 去掉 `MessageSender.restorePendingQueues` 的 `deletedConversations` 守卫 → `restoreSkipsDeletedConversation` 变红（已删除会话被误恢复）；恢复后转绿。
+
+> 变异验证（#517，已送出附件精确清理）：
+> - M1 把 `clearSentAttachments` 还原为「挂起池与送出快照完全相等才清空」的旧逻辑 → `sentImageRemovedWhenAnotherAddedDuringEncode`、`sentFileRemovedWhenAnotherAddedDuringEncode`、`laterAddedImageSurvivesBackgroundCommit` 变红（`[X,Y] != [X]` 时已送出的 X 残留池中被重复发送）；`unchangedPoolIsFullyCleared`、`alreadyRemovedSentAttachmentDoesNotNotify` 仍绿（正常清空与 no-op 路径不受影响）；恢复按 id 精确移除后全绿。
 
 ## 优先级说明
 

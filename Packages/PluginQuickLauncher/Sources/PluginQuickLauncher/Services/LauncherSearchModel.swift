@@ -243,8 +243,11 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
                 .map { LauncherResult(app: $0.item) }
         }
 
-        // 文件（Spotlight 异步，结果到达后经 $results 再触发 rebuild）
-        if Self.isSourceEnabled(.file) {
+        // 文件（Spotlight 异步，结果到达后经 $results 再触发 rebuild）。
+        // 只合并属于当前查询的文件结果：查询刚切换、新搜索还在防抖窗口内时，
+        // fileSearch.results 仍是上一查询的旧文件，无条件合并会让 Return 打开旧查询
+        // 遗留的文件（#445）。resultsQuery 与当前 trimmed 查询不符即丢弃。
+        if Self.isSourceEnabled(.file), fileSearch.resultsQuery == trimmed {
             merged += fileSearch.results.map(LauncherResult.init(file:))
         }
 

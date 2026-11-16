@@ -12,7 +12,14 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📖"
     nonisolated static let verbose = false
 
-    private let store: StoryStore
+    private let store: any StoryWriting
+
+    /// 故事选择代次：每次装载故事内容（切换/重载故事）时递增。
+    ///
+    /// 创建章节/角色/导入是异步的，await 期间用户可能已切换故事；
+    /// 写回内存列表与选中节点前必须比对代次，否则旧故事的创建结果
+    /// 会污染新故事的大纲与选择（见 issue #432）。
+    private var storyGeneration = 0
 
     @Published public private(set) var stories: [Story] = []
     @Published public var currentStoryID: UUID?
@@ -29,7 +36,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     @Published public var selectedNodeID: UUID?
     @Published public var selectedNodeKind: StoryWriterNodeKind?
 
-    public init(store: StoryStore) {
+    public init(store: any StoryWriting) {
         self.store = store
     }
 
@@ -92,6 +99,7 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     private func loadStoryContent(id: UUID?) async {
+        storyGeneration += 1
         if let id {
             let loaded = await store.loadChapters(storyID: id)
             chapters = loaded
@@ -140,7 +148,11 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func createChapter(title: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
+        let generation = storyGeneration
         guard let chapter = await store.createChapter(storyID: storyID, title: title) else { return nil }
+        // await 期间可能已切换故事：磁盘上章节仍归属原故事，但不得把
+        // 它追加进新故事的章节列表或改选中新故事里不存在的节点（#432）。
+        guard storyGeneration == generation, currentStoryID == storyID else { return chapter }
         chapters.append(chapter)
         refreshTotalWordCount()
         selectedNodeID = chapter.id
@@ -190,7 +202,9 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func createCharacter(name: String) async -> Character? {
         guard let storyID = currentStoryID else { return nil }
+        let generation = storyGeneration
         guard let character = await store.createCharacter(storyID: storyID, name: name) else { return nil }
+        guard storyGeneration == generation, currentStoryID == storyID else { return character }
         characters.append(character)
         selectedNodeID = character.id
         selectedNodeKind = .character
@@ -218,9 +232,11 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public func importMarkdownAsChapter(title: String, content: String) async -> Chapter? {
         guard let storyID = currentStoryID else { return nil }
+        let generation = storyGeneration
         guard let chapter = await store.importMarkdownAsChapter(storyID: storyID, title: title, content: content) else {
             return nil
         }
+        guard storyGeneration == generation, currentStoryID == storyID else { return chapter }
         chapters.append(chapter)
         return chapter
     }

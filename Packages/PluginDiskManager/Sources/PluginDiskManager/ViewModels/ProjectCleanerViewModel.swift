@@ -13,6 +13,11 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: String = ""
     @Published var alertMessage: String?
 
+    /// 扫描控制栏可见性（#849）：扫描中保留 Stop 入口。
+    var isScanControlBarVisible: Bool {
+        ScanControlBarVisibility.isVisible(isScanning: isScanning, hasResults: !projects.isEmpty)
+    }
+
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
         for project in projects {

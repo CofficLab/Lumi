@@ -37,6 +37,10 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
     /// 搜索结果
     @Published public private(set) var results: [LauncherFileItem] = []
 
+    /// 当前 `results` 所属的查询词（已 trim）。聚合模型据此判断文件结果是否仍属于
+    /// 当前查询：查询切换后、新 Spotlight 搜索返回前，旧结果不得被展示或执行（#445）。
+    public private(set) var resultsQuery: String = ""
+
     /// 是否正在搜索
     @Published public private(set) var isSearching = false
 
@@ -88,7 +92,7 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
         generation += 1
         searchTask?.cancel()
         stopActiveQuery()
-        results = []
+        commitResults([], forQuery: "")
         isSearching = false
     }
 
@@ -96,7 +100,7 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
     private func runSpotlightQuery(_ query: String, generation currentGeneration: Int) async {
         stopActiveQuery()
         isSearching = true
-        results = []
+        commitResults([], forQuery: "")
 
         let metadataQuery = NSMetadataQuery()
         // 名称包含匹配（大小写/音调不敏感）
@@ -128,7 +132,7 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
         // 查询已被新的搜索取代
         guard !Task.isCancelled, currentGeneration == generation else { return }
-        results = Self.collect(from: metadataQuery, limit: resultLimit)
+        commitResults(Self.collect(from: metadataQuery, limit: resultLimit), forQuery: query)
         isSearching = false
     }
 
@@ -181,9 +185,15 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Testing
 
-    /// 注入测试用文件结果，避免依赖 Spotlight 查询。
-    public func setResultsForTesting(_ items: [LauncherFileItem]) {
+    /// 提交文件结果并记录其所属查询词，供聚合模型按当前查询过滤（#445）。
+    private func commitResults(_ items: [LauncherFileItem], forQuery query: String) {
         results = items
+        resultsQuery = query
+    }
+
+    /// 注入测试用文件结果，避免依赖 Spotlight 查询；`forQuery` 标记结果所属查询词。
+    public func setResultsForTesting(_ items: [LauncherFileItem], forQuery query: String = "") {
+        commitResults(items, forQuery: query.trimmingCharacters(in: .whitespaces))
     }
 
     /// 替换打开文件行为，返回 false 用于模拟打开失败。

@@ -133,7 +133,7 @@ struct QuickLauncherTests {
         }
 
         fileSearch.setOpenURLForTesting { _ in false }
-        fileSearch.setResultsForTesting([item])
+        fileSearch.setResultsForTesting([item], forQuery: "lumi-missing")
         model.query = "lumi-missing"
 
         let index = try #require(model.results.firstIndex { $0.kind == .file })
@@ -161,7 +161,7 @@ struct QuickLauncherTests {
             openedPaths.append(url.path)
             return true
         }
-        fileSearch.setResultsForTesting([item])
+        fileSearch.setResultsForTesting([item], forQuery: "lumi-open")
         model.query = "lumi-open"
 
         let index = try #require(model.results.firstIndex { $0.kind == .file })
@@ -212,7 +212,7 @@ struct QuickLauncherTests {
         // Spotlight 文件结果异步返回，插入到应用与命令之间。
         fileSearch.setResultsForTesting([
             LauncherFileItem(id: "/tmp/find754.txt", name: "find754.txt", path: "/tmp/find754.txt", isDirectory: false)
-        ])
+        ], forQuery: "find754")
         model.rebuildResults()
 
         #expect(model.results.count == 3)
@@ -230,7 +230,7 @@ struct QuickLauncherTests {
         fileSearch.setResultsForTesting([
             LauncherFileItem(id: "/tmp/reg754-a.txt", name: "reg754-a.txt", path: "/tmp/reg754-a.txt", isDirectory: false),
             LauncherFileItem(id: "/tmp/reg754-b.txt", name: "reg754-b.txt", path: "/tmp/reg754-b.txt", isDirectory: false),
-        ])
+        ], forQuery: "reg754")
         model.query = "reg754"
         #expect(model.results.count == 2)
 
@@ -564,5 +564,131 @@ struct QuickLauncherTests {
         // 恢复默认后提示回到 ⌥Space，证明提示始终跟随当前生效组合。
         manager.resetToDefault()
         #expect(view.hotkeyHint == "⌥Space")
+    }
+
+    // MARK: - 回归 #445：查询切换后不得展示/执行上一查询遗留的文件
+
+    @Test func changingQueryDropsStaleFileResultsBeforeNewSearch() {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        let stale = LauncherFileItem(id: "/tmp/alpha-report.txt", name: "alpha-report.txt", path: "/tmp/alpha-report.txt", isDirectory: false)
+        fileSearch.setResultsForTesting([stale], forQuery: "alpha")
+        model.query = "alpha"
+        #expect(model.results.contains { $0.file?.path == stale.path })
+
+        // 改查询到 beta：新 Spotlight 搜索仍在防抖窗口内，旧文件必须立即从聚合列表消失。
+        model.query = "beta"
+        #expect(!model.results.contains { $0.file?.path == stale.path }, "上一查询的文件不得在新查询下展示（#445）")
+        #expect(!model.results.contains { $0.kind == .file }, "新查询文件搜索返回前不应残留任何文件结果")
+    }
+
+    @Test func executeUnderNewQueryNeverOpensPreviousQueryFile() throws {
+        let fileSearch = FileSearchService.shared
+        let appSearch = AppSearchService.shared
+        let model = LauncherSearchModel.shared
+        var openedPaths: [String] = []
+        defer {
+            fileSearch.setOpenURLForTesting { NSWorkspace.shared.open($0) }
+            fileSearch.setResultsForTesting([])
+            appSearch.setAppsForTesting([])
+            LauncherBridge.commandGroupsProvider = nil
+            model.reset()
+        }
+
+        appSearch.setAppsForTesting([])
+        LauncherBridge.commandGroupsProvider = nil
+        fileSearch.setOpenURLForTesting { url in
+            openedPaths.append(url.path)
+            return true
+        }
+        let stale = LauncherFileItem(id: "/tmp/alpha-secret.txt", name: "alpha-secret.txt", path: "/tmp/alpha-secret.txt", isDirectory: false)
+        fileSearch.setResultsForTesting([stale], forQuery: "alpha")
+        model.query = "alpha"
+        #expect(model.results.contains { $0.file?.path == stale.path })
+
+        // 用户改查询到 beta 后立即回车：旧文件已被剔除，执行不得打开它。
+        model.query = "beta"
+        #expect(!model.results.contains { $0.file?.path == stale.path })
+        #expect(model.execute(at: model.selectedIndex) == false)
+        #expect(openedPaths.isEmpty, "切换查询后回车不得打开上一查询遗留的文件（#445）")
+    }
+
+    @Test func currentQueryFileResultsRemainVisibleAndExecutable() throws {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        var openedPaths: [String] = []
+        defer {
+            fileSearch.setOpenURLForTesting { NSWorkspace.shared.open($0) }
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        fileSearch.setOpenURLForTesting { url in
+            openedPaths.append(url.path)
+            return true
+        }
+        let current = LauncherFileItem(id: "/tmp/beta-notes.txt", name: "beta-notes.txt", path: "/tmp/beta-notes.txt", isDirectory: false)
+        fileSearch.setResultsForTesting([current], forQuery: "beta")
+        model.query = "beta"
+
+        let index = try #require(model.results.firstIndex { $0.file?.path == current.path })
+        #expect(model.execute(at: index) == true)
+        #expect(openedPaths == [current.path], "属于当前查询的文件仍须可见且可执行")
+    }
+
+    @Test func newQueryFileResultsArrivingAsyncAreIncluded() {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        let stale = LauncherFileItem(id: "/tmp/alpha-old.txt", name: "alpha-old.txt", path: "/tmp/alpha-old.txt", isDirectory: false)
+        fileSearch.setResultsForTesting([stale], forQuery: "alpha")
+        model.query = "alpha"
+        model.query = "beta"
+        #expect(!model.results.contains { $0.kind == .file })
+
+        // beta 的 Spotlight 结果异步返回（属于 beta），经 rebuild 后必须出现，旧文件不得回潮。
+        let fresh = LauncherFileItem(id: "/tmp/beta-new.txt", name: "beta-new.txt", path: "/tmp/beta-new.txt", isDirectory: false)
+        fileSearch.setResultsForTesting([fresh], forQuery: "beta")
+        model.rebuildResults()
+        #expect(model.results.contains { $0.file?.path == fresh.path })
+        #expect(!model.results.contains { $0.file?.path == stale.path })
+    }
+
+    @Test func cancelSearchClearsResultsQuery() {
+        let fileSearch = FileSearchService.shared
+        defer { fileSearch.setResultsForTesting([]) }
+
+        fileSearch.setResultsForTesting([
+            LauncherFileItem(id: "/tmp/cancel.txt", name: "cancel.txt", path: "/tmp/cancel.txt", isDirectory: false)
+        ], forQuery: "cancel")
+        #expect(fileSearch.resultsQuery == "cancel")
+
+        fileSearch.cancelSearch()
+        #expect(fileSearch.results.isEmpty)
+        #expect(fileSearch.resultsQuery.isEmpty, "取消搜索后结果所属查询必须清空")
+    }
+
+    @Test func fileResultsGateUsesTrimmedQuery() {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        let item = LauncherFileItem(id: "/tmp/trim.txt", name: "trim.txt", path: "/tmp/trim.txt", isDirectory: false)
+        // 结果所属查询带空白，聚合模型按 trim 后的查询比对，仍应匹配。
+        fileSearch.setResultsForTesting([item], forQuery: "  trim  ")
+        model.query = "trim"
+        #expect(model.results.contains { $0.file?.path == item.path }, "文件结果归属按 trim 后的查询比对")
     }
 }
