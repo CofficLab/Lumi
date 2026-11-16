@@ -905,20 +905,15 @@ public struct HTTPExchangeSettingsView: View {
 
             HTTPExportProgress.shared.begin(total: snapshots.count)
             Task.detached(priority: .userInitiated) {
-                do {
-                    for (index, snapshot) in snapshots.enumerated() {
-                        let document = HTTPExchangeExportFormatter.document(for: snapshot)
-                        let fileName = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: index)
-                        try document.write(
-                            to: directory.appendingPathComponent(fileName),
-                            atomically: true,
-                            encoding: .utf8
-                        )
-                        await MainActor.run { HTTPExportProgress.shared.advance() }
+                let failures = await HTTPExchangeExportFormatter.writeBatch(snapshots, to: directory) { _ in
+                    await MainActor.run { HTTPExportProgress.shared.advance() }
+                }
+                await MainActor.run {
+                    if failures.isEmpty {
+                        HTTPExportProgress.shared.finish()
+                    } else {
+                        HTTPExportProgress.shared.fail(message: failures[0].errorDescription)
                     }
-                    await MainActor.run { HTTPExportProgress.shared.finish() }
-                } catch {
-                    await MainActor.run { HTTPExportProgress.shared.fail(message: error.localizedDescription) }
                 }
             }
         }
