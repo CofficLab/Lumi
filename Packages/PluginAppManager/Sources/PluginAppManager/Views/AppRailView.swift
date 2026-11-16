@@ -77,6 +77,12 @@ struct AppRailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textSecondary)
 
+                // 大小仍在后台逐个回填：非阻塞进度提示，列表保持可见、可选（#1221）。
+                if viewModel.isCalculatingSizes {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
                 Spacer()
             }
         }

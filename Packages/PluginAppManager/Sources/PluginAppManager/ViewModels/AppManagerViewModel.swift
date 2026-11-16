@@ -26,6 +26,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var installedApps: [AppModel] = []
     @Published var filteredApps: [AppModel] = []
     @Published var isLoading = false
+    /// 应用列表已发布、正在后台逐个回填大小（#1221）。
+    /// 与 `isLoading`（仅覆盖初始枚举的阻塞态）分离，使列表在计算大小期间即可见、可选。
+    @Published var isCalculatingSizes = false
     @Published var searchText = ""
     @Published var selectedApp: AppModel? = nil
     @Published var relatedFiles: [RelatedFile] = []
@@ -116,9 +119,11 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     private func performScan(force: Bool, scanID: UUID) async {
         isLoading = true
+        isCalculatingSizes = false
         defer {
             if activeScanID == scanID {
                 isLoading = false
+                isCalculatingSizes = false
                 activeScanID = nil
                 scanTask = nil
             }
@@ -130,6 +135,10 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
+        // 列表已就绪：结束「扫描应用」阻塞态，大小计算改用独立进度态，
+        // 让用户在逐个回填大小期间即可看到并选择应用，而非等全部遍历完成（#1221）。
+        isLoading = false
+        isCalculatingSizes = apps.contains { $0.size == 0 }
         if Self.verbose {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)App list loaded: \(self.installedApps.count) apps")
