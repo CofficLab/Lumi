@@ -20,6 +20,7 @@ import ProviderMessage
     let viewModel = ConversationSpeedViewModel()
 
     viewModel.selectConversation(conversationID, messages: [message])
+    viewModel.setPopoverPresented(true)
 
     #expect(viewModel.selectedConversationID == conversationID)
     #expect(viewModel.cachedTPS == 20)
@@ -44,6 +45,7 @@ import ProviderMessage
     let viewModel = ConversationSpeedViewModel()
 
     viewModel.selectConversation(conversationID, messages: [message])
+    viewModel.setPopoverPresented(true)
 
     #expect(viewModel.cachedTPS == 30)
     #expect(viewModel.speedHistory.count == 1)
@@ -92,6 +94,7 @@ import ProviderMessage
     let viewModel = ConversationSpeedViewModel()
 
     viewModel.selectConversation(selectedConversationID, messages: [selectedMessage])
+    viewModel.setPopoverPresented(true)
     viewModel.refresh(conversationID: staleConversationID, messages: [staleMessage])
 
     #expect(viewModel.selectedConversationID == selectedConversationID)
@@ -150,6 +153,7 @@ import ProviderMessage
     let viewModel = ConversationSpeedViewModel()
 
     viewModel.selectConversation(conversationID, messages: [earlier, latest])
+    viewModel.setPopoverPresented(true)
 
     // 最新响应缺少 outputTokenCount：Current speed 不可用，且详情必须来自 B 而非 A。
     #expect(viewModel.cachedTPS == nil)

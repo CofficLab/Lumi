@@ -76,6 +76,7 @@ private final class GatedSnapshotMessageManager: MessageManaging {
     let messages = GatedSnapshotMessageManager()
 
     let viewModel = ConversationSpeedViewModel()
+    viewModel.setPopoverPresented(true)
     messages.gateFirstSnapshot = true
     let selectionObserver = SpeedConversationObserver(
         conversations: conversations, messages: messages, viewModel: viewModel

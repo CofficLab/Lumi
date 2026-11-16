@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试覆盖 23 条用例。
+PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试覆盖 36 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 23
+测试文件: 7 个，用例总数: 36
 
 核心组件（源码目录）:
 - `Observers/`
@@ -32,6 +32,7 @@ PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试�
 - **综合**（8 条）：由 `speedPluginInstantiates`、`speedViewModelUpdatesFromMessageSnapshot`、`speedViewModelClearsWhenConversationIsDeselected`、`speedViewModelReadsLegacyMetadataTiming` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SpeedModels**（11 条）：由 `speedDurationPrefersStreamingGenerationTime`、`speedDurationFallsBackToEitherPositiveMeasurement`、`legacyMetadataTimingRestoresHistoricalSpeedAndTTFT` 等用例锁定——强类型计时缺失时必须回退到旧版 metadata（**#1029**）；streaming 与 latency 同时有效时 TPS 分母只用生成时长，不得计入 TTFT（**#237**）。
 - **SpeedObserver**（4 条）：由 `conversationObserverLoadsAndTracksTheSelectedConversation`、`conversationObserverCancelStopsFurtherSelectionUpdates`、`conversationObserverBindsNewSelectionBeforeSnapshotArrives` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **SpeedPopoverGating**（4 条）：由 `closedPopoverKeepsToolbarFreshWithoutBuildingHistory`、`openingPopoverRebuildsHistoryFromLatestSnapshot`、`closingPopoverClearsHistoryButKeepsToolbarValue`、`popoverOpenStillTracksNewInsertions` 锁定——趋势历史只在弹窗打开时重建，关闭时清空且工具栏数值（cachedTPS / requestCount）始终即时刷新（**#1226**）。
 
 ## 测试用例清单
 
@@ -69,27 +70,35 @@ PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试�
 | 30 | SpeedChartGeometry | 单个样本落在水平中点 | 单样本 | 读取坐标 | x 为中点 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
 | 31 | SpeedExportOffMain | writePNG 在后台线程编码并写出可解码的 PNG | 有效图表样本 | 调用 writePNG 后解码文件 | 非主线程编码、PNG 可解码 | P1 | ✅ 已覆盖 | `writesOffMain` |
 | 32 | SpeedExportOffMain | 目标目录不存在时 writePNG 抛出错误而非静默失败 | 不存在的目标目录 | 调用 writePNG | 抛出错误 | P1 | ✅ 已覆盖 | `writeFailureThrows` |
+| 33 | SpeedPopoverGating | 弹窗关闭时工具栏数值照常刷新但不得重建趋势历史；打开后用最近快照即时补建（**#1226**） | 弹窗关闭，先后选中 / 刷新两条 assistant | 读取 ViewModel，再打开弹窗 | 关闭时 cachedTPS 20、requestCount 1→2、历史为空；打开后历史 2 条 | P0 | ✅ 已覆盖 | `closedPopoverKeepsToolbarFreshWithoutBuildingHistory` |
+| 34 | SpeedPopoverGating | 打开弹窗用最近快照即时重建历史，无需新事件（**#1226**） | 弹窗关闭时已选中含 1 条 assistant 的会话 | 打开弹窗 | 历史含该消息 id | P1 | ✅ 已覆盖 | `openingPopoverRebuildsHistoryFromLatestSnapshot` |
+| 35 | SpeedPopoverGating | 关闭弹窗清空历史但保留工具栏数值（**#1226**） | 弹窗打开且历史 1 条 | 关闭弹窗 | 历史为空、cachedTPS 20、requestCount 1 | P1 | ✅ 已覆盖 | `closingPopoverClearsHistoryButKeepsToolbarValue` |
+| 36 | SpeedPopoverGating | 弹窗打开期间新插入照常进入历史（**#1226**） | 弹窗打开且历史 1 条 | 刷新追加第二条 assistant | 历史 2 条、cachedTPS 20 | P1 | ✅ 已覆盖 | `popoverOpenStillTracksNewInsertions` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#1226）：把 `updateState` 中的历史构建改回无条件执行（去掉 `if isPopoverPresented`），
+> `closedPopoverKeepsToolbarFreshWithoutBuildingHistory` 与 `openingPopoverRebuildsHistoryFromLatestSnapshot`
+> 立即变红（关闭时历史非空）；恢复门禁后 36 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 24 / 24
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 27 / 27
 - P2: 已覆盖 0 / 0
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（27 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
