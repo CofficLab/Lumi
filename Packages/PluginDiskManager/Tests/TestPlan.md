@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 71 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 67
+测试文件: 9 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Internal/`
@@ -43,6 +43,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskManagerPlugin 运行时启停**（3 条）：由 `disablingPluginWithdrawsAgentTools`、`enablingPluginRestoresAgentTools`、`disabledToolsAreNotExecutable` 锁定。内核运行时禁用插件只撤回显式登记的贡献，不清理 Provider 侧写入；`onDisable` 必须撤回全部 10 个 Agent 工具（含缓存/项目清理与 `DeleteFilesTool` 删除），`onEnable` 必须恢复，登记/撤回经 `areAgentToolsRegistered` 标志保证幂等。禁用后工具不得再被解析或执行（**回归 #453**）。改动 `DiskManagerPlugin.onEnable/onDisable/registerAgentTools/unregisterAgentTools` 时优先跑对应测试文件。
+- **DirectoryTreePackageSize**（4 条）：由 `topLevelSummaryCountsPackageContentRecursively`、`fullTreeCountsPackageContentInParentDirectory`、`fullTreeAggregatesRegularFilesIntoParentDirectory`、`nestedPackageContentIsCountedRecursively` 锁定（**回归 #850**）：`.app`/`.photoslibrary` 等 package 仍折叠为单个叶子展示，但其大小必须递归累计内部真实内容（含嵌套 package），不得只读目录记录的几十字节；该递归大小必须计入父目录与扫描进度的 `scannedBytes`。`buildTree` 的自底向上聚合必须把叶子（普通文件与 package）大小也传入父目录，否则父目录大小恒为 0。改动 `DirectoryTreeService.buildTopLevelSummary/buildTree/packageContentSize` 或聚合循环时优先跑对应测试文件（串行套件）。
 
 ## 测试用例清单
 
@@ -115,8 +116,12 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 65 | DiskManagerPlugin 运行时启停 | 运行时禁用后必须撤回全部 10 个 Agent 工具，含清理与删除（**回归 #453**） | 内核已启动且插件启用，工具均在 | `kernel.disablePlugin(id:)` | 10 个工具全部解析为 nil | P0 | ✅ 已覆盖 | `disablingPluginWithdrawsAgentTools` |
 | 66 | DiskManagerPlugin 运行时启停 | 运行时重新启用插件后恢复全部 Agent 工具 | 内核已启动且插件启用 | 先 disable 再 `enablePlugin` | 10 个工具全部恢复 | P1 | ✅ 已覆盖 | `enablingPluginRestoresAgentTools` |
 | 67 | DiskManagerPlugin 运行时启停 | 禁用后清理与删除工具不得再进入执行路径（**回归 #453**） | 内核已启动且插件启用 | `kernel.disablePlugin(id:)` | delete-files/clean-caches 解析为 nil，allTools 无 disk-manager. 前缀 | P0 | ✅ 已覆盖 | `disabledToolsAreNotExecutable` |
+| 68 | DirectoryTreePackageSize | 顶层汇总递归累计 package 内容大小并计入扫描进度（**回归 #850**） | 临时根下 Calculator.app（exec 1000B + 资源 2000B）与 root.bin 7B | 调用 `scanTopLevelDirectoryUsage` | Calculator.app 大小为 3000（非目录记录），root.bin 为 7，进度 scannedBytes 为 3007 | P0 | ✅ 已覆盖 | `topLevelSummaryCountsPackageContentRecursively` |
+| 69 | DirectoryTreePackageSize | 完整目录树把 package 递归大小计入父目录，package 仍为叶子（**回归 #850**） | Applications 下 Calculator.app（3000B）与 note.txt 5B | 调用 `scanDirectoryTree` | Applications 大小 3005，Calculator.app 大小 3000、isDirectory=false、children=nil | P0 | ✅ 已覆盖 | `fullTreeCountsPackageContentInParentDirectory` |
+| 70 | DirectoryTreePackageSize | 完整目录树自底向上聚合必须把普通文件大小传入父目录（**回归 #850**） | Docs/a.bin 1000B 与根 top.bin 23B | 调用 `scanDirectoryTree` | Docs 大小 1000（非 0），top.bin 大小 23 | P0 | ✅ 已覆盖 | `fullTreeAggregatesRegularFilesIntoParentDirectory` |
+| 71 | DirectoryTreePackageSize | package 内嵌套 package 的内容也被递归累计（**回归 #850**） | Outer.app（exec 1000B）内 Resources/Inner.bundle/payload.bin 500B | 调用 `scanTopLevelDirectoryUsage` | Outer.app 大小 1500，嵌套 bundle 的 500B 不丢失 | P1 | ✅ 已覆盖 | `nestedPackageContentIsCountedRecursively` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#453**，`DiskManagerPlugin.onDisable/onEnable`）：
@@ -124,23 +129,29 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 > - **M2** `onEnable` 改为无操作 → `enablingPluginRestoresAgentTools` 转红（10 个工具未恢复）；两条禁用用例仍绿。
 > - 还原完整修复（onDisable 撤回 + onEnable 恢复，幂等标志）→ 67 条全绿。
 
+> 变异验证（**#850**，`DirectoryTreeService` package 递归大小与父目录聚合）：
+> - **M1** 两处 `size` 改回只读 `values.fileSize`（复现原 bug）→ `topLevelSummaryCountsPackageContentRecursively` 转红（package 大小塌为目录记录、scannedBytes 只剩 7），`fullTreeCountsPackageContentInParentDirectory` 转红（package 与父目录大小丢失），`nestedPackageContentIsCountedRecursively` 转红；`fullTreeAggregatesRegularFilesIntoParentDirectory` 仍绿。
+> - **M2** 聚合循环恢复 `&& node.isDirectory` 过滤 → `fullTreeCountsPackageContentInParentDirectory` 转红（父目录塌为 0），`fullTreeAggregatesRegularFilesIntoParentDirectory` 转红（Docs 塌为 0）；两条顶层汇总用例仍绿。
+> - **M3** `packageContentSize` 枚举加回 `.skipsPackageDescendants` → `nestedPackageContentIsCountedRecursively` 转红（嵌套 bundle 的 500B 丢失，只剩 1000）；其余三条仍绿。
+> - 还原完整修复（递归 package 大小 + 全叶子自底向上聚合 + 嵌套下降）→ 71 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 43 / 43
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 44 / 44
 - P2: 已覆盖 8 / 8
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（43 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（44 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

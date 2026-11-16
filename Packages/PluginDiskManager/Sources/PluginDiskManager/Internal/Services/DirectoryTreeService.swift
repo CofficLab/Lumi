@@ -267,7 +267,12 @@ actor DirectoryTreeScanCoordinator {
             let isDirectory = values.isDirectory ?? false
             let isPackage = values.isPackage ?? false
             let treatedAsDirectory = isDirectory && !isPackage
-            let size = Int64(values.fileSize ?? 0)
+            // A package (.app/.photoslibrary/…) is folded into a single leaf, but
+            // its directory record only holds a few bytes. Sum the real content
+            // recursively so the summary and progress reflect actual disk usage.
+            let size = (isDirectory && isPackage)
+                ? packageContentSize(at: url)
+                : Int64(values.fileSize ?? 0)
             let topLevelPath = immediateChildPath(of: normalizedURLPath, rootPath: rootPath)
 
             if treatedAsDirectory {
@@ -375,7 +380,9 @@ actor DirectoryTreeScanCoordinator {
             let isDirectory = values.isDirectory ?? false
             let isPackage = values.isPackage ?? false
             let treatedAsDirectory = isDirectory && !isPackage
-            let size = Int64(values.fileSize ?? 0)
+            let size = (isDirectory && isPackage)
+                ? packageContentSize(at: url)
+                : Int64(values.fileSize ?? 0)
             let node = nodes[normalizedURLPath] ?? MutableScanNode(
                 path: normalizedURLPath,
                 isDirectory: treatedAsDirectory,
@@ -418,7 +425,11 @@ actor DirectoryTreeScanCoordinator {
         let nodesByDepth = nodes.values.sorted {
             $0.path.split(separator: "/").count > $1.path.split(separator: "/").count
         }
-        for node in nodesByDepth where node.path != rootPath && node.isDirectory {
+        // Propagate every non-root node into its parent, deepest first. Leaf
+        // nodes (regular files and folded packages) carry their own size, and
+        // directory nodes carry the sum already accumulated from their children,
+        // so each byte is counted exactly once up the tree.
+        for node in nodesByDepth where node.path != rootPath {
             try checkCancellation(token)
             let parentPath = URL(fileURLWithPath: node.path).deletingLastPathComponent().path
             nodes[parentPath]?.size += node.size
@@ -470,6 +481,34 @@ actor DirectoryTreeScanCoordinator {
             parent.children[path] = node
         }
         return node
+    }
+
+    /// Recursively sums the real content of a package (.app/.photoslibrary/…).
+    /// The package is still displayed as a single leaf, but its directory record
+    /// only holds a few bytes, so the executables, resources and nested packages
+    /// inside must be accumulated to reflect actual disk usage (#850).
+    private static func packageContentSize(at url: URL) -> Int64 {
+        let directSize = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+        // Descend into everything (no skipsPackageDescendants / skipsHiddenFiles)
+        // so nested packages and hidden resources are counted like `du` does.
+        guard let enumerator = FileManager.default.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
+            options: []
+        ) else { return directSize }
+
+        var total: Int64 = 0
+        while let child = enumerator.nextObject() as? URL {
+            if Task.isCancelled { break }
+            guard let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]) else {
+                continue
+            }
+            // Directory records (including nested package roots) carry no content
+            // bytes of their own; their files are yielded separately.
+            if values.isDirectory == true { continue }
+            total += Int64(values.fileSize ?? 0)
+        }
+        return total
     }
 
     private static func immediateChildPath(of path: String, rootPath: String) -> String {
