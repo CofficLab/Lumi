@@ -5,7 +5,7 @@
 TerminalPlugin Native terminal plugin for Lumi. Provides a developer tool view with interactive terminal tabs powered by SwiftTerm and KitTerminalCore.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 4
+测试文件: 1 个，用例总数: 5
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -32,6 +32,7 @@ TerminalPlugin Native terminal plugin for Lumi. Provides a developer tool view w
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（4 条）：由 `packageLoads`、`v2PluginRegistersStableTerminalEntry`、`activatingPluginHidesChatSectionAndDeactivatingRestoresIt`、`terminalPreservesLeadingTrailingWhitespaceInProjectPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TerminalDisableLifecycle**（1 条，**回归 #420**）：由 `disableClosesOwnedTerminalSessions` 锁定运行时禁用必须关闭两个宿主（`TerminalTabsViewModel.shared` 与 `.bottomPanel`）各自拥有的终端会话，而不是只移除底部面板入口把后台 shell 留下；改动 `TerminalPlugin.onDisable` 时优先跑该文件。
 
 ## 测试用例清单
 
@@ -41,27 +42,29 @@ TerminalPlugin Native terminal plugin for Lumi. Provides a developer tool view w
 | 2 | 综合 | v2PluginRegistersStableTerminalEntry | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `v2PluginRegistersStableTerminalEntry` |
 | 3 | 综合 | activatingPluginHidesChatSectionAndDeactivatingRestoresIt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` |
 | 4 | 综合 | 终端项目路径首尾空白是合法字符，裁剪后会在错误目录启动会话（**回归 #498**） | 传入带尾空格的项目路径 | 读取 `TerminalMainView(projectPath:).currentProjectPathForTerminal` | 返回带尾空格的原路径；空白-only/空/nil 仍回退 nil | P1 | ✅ 已覆盖 | `terminalPreservesLeadingTrailingWhitespaceInProjectPath` |
+| 5 | TerminalDisableLifecycle | 运行时禁用必须关闭两个宿主拥有的终端会话，不得只隐藏 UI 留下后台 shell（**回归 #420**） | onBoot 后在 `.shared` 与 `.bottomPanel` 各创建一个会话 | 调用 `plugin.onDisable(kernel:)` | 两个 ViewModel 的 `sessions` 均为空 | P0 | ✅ 已覆盖 | `disableClosesOwnedTerminalSessions` |
 
-> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> #420 回归：`onDisable` 曾只移除底部面板入口，`closeAllSessions()` 仅出现在 Shutdown 路径，禁用后交互式 shell 及子进程仍在后台运行。修复在 `onDisable` 中关闭 `.shared` 与 `.bottomPanel` 两个宿主的会话。变异验证（把 `onDisable` 还原为仅移除入口）令 `disableClosesOwnedTerminalSessions` 转红（2 处断言失败）；还原后 5 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 1 / 1
 - P1: 已覆盖 3 / 3
 - P2: 已覆盖 1 / 1
-- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
+- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
 - **P1**: 其余功能性用例（3 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 4 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 5 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -104,8 +104,15 @@ public final class TerminalPlugin: SuperPlugin, SuperLog {
         registerPanelBottomTab(kernel: kernel)
     }
 
-    /// 运行时禁用：撤回底部面板入口（内核不会代撤 Provider 侧贡献）。
+    /// 运行时禁用：撤回底部面板入口（内核不会代撤 Provider 侧贡献），
+    /// 并关闭本插件拥有的终端会话。
+    ///
+    /// 内核只撤回通过 `trackContribution` 登记的贡献，不会终止插件自己持有的
+    /// shell 进程。仅移除底部面板入口会把交互式 shell 及其子进程留在后台运行，
+    /// 因此禁用时必须像 Shutdown 一样关闭两个宿主各自的会话（#420）。
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        TerminalTabsViewModel.shared.closeAllSessions()
+        TerminalTabsViewModel.bottomPanel.closeAllSessions()
         panelBottom?.removeItems(ownerPluginID: id)
     }
 
