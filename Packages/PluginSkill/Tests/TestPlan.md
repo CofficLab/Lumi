@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 77 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 81 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 77
+测试文件: 13 个，用例总数: 81
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -48,6 +48,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 77 条
 - **DeleteSkillOrdinaryFile**（2 条）：由 `deleteOrdinaryFileIsRejected`、`deleteIncompleteDirectoryStillSucceeds` 锁定 delete_skill 只删除目录、同名普通文件必须拒绝并保留，残缺目录仍可删除（**回归 #525**）；改动 `SkillCreationService.deleteSkill` 的目标判定时优先跑对应测试文件。
 - **ReadSkillUndecodableBody**（3 条）：由 `readUndecodableBodyThrows`、`readValidBodyReturnsContent`、`readEmptyBodySucceeds` 锁定 read_skill 在正文文件存在却读不出（损坏/非 UTF-8）时必须抛 `SkillCreationError`，不得用 `?? ""` 伪装成空正文；合法正文与真正的空文件仍正常返回（**回归 #527**）；改动 `ReadSkillTool.execute` 的正文读取分支时优先跑对应测试文件。
 - **SkillSettingsRefresh**（3 条）：由 `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion`、`refreshWithoutSelectionClearsSkills` 锁定设置页显式刷新必须先使选中项目的 `SkillService` 缓存失效再重扫磁盘，30s TTL 内外部增删改立即可见；无选中项目时刷新清空且不崩溃（**回归 #642**）；改动 `SkillSettingsViewModel.refresh` 或缓存失效路径时优先跑对应测试文件。
+- **SkillSettingsProjectRemoval**（4 条）：由 `removingLastProjectClearsSkillsImmediately`、`removingLastProjectKeepsOnlyBaseSkills`、`removingSelectedProjectFallsBackToRemainingProject`、`inFlightScanDoesNotRestoreRemovedProjectSkills` 锁定最后一个项目被移除后必须立刻清空 `projectSkills`（顶部计数只剩通用底座），仍有其他项目时改选剩余项目并重扫，且扫描途中项目被移除时旧结果不得写回（**回归 #791**）；改动 `SkillSettingsViewModel.syncSelectionAfterProjectChange` 或 `reload` 的写回分支时优先跑对应测试文件。
 - **SkillInjectionConversationScope**（1 条）：由 `injectsConversationProjectSkills` 锁定；技能注入必须按会话绑定项目取技能，不得读 UI 全局当前项目。
 - **Skill Tools Conversation Scope**（3 条）：由 `resolveProjectPathConversationPriority`、`readExplicitPathBeatsConversationProject`、`toolsRouteThroughConversationProject` 锁定；list / read / update / delete_skill 的项目路径回退链必须是「显式 `project_path` → 会话绑定项目 → UI 当前项目」，会话绑定项目优先于 UI 当前项目（**回归 #789**）。「UI 当前=B、会话=A」的确定性回归并入 `projectPathFallback`（唯一 `.serialized` 单例用例），避免跨套件并行踩踏 `SkillRuntime`。
 - **Skill 更新原子性**（4 条）：由 `directoryOccupiedBodyRejectsUpdateAndKeepsMetadata`、`directoryOccupiedBodyRejectsContentOnlyUpdate`、`failedBodyWriteRollsBackMetadata`、`normalUpdateWritesMetadataAndBody` 锁定；update_skill 的元数据与正文必须「要么全成、要么全不变」——写入前校验两个目标路径（被目录占用时提前拒绝，metadata.json 不被重写），正文写入中途失败时回滚已改的元数据（**回归 #526**）；改动 `SkillCreationService.updateSkill` 的写入/校验/回滚分支时优先跑对应测试文件。回滚用例用 macOS `chflags uchg` 确定性触发正文写失败，仅 macOS 编译。
@@ -135,8 +136,12 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 77 条
 | 75 | Skill 更新原子性 | 正文路径被目录占用时，仅改正文的更新也被拒绝且元数据不变 | SKILL.md 被换成同名目录 | 调用 `updateSkill(content:)` | 抛 SkillCreationError，title 仍为原值（**回归 #526**） | P0 | ✅ 已覆盖 | `directoryOccupiedBodyRejectsContentOnlyUpdate` |
 | 76 | Skill 更新原子性 | 正文写入失败时回滚已修改的元数据，技能保持原样 | SKILL.md 加 uchg 标志（仅 macOS） | 调用 `updateSkill(title:content:)` | 正文写失败抛错，元数据回滚到原 title（**回归 #526**） | P0 | ✅ 已覆盖 | `failedBodyWriteRollsBackMetadata` |
 | 77 | Skill 更新原子性 | 正常的标题与正文更新同时落盘 | 正常技能 | 调用 `updateSkill(title:content:)` | title 与正文均更新成功 | P1 | ✅ 已覆盖 | `normalUpdateWritesMetadataAndBody` |
+| 78 | SkillSettingsProjectRemoval | 移除最后一个项目后立刻清空项目技能，顶部计数不得包含已删除项目的技能 | 单项目已加载 2 条技能，设置页保持打开 | 调用 `updateProjects([])` | 同步断言 selectedProjectPath 为 nil、projectSkills 为空、availableSkillCount 为 0（**回归 #791**） | P0 | ✅ 已覆盖 | `removingLastProjectClearsSkillsImmediately` |
+| 79 | SkillSettingsProjectRemoval | 移除最后一个项目后顶部只剩仍然存在的通用底座技能 | 底座 2 条 + 项目 1 条 | 调用 `updateProjects([])` | projectSkills 为空，availableSkillCount 为 2（**回归 #791**） | P1 | ✅ 已覆盖 | `removingLastProjectKeepsOnlyBaseSkills` |
+| 80 | SkillSettingsProjectRemoval | 移除选中项目但仍有其他项目时改选剩余项目并加载它的技能 | 两个项目 A/B，选中 B，移除 B | 调用 `updateProjects([A])` | 切换期间保留旧列表，随后 selectedProjectPath 为 A、projectSkills 为 A 的技能（**回归 #791**） | P1 | ✅ 已覆盖 | `removingSelectedProjectFallsBackToRemainingProject` |
+| 81 | SkillSettingsProjectRemoval | 扫描途中移除最后一个项目，旧项目的结果不得写回 | 扫描器被闩锁阻塞在 SkillService actor 上 | 阻塞期间 `updateProjects([])`，随后放行扫描 | 晚到的扫描结果被身份校验丢弃，projectSkills 仍为空、isLoading 为 false（**回归 #791**） | P0 | ✅ 已覆盖 | `inFlightScanDoesNotRestoreRemovedProjectSkills` |
 
-> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #525 变异验证：M1 移除 `deleteSkill` 的 isDirectory 守卫（回到只凭 fileExists 删除）→ `deleteOrdinaryFileIsRejected` 失败（普通文件被删、未抛错，RED）；M2 把定位改用 `locateValidSkillDirectory`（要求完整技能目录）→ `deleteIncompleteDirectoryStillSucceeds` 失败（残缺目录删不掉，RED）；还原后 64 条全绿。
@@ -146,24 +151,26 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 77 条
 > 回归 #642 变异验证：M1 把 `refresh()` 还原为 `Task { await reload() }`（不失效缓存）→ `refreshRescansAfterExternalChange`、`refreshReflectsExternalDeletion` 失败（TTL 内命中旧缓存，外部增删不可见，RED）；M2 把失效键改为 `invalidateCache(projectPath: "")`（清错键，选中项目缓存仍在）→ 同样两条失败（RED）；还原后 70 条全绿。
 >
 > 回归 #526 变异验证：M1 移除 `updateSkill` 正文写失败 catch 中的元数据回滚（只 `throw error`）→ `failedBodyWriteRollsBackMetadata` 失败（元数据停留在 Changed，RED）；M2 移除写入前的两处 `ensureWritableTarget` 预校验 → `directoryOccupiedBodyRejectsUpdateAndKeepsMetadata` 失败（元数据被先写后回滚，修改时间改变，RED）；还原后 77 条全绿。
+>
+> 回归 #791 变异验证：M1 把 `syncSelectionAfterProjectChange` 还原为「只在选中项目非 nil 时 reload」（不清空项目技能）→ `removingLastProjectClearsSkillsImmediately`、`removingLastProjectKeepsOnlyBaseSkills` 失败（已删除项目的技能仍被计数，RED）；M2 移除 `reload()` 在 await 之后的 `selectedProjectPath == projectPath` 身份校验 → `inFlightScanDoesNotRestoreRemovedProjectSkills` 失败（晚到的旧项目扫描结果写回列表，RED）；M3 在任何项目变化时都同步清空旧列表 → `removingSelectedProjectFallsBackToRemainingProject` 失败（改选剩余项目时列表被无谓清空，RED）；还原后 81 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 48 / 48
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 50 / 50
 - P2: 已覆盖 7 / 7
-- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（48 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（50 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 77 条用例位于 `Tests/`，需在目标平台执行 `swift test`（其中 `failedBodyWriteRollsBackMetadata` 用 `chflags` 触发写失败，仅 macOS 编译）
+- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`（其中 `failedBodyWriteRollsBackMetadata` 用 `chflags` 触发写失败，仅 macOS 编译）
 
 ## 测试执行
 
