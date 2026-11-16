@@ -5,7 +5,7 @@
 AppManagerPlugin Manage installed applications for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 19
+测试文件: 2 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Models/`
@@ -26,6 +26,7 @@ AppManagerPlugin Manage installed applications for Lumi.
 - `AppService`
 - `CacheStats`
 - `AppManagerServicing`
+- `AppSearchMembership`
 - `ActionBar`
 - `AppManagerAboutView`
 - `AppManagerDetailView`
@@ -39,6 +40,7 @@ AppManagerPlugin Manage installed applications for Lumi.
 - **综合**（13 条）：由 `v2PluginStateIsStable`、`activatingPluginHidesChatSectionAndDeactivatingRestoresIt`、`localizationCatalogIsPackaged` 等用例锁定；改动该模块时优先跑对应测试文件。其中关联文件扫描的路径穿越防护（`untrustedBundleNameCannotEscapeApplicationSupport`、`emptyBundleNameDoesNotSelectApplicationSupportRoot`、`pathContainmentRejectsEscapesAndDirectoryItself`、`untrustedBundleIdentifierCannotEscapeLibrary`、`validBundleIdentifierStillMatchesLibraryFiles`）要求：CFBundleName 与 CFBundleIdentifier 都必须是安全单路径分量（`AppModel.isValidPathComponent`），且每个候选路径 standardized 后仍位于对应 Library 子目录内（`AppService.isContained`），越界条目不得返回或删除；合法 Bundle ID 仍须正常命中（**回归 #211**）。
 - **卸载归属保护**（4 条）：由 `nameOnlySupportMatchIsNotOwnershipVerified`、`bundleIdSupportMatchIsOwnershipVerified`、`defaultSelectionExcludesUnverifiedNameOnlyMatch`、`defaultSelectionIncludesVerifiedBundleIdMatch` 锁定（**回归 #647**）：仅凭 `CFBundleName` 同名匹配到的 Application Support 目录无法证明归属，`RelatedFile.ownershipVerified` 须为 false，卸载默认勾选不得包含它（避免误删其它厂商数据）；精确 Bundle ID 命中的目录归属确认（true）且仍须默认勾选；App 本体始终确认。改动 `AppService.scanRelatedFiles` 策略 B、`RelatedFile.ownershipVerified` 或 `AppManagerViewModel.scanRelatedFiles` 的默认勾选时优先跑对应测试。
 - **无 Bundle ID 仍可卸载**（2 条）：由 `nilBundleIdentifierStillListsAppItselfForUninstall`、`nilBundleIdentifierAppIsSelectedForUninstallByDefault` 锁定（**回归 #794**）：`AppService.scanRelatedFiles` 必须先加入 App 本体再判断 Bundle ID；缺少 Bundle ID 时跳过依赖标识符的 Library 扫描，但仍须返回 App 本体（`type == .app`、`ownershipVerified == true`），使 `AppManagerViewModel` 默认勾选包含它、卸载入口可用（此前早返回 `[]` 导致无 Bundle ID 的应用无法卸载）。改动 `scanRelatedFiles` 的早返回分支或默认勾选时优先跑对应测试。
+- **搜索成员缓存**（5 条）：由 `sizeOnlyUpdatesDoNotRerunLocalizedSearch`、`queryChangeRerunsLocalizedSearch`、`membershipChangeRerunsLocalizedSearch`、`emptyQueryReturnsAllAppsAndReflectsSizes`、`searchMatchesNameAndBundleIDCaseInsensitively` 锁定（**回归 #1220**）：刷新时 `performScan` 逐个回填 App 大小并多次重发 `installedApps`，搜索过滤不得在每次「仅大小变化」的重发上重跑 N 次本地化名称/Bundle ID 匹配（此前 O(N²) 主线程卡顿）。`AppSearchMembership.filtered(query:apps:)` 以「查询串 + 可搜索投影（path/displayName/bundleIdentifier，**不含 size**）」为键缓存命中集合：仅大小变化时复用缓存（`recomputeCount` 不增），输出仍按 path 成员重建并反映最新 size；查询串或成员变化时才重算；空查询返回全部并反映 size；名称与 Bundle ID 均大小写不敏感匹配。改动 `AppSearchMembership` 的键、缓存判定或 `AppManagerViewModel` 搜索管道时优先跑对应测试。
 
 ## 测试用例清单
 
@@ -74,28 +76,44 @@ AppManagerPlugin Manage installed applications for Lumi.
 | 18 | 无 Bundle ID 卸载 | 无 Bundle ID 仍列出 App 本体（回归 #794） | 临时 home，Info.plist 缺少 CFBundleIdentifier 的应用 | 扫描关联文件 | 必须返回 App 本体（type=.app，ownershipVerified=true），且仅 1 条 | P0 | ✅ 已覆盖 | `nilBundleIdentifierStillListsAppItselfForUninstall` |
 | 19 | 无 Bundle ID 卸载 | 无 Bundle ID 的 App 默认勾选可卸载（回归 #794） | 同 18，注入临时 home 的 AppService | ViewModel 扫描关联文件 | 默认勾选包含 App 本体，卸载按钮可用 | P1 | ✅ 已覆盖 | `nilBundleIdentifierAppIsSelectedForUninstallByDefault` |
 
-> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
+### 搜索成员缓存（回归 #1220）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 20 | 搜索成员缓存 | 仅大小变化不得重跑本地化搜索（回归 #1220） | Alpha/Beta/Gamma 三个 App，查询 `alpha` | 首次过滤后模拟 20 轮逐 App 大小回填重发 | 每轮结果仍为 `["Alpha"]` 且反映最新 size，`recomputeCount` 始终为 1 | P0 | ✅ 已覆盖 | `sizeOnlyUpdatesDoNotRerunLocalizedSearch` |
+| 21 | 搜索成员缓存 | 查询串变化才重算命中集合（回归 #1220） | Alpha/Beta 两个 App | 先查 `alpha` 再查 `beta` | 结果分别为 `["Alpha"]`/`["Beta"]`，`recomputeCount` 由 1 增至 2 | P1 | ✅ 已覆盖 | `queryChangeRerunsLocalizedSearch` |
+| 22 | 搜索成员缓存 | 成员变化才重算命中集合（回归 #1220） | Alpha/Beta，查询 `alpha` | 追加 Alphabet 后再次过滤 | 结果为 `["Alpha","Alphabet"]`，`recomputeCount` 由 1 增至 2 | P1 | ✅ 已覆盖 | `membershipChangeRerunsLocalizedSearch` |
+| 23 | 搜索成员缓存 | 空查询返回全部并反映最新大小（回归 #1220） | Alpha/Beta 两个 App，查询为空 | 首次过滤后回填 Alpha size=4096 再过滤 | 两次均返回 2 个 App，第二次首项 size=4096，`recomputeCount` 始终为 1 | P1 | ✅ 已覆盖 | `emptyQueryReturnsAllAppsAndReflectsSizes` |
+| 24 | 搜索成员缓存 | 名称与 Bundle ID 大小写不敏感匹配（回归 #1220） | Alpha(com.test.alpha)/Beta(com.test.beta) | 分别查 `ALPHA`、`COM.TEST.BETA`、`zzz` | 依次命中 `["Alpha"]`、`["Beta"]`、空集 | P1 | ✅ 已覆盖 | `searchMatchesNameAndBundleIDCaseInsensitively` |
+
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#794）：把 `AppService.scanRelatedFiles` 无 Bundle ID 分支的 `return relatedFiles` 改回 `return []`（恢复缺陷），`nilBundleIdentifierStillListsAppItselfForUninstall`、`nilBundleIdentifierAppIsSelectedForUninstallByDefault` 两条转红（扫描结果为空、拿不到 App 本体），其余 17 条（合法 Bundle ID / 路径穿越 / 归属保护 / 缓存 / 插件状态）保持绿；还原后 19 条全绿。
 
+> 变异验证（#1220，`AppSearchMembership.filtered`）：
+> - **M1** 缓存判定 `if query != lastQuery || keys != lastKeys` 改为 `if true`（每次重算，复现 O(N²)）→ `sizeOnlyUpdatesDoNotRerunLocalizedSearch`、`emptyQueryReturnsAllAppsAndReflectsSizes` 转红（`recomputeCount != 1`），其余 3 条仍绿。
+> - **M2** 把 `size` 加入 `Key` 与投影（大小变化即触发重算）→ 同上两条转红（`recomputeCount != 1`），其余 3 条仍绿。
+> - **M3** 忽略缓存命中集合、末尾直接 `return apps`（不过滤）→ `sizeOnlyUpdatesDoNotRerunLocalizedSearch`、`queryChangeRerunsLocalizedSearch`、`membershipChangeRerunsLocalizedSearch`、`searchMatchesNameAndBundleIDCaseInsensitively` 四条转红（结果含未命中项），`emptyQueryReturnsAllAppsAndReflectsSizes` 仍绿。
+> - 还原完整修复 → 24 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 12 / 12
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 16 / 16
 - P2: 已覆盖 1 / 1
-- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（16 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
