@@ -733,9 +733,16 @@ public final class MessageManager: MessageManaging, SuperLog {
         conversationID: UUID
     ) {
         let store = self.store
-        persistQueue.async {
-            _ = store?.updateMessage(id: message.id, content: message.content)
-            self.dequeuePending(id: message.id, conversationID: conversationID)
+        persistQueue.async { [weak self] in
+            let saved = store?.updateMessage(id: message.id, content: message.content) ?? false
+            if saved {
+                self?.dequeuePending(id: message.id, conversationID: conversationID)
+            } else {
+                // 落盘失败（磁盘无记录 / 读失败 / save 失败）：必须保留 pending。
+                // 否则消息既不在磁盘也不在内存，从所有读路径静默消失（#151）。
+                // 与 persistLater 的 catch 同形态：保留缓冲 + 暴露可观察错误。
+                Self.logger.error("\(Self.t)更新落盘失败，保留 pending message=\(message.id.uuidString.prefix(8))… conversation=\(conversationID.uuidString.prefix(8))…")
+            }
         }
     }
 
