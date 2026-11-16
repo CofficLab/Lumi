@@ -599,6 +599,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 224 | 回车 | 命令派发层对 Shift/Option/Command/Control + 回车都交回 AppKit 插换行（**回归 #644**） | 回车命令选择器 + 各修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags:)` | 四种修饰键均返回 true（不发送） | P0 | ✅ 已覆盖 | `returnCommandDefersToLineBreakForAllModifiers` |
 | 225 | 回车 | 无修饰键的回车命令仍走发送（**回归 #644**） | 回车命令选择器、无修饰键 | 调用 `shouldDeferReturnCommandToLineBreak(modifierFlags: [])` | 返回 false（发送） | P1 | ✅ 已覆盖 | `returnCommandWithoutModifiersSubmits` |
 | 226 | 回车 | 命令派发与直接按键规则对同一修饰键结论一致（**回归 #644**） | 6 组修饰键组合 | 对每组比较 `shouldDeferReturnCommandToLineBreak` 与 `!shouldHandleReturnKey` | 两者恒相等，两条路径不分叉 | P0 | ✅ 已覆盖 | `commandDispatchMatchesDirectKeyRule` |
+| 227 | 回归 | 拖入目录插入路径后光标移到末尾，后续输入不插到路径之前（**回归 #645**） | 真实编辑器 Coordinator + Input Provider；草稿 "look at"，光标在末尾 offset 7 | `insertDirectoryPath` 入队纯文本块后走 `coordinator.insert` 同一入口 | 正文变为 "look at\n/tmp/pkg"；编辑器选区与 `capability.inputCursorPosition` 均落在末尾（> 旧 offset 7） | P1 | ✅ 已覆盖 | `directoryDropAdvancesCaretPastInsertedPath` |
 
 > **#601 变异验证**（恢复后 GREEN）：去掉 `makeNSView` 里「用 binding 文本初始化
 > 编辑器 + `noteBindingTextPushedDown`」这段 → ID 222 / 223 RED（重建后的空编辑器
@@ -620,12 +621,18 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > → ID 226 RED（两条路径结论不再一致）。三处变异分别锁定「命令派发豁免全部改行修饰键」
 > 「无修饰键仍发送」「两条路径共用同一集合」。
 
+> **#645 变异验证**（恢复后 GREEN）：在 `Coordinator.insert` 的纯文本分支末尾补
+> `textView.setSelectedRange(insertionRange)`，把光标还原到插入前的旧位置 → ID 227 RED
+> （编辑器选区与 `capability.inputCursorPosition` 都停在旧 offset 7，后续输入会插到
+> 目录路径之前）。变异锁定「插入路径后必须把光标推进到末尾并经 binding 发布回能力层」
+> 这一契约；其余 14 条编辑器用例仍 GREEN，说明变异精确落在目录拖放的光标推进路径。
+
 ## 覆盖率统计
 
 - P0: 已覆盖 83 / 83
-- P1: 已覆盖 125 / 125
+- P1: 已覆盖 126 / 126
 - P2: 已覆盖 18 / 18
-- **合计: 226 / 226**（仅表示清单场景，非源码覆盖率）
+- **合计: 227 / 227**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
