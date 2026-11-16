@@ -39,12 +39,15 @@ struct BrewFormulaFullNameTests {
         #expect(formula.name == "pulumi/tap/pulumi")
     }
 
-    @Test("getOutdated 的 Formula 保留 full_name")
+    @Test("getOutdated 的 Formula 保留 Tap 全名身份")
     func getOutdatedFormulaKeepsFullName() async throws {
-        let service = makeService(stdout: tapFormulaJSON)
+        // outdated 没有 full_name 字段，name 本身已含 tap 前缀（#847 真实 schema）。
+        let json = #"{"formulae":[{"name":"pulumi/tap/pulumi","installed_versions":["2.0"],"current_version":"3.0","pinned":false,"pinned_version":null}],"casks":[]}"#
+        let service = makeService(stdout: json)
         let packages = try await service.getOutdated()
         let formula = try #require(packages.first)
         #expect(formula.name == "pulumi/tap/pulumi")
+        #expect(formula.id == "pulumi/tap/pulumi")
     }
 
     @Test("没有 full_name 的 Formula 回退到短 name（无回归）")
