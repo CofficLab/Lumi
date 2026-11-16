@@ -398,11 +398,20 @@ final class TitleService: SuperLog {
     /// ## 边界
     ///
     /// 只处理**开头**的提醒块：消息中间出现同名标签是用户自己的内容，不该动。
+    /// 开头允许有空白（换行/空格）——IDE 常在提醒块前注入换行，连续提醒块之间
+    /// 也可能有空行；这些空白必须跳过，否则清理失败、XML 噪声会被当成标题持久化
+    /// 并截断真正的用户请求（#783）。
     nonisolated static func strippingInjectedReminders(_ text: String) -> String {
         var result = text
-        while result.range(of: "<system-reminder", options: .caseInsensitive)?.lowerBound == result.startIndex,
-              let closeRange = result.range(of: "</system-reminder>", options: .caseInsensitive) {
-            result = String(result[closeRange.upperBound...])
+        while true {
+            // 跳过开头空白后再判断是否紧跟提醒块；只剥离「开头（含前导空白）」
+            // 的连续提醒块，遇到真实用户内容即停止。
+            let candidate = result.drop(while: { $0.isWhitespace })
+            guard candidate.range(of: "<system-reminder", options: .caseInsensitive)?.lowerBound == candidate.startIndex,
+                  let closeRange = candidate.range(of: "</system-reminder>", options: .caseInsensitive) else {
+                break
+            }
+            result = String(candidate[closeRange.upperBound...])
         }
         return result
     }

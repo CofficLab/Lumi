@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 78 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 84 条用例。
 
 平台: iOS 17+
-测试文件: 10 个，用例总数: 78
+测试文件: 11 个，用例总数: 84
 
 核心组件（源码目录）:
 - `Observers/`
@@ -38,6 +38,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleUpdateTool**（10 条）：由 `updatesSelectedTitle`、`trimsWhitespace`、`reportsMissingProvider`、`executeResultThrowsOnPersistenceFailure`、`executeResultSuccessIsNotError` 等用例锁定；失败分支（服务不可用/未选中/写库失败）统一抛出 `ToolExecutionError`，带 context 的 `executeResult` 同样传播失败由宿主标记 `isError`，不得包成成功结果（**回归 #651**）。改动该模块时优先跑对应测试文件。
 - **TitleUtilityRouting**（4 条）：由 `titleRoutesToUtilityModel`、`titleWithoutDeclarationUsesMainModel`、`titleUsageRecordedToLedger` 等用例锁定。声明轻量模型时标题路由到轻量模型、未声明时沿用主模型；用量按 `.title` 用途记入账本并带服务模型，供应商未报用量时记估算值且不为零（**#1158**）。改动该模块时优先跑对应测试文件。
+- **InjectedReminderWhitespace**（6 条）：由 `stripsReminderAfterLeadingNewline`、`stripsReminderAfterLeadingSpaces`、`stripsConsecutiveRemindersSeparatedByBlankLine`、`strippingHelperSkipsLeadingAndInterBlockWhitespace` 等用例锁定。`strippingInjectedReminders` 每轮先跳过前导空白再判断是否紧跟提醒块，逐块剥离到真实用户内容；前导换行/空格、块间空行都不得让 XML 噪声漏进占位标题（**回归 #783**）。只处理开头的连续提醒块：前导空白后先出现真实正文时，正文中间的同名标签必须原样保留。改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -121,8 +122,14 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 76 | TitleUpdateTool | executeResult 成功时不带错误标记（**回归 #651**） | 有效 context 会话，写库成功 | 调用 `executeResult(context:arguments:)` | 结果 isError == false 且含成功文案，与失败路径形成对照 | P1 | ✅ 已覆盖 | `executeResultSuccessIsNotError` |
 | 77 | TitleServiceBackfill | 回填读取首条消息期间用户改了标题，旧回填不得覆盖新标题（**回归 #466**） | 无标题对话，门闩让 firstUserMessage 读取挂起 | 读取窗口内 `updateConversationTitle` 写新标题后放行读取 | backfilled == 0，标题仍为用户新写入值，不消耗 LLM | P0 | ✅ 已覆盖 | `backfillDoesNotOverwriteTitleSetDuringMessageRead` |
 | 78 | TitleServiceBackfill | 回填读取期间无人改标题时仍正常补写占位标题（**回归 #466** 护栏） | 无标题对话，门闩让读取挂起 | 读取窗口内不改标题，直接放行 | backfilled == 1，补写首条消息占位标题，二次复核不过宽 | P1 | ✅ 已覆盖 | `backfillStillWritesWhenNoTitleSetDuringRead` |
+| 79 | InjectedReminderWhitespace | placeholderTitle：前导换行后的提醒块仍被去掉，真实请求不得被 XML 噪声替换（**回归 #783**） | 首条用户消息以换行开头，后接 system-reminder 块与真实请求 | 生成占位标题 | 标题等于真实请求，不含 system-reminder | P0 | ✅ 已覆盖 | `stripsReminderAfterLeadingNewline` |
+| 80 | InjectedReminderWhitespace | placeholderTitle：前导空格后的提醒块仍被去掉（**回归 #783**） | 首条用户消息以空格开头，后接 system-reminder 块与真实请求 | 生成占位标题 | 标题等于真实请求 | P0 | ✅ 已覆盖 | `stripsReminderAfterLeadingSpaces` |
+| 81 | InjectedReminderWhitespace | placeholderTitle：空行分隔的连续提醒块全部被去掉（**回归 #783**） | 两个 system-reminder 块以空行分隔，后接真实请求 | 生成占位标题 | 两块均被剥离，标题等于真实请求，不含 system-reminder | P0 | ✅ 已覆盖 | `stripsConsecutiveRemindersSeparatedByBlankLine` |
+| 82 | InjectedReminderWhitespace | strippingInjectedReminders：跳过前导与块间空白，逐块剥离到真实内容（**回归 #783**） | 前导空白 + 两个以换行分隔的提醒块 + 尾部正文 | 直接调用剥离助手 | 结果不含 system-reminder，保留尾部正文 | P1 | ✅ 已覆盖 | `strippingHelperSkipsLeadingAndInterBlockWhitespace` |
+| 83 | InjectedReminderWhitespace | 边界：前导空白后是真实正文时，中间的同名标签不得误删（**回归 #783** 护栏） | 前导空白后先有正文，正文中间含 system-reminder 标签 | 调用剥离助手与占位标题 | 助手原样返回，占位标题以正文开头并保留中间标签 | P1 | ✅ 已覆盖 | `keepsInnerReminderAfterLeadingWhitespaceAndRealText` |
+| 84 | InjectedReminderWhitespace | 无提醒块时前导空白不被误删（交由后续折叠处理） | 仅前导空白 + 普通请求，无提醒块 | 调用剥离助手与占位标题 | 助手原样返回，占位标题折叠空白后等于请求 | P2 | ✅ 已覆盖 | `leavesLeadingWhitespaceWhenNoReminder` |
 
-> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **84 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#799）：把 `backfillUntitledConversations` 的查询改回 `untitledConversationIDs(limit: Self.backfillLimit)`（只取前 200 条窗口），`skippedWindowDoesNotBlockValidConversation` 立即变红（backfilled == 0，窗口外的有效对话永远轮不到）；恢复 `limit: Int.max` 全量取 ID 后重新变绿。`backfillStopsAtWriteCap` 锁定「补满 200 条即停」的有界语义。
@@ -131,23 +138,25 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 
 > 变异验证（#466）：把 `backfillUntitledConversations` 写前的二次复核 `guard await shouldApplyGeneratedTitle(...)` 删除（还原读取后无条件写占位标题的旧缺陷）→ `backfillDoesNotOverwriteTitleSetDuringMessageRead` 转红（backfilled == 1、用户新标题被占位标题覆盖，2 处断言失败），护栏 `backfillStillWritesWhenNoTitleSetDuringRead` 与其余 6 条回填用例仍绿；恢复二次复核后 78 条全绿。门闩 `BackfillReadGate` 让 `firstUserMessage` 读取挂起，测试在窗口内写入新标题后再放行，确定性构造「旧读取晚到」。
 
+> 变异验证（#783）：把 `strippingInjectedReminders` 每轮的 `let candidate = result.drop(while: { $0.isWhitespace })` 改回 `let candidate = result[...]`（还原「提醒块必须紧贴 startIndex 才剥离」的旧缺陷）→ `stripsReminderAfterLeadingNewline`、`stripsReminderAfterLeadingSpaces`、`stripsConsecutiveRemindersSeparatedByBlankLine`、`strippingHelperSkipsLeadingAndInterBlockWhitespace` 全部转红（前导/块间空白让 XML 噪声漏进标题，6 处断言失败），边界护栏 `keepsInnerReminderAfterLeadingWhitespaceAndRealText`、`leavesLeadingWhitespaceWhenNoReminder` 仍绿；恢复跳过空白后 84 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 23 / 23
-- P2: 已覆盖 38 / 38
-- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 25 / 25
+- P2: 已覆盖 39 / 39
+- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（23 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（25 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（39 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 84 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
