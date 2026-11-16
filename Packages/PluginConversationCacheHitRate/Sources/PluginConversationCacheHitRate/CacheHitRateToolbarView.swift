@@ -73,6 +73,12 @@ struct CacheHitRateToolbarView: View {
                 switch event {
                 case let .selectedConversationChanged(id):
                     selectedConversationID = id
+                    // 选择一变就立即清空展示态，避免 debounce + 读盘期间把上一会话的数据当作新会话（#599）。
+                    let reset = CacheHitRateSelectionGate.reset(forConversationID: id)
+                    stats = reset.stats
+                    history = reset.history
+                    latestSnapshot = []
+                    unavailabilityReason = reset.unavailabilityReason
                 case .messagesChanged:
                     messageRefreshRevision &+= 1
                 }
@@ -164,5 +170,27 @@ enum CacheHitRateRefreshGate {
 enum CacheHitRateHistoryGate {
     static func resolve(isPopoverPresented: Bool, snapshot: [Message]) -> CacheHitRateHistory {
         isPopoverPresented ? CacheHitRateHistory.build(from: snapshot) : .empty
+    }
+}
+
+/// 切换选中会话时的即时清空门禁（#599）。
+///
+/// 选择变化到新会话快照返回之间隔着 150ms debounce 与异步读盘。此前 observer 只
+/// 更新 `selectedConversationID`，不清空展示态，于是上一会话的命中率、历史与不可用
+/// 原因在这段时间里被当作新会话的数据展示。选择一变就立即归零：选中新会话显示等待态，
+/// 无会话显示未选择态，旧统计绝不会被归到新会话名下。
+enum CacheHitRateSelectionGate {
+    struct Reset: Equatable {
+        let stats: CacheHitRateStats
+        let history: CacheHitRateHistory
+        let unavailabilityReason: CacheHitRateUnavailability
+    }
+
+    static func reset(forConversationID id: UUID?) -> Reset {
+        Reset(
+            stats: .empty,
+            history: .empty,
+            unavailabilityReason: id == nil ? .noConversationSelected : .waitingForResponse
+        )
     }
 }

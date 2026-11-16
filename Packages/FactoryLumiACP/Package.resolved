@@ -1,5 +1,5 @@
 {
-  "originHash" : "f2b040acae2a600e3e17cd5c747424c4ab2ca4102eb66c550424bfef7cd400f9",
+  "originHash" : "a2dfbc8f29903f7300fef56bbec0eb20c8da20aaeb7ba85a28ab92af271b72db",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginRootView.git",
       "state" : {
-        "revision" : "da93b69e855e638f3062d46c6c41cd02244f2d39",
-        "version" : "1.3.1"
+        "revision" : "3ff9eeef9bb850f16dec21d42706fefff8768e2f",
+        "version" : "1.3.2"
       }
     },
     {
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "218327a2a2268a759d0c064bbbcd4b46c400a9d4",
-        "version" : "1.24.1"
+        "revision" : "06272ae385bcad8993e199cbd4b957f4f65c2a6c",
+        "version" : "1.25.0"
       }
     },
     {
@@ -285,8 +285,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-system.git",
       "state" : {
-        "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
-        "version" : "1.8.1"
+        "revision" : "640e5755b5826f4437eaeedd366fd776737db62c",
+        "version" : "1.9.0"
       }
     },
     {

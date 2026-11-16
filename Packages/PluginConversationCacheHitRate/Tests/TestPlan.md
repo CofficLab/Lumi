@@ -5,7 +5,7 @@
 PluginConversationCacheHitRate Lumi 编辑器插件。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 68
+测试文件: 8 个，用例总数: 72
 
 核心组件（源码目录）:
 - `Models/`
@@ -33,6 +33,7 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 - **CacheHitRateObserverAndLifecycle**（26 条）：由 `observerReplaysCurrentSelectionOnInit`、`observerForwardsSelectionChanges`、`observerForwardsEveryMessageChangeKind` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CacheHitRateRefreshGate**（4 条）：由 `latestRevisionForCurrentConversationIsPublished`、`supersededRevisionIsDropped`、`cancelledRefreshIsDropped` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CacheHitRateHistoryGate**（3 条）：由 `closedPopoverSkipsHistoryBuild`、`openPopoverBuildsHistoryFromSnapshot`、`openPopoverWithEmptySnapshotIsEmpty` 锁定——趋势历史只在弹窗打开时构建，关闭时返回空历史，工具栏数值（stats）不受影响（**#1226**）。
+- **CacheHitRateSelectionGate**（4 条）：由 `selectionResetClearsStats`、`selectionResetClearsHistory`、`selectionResetShowsWaitingForNewConversation` 等用例锁定——切换选中会话时立即清空命中率/历史/不可用原因，旧会话数据不得归到新会话名下（**#599**）。
 - **CacheHitRateExportOffMain**（2 条）：由 `writesOffMain`、`writeFailureThrows` 锁定——卡片导出 PNG 的编码与落盘必须在后台线程完成，失败时抛出而非静默（**#1225**）。
 - **综合**（16 条）：由 `cacheHitRatePluginInstantiates`、`cacheHitRateToolbarStateForwardsTypedEvents`、`cacheHitRateStatsUseTypedTokenFields` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -108,30 +109,38 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 | 66 | CacheHitRateHistoryGate | 弹窗关闭时不得构建趋势历史（**#1226**） | 含 2 条有效 assistant 的快照，弹窗关闭 | 调用 `resolve(isPopoverPresented: false, …)` | 返回空历史 | P0 | ✅ 已覆盖 | `closedPopoverSkipsHistoryBuild` |
 | 67 | CacheHitRateHistoryGate | 弹窗打开时用快照构建历史，与直接 build 一致（**#1226**） | 同上快照，弹窗打开 | 调用 `resolve(isPopoverPresented: true, …)` | 等于 `CacheHitRateHistory.build`、2 个采样点 | P1 | ✅ 已覆盖 | `openPopoverBuildsHistoryFromSnapshot` |
 | 68 | CacheHitRateHistoryGate | 弹窗打开但快照为空时历史为空（**#1226**） | 空快照，弹窗打开 | 调用 `resolve(isPopoverPresented: true, snapshot: [])` | 返回空历史 | P2 | ✅ 已覆盖 | `openPopoverWithEmptySnapshotIsEmpty` |
+| 69 | CacheHitRateSelectionGate | 切到新会话时立即清空命中率统计（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | stats 为空、sampleCount=0 | P0 | ✅ 已覆盖 | `selectionResetClearsStats` |
+| 70 | CacheHitRateSelectionGate | 切到新会话时立即清空趋势历史（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | history 为空 | P1 | ✅ 已覆盖 | `selectionResetClearsHistory` |
+| 71 | CacheHitRateSelectionGate | 切到新会话时显示等待态而非上一会话的不可用原因（**#599**） | 已选中某会话 | 调用 `reset(forConversationID: 新ID)` | 原因为 waitingForResponse | P1 | ✅ 已覆盖 | `selectionResetShowsWaitingForNewConversation` |
+| 72 | CacheHitRateSelectionGate | 切到无会话时显示未选择态（**#599**） | 无选中会话 | 调用 `reset(forConversationID: nil)` | 原因为 noConversationSelected | P2 | ✅ 已覆盖 | `selectionResetShowsNoSelectionForNil` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#1226）：把 `CacheHitRateHistoryGate.resolve` 改回无条件 `build`（去掉弹窗判断），
-> `closedPopoverSkipsHistoryBuild` 立即变红（关闭时历史非空）；恢复门禁后 68 条全绿。
+> `closedPopoverSkipsHistoryBuild` 立即变红（关闭时历史非空）；恢复门禁后全绿。
+
+> 变异验证（#599）：M1 把 `CacheHitRateSelectionGate.reset` 的 stats 改为非空（`compute(previewMessages)`）→
+> `selectionResetClearsStats` 变红；M2 把 history 改为非空（`build(previewMessages)`）→ `selectionResetClearsHistory` 变红；
+> M3 把原因写死为 `.noConversationSelected` → `selectionResetShowsWaitingForNewConversation` 变红；还原后 72 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 53 / 53
-- P2: 已覆盖 6 / 6
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 55 / 55
+- P2: 已覆盖 7 / 7
+- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（53 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（55 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 72 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

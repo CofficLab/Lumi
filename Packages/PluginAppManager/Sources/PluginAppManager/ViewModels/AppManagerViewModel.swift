@@ -39,6 +39,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     private var activeScanID: UUID?
     private var relatedFilesTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
+    private let searchMembership = AppSearchMembership()
 
     init(appService: any AppManagerServicing = AppService()) {
         self.appService = appService
@@ -47,12 +48,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         $searchText
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .combineLatest($installedApps)
-            .map { (text, apps) -> [AppModel] in
-                if text.isEmpty { return apps }
-                return apps.filter { app in
-                    app.displayName.localizedCaseInsensitiveContains(text) ||
-                    (app.bundleIdentifier?.localizedCaseInsensitiveContains(text) ?? false)
-                }
+            .map { [searchMembership] (text, apps) -> [AppModel] in
+                searchMembership.filtered(query: text, apps: apps)
             }
             .sink { [weak self] apps in
                 self?.filteredApps = apps
