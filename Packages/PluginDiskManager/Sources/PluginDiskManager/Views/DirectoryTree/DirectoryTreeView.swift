@@ -43,9 +43,9 @@ struct DirectoryTreeRow: View {
     let entry: DirectoryEntry
     @ObservedObject var viewModel: DirectoryTreeViewModel
 
-    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
-    private var icon: NSImage {
-        NSWorkspace.shared.icon(forFile: entry.path)
+    // 图标按路径缓存，避免每次 body 求值重复同步 workspace 查询（#1223）。
+    @MainActor private var icon: NSImage {
+        WorkspaceIconCache.shared.icon(forPath: entry.path)
     }
 
     var body: some View {
