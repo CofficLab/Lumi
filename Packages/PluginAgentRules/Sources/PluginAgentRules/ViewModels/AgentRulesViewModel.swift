@@ -23,7 +23,14 @@ final class AgentRulesViewModel: ObservableObject {
     /// 加载错误信息。
     @Published private(set) var errorMessage: String?
 
-    init() {}
+    /// 规则加载入口。默认走真实服务；测试可注入受控闭包以构造「旧请求晚到」。
+    private let listRules: @Sendable (String) async throws -> [AgentRuleMetadata]
+
+    init(listRules: @escaping @Sendable (String) async throws -> [AgentRuleMetadata] = { path in
+        try await AgentRulesService.shared.listRules(projectPath: path)
+    }) {
+        self.listRules = listRules
+    }
 
     // MARK: - 派生状态
 
@@ -95,8 +102,13 @@ final class AgentRulesViewModel: ObservableObject {
         }
 
         do {
-            rules = try await AgentRulesService.shared.listRules(projectPath: projectPath)
+            let loaded = try await listRules(projectPath)
+            // await 期间用户可能已切到别的项目：旧项目的晚到结果不得覆盖新选中
+            // 项目的规则列表（#465）。写回前比对身份，不匹配就直接丢弃。
+            guard selectedProjectPath == projectPath else { return }
+            rules = loaded
         } catch {
+            guard selectedProjectPath == projectPath else { return }
             errorMessage = error.localizedDescription
             rules = []
         }
