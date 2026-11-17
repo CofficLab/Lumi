@@ -5,7 +5,7 @@
 PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 58
+测试文件: 8 个，用例总数: 60
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,7 +39,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 - **MindMapDesignerPlugin**（11 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MindMapMarkdownCodec 健壮性**（11 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
-- **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
+- **MindMapStore 写前同步**（5 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState`、`nodeEditDoesNotReloadUnrelatedMaps`、`nodeEditAfterExternalDeletionFailsWithoutResurrecting` 锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
 - **MindMapStore 保存失败**（2 条）：由 `failedSavePropagatesAndKeepsStateUnchanged`、`successfulSaveUpdatesMemoryAndDisk` 用例锁定；`updateMap` 必须先落盘再提交内存，目录不可写导致保存失败时把错误抛给工具并写入 `lastError`，内存与磁盘都保持旧值，不得误报成功（#429）。
@@ -107,8 +107,10 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 56 | MindMap 布局缓存与查找 | 字典化查找后边收集完整且正确（**回归 #1191**） | 根+A/B+A1 的 right 树 | 调用 `MindMapLayoutEngine.layout` | 边集恰为 r->a/r->b/a->a1 | P1 | ✅ 已覆盖 | `layoutCollectsAllVisibleEdges` |
 | 57 | MindMap 布局缓存与查找 | 折叠子树不得产生边也不得布局其子节点（**回归 #1191**） | 折叠节点 a 含子 a1 | 调用 `layout` | 边仅 r->a，nodes 无 a1 | P0 | ✅ 已覆盖 | `layoutSkipsCollapsedSubtreeEdges` |
 | 58 | MindMap 布局缓存与查找 | 布局查找必须 O(N)，大图不得卡顿（**回归 #1191**） | 1 万节点宽树 | 计时调用 `layout` | 节点数=count、边数=count-1 且耗时 < 3s | P0 | ✅ 已覆盖 | `layoutHandlesLargeMapLinearly` |
+| 59 | MindMapStore 写前同步 | 节点编辑只重读目标导图，不再全量解码目录（**回归 #1190**） | 目录下有目标导图与无关导图，无关导图文件已损坏 | 损坏无关文件后 `updateNode` 目标导图 | 内存列表仍保留无关导图条目，目标编辑正常落盘 | P1 | ✅ 已覆盖 | `nodeEditDoesNotReloadUnrelatedMaps` |
+| 60 | MindMapStore 写前同步 | 别处删除目标导图后，节点编辑按找不到失败且不得复活文件（**回归 #1190**） | 目标导图文件已被外部删除 | `updateNode` 该导图 | 抛 `mapNotFound`，文件不复活，内存列表同步丢弃 | P0 | ✅ 已覆盖 | `nodeEditAfterExternalDeletionFailsWithoutResurrecting` |
 
-> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **60 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#429）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -121,21 +123,21 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 38 / 38
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 2 / 2
-- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
+- **合计: 60 / 60**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

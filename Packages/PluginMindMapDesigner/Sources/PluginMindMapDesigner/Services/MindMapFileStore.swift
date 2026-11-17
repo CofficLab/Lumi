@@ -1,5 +1,15 @@
 import Foundation
 
+/// 目标地图在磁盘上的状态。
+public enum MindMapDiskState {
+    /// 文件存在且解码成功。
+    case loaded(MindMap)
+    /// 目录下没有匹配该 id 的文件。
+    case missing
+    /// 文件存在但读取或解码失败（损坏）。
+    case unreadable
+}
+
 /// 与作用域无关的纯文件系统思维导图存储。
 ///
 /// 所有方法接收一个 `storagePath`（目录路径），在其下读写
@@ -19,6 +29,31 @@ public enum MindMapFileStore {
         decoder.dateDecodingStrategy = .iso8601
         return decoder
     }()
+
+    /// 按文件名中的 id 前缀定位单个导图并读取其当前磁盘状态。
+    ///
+    /// 写前同步只需要对齐将被写回的那一个文件；全量 `loadAll` 会把目录下
+    /// 每个文件都读盘解码，单次节点编辑也要付出全部导图的代价（#1190）。
+    public static func diskState(forMapID id: String, storagePath: String) -> MindMapDiskState {
+        guard !storagePath.isEmpty else { return .missing }
+        let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
+        guard
+            let urls = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        else { return .missing }
+        let suffix = "-\(id.prefix(8)).json"
+        guard
+            let url = urls.first(where: {
+                $0.pathExtension.lowercased() == "json" && $0.lastPathComponent.hasSuffix(suffix)
+            })
+        else { return .missing }
+        guard let data = try? Data(contentsOf: url) else { return .unreadable }
+        guard let map = try? decoder.decode(MindMap.self, from: data) else { return .unreadable }
+        return .loaded(map)
+    }
 
     /// 列出指定目录下的全部思维导图（按文件名排序）。
     public static func loadAll(storagePath: String) -> [MindMap] {
