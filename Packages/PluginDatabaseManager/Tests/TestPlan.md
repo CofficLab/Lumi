@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 21 个，用例总数: 182
+测试文件: 22 个，用例总数: 185
 
 核心组件（源码目录）:
 - `Agent/`
@@ -355,8 +355,11 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 180 | MySQL 重复列名解码 | JOIN 形态首尾同名列夹一个异名列，三列各按位置解码 | "id"/"name"/"id" 三列，值 "10"/"alice"/"20" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("10"), .string("alice"), .string("20")]` | P0 | ✅ 已覆盖 | `joinLikeDuplicateNamesAcrossThreeColumnsDecodeByPosition` |
 | 181 | MySQL 重复列名解码 | 重复列名中第二列为 NULL 时按位置解码为 null，不得回填首列值 | 两个同名 "id" 列，值 ["1", nil] | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .null]`，而非两列都 "1" | P0 | ✅ 已覆盖 | `duplicateColumnNameWithNullSecondValueDecodesPositionally` |
 | 182 | MySQL 重复列名解码 | 唯一列名仍按位置正确解码（重构不回归正常路径） | "id"/"name" 两列，值 "1"/"alice" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .string("alice")]` | P1 | ✅ 已覆盖 | `uniqueColumnNamesStillDecodeCorrectly` |
+| 183 | 查询结果列宽 | 列宽只采样前 50 行，超出部分不影响宽度（回归 #1253） | 60 行数据，第 51 行起内容更长 | 调用 `QueryResultView.columnWidths(for:)` | 等于 `[264]`（30 字符 × 8pt + 24pt），未按第 51 行后的长内容放大 | P1 | ✅ 已覆盖 | `samplesOnlyFirst50Rows` |
+| 184 | 查询结果列宽 | 列宽钳制在上下限内，列名长度是下限基准（回归 #1253） | 短内容列与 1000 字符长内容列 | 调用 `QueryResultView.columnWidths(for:)` | 短列取下限 80，长列取上限 320 | P1 | ✅ 已覆盖 | `clampsToBounds` |
+| 185 | 查询结果列宽 | NULL 与 BLOB 的文本化不参与膨胀，估算结果稳定（回归 #1253） | 10KB BLOB 行与 NULL 行 | 两次调用 `QueryResultView.columnWidths(for:)` | 两次结果一致，等于 `"<BLOB 10000 bytes>"` 18 字符的估算值 | P1 | ✅ 已覆盖 | `handlesNullAndBlobValuesStably` |
 
-> 说明：全部 **182 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **185 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -388,20 +391,20 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 ## 覆盖率统计
 
 - P0: 已覆盖 92 / 92
-- P1: 已覆盖 87 / 87
+- P1: 已覆盖 90 / 90
 - P2: 已覆盖 3 / 3
-- **合计: 182 / 182**（仅表示清单场景，非源码覆盖率）
+- **合计: 185 / 185**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（92 条）
-- **P1**: 其余功能性用例（87 条）
+- **P1**: 其余功能性用例（90 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 182 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 185 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
