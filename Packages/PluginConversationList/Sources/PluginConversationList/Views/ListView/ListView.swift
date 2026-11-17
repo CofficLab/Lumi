@@ -10,7 +10,13 @@ import SwiftUI
 ///
 /// View 只依赖 `ConversationListViewModel`，不持有任何 Provider / Observer。
 struct ListView: View {
+    /// 相对时间的周期性 tick：列表空闲时也要驱动重算，否则「刚刚」等
+    /// 文本会一直停留在上一次无关重绘的值（#638）。static 保证所有
+    /// 渲染轮次共享同一个 Timer。
+    private static let relativeTimeTick = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+
     @ObservedObject private var viewModel: ConversationListViewModel
+    @State private var timeTick = Date()
 
     init(viewModel: ConversationListViewModel) {
         self.viewModel = viewModel
@@ -22,6 +28,9 @@ struct ListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onReceive(Self.relativeTimeTick) { tick in
+            timeTick = tick
+        }
         .task {
             await viewModel.loadInitialIfNeeded()
         }
@@ -54,6 +63,7 @@ struct ListView: View {
                     ForEach(viewModel.conversations, id: \.id) { conversation in
                         ItemView(
                             conversation: conversation,
+                            now: timeTick,
                             conversationState: viewModel.conversationState(for: conversation.id),
                             isSelected: (viewModel.immediateSelectionID ?? viewModel.selectedConversationID) == conversation.id,
                             needsAttention: viewModel.needsAttention(for: conversation.id),

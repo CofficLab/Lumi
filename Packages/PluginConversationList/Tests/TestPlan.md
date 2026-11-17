@@ -5,7 +5,7 @@
 PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 78 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 79
+测试文件: 15 个，用例总数: 80
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -52,7 +52,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationSortStabilizer**（3 条）：由 `sortTimeStaysAnchoredUntilTheHoldWindowExpires`、`markingViewedAnchorsTheConversationAtTheCurrentTime`、`cleanupKeepsRecentAnchorsAndDropsOldOnes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStopCapability**（6 条）：由 `canStopForRunningAndSuspended`、`cannotStopForTerminalStates`、`noAgentLoopMeansNoStop`、`stopCancelsTheGivenConversation`、`stopTargetsTheGivenConversation`、`noCapabilityMeansNotStoppable` 锁定会话行右键停止的可停止判定与目标会话接线；改动该模块时优先跑对应测试文件。
 - **GetRecentConversationsTool**（5 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationTableEscapesProjectNamesAndKeepsFiveColumns`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RelativeTime**（3 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RelativeTime**（4 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PluginLocalizationIntegrity**（5 条）：由 `userFacingKeysAreFullyLocalized`、`pinnedTranslationsMatchCatalog`、`everyCatalogEntryCoversRequiredLanguages`、`placeholdersAreConsistentAcrossLanguages`、`compiledBundlesContainPinnedStrings` 锁定上屏文案进入目录与编译产物，硬编码中文不得回潮（**#1299**）。
 
 ## 测试用例清单
@@ -138,6 +138,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 77 | ConversationListViewModel | 运行时状态更新只刷新可见行，不得重读分页摘要（**#1258**） | 已加载两条会话，挂状态提供者与上下文观察器 | 发射 `.updated(id)` 状态事件 | 分页请求数不变、摘要列表数据不变，仅发布一次行刷新 | P0 | ✅ 已覆盖 | `stateUpdateRefreshesVisibleRowWithoutReloadingSummaries` |
 | 78 | ConversationListViewModel | 隐藏/未初始化列表面不得因状态事件启动加载（**#1258**） | 从未加载的隐藏 ViewModel，挂状态提供者与观察器 | 发射 `.updated(id)` 并等待 100ms | 分页请求数保持 0，不发布任何刷新 | P0 | ✅ 已覆盖 | `stateUpdateDoesNotStartLoadForUninitializedSurface` |
 | 79 | ConversationListViewModel | 选中会话必须刷新粘性排序锚点，不被新消息顶走（**#800**） | 注入可控时钟的 stabilizer，Viewed(lastMessageAt=0) 与 Active(90)；t=100 选中 Viewed，t=110 Active 收到新消息 | selectConversation 后 reload | Viewed 锚点被刷到 t=100，排序仍位于 Active(t=90) 之前 | P0 | ✅ 已覆盖 | `selectingConversationRefreshesStickySortAnchor` |
+| 80 | RelativeTime | 相对时间必须由注入的 now 驱动，列表 tick 才能让文本空闲时前进（**回归 #638**） | 基准时刻固定为 epoch | 以注入 now 分别偏移 0/5m/2h/3d/未来 | 各偏移得到对应文案，忽略注入 now 则转红 | P1 | ✅ 已覆盖 | `relativeTimeIsDrivenByTheInjectedNow` |
 
 > 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -145,9 +146,9 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 57 / 57
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 11 / 11
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

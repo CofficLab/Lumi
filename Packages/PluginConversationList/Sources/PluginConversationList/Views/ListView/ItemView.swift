@@ -14,6 +14,9 @@ struct ItemView: View {
     @State private var isAttentionRingExpanded = false
 
     let conversation: ConversationSummary
+    /// 渲染相对时间的基准时刻。列表用周期性 tick 驱动整表重算，
+    /// 空闲时「刚刚」等文本才会随时间前进（#638）。
+    var now: Date = Date()
     let conversationState: ConversationStateSnapshot?
     let isSelected: Bool
     let needsAttention: Bool
@@ -121,7 +124,7 @@ struct ItemView: View {
                             .foregroundColor(theme.textTertiary)
                     }
 
-                    Text(conversation.lastMessageAt.relativeTime)
+                    Text(conversation.lastMessageAt.relativeTime(now: now))
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
                 }
