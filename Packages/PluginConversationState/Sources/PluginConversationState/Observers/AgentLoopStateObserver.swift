@@ -49,6 +49,10 @@ final class AgentLoopStateObserver: SuperLog {
                 toolState: .idle,
                 authorizationState: ConversationAuthorizationState.none,
                 activity: .thinking,
+                // 新回合必须清掉上一回合的 ToolJob 汇总：授权路径不产生
+                // ToolJobEvent，不清的话 Brief 会在「等待确认」旁显示旧
+                // 回合的工具描述（#595）。
+                jobActivity: ConversationJobActivity(),
                 clearError: true
             )
         case .toolCallsReceived(let id, let turn, _, _):

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 33 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 38 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 33
+测试文件: 6 个，用例总数: 38
 
 核心组件（源码目录）:
 - `Observers/`
@@ -31,6 +31,8 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 - **pre-turn 活动状态**（4 条）：由 `secondTurnSendingActivitySurvivesPreviousTerminalState`、`messageSenderStartedWritesSendingActivity` 等用例锁定——发送前窗口的 `.sending` 不受上一轮终态影响（#891），回合期 activity 仍不得回流到已死掉的回合。
 - **Chat 模式拦截后 activity 残留**（2 条）：由 `blockedBatchClearsExecutingToolActivity`、`pendingApprovalKeepsWaitingForUser` 锁定——整批拦截（无 ToolJob）后 `.batchCompleted` 必须清掉 `.executingTool`，但批次因待授权暂停时要保留 `.waitingForUser`。
 - **执行期授权状态**（3 条）：由 `authorizationSuspensionMarksAuthorizationRequired`、`askUserSuspensionKeepsAuthorizationNone`、`resumedTurnClearsAuthorizationRequired` 锁定——执行期授权挂起（Computer Use）必须标记 `authorizationState == .required`，`ask_user` 挂起不得误标，用户做出决定后必须回落。
+- **迟到终态**（4 条）：由 `staleCompletedDoesNotOverwriteRunningTurn`、`staleFailedAndCancelledDoNotOverwriteRunningTurn`、`staleToolCallsDoNotOverwriteTurn`、`terminalWithoutKnownTurnStillApplies` 锁定——终态通知异步投递，旧回合的迟到 completed/failed/cancelled/toolCalls 不得把新回合的 running 状态或 turnID 覆盖掉；快照未记录 turnID 时保持旧行为（**回归 #438**）。
+- **新回合重置 ToolJob 汇总**（1 条）：由 `authorizationInNewTurnDoesNotShowPreviousTurnTool` 锁定——`.started` 必须重置 `jobActivity`，否则授权路径（不产生 ToolJobEvent）会让 Brief 在「等待确认」旁显示上一回合的工具描述（**回归 #595**）。
 
 ## 测试用例清单
 
@@ -69,21 +71,28 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 31 | pre-turn 活动状态 | MessageSender 事件到达后必须写入发送中活动（**#891**） | 第一轮已进入终态 | 发出 `MessageSenderEvent.started` | activity 为 `.sending` | P0 | ✅ 已覆盖 | `messageSenderStartedWritesSendingActivity` |
 | 32 | pre-turn 活动状态 | 终态回合仍不得承载回合期活动（**#891 护栏**） | 回合已进入终态 | 写入 thinking / executingTool / waitingForUser | activity 恒为 nil | P0 | ✅ 已覆盖 | `terminalTurnStillRejectsTurnScopedActivity` |
 | 33 | pre-turn 活动状态 | 发送前窗口不得把回合状态改写成 idle（**#891 护栏**） | 第一轮已进入终态 | 写入 `activity = .sending` | agentLoopState 保持终态，activity 为 `.sending` | P0 | ✅ 已覆盖 | `sendingActivityDoesNotResetAgentLoopState` |
+| 34 | 迟到终态 | 旧回合的迟到 completed 不得覆盖新回合的 running 状态（**回归 #438**） | 取消 A 后立即开始 B | A 的 `.completed` 迟到到达 | B 保持 running/turnID/thinking；B 自己的 completed 正常落终态 | P0 | ✅ 已覆盖 | `staleCompletedDoesNotOverwriteRunningTurn` |
+| 35 | 迟到终态 | 旧回合的迟到 failed/cancelled 不得覆盖新回合状态（**回归 #438**） | 新回合 B 运行中 | A 的 `.failed`/`.cancelled` 依次迟到到达 | B 保持 running 且 lastError 为 nil | P0 | ✅ 已覆盖 | `staleFailedAndCancelledDoNotOverwriteRunningTurn` |
+| 36 | 迟到终态 | 旧回合的迟到工具事件不得改写新回合的 turnID 与活动（**回归 #438**） | 新回合 B 运行中 | A 的 `.toolCallsReceived` 迟到到达 | turnID 仍为 B，activity 仍为 thinking | P0 | ✅ 已覆盖 | `staleToolCallsDoNotOverwriteTurn` |
+| 37 | 迟到终态 | 快照未记录 turnID 时终态保持旧行为（**#438 护栏**） | 观察者中途接入或外部回合未发 started | 终态事件到达 | 状态照常应用，不误判为迟到 | P1 | ✅ 已覆盖 | `terminalWithoutKnownTurnStillApplies` |
+| 38 | 新回合重置 ToolJob 汇总 | 新回合的授权等待不得显示上一回合的工具描述（**回归 #595**） | 回合 A 已留下 Job 汇总，回合 B 只触发授权（无 ToolJobEvent） | 发 `.started(B)` 再发 `authorizationRequired` | jobActivity 清空（hasJobs=false、描述 nil），授权等待正常标记 | P0 | ✅ 已覆盖 | `authorizationInNewTurnDoesNotShowPreviousTurnTool` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#595）：移除 `AgentLoopStateObserver.consume(.started)` 中的 `jobActivity: ConversationJobActivity()` 重置 → `authorizationInNewTurnDoesNotShowPreviousTurnTool` 转红（回合 A 的 Job 汇总残留，hasJobs 仍为真、描述非 nil），#962 / #438 相关用例仍绿。变异确认转红后还原，最终 38 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 14 / 14
+- P0: 已覆盖 21 / 21
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 2 / 2
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
