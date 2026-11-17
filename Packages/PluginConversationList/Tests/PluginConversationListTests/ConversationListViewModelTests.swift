@@ -590,6 +590,43 @@ private func englishTableLocalizedString(_ key: String) -> String {
     viewModel.cancel()
 }
 
+/// #800：选中会话必须调用 markViewed 刷新粘性排序锚点，否则刚看过的对话
+/// 在 hold window 内仍按旧 lastMessageAt 排序，被随后刷新的会话顶走。
+@Test @MainActor func selectingConversationRefreshesStickySortAnchor() async throws {
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+
+    let base = Date()
+    let viewed = ConversationSummary(
+        id: UUID(), title: "Viewed", createdAt: base, updatedAt: base,
+        lastMessageAt: base, projectPath: "/workspace/One"
+    )
+    let active = ConversationSummary(
+        id: UUID(), title: "Active", createdAt: base, updatedAt: base.addingTimeInterval(90),
+        lastMessageAt: base.addingTimeInterval(90), projectPath: "/workspace/One"
+    )
+    let conversations = DelayedConversationManager(summaries: [viewed, active])
+
+    var clock = base.addingTimeInterval(100)
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(holdWindowSeconds: 30, now: { clock }),
+        scope: .currentProject
+    )
+    await viewModel.loadInitialIfNeeded()
+    #expect(viewModel.conversations.map(\.id) == [active.id, viewed.id])
+
+    // 用户在 t=100 查看 Viewed；随后 Active 在 t=110 收到新消息并刷新。
+    viewModel.selectConversation(id: viewed.id)
+    clock = base.addingTimeInterval(110)
+    conversations.bumpLastMessage(at: 1, to: base.addingTimeInterval(110))
+    await viewModel.reload()
+
+    // Viewed 的锚点已被选中动作刷新到 t=100，排序仍在新锚点（t=90）之前。
+    #expect(viewModel.conversations.map(\.id) == [viewed.id, active.id])
+}
+
 @MainActor
 private func makeListContext(
     conversations: any ConversationManaging,
@@ -652,6 +689,12 @@ private final class DelayedConversationManager: ConversationManaging {
 
     func retitle(_ title: String, at index: Int) {
         summaries[index].title = title
+    }
+
+    /// 模拟某条会话收到新消息：同时推进 updatedAt 与 lastMessageAt。
+    func bumpLastMessage(at index: Int, to date: Date) {
+        summaries[index].updatedAt = date
+        summaries[index].lastMessageAt = date
     }
 
     var conversations: [ConversationSummary] { summaries }

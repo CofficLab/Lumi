@@ -155,6 +155,9 @@ final class ConversationListViewModel: ObservableObject {
         // 先同步写入乐观选中，立刻高亮，不等管理器链路。
         immediateSelectionID = id
         selectedConversationID = id
+        // 用户主动查看会话时刷新粘性排序锚点：否则刚看过的对话仍按旧的
+        // lastMessageAt 排序，随后被新消息顶走（#800）。
+        sortStabilizer.markViewed(conversationID: id)
         Task { @MainActor in
             context.conversations.selectConversation(id: id)
             attentionStore.markRead(conversationID: id)
