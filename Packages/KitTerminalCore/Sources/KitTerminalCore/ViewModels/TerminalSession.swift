@@ -175,9 +175,24 @@ extension TerminalSession: LocalProcessTerminalViewDelegate {
     nonisolated public func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
     nonisolated public func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
-        Task { @MainActor [weak self] in
-            self?.title = title.isEmpty ? "Terminal" : title
+        let normalized = title.isEmpty ? "Terminal" : title
+        if Thread.isMainThread {
+            // SwiftTerm 在主队列同步投递输出：直接应用，避免为每个 OSC 标题
+            // 新建 MainActor Task（#1232）。
+            MainActor.assumeIsolated {
+                applyTitleIfChanged(normalized)
+            }
+        } else {
+            Task { @MainActor [weak self] in
+                self?.applyTitleIfChanged(normalized)
+            }
         }
+    }
+
+    /// 与当前标题相同则跳过发布：重复 OSC 标题不得反复触发 SwiftUI 失效（#1232）。
+    private func applyTitleIfChanged(_ newTitle: String) {
+        guard title != newTitle else { return }
+        title = newTitle
     }
 
     nonisolated public func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}

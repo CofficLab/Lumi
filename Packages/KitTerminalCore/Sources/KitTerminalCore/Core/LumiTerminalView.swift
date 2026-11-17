@@ -52,9 +52,12 @@ public class LumiTerminalView: LocalProcessTerminalView {
 
     override public func accessibilityValue() -> Any? {
         let terminal = getTerminal()
+        // 只取可见视口：从 row 0 开始会把整段 scrollback 连同视口一起重建，
+        // 每次无障碍查询的代价都与缓冲区总行数成正比（#1233）。
+        let top = terminal.getTopVisibleRow()
         return terminal.getText(
-            start: Position(col: 0, row: 0),
-            end: Position(col: terminal.cols, row: terminal.getTopVisibleRow() + terminal.rows)
+            start: Position(col: 0, row: top),
+            end: Position(col: terminal.cols, row: top + terminal.rows)
         )
     }
 }

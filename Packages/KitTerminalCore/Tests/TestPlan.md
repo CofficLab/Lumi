@@ -5,7 +5,7 @@
 KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的终端渲染、Shell 集成、主题适配与多标签会话管理。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 22
+测试文件: 4 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Core/`
@@ -35,6 +35,8 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 - **子进程环境**（#500，6 条）：`ShellIntegration.makeEnvironment` 须在 SwiftTerm 允许列表之上导出所选 shell 的 `SHELL`、继承父进程非空 `ZDOTDIR`（未设置/空串不写入），并保留 base 与 TERM/LANG/PATH；集成脚本 `setupZsh` 须能从环境数组恢复用户原始 `ZDOTDIR` 到 `USER_ZDOTDIR`，不得回退到家目录。由 `TerminalEnvironmentTests` 锁定。
 - **进程树清理**（#497，3 条）：关闭 Tab 时 `TerminalSession.terminate` 须经 `TerminalProcessTree.terminate` 清理整棵进程树，而非仅 `killpg(shellPid)`。交互式 shell 的后台作业（`set -m`）拥有独立 PGID 且可能忽略 HUP/TERM，必须递归枚举每个后代 PID 直接发信号、宽限期后对仍存活者 SIGKILL；信号前先快照整棵树（shell 被 SIGTERM 杀死后忽略信号的子进程会被挂到 launchd，再枚举不到）；仅对树内自身即组长者 `killpg`，不得误杀树外进程。由 `TerminalProcessTreeTests` 锁定。
 
+- **标题与无障碍**（#1232/#1233，3 条）：`TerminalSession.setTerminalTitle` 主线程投递时同步应用且与当前标题相同则跳过发布（重复 OSC 标题不得反复触发 SwiftUI 失效），空标题归一化为 "Terminal"；`LumiTerminalView.accessibilityValue` 只重建可见视口而非整段 scrollback。由 `TerminalTitleAccessibilityTests` 锁定。
+
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
@@ -61,9 +63,14 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 | 20 | 进程树清理 | descendantPIDs 递归枚举真实进程树（含孙进程） | root 派生后台 child，child 派生 sleep 孙进程 | 枚举 root 的后代 PID | 树含 root、child 与孙进程 | P1 | ✅ 已覆盖 | `descendantPIDsEnumeratesRealProcessTree` |
 | 21 | 进程树清理 | terminate 杀死忽略 HUP/TERM 且独立 PGID 的后台子进程（**回归 #497**） | set -m 后台 child trap 忽略 HUP/TERM，拥有独立 PGID | 调用 terminate(root) 并等待宽限期 | child 与 root 均被杀死，忽略 TERM 的孤儿不得存活 | P0 | ✅ 已覆盖 | `terminateKillsTermIgnoringBackgroundChildInOwnProcessGroup` |
 | 22 | 进程树清理 | terminate 不误杀进程树之外的无关进程 | 独立 bystander 非 root 后代 | 调用 terminate(root) | root 与 child 退出，bystander 仍存活 | P0 | ✅ 已覆盖 | `terminateDoesNotKillProcessesOutsideTheTree` |
+| 23 | 标题更新 | 重复 OSC 标题不得重复发布（**回归 #1232**） | — | 对同一会话连续委派两次相同标题 | title 仅发布一次且值为该标题 | P0 | ✅ 已覆盖 | `duplicateTitleDoesNotRepublish` |
+| 24 | 标题更新 | 主线程同步应用标题且空标题归一化为 Terminal（**回归 #1232**） | — | 主线程委派设置标题与空标题 | 调用返回后立即生效；空标题变为 Terminal | P1 | ✅ 已覆盖 | `titleAppliesSynchronouslyOnMainAndNormalizesEmpty` |
+| 25 | 无障碍 | 无障碍值只含可见视口而非 scrollback（**回归 #1233**） | 缓冲区已滚动产生 scrollback | 灌入超屏输出后读取 accessibilityValue | 首行为可见区首行，不含 scrollback 行 | P1 | ✅ 已覆盖 | `accessibilityValueCoversViewportOnly` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#1232/#1233）：M1 将 `setTerminalTitle` 还原为旧的 Task + 无条件赋值 → `duplicateTitleDoesNotRepublish`、`titleAppliesSynchronouslyOnMainAndNormalizesEmpty` 转红（title 仍为初始值、发布数为 0）；M2 将 `accessibilityValue` 起始行还原为 row 0 → `accessibilityValueCoversViewportOnly` 转红（scrollback 全部行被重建）。两处变异均单独施加并确认转红后还原，最终 25 条全绿。
 >
 > 变异验证（#500）：M1 删除 `makeEnvironment` 的 `env.append("SHELL=\(shellPath)")` → `environmentExportsSelectedShell` 转红；M2 删除继承 ZDOTDIR 的 `if let zDotDir …` 整块 → `environmentInheritsCustomZdotdir`、`integrationRecoversCustomZdotdir` 转红（集成回退家目录）；M3 去掉 `!zDotDir.isEmpty` 守卫 → `environmentOmitsZdotdirWhenEmpty` 转红（空串被写入）；M4 将 `var env = base` 改为 `var env: [String] = []` → `environmentKeepsBaseAndTermVars` 转红（base 丢失）。四处变异均单独施加并确认转红后还原，最终全绿。
 >
@@ -71,21 +78,21 @@ KitTerminalCore 可复用的终端会话核心包。封装基于 SwiftTerm 的�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 8 / 8
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 10 / 10
 - P2: 已覆盖 4 / 4
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（10 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 - `TerminalProcessTreeTests` 派生真实 shell 进程树并测量进程存活，标记 `.serialized` 串行执行；依赖 Darwin `proc_listpids`/`proc_pidinfo`，为 macOS 专属
 
 ## 测试执行
