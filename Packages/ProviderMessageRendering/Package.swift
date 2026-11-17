@@ -8,8 +8,8 @@ let package = Package(
         .library(name: "ProviderMessageRendering", targets: ["ProviderMessageRendering"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [

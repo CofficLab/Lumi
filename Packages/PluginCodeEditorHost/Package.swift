@@ -9,7 +9,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitEditorKernel"),
         .package(path: "../KitEditorSource"),
@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../KitEditorLanguageRuntime"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.1"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),

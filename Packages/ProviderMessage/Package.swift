@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ProviderMessage", targets: ["ProviderMessage"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
     ],
     targets: [
         .target(

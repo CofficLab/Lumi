@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(path: "../PluginRootView")
     ],
     targets: [

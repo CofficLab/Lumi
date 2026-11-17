@@ -8,12 +8,12 @@ let package = Package(
         .library(name: "PluginConversationState", targets: ["PluginConversationState"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
         .package(path: "../ProviderMessageSender"),
     ],
     targets: [

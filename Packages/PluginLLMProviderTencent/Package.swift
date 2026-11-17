@@ -13,7 +13,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
     ],
     targets: [
         .target(
