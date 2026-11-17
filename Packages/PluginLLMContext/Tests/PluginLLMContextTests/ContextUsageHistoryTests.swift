@@ -201,4 +201,38 @@ struct ContextUsageHistoryTests {
         #expect(history.samples.map(\.tokens) == [200, 800])
         #expect(history.samples.map(\.index) == [0, 1])
     }
+
+    /// 模型切换时间线消息与真实请求的过滤规则一致：不采样也不累计（#855）。
+    @Test("模型切换等时间线消息不计入估算（回归 #855）")
+    func modelSwitchTimelineEventExcludedFromEstimate() {
+        let base = Date(timeIntervalSince1970: 9_000)
+        let user = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: String(repeating: "a", count: 300),
+            createdAt: base
+        )
+        let modelSwitch = Message(
+            conversationID: conversationID,
+            role: .system,
+            content: "已从 A 切换到 B " + String(repeating: "m", count: 900),
+            createdAt: base.addingTimeInterval(1),
+            metadata: [
+                MessageTimelineEvent.metadataKey: MessageTimelineEvent.modelSwitched,
+            ],
+            renderKind: MessageTimelineEvent.modelSwitchedRenderKind
+        )
+        let messages = [
+            user,
+            modelSwitch,
+            assistantMessage("回复", inputTokens: nil, at: base.addingTimeInterval(2)),
+        ]
+
+        let history = ContextUsageHistory.build(from: messages)
+
+        let expected = LLMContextTokenEstimator.estimate(message: user)
+        #expect(history.samples.count == 1)
+        #expect(history.samples[0].isEstimated)
+        #expect(history.samples[0].tokens == expected, "时间线消息正文不得计入输入估算")
+    }
 }

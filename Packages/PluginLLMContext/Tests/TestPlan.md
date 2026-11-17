@@ -5,7 +5,7 @@
 PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 123 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 124
+测试文件: 15 个，用例总数: 125
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -48,7 +48,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextPopoverLayout**（6 条）：由 `trendViewHeightIsConstrained`、`trendViewRendersInTightSpace`、`trendViewHeightStaysStableWithManySamples` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextRecoveryTools**（19 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ContextUsageHistory**（10 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackToolPairing**（5 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMContextPlugin**（25 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -198,6 +198,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 122 | UtilityModelAndAuxiliaryUsage | 压缩事件净收益 = 节省估算 − 摘要消耗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionNetTokensEqualsSavedMinusSpent` |
 | 123 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
 | 124 | ContextRecoveryTools | 会话删除事件必须清空摘要库中的明文摘要，不得残留已删除会话的数据（#350） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deletionObserverRemovesPersistedSummary` |
+| 125 | ContextUsageHistory | 模型切换等时间线消息不计入输入估算（回归 #855） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelSwitchTimelineEventExcludedFromEstimate` |
 
 > 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -207,9 +208,9 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 ## 覆盖率统计
 
 - P0: 已覆盖 22 / 22
-- P1: 已覆盖 97 / 97
+- P1: 已覆盖 98 / 98
 - P2: 已覆盖 5 / 5
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

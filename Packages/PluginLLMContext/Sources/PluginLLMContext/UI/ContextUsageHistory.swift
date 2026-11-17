@@ -79,6 +79,13 @@ struct ContextUsageHistory: Equatable {
                 continue
             }
 
+            // 其余时间线事件（模型切换、子代理委派等）只存在于界面展示，
+            // 真实请求的历史选择会显式过滤它们；估算口径必须与真实请求一致，
+            // 全部不计入采样与累计（#855）。
+            if MessageTimelineEvent.isTimelineEvent(message) {
+                continue
+            }
+
             if message.role == .assistant {
                 // 该轮输入 = 处理本条之前已累积的历史；assistant 自身的输出不属于输入。
                 if let actual = message.inputTokenCount, actual > 0 {
