@@ -38,7 +38,7 @@ let package = Package(
         .package(path: "../PluginAgentRules"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginLogos.git", from: "1.0.0"),
         .package(path: "../PluginSettingGeneral"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginCacheManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginCacheManager.git", from: "1.1.0"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginSettingView.git", from: "1.0.3"),
         .package(path: "../PluginSystemBenchmark"),
         .package(url: "https://github.com/lumi-softworks/LumiPluginThemeManager.git", from: "1.0.1"),
