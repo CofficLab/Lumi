@@ -339,8 +339,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiProviderToolManager.git",
       "state": {
-        "revision": "e19e919316824ee5a4db6ab38898b36cbe3d6b65",
-        "version": "1.0.2"
+        "revision": "b7c155045fc1719287b627e369f2a395e7a044c9",
+        "version": "1.0.3"
       }
     },
     {
