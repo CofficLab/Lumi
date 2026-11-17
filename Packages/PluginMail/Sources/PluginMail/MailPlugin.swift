@@ -134,6 +134,7 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         // Agent 工具注册。
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         let agentService = agentToolService
+        tools?.add(MailListAccountsTool(service: agentService), pluginID: id)
         tools?.add(MailListMessagesTool(service: agentService), pluginID: id)
         tools?.add(MailReadMessageTool(service: agentService), pluginID: id)
         tools?.add(MailSearchMessagesTool(service: agentService), pluginID: id)
@@ -218,6 +219,7 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         }
 
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        tools?.remove(id: MailListAccountsTool.toolName)
         tools?.remove(id: MailListMessagesTool.toolName)
         tools?.remove(id: MailReadMessageTool.toolName)
         tools?.remove(id: MailSearchMessagesTool.toolName)

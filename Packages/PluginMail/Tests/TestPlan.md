@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 111 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 108
+测试文件: 12 个，用例总数: 111
 
 核心组件（源码目录）:
 - `Agent/`
@@ -38,7 +38,7 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MailAccountStore**（26 条）：由 `testUpsertAndLoad`、`testUpsertUpdatesExistingByID`、`testDeleteRemovesAccountAndPassword` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailAgentTools**（14 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailDraftAutosave**（9 条）：由 `testSaveEncodesAndWritesOffMainThread`、`testTextOnlyEditDoesNotRewriteAttachments`、`testStaleSaveDoesNotOverwriteNewerDraft` 等用例锁定；连续击键必须合并落盘、编码与写入不得占用主线程、附件只在增删时重写，晚到的旧快照不得覆盖新草稿（issue #1188）。
 - **Mail account_id 校验**（9 条）：由 `invalidAccountIDIsRejectedByEveryTool`、`nonStringAccountIDIsRejected`、`unknownAccountIDIsAnErrorNotAnEmptyResult`、`validAccountIDSelectsThatAccount` 锁定；只有完全省略 account_id 才能回落到第一个账户，传了但为空/格式非法/类型不对/账户不存在都必须在任何 IMAP/SMTP 操作前报错，否则发送工具会从错误的邮箱寄信（issue #840）。
 - **Mail 账户身份变更与缓存隔离**（9 条）：由 `testEmailChangeDetected`、`testIdentityChangePurgesCache`、`testDeletePurgesCache`、`testUnchangedIdentityKeepsCache` 锁定；编辑账户改变邮箱/用户名/IMAP/SMTP 主机时必须清空旧缓存，否则新邮箱会读到旧邮箱的邮件（issue #845）。
@@ -167,16 +167,19 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 | 106 | 账户身份与缓存隔离 | 身份变更后旧缓存必须被清空（**回归 #845**） | 账户 A 有 2 封缓存邮件 | 编辑为不同邮箱后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testIdentityChangePurgesCache` |
 | 107 | 账户身份与缓存隔离 | 删除账户后缓存必须被清空（**回归 #845**） | 账户 A 有缓存邮件 | 删除账户后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testDeletePurgesCache` |
 | 108 | 账户身份与缓存隔离 | 身份未变时保留缓存 | 账户 A 有 1 封缓存邮件 | 仅改显示名，不 purge | 缓存仍有 1 封 | P1 | ✅ 已覆盖 | `testUnchangedIdentityKeepsCache` |
+| 109 | MailAgentTools | mail_list_accounts 列出已配置账户且不含凭据（回归 #841） | 已配置两个账户 | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsReturnsConfiguredAccountsWithoutCredentials` |
+| 110 | MailAgentTools | 未配置账户时返回设置引导文案 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsHintsSetupWhenNoAccountsConfigured` |
+| 111 | MailAgentTools | mail_list_accounts schema 无必需参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsSchemaHasNoRequiredArguments` |
 
-> 说明：全部 **90 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **111 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 27 / 27
-- P1: 已覆盖 76 / 76
+- P1: 已覆盖 79 / 79
 - P2: 已覆盖 5 / 5
-- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
+- **合计: 111 / 111**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
