@@ -74,7 +74,8 @@ struct NetworkChartGeometryTests {
             NetworkDataPoint(timestamp: now - 10, downloadSpeed: 1, uploadSpeed: 1),
             NetworkDataPoint(timestamp: now - 5000, downloadSpeed: 2, uploadSpeed: 2),
         ]
-        viewModel.apply(recent: points, longTerm: points)
+        viewModel.applyRecent(points)
+        viewModel.applyLongTerm(points)
 
         let first = viewModel.data(for: .hour1)
         let second = viewModel.data(for: .hour1)
@@ -82,10 +83,8 @@ struct NetworkChartGeometryTests {
         #expect(first.count == 1)
 
         // 缓冲更新后缓存必须失效。
-        viewModel.apply(
-            recent: points + [NetworkDataPoint(timestamp: now, downloadSpeed: 3, uploadSpeed: 3)],
-            longTerm: points
-        )
+        viewModel.applyRecent(points + [NetworkDataPoint(timestamp: now, downloadSpeed: 3, uploadSpeed: 3)])
+        viewModel.applyLongTerm(points)
         let third = viewModel.data(for: .hour1)
         #expect(third.count == 2)
     }
