@@ -186,12 +186,15 @@ final class ModelSelectorViewModel: ObservableObject {
         showsModelSearchBar ? modelSearchText : ""
     }
 
-    func modelID(providerID: String, model: String) -> String? {
-        box.modelID(providerID: providerID, model: model)
-    }
-
+    /// 当前行是否为全局生效中的模型。
+    ///
+    /// `activeProviderID` 与 `selectedModel` 都是从 `selectedModelID` 解析出来的
+    /// 同一份快照，因此这里的比对与「构造 `LLMModelID` 后比较 rawValue」等价，
+    /// 但不再回查管理器：管理器侧会重新扫描整个动态模型池，远程供应商每次
+    /// 读取还会重建合并列表；列表每行渲染都调一次会把选择器拖成 O(V×M)
+    /// 的主线程开销（#1255）。
     func isSelected(providerID: String, model: String) -> Bool {
-        modelID(providerID: providerID, model: model) == selectedModelID
+        providerID == activeProviderID && model == selectedModel
     }
 
     func usageCount(for providerID: String) -> Int {
