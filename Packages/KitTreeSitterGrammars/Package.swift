@@ -69,7 +69,6 @@ let package = Package(
             exclude: [
                 "src/grammar.json",
                 "src/node-types.json",
-                "src/schema.json",
                 "LICENSE",
             ],
             sources: [
