@@ -7,20 +7,25 @@ import Foundation
 /// path is handed to `KernelFactory` after the shared V2 kernel is ready.
 @MainActor
 final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
-    @Published var pendingOpenPath: String?
+    /// 待打开的外部路径队列。冷启动时 Launch Services 可能一次送来多个
+    /// 文件，且事件可能先于主窗口的订阅到达；单值会被同批次后续项覆盖，
+    /// 必须排队逐个消费（#441）。
+    @Published var pendingOpenPaths: [String] = []
+    /// 是否已有消费循环在跑：防止多个批次触发并发 drain 重复处理。
+    private var isDrainingPendingOpenPaths = false
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if handleFinderCommand(url) { continue }
             if url.isFileURL {
-                pendingOpenPath = url.standardizedFileURL.path
+                pendingOpenPaths.append(url.standardizedFileURL.path)
             }
         }
         activateMainWindow()
     }
 
     func application(_ application: NSApplication, openFile filename: String) -> Bool {
-        pendingOpenPath = (filename as NSString).standardizingPath
+        pendingOpenPaths.append((filename as NSString).standardizingPath)
         activateMainWindow()
         return true
     }
@@ -67,8 +72,8 @@ final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     /// 处理 `lumi://finder/open-project?path=<文件夹绝对路径>`。
     ///
-    /// 该命令由 Finder 右键扩展的「在 Lumi 中打开」发出。这里只把路径交给
-    /// `pendingOpenPath`，由主视图按既有的外部路径流程切换当前项目，
+    /// 该命令由 Finder 右键扩展的「在 Lumi 中打开」发出。这里只把路径
+    /// 交给 `pendingOpenPaths`，由主视图按既有的外部路径流程切换当前项目，
     /// 避免在 App Delegate 里直接依赖内核。
     private func handleOpenProjectCommand(_ url: URL) -> Bool {
         guard let path = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -77,8 +82,23 @@ final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             return false
         }
 
-        pendingOpenPath = (path as NSString).standardizingPath
+        pendingOpenPaths.append((path as NSString).standardizingPath)
         return true
+    }
+
+    /// 逐个消费排队的打开请求。
+    ///
+    /// 同一时刻只允许一个消费循环：drain 进行中新到达的批次交给当前循环
+    /// 的下一轮迭代，而不是再起一个并发循环。循环内先弹出队首再处理，
+    /// 处理期间新入队的项不会丢（#441）。
+    func drainPendingOpenPaths(_ open: (String) async -> Void) async {
+        guard !isDrainingPendingOpenPaths else { return }
+        isDrainingPendingOpenPaths = true
+        defer { isDrainingPendingOpenPaths = false }
+        while let path = pendingOpenPaths.first {
+            pendingOpenPaths.removeFirst()
+            await open(path)
+        }
     }
 
     private func activateMainWindow() {
