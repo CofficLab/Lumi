@@ -5,7 +5,7 @@
 KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提供与 UI/插件无关的 MCP 客户端能力：服务器配置模型、传输层（stdio / Streamable HTTP）、 会话生命周期（initialize / listTools / callTool）、工具描述与调用结果模型。 - 底层使用官方 `modelcontextprotocol/swift-sdk`（精确锁版 `0.12.1`，官方分级 Tier 3）， 通过 `MCPServerServing` 薄抽象隔离，替换实现不影响上层调用方。 - 不依赖任何其他 Lumi 包；只被 `PluginMCP`（或宿主）依赖。
 
 平台: macOS 13+, iOS 17+
-测试文件: 5 个，用例总数: 38
+测试文件: 6 个，用例总数: 41
 
 ## 公开 API
 
@@ -28,6 +28,7 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 - **MCPJSONValue**（8 条）：由 `valueRoundTrip`、`foundationValue`、`fromFoundation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerSession**（10 条）：由 `listAndCallTool`、`errorResult`、`notConnected` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerSessionCancellation**（2 条）：由 `cancellationCompletesWhenServerNeverResponds`、`preCancelledCallDoesNotSendRequest` 等用例锁定取消必须终止底层请求（#178）；改动该模块时优先跑对应测试文件。
+- **MCPServerSessionTermination**（3 条，**回归 #473**）：由 `unexpectedExitYieldsEventAndClearsConnectedState`、`intentionalDisconnectDoesNotEmitUnexpectedExit`、`sessionWithoutExitStreamExposesNoEvents` 锁定——stdio 子进程退出必须经 `terminationHandler` 主动上报：未主动断开的退出以退出码经 `unexpectedTerminationEvents()` 通知上层且 `isConnected` 清零；主动 `disconnect()` 引发的退出不得上报为意外退出；无退出流的实现经协议默认实现返回 nil。要求必须声明在协议本体（只放扩展默认实现时 `any MCPServerServing` 调用会静态解析到默认实现，拿不到实现方事件流）。改动 `MCPServerSession` 退出监测或 `MCPServerServing` 事件要求时优先跑该文件。
 - **MCPToolSchema**（11 条）：由 `parametersMatchDirectParsing`、`normalizedJSONMatchesDirectSerialization`、`invalidJSONYieldsNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -72,28 +73,32 @@ KitMCP Lumi 的 MCP（Model Context Protocol）客户端核心 Kit 包。 - 提�
 | 36 | MCPToolSchema | 重复读取 schema 的耗时显著低于首次解析 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedAccessIsCheaperThanParsing` |
 | 37 | MCPServerSessionCancellation | 服务器永不响应时取消仍必须立即结束调用（**#178**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancellationCompletesWhenServerNeverResponds` |
 | 38 | MCPServerSessionCancellation | 已取消的任务进入 callTool 时不得发出请求（**#178**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `preCancelledCallDoesNotSendRequest` |
+| 39 | MCPServerSessionTermination | 子进程意外退出必须以退出码上报且 isConnected 清零（**回归 #473**） | InMemory 配对 transport + 注入 processExit 流 | connect 后向 processExit 注入退出码 | 事件流发出 [9]，isConnected=false，lastTerminationStatus=9 | P0 | ✅ 已覆盖 | `unexpectedExitYieldsEventAndClearsConnectedState` |
+| 40 | MCPServerSessionTermination | 主动 disconnect 引发的退出不得上报为意外退出（**回归 #473**） | 同上 | disconnect 后再注入退出码 | 事件流结束且无事件，isConnected=false | P0 | ✅ 已覆盖 | `intentionalDisconnectDoesNotEmitUnexpectedExit` |
+| 41 | MCPServerSessionTermination | 无退出流时 unexpectedTerminationEvents 返回 nil（**回归 #473**） | 同上（prepare 不带 processExit） | connect 后读取事件流 | 返回 nil | P2 | ✅ 已覆盖 | `sessionWithoutExitStreamExposesNoEvents` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除 `callTool` 的 `withTaskCancellationHandler`/`cancelRequest` 桥接后，`cancellationCompletesWhenServerNeverResponds` 被 5 秒看门狗判为仍在等待而失败；恢复后重新通过。
+> 变异验证（**#473**）：M1 去掉 `connect` 末尾的 `armUnexpectedExitMonitoring()` → `unexpectedExitYieldsEventAndClearsConnectedState` 转红（事件流为 nil，#require 失败），`intentionalDisconnectDoesNotEmitUnexpectedExit` 同步转红；PluginMCP 层 `MCPConnectionTerminationTests.unexpectedExitWithdrawsToolsAndMarksError` 转红（状态滞留 connected、工具未撤回、会话未清理，即 issue 描述的原始故障）。M2 在 `MCPConnectionManager.connect` 去掉 `watchUnexpectedTermination` → 同一条 PluginMCP 用例转红（3 issues）；还原后两包全绿（KitMCP 41 / PluginMCP 83）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
+- P0: 已覆盖 11 / 11
 - P1: 已覆盖 27 / 27
-- P2: 已覆盖 2 / 2
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 3 / 3
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
 - **P1**: 其余功能性用例（27 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 13+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

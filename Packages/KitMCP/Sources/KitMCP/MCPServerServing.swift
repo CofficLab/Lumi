@@ -31,4 +31,15 @@ public protocol MCPServerServing: Sendable {
     func listTools() async throws -> [MCPToolDescriptor]
     /// 调用一个工具。
     func callTool(name: String, arguments: [String: MCPJSONValue]) async throws -> MCPCallResult
+    /// 订阅子进程「意外退出」事件：未主动断开时子进程退出，发出退出码。
+    ///
+    /// 每个连接生命周期至多发出一次，随后流结束。必须声明为协议本体要求：
+    /// 只放扩展默认实现时，经 `any MCPServerServing` 的调用会静态解析到
+    /// 默认实现，永远拿不到实现方的事件流（#473）。
+    func unexpectedTerminationEvents() async -> AsyncStream<Int32>?
+}
+
+public extension MCPServerServing {
+    /// 默认实现：不支持退出监测（HTTP 传输、测试替身）返回 `nil`（#473）。
+    func unexpectedTerminationEvents() async -> AsyncStream<Int32>? { nil }
 }

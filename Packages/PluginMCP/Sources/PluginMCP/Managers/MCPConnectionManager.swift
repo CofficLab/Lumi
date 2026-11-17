@@ -38,17 +38,23 @@ public final class MCPConnectionManager: ObservableObject {
     private weak var toolManager: (any ToolManagerProviding)?
     private let pluginID: String
     private let policy: MCPPermissionPolicy
+    /// serverID → 意外退出监视任务。
+    private var terminationWatchers: [String: Task<Void, Never>] = [:]
+    /// 会话工厂（测试注入替身用；生产为 nil，直接构造 `MCPServerSession`）。
+    private let sessionFactory: ((MCPServerConfig) -> any MCPServerServing)?
 
     public init(
         registry: MCPServerRegistry,
         toolManager: (any ToolManagerProviding)?,
         pluginID: String,
-        policy: MCPPermissionPolicy = MCPPermissionPolicy()
+        policy: MCPPermissionPolicy = MCPPermissionPolicy(),
+        sessionFactory: ((MCPServerConfig) -> any MCPServerServing)? = nil
     ) {
         self.registry = registry
         self.toolManager = toolManager
         self.pluginID = pluginID
         self.policy = policy
+        self.sessionFactory = sessionFactory
         for server in registry.servers where !server.enabled {
             states[server.id] = .disconnected
         }
@@ -89,7 +95,7 @@ public final class MCPConnectionManager: ObservableObject {
         guard sessions[serverID] == nil else { return } // 已在连接/已连接
 
         states[serverID] = .connecting
-        let session = MCPServerSession(config: config)
+        let session = sessionFactory?(config) ?? MCPServerSession(config: config)
         sessions[serverID] = session
         do {
             try await session.connect()
@@ -121,6 +127,7 @@ public final class MCPConnectionManager: ObservableObject {
             }
             registeredTools[serverID] = adapters
             states[serverID] = .connected
+            watchUnexpectedTermination(serverID: serverID, session: session)
         } catch {
             await session.disconnect()
             sessions[serverID] = nil
@@ -130,6 +137,8 @@ public final class MCPConnectionManager: ObservableObject {
     }
 
     public func disconnect(serverID: String) async {
+        terminationWatchers[serverID]?.cancel()
+        terminationWatchers[serverID] = nil
         let manager = toolManager
         if let tools = registeredTools[serverID] {
             for tool in tools {
@@ -191,10 +200,45 @@ public final class MCPConnectionManager: ObservableObject {
         }
     }
 
-    /// 测试钩子：注入可观察会话，用于验证 `onShutdown` 的异步清理确实执行。
+    /// 测试钩子：注入可观察会话并建立意外退出监视（#473）。
     /// 生产路径只经 `connect(serverID:)` 建立会话，不会调用此方法。
-    func attachSessionForTesting(_ session: any MCPServerServing, serverID: String) {
+    func attachSessionForTesting(_ session: any MCPServerServing, serverID: String) async {
         sessions[serverID] = session
+        watchUnexpectedTermination(serverID: serverID, session: session)
+    }
+
+    // MARK: - Unexpected termination (#473)
+
+    /// 订阅会话意外退出：子进程在未主动断开的情况下退出时，立即撤回工具
+    /// 并把状态置为 error，不再维持过期的 Running 与失效工具注册（#473）。
+    private func watchUnexpectedTermination(serverID: String, session: any MCPServerServing) {
+        guard terminationWatchers[serverID] == nil else { return }
+        terminationWatchers[serverID] = Task { @MainActor [weak self] in
+            guard let stream = await session.unexpectedTerminationEvents() else { return }
+            for await exitCode in stream {
+                await self?.handleUnexpectedTermination(serverID: serverID, exitCode: exitCode)
+                return
+            }
+        }
+    }
+
+    private func handleUnexpectedTermination(serverID: String, exitCode: Int32) async {
+        terminationWatchers[serverID] = nil
+        // 与显式 disconnect 竞态时后到者生效：会话已被移除就不再重复清理。
+        guard sessions[serverID] != nil else { return }
+
+        let manager = toolManager
+        if let tools = registeredTools[serverID] {
+            for tool in tools {
+                manager?.remove(id: tool.name)
+            }
+            registeredTools[serverID] = nil
+        }
+        if let session = sessions[serverID] {
+            await session.disconnect()
+        }
+        sessions[serverID] = nil
+        states[serverID] = .error(Self.describe(MCPClientError.serverTerminated(exitCode)))
     }
 
     // MARK: - Errors

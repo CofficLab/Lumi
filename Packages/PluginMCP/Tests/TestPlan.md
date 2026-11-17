@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 12 个，用例总数: 81
+测试文件: 13 个，用例总数: 83
 
 核心组件（源码目录）:
 - `Managers/`
@@ -38,6 +38,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPPermissionServerScope**（8 条）：由 `foreignDestructiveSameNameIsHigh`、`rejectsForeignCommands`、`foreignAdapterDestructiveSameName` 等用例锁定 Xcode 精确规则的服务器身份边界（#530）；改动该模块时优先跑对应测试文件。
 - **MCPPluginBoot**（2 条）：由 `bootResolvesPluginDataDirectory`、`refusesWithoutStorageProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPluginShutdown**（1 条）：由 `shutdownDisconnectsSessions` 用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPConnectionTermination**（2 条，**回归 #473**）：由 `unexpectedExitWithdrawsToolsAndMarksError`、`lateEventAfterExplicitDisconnectDoesNotOverwriteState` 锁定——stdio 子进程意外退出时 Manager 必须立即撤回该服务器的全部已注册工具、断开会话并把状态置为 error（「服务器进程已退出（码 N）」），不得维持过期的 Running 与失效工具注册；显式 disconnect 之后到达的迟到退出事件不得重复处理（watcher 已取消、会话已移除时直接跳过）。改动 `MCPConnectionManager` 的 `watchUnexpectedTermination`/`handleUnexpectedTermination` 或 `attachSessionForTesting` 时优先跑该文件。
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（16 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回、#532 写回失败必须抛出且不污染内存列表）；改动该模块时优先跑对应测试文件。
 - **MCPSaveFailure**（7 条）：由 `editorSaveThrowsWhenWriteFails`、`toggleFailureReportsErrorAndKeepsState`、`deleteFailureReportsErrorAndKeepsServer` 等用例锁定（#532：编辑页/启停/删除都以「确实写进磁盘」为成功前提，失败必须给出错误文案且不改状态）；改动该模块时优先跑对应测试文件。
@@ -130,8 +131,10 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 79 | MCPAutoStartSync | 遗留 enabled=true/autoStart=false 读盘自愈并写回（**回归 #533**） | 磁盘上是旧版本开关留下的半启用配置 | 初始化注册表并直接解码磁盘文件 | 内存与磁盘的 autoStart 都为 true，重启后仍被自动启动选中 | P0 | ✅ 已覆盖 | `legacyEnabledWithoutAutoStartIsRepairedOnLoad` |
 | 80 | MCPAutoStartSync | 自愈只修复已启用的服务器，禁用态保持不变（**回归 #533** 护栏） | 磁盘上同时有禁用与半启用两条配置 | 初始化注册表 | 禁用条目的 enabled/autoStart 仍为 false，只有已启用条目被修复 | P1 | ✅ 已覆盖 | `repairDoesNotTouchDisabledServers` |
 | 81 | MCPAutoStartSync | 写回失败时 autoStart 与 enabled 都保持原值（**回归 #533** / #532 护栏） | 配置文件路径被换成目录，原子写必然失败 | 调用 setEnabled(false) | 返回非空错误文案，enabled 与 autoStart 均保持 true | P0 | ✅ 已覆盖 | `toggleFailureKeepsAutoStartUnchanged` |
+| 82 | MCPConnectionTermination | 子进程意外退出必须立即撤回工具、断开会话并置 error（**回归 #473**） | sessionFactory 注入 TerminatableSession，connect 成功且工具已注册 | 向会话注入意外退出事件 | 状态变为 error（含退出码文案），registeredTools 清空，remove 覆盖全部已注册名，session.disconnect 恰好一次 | P0 | ✅ 已覆盖 | `unexpectedExitWithdrawsToolsAndMarksError` |
+| 83 | MCPConnectionTermination | 显式 disconnect 后到达的迟到退出事件不得重复处理（**回归 #473**） | 同上，connect 后先显式 disconnect | 再注入意外退出事件 | 状态保持 disconnected，工具不再额外撤回，disconnectCount 保持 1 | P0 | ✅ 已覆盖 | `lateEventAfterExplicitDisconnectDoesNotOverwriteState` |
 
-> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
 > 变异验证（#534）：① 去掉 join 的引号包裹（含空格参数原样输出）→ `joinQuotesArgumentWithSpaces` 失败；② parse 把双引号当普通字符（不进入引号态）→ `parseDoubleQuotedInputKeepsSpaces` 失败；③ 用 `current.isEmpty` 取代 `hasToken` 标志（空引号 token 被丢弃）→ `emptyArgumentRoundTrips` 失败；恢复后重新通过。
@@ -140,21 +143,21 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 26 / 26
+- P0: 已覆盖 28 / 28
 - P1: 已覆盖 47 / 47
 - P2: 已覆盖 8 / 8
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
 - **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
