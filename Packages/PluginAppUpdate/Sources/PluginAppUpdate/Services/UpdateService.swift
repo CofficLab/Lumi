@@ -60,9 +60,13 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         updaterController?.updater
     }
 
-    init(store: AppUpdatePluginLocalStore = .shared) {
+    init(
+        store: AppUpdatePluginLocalStore = .shared,
+        feedURLDetector: FeedURLDetector? = nil
+    ) {
         self.store = store
         channel = store.channel
+        self.feedURLDetector = feedURLDetector
         super.init()
     }
 
@@ -112,6 +116,13 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
                 )
             }
         }
+
+        // 通道切换后必须重新准备 feed（#236）：上面只把 resolvedFeedURL 置为
+        // 新通道主源，尚未探测。Sparkle 的后台检查会同步读取该 URL，若不在
+        // 这里排入探测任务，新通道主源不可达时会一直用不可达的主源，直到
+        // 手动检查或重启。prepareFeedURLIfNeeded 会先等 updateFeedURLs 完成
+        // 再探测（updateFeedURLs 已清除缓存窗口）。
+        _ = prepareFeedURLIfNeeded()
     }
 
     /// Lazily initialize the Sparkle updater controller.
@@ -175,6 +186,18 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         }
         feedPreparationTask = task
         return task
+    }
+
+    /// 等待在途的 feed 配置与探测任务结束后，返回当前生效的 feed URL。
+    /// 仅供测试观察通道切换后的最终状态（#236）。
+    func feedURLAfterPendingPreparation() async -> URL {
+        if let feedConfigurationTask {
+            await feedConfigurationTask.value
+        }
+        if let feedPreparationTask {
+            await feedPreparationTask.value
+        }
+        return resolvedFeedURL
     }
 
     /// Trigger an immediate update check.

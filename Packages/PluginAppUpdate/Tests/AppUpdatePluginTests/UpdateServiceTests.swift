@@ -122,6 +122,38 @@ struct UpdateChannelPersistenceTests {
     }
 }
 
+@Suite("通道切换后重新探测 feed（#236）")
+@MainActor
+struct UpdateChannelSwitchProbeTests {
+    @Test("切换通道后自动探测新通道主源，不可达时落到备用源")
+    func setChannelReprobesNewChannelFeed() async {
+        // setChannel 的 URL 一律来自 UpdateFeedURLProvider（静态生产清单），
+        // 因此测试直接用真实 URL，把可达性交给注入的假 checker 决定。
+        let previewPrimary = UpdateFeedURLProvider.primary(for: .preview)
+        let previewFallback = UpdateFeedURLProvider.fallback(for: .preview)
+        let checker = MutableReachabilityChecker(reachable: [
+            previewPrimary: false,
+            previewFallback: true,
+        ])
+        let detector = FeedURLDetector(
+            initialURL: UpdateFeedURLProvider.primary(for: .stable),
+            reachabilityChecker: checker,
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("channel-switch-probe")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        service.setChannel(.preview)
+        let url = await service.feedURLAfterPendingPreparation()
+
+        // 修复前：切换不排入探测任务，Sparkle 后台检查会一直读未探测的
+        // Preview 主源，主源不可达时无法发现备用源上的更新。
+        #expect(url == previewFallback)
+        #expect(await checker.calls() == [previewPrimary])
+    }
+}
+
 private actor MutableReachabilityChecker: FeedURLReachabilityChecker {
     private var reachability: [URL: Bool]
     private var probedURLs: [URL] = []
