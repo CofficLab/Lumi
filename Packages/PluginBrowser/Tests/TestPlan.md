@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 94
+测试文件: 21 个，用例总数: 95
 
 核心组件（源码目录）:
 - `Models/`
@@ -164,18 +164,21 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 92 | find 交互过滤 | 空匹配列表过滤后仍为空 | matches 为空 | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P2 | ✅ 已覆盖 | `interactiveFilterOnEmptyMatchesReturnsEmpty` |
 | 93 | Browser click 遮挡检测 | 被遮挡的非链接元素点击必须报告失败且不执行真实点击（**回归 #832**） | elementFromPoint 返回遮挡元素 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=false 且提示被遮挡，`el.click()` 未执行 | P0 | ✅ 已覆盖 | `coveredClickReportsFailureAndDoesNotClick` |
 | 94 | Browser click 遮挡检测 | 未被遮挡的非链接元素点击成功并执行真实点击 | elementFromPoint 返回自身 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=true、message "Clicked."，`el.click()` 执行一次 | P1 | ✅ 已覆盖 | `uncoveredClickSucceedsAndClicks` |
+| 95 | Browser 会话标题同步 | 运行时修改 document.title 后会话标题立即跟随 | 内联加载带标题的 HTML 页面 | `browser` 场景：加载 Original 页后用 JS 把 `document.title` 改为 Changed | 会话缓存标题先变为 Original、随后立即变为 Changed（**#835**） | P0 | ✅ 已覆盖 | `runtimeTitleChangeIsReflected` |
 
-> 说明：全部 **94 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
+>
+> 变异验证（#835）：禁用 init 中的 `observeTitle()` → `runtimeTitleChangeIsReflected` 转红（加载期的 Initial 标题与运行时 Changed 标题都收不到——URL 观察对 `loadHTMLString` 的标题时序不生效）。变异确认转红后还原，最终 95 条全绿。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
 > **#832 变异验证**：对 `BrowserInteractionScript` 的 click 路径注入 2 个变异均被相应用例捕获——M1 还原原始 bug（成功 `return true;` + 调用处 `if (!click()) return fail(...)`，JS 失败对象恒真使遮挡被当成功），被 `coveredClickReportsFailureAndDoesNotClick` 捕获（ok=false 与遮挡提示两处断言失败）；M2 把成功返回改为 `return { ok: false };`，被 `uncoveredClickSucceedsAndClicks` 唯一捕获（ok=true 与 message "Clicked." 两处断言失败），证明正向用例能区分成功返回。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
+- P0: 已覆盖 21 / 21
 - P1: 已覆盖 59 / 59
 - P2: 已覆盖 15 / 15
-- **合计: 94 / 94**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -188,14 +191,14 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
 - **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 94 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

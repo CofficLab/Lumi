@@ -77,6 +77,9 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     /// 已获批准的本地主机键（归一化）。内部可见以便测试直接布置审批状态。
     var approvedLocalHost: String?
     private var urlObservation: NSKeyValueObservation?
+    /// SPA 常在不导航的情况下改 `document.title`，必须观察 `title`
+    /// 才能让状态与快照头部的页面标识跟上运行时变化（#835）。
+    private var titleObservation: NSKeyValueObservation?
     /// ref 登记簿：记录已见过的元素特征，用于诊断失效 ref。
     private let refStore = BrowserElementRefStore()
 
@@ -89,10 +92,19 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         webView.navigationDelegate = self
         webView.allowsBackForwardNavigationGestures = true
         observeURL()
+        observeTitle()
     }
 
     private func observeURL() {
         urlObservation = webView.observe(\.url, options: [.new]) { [weak self] webView, _ in
+            Task { @MainActor in
+                self?.syncPageState(from: webView)
+            }
+        }
+    }
+
+    private func observeTitle() {
+        titleObservation = webView.observe(\.title, options: [.new]) { [weak self] webView, _ in
             Task { @MainActor in
                 self?.syncPageState(from: webView)
             }
@@ -107,6 +119,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     func tearDown() {
         urlObservation?.invalidate()
         urlObservation = nil
+        titleObservation?.invalidate()
+        titleObservation = nil
         navigationTimeoutTask?.cancel()
         navigationTimeoutTask = nil
         finishNavigation(.failure(SessionError.navigationCancelled), token: navigationToken)
