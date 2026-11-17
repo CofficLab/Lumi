@@ -1,7 +1,10 @@
+import CoreGraphics
 import Foundation
+import ImageIO
 import ProviderMessage
 import ProviderMessageSender
 import Testing
+import UniformTypeIdentifiers
 @testable import PluginConversationInput
 
 /// `ConversationInputViewModel` 的附件生命周期与拖放。
@@ -113,6 +116,49 @@ struct ConversationInputViewModelAttachmentTests {
     }
 
     // MARK: - 拖放：图片 / 文件 → 挂起池
+
+    @Test("拖入 Provider 不支持的 TIFF 图片时转码为 PNG（#519）")
+    func droppingProviderUnsupportedImageTranscodesToPNG() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-tiff-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("photo.tif")
+        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: Self.makeOnePixelTIFF()))
+
+        let capability = SendActionBarTestCapability()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attachImage(fileURL)
+
+        await waitUntil("转码后的图片附件进入挂起池", timeout: .seconds(10)) {
+            !capability.pendingImageAttachments.isEmpty
+        }
+
+        let attachment = try #require(capability.pendingImageAttachments.first)
+        #expect(attachment.mimeType == "image/png")
+        let bytes = try #require(Data(base64Encoded: attachment.base64Data))
+        // PNG 文件签名，证明字节确实被重新编码而非原样透传。
+        #expect(bytes.prefix(4) == Data([0x89, 0x50, 0x4E, 0x47]))
+    }
+
+    /// 用 ImageIO 生成一张真实的 1×1 TIFF（Provider 不支持该格式，#519）。
+    private static func makeOnePixelTIFF() -> Data {
+        let context = CGContext(
+            data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        let image = context.makeImage()!
+        let output = NSMutableData()
+        let destination = CGImageDestinationCreateWithData(
+            output, UTType.tiff.identifier as CFString, 1, nil
+        )!
+        CGImageDestinationAddImage(destination, image, nil)
+        CGImageDestinationFinalize(destination)
+        return output as Data
+    }
 
     @Test("拖入图片进入图片池并聚焦输入框")
     func droppingImageAttachesToImagePool() async throws {

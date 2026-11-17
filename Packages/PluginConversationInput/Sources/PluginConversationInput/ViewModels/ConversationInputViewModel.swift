@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import ImageIO
 import LumiLoggingKit
 import os
 import ProviderMessage
@@ -625,11 +626,44 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         }
         guard !data.isEmpty else { return .empty }
         guard ChatInputEditorRules.isDecodableImageData(data) else { return .undecodable }
+        // 主流视觉 Provider（Anthropic / OpenAI）只接受 png / jpeg / gif / webp；
+        // 输入框接受但 Provider 不支持的格式（heic / bmp / tiff）在附件阶段统一
+        // 转码为 PNG，否则发送后只会收到不支持格式的错误（#519）。
+        if Self.providerUnsupportedImageMIMETypes.contains(mimeType) {
+            guard let pngData = Self.transcodeToPNG(data) else { return .undecodable }
+            return .loaded(UserImageAttachment(
+                mimeType: "image/png",
+                base64Data: pngData.base64EncodedString(),
+                fileName: fileName
+            ))
+        }
         return .loaded(UserImageAttachment(
             mimeType: mimeType,
             base64Data: data.base64EncodedString(),
             fileName: fileName
         ))
+    }
+
+    /// Provider 拒绝、需在附件阶段转码的图片 MIME 类型。
+    nonisolated private static let providerUnsupportedImageMIMETypes: Set<String> = [
+        "image/heic", "image/bmp", "image/tiff",
+    ]
+
+    /// 用 ImageIO 把任意可解码图片重新编码为 PNG（无损、全 Provider 接受）。
+    nonisolated private static func transcodeToPNG(_ data: Data) -> Data? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            return nil
+        }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            output, UTType.png.identifier as CFString, 1, nil
+        ) else {
+            return nil
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
     }
 
     /// 批次附件读取结果（跨 actor 传回主线程，按原始顺序入池）。

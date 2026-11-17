@@ -397,7 +397,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **232 条场景 / 238 个测试方法**已在 macOS 上实跑通过
+> 说明：清单 **233 条场景 / 239 个测试方法**已在 macOS 上实跑通过
 > （`swift test` → 208 tests in 31 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
@@ -645,6 +645,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 230 | 回归 | isFocused=false 时不抢占焦点（**回归 #803**） | 同上；焦点在代码编辑器替身 | 保持 isFocused=false 多轮刷新 | `window.firstResponder` 始终留在代码编辑器替身，不被抢回 | P1 | ✅ 已覆盖 | `doesNotStealFocusWhenNotRequested` |
 | 231 | 拖放 | 拖入读取失败的图片时展示具体原因（**回归 #520**） | 目录冒充 `unreadable.png` | `attachImage` 后等待 `errorMessage` | 错误提示非空，池为空 | P1 | ✅ 已覆盖 | `droppingUnreadableImageSurfacesReason` |
 | 232 | 拖放 | 批量拖入含空图片时同样上报错误，其余附件正常入池（**回归 #520**） | 0 字节 PNG + `note.txt` | `attach(droppedURLs:)` 后等待 `errorMessage` | 错误提示包含文件名，图片池空、文件池仅 `note.txt` | P1 | ✅ 已覆盖 | `batchDropWithEmptyImageSurfacesError` |
+| 233 | 拖放 | 拖入 Provider 不支持的 TIFF 图片时转码为 PNG（**回归 #519**） | ImageIO 生成的 1×1 TIFF | `attachImage` 后等待挂起池 | `mimeType == image/png` 且字节带 PNG 签名 | P1 | ✅ 已覆盖 | `droppingProviderUnsupportedImageTranscodesToPNG` |
 
 > **#803 变异验证**（恢复后 GREEN）：M1 去掉 `updateNSView` 里的 `syncFocus` 调用
 > （还原「从不消费焦点 binding」的旧行为）→ ID 228 RED（焦点停在代码编辑器替身）、
@@ -658,9 +659,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 覆盖率统计
 
 - P0: 已覆盖 85 / 85
-- P1: 已覆盖 129 / 129
+- P1: 已覆盖 130 / 130
 - P2: 已覆盖 18 / 18
-- **合计: 232 / 232**（仅表示清单场景，非源码覆盖率）
+- **合计: 233 / 233**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
