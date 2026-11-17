@@ -127,20 +127,48 @@ final class ProviderDetailViewModel: ObservableObject {
         }
     }
 
+    /// 保存 API Key。
+    ///
+    /// 写入接口不抛错，所以保存后回读校验：读到旧值说明凭据没有落盘，
+    /// 把错误留在 `apiKeySaveError`，并保持「已保存」与输入框原样，
+    /// 不能向用户展示成功（#563）。
     func saveAPIKey() {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         capability.setAPIKey(trimmed, for: providerID)
-        savedAPIKey = trimmed
-        apiKey = trimmed
-        apiKeySaveError = nil
+        let stored = capability.apiKey(for: providerID)
+        if stored == trimmed {
+            savedAPIKey = trimmed
+            apiKey = trimmed
+            apiKeySaveError = nil
+        } else {
+            apiKeySaveError = String(
+                localized: "Failed to save the API key. Check that the app can write to your keychain and try again.",
+                defaultValue: "API Key 保存失败：无法写入钥匙串，请检查权限后重试。",
+                bundle: .module
+            )
+        }
     }
 
+    /// 删除 API Key。
+    ///
+    /// 删除后回读校验：仍能读到旧值说明删除失败，把错误留在
+    /// `apiKeySaveError`，界面与缓存保持原样，避免旧 Key 在重启后又
+    /// 出现、表现成「删了又回来」（#563）。
     func removeAPIKey() {
         capability.removeAPIKey(for: providerID)
-        savedAPIKey = ""
-        apiKey = ""
-        apiKeySaveError = nil
+        let stored = capability.apiKey(for: providerID)
+        if stored.isEmpty {
+            savedAPIKey = ""
+            apiKey = ""
+            apiKeySaveError = nil
+        } else {
+            apiKeySaveError = String(
+                localized: "Failed to remove the API key. It was kept in the keychain.",
+                defaultValue: "API Key 删除失败：钥匙串中仍保留原值。",
+                bundle: .module
+            )
+        }
     }
 
     /// 删除当前自定义供应商。

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
+PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 70 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 67
+测试文件: 11 个，用例总数: 70
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -121,27 +121,31 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 65 | ProviderSettingsRemoteModelCount | 远程刷新新增模型后头部模型数同步更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `headerCountFollowsRemoteRefresh` |
 | 66 | ProviderSettingsRemoteModelCount | 头部模型数与详情模型数始终一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `headerCountMatchesDetailCount` |
 | 67 | ProviderSettingsRemoteModelCount | 静态供应商的模型数不受影响 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `staticProviderCountUnchanged` |
+| 68 | ProviderDetailAPIKeyError | 保存失败必须展示错误并保持旧成功态（**回归 #563**） | 桩供应商的 Key 写入静默失败 | 输入新 Key 后执行 `saveAPIKey` | `apiKeySaveError` 非空；`savedAPIKey` 保持为空，输入框保留用户输入 | P0 | ✅ 已覆盖 | `saveFailureSurfacesErrorAndKeepsState` |
+| 69 | ProviderDetailAPIKeyError | 删除失败必须展示错误且不得清空已保存 Key（**回归 #563**） | 桩供应商已存 Key 且删除静默失败 | 执行 `removeAPIKey` | `apiKeySaveError` 非空；`savedAPIKey` 与输入框仍为旧 Key | P0 | ✅ 已覆盖 | `removeFailureSurfacesErrorAndKeepsKey` |
+| 70 | ProviderDetailAPIKeyError | 保存与删除成功时清空错误并更新成功态（**回归 #563 护栏**） | 记录式桩供应商写入/删除均成功 | 保存后删除 | 两次操作均无错误，`savedAPIKey` 与存储同步更新 | P1 | ✅ 已覆盖 | `successPathsStillWork` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> 变异验证：把 ViewModel 保存/删除后的回读校验短路成无条件成功，68–70 立即失败（#563）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 56 / 56
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 57 / 57
 - P2: 已覆盖 8 / 8
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（56 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（57 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
