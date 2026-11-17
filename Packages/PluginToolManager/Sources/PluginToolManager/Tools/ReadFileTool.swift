@@ -7,8 +7,9 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     public let executionCapability: ToolExecutionCapability = .parallelReadOnly
 
     private static let maxWholeFileBytes: Int64 = 10 * 1024 * 1024
-    private static let defaultLineLimit = 250
-    private static let maxLineLimit = 250
+    private static let defaultLineLimit = 2_000
+    private static let maxLineLimit = 2_000
+    private static let maxOutputCharacters = 100_000
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
     public init(
@@ -27,7 +28,7 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             "properties": [
                 "path": ["type": "string", "description": "The absolute or workspace-relative path to the UTF-8 text file to read"],
                 "offset": ["type": "integer", "description": "1-based line number to start reading from. Negative values count backwards from the end (e.g. -1 is the last line)."],
-                "limit": ["type": "integer", "minimum": 1, "maximum": 250, "description": "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request."],
+                "limit": ["type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum number of lines to return. Defaults to 2000 and is capped at 2000 per request."],
             ],
             "required": ["path"],
         ]
@@ -90,7 +91,7 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
                 throw ToolExecutionError.executionFailed(toolName: name, reason: "'limit' must be a positive integer.")
             }
 
-            // 显式 offset/limit 是有界分块读取，输出仍受 250 行 / 30,000 字符限制，
+            // 显式 offset/limit 是有界分块读取，输出仍受 2000 行 / 100,000 字符限制，
             // 总大小不得否决它（#393）；只有未指定范围的整文件读取才受总大小限制。
             let hasExplicitRange = arguments["offset"]?.value != nil || arguments["limit"]?.value != nil
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -133,19 +134,23 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             var output: [String] = []
             output.reserveCapacity(endIndex - startIndex)
             var totalChars = 0
+            var truncatedByCharBudget = false
             for lineNumber in startIndex..<endIndex {
                 let line = lines[lineNumber]
                 totalChars += line.count + 1
-                if totalChars > 30_000 {
-                    output.append("... (output truncated at 30,000 characters)")
+                if totalChars > Self.maxOutputCharacters {
+                    // 超预算的当前行未输出，续读从它的行号（1-based）开始。
+                    output.append("... (output truncated at \(Self.maxOutputCharacters) characters; continue with offset=\(lineNumber + 1))")
+                    truncatedByCharBudget = true
                     break
                 }
                 output.append("\(lineNumber + 1)\t\(line)")
             }
 
             var result = output.joined(separator: "\n")
-            if endIndex < totalLines {
-                result += "\n... (showing lines \(startIndex + 1)-\(endIndex) of \(totalLines); use offset/limit to read more)"
+            // 字符预算截断时续读偏移已附在截断行内，不再叠加行区间提示。
+            if !truncatedByCharBudget && endIndex < totalLines {
+                result += "\n... (showing lines \(startIndex + 1)-\(endIndex) of \(totalLines); continue with offset=\(endIndex + 1))"
             }
             return result
         } catch let error as ToolExecutionError {

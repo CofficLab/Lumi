@@ -91,15 +91,15 @@ private func withTempFile(
 
 @MainActor
 @Test func readFileCapsRepresentableOversizedLimit() async throws {
-    try await withTempFile(lineCount: 300) { path in
+    try await withTempFile(lineCount: 2_500) { path in
         let tool = ReadFileTool()
         let result = try await tool.execute(arguments: [
             "path": ToolArgument(path),
             "limit": ToolArgument(10_000_000_000),
         ])
-        #expect(result.contains("250\tline 250"))
-        #expect(!result.contains("251\tline 251"))
-        #expect(result.contains("use offset/limit to read more"))
+        #expect(result.contains("2000\tline 2000"))
+        #expect(!result.contains("2001\tline 2001"))
+        #expect(result.contains("continue with offset=2001"))
     }
 }
 
