@@ -109,6 +109,45 @@ import Testing
     try plugin.onShutdown(kernel: kernel)
 }
 
+@Test @MainActor func pluginMarksAttentionForShortTurnsFinishedBetweenPollsViaLoopEvents() throws {
+    let kernel = KernelCoreContainer()
+    let conversations = DefaultConversationManager()
+    let chat = DefaultChatSectionProviding()
+    let agentLoop = TestAgentLoop()
+    try kernel.registerProvider((any ConversationManaging).self, conversations)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
+    let plugin = ConversationListPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    let backgroundConversation = try conversations.createConversation(
+        title: "Short Background",
+        projectPath: nil,
+        providerID: nil,
+        modelName: nil
+    )
+    let selectedConversation = try conversations.createConversation(
+        title: "Short Selected",
+        projectPath: nil,
+        providerID: nil,
+        modelName: nil
+    )
+    try plugin.onReady(kernel: kernel)
+
+    // 回合的整个生命周期落在两次轮询之间：只有 AgentLoop 事件能提供
+    // 边缘信号（#538）。started + completed 事件直接标记关注，不等轮询。
+    agentLoop.emit(.started(conversationID: backgroundConversation, turnID: UUID()))
+    agentLoop.emit(.completed(conversationID: backgroundConversation, turnID: UUID()))
+    #expect(plugin.attentionStore.needsAttention(for: backgroundConversation))
+
+    // 终态事件本身就是完成信号：从未被观察到 running 的回合也要标记，
+    // 选中对话则标记已读。
+    agentLoop.emit(.completed(conversationID: selectedConversation, turnID: UUID()))
+    #expect(!plugin.attentionStore.needsAttention(for: selectedConversation))
+
+    try plugin.onShutdown(kernel: kernel)
+}
+
 @Test @MainActor func pluginStopsTrackingAndClearsAttentionWhenConversationIsDeleted() throws {
     let kernel = KernelCoreContainer()
     let conversations = DefaultConversationManager()
@@ -153,6 +192,20 @@ private func waitUntil(
 @MainActor
 private final class TestAgentLoop: AgentLoopProviding {
     var runningIDs: Set<UUID> = []
+    private var loopCallback: ((AgentLoopEvent) -> Void)?
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        loopCallback = callback
+        return PluginLoopObserverHandle { [weak self] in
+            self?.loopCallback = nil
+        }
+    }
+
+    func emit(_ event: AgentLoopEvent) {
+        loopCallback?(event)
+    }
 
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { fatalError("Unused test path") }
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome { fatalError("Unused test path") }
@@ -162,4 +215,17 @@ private final class TestAgentLoop: AgentLoopProviding {
     func isRunning(for conversationID: UUID) -> Bool { runningIDs.contains(conversationID) }
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+private final class PluginLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
+    }
 }

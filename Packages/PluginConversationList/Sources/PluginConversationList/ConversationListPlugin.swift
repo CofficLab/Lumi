@@ -47,6 +47,9 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     private var popoverCurrentViewModel: ConversationListViewModel?
     /// 复刻旧版 onTurnFinished：轮询 AgentTurn 状态迁移（running → 非 running）。
     private var attentionMonitorTask: Task<Void, Never>?
+    /// 事件驱动的边缘检测：短于轮询间隔的回合在两次扫描之间完成，
+    /// 轮询凑不出 running → 非 running 边缘（#538）。
+    private var agentLoopObserver: (any AgentLoopObserverHandle)?
     private var runningConversationIDs: Set<UUID> = []
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -178,6 +181,13 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
                 self.scanAttention(context: context)
             }
         }
+
+        // 5. AgentLoop 事件直接标记回合结束边缘（#538）：`.started` 先入
+        //    跟踪表，终态事件无条件视为回合结束——事件本身就是完成信号，
+        //    不依赖两次轮询都观察到运行态。
+        agentLoopObserver = context.agentTurn?.addAgentLoopObserver { [weak self] event in
+            self?.handleAgentLoopEvent(event, context: context)
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -189,6 +199,8 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
         attentionMonitorTask?.cancel()
         attentionMonitorTask = nil
+        agentLoopObserver?.cancel()
+        agentLoopObserver = nil
         runningConversationIDs.removeAll()
 
         railTabController?.stop()
@@ -234,6 +246,29 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             } else {
                 attentionStore.markNeedsAttention(conversationID: id)
             }
+        }
+    }
+
+    /// AgentLoop 事件的边缘检测（#538）。
+    ///
+    /// 终态事件无条件视为回合结束：即使回合的整个生命周期都落在两次
+    /// 轮询之间，事件也能直接产出 attention 标记。选中对话标记已读，
+    /// 后台对话标记关注，与轮询路径的语义一致（标记本身幂等）。
+    private func handleAgentLoopEvent(_ event: AgentLoopEvent, context: ConversationListContext) {
+        switch event {
+        case .started(let conversationID, _):
+            runningConversationIDs.insert(conversationID)
+        case .completed(let conversationID, _),
+             .failed(let conversationID, _, _),
+             .cancelled(let conversationID, _):
+            runningConversationIDs.remove(conversationID)
+            if context.selectedConversationID == conversationID {
+                attentionStore.markRead(conversationID: conversationID)
+            } else {
+                attentionStore.markNeedsAttention(conversationID: conversationID)
+            }
+        case .toolCallsReceived, .llmResponseReceived, .suspended:
+            break
         }
     }
 }

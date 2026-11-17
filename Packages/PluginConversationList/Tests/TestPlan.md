@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 81 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 82 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 81
+测试文件: 15 个，用例总数: 82
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -42,7 +42,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 
 - **ConversationAttentionStore**（2 条）：由 `attentionStorePublishesOnlyStateChanges`、`attentionIsTrackedIndependentlyForEachConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListContext**（3 条）：由 `contextPublishesSelectionChangesOnceAndConversationRefreshes`、`contextTracksTheCurrentProjectNameAndPath`、`contextObserverRefreshesForStructureAndStateButIgnoresVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationListPlugin**（4 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection`、`pluginMarksAttentionForShortTurnsFinishedBetweenPollsViaLoopEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListToolbarViewModel**（3 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist`、`toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListViewModel**（13 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`reloadFailurePreservesConversationsAndPagination`、`reloadKeepsPagesAppendedWhileItRuns`、`sameCountReloadInvalidatesStaleNextPage`、`stateUpdateRefreshesVisibleRowWithoutReloadingSummaries`、`stateUpdateDoesNotStartLoadForUninitializedSurface` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRailTabController**（7 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile`、`railTabTitlesUsePluginLocalization`、`railTabTitleKeysHaveTranslations`、`cancelledRefreshDoesNotRemoveNewerRailTabs` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -140,18 +140,20 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 79 | ConversationListViewModel | 选中会话必须刷新粘性排序锚点，不被新消息顶走（**#800**） | 注入可控时钟的 stabilizer，Viewed(lastMessageAt=0) 与 Active(90)；t=100 选中 Viewed，t=110 Active 收到新消息 | selectConversation 后 reload | Viewed 锚点被刷到 t=100，排序仍位于 Active(t=90) 之前 | P0 | ✅ 已覆盖 | `selectingConversationRefreshesStickySortAnchor` |
 | 80 | RelativeTime | 相对时间必须由注入的 now 驱动，列表 tick 才能让文本空闲时前进（**回归 #638**） | 基准时刻固定为 epoch | 以注入 now 分别偏移 0/5m/2h/3d/未来 | 各偏移得到对应文案，忽略注入 now 则转红 | P1 | ✅ 已覆盖 | `relativeTimeIsDrivenByTheInjectedNow` |
 | 81 | ConversationListViewModel | 外部入口选中会话同步时必须清掉关注点（**回归 #637**） | A 已标记 needsAttention | 直接调管理器 `selectConversation(A)`（非列表行点击） | 关注点被清掉、选中态同步为 A；移除 markRead 同步则转红 | P0 | ✅ 已覆盖 | `externalSelectionChangeMarksConversationAsRead` |
+| 82 | ConversationListPlugin | 生命周期短于轮询间隔的回合也必须产生关注标记（**回归 #538**） | 插件 onReady 后未等轮询扫描 | 只发 AgentLoop `.started`/`.completed` 事件（不触碰轮询用的 runningIDs） | 后台会话立即标记 needsAttention；选中会话终态事件标记已读；移除事件观察者注册则转红 | P0 | ✅ 已覆盖 | `pluginMarksAttentionForShortTurnsFinishedBetweenPollsViaLoopEvents` |
 
-> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **82 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#637）：移除 `.selectedConversationChanged` 分支里的 `attentionStore.markRead` → `externalSelectionChangeMarksConversationAsRead` 转红（外部选中后绿点残留），列表行点击的 markRead 既有用例仍绿。变异确认转红后还原，最终 81 条全绿。
+> 变异验证（#538）：把 `agentLoopObserver` 注册改成 nil（不订阅 AgentLoop 事件）→ `pluginMarksAttentionForShortTurnsFinishedBetweenPollsViaLoopEvents` 转红（两次轮询之间完成的短回合不再产生关注标记），轮询路径既有用例仍绿。变异确认转红后还原，最终 82 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
+- P0: 已覆盖 13 / 13
 - P1: 已覆盖 58 / 58
 - P2: 已覆盖 11 / 11
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- **合计: 82 / 82**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
