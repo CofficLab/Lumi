@@ -5,7 +5,7 @@
 PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 55 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 55
+测试文件: 14 个，用例总数: 59
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,13 +42,14 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 55 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ConversationProjectSyncObserver**（9 条）：由 `selectingConversationWithProjectOpensProject`、`selectingConversationWithoutProjectDoesNotOpen`、`deselectDoesNotOpenProject`、`externalOpenSurvivesLateConversationSync`、`userSelectedAfterExternalOpenReenablesSync` 等用例锁定；改动该模块时优先跑对应测试文件。外部打开（`.externalOpen`）优先级高于对话联动，晚到的选中对话不得覆盖外部打开的项目（**回归 #131**）。
+- **ConversationProjectSyncObserver**（11 条）：由 `selectingConversationWithProjectOpensProject`、`selectingConversationWithoutProjectDoesNotOpen`、`deselectDoesNotOpenProject`、`externalOpenSurvivesLateConversationSync`、`userSelectedAfterExternalOpenReenablesSync`、`conversationSwitchAfterExternalOpenStillSwitches`、`restoreSelectionOpensProjectWithoutExternalOpen` 等用例锁定；改动该模块时优先跑对应测试文件。外部打开（`.externalOpen`）优先级高于对话联动，晚到的选中对话不得覆盖外部打开的项目（**回归 #131**）。
 - **ProjectsAppRestore**（3 条）：由 `appRestoreYieldsToExternalOpen`、`appRestoreTaskRechecksAfterExternalOpen`、`appRestoreOpensStoredProjectWhenEmpty` 锁定启动恢复（`.appRestore`）必须在写入前重新校验 `currentProject == nil`，外部打开已设置项目时让位（**回归 #131**）；改动 `ProjectsPlugin.restoreCurrentProjectIfNeeded` 时优先跑对应测试文件。
 - **ProjectsOpenedFilesWriteOrder**（5 条）：由 `writeRunsOffMainThread`、`staleWriteDoesNotOverwriteNewerSnapshot`、`continuousNavigationCoalescesWrites`、`rapidSavesLeaveLatestSnapshotOnDisk`、`cacheUpdatesBeforeWriteCompletes` 锁定打开文件快照后台串行合并写入、晚到旧快照不覆盖新状态（**回归 #1238**）；改动 `ProjectsStore.saveOpenedFiles` 时优先跑对应测试文件。
 - **综合**（5 条）：由 `projectsPersistenceRoundTrip`、`openedFilesPersistenceRoundTrip`、`restoresAndPersistsOpenedFilesThroughProjectProviding` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectPathInjectionHook**（2 条）：由 `injectsConversationProject`、`skipsUnboundConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListProjectsTool**（4 条）：由 `negativeLimitReturnsParameterError`、`zeroLimitReturnsParameterError`、`nonIntegerLimitReturnsParameterError`、`limitDefaultsAndCaps` 锁定；改动 limit 解析时优先跑对应测试文件。
 - **AddProjectNoAutoSelect**（3 条）：由 `addWithoutSelectDoesNotOpenWhenNoCurrentProject`、`addWithoutSelectPreservesExistingCurrentProject`、`addWithSelectStillOpensAddedProject` 锁定 `add(select:false)` 只入列、不得自动打开项目（即使当前无项目），`select:true` 仍打开新增项目（**回归 #475**）；改动 `ProjectsViewModel.add` 时优先跑对应测试文件。
+- **Projects 添加选中保留语言**（2 条，**回归 #477**）：由 `addWithSelectKeepsDetectedLanguage`、`addWithSelectStillOpensPlainDirectory` 锁定——`add(select:true)` 必须先把 store 探测到的语言随条目 `synchronizeProjects` 入列，再按路径打开，否则 Provider 会为该路径补一个无语言条目、UI 语言显示 Unknown；无特征文件目录仍正常打开（语言为 nil）。改动 `ProjectsViewModel.add` 的 shouldSelect 分支时优先跑对应测试文件。
 - **ProjectStorageDetector / ProjectStorageRefresh**（15 条）：由 `internalDiskKind`、`missingDirectoryDiffersFromUnreachableVolume`、`cachedResultIsReused`、`refreshIncrementsRevision` 等用例锁定磁盘类型判定、缓存复用与刷新失效；改动存储探测时优先跑对应测试文件。
 - **ProjectLastUsed**（3 条）：由 `firstSyncPreservesPersistedLastUsed`、`selectionAdvancesLastUsed`、`resyncWithUnchangedCurrentDoesNotAdvance` 锁定启动同步保留持久化 lastUsed、选中推进使用时间、无关同步不反复刷新（**回归 #476**）；改动 `ProjectsViewModel.syncFromProvider` 时优先跑对应测试文件。
 
@@ -111,9 +112,16 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 55 
 | 53 | ProjectsOpenedFilesWriteOrder | 连续导航合并成一次写入（**回归 #1238**） | 门闩卡住首份写入 | 连续提交 6 份快照后释放门闩 | 仅 2 次落盘，磁盘内容为最新 step-5 | P1 | ✅ 已覆盖 | `continuousNavigationCoalescesWrites` |
 | 54 | ProjectsOpenedFilesWriteOrder | 真实写入路径下最终磁盘内容是最新快照（**回归 #1238**） | 隔离 Store | 连续 30 次 `saveOpenedFiles` 后 await 最后一个 | 磁盘为 file-29，无 .tmp 残留 | P0 | ✅ 已覆盖 | `rapidSavesLeaveLatestSnapshotOnDisk` |
 | 55 | ProjectsOpenedFilesWriteOrder | 内存缓存立即更新不等磁盘写入（**回归 #1238**） | 门闩卡住写入 | 写入挂起时读取缓存与修订号 | 缓存已为 pending 快照，修订号为 1 | P1 | ✅ 已覆盖 | `cacheUpdatesBeforeWriteCompletes` |
+| 56 | ConversationProjectSyncObserver | 外部打开项目之后，用户切换对话仍应切换到对话绑定项目 | 绑定 cofficlab 的对话，先有外部打开历史 | 用户主动选中该对话 | 联动切换项目到 cofficlab，currentProject 指向 cofficlab | P1 | ✅ 已覆盖 | `conversationSwitchAfterExternalOpenStillSwitches` |
+| 57 | ConversationProjectSyncObserver | 启动恢复的选中对话在没有外部打开时仍会联动打开项目 | 启动恢复流程 + 选中对话绑定 cofficlab，无外部打开 | 执行启动恢复 | 联动打开 cofficlab | P1 | ✅ 已覆盖 | `restoreSelectionOpensProjectWithoutExternalOpen` |
+| 58 | Projects 添加选中保留语言 | select:true 打开新增项目时保留已检测的语言（**回归 #477**） | 隔离 Store + 模拟 Provider 语义的能力桩，目录含 `Package.swift` | `add(select:true)` 新增并打开 | Provider 列表条目与 currentProject 均携带 `swift` | P0 | ✅ 已覆盖 | `addWithSelectKeepsDetectedLanguage` |
+| 59 | Projects 添加选中保留语言 | select:true 对无特征文件的项目仍正常打开（语言为 nil） | 隔离 Store + 能力桩，目录无特征文件 | `add(select:true)` 新增并打开 | 正常打开，语言为 nil | P1 | ✅ 已覆盖 | `addWithSelectStillOpensPlainDirectory` |
 
-> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> ID 56/57 为补登的历史用例（`ConversationProjectSyncObserverTests` 此前未登记）。
+> ID 58/59 为本轮新增的语言保留回归用例（`ProjectsAddSelectedLanguageTests`，见 #477）。
+> #477 回归：`add(select:true)` 此前只按路径 `openProject`，Provider 为该路径构造无语言的 `ProjectInfo`，store 已探测到的语言被丢弃（UI 显示 Unknown）。修复在打开前先把带语言的条目 `synchronizeProjects` 入列（与 select:false 分支一致）。变异验证（还原为纯路径 openProject）令 `addWithSelectKeepsDetectedLanguage` 转红（Provider 列表与 currentProject 语言均为 nil）；还原后 59 条全绿。
 >
 > 回归 #475 变异验证：M1 在 `add(select:false)` 分支重新加入「`currentProject == nil` 时自动 `openProject`」→ `addWithoutSelectDoesNotOpenWhenNoCurrentProject` 失败（`openedPaths` 非空、`currentProject` 非 nil，RED）；M2 移除 `select:true` 分支的 `openProject` → `addWithSelectStillOpensAddedProject` 失败（RED）；还原后 45 条全绿。
 >
@@ -123,21 +131,21 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 55 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 45 / 45
 - P2: 已覆盖 0 / 0
-- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

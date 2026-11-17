@@ -203,6 +203,14 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         let projectInfo = ProjectInfo(name: project.name, path: project.path, language: project.language)
 
         if shouldSelect {
+            // 先把 store 探测到的语言随条目入列，再打开（#477）：
+            // 直接按路径 openProject 会让 Provider 为该路径补一个无语言的
+            // 新条目，UI 上语言被显示为 Unknown。
+            var providerProjects = projectCapability.projects
+            if !providerProjects.contains(where: { $0.path == projectInfo.path }) {
+                providerProjects.insert(projectInfo, at: 0)
+                projectCapability.synchronizeProjects(providerProjects)
+            }
             openProject(at: project.path)
         } else {
             var providerProjects = projectCapability.projects
