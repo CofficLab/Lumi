@@ -54,7 +54,9 @@ struct ContextUsageHistory: Equatable {
     /// 从会话消息构建历史曲线。
     ///
     /// 压缩事件本身是时间线事件消息（不是真实请求），因此不计入采样，
-    /// 只作为曲线上的标记。
+    /// 只作为曲线上的标记；真实压缩同时把累计口径切换到事件 metadata
+    /// 记录的压缩后估算——被替换的旧历史不再属于后续请求的输入，
+    /// 否则压缩后的估算采样会一直叠加完整旧历史（#609）。
     static func build(from messages: [Message]) -> ContextUsageHistory {
         let ordered = messages.sorted { lhs, rhs in
             if lhs.createdAt == rhs.createdAt { return lhs.id.uuidString < rhs.id.uuidString }
@@ -76,6 +78,12 @@ struct ContextUsageHistory: Equatable {
                         reason: MessageTimelineEvent.compactionReason(for: message)
                     )
                 )
+                if let compactedEstimate = MessageTimelineEvent.integerMetadata(
+                    MessageTimelineEvent.contextCompactionCompactedEstimateKey,
+                    from: message
+                ) {
+                    cumulativeTokens = compactedEstimate
+                }
                 continue
             }
 

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 127 条用例。
+PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 129 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 127
+测试文件: 15 个，用例总数: 129
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -49,7 +49,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextRecoveryTools**（19 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextToolbarSeverity**（2 条）：由 `criticalSeverityUsesInputBudget`、`severityBoundaries` 用例锁定。工具栏用量色的严重程度分母必须是输入预算（`ContextWindowUsageSnapshot.inputTokenLimit`），不得用展示窗口大小；≥0.9 危险、≥0.75 警告、其余正常，无效输入退回正常档，与弹窗 `ContextUsageRing` 同口径（**回归 #610**）。改动 `ContextToolbarView.usageSeverity/colorForUsage` 时优先跑对应测试文件。
-- **ContextUsageHistory**（10 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ContextUsageHistory**（12 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`estimateRestartsFromCompactedBaselineAfterActualCompaction` 等用例锁定。曲线估算的核心约定：assistant 采样取在自身估算加入之前；真实压缩事件既作标记，也把本地累计切换到事件 metadata 记录的压缩后估算基线，被替换的旧历史不再累加（**回归 #609**）；缺估算 metadata 的旧事件保持旧口径不清零。改动 `ContextUsageHistory.build` 时优先跑对应测试文件。
 - **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackToolPairing**（5 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMContextPlugin**（25 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -202,29 +202,33 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 125 | ContextUsageHistory | 模型切换等时间线消息不计入输入估算（回归 #855） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelSwitchTimelineEventExcludedFromEstimate` |
 | 126 | ContextToolbarSeverity | 用量色分母必须是输入预算，不得用展示窗口（**回归 #610**） | used=105000，inputTokenLimit=112000（展示窗口 128000） | 调用 `ContextToolbarView.usageSeverity` | 返回 2（危险）；同 used 对 128000 预算只返回 1（警告） | P1 | ✅ 已覆盖 | `criticalSeverityUsesInputBudget` |
 | 127 | ContextToolbarSeverity | 阈值边界与无效输入退回正常档（**回归 #610**） | used/limit ∈ {0, 74/100, 75/100, 89/100, 90/100} | 调用 `usageSeverity` | 74→0、75→1、89→1、90→2；used 或 limit ≤ 0 → 0 | P2 | ✅ 已覆盖 | `severityBoundaries` |
+| 128 | ContextUsageHistory | 真实压缩后本地估算从压缩后基线重新累计（**回归 #609**） | 压缩前无 usage 采样、真实压缩事件带 `contextCompactionCompactedEstimateKey=21000`、压缩后新增消息仍无 usage | 执行该用例 | 压缩前采样 = 完整旧历史累计；压缩后采样 = 21000 + 压缩后新消息估算，不含被替换历史 | P0 | ✅ 已覆盖 | `estimateRestartsFromCompactedBaselineAfterActualCompaction` |
+| 129 | ContextUsageHistory | 缺少压缩后估算的旧压缩事件保持旧累计口径（**#609 护栏**） | 真实压缩事件不带估算 metadata | 执行该用例 | 累计不得清零，压缩后采样仍沿用压缩前完整累计 | P1 | ✅ 已覆盖 | `legacyCompactionWithoutEstimateMetadataKeepsCumulative` |
 
-> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **126 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#350）：删除 `purgeConversation` 中 `summaryStore?.remove(conversationID:)` 一行后，`deletionObserverRemovesPersistedSummary` 转红（摘要仍可加载），其余 18 条 ContextRecoveryTools 用例不受影响；恢复后 19/19 通过。
+>
+> 变异验证（#609）：把 `ContextUsageHistory.build` 中压缩事件处读取 `contextCompactionCompactedEstimateKey` 并重置 `cumulativeTokens` 的分支改为 `= 0 as Int?` 后，`estimateRestartsFromCompactedBaselineAfterActualCompaction` 转红（压缩后采样仍含被替换的完整旧历史），`legacyCompactionWithoutEstimateMetadataKeepsCumulative` 亦转红（累计被误清零导致采样缺失）；恢复后 12/12 ContextUsageHistory 全绿，全包 129 条通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 22 / 22
-- P1: 已覆盖 99 / 99
+- P0: 已覆盖 23 / 23
+- P1: 已覆盖 100 / 100
 - P2: 已覆盖 6 / 6
-- **合计: 127 / 127**（仅表示清单场景，非源码覆盖率）
+- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（99 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P1**: 其余功能性用例（100 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 126 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
