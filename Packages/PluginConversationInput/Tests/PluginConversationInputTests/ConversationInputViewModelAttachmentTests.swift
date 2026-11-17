@@ -172,8 +172,8 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(message.contains("fake.png"))
     }
 
-    @Test("拖入空文件不会进入图片池")
-    func droppingEmptyImageIsIgnored() async throws {
+    @Test("拖入空图片时报错且不进图片池（#520）")
+    func droppingEmptyImageSurfacesError() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("conversation-input-empty-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
@@ -187,11 +187,38 @@ struct ConversationInputViewModelAttachmentTests {
 
         viewModel.attachImage(fileURL)
 
-        // 读取路径是异步的；等待一轮后仍应为空，且不产生错误提示。
-        await awaitSettle()
+        await waitUntil("空图片上报错误提示", timeout: .seconds(10)) {
+            viewModel.errorMessage != nil
+        }
 
         #expect(capability.pendingImageAttachments.isEmpty)
-        #expect(viewModel.errorMessage == nil)
+        let message = try #require(viewModel.errorMessage)
+        #expect(message.contains("empty.png"))
+    }
+
+    @Test("拖入读取失败的图片时展示具体原因（#520）")
+    func droppingUnreadableImageSurfacesReason() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-unreadable-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        // 用目录冒充图片文件：Data(contentsOf:) 必然抛错，构造确定性的读取失败。
+        let directoryURL = directory.appendingPathComponent("unreadable.png")
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: false)
+
+        let capability = SendActionBarTestCapability()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attachImage(directoryURL)
+
+        await waitUntil("读取失败上报错误提示", timeout: .seconds(10)) {
+            viewModel.errorMessage != nil
+        }
+
+        #expect(capability.pendingImageAttachments.isEmpty)
+        let message = try #require(viewModel.errorMessage)
+        #expect(!message.isEmpty)
     }
 
     @Test("拖入普通文件进入文件池并聚焦输入框")

@@ -193,6 +193,37 @@ struct ConversationInputDropOrderTests {
         #expect(capability.pendingFileAttachments.map(\.fileName) == ["B.txt"])
     }
 
+    // MARK: - 批次拖放错误上报
+
+    /// 走**生产**批次读取器：空图片必须上报错误，普通文件照常入池（#520）。
+    /// 放在本 `.serialized` 套件里，避免与注入 `batchAttachmentReader` 的用例并发。
+    @Test("批量拖入含空图片时同样上报错误，其余附件正常入池（#520）")
+    func batchDropWithEmptyImageSurfacesError() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-batch-empty-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let emptyURL = directory.appendingPathComponent("empty.png")
+        #expect(FileManager.default.createFile(atPath: emptyURL.path, contents: Data()))
+        let textURL = directory.appendingPathComponent("note.txt")
+        #expect(FileManager.default.createFile(atPath: textURL.path, contents: Data("hello".utf8)))
+
+        let capability = SendActionBarTestCapability()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attach(droppedURLs: [emptyURL, textURL])
+
+        await waitUntil("批次中的空图片上报错误提示", timeout: .seconds(10)) {
+            viewModel.errorMessage != nil
+        }
+
+        #expect(capability.pendingImageAttachments.isEmpty)
+        #expect(capability.pendingFileAttachments.map(\.fileName) == ["note.txt"])
+        let message = try #require(viewModel.errorMessage)
+        #expect(message.contains("empty.png"))
+    }
+
     // MARK: - Helpers
 
     /// 注入批次读取器，跑完 body 后恢复原读取器（defer 保证异常路径也恢复）。

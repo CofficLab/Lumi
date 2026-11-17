@@ -574,8 +574,18 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             guard capability.selectedConversationID == conversationID else { return }
             switch outcome {
             case .empty:
-                // 空文件保持静默忽略（见 #520）。
-                return
+                // 空图片同样显式上报，不再静默吞掉（#520）。
+                capability.recordAttachmentReadFailure()
+                capability.errorMessage = String(
+                    format: pluginLocalization.string("Image file is empty: %@"),
+                    fileName
+                )
+                refresh()
+            case .unreadable(let message):
+                // 读取失败与普通文件一致展示具体原因（#520）。
+                capability.recordAttachmentReadFailure()
+                capability.errorMessage = message
+                refresh()
             case .undecodable:
                 capability.recordAttachmentReadFailure()
                 capability.errorMessage = String(
@@ -593,6 +603,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 图片附件后台加载结果（跨 actor 传回主线程）。
     private enum ImageAttachmentLoadOutcome: Sendable {
         case empty
+        case unreadable(message: String)
         case undecodable
         case loaded(UserImageAttachment)
     }
@@ -604,7 +615,15 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         mimeType: String,
         fileName: String
     ) -> ImageAttachmentLoadOutcome {
-        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return .empty }
+        // 读取失败与空文件分开上报：前者带具体原因，后者明确标记为无效
+        // 图片——两者此前都被吞成静默忽略（#520）。
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            return .unreadable(message: error.localizedDescription)
+        }
+        guard !data.isEmpty else { return .empty }
         guard ChatInputEditorRules.isDecodableImageData(data) else { return .undecodable }
         return .loaded(UserImageAttachment(
             mimeType: mimeType,
@@ -617,8 +636,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     enum AttachmentReadOutcome: Sendable {
         case image(UserImageAttachment)
         case file(UserFileAttachment)
-        /// 空图片：静默忽略（#520）。
-        case emptyImage
+        /// 空图片：显式上报无效（#520）。
+        case emptyImage(fileName: String)
+        /// 图片读取失败（I/O 错误等）：与普通文件一致展示原因（#520）。
+        case unreadableImage(message: String)
         case undecodableImage(fileName: String)
         case fileError(message: String)
     }
@@ -632,7 +653,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
             let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
             let fileName = url.lastPathComponent
             switch loadImageAttachment(from: url, mimeType: mimeType, fileName: fileName) {
-            case .empty: return .emptyImage
+            case .empty: return .emptyImage(fileName: fileName)
+            case .unreadable(let message): return .unreadableImage(message: message)
             case .undecodable: return .undecodableImage(fileName: fileName)
             case .loaded(let attachment): return .image(attachment)
             }
@@ -675,8 +697,17 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         case .file(let attachment):
             capability.addFileAttachment(attachment)
             capability.isInputFocused = true
-        case .emptyImage:
-            break
+        case .emptyImage(let fileName):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = String(
+                format: pluginLocalization.string("Image file is empty: %@"),
+                fileName
+            )
+            refresh()
+        case .unreadableImage(let message):
+            capability.recordAttachmentReadFailure()
+            capability.errorMessage = message
+            refresh()
         case .undecodableImage(let fileName):
             capability.recordAttachmentReadFailure()
             capability.errorMessage = String(

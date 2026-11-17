@@ -177,7 +177,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 69 | 拖放 | 目录路径交给编辑器插入且不直接改写草稿正文 | 已有草稿 | 拖入目录 | 生成纯文本块请求（永不折叠）、草稿正文不变、`isInputFocused` 为真 | P1 | ✅ 已覆盖 | `droppingDirectoryQueuesPlainTextBlock` |
 | 70 | 折叠块 | 插入目录路径不会展开已有 chip，区间保持不变 | 编辑器已有 chip | 以纯文本块插入目录路径 | 正文追加路径；chip 仍是 attachment；折叠区间仍指向原 chip | P1 | ✅ 已覆盖 | `insertingPlainTextKeepsExistingChip` |
 | 71 | 拖放 | 图片进入图片池并聚焦 | 真实临时 PNG 文件 | `attachImage` 后等待 | MIME 按扩展名为 `image/png`、base64 正确、文件名保留、聚焦 | P1 | ✅ 已覆盖 | `droppingImageAttachesToImagePool` |
-| 72 | 拖放 | 空文件不进图片池 | 0 字节 PNG | `attachImage` 后等待一轮 | 池为空且不产生错误提示 | P2 | ✅ 已覆盖 | `droppingEmptyImageIsIgnored` |
+| 72 | 拖放 | 拖入空图片时报错且不进图片池（**回归 #520**） | 0 字节 PNG | `attachImage` 后等待 `errorMessage` | 错误提示包含文件名，池为空 | P1 | ✅ 已覆盖 | `droppingEmptyImageSurfacesError` |
 | 73 | 拖放 | 普通文件进入文件池并聚焦 | 真实临时 txt 文件 | `attachFile` 后等待 | MIME `text/plain`、`textContent` 正确、聚焦 | P1 | ✅ 已覆盖 | `droppingFileAttachesToFilePool` |
 | 74 | 拖放 | 不可读文件错误提示可见 | 不存在的路径 | `attachFile` 后等待 | 错误提示非空，附件池为空 | P1 | ✅ 已覆盖 | `droppingUnreadableFileSurfacesError` |
 | 75 | 错误 | 错误提示可被显式清除 | 预置错误 | `dismissError()` | ViewModel 与能力层同时清空 | P2 | ✅ 已覆盖 | `dismissErrorClearsMessage` |
@@ -397,7 +397,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 188 | 命中测试 | chip 矩形外的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形下方 30px)` | nil（空白区不再吞点击） | P1 | ✅ 已覆盖 | `pointOutsideChipDoesNotHit` |
 | 189 | 命中测试 | chip 矩形左侧的空白点不命中 chip | 同上 | `pastePreviewHit(at: 矩形左侧 40px)` | nil | P1 | ✅ 已覆盖 | `pointLeftOfChipDoesNotHit` |
 
-> 说明：清单 **202 条场景 / 208 个测试方法**已在 macOS 上实跑通过
+> 说明：清单 **232 条场景 / 238 个测试方法**已在 macOS 上实跑通过
 > （`swift test` → 208 tests in 31 suites，全部通过；早期记录的 6 条 chip 几何
 > 用例失败已不复现，当前 HEAD 无失败用例）。
 >
@@ -643,6 +643,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 228 | 回归 | 发送到对话置 isFocused=true 后 Composer 成为第一响应者（**回归 #803**） | 真实 NSWindow + NSHostingView 渲染生产编辑器；焦点先移到代码编辑器替身 | 把 binding 的 isFocused 置 true 触发 updateNSView | `window.firstResponder` 变为 Composer 编辑器，而非只把布尔置 true | P0 | ✅ 已覆盖 | `handoverMovesFirstResponderToComposer` |
 | 229 | 回归 | 焦点离开后再次发送能重新聚焦，且离开时 binding 写回 false（**回归 #803**） | 同上；已聚焦 Composer 一次 | 把焦点移回代码编辑器替身 → 再次置 isFocused=true | 失去焦点时 binding 写回 false；再次发送后 `window.firstResponder` 重新变为 Composer | P0 | ✅ 已覆盖 | `refocusesAfterFocusLoss` |
 | 230 | 回归 | isFocused=false 时不抢占焦点（**回归 #803**） | 同上；焦点在代码编辑器替身 | 保持 isFocused=false 多轮刷新 | `window.firstResponder` 始终留在代码编辑器替身，不被抢回 | P1 | ✅ 已覆盖 | `doesNotStealFocusWhenNotRequested` |
+| 231 | 拖放 | 拖入读取失败的图片时展示具体原因（**回归 #520**） | 目录冒充 `unreadable.png` | `attachImage` 后等待 `errorMessage` | 错误提示非空，池为空 | P1 | ✅ 已覆盖 | `droppingUnreadableImageSurfacesReason` |
+| 232 | 拖放 | 批量拖入含空图片时同样上报错误，其余附件正常入池（**回归 #520**） | 0 字节 PNG + `note.txt` | `attach(droppedURLs:)` 后等待 `errorMessage` | 错误提示包含文件名，图片池空、文件池仅 `note.txt` | P1 | ✅ 已覆盖 | `batchDropWithEmptyImageSurfacesError` |
 
 > **#803 变异验证**（恢复后 GREEN）：M1 去掉 `updateNSView` 里的 `syncFocus` 调用
 > （还原「从不消费焦点 binding」的旧行为）→ ID 228 RED（焦点停在代码编辑器替身）、
@@ -656,9 +658,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 覆盖率统计
 
 - P0: 已覆盖 85 / 85
-- P1: 已覆盖 127 / 127
+- P1: 已覆盖 129 / 129
 - P2: 已覆盖 18 / 18
-- **合计: 230 / 230**（仅表示清单场景，非源码覆盖率）
+- **合计: 232 / 232**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
