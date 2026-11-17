@@ -225,6 +225,8 @@ public final class ActivityHeatmapViewModel: ObservableObject {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
     private let preferences: ActivityHeatmapPreferences
+    /// 本地「现在」。测试注入固定值以模拟跨过本地午夜（#507）。
+    let dayStartProvider: () -> Date
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     static let periodKey = ActivityHeatmapPreferences.periodKey
@@ -252,12 +254,37 @@ public final class ActivityHeatmapViewModel: ObservableObject {
     public init(
         messages: (any MessageManaging)?,
         cache: ActivityHeatmapCache? = nil,
-        preferences: ActivityHeatmapPreferences
+        preferences: ActivityHeatmapPreferences,
+        dayStartProvider: @escaping () -> Date = { Date() }
     ) {
         self.messages = messages
         self.cache = cache
         self.preferences = preferences
+        self.dayStartProvider = dayStartProvider
         self.period = ActivityHeatmapPeriod(rawValue: preferences.storedPeriodRawValue ?? 0) ?? .days30
+    }
+
+    /// 本地「今天」的零点。
+    private var currentDayStart: Date {
+        Calendar.current.startOfDay(for: dayStartProvider())
+    }
+
+    /// 监控本地日界变化（#507）。
+    ///
+    /// 页面停留期间跨过本地午夜时，新的一天不会由消息插入触发重载，
+    /// 窗口会停留在昨天。此监控周期性比较 `startOfDay`，一旦变化（跨午夜、
+    /// 时区/日历变更、休眠唤醒后日期不同）立即重载窗口。取消随调用方任务
+    /// 传播（设置页 `.task` 在视图消失时自动取消），无需额外停止入口。
+    func runDayRolloverMonitor(pollInterval: Duration = .seconds(30)) async {
+        var dayStart = currentDayStart
+        while !Task.isCancelled {
+            try? await Task.sleep(for: pollInterval)
+            if Task.isCancelled { return }
+            let current = currentDayStart
+            guard current != dayStart else { continue }
+            dayStart = current
+            await reloadNow()
+        }
     }
 
     /// 从旧版 JSON 设置（`settings/settings.json`）恢复周期偏好。
@@ -313,7 +340,7 @@ public final class ActivityHeatmapViewModel: ObservableObject {
             }
         }
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = currentDayStart
         let heatmapDayCount = ActivityHeatmapPeriod.year.rawValue
         guard let start = calendar.date(byAdding: .day, value: -(heatmapDayCount - 1), to: today) else {
             isLoading = false
@@ -417,7 +444,12 @@ public struct ActivityHeatmapSettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .task { await model.reload() }
+        .task {
+            await model.reload()
+            // 停留在页面上跨过本地午夜时自动滚动窗口（#507）；
+            // 视图消失时 `.task` 取消，监控随之停止。
+            await model.runDayRolloverMonitor()
+        }
     }
 
     private var summary: some View {
