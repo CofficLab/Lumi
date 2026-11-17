@@ -633,42 +633,74 @@ public actor ActivityHeatmapCache {
         public let tokens: Int
     }
 
+    /// 持久化格式 v3：日期分桶与写入时的时区绑定（#504）。
+    private struct Envelope: Codable {
+        let timeZoneIdentifier: String
+        let counts: [String: Counts]
+    }
+
     private let url: URL?
     private var values: [String: Counts]?
-    private let calendar = Calendar.current
+    private var loadedTimeZoneIdentifier: String?
+    /// 当前时区。测试注入固定值以模拟时区切换（#504）。
+    let timeZoneProvider: () -> TimeZone
 
-    public init(directory: URL?) {
-        self.url = directory?.appendingPathComponent("activity-cache-v2.json")
+    public init(directory: URL?, timeZoneProvider: @escaping () -> TimeZone = { TimeZone.current }) {
+        self.url = directory?.appendingPathComponent("activity-cache-v3.json")
+        self.timeZoneProvider = timeZoneProvider
+        // v2 缓存不带时区标识，不再读取；删除避免过期残留。
+        if let directory {
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent("activity-cache-v2.json"))
+        }
     }
 
     public func counts(for dates: [Date]) -> [Date: Counts] {
         let stored = loadIfNeeded()
+        let calendar = Calendar.current
         return Dictionary(uniqueKeysWithValues: dates.compactMap { date in
-            stored[key(for: date)].map { (calendar.startOfDay(for: date), $0) }
+            stored[key(for: date, calendar: calendar)].map { (calendar.startOfDay(for: date), $0) }
         })
     }
 
     public func save(_ updates: [Date: Counts]) {
         guard !updates.isEmpty else { return }
         var stored = loadIfNeeded()
-        for (date, counts) in updates { stored[key(for: date)] = counts }
+        let calendar = Calendar.current
+        for (date, counts) in updates { stored[key(for: date, calendar: calendar)] = counts }
         values = stored
-        guard let url, let data = try? JSONEncoder().encode(stored) else { return }
+        guard let url else { return }
+        let envelope = Envelope(timeZoneIdentifier: timeZoneProvider().identifier, counts: stored)
+        guard let data = try? JSONEncoder().encode(envelope) else { return }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: url, options: .atomic)
     }
 
+    /// 读取缓存，并在时区变化时整体失效（#504）。
+    ///
+    /// 日期分桶（`yyyy-MM-dd`）依赖写入时的时区：同一条消息在
+    /// `America/Los_Angeles` 属于 1 月 1 日，切换到 `Asia/Shanghai` 后属于
+    /// 1 月 2 日。若沿用旧分桶，同一条消息会同时出现在旧日期缓存与
+    /// 当前查询里，被永久双计。因此无论内存缓存还是磁盘信封，时区
+    /// 与当前不符时一律视为空，触发全量重查并以当前时区重写。
     private func loadIfNeeded() -> [String: Counts] {
-        if let values { return values }
-        guard let url,
-              let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode([String: Counts].self, from: data)
-        else { values = [:]; return [:] }
-        values = decoded
-        return decoded
+        let currentIdentifier = timeZoneProvider().identifier
+        if let values, loadedTimeZoneIdentifier == currentIdentifier {
+            return values
+        }
+        let diskCounts: [String: Counts] = {
+            guard let url,
+                  let data = try? Data(contentsOf: url),
+                  let envelope = try? JSONDecoder().decode(Envelope.self, from: data),
+                  envelope.timeZoneIdentifier == currentIdentifier
+            else { return [:] }
+            return envelope.counts
+        }()
+        values = diskCounts
+        loadedTimeZoneIdentifier = currentIdentifier
+        return diskCounts
     }
 
-    private func key(for date: Date) -> String {
+    private func key(for date: Date, calendar: Calendar) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
     }

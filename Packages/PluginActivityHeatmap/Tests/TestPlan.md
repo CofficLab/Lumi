@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 28 条用例。
+PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆盖 30 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 28
+测试文件: 9 个，用例总数: 30
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -90,6 +90,8 @@ PluginActivityHeatmap 的实现包，包含 11 个主要类型；当前测试覆
 | 26 | ActivityHeatmapGitWatchRefreshGate | refs 变化仍刷新提交活动（**#505 护栏**） | — | 以 refsChanged 调用门控 | 返回 true | P1 | ✅ 已覆盖 | `refsChangeRefreshesCommitActivity` |
 | 27 | ActivityHeatmapGitWatchRefreshGate | 不改变提交历史的事件不触发刷新（**#505 护栏**） | — | 以 index/stash/workingTree/started/stopped 调用门控 | 均返回 false | P1 | ✅ 已覆盖 | `nonHistoryEventsDoNotRefresh` |
 | 28 | ActivityHeatmapViewModel | 日界变化时监控自动滚动窗口（**回归 #507**） | 注入 dayStartProvider，先重载一次 | 页面停留期间把「今天」推到次日 | 监控检测到 startOfDay 变化并重载，heatmapDays 末尾变为新的一天（365 天），days 保持 30 天 | P0 | ✅ 已覆盖 | `dayRolloverMonitorReloadsOnDayChange` |
+| 29 | ActivityHeatmapCache | 写入时区切换后旧缓存整体失效（**回归 #504**） | 以 America/Los_Angeles 写入缓存 | 模拟重启后时区切到 Asia/Shanghai 再读取 | counts 为空，触发全量重查 | P0 | ✅ 已覆盖 | `activityCacheIgnoresCountsSavedUnderDifferentTimeZone` |
+| 30 | ActivityHeatmapCache | 时区切换后重查结果按新时区重写（**回归 #504**） | 写入后同实例切换时区 | 切换后读取并重新保存，再以新时区重启读取 | 新实例按新时区命中重写后的计数 | P1 | ✅ 已覆盖 | `activityCacheRewritesCountsUnderNewTimeZoneAfterSwitch` |
 
 > 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
