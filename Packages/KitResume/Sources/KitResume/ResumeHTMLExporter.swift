@@ -39,7 +39,7 @@ public struct ResumePageInspection: Equatable, Sendable {
         public let left: Double
         public let width: Double
         public let height: Double
-        /// 容器实际内容高度超过可视高度（会被 overflow: hidden 裁掉）。
+        /// 容器实际内容超出可视区域（横向或纵向，会被 overflow: hidden 裁掉）。
         public let isOverflowing: Bool
     }
 
@@ -204,15 +204,23 @@ public enum ResumeHTMLExporter {
         let script = """
         (() => {
           const pages = Array.from(document.querySelectorAll('.resume-page'));
-          return pages.map((page, index) => ({
-            index: index,
-            top: page.offsetTop,
-            left: page.offsetLeft,
-            width: page.offsetWidth,
-            height: page.offsetHeight,
-            scrollHeight: page.scrollHeight,
-            clientHeight: page.clientHeight
-          }));
+          return pages.map((page, index) => {
+            const rect = page.getBoundingClientRect();
+            return {
+              index: index,
+              // 文档绝对坐标：rect 是视口相对值，加上滚动偏移才是整页坐标。
+              // offsetTop/offsetLeft 只相对 offsetParent，页面嵌套在定位容器
+              // 里时会量出错误的捕获区域（#488）。
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX,
+              width: page.offsetWidth,
+              height: page.offsetHeight,
+              scrollHeight: page.scrollHeight,
+              clientHeight: page.clientHeight,
+              scrollWidth: page.scrollWidth,
+              clientWidth: page.clientWidth
+            };
+          });
         })()
         """
         guard let raw = try await webView.evaluateJavaScript(script) as? [[String: Any]], !raw.isEmpty else {
@@ -233,13 +241,16 @@ public enum ResumeHTMLExporter {
             let height = try number(item, "height")
             let scrollHeight = try number(item, "scrollHeight")
             let clientHeight = try number(item, "clientHeight")
+            let scrollWidth = try number(item, "scrollWidth")
+            let clientWidth = try number(item, "clientWidth")
             return ResumePageInspection.Page(
                 index: index,
                 top: top,
                 left: left,
                 width: width,
                 height: height,
-                isOverflowing: scrollHeight > clientHeight + 1
+                // 纵向与横向溢出都会被 overflow: hidden 裁掉（#489）。
+                isOverflowing: scrollHeight > clientHeight + 1 || scrollWidth > clientWidth + 1
             )
         }
 
