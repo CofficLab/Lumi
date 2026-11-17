@@ -170,6 +170,44 @@ struct GitWorkspaceViewModelTests {
         #expect(viewModel.changeLabel(for: "a.txt") == "?")
     }
 
+    /// 回归 #389：切换项目时必须先丢弃上一个项目的数据，否则新项目
+    /// 加载失败时旧仓库的分支、变更与提交会顶着新项目的标题继续展示。
+    @Test func switchingToAnotherProjectClearsStaleDataOnFailure() async throws {
+        let status = try makeStatus(branch: "main", modified: ["a.txt"])
+        let commits = try makeCommits([("abc123", "Initial commit")])
+        let git = StubGitWorkspaceGitProvider(
+            statuses: ["/repo-a": status],
+            commits: ["/repo-a": commits],
+            statusFailures: ["/plain"]
+        )
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/repo-a")
+        #expect(viewModel.status?.branch == "main")
+        #expect(viewModel.commits.map(\.hash) == ["abc123"])
+
+        await viewModel.reload(path: "/plain")
+        #expect(viewModel.status == nil)
+        #expect(viewModel.commits.isEmpty)
+        #expect(viewModel.workingTreeFiles.isEmpty)
+        #expect(viewModel.errorMessage == StubGitWorkspaceError.status.localizedDescription)
+    }
+
+    /// 回归 #389：同路径刷新不应清空已有数据（避免面板闪烁）。
+    @Test func samePathReloadKeepsLoadedDataUntilReplaced() async throws {
+        let status = try makeStatus(branch: "main", modified: ["a.txt"])
+        let commits = try makeCommits([("abc123", "Initial commit")])
+        let git = StubGitWorkspaceGitProvider(statuses: ["/repo-a": status], commits: ["/repo-a": commits])
+        let viewModel = GitWorkspaceViewModel(git: git)
+
+        await viewModel.reload(path: "/repo-a")
+
+        await viewModel.reload(path: "/repo-a", force: true)
+        #expect(viewModel.status?.branch == "main")
+        #expect(viewModel.commits.map(\.hash) == ["abc123"])
+        #expect(viewModel.errorMessage == nil)
+    }
+
     private func makeStatus(
         branch: String,
         modified: [String],
