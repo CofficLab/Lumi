@@ -7,6 +7,12 @@ struct AppStoreConnectListResponse<T: Decodable>: Decodable {
 struct AppStoreConnectListResponseWithIncluded<T: Decodable, Included: Decodable>: Decodable {
     let data: [T]
     let included: [Included]?
+    /// JSON:API 文档分页链接；`next` 非空表示还有后续页（#818）。
+    let links: AppStoreConnectDocumentLinks?
+}
+
+struct AppStoreConnectDocumentLinks: Decodable {
+    let next: URL?
 }
 
 struct AppStoreConnectSingleResponse<T: Decodable>: Decodable {

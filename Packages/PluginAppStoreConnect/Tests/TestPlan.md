@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 21 个，用例总数: 112
+测试文件: 22 个，用例总数: 114
 
 核心组件（源码目录）:
 - `Sources/`
@@ -170,18 +170,20 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 110 | ScreenshotImageCache | 按截图失效后桶里不再有该条目，且无网络时读取失败 | 截图数据已入桶 | `invalidate(screenshotID:)` 后再次读取 | 条目被清除，无网络时读取抛错 | P1 | ✅ 已覆盖 | `invalidateRemovesTaggedEntries` |
 | 111 | ScreenshotImageCache | 清空缓存后不再命中 | 截图数据已入桶 | `clear()` 后再次读取 | 桶被清空，读取抛错 | P1 | ✅ 已覆盖 | `clearEmptiesBucket` |
 | 112 | ScreenshotImageCache | 没有 DiskCache Provider 时退化为内存层，不崩溃 | DiskCache Provider 返回 nil | 读取未缓存 URL | 抛错但无崩溃，内存层退化可用 | P1 | ✅ 已覆盖 | `worksWithoutDiskCacheProvider` |
+| 113 | ConnectClient Builds | Builds 查询必须跟随 links.next 翻页，不得静默丢弃第 51 个之后的构建（**回归 #818**） | 两页 stub 响应，首页带 next 链接 | 调用 listBuilds | 共 2 次请求，3 个构建全部返回且版本号合并 | P0 | ✅ 已覆盖 | `followsNextLinksAndMergesAllPages` |
+| 114 | ConnectClient Builds | 无 next 链接时单页请求即停止 | 单页 stub 响应 | 调用 listBuilds | 仅 1 次请求，结果完整 | P1 | ✅ 已覆盖 | `singlePageStopsWithoutNextLink` |
 
-> 说明：全部 **112 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #320 变异验证：M1 把 ViewModel `loadVersions` 的 `listVersions(forceRefresh:)` 写死为 false（不再传播刷新标志）→ `refreshForcesNetworkOnAppIDBinding`/`refreshForcesNetworkOnBundleIDBinding` 失败（listVersions 仍收到 false，RED）；M2 把 `ConnectClient.listVersions` 的 `cachePolicy` 写死为 nil（忽略 forceRefresh）→ `forceRefreshBypassesVersionListCache` 失败（刷新仍命中旧缓存、请求数不增，RED）；还原后 95 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 31 / 31
-- P1: 已覆盖 73 / 73
+- P0: 已覆盖 32 / 32
+- P1: 已覆盖 74 / 74
 - P2: 已覆盖 8 / 8
-- **合计: 112 / 112**（仅表示清单场景，非源码覆盖率）
+- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

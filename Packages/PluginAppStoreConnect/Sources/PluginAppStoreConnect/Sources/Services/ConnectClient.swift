@@ -179,6 +179,21 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         return try decoder.decode(T.self, from: data)
     }
 
+    /// 请求一个绝对 URL（分页 `links.next` 已携带全部 query），不走缓存。
+    func requestAbsolute<T: Decodable>(url: URL) async throws -> T {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
+        request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, statusCode) = try await send(request)
+
+        guard (200 ..< 300).contains(statusCode) else {
+            throw apiError(from: data, statusCode: statusCode)
+        }
+        return try decodeResponse(data)
+    }
+
     /// 发送不期望响应体的请求（如 DELETE 或返回 204 的 PATCH relationships）。
     func requestWithoutResponse(
         path: String,

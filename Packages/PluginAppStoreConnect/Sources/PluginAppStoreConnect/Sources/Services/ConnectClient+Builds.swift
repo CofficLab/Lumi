@@ -33,15 +33,37 @@ extension ConnectClient {
         }
 
         Self.logger.info("\(Self.t)listBuilds appID=\(appID) platform=\(platform ?? "nil")")
-        let response: AppStoreConnectListResponseWithIncluded<ConnectBuild, PreReleaseVersionResource> = try await request(
+        let firstPage: AppStoreConnectListResponseWithIncluded<ConnectBuild, PreReleaseVersionResource> = try await request(
             path: "/v1/builds",
             queryItems: query
         )
+
+        // 跟随 links.next 翻页：默认 limit=50，只读首页会把第 51 个之后的
+        // 构建静默丢弃，UI 与 Agent 都选不到（#818）。页数上限仅作防御，
+        // 正常情况下一页为空即停。
+        var allData = firstPage.data
+        var allIncluded = firstPage.included ?? []
+        var nextURL = firstPage.links?.next
+        var pageCount = 1
+        let maxPages = 100
+        while let url = nextURL {
+            if pageCount >= maxPages {
+                Self.logger.error("\(Self.t)listBuilds hit the \(maxPages)-page cap; builds beyond page \(maxPages) are not fetched")
+                break
+            }
+            let page: AppStoreConnectListResponseWithIncluded<ConnectBuild, PreReleaseVersionResource> =
+                try await requestAbsolute(url: url)
+            allData += page.data
+            allIncluded += page.included ?? []
+            nextURL = page.links?.next
+            pageCount += 1
+        }
+
         let preReleaseVersionsByID = Dictionary(
-            (response.included ?? []).map { ($0.id, $0) },
+            allIncluded.map { ($0.id, $0) },
             uniquingKeysWith: { first, _ in first }
         )
-        return response.data.map { build in
+        return allData.map { build in
             let preReleaseVersion = build.preReleaseVersionID.flatMap { preReleaseVersionsByID[$0] }
             return build.withPreReleaseVersionString(preReleaseVersion?.version)
         }
