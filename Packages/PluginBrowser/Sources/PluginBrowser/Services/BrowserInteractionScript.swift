@@ -243,11 +243,21 @@ enum BrowserInteractionScript {
           el.dispatchEvent(new KeyboardEvent("keyup", init));
           if (key === "Enter") {
             // Enter 在表单里通常意味着提交。
+            // 只走一条提交链路：requestSubmit 自己会派发可取消的 submit 事件并
+            // 执行原生提交流程。原先「手动 dispatchEvent(submit) + requestSubmit」
+            // 会让监听器跑两次，且第一次事件的 preventDefault 拦不住第二次（#266）。
             const form = el.form || el.closest("form");
             if (form) {
-              form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
               if (typeof form.requestSubmit === "function") {
-                try { form.requestSubmit(); } catch (_) {}
+                form.requestSubmit();
+              } else {
+                // 兜底：没有 requestSubmit 的内核手动派发一次可取消 submit，
+                // 未被取消才走原生提交（form.submit 不触发 submit 事件）。
+                const event = new Event("submit", { bubbles: true, cancelable: true });
+                const accepted = form.dispatchEvent(event);
+                if (accepted) {
+                  try { form.submit(); } catch (_) {}
+                }
               }
             }
           }
