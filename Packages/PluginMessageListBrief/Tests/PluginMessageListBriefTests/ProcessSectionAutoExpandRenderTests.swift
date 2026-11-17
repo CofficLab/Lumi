@@ -96,6 +96,7 @@ struct ProcessSectionAutoExpandRenderTests {
         let summary = AgentTurnSummaryItem(
             record: record,
             userMessage: userMessage,
+            rowID: userMessage.id,
             processMessages: [processMessage],
             message: finalMessage
         )

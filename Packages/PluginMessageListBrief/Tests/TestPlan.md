@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 27 个，用例总数: 165
+测试文件: 27 个，用例总数: 173
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -40,6 +40,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 
 - **ActivityLocalization**（5 条）：由 `activityTitlesUseInjectedLocalization`、`toolActivityUsesInjectedLocalization`、`disclosureTitleUsesInjectedLocalization` 等用例锁定；活动行与过程摘要必须经本地化解析，词条需覆盖 5 种语言（#893）。
 - **AgentActivityProjection**（13 条）：由 `thinking`、`generating`、`executingTool` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentTurnProjection**（10 条）：失败后自动重试与失败 turn 回溯到同一条用户消息时，首个认领的 turn 行身份沿用用户消息 ID（保持 pending → 落库连续），重试 turn 改用自身 record.id，两行不得共用同一 ID（**回归 #593**），由 `retryTurnOfSameUserMessageGetsDistinctRowID` 锁定。
 - **AgentTurnProjection**（9 条）：由 `finishedTurnLayout`、`twoUserMessagesRemainSeparateTurns`、`toolAndSystemRowsAreHidden` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentTurnVM**（3 条）：由 `agentTurnVMPublishesProjectionChanges`、`activeToolCallStaysInsideProcessDisclosure`、`pendingAndRecordedTurnKeepStableListIdentity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **BottomStickyPin**（5 条）：由 `bottomStaysPinnedWhenDocumentGrowsAfterSettle`、`bottomStaysPinnedAcrossConsecutiveGrowths`、`bottomStateStaysTrueAfterDocumentGrowth` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -240,21 +241,22 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 170 | AgentTurnSummaryBuilderScaling | 用户消息与 turn 同时刻时仍然匹配（#1267） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userMessageAtSameTimestampStillMatches` |
 | 171 | AgentTurnSummaryBuilderScaling | turn 之前没有用户消息时关联为空（#1267） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noUserMessageBeforeTurn` |
 | 172 | AgentTurnSummaryBuilderScaling | 瞬时 status 只挂到最新活跃 turn（#1267） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transientStatusesOnlyOnLatestActiveTurn` |
+| 173 | AgentTurnProjection | 失败 turn 与自动重试 turn 共用触发消息时行身份必须不同（回归 #593） | 一条用户消息 + failed / completed 两个 turn | 调用 `AgentTurnSummaryBuilder.build` 与 `AgentTurnPresentationItem(recorded:)` | 首个 turn 行身份为用户消息 ID，重试 turn 为 record.id，两行 ID 不同 | P0 | ✅ 已覆盖 | `retryTurnOfSameUserMessageGetsDistinctRowID` |
 
-> 说明：全部 **172 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **173 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
+- P0: 已覆盖 38 / 38
 - P1: 已覆盖 109 / 109
 - P2: 已覆盖 26 / 26
-- **合计: 172 / 172**（仅表示清单场景，非源码覆盖率）
+- **合计: 173 / 173**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（37 条）
-- **P1**: 其余功能性用例（109 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（38 条）
+- **P1**: 其余功能性用例（110 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明

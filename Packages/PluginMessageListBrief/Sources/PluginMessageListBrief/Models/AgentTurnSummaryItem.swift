@@ -9,6 +9,10 @@ struct AgentTurnSummaryItem: Identifiable, Equatable, Sendable {
     /// 生成前已落库），这里由 builder 按 `record.startedAt` 之前最近的一条
     /// `.user` 消息时间回溯匹配，可能为 nil（例如首条或无法匹配时）。
     let userMessage: Message?
+    /// 行身份：第一个认领某条用户消息的 turn 沿用该消息 ID（保持 pending
+    /// → 落库的行身份连续）；同一用户消息触发的后续 turn（失败后的自动重试
+    /// 会生成新 turn）改用自身 record.id，否则两行共用同一 ID（#593）。
+    let rowID: UUID
     /// Turn 内用于解释执行过程的消息，按时间升序排列。最终结果与 `.tool` 原始输出
     /// 不会出现在这里；工具调用本身仍由携带 `toolCalls` 的 assistant 消息展示。
     let processMessages: [Message]

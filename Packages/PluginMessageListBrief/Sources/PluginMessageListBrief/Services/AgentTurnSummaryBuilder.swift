@@ -47,6 +47,12 @@ struct AgentTurnSummaryBuilder {
         // `.user` 消息索引：每个 record 用二分查找，避免 O(N²)。
         let userMessages = userMessageIndex(from: chronological)
 
+        // 失败后的自动重试会生成新 turn，但回溯匹配到的是同一条用户消息。
+        // 行身份（用户消息 ID）只能被第一个认领它的 turn 使用；后续 turn
+        // 改用自身 record.id，否则两行拿到相同 ID，ForEach diff 与
+        // AgentTurnVM 缓存都互相覆盖（#593）。records 已按时间升序处理。
+        var claimedUserMessageIDs = Set<UUID>()
+
         return records
             .sorted(by: recordOrdering)
             .map { record -> AgentTurnSummaryItem in
@@ -54,6 +60,11 @@ struct AgentTurnSummaryBuilder {
                     .map(\.1)
                     .sorted(by: messageOrdering)
                 let user = userMessage(from: userMessages, startedAt: record.startedAt)
+                var rowID = record.id
+                if let user {
+                    let (inserted, _) = claimedUserMessageIDs.insert(user.id)
+                    if inserted { rowID = user.id }
+                }
                 let message = summaryMessage(for: record, messages: turnMessages)
                     ?? placeholderMessage(for: record)
                 // 只有最新活跃 turn 才挂瞬时 status。
@@ -72,6 +83,7 @@ struct AgentTurnSummaryBuilder {
                 return AgentTurnSummaryItem(
                     record: record,
                     userMessage: user,
+                    rowID: rowID,
                     processMessages: processMessages,
                     message: message
                 )
