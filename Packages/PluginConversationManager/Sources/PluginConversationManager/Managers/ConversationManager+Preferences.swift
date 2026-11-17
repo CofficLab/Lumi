@@ -60,11 +60,11 @@ extension ConversationManager {
         }
     }
 
+    /// 未绑定详细度的对话必须继承全局默认（契约语义，回归 #598），
+    /// 与 DefaultConversationManager 保持一致。
     public func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
-        guard let conversationID else {
-            return .defaultVerbosity
-        }
-        return conversations.first { $0.id == conversationID }?.verbosity ?? .defaultVerbosity
+        guard let conversationID else { return globalVerbosity }
+        return conversations.first { $0.id == conversationID }?.verbosity ?? globalVerbosity
     }
 
     public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
