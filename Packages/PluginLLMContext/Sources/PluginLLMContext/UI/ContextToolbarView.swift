@@ -119,14 +119,27 @@ struct ContextToolbarView: View {
 
     private var colorForUsage: Color {
         guard let used = usage?.estimatedInputTokens,
-              let displayedWindowSize,
-              displayedWindowSize > 0 else {
+              let limit = usage?.inputTokenLimit else {
             return theme.textSecondary
         }
-        let ratio = Double(used) / Double(displayedWindowSize)
-        if ratio >= 0.9 { return .red }
-        if ratio >= 0.75 { return theme.warning }
-        return theme.textSecondary
+        switch Self.usageSeverity(used: used, limit: limit) {
+        case 2: return .red
+        case 1: return theme.warning
+        default: return theme.textSecondary
+        }
+    }
+
+    /// 用量严重程度档位（0 正常 / 1 警告 / 2 危险）。
+    ///
+    /// 与弹窗的 `ContextUsageRing` 同口径：分母用输入预算（扣除输出预留、
+    /// 工具 schema 与安全边际），而不是完整窗口大小。同一个快照在工具栏与
+    /// 弹窗里必须显示同一档严重程度，否则工具栏会低估逼近发送预算的程度（#610）。
+    nonisolated static func usageSeverity(used: Int, limit: Int) -> Int {
+        guard used > 0, limit > 0 else { return 0 }
+        let ratio = Double(used) / Double(limit)
+        if ratio >= 0.9 { return 2 }
+        if ratio >= 0.75 { return 1 }
+        return 0
     }
 
     private var contextTooltip: String {

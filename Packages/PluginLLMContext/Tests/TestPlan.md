@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 123 条用例。
+PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 127 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 125
+测试文件: 15 个，用例总数: 127
 
 核心组件（源码目录）:
 - `AuxiliaryUsage/`
@@ -48,6 +48,7 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **ContextPopoverLayout**（6 条）：由 `trendViewHeightIsConstrained`、`trendViewRendersInTightSpace`、`trendViewHeightStaysStableWithManySamples` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextRecoveryTools**（19 条）：由 `decompressTier1RestoresOriginals`、`decompressTier2TransitiveLineage`、`decompressLegacyBlockWithoutLineage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ContextToolbarSeverity**（2 条）：由 `criticalSeverityUsesInputBudget`、`severityBoundaries` 用例锁定。工具栏用量色的严重程度分母必须是输入预算（`ContextWindowUsageSnapshot.inputTokenLimit`），不得用展示窗口大小；≥0.9 危险、≥0.75 警告、其余正常，无效输入退回正常档，与弹窗 `ContextUsageRing` 同口径（**回归 #610**）。改动 `ContextToolbarView.usageSeverity/colorForUsage` 时优先跑对应测试文件。
 - **ContextUsageHistory**（10 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackCalibration**（1 条）：由 `emergencyFallbackTrimsWithCalibratedBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DeterministicFallbackToolPairing**（5 条）：由 `deterministicFallbackDropsOrphanedToolResult`、`deterministicFallbackKeepsPairedToolResultWhenAssistantFits`、`deterministicFallbackDropsAllParallelOrphanedToolResults` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -199,6 +200,8 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 123 | UtilityModelAndAuxiliaryUsage | 账本按用途聚合开销并标注估算/不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overheadSummarizesByPurpose` |
 | 124 | ContextRecoveryTools | 会话删除事件必须清空摘要库中的明文摘要，不得残留已删除会话的数据（#350） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deletionObserverRemovesPersistedSummary` |
 | 125 | ContextUsageHistory | 模型切换等时间线消息不计入输入估算（回归 #855） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelSwitchTimelineEventExcludedFromEstimate` |
+| 126 | ContextToolbarSeverity | 用量色分母必须是输入预算，不得用展示窗口（**回归 #610**） | used=105000，inputTokenLimit=112000（展示窗口 128000） | 调用 `ContextToolbarView.usageSeverity` | 返回 2（危险）；同 used 对 128000 预算只返回 1（警告） | P1 | ✅ 已覆盖 | `criticalSeverityUsesInputBudget` |
+| 127 | ContextToolbarSeverity | 阈值边界与无效输入退回正常档（**回归 #610**） | used/limit ∈ {0, 74/100, 75/100, 89/100, 90/100} | 调用 `usageSeverity` | 74→0、75→1、89→1、90→2；used 或 limit ≤ 0 → 0 | P2 | ✅ 已覆盖 | `severityBoundaries` |
 
 > 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -208,15 +211,15 @@ PluginLLMContext 的实现包，包含 14 个主要类型；当前测试覆盖 1
 ## 覆盖率统计
 
 - P0: 已覆盖 22 / 22
-- P1: 已覆盖 98 / 98
-- P2: 已覆盖 5 / 5
-- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 99 / 99
+- P2: 已覆盖 6 / 6
+- **合计: 127 / 127**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
-- **P1**: 其余功能性用例（97 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（99 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
