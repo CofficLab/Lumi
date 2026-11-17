@@ -127,8 +127,14 @@ enum ConnectCacheInvalidator {
         case ("POST", "/v1/reviewSubmissions"), ("POST", "/v1/reviewSubmissionItems"):
             invalidateSubmissionCaches(cache: cache, accountKey: accountKey)
 
+        // 触发提交（submitted=true）与撤回（canceled=true）都会翻转版本的
+        // appStoreState（PREPARE_FOR_SUBMISSION ↔ WAITING_FOR_REVIEW），但 PATCH
+        // body 只含 submitted/canceled，拿不到 versionID，无法定向失效；
+        // 版本详情缓存默认保留 1 小时（#1333），因此账户级失效全部版本读取缓存
+        // （详情 / 列表 / 本地化集合 / build 关系，路径均含 /appStoreVersions）。
         case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/reviewSubmissions/"):
             invalidateSubmissionCaches(cache: cache, accountKey: accountKey)
+            invalidateVersionCaches(cache: cache, accountKey: accountKey)
 
         default:
             break
@@ -145,6 +151,12 @@ enum ConnectCacheInvalidator {
         cache.invalidate(accountKey: accountKey) { entry in
             entry.path.contains("/reviewSubmissions")
                 || entry.path.contains("/reviewSubmissionItems")
+        }
+    }
+
+    private static func invalidateVersionCaches(cache: ConnectAPICache, accountKey: String) {
+        cache.invalidate(accountKey: accountKey) { entry in
+            entry.path.contains("/appStoreVersions")
         }
     }
 

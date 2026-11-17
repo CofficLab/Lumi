@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 104
+测试文件: 21 个，用例总数: 112
 
 核心组件（源码目录）:
 - `Sources/`
@@ -36,7 +36,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ASCSubmissionTimeline**（13 条）：由 `submissionPreviewBuildLabel`、`submissionPreviewSummaries`、`submissionPreviewCodableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectPlugin**（9 条）：由 `pluginMetadata`、`settingsEntry`、`activationKeepsChatToolbarCategoryVisible` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectRuleContributor**（1 条）：由 `loadsReleaseSafetyRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConnectCacheInvalidator**（21 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead`、`ciBuildRunPostInvalidatesBuildRunsList`、`localizationPatchInvalidatesVersionCollection` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
+- **ConnectCacheInvalidator**（25 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead`、`ciBuildRunPostInvalidatesBuildRunsList`、`localizationPatchInvalidatesVersionCollection`、`submissionSubmitInvalidatesVersionDetail` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
 - **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
 - **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
 - **ASC Chat Toolbar 刷新**（3 条）：由 `refreshForcesNetworkOnAppIDBinding`、`refreshForcesNetworkOnBundleIDBinding`、`initialLoadUsesCacheFirst` 锁定；手动刷新必须把 forceRefresh 传到 App 解析与版本列表，首次加载仍缓存优先（**回归 #320**），改动聊天工具栏刷新的 forceRefresh 传播时优先跑对应测试文件。
@@ -52,6 +52,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **工具失败语义（全量）**（3 条）：由 `registersAllTools`、`everyToolReportsMissingArgumentsAsFailure`、`everyToolReportsBlankArgumentsAsFailure` 锁定；改动工具注册数量或失败语义时优先跑对应测试文件。
 - **工具前置条件失败**（4 条）：由 `uploadScreenshotRequiresExistingFile`、`updateVersionRequiresAtLeastOneField`、`preconditionFailureIsNotMaskedByCredentialError` 锁定；改动参数校验之后、远端调用之前的前置条件分支时优先跑对应测试文件。
 - **ASC 截图导入后台读取**（2 条）：由 `readRunsOffMain`、`unreadableImageIsInvalid` 锁定；截图导入的图片读取与尺寸校验必须在后台线程执行（**回归 #1199**），改动 `VM.readScreenshotItem` 或导入流程时优先跑对应测试文件。
+- **ScreenshotImageCache**（4 条）：由 `readsThroughDiskCacheBucket`、`invalidateRemovesTaggedEntries`、`clearEmptiesBucket`、`worksWithoutDiskCacheProvider` 锁定；截图预览的磁盘桶命中、按截图失效、清空与无 Provider 退化行为，改动 `ScreenshotImageCache` 的读写/失效链路时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -161,23 +162,31 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 102 | ConnectCacheInvalidator | 本地化 PATCH 后失效所属版本的本地化集合缓存（回归 #817） | 集合 GET `/v1/appStoreVersions/{id}/appStoreVersionLocalizations` 已入 L1 与磁盘（打 .version 标签） | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 集合两层缓存均被清除，列表不再返回旧描述 | P0 | ✅ 已覆盖 | `localizationPatchInvalidatesVersionCollection` |
 | 103 | ConnectCacheInvalidator | 本地化 PATCH 后失效该本地化的直接读取缓存（回归 #817） | 详情 GET `/v1/appStoreVersionLocalizations/{id}` 已入缓存 | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 详情缓存被清除，随后读取返回新值 | P0 | ✅ 已覆盖 | `localizationPatchInvalidatesDirectLocalizationRead` |
 | 104 | ConnectCacheInvalidator | 本地化 PATCH 不影响无关的缓存条目（回归 #817） | 无关条目 `/v1/apps` 已入缓存 | `PATCH /v1/appStoreVersionLocalizations/{id}` 成功后触发失效 | 无关条目保留，谓词不清空全部缓存 | P1 | ✅ 已覆盖 | `localizationPatchKeepsUnrelatedEntries` |
+| 105 | ConnectCacheInvalidator | 触发提交后失效版本详情缓存（回归 #1333） | 版本详情 GET `/v1/appStoreVersions/{id}` 已入缓存 | `PATCH /v1/reviewSubmissions/{id}`（submitted）成功后触发失效 | 版本详情缓存被清除，read_version 随后返回翻转后的 appStoreState | P0 | ✅ 已覆盖 | `submissionSubmitInvalidatesVersionDetail` |
+| 106 | ConnectCacheInvalidator | 触发提交后失效版本列表缓存（回归 #1333） | 版本列表 GET `/v1/apps/{appID}/appStoreVersions` 已入缓存 | `PATCH /v1/reviewSubmissions/{id}` 成功后触发失效 | 版本列表缓存被清除，list_versions 与 read_version 状态一致 | P0 | ✅ 已覆盖 | `submissionSubmitInvalidatesVersionList` |
+| 107 | ConnectCacheInvalidator | 撤回提交后失效版本详情缓存（回归 #1333） | 版本详情 GET `/v1/appStoreVersions/{id}` 已入缓存 | `PATCH /v1/reviewSubmissions/{id}`（canceled）成功后触发失效 | 版本详情缓存被清除，撤回后读取不再返回 WAITING_FOR_REVIEW | P0 | ✅ 已覆盖 | `submissionWithdrawInvalidatesVersionDetail` |
+| 108 | ConnectCacheInvalidator | 创建审核提交不改变版本状态，保留版本缓存（回归 #1333） | 版本详情 GET `/v1/appStoreVersions/{id}` 已入缓存 | `POST /v1/reviewSubmissions` 成功后触发失效 | 版本详情缓存保留，仅 PATCH 翻转状态时才失效版本缓存 | P1 | ✅ 已覆盖 | `submissionCreateKeepsVersionCaches` |
+| 109 | ScreenshotImageCache | 已落盘到桶里的截图直接命中，不再走网络 | 截图数据已写入插件磁盘桶 | 以相同 URL 与 screenshotID 读取 | 返回桶内数据，与网络内容一致 | P1 | ✅ 已覆盖 | `readsThroughDiskCacheBucket` |
+| 110 | ScreenshotImageCache | 按截图失效后桶里不再有该条目，且无网络时读取失败 | 截图数据已入桶 | `invalidate(screenshotID:)` 后再次读取 | 条目被清除，无网络时读取抛错 | P1 | ✅ 已覆盖 | `invalidateRemovesTaggedEntries` |
+| 111 | ScreenshotImageCache | 清空缓存后不再命中 | 截图数据已入桶 | `clear()` 后再次读取 | 桶被清空，读取抛错 | P1 | ✅ 已覆盖 | `clearEmptiesBucket` |
+| 112 | ScreenshotImageCache | 没有 DiskCache Provider 时退化为内存层，不崩溃 | DiskCache Provider 返回 nil | 读取未缓存 URL | 抛错但无崩溃，内存层退化可用 | P1 | ✅ 已覆盖 | `worksWithoutDiskCacheProvider` |
 
-> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **112 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 回归 #320 变异验证：M1 把 ViewModel `loadVersions` 的 `listVersions(forceRefresh:)` 写死为 false（不再传播刷新标志）→ `refreshForcesNetworkOnAppIDBinding`/`refreshForcesNetworkOnBundleIDBinding` 失败（listVersions 仍收到 false，RED）；M2 把 `ConnectClient.listVersions` 的 `cachePolicy` 写死为 nil（忽略 forceRefresh）→ `forceRefreshBypassesVersionListCache` 失败（刷新仍命中旧缓存、请求数不增，RED）；还原后 95 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
-- P1: 已覆盖 68 / 68
+- P0: 已覆盖 31 / 31
+- P1: 已覆盖 73 / 73
 - P2: 已覆盖 8 / 8
-- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
+- **合计: 112 / 112**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
-- **P1**: 其余功能性用例（68 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（31 条）
+- **P1**: 其余功能性用例（73 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
