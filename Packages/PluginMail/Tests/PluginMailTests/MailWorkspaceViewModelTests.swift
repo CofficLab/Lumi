@@ -82,6 +82,71 @@ final class MailWorkspaceViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.errorMessage)
     }
 
+    /// loadMore 必须向服务器请求上一页历史邮件并写入缓存，
+    /// 只放大本地缓存截断窗口永远读不到首页同步窗口之外的历史邮件（#842）。
+    func testLoadMoreFetchesOlderPageFromServer() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+
+        // 服务器共 100 封（uid 1...100），按 uid 降序播种：
+        // mock 首页窗口 = 数组前 50 封 = 最新 50 封（uid 51...100）。
+        let all = (1...100).map { makeCacheSummary(accountID: account.id, uid: UInt64($0), subject: "Mail \($0)") }
+            .sorted { $0.uid > $1.uid }
+        let session = MockMailSession(messages: all)
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(messages: all, session: session),
+            accountStore: store
+        )
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory
+        )
+        await vm.load()
+
+        XCTAssertEqual(vm.messages.count, 50, "首页只应展示最新 50 封")
+        XCTAssertEqual(vm.messages.map(\.uid), Array((51...100).reversed()))
+
+        await vm.loadMore()
+
+        XCTAssertEqual(vm.messages.count, 100, "翻页后应展示全部 100 封")
+        XCTAssertEqual(vm.messages.map(\.uid), Array((1...100).reversed()))
+        let cached = try await cache.messages(accountID: account.id, folder: "INBOX")
+        XCTAssertEqual(Set(cached.map(\.uid)), Set(1...100), "历史邮件必须写入缓存")
+    }
+
+    /// 离线时 loadMore 退回本地缓存截断窗口，保持原有降级行为。
+    func testLoadMoreOfflineFallsBackToCachedWindow() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+
+        let all = (1...100).map { makeCacheSummary(accountID: account.id, uid: UInt64($0), subject: "Mail \($0)") }
+        try await cache.upsertMessages(all, accountID: account.id, folder: "INBOX")
+
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(behavior: .init(failConnect: true)),
+            accountStore: store
+        )
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory
+        )
+        await vm.load()
+
+        XCTAssertTrue(vm.isOffline)
+        XCTAssertEqual(vm.messages.count, 50)
+
+        await vm.loadMore()
+
+        XCTAssertEqual(vm.messages.count, 100, "离线时按缓存窗口翻页")
+        XCTAssertEqual(vm.messages.map(\.uid), Array((1...100).reversed()))
+    }
+
     /// 旧邮件的正文晚到，不能覆盖用户后来点开的邮件。
     func testStaleBodyDoesNotOverrideNewerSelection() async throws {
         let account = makeAccount()

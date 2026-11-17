@@ -171,6 +171,37 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         return messages.map { Self.summary(from: $0, accountID: account.id, folder: folder) }
     }
 
+    public func fetchMessages(
+        folder: String,
+        beforeUID: UInt64,
+        limit: Int
+    ) async throws -> [MailMessageSummary] {
+        // 游标 = 1 时没有更旧的邮件，直接返回空页；其余先校验，
+        // 避免在 UInt32 边界上构造非法 UID 区间。
+        guard beforeUID > 1 else { return [] }
+        let cursor = try Self.validatedUID(beforeUID)
+        let range = MCORangeMake(1, UInt64(cursor) - 1)
+        let uids = MCOIndexSet(range: range)
+        let messages: [MCOIMAPMessage] = try await bridge.perform { completion in
+            guard let op = self.imapSession.fetchMessagesOperation(
+                withFolder: folder,
+                requestKind: [.headers, .flags, .structure],
+                uids: uids
+            ) else {
+                completion(nil, MailError.protocolError("operation creation failed"))
+                return
+            }
+            op.start { error, values, _ in
+                completion(values, error)
+            }
+        }
+        // 取游标之前最新的 N 条（uid 降序）。
+        return messages
+            .sorted { $0.uid > $1.uid }
+            .prefix(limit)
+            .map { Self.summary(from: $0, accountID: account.id, folder: folder) }
+    }
+
     public func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
         // MailCore 的接口只接受 UInt32；越界 UID 在这里转为参数错误，
         // 而不是在 `UInt32(uid)` 处 trap。

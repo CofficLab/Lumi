@@ -102,6 +102,15 @@ actor MockMailSession: MailSessionServing {
         return Array(filtered.prefix(limit))
     }
 
+    func fetchMessages(folder: String, beforeUID: UInt64, limit: Int) async throws -> [MailMessageSummary] {
+        if behavior.failMessages { throw MailError.protocolError("mock fetch failure") }
+        if let delay = folderFetchDelays[folder] { try? await Task.sleep(for: delay) }
+        return Array(messages
+            .filter { $0.folder == folder && $0.uid < beforeUID }
+            .sorted { $0.uid > $1.uid }
+            .prefix(limit))
+    }
+
     func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
         if let delay = bodyDelays[uid] { try? await Task.sleep(for: delay) }
         return MailMessageDetail(
