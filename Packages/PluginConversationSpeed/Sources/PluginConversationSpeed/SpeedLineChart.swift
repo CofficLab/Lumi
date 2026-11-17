@@ -6,53 +6,8 @@ struct SpeedLineChart: View {
     @State private var hoveredIndex: Int?
 
     var body: some View {
-        Canvas { context, size in
-            guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
-
-            let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
-            let geometry = SpeedChartGeometry(samples: samples, size: size, inset: inset)
-            let plotWidth = geometry.plotWidth
-            let plotHeight = geometry.plotHeight
-            let points = geometry.points
-
-            // Grid lines
-            var grid = Path()
-            for step in 0...2 {
-                let y = inset.top + plotHeight * Double(step) / 2
-                grid.move(to: CGPoint(x: inset.leading, y: y))
-                grid.addLine(to: CGPoint(x: inset.leading + plotWidth, y: y))
-            }
-            context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
-
-            // 曲线：填充与描边共用同一条路径，避免重复构建。
-            let curvePath = smoothedPath(points: points)
-
-            // Fill area under curve
-            var fill = curvePath
-            fill.addLine(to: CGPoint(x: points.last?.x ?? inset.leading, y: inset.top + plotHeight))
-            fill.addLine(to: CGPoint(x: points.first?.x ?? inset.leading, y: inset.top + plotHeight))
-            fill.closeSubpath()
-            context.fill(fill, with: .linearGradient(
-                Gradient(colors: [.orange.opacity(0.22), .orange.opacity(0.02)]),
-                startPoint: CGPoint(x: size.width / 2, y: inset.top),
-                endPoint: CGPoint(x: size.width / 2, y: inset.top + plotHeight)
-            ))
-
-            // Line
-            context.stroke(curvePath, with: .color(.orange), lineWidth: 2.4)
-
-            // Last point dot
-            if let last = points.last {
-                context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.orange))
-                context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.orange.opacity(0.32)), lineWidth: 2)
-            }
-
-            // - Important: hover 指示线**不在** Canvas 里画。
-            //   `hoveredIndex` 变化会让整个 Canvas 重绘，从而把全量点集映射
-            //   与平滑路径重建都重跑一遍；鼠标每移动一次就是一次全量重算
-            //   （见 issue #1224）。
-        }
-        .overlay {
+        SpeedStaticChart(samples: samples)
+            .overlay {
             GeometryReader { proxy in
                 let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
                 let geometry = SpeedChartGeometry(samples: samples, size: proxy.size, inset: inset)
@@ -123,6 +78,59 @@ struct SpeedLineChart: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+/// 只依赖 `samples` 的静态折线图。
+///
+/// hover 状态留在 `SpeedLineChart`：SwiftUI 会在输入未变化时跳过子视图更新，
+/// 于是 `hoveredIndex` 每次变化只重跑 hover overlay，Canvas 的绘制闭包
+/// （全量点集映射 + 平滑路径重建）不再执行（#1224）。
+private struct SpeedStaticChart: View {
+    let samples: [SpeedSample]
+
+    var body: some View {
+        Canvas { context, size in
+            guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
+
+            let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
+            let geometry = SpeedChartGeometry(samples: samples, size: size, inset: inset)
+            let plotWidth = geometry.plotWidth
+            let plotHeight = geometry.plotHeight
+            let points = geometry.points
+
+            // Grid lines
+            var grid = Path()
+            for step in 0...2 {
+                let y = inset.top + plotHeight * Double(step) / 2
+                grid.move(to: CGPoint(x: inset.leading, y: y))
+                grid.addLine(to: CGPoint(x: inset.leading + plotWidth, y: y))
+            }
+            context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
+
+            // 曲线：填充与描边共用同一条路径，避免重复构建。
+            let curvePath = smoothedPath(points: points)
+
+            // Fill area under curve
+            var fill = curvePath
+            fill.addLine(to: CGPoint(x: points.last?.x ?? inset.leading, y: inset.top + plotHeight))
+            fill.addLine(to: CGPoint(x: points.first?.x ?? inset.leading, y: inset.top + plotHeight))
+            fill.closeSubpath()
+            context.fill(fill, with: .linearGradient(
+                Gradient(colors: [.orange.opacity(0.22), .orange.opacity(0.02)]),
+                startPoint: CGPoint(x: size.width / 2, y: inset.top),
+                endPoint: CGPoint(x: size.width / 2, y: inset.top + plotHeight)
+            ))
+
+            // Line
+            context.stroke(curvePath, with: .color(.orange), lineWidth: 2.4)
+
+            // Last point dot
+            if let last = points.last {
+                context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.orange))
+                context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.orange.opacity(0.32)), lineWidth: 2)
+            }
+        }
+    }
 
     private func smoothedPath(points: [CGPoint]) -> Path {
         var path = Path()
