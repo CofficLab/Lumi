@@ -143,6 +143,27 @@ struct AppStorePromoStoreCoverageTests {
         }
     }
 
+    @Test func readImageWithPreloadedTaskMatchesSlugBasedRead() throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        let task = try store.createTask(
+            storagePath: root.path, slug: "t", title: "T",
+            appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US"
+        )
+        _ = try store.createImage(storagePath: root.path, taskSlug: "t", imageSlug: "i", title: "I")
+
+        // 已解码的任务直接读图，与按 slug 重复读 manifest 的结果完全一致（#1178）。
+        let preloaded = try store.readTask(storagePath: root.path, taskSlug: "t")
+        let fromTask = try store.readImage(task: preloaded, storagePath: root.path, imageSlug: "i")
+        let fromDisk = try store.readImage(storagePath: root.path, taskSlug: "t", imageSlug: "i")
+        #expect(fromTask == fromDisk)
+
+        #expect(throws: AppStorePromoStoreError.self) {
+            _ = try store.readImage(task: task, storagePath: root.path, imageSlug: "ghost")
+        }
+    }
+
     @Test func duplicateLocalizationAndAmbiguousPatchAreRejected() throws {
         let root = try makeRoot()
         defer { try? FileManager.default.removeItem(at: root) }
