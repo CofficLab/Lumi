@@ -197,12 +197,13 @@ final class AppService: @unchecked Sendable, SuperLog {
                     return
                 }
 
-                // 如果是目录，递归计算
+                // 如果是目录，递归计算。隐藏文件同样真实占用磁盘空间，
+                // 跳过它们会让应用体积被系统性低估（#796）；列表扫描处的
+                // skipsHiddenFiles 只是「发现 .app 包」的展示策略，与此无关。
                 var totalSize: Int64 = 0
                 if let enumerator = FileManager.default.enumerator(
                     at: url,
-                    includingPropertiesForKeys: [.fileSizeKey],
-                    options: [.skipsHiddenFiles]
+                    includingPropertiesForKeys: [.fileSizeKey]
                 ) {
                     for case let fileURL as URL in enumerator {
                         if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
