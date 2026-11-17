@@ -99,9 +99,10 @@ final class WorkspaceStore: ObservableObject {
             return
         }
         do {
+            // manifest 已随列表解码在内存里，直接复用，不再重复读盘（#1290）。
             selectedScreen = try documentStore.readScreen(
+                project: project,
                 storagePath: projectStoragePath,
-                projectSlug: selectedProjectID,
                 screenSlug: screenID
             )
             selectedScreenID = screenID
@@ -113,9 +114,16 @@ final class WorkspaceStore: ObservableObject {
     // MARK: - 选中
 
     func select(projectID: String, screenID: String?) {
+        // 选中的仍是已加载的同一屏时不再重复读盘（#1290）。
+        if selectedProjectID == projectID, selectedScreenID == screenID, selectedScreen != nil {
+            return
+        }
         selectedProjectID = projectID
         selectedScreenID = screenID
-        reload()
+        // 选中不改变项目目录：只刷新选中屏幕，不重扫全部项目。
+        // 原先这里无条件 reload()，每次点击轨道行都会在主线程枚举并解码
+        // 整个存储目录的 manifest，再重复读取选中项目的 manifest 与 HTML（#1290）。
+        refreshSelectedScreen()
     }
 
     // MARK: - 变更

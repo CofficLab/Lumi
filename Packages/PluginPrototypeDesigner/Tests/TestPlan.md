@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 39 条用例。
+PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 39
+测试文件: 6 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Conversation/`
@@ -38,7 +38,7 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **PrototypeDesignerPlugin**（23 条）：由 `pluginMetadataMatchesContract`、`contributesCompleteUniqueToolSet`、`everyToolAdvertisesAValidSchemaAndDescription` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **PrototypeDesignerPlugin**（27 条）：由 `pluginMetadataMatchesContract`、`contributesCompleteUniqueToolSet`、`everyToolAdvertisesAValidSchemaAndDescription` 等用例锁定；轨道行选中只刷新选中屏幕——不重扫项目目录、同一屏已加载不重读 HTML、加载失败后重试（#1290）；改动该模块时优先跑对应测试文件。
 - **PrototypeDesignerRuleContributor**（1 条）：由 `loadsPrototypeRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeElementConversationAction**（3 条）：由 `appendsFileURL`、`unavailableInput`、`discardsStaleSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeExport 安装**（3 条）：由 `installsIntoDirectoryThatDoesNotExistYet`、`rollsBackWhenAnInstallStepFails`、`backsUpAndReplacesExistingFile` 用例锁定；`ExportPrototypeTool.installStagedExports` 必须先创建用户选中的导出目录（含中间目录）再 moveItem，中途失败必回滚已安装文件并恢复备份，覆盖前先备份（#427）。
@@ -87,7 +87,12 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 | 38 | PrototypeExport 安装 | 中途失败时回滚已安装文件，不留半成品 | 第一张暂存文件有效、第二张暂存文件缺失 | 调用 `installStagedExports` | 抛错，第一张已安装文件被回滚删除，目标目录无残留 | P0 | ✅ 已覆盖 | `rollsBackWhenAnInstallStepFails` |
 | 39 | PrototypeExport 安装 | 覆盖已有文件时先备份再替换 | 目标目录已有用户同名文件 | 调用 `installStagedExports` 安装替换文件 | 目标为新内容，备份目录保留用户旧内容 | P1 | ✅ 已覆盖 | `backsUpAndReplacesExistingFile` |
 
-> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
+| 40 | 工作区选中 | 选中屏幕不重扫项目目录（**回归 #1290**） | 存储内有 2 个原型项目已载入列表，磁盘另有第 3 个未载入项目 | 调用 `select(projectID:screenID:)` | 列表仍为 2 项，选中屏幕正常加载 | P1 | ✅ 已覆盖 | `selectionDoesNotRescanProjectCatalog` |
+| 41 | 工作区选中 | 重复选中同一屏不再重读 HTML（**回归 #1290**） | 已选中并加载某屏，磁盘 HTML 已被破坏 | 再次 `select` 同一屏 | 缓存 HTML 保持原内容，未被破坏内容覆盖 | P1 | ✅ 已覆盖 | `repeatedSelectionOfSameScreenDoesNotRereadHTML` |
+| 42 | 工作区选中 | 切换屏幕仍会加载新屏幕的 HTML（**回归 #1290**） | 项目内已有两屏 | 依次 `select` 两屏 | 每次选中均加载对应屏幕 | P1 | ✅ 已覆盖 | `selectingAnotherScreenStillLoadsItsHTML` |
+| 43 | 工作区选中 | 加载失败后再次选中会重试（**回归 #1290**） | 屏幕 HTML 文件缺失 | 首次 `select` 后恢复文件再 `select` | 首次失败 `selectedScreen` 为空，恢复后重选加载成功 | P0 | ✅ 已覆盖 | `failedSelectionRetriesOnNextSelect` |
+
+> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **鉴别力验证（#427）**：本轮用三处独立变异确认用例不是「恒绿」——
@@ -99,21 +104,21 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 25 / 25
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 4 / 4
-- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
