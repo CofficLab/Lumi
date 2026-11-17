@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 245 条用例。
+PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 ProjectRAGEngine）；当前测试覆盖 249 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 40 个，用例总数: 245
+测试文件: 40 个，用例总数: 249
 
 核心组件（源码目录）:
 - PluginProjectRAG: `Hooks/` `Navigation/` `Observers/` `Providers/` `Support/` `Tools/` `ViewModels/` `Views/`
@@ -44,6 +44,7 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAG idle 调度候选扫描**（5 条）：由 `probesRunOffMainActor`、`currentProjectIsExcludedBeforeProbing`、`cancellingScanStopsProbing`、`projectSwitchDiscardsStaleScan`、`successfulSliceReusesCandidates` 锁定。候选扫描只在 MainActor 上捕获不可变路径快照，路径存在性探测必须放到后台 worker 并显式转发取消；当前项目在探测**之前**排除；探测结束后写回前比对当前项目身份，切换项目则整份丢弃旧扫描；成功切片消费候选而不是立刻重扫，缓存耗尽或超过 `candidateRefreshInterval` 才重新探测，避免 P 个项目追赶时产生 O(P²) 的主线程文件系统突发（**回归 #1251**）。改动 `RAGIndexScheduler.makeCandidates/candidatesForNextSlice/consumeCandidate` 或 `RAGProjectPathProbing` 时优先跑对应测试文件。
 - **RAGPureLogic**（63 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。CRLF（`\r\n`）在 Swift 中是单个 Character，必须整体算一个换行，分块窗口与 `lineRange` 都按真实源码行计算（**回归 #1114**）。
+- **RAGChunkerBoundary**（8 条）：由 `chunkBoundaryPrefersBlankLine`、`smallFunctionKeptWhole`、`lineRangeFollowsTrimmedContent` 等用例锁定。窗口切点优先空行 > 顶层声明起始行 > 窗口末端；trim 只去掉块首尾空白，`lineRange` 必须收缩到实际保留的内容行（含字符窗口分支），块中间的空行仍占真实行号（**回归 #606**）。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
 - **RAGServiceModelMigration**（1 条）：由 `backgroundIndexRebuildsWhenEmbeddingModelChanged` 用例锁定；该用例预置一个模型标识过期但维度相同的索引状态，再以 `background: true` 触发索引，缺少后台迁移能力时会抛「后台索引暂不执行 embedding 模型迁移」。
 - **RAGFileScannerFailure**（3 条）：由 `missingRootThrows`、`regularFileRootThrows`、`emptyDirectoryReturnsNoFiles` 用例锁定；扫描接口必须把「根目录不可用」与「项目确实为空」区分开，前者抛 `RAGError.projectRootUnavailable`，后者才返回空数组。
@@ -307,6 +308,10 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 | 243 | RAG idle 调度候选扫描 | 取消扫描后不得继续探测路径（**回归 #1251**） | 50 个项目，门闩拦住第一次探测 | 探测进行中 cancel 扫描任务再放行门闩 | 返回空候选，探测次数 ≤ 2（detached worker 收到取消转发） | P0 | ✅ 已覆盖 | `cancellingScanStopsProbing` |
 | 244 | RAG idle 调度候选扫描 | 探测期间切换项目，旧扫描结果必须整份丢弃（**回归 #1251**） | 2 个项目，门闩拦住第一次探测 | 探测进行中把当前项目切到 A 再放行门闩 | 返回空候选，不采用切换前的扫描结果 | P0 | ✅ 已覆盖 | `projectSwitchDiscardsStaleScan` |
 | 245 | RAG idle 调度候选扫描 | 成功切片后复用候选，缓存空了才重扫路径（**回归 #1251**） | 3 个存在的项目 | 连续取候选、消费一个、再取、全部消费后再取 | 探测次数 3 → 3 → 3 → 6；P 个项目各成功一片只触发一次全量探测 | P1 | ✅ 已覆盖 | `successfulSliceReusesCandidates` |
+| 246 | RAGChunkerBoundary | trim 后行号必须收缩到实际保留的内容行（**回归 #606**） | 内容 `"\\n\\nfunc foo() {}\\n"` | 调用 `RAGChunker().chunk` | 1 块，content 为 `func foo() {}`，lineRange 为 3...3 | P0 | ✅ 已覆盖 | `lineRangeFollowsTrimmedContent` |
+| 247 | RAGChunkerBoundary | 尾部空白行同样计入收缩（**回归 #606**） | 内容 `"let a = 1\\nlet b = 2\\n\\n\\n"` | 调用 `chunk` | 1 块，lineRange 为 1...2 | P1 | ✅ 已覆盖 | `trailingBlankLinesShrinkEndLine` |
+| 248 | RAGChunkerBoundary | 块中间的空行保留真实行号（**回归 #606** 护栏） | 内容 `"func a() {}\\n\\n\\nfunc b() {}"` | 调用 `chunk` | 1 块，lineRange 为 1...4 | P2 | ✅ 已覆盖 | `interiorBlankLinesKeepTheirLineNumbers` |
+| 249 | RAGChunkerBoundary | 字符窗口分支同样跳过 segment 首尾空白行（**回归 #606**） | 内容 `\\n\\n` + 120 个 `x`，maxChars=50 | 调用 `chunk` | 3 块，每块 lineRange 均为 3...3 | P1 | ✅ 已覆盖 | `charWindowLineRangeSkipsTrimmedBlankLines` |
 
 > 说明：全部 **245 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -318,16 +323,16 @@ PluginProjectRAG 的实现包（插件适配层 PluginProjectRAG + 检索引擎 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 64 / 64
-- P1: 已覆盖 167 / 167
-- P2: 已覆盖 14 / 14
-- **合计: 245 / 245**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 65 / 65
+- P1: 已覆盖 169 / 169
+- P2: 已覆盖 15 / 15
+- **合计: 249 / 249**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（64 条）
-- **P1**: 其余功能性用例（167 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（65 条）
+- **P1**: 其余功能性用例（169 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
