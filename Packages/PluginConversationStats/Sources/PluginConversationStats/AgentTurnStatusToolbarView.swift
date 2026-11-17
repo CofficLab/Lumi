@@ -66,10 +66,16 @@ struct AgentTurnStatusToolbarView: View {
     }
 
     private func updateRunningState() {
-        guard let conversationID = selectedConversationID else {
-            isRunning = false
-            return
-        }
-        isRunning = agentLoop.isRunning(for: conversationID)
+        isRunning = Self.showsRunning(agentLoop: agentLoop, conversationID: selectedConversationID)
+    }
+
+    /// 工具栏只在真正执行 LLM/工具时显示 Running。
+    ///
+    /// 不能用 `isRunning(for:)`：它的语义是「回合仍活跃、可恢复/停止」，
+    /// 把 `.awaitingUser` 也算进去，于是等待 ask_user 回答时会误亮 Running。
+    /// `state(for:)` 把挂起区分成 `.suspended`，只有 `.running` 才该亮灯。
+    static func showsRunning(agentLoop: any AgentLoopProviding, conversationID: UUID?) -> Bool {
+        guard let conversationID else { return false }
+        return agentLoop.state(for: conversationID) == .running
     }
 }
