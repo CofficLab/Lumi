@@ -5,7 +5,7 @@
 DisplayControlPlugin External display DDC (Display Data Channel) control for Lumi. - Brightness, Volume, Contrast control for external monitors via DDC/CI (VCP commands over I2C) - Built-in display brightness via DisplayServices - Apple Silicon DDC service matching (Arm64DDCMatcher) - Debounced writes (150ms) to prevent DDC overload - Unsupported controls are automatically disabled Based on reference implementation from [hagimi-monitor](https://github.com/Acerola-1/hagimi-monitor).
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 53
+测试文件: 12 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Models/`
@@ -47,6 +47,7 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 - **DisplayControlSupport**（4 条）：由 `ddcServiceAloneDoesNotEnableControl`、`liveVCPReadEnablesControl`、`storedValueEnablesControlWithoutLiveRead`、`builtInOnlySupportsBrightnessWithAppleEvidence` 锁定逐控制能力判定——只有读到 VCP 值或有历史存储值才算支持，DDC 通道存在本身不是证据（#240）；改动 `DisplayService.isControlSupported` 或 refresh 支持旗标时优先跑该文件。
 - **DDCValueScaling**（7 条，**回归 #837**）：由 `readUsesFullReportedMax`、`writeScalesByFullReportedMax`、`readClampsCurrentAboveMax`、`writeClampsPercentageRange` 等锁定 DDC 读数/写回换算——百分比与写回硬件值都必须以显示器报告的原始 VCP 满量程为准，不得截断到 100；改动 `DDCBridge` 的 `DDCValueScaling` 或 read/write 缩放时优先跑该文件。
 - **DisplayControl 禁用生命周期**（1 条，**回归 #460**）：由 `disableStopsRefreshAndCancelsPendingWrites` 锁定——Kernel 运行时 `disablePlugin` 只调用 `onDisable` 并撤回经 `trackContribution` 注册的贡献，不调用 `onShutdown`，也不会清理插件直接写入 ActivityBar 的入口、`DisplayControlObserver` 的 5 秒刷新定时器与订阅、以及 `DisplayService` 150ms 防抖窗口内尚未执行的硬件写入。插件必须在 `onDisable` 取消观察器、调用 `DisplayService.cancelPendingWrites()` 取消未执行的防抖写入并撤回入口；`onEnable` 幂等恢复。viewModel 在禁用期间保持存活。改动 `DisplayControlPlugin` 的 `onBoot`/`onEnable`/`onDisable`/`onShutdown` 或 `installRuntimeContributions`/`removeRuntimeContributions`、`DisplayService.cancelPendingWrites` 时优先跑该文件（串行套件，共享进程级单例与运行时目录注入）。
+- **DisplayControl Observer 同步**（1 条，**回归 #459**）：由 `observerPropagatesDisplaysImmediatelyAfterWrite` 锁定——`DisplayControlObserver` 必须订阅 `DisplayService.displaysDidChange`（`displays` 写入完成后由 `didSet` 发出）而不是 `objectWillChange`（`willSet` 阶段发出，订阅方此时读到的还是旧数组），否则 ViewModel 每轮刷新拿到上一轮的显示器列表。改动 `DisplayService` 的 `displays` 发布方式或 `DisplayControlObserver` 的订阅源时优先跑该文件（串行套件，须先注入运行时目录）。
 
 ## 测试用例清单
 
@@ -105,31 +106,34 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 | 51 | DDCValueScaling | 写回百分比夹到 0...100 | percentage=200 / -50, max=255 | 调用 `DDCValueScaling.write` | 200%→255，-50%→0 | P1 | ✅ 已覆盖 | `writeClampsPercentageRange` |
 | 52 | DDCValueScaling | 满量程 65535 时 100% 写回不溢出 UInt16 | percentage=100, max=65535 | 调用 `DDCValueScaling.write` | 硬件值为 65535，不溢出 | P1 | ✅ 已覆盖 | `writeFullScaleUInt16Boundary` |
 | 53 | DisplayControl 禁用生命周期 | 运行时禁用停止周期刷新、取消未执行的硬件写入并撤回入口，重新启用恢复（**回归 #460**） | 真实 kernel 注册并启用插件（disabledByDefault），注入临时存储目录，构造 150ms 防抖窗口内的待写值 | 禁用/启用插件 | 禁用后入口撤回、观察器停止、防抖写入被取消；启用后入口与观察器恢复；stop 后同样清空 | P0 | ✅ 已覆盖 | `disableStopsRefreshAndCancelsPendingWrites` |
+| 54 | DisplayControl Observer 同步 | displays 写入后 ViewModel 立即同步新列表，不再滞后一轮（**回归 #459**） | 注入临时运行时目录（LocalStore 单例初始化依赖它），向 `DisplayService.shared` 注入显示器快照并构造观察器 | 通过 `setDisplaysForTesting` 写入新的显示器列表 | ViewModel 同步拿到新列表（didSet → displaysDidChange → sink → apply 全链路同步），先注入的初始列表也正确回填 | P0 | ✅ 已覆盖 | `observerPropagatesDisplaysImmediatelyAfterWrite` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > ID 53 为本轮新增的运行时禁用生命周期回归用例（`DisplayControlDisableLifecycleTests`，见 #460）。
+> ID 54 为本轮新增的 Observer 同步回归用例（`DisplayControlObserverSyncTests`，见 #459）。
+> #459 回归：`DisplayControlObserver` 订阅 `objectWillChange`，该信号在 `@Published displays` 的 `willSet` 阶段发出，同步执行的 `viewModel.apply(service)` 读到的是写入前的旧数组，ViewModel 每轮刷新滞后一轮。修复给 `DisplayService` 加 `displaysDidChange`（`PassthroughSubject`，在 `displays` 的 `didSet` 中发出），观察器改订阅它。变异验证（把观察器订阅改回 `objectWillChange`）令 `observerPropagatesDisplaysImmediatelyAfterWrite` 转红（ViewModel 仍持有旧列表）；还原后 54 条全绿。
 > #460 回归：清理原本只在 `onShutdown`，运行时禁用只调用 `onDisable`，导致 5 秒刷新定时器、观察器订阅与 150ms 防抖窗口内的硬件写入在禁用后继续运行。修复抽出 `installRuntimeContributions`/`removeRuntimeContributions`，`onDisable` 取消观察器、`DisplayService.cancelPendingWrites()` 与入口撤回，`onEnable` 恢复。变异验证（掏空 `onDisable`）令 `disableStopsRefreshAndCancelsPendingWrites` 转红（3 issues：入口仍在、观察器仍运行、防抖写入未取消）；还原后 53 条全绿。
 > #240 回归：`hasDDCService` 曾被并进三个支持旗标，导致仅支持 DDC 亮度的显示器把音量/对比度也判为可用。变异验证 M1（在 `isControlSupported` 外部显示分支重新加回 `|| hasDDCService`）令 `ddcServiceAloneDoesNotEnableControl` 转红；M2（移除 `|| storedValue != nil`，只认实时读取）令 `storedValueEnablesControlWithoutLiveRead` 转红；还原后 45 条全绿。
 > #837 回归：`DDCBridge` 曾把显示器报告的 VCP 满量程截断到 100（`min(values.max, 100)`），max>100 的显示器读数被压成 100%、写回硬件值按比例偏小。修复抽出 `DDCValueScaling.read/write`，以显示器报告的原始 max 换算百分比与写回值。变异验证 M1（read 重新把 max 截断到 100）令 `readUsesFullReportedMax` 转红；M2（write 重新截断 max）令 `writeScalesByFullReportedMax` 转红；M3（移除 read 的 100% 上限夹取）令 `readClampsCurrentAboveMax` 转红；M4（移除 write 的百分比上限夹取）令 `writeClampsPercentageRange` 转红；还原后 52 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 14 / 14
 - P1: 已覆盖 35 / 35
 - P2: 已覆盖 5 / 5
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
 - **P1**: 其余功能性用例（35 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
