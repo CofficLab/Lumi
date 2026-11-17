@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 344 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 32 个，用例总数: 343
+测试文件: 32 个，用例总数: 344
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -38,7 +38,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **APIKeyMemoryCache**（5 条）：由 `freshWithinTTL`、`negativeEntry`、`lastKnownIgnoresTTL` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **AnthropicAdapter**（54 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AnthropicAdapter**（55 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicToolUseNullArguments**（4 条）：由 `topLevelNullStaysNull`、`nestedNullStaysNull`、`arrayNullStaysNull` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicUnpairedToolCallRepair**（3 条）：由 `unpairedToolUseIsRepairedWhenFollowedByUserMessage`、`completedToolUseIsNotDuplicated`、`trailingAssistantIsStillRepaired` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicWholeJSONFallbackMetadata**（5 条）：由 `fallbackCarriesTokenUsage`、`fallbackCarriesCacheUsage`、`fallbackCarriesResponseIDAndStopReason` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -417,6 +417,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 | 341 | VisionMessageContentBuilderCache | 不同图片产生不同的 data URL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentImagesProduceDifferentURLs` |
 | 342 | VisionMessageContentBuilderCache | 重复构建同一批图片的耗时显著低于每次重新编码 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedBuildIsCheaperThanFirstBuild` |
 | 343 | VisionMessageContentBuilderCache | 统计编码长度不得使用 O(n) 的 String.count | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `encodedLengthUsesConstantTimeCount` |
+| 344 | AnthropicAdapter | 流式请求体在最后一条消息文本块上放置 prompt cache 断点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `addsPromptCacheBoundaryInStreamingBody` |
 
 > 说明：全部 **343 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -424,9 +425,9 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 ## 覆盖率统计
 
 - P0: 已覆盖 58 / 58
-- P1: 已覆盖 264 / 264
+- P1: 已覆盖 265 / 265
 - P2: 已覆盖 21 / 21
-- **合计: 343 / 343**（仅表示清单场景，非源码覆盖率）
+- **合计: 344 / 344**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
