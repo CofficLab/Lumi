@@ -433,7 +433,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(runner.resumeCalls.first?.answer, "Release")
     }
 
-    func testSuspendedFreeTextDegradesToTextAndCancel() throws {
+    func testSuspendedFreeTextDegradesToTextAndEndsTurn() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
         _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
@@ -458,6 +458,16 @@ final class ACPTurnCoordinatorTests: XCTestCase {
                   case .text(let text, _) = content else { return false }
             return text.contains("想用什么分支名?")
         })
+
+        // 内核以 .cancelled 事件报告兜底停回合（cancelTurn 是唯一手段），
+        // 但客户端并未取消：wire stopReason 必须是 end_turn 而不是 cancelled（#482）。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        XCTAssertEqual(try result?.decoded(as: ACPPromptResult.self).stopReason, .endTurn)
     }
 
     // MARK: - 工具授权（M4）

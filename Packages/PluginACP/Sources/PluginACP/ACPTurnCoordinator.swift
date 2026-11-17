@@ -116,6 +116,8 @@ public final class ACPTurnCoordinator {
     /// `cancel()` 里取消这个尚未启动的 Task，让 `runTurnTask` 启动前看到取消
     /// 并跳过模型/工具，取消意图不会在启动前丢失（#480）。
     private var runnerTasks: [ACPSessionId: Task<Void, Never>] = [:]
+    /// 内部兜底优雅结束的会话（AskUser 无法交互时主动停回合，非客户端取消）。
+    private var gracefulStopConversations: Set<UUID> = []
 
     public init(
         agentLoop: any ACPTurnRunning,
@@ -284,8 +286,11 @@ public final class ACPTurnCoordinator {
             }
         case .cancelled(let conversationID, _):
             markLLMProgress(conversationID: conversationID)
+            // 优雅结束（AskUser 兜底）产生的 .cancelled 不代表客户端取消，
+            // 必须以 end_turn 收尾（#482）。
+            let graceful = consumeGracefulStop(conversationID)
             Task { @MainActor [weak self] in
-                await self?.finalize(conversationID: conversationID, cancelled: true, errorText: nil)
+                await self?.finalize(conversationID: conversationID, cancelled: !graceful, errorText: nil)
             }
         }
     }
@@ -321,7 +326,10 @@ public final class ACPTurnCoordinator {
                 }
                 await finalize(conversationID: conversationID, cancelled: false, errorText: reason)
             case .cancelled:
-                await finalize(conversationID: conversationID, cancelled: true, errorText: nil)
+                // 事件路径可能已消费优雅标记并收尾（finalized 守卫兜底）；
+                // 这里同样消费，谁先看到标记谁负责按 end_turn 收尾（#482）。
+                let graceful = consumeGracefulStop(conversationID)
+                await finalize(conversationID: conversationID, cancelled: !graceful, errorText: nil)
             case .suspended:
                 // 回合挂起等待用户决定（resume 后继续），不结束。
                 break
@@ -359,6 +367,20 @@ public final class ACPTurnCoordinator {
 
     // MARK: - 挂起处理
 
+    /// 内核只有 `cancelTurn` 一种停止回合的手段，但它固定产生 `.cancelled`；
+    /// ACP 语义里 `cancelled` 专指客户端取消。AskUser 兜底（无自由文本通道、
+    /// 载荷缺失、选项为空）是协调者主动结束回合让用户下轮回答，不是取消，
+    /// 必须先登记优雅结束标记，让随后的 `.cancelled` 映射为 end_turn（#482）。
+    private func stopTurnGracefully(_ conversationID: UUID) {
+        gracefulStopConversations.insert(conversationID)
+        agentLoop.cancelTurn(in: conversationID)
+    }
+
+    /// 消费优雅结束标记；返回 true 表示该 `.cancelled` 来自内部兜底而非客户端。
+    private func consumeGracefulStop(_ conversationID: UUID) -> Bool {
+        gracefulStopConversations.remove(conversationID) != nil
+    }
+
     private func handleSuspension(_ suspension: AgentLoopSuspension) {
         guard let sessionID = sessions.sessionID(for: suspension.conversationID),
               activeTurns[sessionID] != nil else { return }
@@ -377,7 +399,7 @@ public final class ACPTurnCoordinator {
         guard let mode = payload?["mode"] as? String else {
             // 非 AskUser 载荷：把 payload 作为问题文本推送，并结束回合。
             sendAgentText(suspension.payload, sessionID: sessionID)
-            agentLoop.cancelTurn(in: suspension.conversationID)
+            stopTurnGracefully(suspension.conversationID)
             return
         }
 
@@ -387,7 +409,7 @@ public final class ACPTurnCoordinator {
             let labels = Self.choiceOptions(from: payload?["options"])
             guard !labels.isEmpty else {
                 sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
-                agentLoop.cancelTurn(in: suspension.conversationID)
+                stopTurnGracefully(suspension.conversationID)
                 return
             }
             // AskUser 的 answer 必须是选项标签本身（内核按标签匹配）；optionId
@@ -409,7 +431,7 @@ public final class ACPTurnCoordinator {
         case "free_text":
             // ACP 无自由文本输入通道：降级为文本问题 + 结束回合，用户下轮回答。
             sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
-            agentLoop.cancelTurn(in: suspension.conversationID)
+            stopTurnGracefully(suspension.conversationID)
         default: // yes_no
             // 展示文案走本地化，但 answer 固定传内核可识别的允许/拒绝词，
             // 否则非中文环境下用户点"允许"会被内核当成拒绝执行。

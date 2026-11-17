@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 - **ACPFileClient**（13 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；路径越权判定必须解析符号链接，workspace 内指向外部的 symlink 读写不得放行，workspace 内及经符号链接到达的 root 下的合法文件不得误拒（**回归 #356**）；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（54 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。首响应超时拒绝必须同时取消底层回合，超时后不得再执行或上报新的工具副作用（**#222**）。流式增量桥按底层流式消息身份（每次 `start` 新建消息）使用独立发送偏移：一个回合内「LLM → 工具 → LLM」的第二段正文必须完整且恰好发送一次，不得沿用第一段偏移被截断或整段丢弃（**#351**）。任何流式通知（正文或思考 token）都证明 LLM 正在产出，必须据此解除首响应 watchdog：健康的长流式回答（含纯思考阶段）不得被误判为「无 LLM 进展」而拒绝并取消底层回合；但装配流式桥本身不解除 watchdog，底层毫无流式活动时仍须照常超时拒绝（**#352**）。`session/cancel` 与 `session/prompt` 同一 burst 到达、runner Task 尚未启动（AgentLoop runtime 未创建、`cancelTurn` 为 no-op）时，取消必须仍然生效：持有并取消 runner Task 句柄，`runTurnTask` 启动前据此跳过模型/工具，由 `cancel()` 的 finalize 以 cancelled 收尾；取消标志随该回合 Task 存续，不得污染同一会话的下一回合，也不得误跳过已合法启动的运行中回合（**#480**）。
+- **ACPTurnCoordinator**（54 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。首响应超时拒绝必须同时取消底层回合，超时后不得再执行或上报新的工具副作用（**#222**）。流式增量桥按底层流式消息身份（每次 `start` 新建消息）使用独立发送偏移：一个回合内「LLM → 工具 → LLM」的第二段正文必须完整且恰好发送一次，不得沿用第一段偏移被截断或整段丢弃（**#351**）。任何流式通知（正文或思考 token）都证明 LLM 正在产出，必须据此解除首响应 watchdog：健康的长流式回答（含纯思考阶段）不得被误判为「无 LLM 进展」而拒绝并取消底层回合；但装配流式桥本身不解除 watchdog，底层毫无流式活动时仍须照常超时拒绝（**#352**）。`session/cancel` 与 `session/prompt` 同一 burst 到达、runner Task 尚未启动（AgentLoop runtime 未创建、`cancelTurn` 为 no-op）时，取消必须仍然生效：持有并取消 runner Task 句柄，`runTurnTask` 启动前据此跳过模型/工具，由 `cancel()` 的 finalize 以 cancelled 收尾；取消标志随该回合 Task 存续，不得污染同一会话的下一回合，也不得误跳过已合法启动的运行中回合（**#480**）。AskUser 兜底（载荷缺失/选项为空/自由文本降级）由协调器主动结束回合而非客户端取消，wire stopReason 必须映射为 end_turn；只有客户端 `session/cancel` 产生的取消才收尾为 cancelled（**#482**）。
 
 ## 测试用例清单
 
@@ -88,7 +88,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 | 43 | ACPTurnCoordinator | testFinalizePublishesToolResultUpdates | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testFinalizePublishesToolResultUpdates` |
 | 44 | ACPTurnCoordinator | testSuspendedYesNoRequestsPermission | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSuspendedYesNoRequestsPermission` |
 | 45 | ACPTurnCoordinator | testSuspendedChoiceRequestsPermissionWithOptions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSuspendedChoiceRequestsPermissionWithOptions` |
-| 46 | ACPTurnCoordinator | testSuspendedFreeTextDegradesToTextAndCancel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSuspendedFreeTextDegradesToTextAndCancel` |
+| 46 | ACPTurnCoordinator | testSuspendedFreeTextDegradesToTextAndEndsTurn | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSuspendedFreeTextDegradesToTextAndEndsTurn` |
 | 47 | ACPTurnCoordinator | testToolPermissionUsesRealToolCallIDAndStandardOptions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testToolPermissionUsesRealToolCallIDAndStandardOptions` |
 | 48 | ACPTurnCoordinator | testToolPermissionAllowSendsInProgressAndResumes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testToolPermissionAllowSendsInProgressAndResumes` |
 | 49 | ACPTurnCoordinator | testToolPermissionRejectResumesWithRejectAnswer | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testToolPermissionRejectResumesWithRejectAnswer` |
@@ -174,6 +174,8 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 > - **M1** 去掉 `runTurnTask` 开头的 `if Task.isCancelled { return }` 启动前判定 → `testCancelBeforeRunnerStartDoesNotRunTurn`、`testCancelBeforeStartDoesNotPoisonNextTurn` 转红（被取消的回合仍调用 runTurn 跑模型/工具）。
 > - **M2** 去掉 `cancel()` 里的 `runnerTasks[sessionID]?.cancel()`（不取消尚未启动的 runner Task）→ 同样两条转红（Task 未被取消，`Task.isCancelled` 为 false，runner 照常启动）。
 > - 还原完整修复（startTurn 持有句柄、cancel 取消句柄、runTurnTask 启动前据 `Task.isCancelled` 跳过）→ 101 条全绿。
+> #482 回归：内核只有 `cancelTurn` 一种停回合手段且固定产生 `.cancelled`，AskUser 兜底停回合被误报为客户端取消（wire stopReason=cancelled）。修复增加 `gracefulStopConversations` 标记集合：三处兜底改经 `stopTurnGracefully` 打标再取消，`.cancelled` 事件与回合作业两处收尾先 `consumeGracefulStop` 消费标记，命中则按 end_turn 收尾。
+> 变异验证（**#482**，兜底停回合误报为取消）：把 free_text 分支改回直接 `agentLoop.cancelTurn` → `testSuspendedFreeTextDegradesToTextAndEndsTurn` 转红（stopReason 实际为 cancelled）；还原后 101 条全绿。
 
 ## 覆盖率统计
 
