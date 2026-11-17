@@ -74,6 +74,9 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     private var navigationContinuation: CheckedContinuation<Void, Error>?
     private var navigationTimeoutTask: Task<Void, Never>?
     private var navigationToken: UUID?
+    /// 当前 token 对应的 `WKNavigation` 实例。WebKit 会把 `load`/`goBack`/
+    /// `reload` 返回的同一个实例传给导航回调，据此识别旧导航的迟到回调（#264）。
+    private var navigation: WKNavigation?
     /// 已获批准的本地主机键（归一化）。内部可见以便测试直接布置审批状态。
     var approvedLocalHost: String?
     private var urlObservation: NSKeyValueObservation?
@@ -160,10 +163,11 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 guard !Task.isCancelled else { return }
                 self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
             }
-            guard webView.load(URLRequest(url: url)) != nil else {
+            guard let navigation = webView.load(URLRequest(url: url)) else {
                 finishNavigation(.failure(SessionError.invalidURL), token: token)
                 return
             }
+            self.navigation = navigation
         }
     }
 
@@ -341,15 +345,18 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         !value.isEmpty && value.count <= 48 && value.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
     }
 
-    func goBack() {
-        if webView.canGoBack { webView.goBack() }
+    @discardableResult
+    func goBack() -> WKNavigation? {
+        webView.canGoBack ? webView.goBack() : nil
     }
 
-    func goForward() {
-        if webView.canGoForward { webView.goForward() }
+    @discardableResult
+    func goForward() -> WKNavigation? {
+        webView.canGoForward ? webView.goForward() : nil
     }
 
-    func reload() {
+    @discardableResult
+    func reload() -> WKNavigation? {
         webView.reload()
     }
 
@@ -365,21 +372,24 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard isCurrentNavigation(navigation) else { return }
         isLoading = false
         updatePageState(from: webView)
-        finishNavigation(.success(()), token: navigationToken)
+        finishNavigation(.success(()), token: navigationToken, navigation: navigation)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        guard isCurrentNavigation(navigation) else { return }
         isLoading = false
         updatePageState(from: webView)
-        finishNavigation(.failure(error), token: navigationToken)
+        finishNavigation(.failure(error), token: navigationToken, navigation: navigation)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        guard isCurrentNavigation(navigation) else { return }
         isLoading = false
         updatePageState(from: webView)
-        finishNavigation(.failure(error), token: navigationToken)
+        finishNavigation(.failure(error), token: navigationToken, navigation: navigation)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
@@ -421,7 +431,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         }
     }
 
-    func performAndWaitNavigation(_ action: () -> Void) async throws {
+    func performAndWaitNavigation(_ action: () -> WKNavigation?) async throws {
         if navigationContinuation != nil {
             finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
             webView.stopLoading()
@@ -436,16 +446,32 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 guard !Task.isCancelled else { return }
                 self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
             }
-            action()
+            navigation = action()
         }
     }
 
-    private func finishNavigation(_ result: Result<Void, Error>, token: UUID?) {
+    /// WebKit 回调携带的实例是否属于当前导航。
+    ///
+    /// WebKit 会把 `load`/`goBack`/`reload` 返回的同一个实例原样传给回调，
+    /// 旧导航的迟到回调携带旧实例，必须整体忽略——不仅不能结束
+    /// continuation，连 `isLoading` 与页面状态也不能动，否则旧导航的
+    /// 迟到事件会干扰新导航的 UI（#264）。实例为 nil 的合成调用（用户
+    /// 停止、测试直接派发）视为当前导航。
+    private func isCurrentNavigation(_ navigation: WKNavigation?) -> Bool {
+        guard let navigation, self.navigation != nil else { return true }
+        return navigation === self.navigation
+    }
+
+    private func finishNavigation(_ result: Result<Void, Error>, token: UUID?, navigation: WKNavigation? = nil) {
         guard let token, token == navigationToken, let continuation = navigationContinuation else { return }
+        // WebKit 回调携带的 navigation 实例必须与当前登记的一致；旧导航的
+        // 迟到回调不得完成或失败新导航（#264）。navigation 为 nil 的调用
+        // （用户停止、会话销毁、测试）仍直接结束当前导航。
         navigationContinuation = nil
         navigationTimeoutTask?.cancel()
         navigationTimeoutTask = nil
         navigationToken = nil
+        self.navigation = nil
         isLoading = false
         continuation.resume(with: result)
     }
