@@ -29,6 +29,10 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// Created on first use to avoid blocking app startup.
     public private(set) var updaterController: SPUStandardUpdaterController?
 
+    /// Sparkle 初始化替身（#234）。生产为 nil，走真实创建；测试注入后
+    /// `ensureUpdaterInitialized()` 只记录调用，不在测试进程里拉起 Sparkle。
+    var updaterInitializationStub: (() -> Void)?
+
     /// Feed URL detector (actor). Network probes run off the main actor.
     private var feedURLDetector: FeedURLDetector?
 
@@ -133,6 +137,11 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
         guard updaterController == nil else { return }
 
+        if let updaterInitializationStub {
+            updaterInitializationStub()
+            return
+        }
+
         let controller = SPUStandardUpdaterController(
             startingUpdater: false,
             updaterDelegate: self,
@@ -183,6 +192,11 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
             if Self.verbose {
                 Self.logger.info("\(Self.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
             }
+            // Feed 就绪后确保 Sparkle 已启动（#234）：此前只有手动检查才会
+            // 初始化 updater，配置的自动检查在用户手动触发前永远不会运行。
+            // 这里是「feed 可用」的唯一汇聚点，启动/手动检查/通道切换三条
+            // 路径共用；ensureUpdaterInitialized 幂等，重复调用无害。
+            self.ensureUpdaterInitialized()
         }
         feedPreparationTask = task
         return task

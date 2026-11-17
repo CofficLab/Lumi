@@ -154,6 +154,36 @@ struct UpdateChannelSwitchProbeTests {
     }
 }
 
+@Suite("启动 feed 准备完成后自动启动 updater（#234）")
+@MainActor
+struct StartupUpdaterInitializationTests {
+    @Test("feed 准备完成后自动初始化 updater，无需手动检查")
+    func setupInitializesUpdaterAfterPreparation() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let checker = MutableReachabilityChecker(reachable: [stablePrimary: true])
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: checker,
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("startup-updater-init")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        // 测试进程不拉起真实 Sparkle：注入替身记录初始化调用。
+        var initializationCalls = 0
+        service.updaterInitializationStub = { initializationCalls += 1 }
+
+        service.setupFeedURLIfNeeded()
+        _ = await service.feedURLAfterPendingPreparation()
+
+        // 修复前：启动只探测 feed，Sparkle 控制器保持 nil，配置的自动检查
+        // 要等用户手动点一次「检查更新」才开始工作。
+        #expect(initializationCalls == 1)
+        #expect(service.updaterController == nil)
+    }
+}
+
 private actor MutableReachabilityChecker: FeedURLReachabilityChecker {
     private var reachability: [URL: Bool]
     private var probedURLs: [URL] = []
