@@ -11,6 +11,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
@@ -38,9 +40,13 @@ let package = Package(
                 "ProviderPromptSuggestionExecutor",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ]
         ),
     ]
