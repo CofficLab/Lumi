@@ -10,11 +10,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderLegacyData"),
         .package(path: "../ProviderLifecycleHooks"),
@@ -27,7 +27,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../PluginRootView"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../ProviderACP"),
         .package(path: "../PluginACP"),

@@ -1,5 +1,5 @@
 {
-  "originHash" : "e0aa8c43ebe12cda8cc6716cc3743092115e1be5553c2a037eafc485f78c5351",
+  "originHash" : "d156b8d2535987548bba44de730196ccf6fee3b515de8a3fc6b5bdb077fa11e1",
   "pins" : [
     {
       "identity" : "lumikernel",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
       "state" : {
-        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
-        "version" : "1.0.3"
+        "revision" : "a91621cb4704162468eaef9095e8aeacae4f9ded",
+        "version" : "1.0.4"
       }
     },
     {

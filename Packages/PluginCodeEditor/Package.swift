@@ -15,8 +15,8 @@ let package = Package(
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../ProviderEditor"),
         .package(path: "../ProviderConversationInputBlock"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
     ],
     targets: [
         .target(

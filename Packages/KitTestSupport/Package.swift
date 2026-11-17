@@ -7,7 +7,7 @@ let package = Package(
     name: "KitTestSupport",
     platforms: [.macOS("14.0"), .iOS(.v17)],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitTestSupport.git", from: "1.0.1"),
     ],
     targets: [
         .testTarget(

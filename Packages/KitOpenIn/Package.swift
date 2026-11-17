@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "KitOpenIn", targets: ["KitOpenIn"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
     ],
     targets: [
         .target(
