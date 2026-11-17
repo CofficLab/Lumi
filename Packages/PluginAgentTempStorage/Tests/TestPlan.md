@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 33 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 33
+测试文件: 5 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Services/`
@@ -34,6 +34,7 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 - **点文件可见且可清理**（2 条）：由 `listsAndReadsRootDotfile`、`purgeRemovesExpiredRootDotfile` 锁定（**回归 #327**）：`.audit.txt` 这类点文件是合法临时文件，可写可读；`listFiles` 与 `purgeExpiredFiles` 的枚举都不得用 `.skipsHiddenFiles`，否则点文件可读写却永远不可见、过期也永不删除。改动两处枚举 options 时优先跑对应用例。
 - **列表枚举失败必须抛错**（2 条）：由 `listFilesThrowsWhenDirectoryCannotBeEnumerated`、`listFilesReturnsEmptyForReadableEmptyDirectory` 锁定（**回归 #511**）：`FileManager.enumerator` 对打不开的目录返回空序列而非 nil，`listFiles` 必须用 `errorHandler` 捕获失败并抛 `listFailed`，只有成功读取的空目录才返回空列表。改动 `listFiles` 枚举时优先跑对应用例。
 - **数据迁移保留天数导入**（5 条）：由 `importsRetentionDaysWhenOnlyVersionedDirectoryExists`、`importsRetentionDaysWhenNoLegacyDirectoryExists`、`mergesUnversionedDirectoryAndStillImports` 等用例锁定（**回归 #811**）：旧 UserDefaults 保留天数是独立于旧文件目录的配置，`migrateData` 无论无版本旧目录是否存在都必须执行 `importLegacyRetentionDays`；已有 settings.plist 不被覆盖，无旧值时保持默认。改动 `migrateData` 的目录守卫或导入顺序时优先跑 `AgentTempStorageMigrationTests.swift`（`.serialized`，注入 `legacyDefaultsDomainProvider` / `legacyFallbackRootDirectoryProvider`）。
+- **过期文件启动/定时清理**（2 条）：由 `schedulerPurgesExpiredFilesWithoutAnyToolCall`、`stopCancelsScheduledPurges` 锁定（**回归 #509**）：调度器启动后立即清理一次过期文件并按周期重复，不依赖任何 Agent 工具调用；`stop` 取消后续清理。改动 `ExpiredTempFilePurgeScheduler` 或插件 `onBoot`/`onShutdown` 接线时优先跑 `AgentTempStoragePurgeSchedulerTests.swift`。
 
 > **#811 变异验证**（`AgentTempStorageMigrationTests`）：把 `migrateData` 中「无版本旧目录」的 `if` 合并块改回 `guard fileExists else { return }`（复现原 bug，导入被短路）→ `importsRetentionDaysWhenOnlyVersionedDirectoryExists`（14→7）与 `importsRetentionDaysWhenNoLegacyDirectoryExists`（30→7）RED；`mergesUnversionedDirectoryAndStillImports`（无版本目录存在）仍 GREEN。该变异锁定「配置导入不得被文件目录守卫短路」的迁移不变量。
 
@@ -74,6 +75,8 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 31 | 数据迁移 | 插件存储已有配置时不被旧值覆盖 | 先写入保留天数=21，旧 UserDefaults=14 | 调用 `migrateData` | 保留天数仍为 21 | P1 | ✅ 已覆盖 | `doesNotOverwriteExistingSettings` |
 | 32 | 数据迁移 | 没有旧保留天数时不导入，保持默认 | 旧域为空 | 调用 `migrateData` | 不生成 settings.plist，解析保留天数为默认 7 | P1 | ✅ 已覆盖 | `skipsImportWhenNoLegacyValue` |
 | 33 | 数据迁移 | 无版本旧目录存在时合并其内容并仍导入保留天数 | 无版本旧目录含文件，旧保留天数=14 | 注入假域与 fallback 根后调用 `migrateData` | 旧文件被合并进插件目录，且保留天数=14 | P1 | ✅ 已覆盖 | `mergesUnversionedDirectoryAndStillImports` |
+| 34 | 过期文件清理调度 | 启动即清理过期文件，不依赖工具调用（**回归 #509**） | 隔离目录，过期文件已存在 | 启动 `ExpiredTempFilePurgeScheduler`，不调用任何工具 | 轮询等待后过期文件被删除 | P1 | ✅ 已覆盖 | `schedulerPurgesExpiredFilesWithoutAnyToolCall` |
+| 35 | 过期文件清理调度 | 按周期重复清理，stop 后不再清理（**回归 #509**） | 极小清理间隔 + 计数器 | start 后观察计数，stop 后再观察 | stop 前计数≥2，stop 后计数不再增长（最多 +1） | P1 | ✅ 已覆盖 | `stopCancelsScheduledPurges` |
 
 > 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
