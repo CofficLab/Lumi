@@ -122,7 +122,20 @@ final class ToolManagerStateObserver: SuperLog {
         ingest(job)
     }
 
+    /// 事件是否属于已被新回合取代的旧回合（#536）。
+    ///
+    /// ToolJob 事件异步投递：旧回合被取消、新回合开始后，旧回合残余的
+    /// output/progress/终态事件不得改写新回合的投影——否则会清空新回合
+    /// 的 job 汇总、把 turnID 回退成旧回合、甚至清掉「正在执行」活动。
+    /// 快照尚未记录 turnID（观察者中途接入）或事件未携带 turnID 时保持
+    /// 旧行为。
+    private func isStale(_ turn: UUID?, for conversationID: UUID) -> Bool {
+        guard let turn, let current = provider.state(for: conversationID).turnID else { return false }
+        return turn != current
+    }
+
     private func ingest(_ job: ToolJob) {
+        guard !isStale(job.turnID, for: job.conversationID) else { return }
         if turnByConversation[job.conversationID] != job.turnID {
             jobsByConversation[job.conversationID] = [:]
             turnByConversation[job.conversationID] = job.turnID

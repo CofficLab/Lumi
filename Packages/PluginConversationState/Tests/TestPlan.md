@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 38 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 38
+测试文件: 7 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Observers/`
@@ -76,29 +76,32 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 36 | 迟到终态 | 旧回合的迟到工具事件不得改写新回合的 turnID 与活动（**回归 #438**） | 新回合 B 运行中 | A 的 `.toolCallsReceived` 迟到到达 | turnID 仍为 B，activity 仍为 thinking | P0 | ✅ 已覆盖 | `staleToolCallsDoNotOverwriteTurn` |
 | 37 | 迟到终态 | 快照未记录 turnID 时终态保持旧行为（**#438 护栏**） | 观察者中途接入或外部回合未发 started | 终态事件到达 | 状态照常应用，不误判为迟到 | P1 | ✅ 已覆盖 | `terminalWithoutKnownTurnStillApplies` |
 | 38 | 新回合重置 ToolJob 汇总 | 新回合的授权等待不得显示上一回合的工具描述（**回归 #595**） | 回合 A 已留下 Job 汇总，回合 B 只触发授权（无 ToolJobEvent） | 发 `.started(B)` 再发 `authorizationRequired` | jobActivity 清空（hasJobs=false、描述 nil），授权等待正常标记 | P0 | ✅ 已覆盖 | `authorizationInNewTurnDoesNotShowPreviousTurnTool` |
+| 39 | 迟到 ToolJob 事件 | 旧回合迟到的 Job 事件不得改写新回合的投影（**回归 #536**） | 回合 A 的 Job 运行中被取消，回合 B 已开始并进入执行 | 依次发 A 的 `.output` 与 `.cancelled` 迟到事件 | turnID 仍为 B，jobActivity 不并入旧 Job，`.executingTool` 不被清掉 | P0 | ✅ 已覆盖 | `lateOldTurnJobEventDoesNotRewriteNewTurnProjection` |
+| 40 | 迟到 ToolJob 事件 | 当前回合的 Job 事件不受迟到过滤影响（**#536 护栏**） | 先发 A 的迟到终态事件，再发 B 自己的 Job 事件 | B 的 Job `.started` 与 `.completed` | B 的 Job 照常并入汇总，终态后 activity 清理 | P1 | ✅ 已覆盖 | `currentTurnJobEventsStillIngested` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#595）：移除 `AgentLoopStateObserver.consume(.started)` 中的 `jobActivity: ConversationJobActivity()` 重置 → `authorizationInNewTurnDoesNotShowPreviousTurnTool` 转红（回合 A 的 Job 汇总残留，hasJobs 仍为真、描述非 nil），#962 / #438 相关用例仍绿。变异确认转红后还原，最终 38 条全绿。
+> 变异验证（#536）：移除 `ToolManagerStateObserver.ingest` 顶部的 `isStale` 防护 → 39/40 两条用例转红（迟到事件回退 turnID、清掉 executingTool），其余 38 条仍绿。变异确认转红后还原，最终 40 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 16 / 16
 - P2: 已覆盖 2 / 2
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（16 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
