@@ -100,6 +100,7 @@ public struct PrototypeDesignerView: View {
                 HTMLPreviewView(
                     htmlText: resolved.html,
                     fileURL: resolved.htmlURL,
+                    readAccessRootURL: resolved.projectDirectoryURL,
                     contentSize: resolved.project.device.logicalSize,
                     onElementReferenceSelected: { reference in
                         sendElementToConversation(reference, resolved: resolved)
