@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 124 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 127 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 124
+测试文件: 9 个，用例总数: 127
 
 核心组件（源码目录）:
 - `Views/`
@@ -33,7 +33,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **TextActionsPlugin**（16 条）：由 `pluginMetadata`、`localStorePersistsEnabledFlagInBinaryPlist`、`localStoreWritesNoUserDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionsCore**（38 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor`、`dragBeyondThresholdIsSelection`、`copyAndCutShortcutsNeverEvaluate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionsCore**（41 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor`、`dragBeyondThresholdIsSelection`、`copyAndCutShortcutsNeverEvaluate`、`mouseEventExtractionIsSafe` 等用例锁定；改动该模块时优先跑对应测试文件。监听回调提取事件字段必须走 `TextActionDismissPolicy.keyCode(of:)` / `scrollingDeltaY(of:)`——对鼠标/滚动事件直接读 `keyCode` 会抛 NSInternalInconsistencyException 吞掉当次点击（关闭按钮失效回归）。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionMenuPanel**（14 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`closeForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -169,29 +169,32 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 122 | TextActionsTrigger | 非选择快捷键的 keyUp 不读取选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonSelectionShortcutKeyUpDoesNotReadSelection` |
 | 123 | TextActionsTrigger | Shift+方向键的 keyUp 读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shiftArrowKeyUpReadsSelection` |
 | 124 | TextActionsTrigger | Cmd+A 的 keyUp 读取选区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectAllKeyUpReadsSelection` |
+| 125 | TextActionsCore | 鼠标事件提取不读 keyCode / 滚动增量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `mouseEventExtractionIsSafe` |
+| 126 | TextActionsCore | 键盘事件保留 keyCode | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keyEventExtractionKeepsKeyCode` |
+| 127 | TextActionsCore | 滚动事件保留增量且不读 keyCode | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scrollEventExtractionKeepsDelta` |
 
-> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **127 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > **回归 #303 变异验证**：U-M1 把 `TextActionsSettings.setEnabled` 的关闭分支改成不停止监听，`toggleOffStopsSelectionMonitoring` 必须变红（路径 B 用例保持绿）；U-M2 把插件 `onDisable` 改成空操作，`pluginDisableStopsMonitorStartedByToggle` 必须变红（路径 A 用例保持绿）。两处还原后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 99 / 99
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 101 / 101
 - P2: 已覆盖 11 / 11
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 127 / 127**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（99 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（101 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 127 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
