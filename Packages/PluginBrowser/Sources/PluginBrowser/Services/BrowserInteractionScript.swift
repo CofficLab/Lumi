@@ -128,7 +128,7 @@ enum BrowserInteractionScript {
           el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y }));
         }
         el.click();
-        return true;
+        return { ok: true };
       };
 
       switch (OPTS.action) {
@@ -136,7 +136,8 @@ enum BrowserInteractionScript {
           if (el.tagName === "A" && el.getAttribute("href")) {
             return { ok: true, href: el.href, message: "Clicked link." };
           }
-          if (!click()) return fail("The element could not be clicked.");
+          const result = click();
+          if (!result.ok) return result;
           return { ok: true, href: "", message: "Clicked." };
         }
 

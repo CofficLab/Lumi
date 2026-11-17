@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 92
+测试文件: 20 个，用例总数: 94
 
 核心组件（源码目录）:
 - `Models/`
@@ -58,6 +58,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 - **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
 - **Browser ref 分配与唯一性**（3 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。
+- **Browser click 遮挡检测**（2 条）：由 `coveredClickReportsFailureAndDoesNotClick`、`uncoveredClickSucceedsAndClicks` 锁定；非链接元素被遮挡时 `click()` 返回失败对象，调用处必须检查 `.ok` 并原样回传失败，不得因 JS 对象恒真而误报 "Clicked." 成功（issue #832）。
 - **browser_evaluate 结果解析**（6 条）：由 `stringValueReturnsAsIs`、`errorEnvelopeMapsToScriptFailed`、`largeResultDecodesOffMain` 等用例锁定；信封到 `.success` / `.scriptFailed` / `.noPage` 的映射是模型判断脚本成败的依据，数 MB 结果的解析必须在后台完成（issue #1297）。
 - **截图 PNG 编码**（3 条）：由 `encodesValidPNGFromCGImage`、`directEncodingMatchesTIFFRoundTrip`、`encodingRunsOffMainThread` 锁定；直接从 CGImage 建位图并在后台编码，去掉 TIFF 往返，像素尺寸不得丢失（issue #1282）。
 - **browser_wait 取消行为**（4 条）：由 `cancellationThrowsImmediately`、`cancellationStopsPolling`、`timeoutReturnsFalse` 锁定；取消必须立刻向上传播并停止轮询，否则 load / navigation 分支会在主线程忙轮询到超时（issue #418）。
@@ -161,37 +162,40 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 90 | find 交互过滤 | 全部可交互时全部保留 | matches 为 button/link | 以 interactiveOnly=true 调用 `filterInteractive` | 两条都保留 | P1 | ✅ 已覆盖 | `interactiveFilterKeepsAllWhenAllInteractive` |
 | 91 | find 交互过滤 | 全部非交互时返回空（触发空匹配提示） | matches 为 heading/paragraph | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P1 | ✅ 已覆盖 | `interactiveFilterReturnsEmptyWhenNoneInteractive` |
 | 92 | find 交互过滤 | 空匹配列表过滤后仍为空 | matches 为空 | 以 interactiveOnly=true 调用 `filterInteractive` | 返回空列表 | P2 | ✅ 已覆盖 | `interactiveFilterOnEmptyMatchesReturnsEmpty` |
+| 93 | Browser click 遮挡检测 | 被遮挡的非链接元素点击必须报告失败且不执行真实点击（**回归 #832**） | elementFromPoint 返回遮挡元素 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=false 且提示被遮挡，`el.click()` 未执行 | P0 | ✅ 已覆盖 | `coveredClickReportsFailureAndDoesNotClick` |
+| 94 | Browser click 遮挡检测 | 未被遮挡的非链接元素点击成功并执行真实点击 | elementFromPoint 返回自身 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=true、message "Clicked."，`el.click()` 执行一次 | P1 | ✅ 已覆盖 | `uncoveredClickSucceedsAndClicks` |
 
-> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **94 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
+> **#832 变异验证**：对 `BrowserInteractionScript` 的 click 路径注入 2 个变异均被相应用例捕获——M1 还原原始 bug（成功 `return true;` + 调用处 `if (!click()) return fail(...)`，JS 失败对象恒真使遮挡被当成功），被 `coveredClickReportsFailureAndDoesNotClick` 捕获（ok=false 与遮挡提示两处断言失败）；M2 把成功返回改为 `return { ok: false };`，被 `uncoveredClickSucceedsAndClicks` 唯一捕获（ok=true 与 message "Clicked." 两处断言失败），证明正向用例能区分成功返回。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 58 / 58
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 15 / 15
-- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
+- **合计: 94 / 94**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
 以下能力依赖真实 `WKWebView` 运行时，单元测试无法覆盖，需要在 App 中人工验证：
 
 - 可访问性脚本在真实 DOM 上的 role 映射与名称计算
-- 交互动作在真实元素上的效果（遮挡检测、下拉选项匹配）
+- 交互动作在真实元素上的效果（真实 DOM 命中测试、下拉选项匹配）
 - 截图的 `takeSnapshot` 渲染结果
 - 等待机制在真实异步页面上的时序
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（58 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 94 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
