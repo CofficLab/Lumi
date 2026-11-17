@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import EditorSource
 
 @MainActor
 extension EditorState {
@@ -80,6 +81,11 @@ extension EditorState {
                 guard let self, let url else { return }
                 self.recordSuccessfulSave()
                 self.lspClient.documentDidSave(uri: url.absoluteString, text: content)
+                // 保存落盘成功必须广播 `.lumiEditorSave`：IdleTime 等监听方靠它
+                // 记录 fileSave 活动。此前该通知从未被任何代码发出（#461）。
+                NotificationCenter.default.post(name: .lumiEditorSave, object: url)
+                // 保存落盘成功必须广播 `.lumiEditorSave`：IdleTime 等监听方靠它
+                // 记录 fileSave 活动。此前该通知从未被任何代码发出（#461）。
             },
             setHasUnsavedChanges: { [weak self] value in
                 self?.hasUnsavedChanges = value
