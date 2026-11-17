@@ -76,6 +76,12 @@ final class ConversationListViewModel: ObservableObject {
             case let .selectedConversationChanged(id):
                 self?.selectedConversationID = id
                 self?.immediateSelectionID = id
+                // 外部入口（项目空态「上次聊到」、建议消费等）选中会话时，
+                // 列表此刻正把它显示为选中；不同步 markRead 的话绿点残留
+                // 会被理解成「还没看」（#637）。
+                if let id {
+                    self?.attentionStore.markRead(conversationID: id)
+                }
             case let .conversationAutomationChanged(id):
                 self?.updateAutomationLevel(for: id)
             case let .conversationStateChanged(id):

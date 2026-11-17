@@ -75,6 +75,42 @@ private func englishTableLocalizedString(_ key: String) -> String {
     #expect(viewModel.conversationCount == 1)
 }
 
+/// 回归 #637：外部入口（项目空态「上次聊到」等）选中会话时，列表同步
+/// 选中态必须同步清掉关注点，否则绿点残留会被理解成「还没看」。
+@Test @MainActor func externalSelectionChangeMarksConversationAsRead() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+    let attentionID = try conversations.createConversation(title: "A", projectPath: "/workspace/One", providerID: nil, modelName: nil)
+    _ = try conversations.createConversation(title: "B", projectPath: "/workspace/One", providerID: nil, modelName: nil)
+
+    let context = makeListContext(conversations: conversations, project: project)
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: nil,
+        context: context
+    )
+    let attentionStore = ConversationAttentionStore()
+    let viewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: attentionStore,
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all,
+        localizedString: englishTableLocalizedString
+    )
+    await viewModel.loadInitialIfNeeded()
+
+    attentionStore.markNeedsAttention(conversationID: attentionID)
+    #expect(viewModel.needsAttention(for: attentionID))
+
+    // 外部入口直接调管理器选中会话（不经过列表行点击）。
+    conversations.selectConversation(id: attentionID)
+
+    let cleared = await waitUntil { !viewModel.needsAttention(for: attentionID) }
+    #expect(cleared, "外部选中同步后关注点必须被清掉")
+    #expect(viewModel.selectedConversationID == attentionID)
+}
+
 @Test @MainActor func conversationCountReflectsScopeAndUpdatesOnChange() async throws {
     let conversations = DefaultConversationManager()
     let project = DefaultProjectProvider()

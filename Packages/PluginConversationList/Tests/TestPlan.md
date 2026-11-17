@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 78 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 81 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 80
+测试文件: 15 个，用例总数: 81
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -139,20 +139,23 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 78 | ConversationListViewModel | 隐藏/未初始化列表面不得因状态事件启动加载（**#1258**） | 从未加载的隐藏 ViewModel，挂状态提供者与观察器 | 发射 `.updated(id)` 并等待 100ms | 分页请求数保持 0，不发布任何刷新 | P0 | ✅ 已覆盖 | `stateUpdateDoesNotStartLoadForUninitializedSurface` |
 | 79 | ConversationListViewModel | 选中会话必须刷新粘性排序锚点，不被新消息顶走（**#800**） | 注入可控时钟的 stabilizer，Viewed(lastMessageAt=0) 与 Active(90)；t=100 选中 Viewed，t=110 Active 收到新消息 | selectConversation 后 reload | Viewed 锚点被刷到 t=100，排序仍位于 Active(t=90) 之前 | P0 | ✅ 已覆盖 | `selectingConversationRefreshesStickySortAnchor` |
 | 80 | RelativeTime | 相对时间必须由注入的 now 驱动，列表 tick 才能让文本空闲时前进（**回归 #638**） | 基准时刻固定为 epoch | 以注入 now 分别偏移 0/5m/2h/3d/未来 | 各偏移得到对应文案，忽略注入 now 则转红 | P1 | ✅ 已覆盖 | `relativeTimeIsDrivenByTheInjectedNow` |
+| 81 | ConversationListViewModel | 外部入口选中会话同步时必须清掉关注点（**回归 #637**） | A 已标记 needsAttention | 直接调管理器 `selectConversation(A)`（非列表行点击） | 关注点被清掉、选中态同步为 A；移除 markRead 同步则转红 | P0 | ✅ 已覆盖 | `externalSelectionChangeMarksConversationAsRead` |
 
-> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 变异验证（#637）：移除 `.selectedConversationChanged` 分支里的 `attentionStore.markRead` → `externalSelectionChangeMarksConversationAsRead` 转红（外部选中后绿点残留），列表行点击的 markRead 既有用例仍绿。变异确认转红后还原，最终 81 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
+- P0: 已覆盖 12 / 12
 - P1: 已覆盖 58 / 58
 - P2: 已覆盖 11 / 11
-- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
 - **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
