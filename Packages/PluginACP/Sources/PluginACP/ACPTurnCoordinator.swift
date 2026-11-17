@@ -109,6 +109,13 @@ public final class ACPTurnCoordinator {
     private var observerHandle: (any AgentLoopObserverHandle)?
     private var retryObserverHandle: (any AgentLoopRetryLifecycleObserverHandle)?
     private var watchdogTasks: [ACPSessionId: Task<Void, Never>] = [:]
+    /// 启动 runner 的 Task 句柄（每会话一个）。
+    ///
+    /// `session/cancel` 可能与 `session/prompt` 同一 burst 到达，此时 runner
+    /// 尚未创建 AgentLoop runtime，`cancelTurn` 是 no-op。持有句柄才能在
+    /// `cancel()` 里取消这个尚未启动的 Task，让 `runTurnTask` 启动前看到取消
+    /// 并跳过模型/工具，取消意图不会在启动前丢失（#480）。
+    private var runnerTasks: [ACPSessionId: Task<Void, Never>] = [:]
 
     public init(
         agentLoop: any ACPTurnRunning,
@@ -153,6 +160,11 @@ public final class ACPTurnCoordinator {
                   let sessionID = self.activeSessionID(for: conversationID) else { return }
             self.sendUpdate(sessionID: sessionID, update: .agentMessageChunk(.text(delta)))
         }
+        // 任何流式增量（正文或思考 token）都证明 LLM 正在产出：据此解除首响应
+        // watchdog，否则持续健康流式的长回答会被误判为「无 LLM 进展」而拒绝（#352）。
+        streaming?.onProgress = { [weak self] conversationID in
+            self?.markLLMProgress(conversationID: conversationID)
+        }
     }
 
     // MARK: - 回合启动
@@ -196,7 +208,7 @@ public final class ACPTurnCoordinator {
         )
         armWatchdog(sessionID: sessionID)
 
-        Task { @MainActor [weak self] in
+        runnerTasks[sessionID] = Task { @MainActor [weak self] in
             await self?.runTurnTask(sessionID: sessionID, conversationID: record.conversationID)
         }
         return nil
@@ -233,6 +245,10 @@ public final class ACPTurnCoordinator {
     public func cancel(sessionID: ACPSessionId) {
         guard let record = sessions.record(for: sessionID) else { return }
         cancelPendingPermissions(sessionID: sessionID)
+        // runner Task 可能尚未启动（prompt 与 cancel 同一 burst）：此刻 AgentLoop
+        // runtime 还没创建，下面的 cancelTurn 是 no-op。先取消 runner Task，让
+        // runTurnTask 启动前据此跳过模型/工具，取消意图不会在启动前丢失（#480）。
+        runnerTasks[sessionID]?.cancel()
         // 退避中的回合不处于运行态，`cancelTurn` 不会产生 cancelled 事件；
         // 必须显式终止重试，并由 ACP 自己完成收尾，否则原请求一直悬挂。
         retryLifecycle?.cancelRetry(for: record.conversationID)
@@ -283,6 +299,14 @@ public final class ACPTurnCoordinator {
     }
 
     private func runTurnTask(sessionID: ACPSessionId, conversationID: UUID) async {
+        // 启动前已被取消（#480）：prompt 与 cancel 同一 burst 到达时 runner 尚未
+        // 创建 runtime，cancelTurn 是 no-op，cancel() 改为取消本 Task。这里必须在
+        // 启动模型/工具前看到取消并跳过 runner；收尾由 cancel() 已调度的
+        // finalize(cancelled:true) 负责，不在此重复收尾。取消标志随本回合 Task
+        // 存续，startTurn 用新 Task 覆盖句柄，不会污染同一会话的下一回合。
+        if Task.isCancelled {
+            return
+        }
         do {
             let outcome = try await agentLoop.runTurn(in: conversationID)
             // 事件路径已 finalize 的回合会因 finalized 标志跳过。

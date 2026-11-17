@@ -5,7 +5,7 @@
 KitKeychain KitKeychain 是 Lumi 项目中负责密钥链存储相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 42
+测试文件: 3 个，用例总数: 45
 
 ## 公开 API
 
@@ -20,7 +20,7 @@ KitKeychain KitKeychain 是 Lumi 项目中负责密钥链存储相关能力的 P
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **KeychainStoreAdditionalCoverage**（7 条）：由 `transientThenSuccessRecovers`、`defaultReadAllowsInteraction`、`stringWithoutPromptSuccess` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **KeychainStoreCoverage**（26 条）：由 `testTransientRetryDelayDoublesExponentially`、`testTransientFailureSleepsBetweenRetriesWithBackoff`、`testClassifySuccessWithData` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **KeychainStoreCoverage**（29 条）：由 `testTransientRetryDelayDoublesExponentially`、`testTransientFailureSleepsBetweenRetriesWithBackoff`、`testClassifySuccessWithData` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **KeychainStore**（9 条）：由 `testReportingReadReturnsValue`、`testReportingReadReturnsNilOnlyForMissingItem`、`testFalseNotFoundCanLookMissingUntilANewReadFindsExistingItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -42,8 +42,8 @@ KitKeychain KitKeychain 是 Lumi 项目中负责密钥链存储相关能力的 P
 | 13 | KeychainStoreCoverage | testClassifyTransientStatuses | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testClassifyTransientStatuses` |
 | 14 | KeychainStoreCoverage | testClassifyUnexpectedStatus | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testClassifyUnexpectedStatus` |
 | 15 | KeychainStoreCoverage | testEmptyKeyShortCircuitsAllOperations | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testEmptyKeyShortCircuitsAllOperations` |
-| 16 | KeychainStoreCoverage | testWriteTrimsWhitespaceBeforeStoring | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testWriteTrimsWhitespaceBeforeStoring` |
-| 17 | KeychainStoreCoverage | testWriteWhitespaceOnlyValueRemovesKey | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testWriteWhitespaceOnlyValueRemovesKey` |
+| 16 | KeychainStoreCoverage | 写入按字节原样保留前后空白，不裁剪秘密（#399） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testWritePreservesWhitespaceByteForByte` |
+| 17 | KeychainStoreCoverage | 全空白非空输入按字节存储，不得当作删除（#399） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testWriteWhitespaceOnlyValueIsPreserved` |
 | 18 | KeychainStoreCoverage | testWriteFailureDoesNotDeleteExistingValueFirst | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testWriteFailureDoesNotDeleteExistingValueFirst` |
 | 19 | KeychainStoreCoverage | testRemoveThrowsDeleteFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRemoveThrowsDeleteFailure` |
 | 20 | KeychainStoreCoverage | testNonThrowingWrappersSwallowFailures | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testNonThrowingWrappersSwallowFailures` |
@@ -69,27 +69,35 @@ KitKeychain KitKeychain 是 Lumi 项目中负责密钥链存储相关能力的 P
 | 40 | KeychainStore | testReportingReadRejectsSuccessWithoutData | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testReportingReadRejectsSuccessWithoutData` |
 | 41 | KeychainStore | testReportingWritePreservesFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testReportingWritePreservesFailure` |
 | 42 | KeychainStore | testReportingRemoveTreatsAlreadyMissingAsSuccess | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testReportingRemoveTreatsAlreadyMissingAsSuccess` |
+| 43 | KeychainStoreCoverage | 真正的空字符串触发删除，保留清空即移除契约 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testWriteEmptyStringRemovesKey` |
+| 44 | KeychainStoreCoverage | 含前后空白密码写读往返字节一致，凭据不再失配（#399） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testWriteThenReadRoundTripsWhitespacePasswordByteForByte` |
+| 45 | KeychainStoreCoverage | 全空白密码写读往返保留，不被删除（#399） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testWriteThenReadRoundTripsAllWhitespacePassword` |
 
-> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+>
+> 回归 #399（秘密按字节存储）：原 `testWriteTrimsWhitespaceBeforeStoring` / `testWriteWhitespaceOnlyValueRemovesKey`
+> 锁定的是「裁剪空白 / 全空白即删除」的错误行为，已重写为 `testWritePreservesWhitespaceByteForByte` /
+> `testWriteWhitespaceOnlyValueIsPreserved`，并新增空串删除与写读往返保真用例。变异验证：
+> M1 恢复写入裁剪 → 16/17/44/45 红；M2 恢复「trim 后为空即删除」→ 17/45 红；还原后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 29 / 29
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 8 / 8
-- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（29 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 42 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

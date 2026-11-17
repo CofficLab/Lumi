@@ -358,3 +358,56 @@ struct InputPluginRuntimeTests {
         )
     }
 }
+
+/// 回归 #365：运行时禁用只走 `onDisable`（内核不调用 `onShutdown`）。
+/// 此前 InputPlugin 没有 `onDisable`，`InputEventObserver` 仍订阅应用激活通知
+/// 并转发给 `InputService.handleAppActivation`，禁用后仍按旧规则切换 macOS 输入源。
+/// 禁用必须立即停止监听，启用时再恢复。
+///
+/// `InputService.shared` 与运行时目录注入是进程级共享状态，用 `.serialized`
+/// 串行化并在 defer 中 shutdown 清理，避免影响并行套件。
+@Suite("Input 禁用生命周期", .serialized)
+@MainActor
+struct InputDisableLifecycleTests {
+    @Test func disableStopsAppActivationListenerAndEnableRestoresIt() async throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let contentView = DefaultContentViewProviding()
+        let railView = DefaultRailViewProviding()
+        let rootView = DefaultRootViewProviding()
+        rootView.setRailView(railView.makeRailView())
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ContentViewProviding).self, contentView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            InputPluginTestDoubles.StubStorageProvider(
+                root: InputPluginTestDoubles.makeTemporaryDirectory("disable-lifecycle")
+            )
+        )
+
+        let plugin = InputPlugin()
+        try plugin.onBoot(kernel: kernel)
+        defer { try? plugin.onShutdown(kernel: kernel) }
+
+        let entry = "\(plugin.id).entry"
+        // 启用后监听器在订阅系统通知，ActivityBar 入口存在。
+        #expect(plugin.isEventObserverRunningForTesting)
+        #expect(activityBar.items.contains { $0.id == entry })
+
+        try await plugin.onDisable(kernel: kernel)
+
+        // 禁用必须立即停止应用激活监听，不再切换输入源，并撤回入口。
+        #expect(!plugin.isEventObserverRunningForTesting)
+        #expect(!activityBar.items.contains { $0.id == entry })
+
+        try await plugin.onEnable(kernel: kernel)
+
+        // 重新启用后监听与入口恢复。
+        #expect(plugin.isEventObserverRunningForTesting)
+        #expect(activityBar.items.contains { $0.id == entry })
+    }
+}

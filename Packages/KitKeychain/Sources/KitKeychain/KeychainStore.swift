@@ -135,16 +135,19 @@ public final class KeychainStore: @unchecked Sendable {
 
     /// Writes a string without deleting an existing item first and preserves
     /// Security framework failures for callers that need verification.
+    ///
+    /// 值按字节原样存储：密码等不透明秘密的前后空白可能是其合法组成部分，
+    /// 通用存储层不得擅自裁剪，也不得把非空输入当作删除（#399）。仅当传入
+    /// 真正的空字符串 `""` 时才删除条目；是否允许空密码由具体账号校验决定。
     public func setReportingErrors(_ value: String, forKey key: String) throws {
         guard !key.isEmpty else { return }
 
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
+        if value.isEmpty {
             try removeReportingErrors(forKey: key)
             return
         }
 
-        let result = backend.write(Data(trimmed.utf8), service: service, account: key)
+        let result = backend.write(Data(value.utf8), service: service, account: key)
         guard result.status == errSecSuccess else {
             throw KeychainStoreError.writeFailed(result.status)
         }

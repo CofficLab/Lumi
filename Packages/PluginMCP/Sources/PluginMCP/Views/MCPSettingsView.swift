@@ -21,6 +21,8 @@ struct MCPSettingsView: View {
     @State private var selectedServerID: String?
     @State private var searchText = ""
     @State private var revision = 0
+    /// 列表侧（启停 / 删除）写回失败的提示；nil 表示无错误（#532）。
+    @State private var persistenceErrorMessage: String?
 
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
@@ -29,6 +31,11 @@ struct MCPSettingsView: View {
                     header
                         .padding(.horizontal, 24)
                         .padding(.bottom, 12)
+                    if let persistenceErrorMessage {
+                        persistenceErrorBanner(persistenceErrorMessage)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 12)
+                    }
                     // 主体内容贴边后，用一条顶部分隔线把标题行与主从容器分开。
                     AppDivider()
                     masterDetail
@@ -200,9 +207,13 @@ struct MCPSettingsView: View {
                 Toggle("", isOn: Binding(
                     get: { server.enabled },
                     set: { enabled in
-                        var updated = server
-                        updated.enabled = enabled
-                        registry.updateServer(updated)
+                        // 写回失败时不改连接状态，开关回到原值并显示错误（#532）。
+                        if let message = Self.setEnabled(enabled, server: server, registry: registry) {
+                            persistenceErrorMessage = message
+                            revision += 1
+                            return
+                        }
+                        persistenceErrorMessage = nil
                         Task { @MainActor in
                             if enabled { await manager.connect(serverID: server.id) }
                             else { await manager.disconnect(serverID: server.id) }
@@ -216,8 +227,13 @@ struct MCPSettingsView: View {
                 AppButton("", systemImage: "pencil", size: .small) { editingServerID = server.id }
                     .help(MCPText.string("Edit"))
                 AppButton("", systemImage: "trash", size: .small) {
+                    // 删除失败时保留服务器与连接，只提示错误（#532）。
+                    if let message = Self.deleteServer(id: server.id, registry: registry) {
+                        persistenceErrorMessage = message
+                        return
+                    }
+                    persistenceErrorMessage = nil
                     Task { @MainActor in await manager.disconnect(serverID: server.id) }
-                    registry.removeServer(id: server.id)
                     if selectedServerID == server.id { selectedServerID = nil }
                     revision += 1
                 }
@@ -300,6 +316,60 @@ struct MCPSettingsView: View {
 
 
     // MARK: - Helpers
+
+    private func persistenceErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+            Text(message)
+                .font(.appCaption)
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            AppButton("", systemImage: "xmark", size: .small) { persistenceErrorMessage = nil }
+        }
+        .padding(12)
+        .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color.red.opacity(0.25), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// 写回失败的统一文案：本地化前缀 + 底层原因（#532）。
+    static func persistenceFailureMessage(_ error: any Error) -> String {
+        String(format: MCPText.string("Failed to save MCP configuration: %@"), error.localizedDescription)
+    }
+
+    /// 启停开关落库：成功返回 nil；失败返回错误文案，注册表状态保持不变（#532）。
+    static func setEnabled(
+        _ enabled: Bool,
+        server: MCPServerConfig,
+        registry: MCPServerRegistry
+    ) -> String? {
+        var updated = server
+        updated.enabled = enabled
+        // 启用即随启动恢复：只写 enabled 会留下 autoStart=false，重启后
+        // startAutoStartServers 跳过它，UI 显示已启用却永远不连接（#533）。
+        updated.autoStart = enabled
+        do {
+            try registry.updateServer(updated)
+            return nil
+        } catch {
+            return persistenceFailureMessage(error)
+        }
+    }
+
+    /// 删除服务器落库：成功返回 nil；失败返回错误文案，服务器仍在列表中（#532）。
+    static func deleteServer(id: String, registry: MCPServerRegistry) -> String? {
+        do {
+            try registry.removeServer(id: id)
+            return nil
+        } catch {
+            return persistenceFailureMessage(error)
+        }
+    }
 
     private var filteredServers: [MCPServerConfig] {
         if searchText.isEmpty { return registry.servers }
@@ -486,11 +556,13 @@ struct MCPServerEditSheet: View {
         isSaving = true
         errorMessage = nil
         let saved: MCPServerConfig
-        if isEditing {
-            registry.updateServer(config)
-            saved = config
-        } else {
-            saved = registry.addServer(config)
+        do {
+            saved = try Self.save(config, registry: registry, isEditing: isEditing)
+        } catch {
+            // 没写进磁盘就不算保存成功：保留编辑页与用户输入，不连接、不回调、不关闭（#532）。
+            isSaving = false
+            errorMessage = MCPSettingsView.persistenceFailureMessage(error)
+            return
         }
         Task { @MainActor in
             if saved.enabled {
@@ -500,5 +572,18 @@ struct MCPServerEditSheet: View {
             onSaved(saved)
             dismiss()
         }
+    }
+
+    /// 保存落库入口：只有确实写入磁盘成功才返回配置；失败抛出（#532）。
+    static func save(
+        _ config: MCPServerConfig,
+        registry: MCPServerRegistry,
+        isEditing: Bool
+    ) throws -> MCPServerConfig {
+        if isEditing {
+            try registry.updateServer(config)
+            return config
+        }
+        return try registry.addServer(config)
     }
 }

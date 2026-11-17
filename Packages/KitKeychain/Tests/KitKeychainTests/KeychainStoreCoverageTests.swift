@@ -118,7 +118,7 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     // MARK: - Write behavior
 
-    func testWriteTrimsWhitespaceBeforeStoring() throws {
+    func testWritePreservesWhitespaceByteForByte() throws {
         let backend = RecordingKeychainBackend()
         let store = KeychainStore(
             service: "test",
@@ -129,10 +129,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
         try store.setReportingErrors("  secret \n", forKey: "account")
 
-        XCTAssertEqual(backend.writtenData, [Data("secret".utf8)])
+        // 密码等不透明秘密的前后空白是合法组成部分，必须原样写入（#399）。
+        XCTAssertEqual(backend.writtenData, [Data("  secret \n".utf8)])
+        XCTAssertEqual(backend.deleteCount, 0)
     }
 
-    func testWriteWhitespaceOnlyValueRemovesKey() throws {
+    func testWriteWhitespaceOnlyValueIsPreserved() throws {
         let backend = RecordingKeychainBackend()
         let store = KeychainStore(
             service: "test",
@@ -143,8 +145,54 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
         try store.setReportingErrors("   \n ", forKey: "account")
 
+        // 全空白密码也是非空输入，不得被当作删除（#399）。
+        XCTAssertEqual(backend.deleteCount, 0)
+        XCTAssertEqual(backend.writtenData, [Data("   \n ".utf8)])
+    }
+
+    func testWriteEmptyStringRemovesKey() throws {
+        let backend = RecordingKeychainBackend()
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
+
+        try store.setReportingErrors("", forKey: "account")
+
+        // 真正的空字符串仍触发删除，保留「清空即移除」契约。
         XCTAssertEqual(backend.deleteCount, 1)
         XCTAssertEqual(backend.writtenData, [])
+    }
+
+    func testWriteThenReadRoundTripsWhitespacePasswordByteForByte() throws {
+        let backend = InMemoryKeychainBackend()
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
+
+        try store.setReportingErrors(" secret ", forKey: "account")
+
+        // 连接测试用原始密码，保存后读回也必须是同一字节序列（#399）。
+        XCTAssertEqual(try store.stringReportingErrors(forKey: "account"), " secret ")
+    }
+
+    func testWriteThenReadRoundTripsAllWhitespacePassword() throws {
+        let backend = InMemoryKeychainBackend()
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
+
+        try store.setReportingErrors("   \n ", forKey: "account")
+
+        XCTAssertEqual(try store.stringReportingErrors(forKey: "account"), "   \n ")
     }
 
     func testWriteFailureDoesNotDeleteExistingValueFirst() {
@@ -381,6 +429,35 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
 
     func delete(service: String, account: String) -> KeychainResult {
         lock.withLock { storedDeleteCount += 1 }
+        return KeychainResult(status: errSecSuccess, data: nil)
+    }
+}
+
+/// 真正按 (service, account) 存储并回读的后端，用于验证写读往返的字节保真（#399）。
+private final class InMemoryKeychainBackend: KeychainBackend, @unchecked Sendable {
+    private let lock = NSLock()
+    private var items: [String: Data] = [:]
+
+    private func storageKey(_ service: String, _ account: String) -> String {
+        "\(service)\u{0}\(account)"
+    }
+
+    func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult {
+        lock.withLock {
+            if let data = items[storageKey(service, account)] {
+                return KeychainResult(status: errSecSuccess, data: data)
+            }
+            return KeychainResult(status: errSecItemNotFound, data: nil)
+        }
+    }
+
+    func write(_ data: Data, service: String, account: String) -> KeychainResult {
+        lock.withLock { items[storageKey(service, account)] = data }
+        return KeychainResult(status: errSecSuccess, data: data)
+    }
+
+    func delete(service: String, account: String) -> KeychainResult {
+        lock.withLock { items.removeValue(forKey: storageKey(service, account)) }
         return KeychainResult(status: errSecSuccess, data: nil)
     }
 }

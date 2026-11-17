@@ -143,8 +143,7 @@ public final class IconDocumentStore: ObservableObject {
         selectedScope = scope
         selectedDocumentId = document.id
         clearHistory()
-        persist(document, scope: scope)
-        lastError = nil
+        if persist(document, scope: scope) { lastError = nil }
         return document
     }
 
@@ -157,8 +156,7 @@ public final class IconDocumentStore: ObservableObject {
         selectedScope = scope
         selectedDocumentId = document.id
         clearHistory()
-        persist(document, scope: scope)
-        lastError = nil
+        if persist(document, scope: scope) { lastError = nil }
         return document
     }
 
@@ -186,11 +184,17 @@ public final class IconDocumentStore: ObservableObject {
         next.updatedAt = Date()
         list[index] = next
         setDocumentsList(list, for: scope)
+        // 先落盘再记录撤销/清错：写入失败时还原内存并抛错，绝不把只在内存里的
+        // 改动当成成功持久化，工具据此上报失败、错误保持可见（#428）。
+        guard persist(next, scope: scope) else {
+            list[index] = previous
+            setDocumentsList(list, for: scope)
+            throw IconDocumentStoreError.persistenceFailed(lastError ?? "unknown error")
+        }
         // 编辑只针对当前选中文档记录撤销历史，避免跨文档污染。
         if selectedScope == scope, selectedDocumentId == id {
             recordUndo(previous)
         }
-        persist(next, scope: scope)
         lastError = nil
         return next
     }
@@ -314,15 +318,19 @@ public final class IconDocumentStore: ObservableObject {
             }
             list[index] = replacement
             setDocumentsList(list, for: scope)
-            if selectedScope == scope, selectedDocumentId == replacement.id {
-                recordUndo(previous)
-            }
             // 标题变化会改变文件名：先清掉该 ID 的旧文件再写新文件。delete 按 ID
             // 清除全部派生文件，若放在 persist 之后会连新文件一起删掉（#292）。
             if IconDocumentFileStore.fileName(for: replacement) != IconDocumentFileStore.fileName(for: previous) {
                 IconDocumentFileStore.delete(previous, storagePath: storagePath(for: scope))
             }
-            persist(replacement, scope: scope)
+            guard persist(replacement, scope: scope) else {
+                list[index] = previous
+                setDocumentsList(list, for: scope)
+                throw IconDocumentStoreError.persistenceFailed(lastError ?? "unknown error")
+            }
+            if selectedScope == scope, selectedDocumentId == replacement.id {
+                recordUndo(previous)
+            }
         } else if let requestedTarget {
             throw IconDocumentStoreError.documentNotFound(requestedTarget)
         } else {
@@ -333,7 +341,13 @@ public final class IconDocumentStore: ObservableObject {
             selectedScope = scope
             selectedDocumentId = replacement.id
             clearHistory()
-            persist(replacement, scope: scope)
+            guard persist(replacement, scope: scope) else {
+                var rolledBack = documentsList(for: scope)
+                rolledBack.removeAll { $0.id == replacement.id }
+                setDocumentsList(rolledBack, for: scope)
+                selectedDocumentId = rolledBack.first?.id
+                throw IconDocumentStoreError.persistenceFailed(lastError ?? "unknown error")
+            }
         }
         lastError = nil
         return replacement
@@ -349,8 +363,7 @@ public final class IconDocumentStore: ObservableObject {
         selectedScope = scope
         selectedDocumentId = imported.id
         clearHistory()
-        persist(imported, scope: scope)
-        lastError = nil
+        if persist(imported, scope: scope) { lastError = nil }
         return imported
     }
 
@@ -365,9 +378,9 @@ public final class IconDocumentStore: ObservableObject {
         redoStack.append(list[index])
         list[index] = previous
         setDocumentsList(list, for: scope)
-        persist(previous, scope: scope)
+        let saved = persist(previous, scope: scope)
         updateHistoryFlags()
-        lastError = nil
+        if saved { lastError = nil }
     }
 
     public func redo() {
@@ -381,9 +394,9 @@ public final class IconDocumentStore: ObservableObject {
         undoStack.append(list[index])
         list[index] = next
         setDocumentsList(list, for: scope)
-        persist(next, scope: scope)
+        let saved = persist(next, scope: scope)
         updateHistoryFlags()
-        lastError = nil
+        if saved { lastError = nil }
     }
 
     // MARK: - Selection
@@ -467,13 +480,20 @@ public final class IconDocumentStore: ObservableObject {
         return nil
     }
 
-    private func persist(_ document: IconDocument, scope: IconScope) {
+    /// 落盘单个文档。返回是否真正持久化成功：
+    /// 无存储路径（全局作用域未绑定项目）是设计上的纯内存态，视为成功；
+    /// 写入抛错时记录 `lastError` 并返回 false，调用方据此决定回滚/上报失败，
+    /// 绝不把只在内存里的改动当成成功落盘（#428）。
+    @discardableResult
+    private func persist(_ document: IconDocument, scope: IconScope) -> Bool {
         let path = storagePath(for: scope)
-        guard !path.isEmpty else { return }
+        guard !path.isEmpty else { return true }
         do {
             try IconDocumentFileStore.save(document, storagePath: path)
+            return true
         } catch {
             lastError = error.localizedDescription
+            return false
         }
     }
 
@@ -508,6 +528,7 @@ public enum IconDocumentStoreError: LocalizedError, Equatable {
     case documentNotFound(String)
     case layerNotFound(String)
     case invalidStorageScope
+    case persistenceFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -519,6 +540,8 @@ public enum IconDocumentStoreError: LocalizedError, Equatable {
             return "Icon layer not found: \(id)"
         case .invalidStorageScope:
             return "The selected storage scope has no storage path."
+        case .persistenceFailed(let reason):
+            return "Failed to save the icon document: \(reason)"
         }
     }
 }

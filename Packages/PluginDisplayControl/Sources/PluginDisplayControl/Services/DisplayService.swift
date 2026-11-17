@@ -144,9 +144,7 @@ final class DisplayService: ObservableObject, SuperLog {
     // MARK: - Write (debounced)
 
     func restoreDefaults() {
-        debounceTimers.values.forEach { $0.cancel() }
-        debounceTimers.removeAll()
-        pendingValues.removeAll()
+        cancelPendingWrites()
 
         for display in displays {
             for control in [DisplayControlKind.brightness, .volume, .contrast] {
@@ -195,6 +193,27 @@ final class DisplayService: ObservableObject, SuperLog {
             try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
             guard !Task.isCancelled else { return }
             await self.performWrite(clampedValue, for: control, displayID: displayID, key: key)
+        }
+    }
+
+    /// 取消所有尚未执行的防抖硬件写入并清空待写值。
+    ///
+    /// 运行时禁用只调用 `onDisable`、不调用 `onShutdown`，150ms 防抖窗口内
+    /// 的写入任务必须在这里被取消，否则插件显示已禁用却仍改写显示器硬件（#460）。
+    func cancelPendingWrites() {
+        debounceTimers.values.forEach { $0.cancel() }
+        debounceTimers.removeAll()
+        pendingValues.removeAll()
+    }
+
+    /// 是否仍有未执行的防抖写入（测试用于断言禁用已取消硬件写入，#460）。
+    var hasPendingWritesForTesting: Bool { !debounceTimers.isEmpty }
+
+    /// 注入显示器快照（测试用于在不触碰真实硬件的情况下构造防抖写入，#460）。
+    func setDisplaysForTesting(_ displays: [ControlledDisplay]) {
+        self.displays = displays
+        for display in displays {
+            seedFallbackValues(for: display)
         }
     }
 

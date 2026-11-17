@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 32 条用例。
+PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 41 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 32
+测试文件: 8 个，用例总数: 41
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,6 +39,8 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 32 条
 - **Frontmatter 解析**（3 条）：由 `descriptionWithDashesRoundTrips`、`contentWithHorizontalRuleRoundTrips`、`recallToolRestoresDescriptionWithDashes` 锁定。`MemoryFileStorage.parse` 只能把整行恰为 `---` 的行当作 frontmatter 结构分隔符；description 等字段值内部出现的 `---`（如 `alpha---beta`）不得被当作分隔符，否则描述被截断、正文混入 created/updated 行而无法还原（**回归 #528**）。改动 `parse` 或 frontmatter 序列化时优先跑对应测试文件。
 - **Memory 列表过滤**（6 条）：由 `filtersByType`、`filtersByQueryAcrossFields`、`queryIsCaseInsensitive`、`typeAndQueryCombine`、`noFilterReturnsAllItems`、`noMatchReturnsEmpty` 锁定 `MemoryListFilter` 的类型/查询词过滤口径：查询词跨名称/描述/ID 匹配且大小写不敏感，类型与查询词可叠加，无过滤返回全部、无命中返回空。
 - **Memory Tools Conversation Scope**（5 条）：由 `saveUsesConversationProject`、`recallUsesConversationProject`、`listUsesConversationProject`、`deleteUsesConversationProject`、`fallsBackToCurrentProjectWithoutContext` 锁定。save / recall / list / delete_memory 的项目域必须作用于工具调用所属会话绑定的项目（`context.conversationProjectPath()`），不得读/写/删 UI 当前打开项目的记忆；仅当缺少会话上下文（旧入口）时才回退到当前项目（**回归 #607**）。改动 `MemoryToolSupport.resolveProjectPath` 或四个工具的 Context 入口时优先跑对应测试文件。
+- **RecallMemory 不可读存储**（4 条）：由 `loadThrowsOnInvalidUTF8`、`recallReportsStorageFailureNotNotFound`、`absentFileStillReportsNotFound`、`loadThrowsOnNoReadPermission` 锁定。`MemoryFileStorage.load` 只有文件确实不存在时才返回 nil；存在但读取/UTF-8 解码失败（权限、IO、非法字节）必须抛出 `MemoryError.storageUnavailable`，`recall_memory` 据此抛出区别于 not found 的工具失败，避免 Agent 把不可读记忆误判为不存在而重建/覆盖（**回归 #788**）。改动 `load` 或 `RecallMemoryTool` 读取路径时优先跑对应测试文件。
+- **ListMemories 不可枚举目录**（5 条）：由 `listThrowsWhenDirectoryPathIsRegularFile`、`listToolThrowsWhenDirectoryUnreadable`、`emptyDirectoryStillReportsNoMemories`、`missingProjectDirectoryReturnsEmpty`、`listThrowsWhenDirectoryHasNoReadPermission` 锁定。`MemoryFileStorage.list` 只有目录确实不存在或成功枚举且为空时才返回空列表；目录存在但不可枚举（权限/IO，或路径被普通文件占位）必须抛出 `MemoryError.storageUnavailable`，`list_memories` 据此抛出工具失败，不得把文件系统错误伪装成「暂无保存的记忆」（**回归 #529**）。改动 `list` 或 `ListMemoriesTool` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -76,27 +78,46 @@ PluginMemory 的实现包，包含 9 个主要类型；当前测试覆盖 32 条
 | 30 | Memory Tools Conversation Scope | list_memories 项目域只列会话项目 A，不含 UI 当前项目 B（**回归 #607**） | A/B 各有记忆，UI 当前=B | 调用 `executeResult` scope=project | 只列 A 的记忆 | P0 | ✅ 已覆盖 | `listUsesConversationProject` |
 | 31 | Memory Tools Conversation Scope | delete_memory 项目域删会话项目 A，UI 当前项目 B 不受影响（**回归 #607**） | A/B 各有同 id 记忆，UI 当前=B | 调用 `executeResult` scope=project | A 域记忆被删，B 域保留 | P0 | ✅ 已覆盖 | `deleteUsesConversationProject` |
 | 32 | Memory Tools Conversation Scope | 缺少会话上下文时回退到 UI 当前项目 | UI 当前=B，旧入口无 Context | 调用 `execute(arguments:)` scope=project | 记忆落在当前项目 B 域 | P1 | ✅ 已覆盖 | `fallsBackToCurrentProjectWithoutContext` |
+| 33 | RecallMemory 不可读存储 | 存在但 UTF-8 非法的记忆文件：load 必须抛出 storageUnavailable，不得返回 nil（**#788**） | global/demo.md 写入非法 UTF-8 字节 | 调用 `storage.load(id: demo)` | 抛出 `MemoryError.storageUnavailable`，不返回 nil | P0 | ✅ 已覆盖 | `loadThrowsOnInvalidUTF8` |
+| 34 | RecallMemory 不可读存储 | recall_memory 对不可读记忆必须报告存储失败，不得误报 not found（**#788**） | global/demo.md 不可读（非法 UTF-8） | 调用 `recall_memory(id=demo, scope=global)` | 抛出 `ToolExecutionError`，文案含 storage unavailable 且不含 not found | P0 | ✅ 已覆盖 | `recallReportsStorageFailureNotNotFound` |
+| 35 | RecallMemory 不可读存储 | 文件确实不存在时 load 返回 nil 且 recall 仍报 not found（区分不可读与不存在） | 空存储，ID ghost 不存在 | 调用 `storage.load` 与 `recall_memory` | load 返回 nil；recall 抛出含 not found 的工具错误 | P1 | ✅ 已覆盖 | `absentFileStillReportsNotFound` |
+| 36 | RecallMemory 不可读存储 | 存在但无读权限的记忆文件：load 必须抛出 storageUnavailable（**#788**，macOS） | 已保存 perm.md 后 chmod 权限置 0 | 调用 `storage.load(id: perm)` | 抛出 `MemoryError.storageUnavailable`，不返回 nil | P0 | ✅ 已覆盖 | `loadThrowsOnNoReadPermission` |
+| 37 | ListMemories 不可枚举目录 | 目录路径被普通文件占位时 list 必须抛出 storageUnavailable，不得返回空（**#529**） | global 目录被普通文件占位 | 调用 `storage.list(scope: global)` | 抛出 `MemoryError.storageUnavailable` | P0 | ✅ 已覆盖 | `listThrowsWhenDirectoryPathIsRegularFile` |
+| 38 | ListMemories 不可枚举目录 | list_memories 对不可枚举目录必须抛出存储失败，不得误报暂无记忆（**#529**） | global 目录不可枚举 | 调用 `list_memories(scope=global)` | 抛出 `ToolExecutionError`，文案含 storage unavailable 且不含「暂无」 | P0 | ✅ 已覆盖 | `listToolThrowsWhenDirectoryUnreadable` |
+| 39 | ListMemories 不可枚举目录 | 目录成功枚举且为空时仍返回空列表与暂无记忆文案 | 空 global 目录 | 调用 `storage.list` 与 `list_memories` | list 返回空；工具返回「暂无保存的记忆」成功文案 | P1 | ✅ 已覆盖 | `emptyDirectoryStillReportsNoMemories` |
+| 40 | ListMemories 不可枚举目录 | 项目目录确实不存在时返回空列表而非抛出 | 不存在的 project 子目录 | 调用 `storage.list(scope: project)` | 返回空列表 | P1 | ✅ 已覆盖 | `missingProjectDirectoryReturnsEmpty` |
+| 41 | ListMemories 不可枚举目录 | 目录存在但无读权限时 list 必须抛出 storageUnavailable（**#529**，macOS） | global 目录 chmod 权限置 0 | 调用 `storage.list(scope: global)` | 抛出 `MemoryError.storageUnavailable` | P0 | ✅ 已覆盖 | `listThrowsWhenDirectoryHasNoReadPermission` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#788）：把 `MemoryFileStorage.load` 改回 `guard fileExists, let raw = try? String(contentsOf:encoding:.utf8) else { return nil }`（吞掉读取错误），
+> `loadThrowsOnInvalidUTF8`、`recallReportsStorageFailureNotNotFound`、`loadThrowsOnNoReadPermission` 立即变红
+> （不可读文件被当作不存在，recall 误报 not found），`absentFileStillReportsNotFound` 仍绿；
+> 恢复 do/catch 抛出 `storageUnavailable` 后全绿。
+
+> 变异验证（#529）：把 `MemoryFileStorage.list` 改回 `guard let contents = try? contentsOfDirectory(...) else { return [] }`（吞掉枚举失败），
+> `listThrowsWhenDirectoryPathIsRegularFile`、`listToolThrowsWhenDirectoryUnreadable`、`listThrowsWhenDirectoryHasNoReadPermission` 立即变红
+> （不可枚举目录被当作空列表，工具误报暂无记忆），`emptyDirectoryStillReportsNoMemories` 与 `missingProjectDirectoryReturnsEmpty` 仍绿；
+> 恢复 do/catch 抛出 `storageUnavailable` 后 41 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 14 / 14
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 2 / 2
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

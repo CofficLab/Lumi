@@ -91,6 +91,37 @@ struct UpdateServiceTests {
     }
 }
 
+@Suite("Update channel persistence (#524)")
+@MainActor
+struct UpdateChannelPersistenceTests {
+    @Test("持久化失败时保留旧通道，不把未落盘的选择当作生效")
+    func keepsOldSelectionWhenPersistenceFails() throws {
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("service-unwritable")
+        let occupied = directory.appendingPathComponent("settings.plist")
+        try FileManager.default.createDirectory(at: occupied, withIntermediateDirectories: true)
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store)
+
+        service.setChannel(.preview)
+
+        // UI 绑定 service.channel：失败时必须仍是旧选择，重启后不会悄悄回退。
+        #expect(service.channel == .stable)
+        #expect(store.channel == .stable)
+    }
+
+    @Test("持久化成功后立即应用新通道并落盘")
+    func appliesNewSelectionAfterSuccessfulPersist() throws {
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("service-ok")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store)
+
+        service.setChannel(.preview)
+
+        #expect(service.channel == .preview)
+        #expect(store.channel == .preview)
+    }
+}
+
 private actor MutableReachabilityChecker: FeedURLReachabilityChecker {
     private var reachability: [URL: Bool]
     private var probedURLs: [URL] = []

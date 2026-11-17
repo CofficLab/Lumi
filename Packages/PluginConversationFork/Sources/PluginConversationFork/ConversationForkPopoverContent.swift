@@ -27,6 +27,9 @@ struct ConversationForkPopoverContent: View {
     @State private var isForking = false
     @State private var errorMessage: String?
     @State private var phase: Phase = .idle
+    /// 进行中的分叉任务句柄。Cancel / 弹窗消失时据此取消，
+    /// 避免摘要完成后仍创建并选中新对话（#579）。
+    @State private var forkTask: Task<Void, Never>?
 
     /// 弹窗的阶段状态。
     private enum Phase {
@@ -60,6 +63,11 @@ struct ConversationForkPopoverContent: View {
             // 弹窗可能被复用：每次呈现都重置上一次分叉残留的结果状态。
             phase = .idle
             errorMessage = nil
+        }
+        .onDisappear {
+            // 弹窗以任何方式消失（Cancel、点击外部、成功关闭）都终止在途分叉，
+            // 摘要晚到也不得再创建 / 选中对话或发送消息（#579）。
+            forkTask?.cancel()
         }
     }
 
@@ -224,6 +232,7 @@ struct ConversationForkPopoverContent: View {
                     .keyboardShortcut(.defaultAction)
                 } else {
                     Button(pluginLocalization.string("Cancel")) {
+                        forkTask?.cancel()
                         isPresented = false
                     }
                     .keyboardShortcut(.cancelAction)
@@ -306,8 +315,11 @@ struct ConversationForkPopoverContent: View {
         isForking = true
         errorMessage = nil
 
-        Task { @MainActor in
-            defer { isForking = false }
+        forkTask = Task { @MainActor in
+            defer {
+                isForking = false
+                forkTask = nil
+            }
             do {
                 let outcome = try await coordinator.fork(conversationID: conversationID)
                 if outcome.usedFallback {
@@ -316,6 +328,8 @@ struct ConversationForkPopoverContent: View {
                 } else {
                     isPresented = false
                 }
+            } catch is CancellationError {
+                // 用户主动取消（Cancel / 关闭弹窗）：不是错误，不展示报错文案。
             } catch {
                 errorMessage = error.localizedDescription
             }

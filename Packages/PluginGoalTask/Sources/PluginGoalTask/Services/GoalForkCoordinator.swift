@@ -1,4 +1,5 @@
 import Foundation
+import ProviderConversation
 
 /// 「在新对话中继续」的执行器：复制 Goal 到新会话并立即开跑。
 ///
@@ -17,7 +18,16 @@ final class GoalForkCoordinator {
     ///
     /// - Throws: 建对话或复制 Goal 失败时抛出，调用方负责呈现错误。
     func forkAndStart(goal: GoalDisplayItem) async throws {
+        // 先捕获源对话的自动化等级：建对话可能改变选中态，必须在 create 之前读（#772）。
+        let sourceLevel = capability.sourceAutomationLevel()
         let conversationID = try capability.createConversation(title: goal.title)
+
+        // 分叉首轮是「继续推进这个目标」的自动回合，必须能用 Goal/Task 等工具。
+        // 新对话默认沿用全局 New Chat 模式，可能是无工具的 Chat，会让首轮静默降级、
+        // 既改不了复制出的 Goal/Task 也推进不了原工作（#772）。这里继承源对话的能力；
+        // 源对话本身无工具时，至少升到允许工具的 Build，绝不退化成无工具回合。
+        let effectiveLevel: AutomationLevel = sourceLevel.allowsTools ? sourceLevel : .build
+        capability.applyAutomationLevel(effectiveLevel, to: conversationID)
 
         do {
             let forked = try await capability.forkGoal(id: goal.id, into: conversationID)

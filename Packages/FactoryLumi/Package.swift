@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -25,7 +25,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiPluginDiskManager.git", from: "1.0.0"),
         .package(path: "../PluginNetworkManager"),
         .package(path: "../PluginServerManager"),
-        .package(url: "https://github.com/lumi-softworks/LumiPluginCaffeinate.git", from: "1.1.4"),
+        .package(url: "https://github.com/lumi-softworks/LumiPluginCaffeinate.git", from: "1.1.6"),
         .package(path: "../PluginHostsManager"),
         .package(path: "../PluginDocxRead"),
         .package(path: "../PluginWebFetch"),
@@ -492,7 +492,11 @@ let package = Package(
                 .product(name: "PluginSubagent", package: "PluginSubagent"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-            ]
+            ],
+            // tools-version 6.0 是为满足 LumiProviders→LumiKitTestSupport 跨包
+            // 循环依赖所必需；测试代码尚未全面适配 Swift 6 严格并发，故测试目标
+            // 显式使用 Swift 5 语言模式，生产目标仍走 Swift 6。
+            swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]
 )

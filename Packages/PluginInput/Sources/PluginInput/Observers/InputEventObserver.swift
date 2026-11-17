@@ -26,4 +26,7 @@ final class InputEventObserver {
     func cancel() {
         cancellables.removeAll()
     }
+
+    /// 是否仍在订阅系统通知。仅供单元测试断言禁用后监听已停止。
+    var isObservingForTesting: Bool { !cancellables.isEmpty }
 }

@@ -19,6 +19,15 @@ protocol GoalForkCapability: AnyObject {
     @discardableResult
     func createConversation(title: String) throws -> UUID
 
+    /// 读取源对话（当前选中对话）的自动化等级。
+    ///
+    /// 必须在 `createConversation` **之前**调用：建对话可能改变选中态，
+    /// 之后再读就拿不到源对话了（#772）。
+    func sourceAutomationLevel() -> AutomationLevel
+
+    /// 把自动化等级应用到分叉出的新对话。
+    func applyAutomationLevel(_ level: AutomationLevel, to conversationID: UUID)
+
     /// 回收复制失败留下的空对话。
     func discardConversation(id: UUID)
 
@@ -54,6 +63,14 @@ final class GoalForkCapabilityAdapter: GoalForkCapability {
             providerID: nil,
             modelName: nil
         )
+    }
+
+    func sourceAutomationLevel() -> AutomationLevel {
+        conversations.automationLevel(for: conversations.selectedConversationID)
+    }
+
+    func applyAutomationLevel(_ level: AutomationLevel, to conversationID: UUID) {
+        conversations.setAutomationLevel(level, for: conversationID)
     }
 
     func discardConversation(id: UUID) {

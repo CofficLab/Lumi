@@ -12,10 +12,10 @@ struct StoryStoreTests {
         #expect(await store.loadAllStories().isEmpty)
         #expect(await store.loadStory(id: UUID()) == nil)
 
-        var story = await store.createStory(title: "First draft")
+        var story = try await store.createStory(title: "First draft")
         story.title = "The Quiet City"
         story.synopsis = "A city wakes up."
-        await store.updateStory(story)
+        try await store.updateStory(story)
 
         guard let persistedStory = await store.loadStory(id: story.id) else {
             Issue.record("Updated story was not persisted")
@@ -25,13 +25,13 @@ struct StoryStoreTests {
         #expect(persistedStory.synopsis == "A city wakes up.")
         #expect(await store.loadAllStories().map(\.id) == [story.id])
 
-        guard let firstChapter = await store.createChapter(storyID: story.id, title: "Arrival"),
-              let importedChapter = await store.importMarkdownAsChapter(
+        guard let firstChapter = try await store.createChapter(storyID: story.id, title: "Arrival"),
+              let importedChapter = try await store.importMarkdownAsChapter(
                 storyID: story.id,
                 title: "The station",
                 content: "Rain covered the platform."
               ),
-              let character = await store.createCharacter(storyID: story.id, name: "Mina") else {
+              let character = try await store.createCharacter(storyID: story.id, name: "Mina") else {
             Issue.record("Could not create story children")
             return
         }
@@ -50,7 +50,7 @@ struct StoryStoreTests {
         updatedChapter.content = "Rain covered the platform. Mina waited."
         updatedChapter.status = .inProgress
         updatedChapter.targetWordCount = 900
-        await store.updateChapter(updatedChapter)
+        try await store.updateChapter(updatedChapter)
         let loadedChapter = await store.loadChapter(id: importedChapter.id, storyID: story.id)
         #expect(loadedChapter?.title == "Platform")
         #expect(loadedChapter?.content == updatedChapter.content)
@@ -61,14 +61,14 @@ struct StoryStoreTests {
         updatedCharacter.role = "Lead"
         updatedCharacter.personality = "Observant"
         updatedCharacter.notes = "Carries a blue notebook."
-        await store.updateCharacter(updatedCharacter)
+        try await store.updateCharacter(updatedCharacter)
         let loadedCharacter = await store.loadCharacter(id: character.id, storyID: story.id)
         #expect(loadedCharacter?.role == "Lead")
         #expect(loadedCharacter?.personality == "Observant")
         #expect(loadedCharacter?.notes == "Carries a blue notebook.")
 
-        await store.deleteChapter(id: firstChapter.id, storyID: story.id)
-        await store.deleteCharacter(id: character.id, storyID: story.id)
+        try await store.deleteChapter(id: firstChapter.id, storyID: story.id)
+        try await store.deleteCharacter(id: character.id, storyID: story.id)
         #expect(await store.loadChapter(id: firstChapter.id, storyID: story.id) == nil)
         #expect(await store.loadCharacter(id: character.id, storyID: story.id) == nil)
         guard let afterDeletingChildren = await store.loadStory(id: story.id) else {
@@ -122,17 +122,17 @@ struct StoryStoreTests {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = StoryStore(pluginDirectory: directory)
-        var story = await store.createStory(title: "Paper Moon")
+        var story = try await store.createStory(title: "Paper Moon")
         story.synopsis = "A map points home."
-        await store.updateStory(story)
+        try await store.updateStory(story)
 
-        _ = await store.importMarkdownAsChapter(
+        _ = try await store.importMarkdownAsChapter(
             storyID: story.id,
             title: "First light",
             content: "The map began to glow."
         )
-        _ = await store.createCharacter(storyID: story.id, name: "Iris")
-        guard let detailedCharacter = await store.createCharacter(storyID: story.id, name: "Noah") else {
+        _ = try await store.createCharacter(storyID: story.id, name: "Iris")
+        guard let detailedCharacter = try await store.createCharacter(storyID: story.id, name: "Noah") else {
             Issue.record("Could not create character")
             return
         }
@@ -140,7 +140,7 @@ struct StoryStoreTests {
         character.role = "Guide"
         character.personality = "Patient"
         character.notes = "Knows the old road."
-        await store.updateCharacter(character)
+        try await store.updateCharacter(character)
 
         let markdown = await store.exportStoryAsMarkdown(storyID: story.id)
         #expect(markdown?.contains("# Paper Moon") == true)
@@ -156,19 +156,19 @@ struct StoryStoreTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = StoryStore(pluginDirectory: directory)
 
-        let story = await store.createStory(title: "Keep")
-        guard let chapter = await store.createChapter(storyID: story.id, title: "Keep") else {
+        let story = try await store.createStory(title: "Keep")
+        guard let chapter = try await store.createChapter(storyID: story.id, title: "Keep") else {
             Issue.record("Could not create chapter")
             return
         }
 
         #expect(await store.deleteStory(id: UUID()) == false)
-        #expect(await store.deleteChapter(id: UUID(), storyID: story.id) == false)
-        #expect(await store.deleteChapter(id: chapter.id, storyID: UUID()) == false)
+        #expect(try await store.deleteChapter(id: UUID(), storyID: story.id) == false)
+        #expect(try await store.deleteChapter(id: chapter.id, storyID: UUID()) == false)
         #expect(await store.loadStory(id: story.id) != nil)
         #expect(await store.loadChapter(id: chapter.id, storyID: story.id) != nil)
 
-        #expect(await store.deleteChapter(id: chapter.id, storyID: story.id) == true)
+        #expect(try await store.deleteChapter(id: chapter.id, storyID: story.id) == true)
         #expect(await store.loadChapter(id: chapter.id, storyID: story.id) == nil)
         #expect(await store.deleteStory(id: story.id) == true)
         #expect(await store.loadStory(id: story.id) == nil)

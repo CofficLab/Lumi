@@ -1,5 +1,6 @@
 import Testing
 import KernelCore
+import KitTerminalCore
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderRailView
@@ -73,4 +74,40 @@ import SwiftUI
     #expect(TerminalMainView(projectPath: "   ").currentProjectPathForTerminal == nil)
     #expect(TerminalMainView(projectPath: "").currentProjectPathForTerminal == nil)
     #expect(TerminalMainView(projectPath: nil).currentProjectPathForTerminal == nil)
+}
+
+/// 回归 #420：运行时禁用只移除底部面板入口，会把两个宿主拥有的交互式 shell
+/// 及其子进程留在后台。禁用必须像 Shutdown 一样关闭它们各自的会话。
+///
+/// 会话单例是进程级共享状态，用 `.serialized` 串行化并在 defer 中清空，
+/// 避免影响并行套件。createSession 不会真正启动 shell（视图 frame 为零，
+/// onReady 不触发），terminate() 在无进程时安全降级。
+@Suite("Terminal 禁用生命周期", .serialized)
+@MainActor
+struct TerminalDisableLifecycleTests {
+    @Test func disableClosesOwnedTerminalSessions() async throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+
+        let plugin = TerminalPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        defer {
+            TerminalTabsViewModel.shared.closeAllSessions()
+            TerminalTabsViewModel.bottomPanel.closeAllSessions()
+        }
+
+        // 全屏与底部面板两个宿主各自拥有独立会话。
+        TerminalTabsViewModel.shared.createSession(workingDirectory: nil)
+        TerminalTabsViewModel.bottomPanel.createSession(workingDirectory: nil)
+        #expect(!TerminalTabsViewModel.shared.sessions.isEmpty)
+        #expect(!TerminalTabsViewModel.bottomPanel.sessions.isEmpty)
+
+        try await plugin.onDisable(kernel: kernel)
+
+        // 禁用必须终止它拥有的会话，而不是只隐藏 UI 留下后台 shell。
+        #expect(TerminalTabsViewModel.shared.sessions.isEmpty)
+        #expect(TerminalTabsViewModel.bottomPanel.sessions.isEmpty)
+    }
 }

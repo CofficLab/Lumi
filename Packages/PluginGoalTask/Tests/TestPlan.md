@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 183
+测试文件: 19 个，用例总数: 194
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,7 +42,8 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 
 - **GoalDisplayAndVM**（19 条）：由 `testMappingPreservesFields`、`testIsTerminal`、`testStatusSystemImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalForkAttachmentIsolation**（1 条）：由 `testForkCommitDoesNotConsumePendingAttachments` 锁定；分叉提交必须走显式附件重载，改动该调用点时优先跑对应测试文件。
-- **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalForkCoordinator**（16 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；分叉首轮是「继续推进目标」的自动回合，必须继承源对话的自动化等级（源无工具时至少升到 Build），且先捕获源等级再建对话、把等级应用到新对话并早于启动回合，绝不退化成无工具回合（**回归** #772），改动该模块时优先跑对应测试文件。
+- **GoalForkAutomationInheritance**（3 条）：由 `testSourceLevelReadsSelectedConversationNotGlobal`、`testApplyLevelTargetsForkedConversation`、`testSourceLevelFallsBackToGlobalWhenNoSelection` 锁定；`sourceAutomationLevel` 必须读选中源对话而非全局 New Chat 默认，`applyAutomationLevel` 必须写到分叉出的目标对话，未选中源对话时才回落全局（**回归** #772），改动 `GoalForkCapabilityAdapter` 的等级读写时优先跑对应测试文件。
 - **GoalHooks**（30 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskMigration**（3 条）：由 `v5MigrationLandsDatabaseAtReadPath`、`promotesMisplacedStoreOnlyWhenReadPathIsEmpty` 锁定；升级迁移必须把 v5 数据库放到 `GoalStateManager` 实际读取的位置，改动迁移或数据库路径时优先跑对应测试文件。
@@ -244,31 +245,51 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 181 | GoalTaskOrphanCleanup | deleteAllGoals 清除追加（addTasksToGoal）的 Task | Goal 含 1 Task，再追加 2 个 | `deleteAllGoals` | `fetchTasks(goalId:)` 为空，追加的 Task 不得绕过清理（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesAppendedTasks` |
 | 182 | GoalTaskOrphanCleanup | deleteAllGoals 清除 fork 副本的 Task，且不影响源会话 | 源会话 Goal 含 2 Task，fork 到目标会话 | 对目标会话 `deleteAllGoals` | 副本 Task 与 Goals 清空，源会话 Task 仍为 2（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesForkedTasks` |
 | 183 | GoalTaskOrphanCleanup | deleteAllGoals 显式按 goalId 清除未链接的历史孤儿 Task | Goal 含 1 链接 Task，另用独立容器写入只带 goalId 的未链接孤儿 | `deleteAllGoals` | `fetchTasks(goalId:)` 为空，未链接孤儿也必须按 goalId 一并清除（**回归** #815） | P0 | ✅ 已覆盖 | `testDeleteAllGoalsRemovesUnlinkedLegacyOrphan` |
+| 184 | GoalForkCoordinator | 分叉继承源对话的自主模式，首轮可用工具 | 源对话为 autonomous | 调用 `forkAndStart` | 新对话被应用 autonomous 且 allowsTools（**回归** #772） | P0 | ✅ 已覆盖 | `testForkInheritsAutonomousLevel` |
+| 185 | GoalForkCoordinator | 分叉继承源对话的构建模式 | 源对话为 build | 调用 `forkAndStart` | 新对话被应用 build（**回归** #772） | P1 | ✅ 已覆盖 | `testForkInheritsBuildLevel` |
+| 186 | GoalForkCoordinator | 源对话无工具时分叉至少升到 Build，绝不退化成无工具回合 | 源对话为 chat（无工具） | 调用 `forkAndStart` | 新对话被应用 build 且 allowsTools，不退化成 chat（**回归** #772） | P0 | ✅ 已覆盖 | `testForkUpgradesToollessSourceToBuild` |
+| 187 | GoalForkCoordinator | 先捕获源等级再建对话，应用等级落在新对话且早于启动回合 | 记录 capability 调用序列 | 调用 `forkAndStart` | sourceAutomationLevel 早于 createConversation，applyAutomationLevel 早于 startTurn 且落在分叉会话（**回归** #772） | P0 | ✅ 已覆盖 | `testAutomationCaptureAndApplyOrdering` |
+| 188 | GoalForkAutomationInheritance | sourceAutomationLevel 读选中源对话的等级，而非全局 New Chat 默认 | 选中源对话为 autonomous、全局为 chat | 调用 `sourceAutomationLevel` | 返回 autonomous（源对话等级），不是全局 chat（**回归** #772） | P0 | ✅ 已覆盖 | `testSourceLevelReadsSelectedConversationNotGlobal` |
+| 189 | GoalForkAutomationInheritance | applyAutomationLevel 把等级写到分叉出的目标对话 | 新建目标对话 | 调用 `applyAutomationLevel(.build, to:)` | setAutomationLevel 落在目标对话，其等级变为 build（**回归** #772） | P0 | ✅ 已覆盖 | `testApplyLevelTargetsForkedConversation` |
+| 190 | GoalForkAutomationInheritance | 未选中源对话时回落到全局默认（边界） | 无选中对话、全局为 build | 调用 `sourceAutomationLevel` | 返回全局 build（边界回落） | P2 | ✅ 已覆盖 | `testSourceLevelFallsBackToGlobalWhenNoSelection` |
+| 191 | GoalFailedGoalVisibility | 唯一的失败 Goal 且任务已结束时必须显示工具栏按钮 | 单个 failed Goal + failed Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false（侧栏高度 0），按钮为 true，保留记录仍有入口（**回归 #777**） | P0 | ✅ 已覆盖 | `testShownForSingleFailedGoalWithFailedTask` |
+| 192 | GoalFailedGoalVisibility | 唯一的失败 Goal 且没有任务时同样显示工具栏按钮 | 单个 failed Goal，tasks 为空 | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false，按钮为 true（**回归 #777**） | P1 | ✅ 已覆盖 | `testShownForSingleFailedGoalWithoutTasks` |
+| 193 | GoalFailedGoalVisibility | 失败 Goal 仍有未结束任务时侧栏可见，按钮保持隐藏 | 单个 failed Goal + pending Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 true，按钮为 false（不重复顶回）（**回归 #777**） | P1 | ✅ 已覆盖 | `testHiddenForFailedGoalWithPendingTask` |
+| 194 | GoalFailedGoalVisibility | 唯一的已完成 Goal 仍然隐藏按钮 | 单个 completed Goal + completed Task | 读取 `shouldShowToolbarButton` | hasActiveWork 为 false，按钮仍为 false（自动删除路径不受影响）（**回归 #777**） | P1 | ✅ 已覆盖 | `testHiddenForSingleCompletedGoal` |
 
-> 说明：全部 **183 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **194 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（**#772**，`GoalForkCoordinator` / `GoalForkCapabilityAdapter`）：
+> - 机制 A（协调器应用等级）：把 `forkAndStart` 里的 `capability.applyAutomationLevel(effectiveLevel, to: conversationID)` 换成 `_ = effectiveLevel`（不再写新对话等级），用例 184/186/187 及继承断言转红（新对话拿不到源等级、无工具回合未被升级），恢复后转绿。
+> - 机制 B（适配器读源对话）：把 `sourceAutomationLevel` 的 `conversations.automationLevel(for: conversations.selectedConversationID)` 换成 `conversations.globalAutomationLevel`（读全局默认），用例 188 转红（拿到全局 chat 而非源 autonomous），恢复后转绿。
 
 > 变异验证（**#815**，`GoalStateManager`）：
 > - 机制 A（建立关系）：删除 createGoal / addTasksToGoal / forkGoal 里的 `task.goal = goal` / `copy.goal = forked`，用例 179 转红（`goal.tasks` 为空，2 条断言失败），而 180–183 仍绿（机制 B 按 goalId 显式删除兜底）；恢复后转绿。
 > - 机制 B（显式按 goalId 删除）：把 `deleteAllGoals` 改回只 `context.delete(goal)` 依赖 `.cascade`，用例 183 转红（未链接孤儿存活，1 条断言失败），而 179–182 仍绿（已链接 Task 被 cascade 命中）；恢复后转绿。
 
+> 变异验证（**#777**，`GoalVM.shouldShowToolbarButton`）：
+> - M1：改回只按 `goals.count > 1` 判定（复现原 bug）→ 用例 191/192 转红（唯一失败 Goal 在侧栏与工具栏同时消失），恢复后转绿。
+> - M2：去掉 `!hasActiveWork` 前置条件 → 用例 193 转红（侧栏已呈现失败 Goal 时按钮被重复顶回），恢复后转绿。
+> - M3：把 `.failed` 放宽成任意终态 `isTerminal` → 用例 194 与既有 `testHiddenForSingleFinishedGoal` 转红（已完成的单个 Goal 也顶出按钮），恢复后转绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 29 / 29
-- P1: 已覆盖 138 / 138
-- P2: 已覆盖 16 / 16
-- **合计: 183 / 183**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 142 / 142
+- P2: 已覆盖 17 / 17
+- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（29 条）
-- **P1**: 其余功能性用例（138 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P1**: 其余功能性用例（142 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（17 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 183 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 194 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

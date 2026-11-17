@@ -7,12 +7,13 @@ struct XcodeCategorySection: View {
     @ObservedObject var viewModel: XcodeCleanerViewModel
     @State private var isExpanded = true
 
+    // 读取 ViewModel 的预聚合快照（#1222），不在 body 内重复 filter/reduce 分类数组。
     var selectedCount: Int {
-        items.filter { $0.isSelected }.count
+        viewModel.categorySummary[category]?.selectedCount ?? 0
     }
 
     var categorySize: Int64 {
-        items.reduce(0) { $0 + $1.size }
+        viewModel.categorySummary[category]?.size ?? 0
     }
 
     var body: some View {

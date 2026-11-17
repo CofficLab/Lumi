@@ -31,11 +31,14 @@ final class AppUpdatePluginLocalStore: @unchecked Sendable {
     }
 
     /// 写入更新通道。
-    func setChannel(_ channel: AppUpdateChannel) {
-        queue.sync {
+    ///
+    /// 序列化或落盘失败时抛出，调用方据此保留旧选择，而不是把未持久化的
+    /// 通道当作已生效（#524）。
+    func setChannel(_ channel: AppUpdateChannel) throws {
+        try queue.sync {
             var dict = readDict()
             dict[AppUpdateChannel.userDefaultsKey] = channel.rawValue
-            writeDict(dict)
+            try writeDict(dict)
         }
     }
 
@@ -51,14 +54,12 @@ final class AppUpdatePluginLocalStore: @unchecked Sendable {
         return dict
     }
 
-    private func writeDict(_ dict: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(
+    private func writeDict(_ dict: [String: Any]) throws {
+        let data = try PropertyListSerialization.data(
             fromPropertyList: dict,
             format: .binary,
             options: 0
-        ) else {
-            return
-        }
-        try? data.write(to: fileURL, options: .atomic)
+        )
+        try data.write(to: fileURL, options: .atomic)
     }
 }

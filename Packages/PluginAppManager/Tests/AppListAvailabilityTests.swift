@@ -200,9 +200,129 @@ private final class GatedAppService: AppManagerServicing, @unchecked Sendable {
     }
 
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] { [] }
-    func deleteFiles(_ files: [RelatedFile]) async throws {}
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult {
+        DeleteFilesResult(deleted: files, failed: [])
+    }
     func saveCache() async {}
     func revealInFinder(_ app: AppModel) {}
     func openApp(_ app: AppModel) {}
     func getAppInfo(_ app: AppModel) -> String { app.displayName }
+}
+
+/// Regression coverage for #795: Refresh replaces `installedApps` with freshly
+/// constructed `AppModel`s, each carrying a brand-new UUID `id`. The row
+/// highlight compares `selectedApp?.id == app.id`, so without reconciliation the
+/// highlight splits from the detail; and an app removed externally before the
+/// refresh used to leave a stale detail / related files / action buttons behind.
+///
+/// The fix reconciles `selectedApp` by stable `bundleURL.path` after the new list
+/// is published: remap to the new model when still present, clear the whole
+/// selection/detail when gone. These tests drive two scans (force:false then
+/// force:true) through `GatedAppService` so the "new batch" is deterministic.
+@MainActor
+struct AppSelectionReconciliationTests {
+
+    @Test
+    func refreshRemapsSelectionToNewModelByPath() async throws {
+        let path = "/Applications/Alpha.app"
+        let old = Self.app(path: path, name: "Alpha", size: 4096)
+        let new = Self.app(path: path, name: "Alpha", size: 4096)
+        #expect(old.id != new.id) // 每个模型 id 都是新 UUID
+        let service = GatedAppService(appsByForce: [false: [old], true: [new]])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.scanApps(force: false)
+        viewModel.selectedApp = viewModel.installedApps[0]
+        let oldID = viewModel.selectedApp?.id
+
+        await viewModel.scanApps(force: true)
+
+        // 选中项映射到新模型：行高亮（按 id 比较）恢复一致，详情读到新模型。
+        #expect(viewModel.selectedApp != nil)
+        #expect(viewModel.selectedApp?.bundleURL.path == path)
+        #expect(viewModel.selectedApp?.id == viewModel.installedApps[0].id)
+        #expect(viewModel.selectedApp?.id != oldID)
+    }
+
+    @Test
+    func refreshClearsSelectionWhenAppRemovedExternally() async throws {
+        let alpha = Self.app(path: "/Applications/Alpha.app", name: "Alpha", size: 4096)
+        let service = GatedAppService(appsByForce: [false: [alpha], true: []])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.scanApps(force: false)
+        viewModel.selectedApp = viewModel.installedApps[0]
+        let file = RelatedFile(path: "/Library/Application Support/Alpha", size: 10, type: .support)
+        viewModel.relatedFiles = [file]
+        viewModel.selectedFileIds = [file.id]
+        viewModel.showUninstallConfirmation = true
+
+        await viewModel.scanApps(force: true)
+
+        // 应用已被外部移除：选择、详情、关联文件、待删除勾选与确认弹窗全部清空。
+        #expect(viewModel.installedApps.isEmpty)
+        #expect(viewModel.selectedApp == nil)
+        #expect(viewModel.relatedFiles.isEmpty)
+        #expect(viewModel.selectedFileIds.isEmpty)
+        #expect(viewModel.showUninstallConfirmation == false)
+        #expect(viewModel.isScanningFiles == false)
+    }
+
+    @Test
+    func refreshClearsRemovedSelectionEvenWhenListNonEmpty() async throws {
+        let alpha = Self.app(path: "/Applications/Alpha.app", name: "Alpha", size: 4096)
+        let beta = Self.app(path: "/Applications/Beta.app", name: "Beta", size: 4096)
+        let alphaNew = Self.app(path: "/Applications/Alpha.app", name: "Alpha", size: 4096)
+        let service = GatedAppService(appsByForce: [false: [alpha, beta], true: [alphaNew]])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.scanApps(force: false)
+        viewModel.selectedApp = viewModel.installedApps[1] // 选中 Beta
+        let file = RelatedFile(path: "/Library/Application Support/Beta", size: 10, type: .support)
+        viewModel.relatedFiles = [file]
+        viewModel.selectedFileIds = [file.id]
+
+        await viewModel.scanApps(force: true)
+
+        // Beta 被移除（列表仍非空）：选中与详情仍须清空，不得残留矛盾状态。
+        #expect(viewModel.installedApps.map(\.bundleURL.path) == ["/Applications/Alpha.app"])
+        #expect(viewModel.selectedApp == nil)
+        #expect(viewModel.relatedFiles.isEmpty)
+        #expect(viewModel.selectedFileIds.isEmpty)
+    }
+
+    @Test
+    func refreshPreservesRelatedFilesWhenAppStillExists() async throws {
+        let path = "/Applications/Alpha.app"
+        let old = Self.app(path: path, name: "Alpha", size: 4096)
+        let new = Self.app(path: path, name: "Alpha", size: 4096)
+        let service = GatedAppService(appsByForce: [false: [old], true: [new]])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.scanApps(force: false)
+        viewModel.selectedApp = viewModel.installedApps[0]
+        let file = RelatedFile(path: "/Library/Application Support/Alpha", size: 10, type: .support)
+        viewModel.relatedFiles = [file]
+        viewModel.selectedFileIds = [file.id]
+
+        await viewModel.scanApps(force: true)
+
+        // 应用仍在：仅 remap 选中项，关联文件与待删除勾选保持不变（不过度清空）。
+        #expect(viewModel.selectedApp?.id == viewModel.installedApps[0].id)
+        #expect(viewModel.relatedFiles.map(\.id) == [file.id])
+        #expect(viewModel.selectedFileIds == [file.id])
+    }
+
+    // MARK: - Helpers
+
+    private static func app(path: String, name: String, size: Int64) -> AppModel {
+        AppModel(
+            bundleURL: URL(fileURLWithPath: path),
+            name: name,
+            identifier: "com.example.\(name.lowercased())",
+            version: "1.0",
+            iconFileName: nil,
+            size: size
+        )
+    }
 }

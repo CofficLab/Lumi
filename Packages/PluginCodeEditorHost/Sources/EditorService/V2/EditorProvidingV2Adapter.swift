@@ -449,22 +449,23 @@ private final class DocumentCapability: EditorDocumentProviding {
     }
 
     func revert(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
     func reload(documentID: EditorDocumentID) async throws {
-        try reloadFromDisk(documentID: documentID)
+        try await reloadFromDisk(documentID: documentID)
     }
 
-    private func reloadFromDisk(documentID: EditorDocumentID) throws {
+    private func reloadFromDisk(documentID: EditorDocumentID) async throws {
         guard let adapter, let service = adapter.service,
-              let session = adapter.session(for: documentID), let url = session.fileURL else {
+              let session = adapter.session(for: documentID), session.fileURL != nil else {
             throw EditorContractError.documentNotFound(documentID)
         }
         guard adapter.isActiveSession(session.id) else {
             throw EditorContractError.capabilityUnavailable(feature: "editor.documents.reload")
         }
-        service.files.loadFile(from: url)
+        service.files.reloadCurrentFileFromDisk()
+        await adapter.waitForFileLoad()
     }
 
     func loadFullDocument(documentID: EditorDocumentID) async throws {
@@ -677,22 +678,25 @@ private final class SessionCapability: EditorSessionProviding {
                 break
             }
         }
+        // 关闭活跃 Session 后的替补恢复由 EditorSessionService 统一处理（#588）；
+        // 这里等待加载收尾，调用方随后读到的正文/URL 已属于替补 Tab。
         service.sessions.closeSession(id: sessionID.rawValue)
-        if service.sessionStore.activeSessionID == nil {
-            service.files.loadFile(from: nil)
-        }
+        await adapter?.waitForFileLoad()
     }
 
     func closeOthers(keeping sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeOtherSessions(keeping: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func closeToLeft(of sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeTabsToLeft(of: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func closeToRight(of sessionID: EditorSessionID) async throws {
         adapter?.service?.sessions.closeTabsToRight(of: sessionID.rawValue)
+        await adapter?.waitForFileLoad()
     }
 
     func setPinned(_ pinned: Bool, sessionID: EditorSessionID) {

@@ -75,8 +75,11 @@ final class GoalVM: ObservableObject, SuperLog {
     /// - 只有一个 Goal:侧栏已经充分呈现(标题、进度、任务列表、折叠、
     ///   描述与续跑入口),按钮属于重复信息,隐藏。侧栏收起时同样隐藏——
     ///   收起是用户自己的折叠选择,不该由工具栏按钮顶回来。
+    /// - 例外:唯一的 Goal 已失败且任务全部结束。失败 Goal 不满足自动删除条件
+    ///   会被保留,而侧栏此时高度为 0,工具栏弹窗是查看它的唯一入口(#777)。
     public var shouldShowToolbarButton: Bool {
-        goals.count > 1
+        if goals.count > 1 { return true }
+        return !hasActiveWork && goals.contains { $0.goal.status == .failed }
     }
 
     // MARK: - 侧栏派生态(从 `goals` 推导当前活跃 Goal)

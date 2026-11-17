@@ -294,7 +294,12 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
             isLoadingConversations = true
         }
 
-        let page = await capability.fetchConversationPage(
+        // 刷新前记住已加载的范围：只重取第一页会把用户翻过的分页整体丢掉，
+        // 第 41 条之后的选中会话还会被误判为不存在而改选第一条（#537）。
+        let loadedCount = initial ? 0 : conversations.count
+        let loadedLastID = conversations.last?.id
+
+        let firstPage = await capability.fetchConversationPage(
             limit: conversationPageSize,
             beforeUpdatedAt: nil,
             beforeID: nil,
@@ -305,14 +310,51 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
             includingChildConversations: true
         )
         let dailySeries = await capability.fetchDailyCountSeries()
+        let page = await refillLoadedRange(firstPage, loadedCount: loadedCount)
+
+        // 刷新期间翻页可能已把列表变长：旧范围的结果不得覆盖新列表，
+        // 交给下一轮刷新按新范围重取。
+        guard conversations.count == loadedCount, conversations.last?.id == loadedLastID else {
+            if initial {
+                isLoadingConversations = false
+            }
+            pendingReload = true
+            return
+        }
 
         conversations = page
         totalConversationCount = total
         dailyCountSeries = dailySeries
-        hasMoreConversations = page.count == conversationPageSize
+        // 重取的范围可能短于总数（新建会话把尾部挤出已加载范围），此时仍可继续翻页。
+        hasMoreConversations = page.count < total
         isLoadingConversations = false
         syncSelectionAfterConversationChange()
         await loadMessageCounts(for: page)
+    }
+
+    /// 按原游标继续翻页，直到重新覆盖刷新前已加载的记录数（#537）。
+    /// 新建/更新会把会话顶到列表前面，已加载范围整体下移，只取第一页会丢掉尾部分页。
+    private func refillLoadedRange(
+        _ firstPage: [ConversationSummary],
+        loadedCount: Int
+    ) async -> [ConversationSummary] {
+        var loaded = firstPage
+        var lastPage = firstPage
+        while lastPage.count == conversationPageSize,
+              loaded.count < loadedCount,
+              let cursor = lastPage.last {
+            let next = await capability.fetchConversationPage(
+                limit: conversationPageSize,
+                beforeUpdatedAt: cursor.lastMessageAt,
+                beforeID: cursor.id,
+                includingChildConversations: true
+            )
+            loaded.append(contentsOf: next)
+            lastPage = next
+        }
+        // 翻页途中有会话被顶进前一页时，两页会含同一条记录：按 ID 去重保序。
+        var seen = Set<UUID>()
+        return loaded.filter { seen.insert($0.id).inserted }
     }
 
     private func loadMessageCounts(for conversations: [ConversationSummary]) async {

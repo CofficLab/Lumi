@@ -28,6 +28,52 @@ struct ConversationExportPluginTests {
         #expect(chat.barItems.isEmpty)
     }
 
+    @Test("运行时禁用撤回导出入口，重新启用后恢复（**回归 #797**）")
+    func runtimeDisableWithdrawsExportEntryAndEnableRestores() async throws {
+        let kernel = KernelCoreContainer()
+        let chat = DefaultChatSectionProviding()
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+        try kernel.registerProvider((any MessageManaging).self, messages)
+
+        let plugin = ConversationExportPlugin()
+        try plugin.onBoot(kernel: kernel)
+        #expect(chat.barItems.map(\.id) == ["com.coffic.lumi.plugin.conversation-export.toolbar"])
+
+        // 内核运行时禁用只撤回显式登记的贡献，不会清理直接写进 ChatSection 的
+        // 导出按钮；插件必须在 onDisable 里自行撤回，否则「已禁用」后按钮仍在、
+        // ViewModel 仍能导出（#797）。
+        try await plugin.onDisable(kernel: kernel)
+        #expect(chat.barItems.isEmpty)
+
+        try await plugin.onEnable(kernel: kernel)
+        #expect(chat.barItems.map(\.id) == ["com.coffic.lumi.plugin.conversation-export.toolbar"])
+        #expect(chat.barItems.first?.order == 90)
+    }
+
+    @Test("重复启用不产生重复导出入口")
+    func repeatedEnableDoesNotDuplicateEntry() async throws {
+        let kernel = KernelCoreContainer()
+        let chat = DefaultChatSectionProviding()
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+        try kernel.registerProvider((any MessageManaging).self, messages)
+
+        let plugin = ConversationExportPlugin()
+        try plugin.onBoot(kernel: kernel)
+        try await plugin.onEnable(kernel: kernel)
+        try await plugin.onEnable(kernel: kernel)
+        #expect(chat.barItems.map(\.id) == ["com.coffic.lumi.plugin.conversation-export.toolbar"])
+
+        try await plugin.onDisable(kernel: kernel)
+        try await plugin.onDisable(kernel: kernel)
+        #expect(chat.barItems.isEmpty)
+    }
+
     @Test("HTML 导出按时间排序并转义不可信内容")
     func exportsSafeOrderedHTML() throws {
         let conversationID = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!

@@ -86,47 +86,81 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
     public func onBoot(kernel: KernelCoreContainer) throws {
         let viewModels = NetworkPluginViewModels()
         self.viewModels = viewModels
-        // 1. 初始化 HTTPExchangeStore
-        let exchangeStore: HTTPExchangeStore?
+        // 1. 初始化 HTTPExchangeStore。store / settingsState / viewModels 在
+        //    「禁用 → 启用」周期内复用，不随运行时禁用销毁。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            let dir = storage.pluginDataDirectory(for: id)
-            exchangeStore = HTTPExchangeStore(directory: dir)
+            httpExchangeStore = HTTPExchangeStore(directory: storage.pluginDataDirectory(for: id))
         } else {
-            exchangeStore = nil
+            httpExchangeStore = nil
         }
-        httpExchangeStore = exchangeStore
-        if let exchangeStore {
-            let settingsState = HTTPExchangeSettingsState()
-            httpExchangeSettingsState = settingsState
-            httpExchangeObserver = HTTPExchangeObserver(store: exchangeStore) { [weak settingsState] in
-                Task { @MainActor in
-                    settingsState?.refresh()
-                }
-            }
-        }
-        NetworkHistoryService.shared.configure(storageDirectory: exchangeStore?.directory)
-        NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
-        metricsObserver?.cancel()
-        metricsObserver = NetworkMetricsObserver(viewModels: viewModels)
+        httpExchangeSettingsState = httpExchangeStore == nil ? nil : HTTPExchangeSettingsState()
 
-        // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
-        // 先注销默认的 NetworkProviding，再注册自定义实现
+        // 2. 注册 NetworkProviding / LLMNetworkProviding。内核运行时禁用会保留
+        //    Provider 注册（兼容 Boot/Enable 分层），故只在 Boot 装配一次。
         kernel.unregisterProvider((any NetworkProviding).self)
         let networkProvider: any NetworkProviding
-        if let exchangeStore {
+        if let exchangeStore = httpExchangeStore {
             let customProvider = NetworkProvider(exchangeStore: exchangeStore)
             try kernel.registerProvider((any NetworkProviding).self, customProvider)
             networkProvider = customProvider
         } else {
             networkProvider = DefaultNetworkProviding()
         }
+        // 桥接 NetworkProviding → LLMNetworkProviding，使 LLM 供应商的网络请求
+        // 经过 kernel 的 NetworkProviding，获得 HTTP 交换记录等能力。
+        try kernel.registerProvider((any LLMNetworkProviding).self, LLMNetworkProviderAdapter(networkProvider))
 
-        // 2.5 注册 LLMNetworkProviding 适配器（桥接 NetworkProviding → LLMNetworkProviding）
-        // 使 LLM 供应商的网络请求经过 kernel 的 NetworkProviding，获得 HTTP 交换记录等能力
-        let llmNetworkAdapter = LLMNetworkProviderAdapter(networkProvider)
-        try kernel.registerProvider((any LLMNetworkProviding).self, llmNetworkAdapter)
+        try installRuntimeContributions(kernel: kernel, viewModels: viewModels)
+    }
 
-        // 3. 注册 Agent 工具到 ToolManagerProviding
+    /// 运行时重新启用：恢复采样、工具、菜单栏与设置入口。
+    ///
+    /// Provider 仍保持注册，这里只重建被 `onDisable` 停掉的运行时资源。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        guard let viewModels else { return }
+        try installRuntimeContributions(kernel: kernel, viewModels: viewModels)
+    }
+
+    /// 运行时禁用：停止监控并撤回工具与设置入口。
+    ///
+    /// 内核运行时禁用只撤回经 `trackContribution` 显式登记的贡献（菜单栏），
+    /// 不会停掉插件自有的采样/定时器/历史写入，也不会清理直接写进
+    /// `ToolManagerProviding` / `SettingViewProviding` 的工具与设置入口。
+    /// 若不在这里自行停止，插件显示「已禁用」后网络采样、定时刷新、历史录制
+    /// 与 7 个 Agent 工具仍在运行、仍可被 LLM 调用（#449）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        removeRuntimeContributions(kernel: kernel)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        removeRuntimeContributions(kernel: kernel)
+        viewModels = nil
+        httpExchangeSettingsState = nil
+        httpExchangeStore = nil
+    }
+
+    /// 装配运行时资源与共享贡献：HTTP 交换观察器、历史/交换存储配置、采样
+    /// 观察器、Agent 工具、菜单栏与设置入口。Boot 与 Enable 共用，确保两条
+    /// 路径恢复出完全一致的运行时状态。
+    private func installRuntimeContributions(
+        kernel: KernelCoreContainer,
+        viewModels: NetworkPluginViewModels
+    ) throws {
+        if let exchangeStore = httpExchangeStore {
+            let settingsState = httpExchangeSettingsState ?? HTTPExchangeSettingsState()
+            httpExchangeSettingsState = settingsState
+            httpExchangeObserver?.cancel()
+            httpExchangeObserver = HTTPExchangeObserver(store: exchangeStore) { [weak settingsState] in
+                Task { @MainActor in
+                    settingsState?.refresh()
+                }
+            }
+        }
+        NetworkHistoryService.shared.configure(storageDirectory: httpExchangeStore?.directory)
+        NetworkService.shared.configureHTTPExchangeStore(httpExchangeStore)
+        metricsObserver?.cancel()
+        metricsObserver = NetworkMetricsObserver(viewModels: viewModels)
+
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
@@ -135,7 +169,6 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
 
         try contributeMenuBar(to: kernel, viewModels: viewModels)
 
-        // 5. 注册设置入口
         if let settingView = kernel.resolveProvider((any SettingViewProviding).self),
            let httpExchangeStore {
             settingView.addEntries([
@@ -154,30 +187,21 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         }
     }
 
-    public func onEnable(kernel: KernelCoreContainer) async throws {
-        guard let viewModels else { return }
-        try contributeMenuBar(to: kernel, viewModels: viewModels)
-    }
-
-    public func onShutdown(kernel: KernelCoreContainer) throws {
+    /// 撤回运行时资源与共享贡献：停采样/定时器、撤工具与设置入口、停 HTTP
+    /// 交换观察器、落盘历史并清空共享交换存储。Disable 与 Shutdown 共用。
+    /// 菜单栏由内核的贡献撤回机制处理，这里不重复移除。
+    private func removeRuntimeContributions(kernel: KernelCoreContainer) {
         metricsObserver?.cancel()
         metricsObserver = nil
-        viewModels = nil
-        // 撤回 Agent 工具
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)
             }
         }
-
-        // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
-
         httpExchangeObserver?.cancel()
         httpExchangeObserver = nil
-        httpExchangeSettingsState = nil
-        httpExchangeStore = nil
         NetworkHistoryService.shared.stopRecording()
         NetworkService.shared.configureHTTPExchangeStore(nil)
     }

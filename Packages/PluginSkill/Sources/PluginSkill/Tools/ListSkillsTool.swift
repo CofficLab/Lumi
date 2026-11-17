@@ -107,6 +107,11 @@ public struct ListSkillsTool: SuperAgentTool {
                 "version": skill.version,
                 "is_project_skill": projectNames.contains(skill.name),
             ]
+            // 工具描述承诺返回正文路径，与 read/update/create 的回执保持一致（#790）。
+            // 插件贡献的技能可能只携带 content，路径为空时省略该键。
+            if !skill.contentPath.isEmpty {
+                item["content_path"] = skill.contentPath
+            }
             if includeContent, let content = skill.loadContent() {
                 item["content"] = content
             }

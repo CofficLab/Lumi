@@ -56,6 +56,9 @@ enum TitleTestDoubles {
         let insertHandle = CountingMessageInsertedHandle()
         /// 便于断言「取首条用户消息」被调用了几次。
         private(set) var firstUserMessageCallCount = 0
+        /// 测试用门闩：返回首条用户消息前先 await 它，构造「读取晚到」时序（#466）。
+        /// 默认 nil，正常路径不挂起。
+        var firstUserMessageGate: (@MainActor () async -> Void)?
         private var observer: ((Message, UUID) -> Void)?
 
         init(messages: [Message] = []) { stored = messages }
@@ -66,6 +69,7 @@ enum TitleTestDoubles {
 
         func firstUserMessage(in conversationID: UUID) async -> Message? {
             firstUserMessageCallCount += 1
+            if let firstUserMessageGate { await firstUserMessageGate() }
             return messages(for: conversationID).first {
                 $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }

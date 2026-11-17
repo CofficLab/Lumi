@@ -10,6 +10,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
         .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
@@ -43,6 +45,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
             ]
         ),
     ]

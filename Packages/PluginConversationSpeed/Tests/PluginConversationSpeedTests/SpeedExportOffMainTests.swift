@@ -44,6 +44,31 @@ struct SpeedExportOffMainTests {
             }.value
         }
     }
+
+    #if os(macOS)
+    /// 回归 #600：保存面板选中一个已存在的只读 PNG 并确认替换时，落盘会因
+    /// 权限被拒而失败。writePNG 必须抛出错误（交由 exportErrorMessage 弹窗显示），
+    /// 不得用 `try?` 吞掉错误后让导出流程伪装成功。
+    @Test("替换只读 PNG 时 writePNG 抛出权限错误而非静默成功")
+    func writeFailureOnReadOnlyTargetThrows() async throws {
+        let cgImage = try makeCGImage()
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("speed-readonly-\(UUID().uuidString).png")
+        try SpeedPopover.writePNG(cgImage, to: url)
+        defer {
+            try? setImmutable(url, false)
+            try? FileManager.default.removeItem(at: url)
+        }
+        try setImmutable(url, true)
+        let box = ImageBox(cgImage)
+
+        await #expect(throws: (any Error).self) {
+            try await Task.detached(priority: .userInitiated) {
+                try SpeedPopover.writePNG(box.image, to: url)
+            }.value
+        }
+    }
+    #endif
 }
 
 // MARK: - Helpers
@@ -82,3 +107,17 @@ private struct ImageBox: @unchecked Sendable {
 private final class ThreadFlag: @unchecked Sendable {
     var value = false
 }
+
+#if os(macOS)
+/// 用 chflags 设置/清除 immutable 标志，构造「替换只读文件」的确定性写失败。
+private func setImmutable(_ url: URL, _ immutable: Bool) throws {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/chflags")
+    process.arguments = [immutable ? "uchg" : "nouchg", url.path]
+    try process.run()
+    process.waitUntilExit()
+    guard process.terminationStatus == 0 else {
+        throw TestImageError.contextCreationFailed
+    }
+}
+#endif

@@ -67,11 +67,11 @@ struct MemoryPluginTests {
             id: "b", type: .reference, name: "B", description: "",
             content: "y", scope: .project, projectPath: "/tmp/proj"
         )
-        let items = await storage.list(scope: .project, projectPath: "/tmp/proj")
+        let items = try await storage.list(scope: .project, projectPath: "/tmp/proj")
         #expect(items.count == 2)
 
         try await storage.delete(id: "a", scope: .project, projectPath: "/tmp/proj")
-        let after = await storage.list(scope: .project, projectPath: "/tmp/proj")
+        let after = try await storage.list(scope: .project, projectPath: "/tmp/proj")
         #expect(after.count == 1)
         #expect(after.first?.id == "b")
     }
@@ -129,7 +129,7 @@ struct MemoryPluginTests {
         #expect(try await storage.load(id: "a@b", type: .project, scope: .global, projectPath: nil)?.content == "content-B")
         #expect(try await storage.load(id: "a%20b", type: .project, scope: .global, projectPath: nil)?.content == "content-C")
 
-        let listed = await storage.list(scope: .global, projectPath: nil)
+        let listed = try await storage.list(scope: .global, projectPath: nil)
         #expect(Set(listed.map(\.id)) == ["a b", "a@b", "a%20b"])
 
         try await storage.delete(id: "a b", scope: .global, projectPath: nil)
@@ -158,8 +158,8 @@ struct MemoryPluginTests {
         #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a b")?.content == "content-A")
         #expect(try await storage.load(id: "architecture", type: .project, scope: .project, projectPath: "/tmp/a-b")?.content == "content-B")
 
-        let listedA = await storage.list(scope: .project, projectPath: "/tmp/a b")
-        let listedB = await storage.list(scope: .project, projectPath: "/tmp/a-b")
+        let listedA = try await storage.list(scope: .project, projectPath: "/tmp/a b")
+        let listedB = try await storage.list(scope: .project, projectPath: "/tmp/a-b")
         #expect(listedA.count == 1)
         #expect(listedA.first?.content == "content-A")
         #expect(listedB.count == 1)

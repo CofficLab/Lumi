@@ -1,5 +1,5 @@
 {
-  "originHash" : "6a6e75fdf644a0ac408ed7ee0d1fcf5b8bd960e2e8aff3d231f7b8bc15eff4d6",
+  "originHash" : "3bbd78aa85079f0ec73087908079d12c72550623513db9f45f0b104608871339",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -35,6 +35,33 @@
       "state" : {
         "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
         "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "lumikitkeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitKeychain.git",
+      "state" : {
+        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikitllm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
+      "state" : {
+        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikittestsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitTestSupport.git",
+      "state" : {
+        "revision" : "3d43b467db654c19c7535fca8067f979d800dff4",
+        "version" : "1.0.1"
       }
     },
     {

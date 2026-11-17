@@ -499,6 +499,227 @@ struct PluginAppManagerTests {
         #expect(viewModel.selectedFileIds.contains(appEntry.id))
     }
 
+    // MARK: - 部分删除失败与重试（回归 #410）
+
+    @Test
+    func deleteFilesSkipsAlreadyMissingItemsSoRetryIsNotBlocked() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-delete-missing-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 首项模拟「上一次部分成功已移入废纸篓的 App 本体」：路径已不存在。
+        let missingApp = RelatedFile(path: root.appendingPathComponent("Gone.app").path, size: 1, type: .app)
+        let tailFile = root.appendingPathComponent("tail.plist")
+        try "prefs".write(to: tailFile, atomically: true, encoding: .utf8)
+        let tail = RelatedFile(path: tailFile.path, size: 1, type: .preferences)
+
+        let result = await AppService().deleteFiles([missingApp, tail])
+
+        // 已不存在的首项被视为已删除并跳过，不得阻塞其余项；剩余项正常移入废纸篓。
+        #expect(result.failed.isEmpty)
+        #expect(result.deleted.count == 2)
+        #expect(result.deleted.contains { $0.path == missingApp.path })
+        #expect(result.deleted.contains { $0.path == tail.path })
+        #expect(!FileManager.default.fileExists(atPath: tailFile.path))
+    }
+
+    @Test
+    func deleteFilesContinuesPastFailureAndReportsPartial() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-delete-partial-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let appDir = root.appendingPathComponent("App.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
+        let lockedFile = root.appendingPathComponent("locked.plist")
+        try "locked".write(to: lockedFile, atomically: true, encoding: .utf8)
+        // 用户不可变标志（uchg）：trashItem 无法移动，确定性失败。
+        try FileManager.default.setAttributes([.immutable: true], ofItemAtPath: lockedFile.path)
+        defer { try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: lockedFile.path) }
+        let tailFile = root.appendingPathComponent("tail.plist")
+        try "tail".write(to: tailFile, atomically: true, encoding: .utf8)
+
+        let appFile = RelatedFile(path: appDir.path, size: 1, type: .app)
+        let locked = RelatedFile(path: lockedFile.path, size: 1, type: .preferences)
+        let tail = RelatedFile(path: tailFile.path, size: 1, type: .cache)
+
+        let result = await AppService().deleteFiles([appFile, locked, tail])
+
+        // 中间项失败不得中断整批：App 本体与失败项之后的文件仍被删除并计入成功。
+        #expect(result.deleted.contains { $0.path == appFile.path })
+        #expect(result.deleted.contains { $0.path == tail.path })
+        #expect(result.failed.count == 1)
+        #expect(result.failed.first?.file.path == locked.path)
+        #expect(!FileManager.default.fileExists(atPath: appDir.path))
+        #expect(!FileManager.default.fileExists(atPath: tailFile.path))
+        #expect(FileManager.default.fileExists(atPath: lockedFile.path))
+    }
+
+    @Test
+    func partialDeletionRemovesDeletedItemsAndKeepsFailedForRetry() async throws {
+        let app = Self.app(path: "/Applications/Partial.app", name: "Partial", size: 1)
+        let appFile = RelatedFile(path: app.bundleURL.path, size: 1, type: .app)
+        let support = RelatedFile(path: "/Users/x/Library/Application Support/Partial", size: 1, type: .support)
+        let cache = RelatedFile(path: "/Users/x/Library/Caches/Partial", size: 1, type: .cache)
+
+        let service = FakeAppManagerService()
+        service.deleteHandler = { _ in
+            DeleteFilesResult(deleted: [appFile, support], failed: [.init(file: cache, message: "locked")])
+        }
+        let viewModel = AppManagerViewModel(appService: service)
+        viewModel.installedApps = [app]
+        viewModel.selectedApp = app
+        viewModel.relatedFiles = [appFile, support, cache]
+        viewModel.selectedFileIds = [appFile.id, support.id, cache.id]
+
+        viewModel.deleteSelectedFiles()
+        try await Self.waitForDeletion(viewModel)
+
+        // 已删除的 App 本体立即从列表移除；成功项从详情与选择中移除。
+        #expect(!viewModel.installedApps.contains { $0.bundleURL.path == app.bundleURL.path })
+        #expect(viewModel.relatedFiles.map(\.id) == [cache.id])
+        #expect(viewModel.selectedFileIds == Set([cache.id]))
+        // 保留选择上下文与失败项，供用户修复权限/锁定后重试。
+        #expect(viewModel.selectedApp?.bundleURL.path == app.bundleURL.path)
+        #expect(viewModel.errorMessage != nil)
+        #expect(viewModel.showUninstallConfirmation == false)
+    }
+
+    @Test
+    func retryAfterPartialFailureClearsRemainingAndCompletes() async throws {
+        let app = Self.app(path: "/Applications/Retry.app", name: "Retry", size: 1)
+        let appFile = RelatedFile(path: app.bundleURL.path, size: 1, type: .app)
+        let cache = RelatedFile(path: "/Users/x/Library/Caches/Retry", size: 1, type: .cache)
+
+        let service = FakeAppManagerService()
+        // 第一次：App 本体删除成功、cache 失败；第二次（重试）：剩余项成功。
+        service.deleteHandler = { files in
+            if files.contains(where: { $0.type == .app }) {
+                return DeleteFilesResult(deleted: [appFile], failed: [.init(file: cache, message: "locked")])
+            }
+            return DeleteFilesResult(deleted: files, failed: [])
+        }
+        let viewModel = AppManagerViewModel(appService: service)
+        viewModel.installedApps = [app]
+        viewModel.selectedApp = app
+        viewModel.relatedFiles = [appFile, cache]
+        viewModel.selectedFileIds = [appFile.id, cache.id]
+
+        viewModel.deleteSelectedFiles()
+        try await Self.waitForDeletion(viewModel)
+        #expect(viewModel.relatedFiles.map(\.id) == [cache.id])
+        #expect(viewModel.selectedFileIds == Set([cache.id]))
+
+        // 重试：只针对剩余的 cache，不再触碰已删除的 App 本体。
+        viewModel.deleteSelectedFiles()
+        try await Self.waitForDeletion(viewModel)
+
+        let calls = service.deleteCalls.calls
+        #expect(calls.count == 2)
+        #expect(calls.last?.map(\.id) == [cache.id])
+        #expect(viewModel.relatedFiles.isEmpty)
+        #expect(viewModel.selectedFileIds.isEmpty)
+        #expect(viewModel.selectedApp == nil)
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test
+    func successfulExtraOnlyDeletionKeepsAppAndRescans() async throws {
+        let app = Self.app(path: "/Applications/Keep.app", name: "Keep", size: 1)
+        let appFile = RelatedFile(path: app.bundleURL.path, size: 1, type: .app)
+        let support = RelatedFile(path: "/Users/x/Library/Application Support/Keep", size: 1, type: .support)
+        let refreshed = [appFile]
+
+        let service = FakeAppManagerService()
+        service.relatedFilesByApp[app.bundleURL.path] = refreshed
+        service.deleteHandler = { files in DeleteFilesResult(deleted: files, failed: []) }
+        let viewModel = AppManagerViewModel(appService: service)
+        viewModel.installedApps = [app]
+        viewModel.selectedApp = app
+        viewModel.relatedFiles = [appFile, support]
+        viewModel.selectedFileIds = [support.id]
+
+        viewModel.deleteSelectedFiles()
+        try await Self.waitForDeletion(viewModel)
+        try await Self.waitForScan(viewModel)
+
+        // App 本体未被删除：仍在列表与选择中，仅关联文件删除后重扫刷新。
+        #expect(viewModel.installedApps.contains { $0.bundleURL.path == app.bundleURL.path })
+        #expect(viewModel.selectedApp?.bundleURL.path == app.bundleURL.path)
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.relatedFiles.map(\.id) == refreshed.map(\.id))
+    }
+
+    @Test
+    func completeAppDeletionRemovesAppAndClearsSelection() async throws {
+        let app = Self.app(path: "/Applications/Full.app", name: "Full", size: 1)
+        let appFile = RelatedFile(path: app.bundleURL.path, size: 1, type: .app)
+        let support = RelatedFile(path: "/Users/x/Library/Application Support/Full", size: 1, type: .support)
+
+        let service = FakeAppManagerService()
+        service.deleteHandler = { files in DeleteFilesResult(deleted: files, failed: []) }
+        let viewModel = AppManagerViewModel(appService: service)
+        viewModel.installedApps = [app]
+        viewModel.selectedApp = app
+        viewModel.relatedFiles = [appFile, support]
+        viewModel.selectedFileIds = [appFile.id, support.id]
+
+        viewModel.deleteSelectedFiles()
+        try await Self.waitForDeletion(viewModel)
+
+        #expect(!viewModel.installedApps.contains { $0.bundleURL.path == app.bundleURL.path })
+        #expect(viewModel.selectedApp == nil)
+        #expect(viewModel.relatedFiles.isEmpty)
+        #expect(viewModel.selectedFileIds.isEmpty)
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.showUninstallConfirmation == false)
+    }
+
+    @Test
+    func staleDeletionResultDoesNotPolluteNewSelection() async throws {
+        let appA = Self.app(path: "/Applications/A.app", name: "A", size: 1)
+        let appB = Self.app(path: "/Applications/B.app", name: "B", size: 1)
+        let aFile = RelatedFile(path: appA.bundleURL.path, size: 1, type: .app)
+        let bFile = RelatedFile(path: appB.bundleURL.path, size: 1, type: .app)
+
+        let gate = DeletionGate()
+        let service = FakeAppManagerService()
+        service.deleteHandler = { _ in
+            await gate.wait()
+            return DeleteFilesResult(deleted: [aFile], failed: [])
+        }
+        let viewModel = AppManagerViewModel(appService: service)
+        viewModel.installedApps = [appA, appB]
+        viewModel.selectedApp = appA
+        viewModel.relatedFiles = [aFile]
+        viewModel.selectedFileIds = [aFile.id]
+
+        viewModel.deleteSelectedFiles()
+        // 删除挂起期间用户切换到 B：旧删除结果晚到，不得污染新上下文。
+        viewModel.selectedApp = appB
+        viewModel.relatedFiles = [bFile]
+        viewModel.selectedFileIds = [bFile.id]
+
+        await gate.release()
+        try await Self.waitForDeletion(viewModel)
+
+        #expect(viewModel.selectedApp?.bundleURL.path == appB.bundleURL.path)
+        #expect(viewModel.relatedFiles.map(\.id) == [bFile.id])
+        #expect(viewModel.selectedFileIds == Set([bFile.id]))
+        #expect(viewModel.installedApps.contains { $0.bundleURL.path == appB.bundleURL.path })
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    private static func waitForDeletion(_ viewModel: AppManagerViewModel) async throws {
+        for _ in 0..<400 {
+            if !viewModel.isDeleting { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(!viewModel.isDeleting)
+    }
+
     private static func waitForScan(_ viewModel: AppManagerViewModel) async throws {
         for _ in 0..<200 {
             if !viewModel.isScanningFiles { return }
@@ -560,8 +781,14 @@ struct PluginAppManagerTests {
 
 private final class FakeAppManagerService: AppManagerServicing, @unchecked Sendable {
     let results: [Bool: (delay: UInt64, apps: [AppModel])]
+    /// 按 App 路径配置的关联文件扫描结果（删除成功后刷新用）。
+    var relatedFilesByApp: [String: [RelatedFile]] = [:]
+    /// 自定义逐项删除结果；为 nil 时默认全部成功。
+    var deleteHandler: (([RelatedFile]) async -> DeleteFilesResult)?
+    /// 记录每次 deleteFiles 收到的入参，供断言重试只针对剩余项。
+    let deleteCalls = RelatedFileCallBox()
 
-    init(results: [Bool: (delay: UInt64, apps: [AppModel])]) {
+    init(results: [Bool: (delay: UInt64, apps: [AppModel])] = [:]) {
         self.results = results
     }
 
@@ -578,10 +805,16 @@ private final class FakeAppManagerService: AppManagerServicing, @unchecked Senda
     }
 
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
-        []
+        relatedFilesByApp[app.bundleURL.path] ?? []
     }
 
-    func deleteFiles(_ files: [RelatedFile]) async throws {}
+    func deleteFiles(_ files: [RelatedFile]) async -> DeleteFilesResult {
+        deleteCalls.record(files)
+        if let deleteHandler {
+            return await deleteHandler(files)
+        }
+        return DeleteFilesResult(deleted: files, failed: [])
+    }
 
     func saveCache() async {}
 
@@ -591,5 +824,46 @@ private final class FakeAppManagerService: AppManagerServicing, @unchecked Senda
 
     func getAppInfo(_ app: AppModel) -> String {
         app.displayName
+    }
+}
+
+/// 线程安全的 deleteFiles 入参记录器（写入发生在非主线程的删除 Task 中）。
+private final class RelatedFileCallBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [[RelatedFile]] = []
+
+    func record(_ files: [RelatedFile]) {
+        lock.lock()
+        storage.append(files)
+        lock.unlock()
+    }
+
+    var calls: [[RelatedFile]] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+}
+
+/// 异步门闩：`wait()` 挂起直到 `release()`，用于确定性地构造「删除尚未完成、
+/// 用户已切换选择」的旧请求晚到中间态（Swift 6 下不在 async 闭包里用信号量阻塞）。
+private actor DeletionGate {
+    private var continuations: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+
+    func wait() async {
+        if released { return }
+        await withCheckedContinuation { continuation in
+            continuations.append(continuation)
+        }
+    }
+
+    func release() {
+        released = true
+        let pending = continuations
+        continuations.removeAll()
+        for continuation in pending {
+            continuation.resume()
+        }
     }
 }

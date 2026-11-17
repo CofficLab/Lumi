@@ -21,21 +21,21 @@ struct AppUpdatePluginLocalStoreTests {
     }
 
     @Test("写入 preview 后读回 preview")
-    func roundTripsPreviewChannel() {
+    func roundTripsPreviewChannel() throws {
         let directory = AppUpdateTestDoubles.makeTemporaryDirectory("store-preview")
         let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
 
-        store.setChannel(.preview)
+        try store.setChannel(.preview)
 
         #expect(store.channel == .preview)
     }
 
     @Test("写入后在设置目录落下 settings.plist")
-    func writesSettingsPlist() {
+    func writesSettingsPlist() throws {
         let directory = AppUpdateTestDoubles.makeTemporaryDirectory("store-file")
         let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
 
-        store.setChannel(.preview)
+        try store.setChannel(.preview)
 
         let file = directory.appendingPathComponent("settings.plist")
         #expect(FileManager.default.fileExists(atPath: file.path))
@@ -76,6 +76,21 @@ struct AppUpdatePluginLocalStoreTests {
         _ = AppUpdatePluginLocalStore(settingsDirectory: directory)
 
         #expect(FileManager.default.fileExists(atPath: directory.path))
+    }
+
+    @Test("落盘失败时 setChannel 抛出而非静默吞掉")
+    func setChannelThrowsWhenWriteFails() throws {
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("store-unwritable")
+        // 把目标文件位置占成目录，原子写入必然失败。
+        let occupied = directory.appendingPathComponent("settings.plist")
+        try FileManager.default.createDirectory(at: occupied, withIntermediateDirectories: true)
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+
+        #expect(throws: (any Error).self) {
+            try store.setChannel(.preview)
+        }
+        // 失败后读回仍是默认 stable，没有半保存状态。
+        #expect(store.channel == .stable)
     }
 }
 
@@ -420,7 +435,7 @@ struct AppUpdateBootstrapTests {
     func keepsExistingChannelOverLegacy() throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-existing")
         let directory = root.appendingPathComponent(AppUpdateBootstrap.pluginID, isDirectory: true)
-        AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(.stable)
+        try AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(.stable)
 
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(

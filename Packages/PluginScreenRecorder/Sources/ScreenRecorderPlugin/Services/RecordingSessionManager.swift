@@ -277,7 +277,7 @@ public final class RecordingSessionManager {
                 self.elapsedSeconds += 1
                 self.postActivity(state: self.currentSession?.state ?? .idle)
                 if let maxDuration, self.elapsedSeconds >= maxDuration {
-                    _ = try? await self.stop()
+                    self.scheduleAutoStop()
                     return
                 }
             }
@@ -295,7 +295,7 @@ public final class RecordingSessionManager {
                         RecordableWindowProvider.windowExists(id: window.id)
                     }.value
                     if !stillPresent {
-                        _ = try? await self.stop()
+                        self.scheduleAutoStop()
                         return
                     }
                 }
@@ -306,6 +306,17 @@ public final class RecordingSessionManager {
     private func cancelTimers() {
         elapsedTimer?.cancel(); elapsedTimer = nil
         survivalPollTask?.cancel(); survivalPollTask = nil
+    }
+
+    /// 自动停止（计时到期 / 目标窗口消失）必须在独立 Task 中执行 `stop()`。
+    /// 计时器 Task 直接 `await stop()` 时，`stop()` 内的 `cancelTimers()` 会取消计时器
+    /// 自身，而 Swift 的取消状态跨 `await` 保留，`RecordingFileWriter.finalize` 入口的
+    /// `Task.checkCancellation()` 随即抛 `CancellationError`，自动停止无法落盘、录制丢失
+    /// （#377）。非结构化 Task 不继承创建者的取消状态，落盘得以正常完成。
+    private func scheduleAutoStop() {
+        Task { @MainActor [weak self] in
+            _ = try? await self?.stop()
+        }
     }
 
     // MARK: - Stream error

@@ -68,3 +68,19 @@ public struct XcodeCleanItem: Identifiable, Equatable, Sendable {
         self.version = version
     }
 }
+
+/// 单个分类的预聚合快照（#1222）：随 ViewModel 的 itemsByCategory 变更单遍重算，
+/// 分类头直接读取，避免每次 body 求值重新 filter/reduce 整个分类数组。
+public struct XcodeCategorySummary: Equatable, Sendable {
+    public var size: Int64
+    public var selectedSize: Int64
+    public var selectedCount: Int
+    public var totalCount: Int
+
+    public init(size: Int64, selectedSize: Int64, selectedCount: Int, totalCount: Int) {
+        self.size = size
+        self.selectedSize = selectedSize
+        self.selectedCount = selectedCount
+        self.totalCount = totalCount
+    }
+}

@@ -83,6 +83,40 @@ struct TitleUpdateToolTests {
         }
     }
 
+    // MARK: - 结构化结果（executeResult）
+
+    /// 回归 #651：带 context 的结构化入口在写库失败时必须抛出，由宿主包装层
+    /// 标记 `isError == true`；不得把失败文案包成 `isError == false` 的成功结果，
+    /// 否则 GUI 显示成功、ACP 发送 completed。
+    @Test("executeResult 写库失败时抛出而非返回成功结果")
+    func executeResultThrowsOnPersistenceFailure() async {
+        let id = UUID()
+        let (tool, _) = makeTool(selected: id, failTitleUpdate: true)
+        let context = ToolExecutionContext(jobID: "job-\(id.uuidString)", conversationID: id)
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.executeResult(
+                context: context,
+                arguments: ["title": ToolArgument("标题")]
+            )
+        }
+    }
+
+    /// 回归 #651：成功路径的结构化结果保持 `isError == false`，与失败路径形成对照。
+    @Test("executeResult 成功时不带错误标记")
+    func executeResultSuccessIsNotError() async throws {
+        let id = UUID()
+        let (tool, _) = makeTool(selected: id)
+        let context = ToolExecutionContext(jobID: "job-\(id.uuidString)", conversationID: id)
+
+        let result = try await tool.executeResult(
+            context: context,
+            arguments: ["title": ToolArgument("新标题")]
+        )
+        #expect(result.isError == false)
+        #expect(result.content.contains("Conversation Title Updated"))
+    }
+
     // MARK: - 参数校验
 
     /// 缺参数、空串、纯空白、非字符串都应抛 `ToolExecutionError`。

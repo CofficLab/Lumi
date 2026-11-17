@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 34 条用例。
+PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆盖 49 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 34
+测试文件: 8 个，用例总数: 49
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,9 +38,9 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 - **CreateNewConversationTool**（14 条）：由 `missingTaskThrows`、`titleFallsBackToDerived`、`explicitTitleWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CreateNewConversationTool 会话归属**（2 条）：由 `createInheritsCallingConversationProjectAndModel`、`callingConversationUnboundDoesNotLeakCurrent` 锁定。`create_new_conversation` 必须经 `executeResult(context:)` 用发起调用的对话（`context.conversationID`）解析项目与模型，不得读执行时 UI 选中对话的 `currentProjectPath/currentModelID`；发起对话未绑定项目/模型时继承 nil，不得泄漏当前对话归属；仅缺少 Context 的旧入口才回退到当前选中态（**回归 #331**）。改动 `CreateNewConversationTool.prepareAndRender` 或 `NewChatCapability.projectPath(for:)/modelID(for:)` 时优先跑对应测试文件。
 - **NewConversationRowRenderer**（8 条）：由 `canRenderMatchesToolWithPayload`、`canRenderRejectsOtherTools`、`canRenderRejectsUndecodableResults` 等用例锁定；改动该模块时优先跑对应测试文件。**#778**：工具把模型可控的 `title` 正文插在前、真实结构化 payload 追加在末尾；`extractJSON` 必须只取「独占一行的末尾 ```json 开围栏」到闭围栏之间的内容，不得取首个代码块。否则 title 里伪造的 suggestion JSON 会被解码，点击卡片会选中另一个对话并发送错误消息（数据隔离破坏）。按行锚定末尾围栏可确保 title 正文（含内嵌 ```json 文本）不参与解析。
-- **NewChatCapabilityAdapter**（4 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter`、`conversationExistsReflectsDeletion` 锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；`conversationExists(id:)` 必须如实反映会话是否仍在列表，删除后返回 false，供建议卡片点击前校验目标（**回归 #185**）；改动该模块时优先跑对应测试文件。
+- **NewChatCapabilityAdapter**（8 条）：由 `restoreNilSelectionDeselects`、`restoreNonNilSelectionSelects`、`toolPreservesNilSelectionThroughAdapter`、`conversationExistsReflectsDeletion`、`adapterDetectsConsumedStarterAcrossRebuild` 等用例锁定；`restoreSelection(to:)` 恢复 nil 选中态必须显式取消选择，不得无操作把用户甩进新建的空对话（**回归 #260**）；`conversationExists(id:)` 必须如实反映会话是否仍在列表，删除后返回 false，供建议卡片点击前校验目标（**回归 #185**）；`starterAlreadySent(in:)` 必须以消息存储的首条非空 user 消息为消费信号（`MessageManaging.firstUserMessage(in:)`），跨适配层重建/应用重启保持同一答案，未注入消息存储时退化为 false 以不阻断首次发送（**回归 #632/#592**）；改动该模块时优先跑对应测试文件。
 - **NewChatStartingAdapter**（4 条）：由 `startInDoesNotConsumeUnsentComposerAttachments`、`startInReturnsTrueOnSuccess`、`startInReturnsFalseOnSendError`、`startInReturnsFalseWhenSenderMissing` 锁定；`startIn(conversationID:content:)` 只发送工具参数里自包含的 task 文本，必须走显式空附件入口，不得用隐式 `sendMessage(_:conversationID:)` 快照全局挂起池，把当前对话输入框里未发送的附件带进新对话首条消息并清空输入框（**回归 #591**）；返回 `Bool` 如实上报成功/失败，发送器缺失或发送抛错必须返回 false，不得用 `try?` 吞错后让卡片无条件显示「已打开」（**回归 #185**）；改动该模块时优先跑对应测试文件。
-- **NewConversationSuggestionCard**（3 条）：由 `deletedTargetDoesNotSelectOrSend`、`sendFailureRestoresSelection`、`successSelectsTargetAndReturnsTrue` 锁定。`performStart` 编排「校验目标存在 → 切换 → 发送 → 按结果收敛」：目标已删除时不切换、不发送、返回失败；发送失败时仅当选中态仍停在目标才恢复原选中态（避免覆盖用户等待期间的手动切换），返回失败；成功才切换并返回 true。绝不向已删除 ID 写入消息或启动不可见回合（**回归 #185**）。改动 `NewConversationSuggestionCard.start()/performStart` 时优先跑对应测试文件。
+- **NewConversationSuggestionCard**（14 条）：由 `deletedTargetDoesNotSelectOrSend`、`sendFailureRestoresSelection`、`successSelectsTargetAndReturnsTrue`、`consumedTargetNavigatesWithoutResending`、`refreshedPhaseShowsOpenedForConsumedTarget` 等用例锁定。`performStart` 编排「校验目标存在 → 消费判定 → 切换 → 发送 → 按结果收敛」：目标已删除时不切换、不发送、返回失败；首条消息已发出时只导航到既有对话、不得重复发送或启动第二个回合，且 await 之后必须复核目标仍存在才写选中态；发送失败时仅当选中态仍停在目标才恢复原选中态（避免覆盖用户等待期间的手动切换），返回失败；成功才切换并返回 true。绝不向已删除 ID 写入消息或启动不可见回合（**回归 #185**）。`refreshedPhase` 在卡片出现/重建时按存储校正 phase：只校正 idle/failed，不得回退飞行中的 starting 或终态 opened，目标已删除或能力缺失时保持原值（**回归 #632/#592**）。改动 `NewConversationSuggestionCard.start()/performStart/refreshedPhase` 时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -80,8 +80,23 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 32 | NewChatStartingAdapter | startIn 发送成功返回 true，且走显式空附件入口 | 记录型 sender 替身 | `adapter.startIn(conversationID:content:)` | 返回 true，显式重载收到目标 ID 与空附件 | P1 | ✅ 已覆盖 | `startInReturnsTrueOnSuccess` |
 | 33 | NewChatStartingAdapter | startIn 发送抛错时返回 false，不得吞错（**回归 #185**） | sender 替身配置抛错 | `adapter.startIn(conversationID:content:)` | 返回 false，不得显示已打开 | P0 | ✅ 已覆盖 | `startInReturnsFalseOnSendError` |
 | 34 | NewChatStartingAdapter | startIn 发送器缺失时返回 false | adapter sender 为 nil | `adapter.startIn(conversationID:content:)` | 返回 false | P1 | ✅ 已覆盖 | `startInReturnsFalseWhenSenderMissing` |
+| 35 | NewConversationSuggestionCard 消费幂等 | 首条消息已发出时只导航到既有对话，不得重复发送（**回归 #632/#592**） | 目标存在且已消费，当前选中源会话 | `performStart(...)` | 返回 true，sender 零调用，选中态切到目标 | P0 | ✅ 已覆盖 | `consumedTargetNavigatesWithoutResending` |
+| 36 | NewConversationSuggestionCard 消费幂等 | 首条消息未发出时正常发送一次 | 目标存在且未消费 | `performStart(...)` | 返回 true，sender 恰好收到目标 ID 一次 | P1 | ✅ 已覆盖 | `unconsumedTargetSendsOnce` |
+| 37 | NewConversationSuggestionCard 消费幂等 | 卡片重建后再次点击不得产生第二条首条消息（**回归 #632**） | 首次点击成功后首条消息落库，选中态回到源会话 | 连续两次 `performStart(...)` | 两次均返回 true，sender 合计只调用一次 | P0 | ✅ 已覆盖 | `secondStartAfterConsumptionDoesNotDuplicateSend` |
+| 38 | NewConversationSuggestionCard 消费幂等 | 读取消费状态期间目标被删除时不得写选中态 | 消费查询的 await 期间把目标移出存在集合 | `performStart(...)` | 返回 false，不发送、不切换，选中态仍为源会话 | P0 | ✅ 已覆盖 | `deletedDuringConsumptionQueryDoesNotSelect` |
+| 39 | NewConversationSuggestionCard 消费幂等 | 目标已删除时消费判定不参与，不得绕过 #185 校验 | 目标标记为已消费但不在存在集合 | `performStart(...)` | 返回 false，不发送、不切换 | P0 | ✅ 已覆盖 | `deletedTargetStillFailsEvenIfConsumed` |
+| 40 | NewConversationSuggestionCard 消费幂等 | 重建后 idle 卡片必须按存储校正为已打开（**回归 #632/#592**） | 目标存在且已消费，phase 为 idle | `refreshedPhase(current:suggestion:conversations:)` | 返回 .opened | P0 | ✅ 已覆盖 | `refreshedPhaseShowsOpenedForConsumedTarget` |
+| 41 | NewConversationSuggestionCard 消费幂等 | 未消费目标保持 idle，按钮仍可点击 | 目标存在且未消费 | `refreshedPhase(...)` | 返回 .idle | P1 | ✅ 已覆盖 | `refreshedPhaseKeepsIdleForUnconsumedTarget` |
+| 42 | NewConversationSuggestionCard 消费幂等 | 发送失败后的重试态在未消费时保留 | phase 为 failed，目标未消费 | `refreshedPhase(...)` | 返回 .failed，保留重试入口 | P1 | ✅ 已覆盖 | `refreshedPhaseKeepsFailedWhenUnconsumed` |
+| 43 | NewConversationSuggestionCard 消费幂等 | 飞行中的 starting 与终态 opened 不得被异步读取回退 | 分别为 starting+已消费、opened+未消费 | `refreshedPhase(...)` | 各自保持 .starting / .opened | P0 | ✅ 已覆盖 | `refreshedPhaseDoesNotRegressInFlightOrTerminalPhase` |
+| 44 | NewConversationSuggestionCard 消费幂等 | 目标已删除时不改写 phase，交给点击路径校验（#185） | 目标已消费但存在集合为空 | `refreshedPhase(...)` | 返回原 .idle | P1 | ✅ 已覆盖 | `refreshedPhaseIgnoresDeletedTarget` |
+| 45 | NewConversationSuggestionCard 消费幂等 | 能力缺失时保持原 phase | conversations 为 nil | `refreshedPhase(...)` | 返回原 .idle | P1 | ✅ 已覆盖 | `refreshedPhaseWithoutCapabilityKeepsCurrent` |
+| 46 | NewChatCapabilityAdapter 消费判定 | 适配层按首条用户消息判定已消费，且跨重建保持（**回归 #592**） | 真实会话/消息存储，目标已插入一条 user 消息 | 两个先后创建的适配层分别查询 `starterAlreadySent(in:)` | 均返回 true，重启后仍识别为已消费 | P0 | ✅ 已覆盖 | `adapterDetectsConsumedStarterAcrossRebuild` |
+| 47 | NewChatCapabilityAdapter 消费判定 | 空对话判定为未消费 | 真实存储，目标无任何消息 | `starterAlreadySent(in:)` | 返回 false | P1 | ✅ 已覆盖 | `adapterReportsUnconsumedForEmptyConversation` |
+| 48 | NewChatCapabilityAdapter 消费判定 | 只有空白正文或助手消息时不算已消费 | 目标仅含空白 user 消息与 assistant 消息 | `starterAlreadySent(in:)` | 返回 false | P1 | ✅ 已覆盖 | `adapterIgnoresWhitespaceAndAssistantOnlyMessages` |
+| 49 | NewChatCapabilityAdapter 消费判定 | 未注入消息存储时退化为未消费，不阻断首次发送 | 适配层 messages 为 nil | `starterAlreadySent(in:)` | 返回 false | P1 | ✅ 已覆盖 | `adapterWithoutMessageManagerReportsUnconsumed` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#591**，`NewChatStartingAdapter.startIn`）：
@@ -103,23 +118,32 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 > - **M3** `performStart` 失败分支移除选中态恢复（复现残留切换）→ `sendFailureRestoresSelection` 转红（选中态停在目标而非源会话）；其余 6 条仍绿。
 > - 还原完整修复（存在性守卫 + do/catch 如实上报 + 失败按身份恢复选中态）→ 34 条全绿。
 
+> 变异验证（**#632/#592**，`NewConversationSuggestionCard.performStart/refreshedPhase` + `NewChatCapabilityAdapter.starterAlreadySent`）：
+> - **M1** 移除 `performStart` 的消费判定分支（复现原 bug：重建/重启后重复发送）→ `consumedTargetNavigatesWithoutResending`、`secondStartAfterConsumptionDoesNotDuplicateSend` 转红（sender 被再次调用）。
+> - **M2** `refreshedPhase` 忽略消费状态直接 `return current` → `refreshedPhaseShowsOpenedForConsumedTarget` 转红（重建后仍显示可点击的 idle）。
+> - **M3** 适配层 `starterAlreadySent` 永远返回 false → `adapterDetectsConsumedStarterAcrossRebuild` 转红（跨重启丢失消费信号）。
+> - **M4** 消费分支去掉 await 之后的 `conversationExists` 复核 → `deletedDuringConsumptionQueryDoesNotSelect` 转红（旧请求晚到仍写选中态）。
+> - **M5** `refreshedPhase` 去掉「只校正 idle/failed」前置条件 → `refreshedPhaseDoesNotRegressInFlightOrTerminalPhase` 转红（starting 被回退）。
+> - **M6** `refreshedPhase` 去掉目标存在校验 → `refreshedPhaseIgnoresDeletedTarget` 转红（已删除目标被标记为已打开）。
+> - 还原完整修复 → 49 条全绿（`swift test` exit=0）。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 20 / 20
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 6 / 6
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

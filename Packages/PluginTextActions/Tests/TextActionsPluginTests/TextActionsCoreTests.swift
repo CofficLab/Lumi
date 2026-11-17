@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 import Foundation
 import Testing
 @testable import TextActionsPlugin
@@ -379,6 +380,43 @@ struct TextActionDismissPolicyTests {
     func unknownWindowNumberNeverMatches() {
         #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 0))
         #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 42))
+    }
+
+    // MARK: 监听事件字段安全提取
+
+    @Test("鼠标事件提取不读 keyCode / 滚动增量")
+    func mouseEventExtractionIsSafe() {
+        // 回归：直接对鼠标事件读 keyCode 会抛
+        // NSInternalInconsistencyException，监听闭包吞掉当次点击，
+        // 表现为关闭按钮点不动、点击外部不消失。走到断言即证明未抛异常。
+        let down = NSEvent.mouseEvent(
+            with: .leftMouseDown, location: .zero, modifierFlags: [],
+            timestamp: 0, windowNumber: 0, context: nil,
+            eventNumber: 0, clickCount: 1, pressure: 1
+        )!
+        #expect(TextActionDismissPolicy.keyCode(of: down) == 0)
+        #expect(TextActionDismissPolicy.scrollingDeltaY(of: down) == 0)
+    }
+
+    @Test("键盘事件保留 keyCode")
+    func keyEventExtractionKeepsKeyCode() {
+        let key = NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [],
+            timestamp: 0, windowNumber: 0, context: nil,
+            characters: "", charactersIgnoringModifiers: "",
+            isARepeat: false, keyCode: 53
+        )!
+        #expect(TextActionDismissPolicy.keyCode(of: key) == 53)
+        #expect(TextActionDismissPolicy.scrollingDeltaY(of: key) == 0)
+    }
+
+    @Test("滚动事件保留增量且不读 keyCode")
+    func scrollEventExtractionKeepsDelta() {
+        let cg = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 1, wheel1: 12, wheel2: 0, wheel3: 0)!
+        let scroll = NSEvent(cgEvent: cg)!
+        #expect(TextActionDismissPolicy.keyCode(of: scroll) == 0)
+        #expect(TextActionDismissPolicy.scrollingDeltaY(of: scroll) == scroll.scrollingDeltaY)
+        #expect(TextActionDismissPolicy.scrollingDeltaY(of: scroll) != 0)
     }
 }
 

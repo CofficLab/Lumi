@@ -191,33 +191,33 @@ private actor GatedStoryStore: StoryWriting {
         }
     }
 
-    func createChapter(storyID: UUID, title: String) async -> Chapter? {
+    func createChapter(storyID: UUID, title: String) async throws -> Chapter? {
         await waitForGateIfNeeded()
-        return await base.createChapter(storyID: storyID, title: title)
+        return try await base.createChapter(storyID: storyID, title: title)
     }
 
-    func importMarkdownAsChapter(storyID: UUID, title: String, content: String) async -> Chapter? {
+    func importMarkdownAsChapter(storyID: UUID, title: String, content: String) async throws -> Chapter? {
         await waitForGateIfNeeded()
-        return await base.importMarkdownAsChapter(storyID: storyID, title: title, content: content)
+        return try await base.importMarkdownAsChapter(storyID: storyID, title: title, content: content)
     }
 
-    func createCharacter(storyID: UUID, name: String) async -> Character? {
+    func createCharacter(storyID: UUID, name: String) async throws -> Character? {
         await waitForGateIfNeeded()
-        return await base.createCharacter(storyID: storyID, name: name)
+        return try await base.createCharacter(storyID: storyID, name: name)
     }
 
     func loadAllStories() async -> [Story] { await base.loadAllStories() }
-    func createStory(title: String) async -> Story { await base.createStory(title: title) }
-    func updateStory(_ story: Story) async { await base.updateStory(story) }
+    func createStory(title: String) async throws -> Story { try await base.createStory(title: title) }
+    func updateStory(_ story: Story) async throws { try await base.updateStory(story) }
     @discardableResult
     func deleteStory(id: UUID) async -> Bool { await base.deleteStory(id: id) }
     func loadChapters(storyID: UUID) async -> [Chapter] { await base.loadChapters(storyID: storyID) }
-    func updateChapter(_ chapter: Chapter) async { await base.updateChapter(chapter) }
+    func updateChapter(_ chapter: Chapter) async throws { try await base.updateChapter(chapter) }
     @discardableResult
-    func deleteChapter(id: UUID, storyID: UUID) async -> Bool { await base.deleteChapter(id: id, storyID: storyID) }
+    func deleteChapter(id: UUID, storyID: UUID) async throws -> Bool { try await base.deleteChapter(id: id, storyID: storyID) }
     func loadCharacters(storyID: UUID) async -> [Character] { await base.loadCharacters(storyID: storyID) }
-    func updateCharacter(_ character: Character) async { await base.updateCharacter(character) }
-    func deleteCharacter(id: UUID, storyID: UUID) async { await base.deleteCharacter(id: id, storyID: storyID) }
+    func updateCharacter(_ character: Character) async throws { try await base.updateCharacter(character) }
+    func deleteCharacter(id: UUID, storyID: UUID) async throws { try await base.deleteCharacter(id: id, storyID: storyID) }
     func exportStoryAsMarkdown(storyID: UUID) async -> String? { await base.exportStoryAsMarkdown(storyID: storyID) }
 }
 
