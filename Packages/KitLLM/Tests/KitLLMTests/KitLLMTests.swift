@@ -783,6 +783,23 @@ struct KitLLMTests {
         #expect(chunk?.cacheTotalInputTokens == 1618)
     }
 
+    @Test("Anthropic 官方响应的总输入是三段之和，命中率分母不再误判（#512）")
+    func anthropicAdapterSumsOfficialCacheUsage() throws {
+        let adapter = AnthropicCompatibleProviderAdapter(
+            configuration: AnthropicCompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        // #512 报告的官方响应：2048 未命中 + 1800 命中 + 248 写入，
+        // 总输入 4096（修复前启发式返回 2048，命中率 50% 被算成 ≈87.9%）。
+        let event = """
+        event: message_start
+        data: {"type":"message_start","message":{"usage":{"input_tokens":2048,"cache_creation_input_tokens":248,"cache_read_input_tokens":1800}}}
+
+        """
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.cacheTotalInputTokens == 4096)
+    }
+
     @Test("VendorAPIKeyTools set/get/remove")
     func apiKeyTools() {
         VendorAPIKeyTools.keychainService = "com.kit.llm.test.\(UUID().uuidString)"

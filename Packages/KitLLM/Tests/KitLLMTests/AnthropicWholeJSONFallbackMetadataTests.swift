@@ -61,7 +61,7 @@ struct AnthropicWholeJSONFallbackMetadataTests {
 
         #expect(chunk.cacheWriteInputTokens == 4, "缓存写入 token 数丢失")
         #expect(chunk.cachedInputTokens == 5, "缓存命中 token 数丢失")
-        #expect(chunk.cacheTotalInputTokens == 12, "总输入 token 数丢失")
+        #expect(chunk.cacheTotalInputTokens == 21, "总输入 token 数丢失")
     }
 
     @Test("整段 JSON 回退带上响应 ID 与停止原因")

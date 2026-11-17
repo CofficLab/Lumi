@@ -501,14 +501,15 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
     /// 缓存命中率的分母 = 输入总 token 数。
     ///
-    /// 不同 Anthropic 兼容端点的 `input_tokens` 语义不一致，需按值推断：
-    /// - Anthropic 官方：`input_tokens` 已含 `cache_read` 与 `cache_creation`
-    ///   （故 `input_tokens >= cache_read + cache_creation`），直接用它即可；
-    /// - DeepSeek 等兼容层（实测 2026-08-06）：`input_tokens` 是「未命中」部分，
-    ///   总输入 = `input_tokens + cache_read + cache_creation`
-    ///   （例：总 580 = input 68 + read 512，此时 input < read）。
-    /// 用 `input_tokens` 与 `cache_read + cache_creation` 的大小关系做启发式区分。
-    /// 切勿无条件把三者相加——那会让官方语义下的分母被重复放大、缓存率系统性低估。
+    /// Anthropic 官方 `input_tokens` 只统计**未命中**缓存的部分，官方文档明确
+    /// 总输入 = `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`
+    /// 三段相加。DeepSeek 等兼容层同口径（实测 2026-08-06：总 580 =
+    /// input 68 + read 512）。因此一律无条件相加；按大小关系推断口径的
+    /// 启发式会把官方响应的缓存命中率放大近一倍（例：2048/4096 = 50%
+    /// 被算成 1800/2048 = 87.9%，#512）。
+    ///
+    /// OpenAI 形态（`prompt_tokens` 已含 `cached_tokens`）、Gemini 形态
+    /// （`prompt_token_count` 同理）不走本函数，直接用各自的总数字段。
     static func cacheTotalInputTokens(
         inputTokens: Int?,
         cachedInputTokens: Int?,
@@ -519,12 +520,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             guard !values.isEmpty else { return nil }
             return values.reduce(0, +)
         }
-        let read = cachedInputTokens ?? 0
-        let write = cacheWriteInputTokens ?? 0
-        if inputTokens < read + write {
-            return inputTokens + read + write
-        }
-        return inputTokens
+        return inputTokens + (cachedInputTokens ?? 0) + (cacheWriteInputTokens ?? 0)
     }
 
     /// 兼容阿里云不同协议入口及网关转发时使用的缓存字段路径。

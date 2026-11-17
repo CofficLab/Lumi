@@ -752,15 +752,28 @@ struct AnthropicAdapterMessageTests {
 @Suite("Anthropic 缓存 token 口径")
 struct AnthropicCacheTokenTests {
 
-    @Test("官方语义下总输入就是 input_tokens")
-    func officialSemanticsUseInputTokens() {
+    @Test("官方语义下总输入是三段之和（#512）")
+    func officialSemanticsSumsAllParts() {
         let total = AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
             inputTokens: 100,
             cachedInputTokens: 40,
             cacheWriteInputTokens: 10
         )
 
-        #expect(total == 100)
+        // 官方 input_tokens 只含未命中部分，总输入 = 100 + 40 + 10。
+        #expect(total == 150)
+    }
+
+    @Test("官方响应 2048/1800/248 的总输入是 4096，命中率 50%（#512）")
+    func officialResponseIssue512ExampleSumsAllParts() {
+        let total = AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
+            inputTokens: 2048,
+            cachedInputTokens: 1800,
+            cacheWriteInputTokens: 248
+        )
+
+        // 修复前按大小关系启发式返回 2048，命中率被算成 1800/2048 ≈ 87.9%。
+        #expect(total == 4096)
     }
 
     @Test("兼容层语义下总输入是三段之和")

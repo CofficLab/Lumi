@@ -521,13 +521,21 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let cacheWrite = anthropic
             ? AnthropicCompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
             : OpenAICompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
-        let cacheTotal = anthropic
-            ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
-                inputTokens: input,
-                cachedInputTokens: cachedInput,
-                cacheWriteInputTokens: cacheWrite
-            )
-            : input
+        let cacheTotal: Int?
+        if anthropic {
+            // `input_tokens`（官方与兼容层）都是「未命中」口径，需三段相加得
+            // 总输入（#512）；`prompt_tokens` 等别名来自 OpenAI/Gemini 形态
+            // 网关，已是含缓存的总量，直接沿用，否则分母被重复放大。
+            cacheTotal = usage["input_tokens"] != nil
+                ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
+                    inputTokens: input,
+                    cachedInputTokens: cachedInput,
+                    cacheWriteInputTokens: cacheWrite
+                )
+                : input
+        } else {
+            cacheTotal = input
+        }
         return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
 }

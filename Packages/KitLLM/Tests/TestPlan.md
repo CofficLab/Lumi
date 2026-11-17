@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 344 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 346 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 32 个，用例总数: 344
+测试文件: 32 个，用例总数: 346
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -124,7 +124,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 344 条用�
 | 48 | AnthropicAdapter | 带思考内容的 assistant 消息生成 thinking 块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transformsReasoningContent` |
 | 49 | AnthropicAdapter | 带图片的消息转成 base64 图片块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transformsImages` |
 | 50 | AnthropicAdapter | 工具定义被转成 Anthropic 形态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `formatsToolSchema` |
-| 51 | AnthropicAdapter | 官方语义下总输入就是 input_tokens | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialSemanticsUseInputTokens` |
+| 51 | AnthropicAdapter | 官方语义下总输入是三段之和（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialSemanticsSumsAllParts` |
 | 52 | AnthropicAdapter | 兼容层语义下总输入是三段之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compatibleSemanticsSumAllParts` |
 | 53 | AnthropicAdapter | 缺少 input_tokens 时退回到缓存字段之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToCacheFields` |
 | 54 | AnthropicAdapter | 完全没有任何计数时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilWithoutAnyCount` |
@@ -418,27 +418,29 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 344 条用�
 | 342 | VisionMessageContentBuilderCache | 重复构建同一批图片的耗时显著低于每次重新编码 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedBuildIsCheaperThanFirstBuild` |
 | 343 | VisionMessageContentBuilderCache | 统计编码长度不得使用 O(n) 的 String.count | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `encodedLengthUsesConstantTimeCount` |
 | 344 | AnthropicAdapter | 流式请求体在最后一条消息文本块上放置 prompt cache 断点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `addsPromptCacheBoundaryInStreamingBody` |
+| 345 | AnthropicAdapter | 官方响应 2048/1800/248 的总输入是 4096，命中率 50%（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialResponseIssue512ExampleSumsAllParts` |
+| 346 | 综合 | Anthropic 官方响应的总输入是三段之和，命中率分母不再误判（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicAdapterSumsOfficialCacheUsage` |
 
-> 说明：全部 **343 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **346 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 58 / 58
-- P1: 已覆盖 265 / 265
+- P1: 已覆盖 267 / 267
 - P2: 已覆盖 21 / 21
-- **合计: 344 / 344**（仅表示清单场景，非源码覆盖率）
+- **合计: 346 / 346**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
-- **P1**: 其余功能性用例（264 条）
+- **P1**: 其余功能性用例（266 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（21 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 343 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 346 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
