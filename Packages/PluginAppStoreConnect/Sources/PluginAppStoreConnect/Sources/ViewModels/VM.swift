@@ -73,6 +73,9 @@ final class VM: ObservableObject, SuperLog {
     @Published var screenshotsBySetID: [String: [AppScreenshot]] = [:]
     @Published var selectedScreenshotDisplayType = "APP_IPHONE_67"
     @Published var metadataIsDirty = false
+    /// 元数据编辑代次：每次标记脏或切换本地化递增。保存响应据此判断
+    /// await 期间是否发生过新编辑，避免迟到的响应覆盖新内容（#436）。
+    var metadataEditGeneration = 0
     @Published var builds: [ConnectBuild] = []
     @Published var assignedBuildID: String?
     @Published var selectedBuildID: String?
