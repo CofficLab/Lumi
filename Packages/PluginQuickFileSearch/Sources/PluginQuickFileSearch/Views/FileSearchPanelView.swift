@@ -30,6 +30,22 @@ public struct FileSearchPanelView: View {
             // 搜索输入框区域
             searchHeader
 
+            // 打开失败提示（#187）：面板保持打开，用户可修正后重试。
+            if let failure = searchService.openFailureMessage {
+                Divider()
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.yellow)
+                    Text(failure)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+
             // 只有在有搜索内容时才显示分隔线和结果
             if !searchService.searchQuery.isEmpty {
                 Divider()
@@ -54,6 +70,10 @@ public struct FileSearchPanelView: View {
         }
         .onChange(of: searchService.searchResults.count) { _ in
             selectedIndex = 0
+        }
+        .onChange(of: searchService.searchQuery) { _ in
+            // 新查询开始后上一轮的打开失败提示不再适用（#187）。
+            searchService.openFailureMessage = nil
         }
         // macOS 13 兼容实现：`onKeyPress` 是 macOS 14 独占 API。上下箭头用
         // SwiftUI 的 `onMoveCommand`（macOS 11+）区分方向，Esc 用
@@ -224,8 +244,13 @@ public struct FileSearchPanelView: View {
         guard index >= 0 && index < searchService.searchResults.count else { return }
 
         let result = searchService.searchResults[index]
-        searchService.selectFile(result, windowId: windowIdProvider())
-        hotkeyManager.hideOverlay()
+        Task { @MainActor in
+            // 只有打开被接受才收起面板（#187）：失败时保留查询与结果供重试，
+            // 服务层设置 openFailureMessage，失败提示条会显示在输入框下方。
+            if await searchService.selectFile(result, windowId: windowIdProvider()) {
+                hotkeyManager.hideOverlay()
+            }
+        }
     }
 
 }

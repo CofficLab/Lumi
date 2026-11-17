@@ -45,6 +45,10 @@ public final class FileSearchService: ObservableObject, SuperLog {
     /// 是否正在加载
     @Published private(set) var isLoading: Bool = false
 
+    /// 上一次打开失败的原因（#187）。internal 可写：面板在查询变化时清除，
+    /// 测试经 `@testable` 断言。仅在打开失败时非空。
+    @Published var openFailureMessage: String?
+
     /// 当前项目路径
     @Published private(set) var currentProjectPath: String = ""
 
@@ -113,16 +117,28 @@ public final class FileSearchService: ObservableObject, SuperLog {
         rebuildIndex(for: path)
     }
 
-    /// 选择文件并更新项目状态
-    public func selectFile(_ result: FileResult, windowId: UUID? = nil) {
+    /// 选择文件并请求内核打开。
+    ///
+    /// 返回 `true` 表示打开已被接受，此时清空搜索查询（面板随之收起）。
+    /// 返回 `false` 表示打开失败（桥接未注入、provider 缺失或 `open` 抛错）：
+    /// 保留查询与结果以便重试，并设置 `openFailureMessage` 供面板显式报告（#187）。
+    @discardableResult
+    public func selectFile(_ result: FileResult, windowId: UUID? = nil) async -> Bool {
         if Self.verbose {
             QuickFileSearchLog.logger.info("\(Self.t)📄 选择文件: \(result.relativePath)")
         }
 
-        QuickFileSearchBridge.selectFileHandler?(result.path, windowId)
+        guard let handler = QuickFileSearchBridge.selectFileHandler,
+              await handler(result.path, windowId) else {
+            openFailureMessage = pluginLocalization.string("无法打开所选文件")
+            return false
+        }
 
-        // 清空搜索查询
+        // 打开成功才清空搜索查询（#187）：失败时保留查询，面板停留在
+        // 可重试状态。
         searchQuery = ""
+        openFailureMessage = nil
+        return true
     }
 
     public func quickOpenResults(
