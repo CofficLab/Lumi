@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 84 条用例。
+PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试覆盖 91 条用例。
 
 平台: iOS 17+
-测试文件: 11 个，用例总数: 84
+测试文件: 12 个，用例总数: 91
 
 核心组件（源码目录）:
 - `Observers/`
@@ -33,6 +33,7 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 - **HeaderTitleObserver**（7 条）：由 `viewModelSkipsDuplicateTitle`、`viewModelStartsEmpty`、`syncsInitialTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（4 条）：由 `normalizeTitle`、`placeholderTitle`、`updateToolUpdatesTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleServiceBackfill**（8 条）：由 `backfillsUntitledConversation`、`skipsTitledConversation`、`skipsConversationWithoutUserMessage`、`skippedWindowDoesNotBlockValidConversation`、`backfillStopsAtWriteCap`、`backfillDoesNotOverwriteTitleSetDuringMessageRead`、`backfillStillWritesWhenNoTitleSetDuringRead` 等用例锁定；回填取全库无标题 ID 后按「补满 200 条或耗尽列表」推进，永久跳过的条目不得阻塞窗口之外的有效对话（**回归 #799**）。读取首条用户消息的 await 窗口内用户可能已改标题，写前必须再复核一次 `shouldApplyGeneratedTitle`，旧回填不得覆盖新写入的自定义标题（**回归 #466**）。改动该模块时优先跑对应测试文件。
+- **AttachmentOnlyTitle**（7 条）：由 `generatesTitleFromAttachmentFileNames`、`backfillsAttachmentOnlyConversation` 等用例锁定；正文为空的合法首条消息标题素材退回附件文件名，实时生成与启动回填都不得把纯附件消息当成「没有内容」永久跳过（**回归 #652**）；全附件匿名（如无文件名的粘贴图片）时仍按空白消息跳过。改动该模块时优先跑对应测试文件。
 - **PlaceholderTitleCollapsing**（4 条）：由 `shortTextMatchesReference`、`longTextMatchesReference`、`extremelyWhitespaceHeavyMatchesReference`、`resultLengthIsBounded` 锁定；占位标题先取有界前缀再折叠空白，语义必须与「全量折叠再截断」完全一致且结果长度有界（**#1287**）。改动该模块时优先跑对应测试文件。
 - **TitleServiceFallback**（4 条）：由 `fallsBackWhenLLMThrows`、`fallsBackWhenLLMReturnsEmptyTitle`、`fallbackDoesNotOverwriteCustomTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TitleService**（11 条）：由 `generatesTitleForFirstUserMessage`、`composesPromptWithFence`、`ignoresNonFirstUserMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -128,8 +129,15 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 | 82 | InjectedReminderWhitespace | strippingInjectedReminders：跳过前导与块间空白，逐块剥离到真实内容（**回归 #783**） | 前导空白 + 两个以换行分隔的提醒块 + 尾部正文 | 直接调用剥离助手 | 结果不含 system-reminder，保留尾部正文 | P1 | ✅ 已覆盖 | `strippingHelperSkipsLeadingAndInterBlockWhitespace` |
 | 83 | InjectedReminderWhitespace | 边界：前导空白后是真实正文时，中间的同名标签不得误删（**回归 #783** 护栏） | 前导空白后先有正文，正文中间含 system-reminder 标签 | 调用剥离助手与占位标题 | 助手原样返回，占位标题以正文开头并保留中间标签 | P1 | ✅ 已覆盖 | `keepsInnerReminderAfterLeadingWhitespaceAndRealText` |
 | 84 | InjectedReminderWhitespace | 无提醒块时前导空白不被误删（交由后续折叠处理） | 仅前导空白 + 普通请求，无提醒块 | 调用剥离助手与占位标题 | 助手原样返回，占位标题折叠空白后等于请求 | P2 | ✅ 已覆盖 | `leavesLeadingWhitespaceWhenNoReminder` |
+| 85 | AttachmentOnlyTitle | titleSource：正文优先，空正文退回附件文件名（**回归 #652**） | 空正文 + fileAttachments metadata 的用户消息 | 调用 `titleSource(for:)` | 正文非空时返回正文；空正文返回文件名列表（如 `a.pdf, b.png`） | P1 | ✅ 已覆盖 | `titleSourcePrefersContentThenAttachmentNames` |
+| 86 | AttachmentOnlyTitle | titleSource：全部附件匿名时素材为空 | 空正文 + 无文件名的粘贴图片 metadata | 调用 `titleSource(for:)` | 返回空串，由调用方按空白消息跳过 | P2 | ✅ 已覆盖 | `titleSourceIsEmptyForAnonymousAttachments` |
+| 87 | AttachmentOnlyTitle | 纯附件首条消息触发标题生成，LLM 收到文件名（**回归 #652**） | 无标题对话，空正文 + 文件附件的首条用户消息 | 插入消息触发实时生成 | LLM 请求包含文件名，生成的标题落库，不再永久停在 Untitled | P0 | ✅ 已覆盖 | `generatesTitleFromAttachmentFileNames` |
+| 88 | AttachmentOnlyTitle | LLM 失败时回退到文件名占位标题（**回归 #652**） | 无标题对话，空正文 + 文件附件的首条用户消息，LLM 抛错 | 插入消息触发实时生成 | 仍发起一次 LLM 请求，占位标题等于文件名 | P1 | ✅ 已覆盖 | `fallsBackToFileNamePlaceholderWhenLLMFails` |
+| 89 | AttachmentOnlyTitle | 全部附件匿名时仍按空白消息跳过（**回归 #652** 边界） | 无标题对话，空正文 + 无文件名粘贴图片 | 插入消息 | 无 LLM 请求、无标题写入，保持原空白消息语义 | P1 | ✅ 已覆盖 | `anonymousAttachmentsAreSkipped` |
+| 90 | AttachmentOnlyTitle | 首条附件消息定题后，后续消息不重新生成 | 无标题对话，首条纯附件消息已生成标题 | 依次插入第二条纯附件消息与一条文本消息 | LLM 只调用一次、只写库一次，标题保持首条消息的结果 | P1 | ✅ 已覆盖 | `laterMessagesDoNotRegenerateAfterAttachmentFirst` |
+| 91 | AttachmentOnlyTitle | 回填为纯附件对话补写文件名占位标题（**回归 #652**） | 无标题对话，仅一条空正文 + 文件附件的用户消息 | 执行启动回填 | backfilled == 1，占位标题等于文件名，不消耗 LLM | P0 | ✅ 已覆盖 | `backfillsAttachmentOnlyConversation` |
 
-> 说明：全部 **84 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **91 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（#799）：把 `backfillUntitledConversations` 的查询改回 `untitledConversationIDs(limit: Self.backfillLimit)`（只取前 200 条窗口），`skippedWindowDoesNotBlockValidConversation` 立即变红（backfilled == 0，窗口外的有效对话永远轮不到）；恢复 `limit: Int.max` 全量取 ID 后重新变绿。`backfillStopsAtWriteCap` 锁定「补满 200 条即停」的有界语义。
@@ -140,23 +148,25 @@ PluginConversationTitle 的实现包，包含 6 个主要类型；当前测试�
 
 > 变异验证（#783）：把 `strippingInjectedReminders` 每轮的 `let candidate = result.drop(while: { $0.isWhitespace })` 改回 `let candidate = result[...]`（还原「提醒块必须紧贴 startIndex 才剥离」的旧缺陷）→ `stripsReminderAfterLeadingNewline`、`stripsReminderAfterLeadingSpaces`、`stripsConsecutiveRemindersSeparatedByBlankLine`、`strippingHelperSkipsLeadingAndInterBlockWhitespace` 全部转红（前导/块间空白让 XML 噪声漏进标题，6 处断言失败），边界护栏 `keepsInnerReminderAfterLeadingWhitespaceAndRealText`、`leavesLeadingWhitespaceWhenNoReminder` 仍绿；恢复跳过空白后 84 条全绿。
 
+> 变异验证（#652）：把 `titleSource(for:)` 的附件文件名回退删掉（空正文一律返回空串，还原「纯附件消息被当成没有内容」的旧缺陷）→ `titleSourcePrefersContentThenAttachmentNames`、`generatesTitleFromAttachmentFileNames`、`fallsBackToFileNamePlaceholderWhenLLMFails`、`backfillsAttachmentOnlyConversation` 转红（LLM 零调用、标题与占位均不落库），`titleSourceIsEmptyForAnonymousAttachments`、`anonymousAttachmentsAreSkipped` 等边界护栏仍绿；恢复附件回退后 91 条全绿。`laterMessagesDoNotRegenerateAfterAttachmentFirst` 锁定「每条会话只在首条可产标题消息上尝试一次」的语义不回归。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 39 / 39
-- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 29 / 29
+- P2: 已覆盖 40 / 40
+- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（39 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（29 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（40 条）
 
 ## 跨平台说明
 
 - Package 声明: iOS 17+
-- 84 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 91 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
