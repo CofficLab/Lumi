@@ -61,7 +61,7 @@ final class ListV3ViewModel: ObservableObject {
     ///
     /// 曾是 `static` 全局开关，测试并行执行时会互相覆盖，导致同一 suite
     /// 内单跑通过、并行失败。改为实例属性 + 构造注入后不再有共享状态。
-    /// 生产代码从不设置它，默认关闭。
+    /// 生产构造显式开启（#313）；测试按需注入。
     private let streamingDisplayEnabled: Bool
 
     init(

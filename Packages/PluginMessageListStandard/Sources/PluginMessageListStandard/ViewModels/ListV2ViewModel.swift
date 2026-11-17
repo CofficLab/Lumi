@@ -81,7 +81,11 @@ private struct CachedFingerprint {
 @MainActor
 final class ListV2ViewModel: ObservableObject {
     /// 流式逐字显示开关。
-    static var streamingDisplayEnabled = false
+    ///
+    /// 默认开启：流式行机制（独立 published 行 + 帧门禁）已完整落地并在
+    /// 套件开启态下验证，生产理应呈现逐字流式（#313）。Brief 模式仍恒隐藏；
+    /// 测试可用此开关临时改回关闭（记得恢复，静态属性并行会互相覆盖）。
+    static var streamingDisplayEnabled = true
 
     // MARK: - Published State (供 View 展示)
 

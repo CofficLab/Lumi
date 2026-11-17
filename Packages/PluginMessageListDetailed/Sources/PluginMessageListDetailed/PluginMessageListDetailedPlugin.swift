@@ -86,7 +86,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
             toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
             chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
-        let viewModel = ListV3ViewModel(services: services)
+        let viewModel = ListV3ViewModel(services: services, streamingDisplayEnabled: true)
         self.viewModel = viewModel
 
         let verbosityObservation = VerbosityObservationBox(
