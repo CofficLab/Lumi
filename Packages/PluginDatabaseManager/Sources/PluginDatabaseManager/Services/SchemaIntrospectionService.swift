@@ -279,9 +279,45 @@ public struct MySQLIntrospector: DatabaseIntrospector {
                 comment: SchemaRowDecoder.string(row, at: 5)
             )
         }
+        // 索引：SHOW INDEX 按 Key_name 分组，列序按 Seq_in_index 还原。
+        // 不读取会让结构页看不到任何已有索引，本地重名校验也随之失效（#584）。
+        var indexes: [TableIndex] = []
+        let indexResult = try? await connection.query("SHOW INDEX FROM \(qualified);", params: nil)
+        if let indexResult {
+            // SHOW INDEX 行：1 Non_unique、2 Key_name、3 Seq_in_index、4 Column_name、10 Index_type。
+            struct Parts {
+                var columns: [(seq: Int, name: String)] = []
+                var isUnique = false
+                var indexType: String?
+            }
+            var order: [String] = []
+            var partsByKey: [String: Parts] = [:]
+            for row in indexResult.rows {
+                guard let keyName = SchemaRowDecoder.string(row, at: 2) else { continue }
+                var parts = partsByKey[keyName] ?? Parts()
+                if partsByKey[keyName] == nil {
+                    order.append(keyName)
+                    parts.isUnique = SchemaRowDecoder.int(row, at: 1) == 0
+                    parts.indexType = SchemaRowDecoder.string(row, at: 10)
+                }
+                if let columnName = SchemaRowDecoder.string(row, at: 4), !columnName.isEmpty {
+                    parts.columns.append((SchemaRowDecoder.int(row, at: 3) ?? 1, columnName))
+                }
+                partsByKey[keyName] = parts
+            }
+            indexes = order.map { keyName in
+                let parts = partsByKey[keyName] ?? Parts()
+                return TableIndex(
+                    name: keyName,
+                    columns: parts.columns.sorted { $0.seq < $1.seq }.map { $0.name },
+                    isUnique: parts.isUnique,
+                    indexType: parts.indexType
+                )
+            }
+        }
         let ddl = try? await connection.query("SHOW CREATE TABLE \(qualified);", params: nil)
         let ddlString = ddl?.rows.first.flatMap { SchemaRowDecoder.string($0, at: 1) }
-        return TableSchema(table: object, columns: columns, ddl: ddlString)
+        return TableSchema(table: object, columns: columns, indexes: indexes, ddl: ddlString)
     }
 
     public func loadDDL(for object: DatabaseObject, in connection: any DatabaseConnection) async throws -> String? {
