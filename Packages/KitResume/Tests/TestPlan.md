@@ -5,7 +5,7 @@
 KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 65
+测试文件: 5 个，用例总数: 66
 
 ## 公开 API
 
@@ -99,17 +99,18 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用
 | 63 | ResumeHTMLLinter | javascript: 伪协议 URL 被拒绝（**#494**） | — | lint 含 `href="javascript:…"` 的链接 | 报 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `rejectsJavaScriptURL` |
 | 64 | ResumeHTMLLinter | 正文里偶然出现的 on…= 文本不被误判（**#494 护栏**） | — | lint 纯文本含 “on light=” 的文档 | 无 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `doesNotFlagPlainText` |
 | 65 | ResumeExporter | pngData 在后台线程栅格化并编码出目标尺寸 PNG | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pngDataRunsOffMain` |
+| 66 | ResumeDocumentStore | 基于已解码文档读简历与按 slug 读简历结果一致（**回归 #1177**） | 项目含一份简历 | 分别用 `readResume(document:)` 与 `readResume(slug:)` 读取并比较 | 两个结果完全相等；未知文档抛 `notFound` | P1 | ✅ 已覆盖 | `readResumeWithPreloadedDocumentMatchesSlugBasedRead` |
 
-> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#494）：停用 `containsInlineScript` 规则后，`rejectsInlineEventHandler` / `rejectsEventHandlerOnInnerTag` / `rejectsJavaScriptURL` 转红，`doesNotFlagPlainText` 与内置模板校验保持绿；恢复后全绿。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 43 / 43
+- P1: 已覆盖 44 / 44
 - P2: 已覆盖 11 / 11
-- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
+- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

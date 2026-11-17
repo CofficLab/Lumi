@@ -580,6 +580,34 @@ struct ResumeDocumentStoreTests {
         }
     }
 
+    @Test("基于已解码文档读简历与按 slug 读简历结果一致")
+    func readResumeWithPreloadedDocumentMatchesSlugBasedRead() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let store = ResumeDocumentStore()
+        _ = try store.createResume(
+            storagePath: root.path,
+            slug: "ada",
+            title: "Ada Lovelace",
+            paper: .a4,
+            template: .classic
+        )
+
+        // 已解码的文档直接读 HTML，与按 slug 重复读 manifest 的结果完全一致（#1177）。
+        let preloaded = try store.listResumes(storagePath: root.path).first!
+        let fromDocument = try store.readResume(document: preloaded, storagePath: root.path)
+        let fromDisk = try store.readResume(storagePath: root.path, slug: "ada")
+        #expect(fromDocument == fromDisk)
+
+        #expect(throws: ResumeStoreError.self) {
+            try store.readResume(
+                document: ResumeDocument(id: "ghost", title: "Ghost", paper: .a4, template: .classic),
+                storagePath: root.path
+            )
+        }
+    }
+
     @Test("空标题回退到 slug")
     func fallsBackToSlugForEmptyTitle() throws {
         let root = try makeTemporaryDirectory()

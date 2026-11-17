@@ -139,6 +139,12 @@ public struct ResumeDocumentStore: @unchecked Sendable {
         let manifestURL = directory.appendingPathComponent(Self.manifestFileName)
         guard fileManager.fileExists(atPath: manifestURL.path) else { throw ResumeStoreError.notFound(directory.path) }
         let document = try readManifest(at: manifestURL)
+        return try readResume(document: document, storagePath: storagePath)
+    }
+
+    /// 基于调用方已解码的文档读取简历，避免重复读盘解码 manifest。
+    public func readResume(document: ResumeDocument, storagePath: String) throws -> ResumeResolvedDocument {
+        let directory = try resumeDirectoryURL(storagePath: storagePath, slug: document.id)
         let htmlURL = directory.appendingPathComponent(Self.htmlFileName)
         guard fileManager.fileExists(atPath: htmlURL.path) else { throw ResumeStoreError.notFound(directory.path) }
         return ResumeResolvedDocument(
