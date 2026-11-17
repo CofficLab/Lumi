@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import Combine
 
 @MainActor
 public class InputSettingsViewModel: ObservableObject {
@@ -11,9 +12,31 @@ public class InputSettingsViewModel: ObservableObject {
     @Published var selectedSourceID: String = ""
     
     let service = InputService.shared
-    
-    public init() {
+
+    private var workspaceCancellables = Set<AnyCancellable>()
+
+    private let runningAppsProvider: () -> [NSRunningApplication]
+
+    public init(
+        runningAppsProvider: @escaping () -> [NSRunningApplication] = {
+            NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+        }
+    ) {
+        self.runningAppsProvider = runningAppsProvider
         refreshRunningApps()
+        // 页面常驻时应用启动/退出也要反映到选择器：onAppear 只在出现时快照一次，
+        // 之后列表会一直停留在旧状态（#785）。订阅随实例释放自动取消。
+        let center = NSWorkspace.shared.notificationCenter
+        center.publisher(for: NSWorkspace.didLaunchApplicationNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.refreshRunningApps() }
+            }
+            .store(in: &workspaceCancellables)
+        center.publisher(for: NSWorkspace.didTerminateApplicationNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.refreshRunningApps() }
+            }
+            .store(in: &workspaceCancellables)
     }
 
     func apply(config: InputConfig) {
@@ -26,8 +49,7 @@ public class InputSettingsViewModel: ObservableObject {
     }
     
     public func refreshRunningApps() {
-        runningApps = NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular }
+        runningApps = runningAppsProvider()
     }
 
     /// 重新枚举系统输入源并同步到界面。

@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import AppKit
 import SwiftUI
 import KernelCore
 import KitTestIsolation
@@ -293,6 +294,48 @@ import ProviderStorage
     viewModel.removeRule(at: IndexSet([2]))
 
     #expect(viewModel.rules.count == 1)
+}
+
+@MainActor
+@Test func launchAndTerminateNotificationsRefreshRunningApps() async throws {
+    // InputSettingsViewModel 会触碰 InputService.shared，进而读取插件数据目录。
+    // 测试进程里守卫拒绝回退到本机真实目录，因此必须先注入临时目录。
+    InputPluginRuntimeBridge.pluginDirectory = InputPluginTestDoubles.makeTemporaryDirectory("running-apps-notify")
+    defer { InputPluginRuntimeBridge.pluginDirectory = nil }
+
+    let center = NSWorkspace.shared.notificationCenter
+    var providerCalls = 0
+    // 注入可枚举的来源只为计数：通知到达时 refreshRunningApps 必须重新拉取，
+    // 否则页面常驻期间启动/退出的应用不会出现在选择器里（#785）。
+    let viewModel = InputSettingsViewModel(runningAppsProvider: {
+        providerCalls += 1
+        return []
+    })
+    let callsAfterInit = providerCalls
+
+    center.post(name: NSWorkspace.didLaunchApplicationNotification, object: nil)
+    let launched = await waitUntilRunningAppsRefreshed { providerCalls > callsAfterInit }
+    #expect(launched)
+
+    let callsAfterLaunch = providerCalls
+    center.post(name: NSWorkspace.didTerminateApplicationNotification, object: nil)
+    let terminated = await waitUntilRunningAppsRefreshed { providerCalls > callsAfterLaunch }
+    #expect(terminated)
+}
+
+/// 观察者块经主队列异步投递：轮询等待其落地。
+@MainActor
+private func waitUntilRunningAppsRefreshed(
+    timeout: Duration = .seconds(1),
+    condition: @MainActor () -> Bool
+) async -> Bool {
+    let clock = ContinuousClock()
+    let deadline = clock.now.advanced(by: timeout)
+    while clock.now < deadline {
+        if condition() { return true }
+        try? await Task.sleep(for: .milliseconds(10))
+    }
+    return condition()
 }
 
 // MARK: - 运行时目录
