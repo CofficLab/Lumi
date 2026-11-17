@@ -4,6 +4,7 @@ import KitAgentTool
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderDeveloperMode
+import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
@@ -25,8 +26,9 @@ protocol MessageRendererCapability: AnyObject {
 
     // MARK: 重发消息
 
-    /// 以相同内容重发消息（等价于内核发送）。
-    func resendMessage(content: String, conversationID: UUID) async
+    /// 原样重发该消息（等价于内核发送）：正文之外，落库时随消息保存的
+    /// 图片与文件附件也一并送出（#372）。旧实现只发正文，附件被悄悄丢弃。
+    func resendMessage(_ message: Message) async
 
     // MARK: 重试失败回合
 
@@ -102,8 +104,18 @@ final class MessageRendererCapabilityAdapter: MessageRendererCapability {
         )
     }
 
-    func resendMessage(content: String, conversationID: UUID) async {
-        try? await messageSending?.sendMessage(content, conversationID: conversationID)
+    func resendMessage(_ message: Message) async {
+        // 附件在落库时已随消息序列化进 metadata（UserAttachmentMetadata），
+        // 重发时从 metadata 还原原始附件并走显式附件重载，模型收到的新消息
+        // 与首次发送等价（#372）。纯文字消息解出空数组，行为不变。
+        let imageAttachments = UserAttachmentMetadata.decodeImageAttachments(from: message.metadata)
+        let fileAttachments = UserAttachmentMetadata.decodeFileAttachments(from: message.metadata)
+        try? await messageSending?.sendMessage(
+            message.content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: message.conversationID
+        )
     }
 
     func canRetryTurn(turnID: UUID, conversationID: UUID) -> Bool {

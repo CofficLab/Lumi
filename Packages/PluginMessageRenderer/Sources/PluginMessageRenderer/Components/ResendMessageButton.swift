@@ -23,11 +23,8 @@ struct ResendMessageButton: View {
     private func resend() {
         guard let capability else { return }
         Task {
-            // 新版 MessageSendingProviding 无 id 级重发；以相同内容再次发送，行为等价。
-            await capability.resendMessage(
-                content: message.content,
-                conversationID: message.conversationID
-            )
+            // 原样重发：附件由 capability 从消息 metadata 还原后随正文一起送出（#372）。
+            await capability.resendMessage(message)
         }
     }
 }

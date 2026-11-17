@@ -28,7 +28,7 @@ private final class StubRendererCapability: MessageRendererCapability {
         nil
     }
 
-    func resendMessage(content: String, conversationID: UUID) async {}
+    func resendMessage(_ message: Message) async {}
 
     func canRetryTurn(turnID: UUID, conversationID: UUID) -> Bool {
         retryableTurnIDs.contains(turnID)

@@ -175,10 +175,7 @@ enum ChatGPTUserMessageActions {
         message: Message,
         capability: any MessageRendererCapability
     ) async {
-        await capability.resendMessage(
-            content: message.content,
-            conversationID: message.conversationID
-        )
+        await capability.resendMessage(message)
     }
 }
 

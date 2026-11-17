@@ -12,7 +12,7 @@ import Testing
 
 @MainActor
 private final class ChatGPTStubRendererCapability: MessageRendererCapability {
-    private(set) var resendRequests: [(content: String, conversationID: UUID)] = []
+    private(set) var resendRequests: [Message] = []
 
     func toolCallResult(
         for toolCallID: String,
@@ -22,8 +22,8 @@ private final class ChatGPTStubRendererCapability: MessageRendererCapability {
         nil
     }
 
-    func resendMessage(content: String, conversationID: UUID) async {
-        resendRequests.append((content, conversationID))
+    func resendMessage(_ message: Message) async {
+        resendRequests.append(message)
     }
 
     func canRetryTurn(turnID: UUID, conversationID: UUID) -> Bool { false }
@@ -132,8 +132,8 @@ struct ChatGPTUserMessageViewTests {
         await ChatGPTUserMessageActions.resend(message: message, capability: capability)
 
         #expect(capability.resendRequests.count == 1)
+        #expect(capability.resendRequests.first?.id == message.id)
         #expect(capability.resendRequests.first?.content == message.content)
-        #expect(capability.resendRequests.first?.conversationID == conversationID)
     }
 
     @Test("气泡与操作按钮使用 V5 几何")

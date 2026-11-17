@@ -32,10 +32,7 @@ struct MessageContextMenu: View {
         if showsResend {
             Button {
                 Task {
-                    await capability?.resendMessage(
-                        content: message.content,
-                        conversationID: message.conversationID
-                    )
+                    await capability?.resendMessage(message)
                 }
             } label: {
                 Label(pluginLocalization.string("重新发送"), systemImage: "arrow.clockwise")
