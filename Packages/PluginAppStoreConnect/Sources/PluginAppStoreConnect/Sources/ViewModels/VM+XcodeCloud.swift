@@ -25,13 +25,10 @@ extension VM {
     func loadCiWorkflows() async {
         guard let product = selectedCiProduct else { return }
         await runBusy {
-            ciWorkflows = try await client.listCiWorkflows(productID: product.id)
-            selectedCiWorkflow = ciWorkflows.first
+            let workflows = try await client.listCiWorkflows(productID: product.id)
+            guard applyCiWorkflowsResponse(workflows, forProductID: product.id) else { return }
             if selectedCiWorkflow != nil {
                 await loadSelectedCiWorkflowDetail()
-            } else {
-                selectedCiWorkflowDetail = nil
-                ciBuildRuns = []
             }
         }
     }
@@ -47,8 +44,10 @@ extension VM {
     func loadSelectedCiWorkflowDetail() async {
         guard let workflow = selectedCiWorkflow else { return }
         await runBusy {
-            selectedCiWorkflowDetail = try await client.readCiWorkflow(id: workflow.id)
-            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            let detail = try await client.readCiWorkflow(id: workflow.id)
+            guard applyCiWorkflowDetailResponse(detail, forWorkflowID: workflow.id) else { return }
+            let buildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            _ = applyCiBuildRunsResponse(buildRuns, forWorkflowID: workflow.id)
             updateCiWorkflowExportJSON()
         }
     }
@@ -56,7 +55,8 @@ extension VM {
     func loadCiBuildRuns() async {
         guard let workflow = selectedCiWorkflow else { return }
         await runBusy {
-            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            let buildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            _ = applyCiBuildRunsResponse(buildRuns, forWorkflowID: workflow.id)
         }
     }
 
@@ -67,8 +67,13 @@ extension VM {
                 workflowID: workflow.id,
                 branch: ciSourceBranchOrTag
             )
+            guard selectedCiWorkflow?.id == workflow.id else {
+                Self.logger.info("\(self.t)discarded build run started for stale workflow: \(workflow.id)")
+                return
+            }
             ciBuildRuns.insert(buildRun, at: 0)
-            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            let buildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            _ = applyCiBuildRunsResponse(buildRuns, forWorkflowID: workflow.id)
         }
     }
 
@@ -149,6 +154,44 @@ extension VM {
         if let index = ciWorkflows.firstIndex(where: { $0.id == workflow.id }) {
             ciWorkflows[index] = workflow
         }
+    }
+
+    /// 应用工作流列表响应：切换过 App 或产品后，迟到的响应会被丢弃（#434）。
+    @discardableResult
+    func applyCiWorkflowsResponse(_ workflows: [CiWorkflow], forProductID productID: String) -> Bool {
+        guard selectedCiProduct?.id == productID else {
+            Self.logger.info("\(self.t)discarded stale workflows for product: \(productID)")
+            return false
+        }
+        ciWorkflows = workflows
+        selectedCiWorkflow = ciWorkflows.first
+        if selectedCiWorkflow == nil {
+            selectedCiWorkflowDetail = nil
+            ciBuildRuns = []
+        }
+        return true
+    }
+
+    /// 应用工作流详情响应：切换过工作流后，迟到的响应会被丢弃（#434）。
+    @discardableResult
+    func applyCiWorkflowDetailResponse(_ detail: CiWorkflow, forWorkflowID workflowID: String) -> Bool {
+        guard selectedCiWorkflow?.id == workflowID else {
+            Self.logger.info("\(self.t)discarded stale workflow detail for: \(workflowID)")
+            return false
+        }
+        selectedCiWorkflowDetail = detail
+        return true
+    }
+
+    /// 应用构建列表响应：切换过工作流后，迟到的响应会被丢弃（#434）。
+    @discardableResult
+    func applyCiBuildRunsResponse(_ buildRuns: [CiBuildRun], forWorkflowID workflowID: String) -> Bool {
+        guard selectedCiWorkflow?.id == workflowID else {
+            Self.logger.info("\(self.t)discarded stale build runs for: \(workflowID)")
+            return false
+        }
+        ciBuildRuns = buildRuns
+        return true
     }
 
     func updateCiWorkflowExportJSON() {
