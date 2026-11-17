@@ -5,7 +5,7 @@
 KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 66
+测试文件: 6 个，用例总数: 67
 
 ## 公开 API
 
@@ -28,6 +28,7 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用
 - **ResumeHTMLLinter**（20 条）：由 `reportSplitsErrorsAndWarnings`、`rejectsOversizedHTML`、`rejectsMissingPageRule`、`rejectsInlineEventHandler` 等用例锁定；含内联事件处理器/javascript: URL 拒绝（#494）。
 - **ResumeDocumentStore**（7 条）：由 `fullLifecycle`、`fallsBackToSlugForEmptyTitle`、`pathAllowListChecks` 等用例锁定。
 - **ResumeExportError**（2 条）：由 `exportErrorDescriptions`、`inspectionSummarizesPages` 锁定。
+- **Resume PNG 栅格化**（1 条，**回归 #487**）：由 `rasterizedPNGScalesContentByDpi` 锁定——`rasterize` 必须按 dpi/72 缩放 CTM 后再 `PDFPage.draw`（draw 按 1 pt = 1 px 绘制，不会自动放大到目标尺寸），否则高 DPI 位图只有左下角 72dpi 大小的区域有内容。改动 `ResumeHTMLExporter.rasterize` / `pngData` 时优先跑该文件。
 - **ResumeExporter**（8 条）：由 `exportPNGsRendersEveryPage`、`pngDataMatchesSinglePageExport`、`exportPNGRejectsOutOfRangePageIndex` 等用例锁定。
 
 ## 测试用例清单
@@ -100,28 +101,31 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 65 条用
 | 64 | ResumeHTMLLinter | 正文里偶然出现的 on…= 文本不被误判（**#494 护栏**） | — | lint 纯文本含 “on light=” 的文档 | 无 `inline_script_forbidden` | P1 | ✅ 已覆盖 | `doesNotFlagPlainText` |
 | 65 | ResumeExporter | pngData 在后台线程栅格化并编码出目标尺寸 PNG | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pngDataRunsOffMain` |
 | 66 | ResumeDocumentStore | 基于已解码文档读简历与按 slug 读简历结果一致（**回归 #1177**） | 项目含一份简历 | 分别用 `readResume(document:)` 与 `readResume(slug:)` 读取并比较 | 两个结果完全相等；未知文档抛 `notFound` | P1 | ✅ 已覆盖 | `readResumeWithPreloadedDocumentMatchesSlugBasedRead` |
+| 67 | Resume PNG 栅格化 | 栅格化按目标 DPI 缩放内容，整页铺满而不是缩在角落（**回归 #487**） | 用 CGPDFContext 构造一页整版黑色矩形的 A4 PDF（595.5×842.25 pt） | 调用 `pngData(page:paper:dpi:300)` 并解码 PNG 采样四角 | 尺寸 2481×3509；四角全部为内容色；未缩放时内容只占 CG 坐标系左下角，顶部两角为白底 | P0 | ✅ 已覆盖 | `rasterizedPNGScalesContentByDpi` |
 
-> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+> ID 67 为本轮新增的 PNG 栅格化 DPI 缩放回归用例（`ResumePNGRasterizationTests`，见 #487）。
+> #487 回归：`rasterize` 创建像素级 bitmap context 后直接 `PDFPage.draw`，按 1 pt = 1 px 绘制且未按 dpi/72 缩放 CTM，300 dpi 导出内容缩在角落、其余全是空白。修复在 draw 前加 `context.scaleBy(dpi/72)`。变异验证即测试先行：修复前 `rasterizedPNGScalesContentByDpi` 红（顶部两角与右下角 white=1.0，3 issues）；修复后转绿，67 条全绿。
 > 变异验证（#494）：停用 `containsInlineScript` 规则后，`rejectsInlineEventHandler` / `rejectsEventHandlerOnInnerTag` / `rejectsJavaScriptURL` 转红，`doesNotFlagPlainText` 与内置模板校验保持绿；恢复后全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
+- P0: 已覆盖 12 / 12
 - P1: 已覆盖 44 / 44
 - P2: 已覆盖 11 / 11
-- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（43 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（44 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

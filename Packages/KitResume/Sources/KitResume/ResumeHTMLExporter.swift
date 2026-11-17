@@ -333,8 +333,11 @@ public enum ResumeHTMLExporter {
         }
         context.setFillColor(CGColor(gray: 1, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        // PDFPage.draw 内部处理 PDF 坐标系（原点左下）到 CGContext 的映射，
-        // 并自动按 mediaBox 与目标尺寸缩放。
+        // PDFPage.draw 按 1 pt = 1 px 绘制，并不会自动放大到目标尺寸（实测
+        // 96/300 dpi 内容像素数几乎不变，见 #487）；必须先按 dpi/72 缩放 CTM，
+        // 否则高 DPI 位图只有左下角 72dpi 大小的区域有内容。
+        let dpiScale = CGFloat(dpi) / 72.0
+        context.scaleBy(x: dpiScale, y: dpiScale)
         context.interpolationQuality = .high
         page.draw(with: .mediaBox, to: context)
         guard let image = context.makeImage(),
