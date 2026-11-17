@@ -6,8 +6,7 @@ extension VM {
         guard let localizationID = selectedLocalizationID else { return }
         await runBusy(forceRefresh: forceRefresh) {
             try await applyScreenshotPayload(
-                try await client.loadScreenshotSets(localizationID: localizationID),
-                pruneImageCache: forceRefresh
+                try await client.loadScreenshotSets(localizationID: localizationID)
             )
         }
     }
@@ -96,7 +95,7 @@ extension VM {
         }
     }
 
-    func applyScreenshotPayload(_ payload: ScreenshotSetsPayload, pruneImageCache: Bool = false) async throws {
+    func applyScreenshotPayload(_ payload: ScreenshotSetsPayload) async throws {
         screenshotSets = payload.sets
         screenshotsBySetID = payload.screenshotsBySetID
         alignSelectedScreenshotDisplayType()
@@ -112,17 +111,13 @@ extension VM {
             try await loadScreenshots()
         }
 
-        if pruneImageCache {
-            await pruneScreenshotImageCache()
-        }
         prefetchScreenshotPreviews()
     }
 
     func reloadScreenshotSetsFromNetwork() async throws {
         guard let localizationID = selectedLocalizationID else { return }
         try await applyScreenshotPayload(
-            try await client.loadScreenshotSets(localizationID: localizationID),
-            pruneImageCache: true
+            try await client.loadScreenshotSets(localizationID: localizationID)
         )
     }
 
@@ -147,15 +142,6 @@ extension VM {
             return .invalid(AppStoreConnectLocalization.string("Image is too small"))
         }
         return .ready
-    }
-
-    private func pruneScreenshotImageCache() async {
-        let keepingURLs = Set(
-            screenshotsBySetID.values
-                .flatMap { $0 }
-                .compactMap(\.previewURL)
-        )
-        await ScreenshotImageCache.shared.pruneEntries(keepingURLs: keepingURLs)
     }
 
     private func prefetchScreenshotPreviews() {

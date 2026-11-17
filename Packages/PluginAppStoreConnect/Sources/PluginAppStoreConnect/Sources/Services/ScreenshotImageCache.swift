@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import Foundation
 import KernelCore
 import KitAgentTool
@@ -8,6 +9,7 @@ import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
+import ProviderDiskCache
 import ProviderDocsView
 import ProviderNetwork
 import ProviderRailView
@@ -29,25 +31,30 @@ enum ScreenshotImageCacheError: LocalizedError {
     }
 }
 
+/// 截图预览图缓存：内存层 + App 级 `DiskCacheProviding` 桶。
+///
+/// 落盘、TTL 过期与 LRU 淘汰统一由 DiskCache 桶治理；本类只补齐截图语义：
+/// 按 URL 摘要做 key、内存热层、同 key 并发去重与图片有效性校验。
 actor ScreenshotImageCache {
-    static let shared: ScreenshotImageCache = {
-        let pluginRoot = AppStoreConnectPluginRuntimeBridge.resolvedPluginDirectory
-        let root = pluginRoot
-            .appendingPathComponent(ScreenshotCacheConfiguration.cacheDirectoryName, isDirectory: true)
-        return ScreenshotImageCache(rootDirectory: root)
-    }()
+    static let shared = ScreenshotImageCache(
+        diskCache: { AppStoreConnectPluginRuntimeBridge.diskCacheProvider },
+        pluginID: AppStoreConnectPluginRuntimeBridge.pluginID
+    )
 
-    private let diskStore: ScreenshotCacheDiskStore
+    private let diskCache: (@Sendable () -> (any DiskCacheProviding)?)?
+    private let pluginID: String
+    private var bucketHandle: (any DiskCacheBucket)?
     private var network: (any NetworkProviding)?
     private let memoryCache = MemoryDataCache(limit: ScreenshotCacheConfiguration.memoryCostLimit)
     private var inFlightTasks: [String: Task<Data, Error>] = [:]
 
     init(
-        rootDirectory: URL,
-        network: (any NetworkProviding)? = nil,
-        diskStore: ScreenshotCacheDiskStore? = nil
+        diskCache: (@Sendable () -> (any DiskCacheProviding)?)? = nil,
+        pluginID: String = AppStoreConnectPluginRuntimeBridge.pluginID,
+        network: (any NetworkProviding)? = nil
     ) {
-        self.diskStore = diskStore ?? ScreenshotCacheDiskStore(rootDirectory: rootDirectory)
+        self.diskCache = diskCache
+        self.pluginID = pluginID
         self.network = network
     }
 
@@ -56,10 +63,9 @@ actor ScreenshotImageCache {
     }
 
     func data(for url: URL, screenshotID: String? = nil) async throws -> Data {
-        let key = ScreenshotCacheDiskStore.cacheKey(for: url)
+        let key = Self.cacheKey(for: url)
 
         if let cached = memoryCache.value(forKey: key) {
-            diskStore.touchAccess(for: key)
             return cached
         }
 
@@ -98,44 +104,75 @@ actor ScreenshotImageCache {
         }
     }
 
-    func invalidate(screenshotID: String) {
-        diskStore.invalidate(screenshotID: screenshotID)
+    /// 失效某张截图的所有缓存条目（截图被替换或删除时调用）。
+    func invalidate(screenshotID: String) async {
         memoryCache.removeAll()
+        await bucket()?.invalidate(tag: Self.screenshotTag(for: screenshotID))
     }
 
-    func pruneEntries(keepingURLs: Set<URL>) {
-        diskStore.pruneEntries(keepingURLs: keepingURLs)
+    func clear() async {
         memoryCache.removeAll()
+        await bucket()?.clear()
     }
 
-    func clear() {
-        memoryCache.removeAll()
-        diskStore.clear()
+    static func cacheKey(for url: URL) -> String {
+        let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 
-    func diskUsage() -> ScreenshotCacheDiskUsage {
-        diskStore.diskUsage()
+    static func screenshotTag(for screenshotID: String) -> String {
+        "screenshot:\(screenshotID)"
+    }
+
+    /// 首次使用时向 Provider 取桶；Provider 缺失时返回 nil，缓存退化为内存层。
+    private func bucket() async -> (any DiskCacheBucket)? {
+        if let bucketHandle {
+            return bucketHandle
+        }
+        guard let diskCache, let provider = diskCache() else { return nil }
+        let bucket = await provider.bucket(
+            for: pluginID,
+            policy: ScreenshotCacheConfiguration.policy
+        )
+        bucketHandle = bucket
+        return bucket
     }
 
     private func loadData(for url: URL, key: String, screenshotID: String?) async throws -> Data {
-        if let diskData = diskStore.readData(for: key), isValidImageData(diskData) {
-            diskStore.touchAccess(for: key)
+        let bucket = await bucket()
+
+        if let diskData = await bucket?.data(forKey: key) {
+            guard isValidImageData(diskData) else {
+                await bucket?.remove(forKey: key)
+                return try await downloadAndStore(url: url, key: key, screenshotID: screenshotID, bucket: bucket)
+            }
             memoryCache.setValue(diskData, forKey: key)
             return diskData
         }
 
-        if let diskData = diskStore.readData(for: key) {
-            diskStore.removeEntry(forKey: key)
-            _ = diskData
-        }
+        return try await downloadAndStore(url: url, key: key, screenshotID: screenshotID, bucket: bucket)
+    }
 
+    private func downloadAndStore(
+        url: URL,
+        key: String,
+        screenshotID: String?,
+        bucket: (any DiskCacheBucket)?
+    ) async throws -> Data {
         let networkData = try await fetchFromNetwork(url: url)
         guard isValidImageData(networkData) else {
             throw ScreenshotImageCacheError.undecodableImage
         }
 
         memoryCache.setValue(networkData, forKey: key)
-        _ = diskStore.store(key: key, sourceURL: url, screenshotID: screenshotID, data: networkData)
+        if let bucket {
+            let tags = screenshotID.map { [Self.screenshotTag(for: $0)] } ?? []
+            _ = await bucket.store(
+                networkData,
+                forKey: key,
+                options: DiskCacheStoreOptions(ttl: .useDefault, tags: tags)
+            )
+        }
         return networkData
     }
 

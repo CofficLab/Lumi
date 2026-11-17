@@ -72,8 +72,7 @@ extension VM {
         metadataIsDirty = false
         if let localizationID = selectedLocalizationID {
             try await applyScreenshotPayload(
-                try await client.loadScreenshotSets(localizationID: localizationID),
-                pruneImageCache: true
+                try await client.loadScreenshotSets(localizationID: localizationID)
             )
         }
     }
