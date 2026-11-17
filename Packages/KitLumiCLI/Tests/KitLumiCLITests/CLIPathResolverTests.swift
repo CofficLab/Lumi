@@ -27,15 +27,31 @@ struct CLIPathResolverTests {
     func resolvedPathPrefersUserShellPath() {
         // GUI 启动的 App 只继承系统最小 PATH；解析用户 shell 的 PATH 才能
         // 看到 Homebrew、~/.local/bin 等用户目录。
-        let entries = CLIPathResolver.resolveUserPath()
-        #expect(!entries.isEmpty)
-
-        // 用户目录存在时应当被解析出来（存在性取决于开发机环境，
-        // 因此只断言「解析成功且不短于系统 PATH」）。
-        let systemEntries = CLIPathResolver.parsePathEntries(
-            ProcessInfo.processInfo.environment["PATH"] ?? ""
+        //
+        // 不比较条目数量：用户 shell 的 PATH 与进程 PATH 谁更长完全取决于
+        // 机器环境（CI agent 往往会注入一条很长的进程 PATH），无法作为契约。
+        // 改为给进程 PATH 注入一个哨兵目录，断言解析结果不来自进程 PATH 兜底，
+        // 从而确定性地验证「优先使用 shell PATH」这一行为。
+        let sentinel = "/__lumi_cli_process_path_sentinel__"
+        let shell = launchShellPathForTest()
+        let entries = CLIPathResolver.resolveUserPath(
+            environment: ["SHELL": shell, "PATH": sentinel]
         )
-        #expect(entries.count >= systemEntries.count)
+
+        #expect(!entries.isEmpty)
+        #expect(!entries.contains(sentinel))
+    }
+
+    /// 选一个存在的 shell 供 PATH 解析测试使用；找不到时返回无效路径，
+    /// 让被测方法走进程 PATH 兜底（此时哨兵会出现，测试会如实失败）。
+    private func launchShellPathForTest() -> String {
+        for candidate in [ProcessInfo.processInfo.environment["SHELL"], "/bin/zsh", "/bin/bash"]
+            .compactMap({ $0 }) {
+            if FileManager.default.isExecutableFile(atPath: candidate) {
+                return candidate
+            }
+        }
+        return "/nonexistent/shell"
     }
 
     @Test("SHELL 无效时回落到进程 PATH")
