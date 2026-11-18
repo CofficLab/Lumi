@@ -145,6 +145,94 @@ struct DirectoryTreeServiceTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         return root
     }
+
+    @Test("并行扫描互不取消：后启动的扫描不得终止先启动的扫描（#226）")
+    func parallelScansDoNotCancelEachOther() async throws {
+        let service = DirectoryTreeService()
+        let gate = ProgressGate()
+        let rootA = try makeTemporaryDirectory()
+        let rootB = try makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: rootA)
+            try? FileManager.default.removeItem(at: rootB)
+        }
+
+        // 扫描 A 在首次进度发布处被门闩停住，确定性地处于进行中。
+        let scanA = Task {
+            try await service.scanTopLevelDirectoryUsage(
+                atPath: rootA.path,
+                onProgress: { _ in await gate.waitOnce() }
+            )
+        }
+        let deadline = Date().addingTimeInterval(5)
+        while await !gate.isBlocked, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.isBlocked, "扫描 A 应已进入首次进度回调并被门闩停住")
+
+        // 后启动的扫描 B 完整跑完；旧实现在这里取消 A 的令牌。
+        let entriesB = try await service.scanTopLevelDirectoryUsage(atPath: rootB.path)
+
+        // 放行 A：A 必须正常完成，而不是被误报为用户取消。
+        await gate.releaseAll()
+        let entriesA = try await scanA.value
+
+        #expect(entriesB.isEmpty)
+        #expect(entriesA.isEmpty)
+    }
+
+    @Test("cancelScan 终止当前所有扫描")
+    func cancelScanStopsAllActiveScans() async throws {
+        let service = DirectoryTreeService()
+        let gate = ProgressGate(blockingBudget: 2)
+        let rootA = try makeTemporaryDirectory()
+        let rootB = try makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: rootA)
+            try? FileManager.default.removeItem(at: rootB)
+        }
+
+        let scanA = Task {
+            try await service.scanTopLevelDirectoryUsage(
+                atPath: rootA.path,
+                onProgress: { _ in await gate.waitOnce() }
+            )
+        }
+        let deadline = Date().addingTimeInterval(5)
+        while await !gate.isBlocked, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.isBlocked)
+
+        let scanB = Task {
+            try await service.scanTopLevelDirectoryUsage(
+                atPath: rootB.path,
+                onProgress: { _ in await gate.waitOnce() }
+            )
+        }
+        let deadlineB = Date().addingTimeInterval(5)
+        while await !(gate.blockedCount >= 2), Date() < deadlineB {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.blockedCount >= 2, "两个扫描都应被门闩停住")
+
+        await service.cancelScan()
+
+        // 放行门闩后，两个扫描都应收到取消（用户显式停止 = 停止全部）。
+        await gate.releaseAll()
+        do {
+            _ = try await scanA.value
+            Issue.record("扫描 A 应被 cancelScan 终止")
+        } catch is CancellationError {
+            // 预期
+        }
+        do {
+            _ = try await scanB.value
+            Issue.record("扫描 B 应被 cancelScan 终止")
+        } catch is CancellationError {
+            // 预期
+        }
+    }
 }
 
 private actor ProgressRecorder {
@@ -155,6 +243,36 @@ private actor ProgressRecorder {
     }
 
     var count: Int { values.count }
+}
+
+/// 进度门闩：把前 `blockingBudget` 次进度回调挂起，直到 `releaseAll`；
+/// 之后的调用直接放行。用于把扫描确定性地停在进行中状态。
+private actor ProgressGate {
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var blockingBudget: Int
+    private var armedCalls = 0
+
+    /// 该门闩是否已挂起过调用（用于等待扫描进入回调）。
+    var isBlocked: Bool { !waiters.isEmpty }
+
+    var blockedCount: Int { waiters.count }
+
+    init(blockingBudget: Int = 1) {
+        self.blockingBudget = blockingBudget
+    }
+
+    func waitOnce() async {
+        guard armedCalls < blockingBudget else { return }
+        armedCalls += 1
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func releaseAll() {
+        for continuation in waiters {
+            continuation.resume()
+        }
+        waiters.removeAll()
+    }
 }
 
 @Suite(.serialized)
