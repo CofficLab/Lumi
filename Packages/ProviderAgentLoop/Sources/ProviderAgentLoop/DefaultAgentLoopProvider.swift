@@ -394,6 +394,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 conversationID: conversationID, turnID: turnID
             ))
         }
+        // 恢复即回到运行态，立即广播（#218）：挂起时观察者已按 `.suspended`
+        // 隐藏运行指示；恢复后的首个 LLM 请求不带任何事件，不在此处通知的
+        // 话运行态要等下一批 toolCalls 或终态事件才会重新出现。
+        if let turnID = turnIDs[conversationID] {
+            notify(.resumed(conversationID: conversationID, turnID: turnID))
+        }
         activeToolCalls.removeValue(forKey: conversationID)
         let completedIDs = Set((await messages.messagesSnapshot(in: conversationID)).compactMap {
             $0.role == .tool ? $0.toolCallID : nil

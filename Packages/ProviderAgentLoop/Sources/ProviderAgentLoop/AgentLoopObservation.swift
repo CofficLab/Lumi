@@ -16,6 +16,10 @@ public enum AgentLoopEvent {
     /// 兼容旧实现的工具调用事件。新实现应发布并监听 `toolCallsReceived`。
     case llmResponseReceived(conversationID: UUID, turnID: UUID, toolCalls: [MessageToolCall])
     case suspended(conversationID: UUID, turnID: UUID, suspension: AgentLoopSuspension)
+    /// 被挂起的回合恢复运行（#218）。挂起期间观察者已按 `.suspended` 进入
+    /// 非运行态展示；恢复后的首个 LLM 请求不会立刻产生其它事件，观察者
+    /// 必须依赖本事件立即回到运行态。
+    case resumed(conversationID: UUID, turnID: UUID)
     case completed(conversationID: UUID, turnID: UUID)
     case failed(conversationID: UUID, turnID: UUID, reason: String)
     case cancelled(conversationID: UUID, turnID: UUID?)

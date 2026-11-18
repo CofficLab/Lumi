@@ -264,7 +264,7 @@ public final class ACPTurnCoordinator {
 
     private func handle(_ event: AgentLoopEvent) {
         switch event {
-        case .started:
+        case .started, .resumed:
             break
         case .toolCallsReceived(let conversationID, _, _, let toolCalls):
             markLLMProgress(conversationID: conversationID)

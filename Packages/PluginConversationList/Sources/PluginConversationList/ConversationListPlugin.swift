@@ -256,7 +256,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     /// 后台对话标记关注，与轮询路径的语义一致（标记本身幂等）。
     private func handleAgentLoopEvent(_ event: AgentLoopEvent, context: ConversationListContext) {
         switch event {
-        case .started(let conversationID, _):
+        case .started(let conversationID, _), .resumed(let conversationID, _):
             runningConversationIDs.insert(conversationID)
         case .completed(let conversationID, _),
              .failed(let conversationID, _, _),

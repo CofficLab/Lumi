@@ -41,7 +41,8 @@ final class AgentLoopStateObserver: SuperLog {
 
     private func consume(_ event: AgentLoopEvent) {
         switch event {
-        case .started(let id, let turn):
+        case .started(let id, let turn),
+             .resumed(let id, let turn):
             provider.update(
                 conversationID: id,
                 turnID: turn,

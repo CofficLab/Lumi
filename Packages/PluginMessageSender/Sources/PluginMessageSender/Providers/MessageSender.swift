@@ -624,7 +624,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         let conversationID: UUID
         let outcome: AgentLoopOutcome
         switch event {
-        case .started(let id, let turn):
+        case .started(let id, let turn), .resumed(let id, let turn):
             activeTurnIDs[id] = turn
             // 新回合使上一回合缓存的终态失效，避免污染下一次等待。
             completedOutcomes.removeValue(forKey: id)

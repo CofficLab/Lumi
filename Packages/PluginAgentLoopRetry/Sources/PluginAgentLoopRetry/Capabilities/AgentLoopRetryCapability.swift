@@ -90,7 +90,8 @@ final class AgentLoopRetryCapabilityAdapter: AgentLoopRetryCapability {
                 case .completed(let conversationID, _), .cancelled(let conversationID, _):
                     callback(.settled(conversationID: conversationID))
                 case .toolCallsReceived(let conversationID, _, _, _),
-                     .llmResponseReceived(let conversationID, _, _):
+                     .llmResponseReceived(let conversationID, _, _),
+                     .resumed(let conversationID, _):
                     callback(.progressReceived(conversationID: conversationID))
                 case .suspended:
                     break

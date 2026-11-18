@@ -452,6 +452,10 @@ struct AgentLoopFullLoopTests {
         conversations.setAutomation(.build, for: conversationID)
 
         let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
+        var events: [AgentLoopEvent] = []
+        let observer = loop.addAgentLoopObserver { event in
+            events.append(event)
+        }
 
         // 第一轮：高风险工具 → 挂起
         let outcome = try await loop.runTurn(in: conversationID)
@@ -469,9 +473,28 @@ struct AgentLoopFullLoopTests {
             in: conversationID,
             request: AgentTurnResumeRequest(suspensionID: suspension.suspensionID, answer: "允许")
         )
+        observer.cancel()
         #expect(resumed == .completed)
         #expect(messages.lastMessage(in: conversationID)?.content == "已删除")
         #expect(tool.executionCount == 1)
+
+        // #218：恢复时必须立即广播 .resumed，先于恢复路径上的任何后续事件。
+        let suspendedIndex = try #require(
+            events.lastIndex(where: { if case .suspended = $0 { return true } else { return false } }),
+            "缺少 .suspended 事件"
+        )
+        let completedIndex = try #require(
+            events.lastIndex(where: { if case .completed = $0 { return true } else { return false } }),
+            "缺少 .completed 事件"
+        )
+        let resumedIndexes = events.indices.filter {
+            if case .resumed(conversationID: conversationID, turnID: _) = events[$0] { return true } else { return false }
+        }
+        #expect(resumedIndexes.count == 1, "恢复必须恰好广播一次 .resumed")
+        if let resumedIndex = resumedIndexes.first {
+            #expect(resumedIndex > suspendedIndex, ".resumed 必须晚于 .suspended")
+            #expect(resumedIndex < completedIndex, ".resumed 必须先于终态事件")
+        }
     }
 
     @Test("chat 模式拒绝执行工具")
