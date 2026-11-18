@@ -127,6 +127,9 @@ final class ListV2ViewModel: ObservableObject {
     private let pagination = MessageListPaginationService()
     private let rowBuilder = MessageListRowBuilder()
     private let tailRefreshGate = MessageListTailRefreshGate()
+    /// 窗口版本：向上翻页前插更早历史时自增。尾部刷新在 I/O 期间捕获的是
+    /// 旧窗口快照，返回时若版本已变，整体替换会抹掉刚前插的消息（#388）。
+    private var windowVersion: UInt64 = 0
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
@@ -264,6 +267,8 @@ final class ListV2ViewModel: ObservableObject {
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
+        // 翻页改动了窗口：作废在途尾部刷新基于旧快照的结果（#388）。
+        windowVersion &+= 1
         return displayAnchorID
     }
 
@@ -281,12 +286,20 @@ final class ListV2ViewModel: ObservableObject {
     /// one trailing pass before the owner returns.
     private func performTailRefresh() async -> Bool {
         guard let conversationID = selectedConversationID else { return false }
+        let windowVersionAtStart = windowVersion
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: services.messages,
             current: persistedMessages
         ) else { return false }
         guard selectedConversationID == conversationID else { return false }
+        guard windowVersion == windowVersionAtStart else {
+            // 翻页在 I/O 期间前插了更早历史：本次结果基于旧窗口快照计算，
+            // 整体替换会抹掉刚前插的消息（#388）。丢弃，并在门外补跑一次
+            // 基于新窗口的刷新，避免本次落库事件丢失。
+            Task { @MainActor [weak self] in await self?.refreshTail() }
+            return false
+        }
 
         let messagesChanged = persistedMessages != result.merged
         let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false

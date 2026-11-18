@@ -26,6 +26,9 @@ final class ConversationMessageListVM: ObservableObject {
     private let builder = AgentTurnSummaryBuilder()
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
+    /// 窗口版本：向上翻页前插更早历史时自增。尾部刷新在 I/O 期间捕获的是
+    /// 旧窗口快照，返回时若版本已变，整体替换会抹掉刚前插的消息（#388）。
+    private var windowVersion: UInt64 = 0
     private var agentTurnVMs: [UUID: AgentTurnVM] = [:]
 
     /// 测试可读的 Turn VM 缓存规模；生产代码不依赖它。
@@ -154,12 +157,20 @@ final class ConversationMessageListVM: ObservableObject {
         guard let conversationID = activeConversationID,
               let messageManager = services.messages else { return false }
 
+        let windowVersionAtStart = windowVersion
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: messageManager,
             current: messageWindow
         ) else { return false }
         guard selectedConversationID == conversationID else { return false }
+        guard windowVersion == windowVersionAtStart else {
+            // 翻页在 I/O 期间前插了更早历史：本次结果基于旧窗口快照计算，
+            // 整体替换会抹掉刚前插的消息（#388）。丢弃，并在门外补跑一次
+            // 基于新窗口的刷新，避免本次落库事件丢失。
+            Task { @MainActor [weak self] in await self?.refresh() }
+            return false
+        }
 
         let previousPresentation = presentation
         messageWindow = result.merged
@@ -195,6 +206,8 @@ final class ConversationMessageListVM: ObservableObject {
         // 窗口上限：翻页会把更早一页整段加进来，不回收的话长会话会把整个
         // 会话拉进内存（展示投影也要跟着整体重建）。
         messageWindow = pagination.evictTailIfNeeded(messages: messageWindow)
+        // 翻页改动了窗口：作废在途尾部刷新基于旧快照的结果（#388）。
+        windowVersion &+= 1
         rebuildWindow(for: conversationID, sequence: activationSequence)
         return anchorID
     }
