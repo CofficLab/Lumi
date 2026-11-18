@@ -315,6 +315,10 @@ struct MemorySettingsView: View {
 
                     HStack(spacing: 12) {
                         metadataTag(icon: "tag", text: memory.type.displayName, color: colorForType(memory.type))
+                        // 跨项目列表里标出记忆归属的项目（#361）。
+                        if let projectPath = storage.projectPath(forItemAt: memory.filePath) {
+                            metadataTag(icon: "folder", text: projectPath, color: theme.textSecondary)
+                        }
                         metadataTag(icon: "calendar", text: formattedDate(memory.createdAt), color: theme.textTertiary)
                         metadataTag(icon: "clock", text: formattedDate(memory.updatedAt), color: theme.textTertiary)
                         metadataTag(icon: "number", text: "ID: \(memory.id)", color: theme.textTertiary)
@@ -351,6 +355,8 @@ struct MemorySettingsView: View {
                 .font(.appMicro)
             Text(text)
                 .font(.appMicro)
+                // 项目路径等长文本单行截断，避免挤掉同行其它标签。
+                .lineLimit(1)
         }
         .foregroundStyle(color)
     }
@@ -401,7 +407,10 @@ struct MemorySettingsView: View {
     }
 
     private func deleteItem(_ item: MemoryItem) async {
-        try? await storage.delete(id: item.id, scope: selectedScope, projectPath: nil)
+        // 列表来自跨项目递归枚举，条目文件在 projects/<项目>/<id>.md；
+        // 按 id + nil 重算路径只会落在 projects/ 根，永远删不到真实文件（#361），
+        // 因此按列表返回的精确路径删除。
+        try? await storage.delete(at: item.filePath)
         if selectedMemoryID == item.id {
             selectedMemoryID = nil
         }

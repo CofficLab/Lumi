@@ -104,25 +104,15 @@ public actor MemoryFileStorage {
         // 目录确实不存在时尚无记忆，返回空列表；存在但枚举失败（权限/IO，或路径被普通文件占位）
         // 必须抛出，否则 list_memories 会把文件系统错误误报为「暂无记忆」（#529）。
         guard fileManager.fileExists(atPath: directory.path) else { return [] }
-        let contents: [URL]
-        do {
-            contents = try fileManager.contentsOfDirectory(
-                at: directory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            )
-        } catch {
-            throw MemoryError.storageUnavailable(error.localizedDescription)
+
+        // 未指定项目时（设置页跨项目管理）必须递归枚举 projects/ 下每个项目
+        // 子目录；正常保存的项目记忆都在 projects/<sanitized>/<id>.md，
+        // 只扫根目录的话设置页永远看不到它们（#361）。
+        if scope == .project, projectPath == nil {
+            return try listMarkdownFiles(in: directory, recursive: true)
         }
 
-        return contents
-            .filter { $0.pathExtension == "md" }
-            .compactMap { url in
-                guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-                let id = Self.id(fromFileName: url.deletingPathExtension().lastPathComponent)
-                return parse(raw, filePath: url.path, id: id)
-            }
-            .sorted { $0.updatedAt > $1.updatedAt }
+        return try listMarkdownFiles(in: directory, recursive: false)
     }
 
     public func delete(id: String, scope: MemoryScope, projectPath: String?) throws {
@@ -136,7 +126,81 @@ public actor MemoryFileStorage {
         try fileManager.removeItem(at: fileURL)
     }
 
+    /// 按列表返回的精确文件路径删除记忆（设置页跨项目列表使用）。
+    ///
+    /// 跨项目列表混合了多个项目子目录，按 id + nil 重算路径只会落在
+    /// `projects/` 根，永远删不到真实文件（#361）。路径必须位于 Memory
+    /// 根目录之内，越界一律按不存在处理。
+    public func delete(at filePath: String) throws {
+        let rootPath = memoryRoot.standardizedFileURL.path
+        let targetPath = URL(fileURLWithPath: filePath).standardizedFileURL.path
+        guard targetPath.hasPrefix(rootPath + "/") else {
+            throw MemoryError.notFound(filePath)
+        }
+        guard fileManager.fileExists(atPath: targetPath) else {
+            throw MemoryError.notFound(filePath)
+        }
+        try fileManager.removeItem(atPath: targetPath)
+    }
+
+    /// 从记忆文件路径推断所属项目路径（`sanitizeProjectPath` 的逆映射）。
+    ///
+    /// `Memory/projects/<sanitized>/<id>.md` → 原项目路径；global 记忆或直接
+    /// 躺在 `projects/` 根的旧文件返回 nil。以本实例的 projects/ 根为锚点。
+    /// 不做路径标准化：`sanitizeProjectPath` 保留前导 `/`，绝对路径项目在
+    /// `projects/` 后是双斜杠，标准化会把它吞掉、还原时丢失前导斜杠。
+    /// 纯字符串映射，无需访问文件系统，可从同步上下文调用。
+    nonisolated public func projectPath(forItemAt filePath: String) -> String? {
+        let prefix = memoryRoot.path + "/projects/"
+        guard filePath.hasPrefix(prefix) else { return nil }
+        let relative = filePath.dropFirst(prefix.count)
+        guard let lastSlash = relative.lastIndex(of: "/") else { return nil }
+        let directoryPortion = String(relative[..<lastSlash])
+        guard !directoryPortion.isEmpty else { return nil }
+        return directoryPortion.removingPercentEncoding ?? directoryPortion
+    }
+
     // MARK: - Private
+
+    /// 枚举目录下的 .md 记忆文件并解析成条目，按更新时间倒序。
+    ///
+    /// 枚举失败（权限/IO）必须抛出，不能把错误伪装成空列表（#529）。
+    private func listMarkdownFiles(in directory: URL, recursive: Bool) throws -> [MemoryItem] {
+        let contents: [URL]
+        do {
+            if recursive {
+                let enumerator = fileManager.enumerator(
+                    at: directory,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
+                var urls: [URL] = []
+                while let next = enumerator?.nextObject() as? URL {
+                    if next.pathExtension == "md" {
+                        urls.append(next)
+                    }
+                }
+                contents = urls
+            } else {
+                contents = try fileManager.contentsOfDirectory(
+                    at: directory,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
+            }
+        } catch {
+            throw MemoryError.storageUnavailable(error.localizedDescription)
+        }
+
+        return contents
+            .filter { $0.pathExtension == "md" }
+            .compactMap { url in
+                guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+                let id = Self.id(fromFileName: url.deletingPathExtension().lastPathComponent)
+                return parse(raw, filePath: url.path, id: id)
+            }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
 
     private func directory(for type: MemoryType, scope: MemoryScope, projectPath: String?) -> URL {
         if scope == .project {
