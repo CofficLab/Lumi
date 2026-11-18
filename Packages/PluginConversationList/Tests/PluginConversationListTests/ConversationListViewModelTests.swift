@@ -75,6 +75,65 @@ private func englishTableLocalizedString(_ key: String) -> String {
     #expect(viewModel.conversationCount == 1)
 }
 
+/// 回归 #208：工具栏弹层与 rail 各持有独立的「当前项目」ViewModel 实例，
+/// 项目切换必须由 ViewModel 自订阅重载，不能依赖外部观察者只刷新侧栏实例。
+@Test @MainActor func currentProjectScopeAutoReloadsOnProjectSwitch() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/A")
+    _ = try conversations.createConversation(title: "A-1", projectPath: "/workspace/A", providerID: nil, modelName: nil)
+    _ = try conversations.createConversation(title: "A-2", projectPath: "/workspace/A", providerID: nil, modelName: nil)
+
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject,
+        localizedString: englishTableLocalizedString
+    )
+    await viewModel.loadInitialIfNeeded()
+    #expect(viewModel.conversations.count == 2)
+    #expect(viewModel.resolvedProjectPath == "/workspace/A")
+
+    // 切换项目且不手动 reload：ViewModel 必须自行感知并加载新项目对话。
+    try await project.openProject(at: "/workspace/B")
+    let autoReloaded = await waitUntil {
+        viewModel.resolvedProjectPath == "/workspace/B"
+            && viewModel.conversations.isEmpty
+            && viewModel.conversationCount == 0
+    }
+    #expect(autoReloaded, "切换项目后 ViewModel 应自动重载为新项目的（空）对话列表")
+    viewModel.cancel()
+}
+
+/// #208 补充：新项目已有对话时，自动重载必须展示新项目的对话而非旧列表。
+@Test @MainActor func currentProjectScopeAutoReloadShowsNewProjectConversations() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/A")
+    _ = try conversations.createConversation(title: "A-1", projectPath: "/workspace/A", providerID: nil, modelName: nil)
+
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject,
+        localizedString: englishTableLocalizedString
+    )
+    await viewModel.loadInitialIfNeeded()
+    #expect(viewModel.conversations.count == 1)
+
+    _ = try conversations.createConversation(title: "B-1", projectPath: "/workspace/B", providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/B")
+    let autoReloaded = await waitUntil {
+        viewModel.resolvedProjectPath == "/workspace/B"
+            && viewModel.conversations.map(\.title) == ["B-1"]
+            && viewModel.conversationCount == 1
+    }
+    #expect(autoReloaded, "切换项目后 ViewModel 应展示新项目的对话")
+    viewModel.cancel()
+}
+
 /// 回归 #637：外部入口（项目空态「上次聊到」等）选中会话时，列表同步
 /// 选中态必须同步清掉关注点，否则绿点残留会被理解成「还没看」。
 @Test @MainActor func externalSelectionChangeMarksConversationAsRead() async throws {

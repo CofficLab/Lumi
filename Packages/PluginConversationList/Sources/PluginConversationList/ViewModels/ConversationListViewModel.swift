@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import ProviderConversation
 import ProviderConversationState
+import ProviderProject
 import SwiftUI
 
 /// 对话列表 + 标题栏唯一的数据来源与交互入口。
@@ -54,6 +55,7 @@ final class ConversationListViewModel: ObservableObject {
     private var listGeneration: UInt64 = 0
     private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
     private var attentionObserverHandle: (any ConversationAttentionStore.ObserverHandle)?
+    private var projectObserverHandle: (any ProjectProvidingObserverHandle)?
 
     init(
         context: ConversationListContext,
@@ -93,6 +95,15 @@ final class ConversationListViewModel: ObservableObject {
         attentionObserverHandle = attentionStore.addObserver { [weak self] _ in
             self?.objectWillChange.send()
         }
+        // 「当前项目」作用域可能有多个 ViewModel 实例（rail 与工具栏弹层各自
+        // 持有，#208）：项目切换必须在本层自订阅并重载，不能依赖外部观察者
+        // 只刷新其中一个实例。`.all` 作用域不按项目过滤，无需订阅。
+        if case .currentProject = scope {
+            projectObserverHandle = context.project?.addObserver { [weak self] event in
+                guard case .currentProjectChanged = event else { return }
+                self?.scheduleReload()
+            }
+        }
     }
 
     /// 插件卸载时调用，释放外部观察订阅。
@@ -101,6 +112,8 @@ final class ConversationListViewModel: ObservableObject {
         contextObserverHandle = nil
         attentionObserverHandle?.cancel()
         attentionObserverHandle = nil
+        projectObserverHandle?.cancel()
+        projectObserverHandle = nil
     }
 
     // MARK: - Derived
