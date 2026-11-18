@@ -33,6 +33,9 @@ final class QuickLauncherSettingsViewModel: ObservableObject {
     @Published private(set) var isRecording = false
     private var recordMonitor: Any?
 
+    /// 热键注册失败的提示（组合可能被其它应用占用）。注册成功时清空。
+    @Published private(set) var errorMessage: String?
+
     init(hotkeyManager: GlobalHotkeyManager) {
         self.hotkeyManager = hotkeyManager
         let defaults = UserDefaults.standard
@@ -52,6 +55,7 @@ final class QuickLauncherSettingsViewModel: ObservableObject {
     func startRecording() {
         guard !isRecording else { return }
         isRecording = true
+        errorMessage = nil
         // 应用内监听下一次按键组合
         recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return nil }
@@ -63,10 +67,21 @@ final class QuickLauncherSettingsViewModel: ObservableObject {
             if event.keyCode == kVK_Escape {
                 self.stopRecording()
             } else if combo.hasFunctionModifier {
-                self.hotkeyManager.updateCombo(combo)
+                self.applyCombo(combo)
                 self.stopRecording()
             }
             return nil
+        }
+    }
+
+    /// 应用新热键组合：注册失败时提示冲突，原组合保持不变（#454）。
+    func applyCombo(_ combo: HotkeyCombo) {
+        if hotkeyManager.updateCombo(combo) {
+            errorMessage = nil
+        } else {
+            errorMessage = pluginLocalization.string(
+                "Hotkey registration failed. The combination may be in use by another app."
+            )
         }
     }
 
@@ -79,6 +94,6 @@ final class QuickLauncherSettingsViewModel: ObservableObject {
     }
 
     func resetHotkey() {
-        hotkeyManager.resetToDefault()
+        applyCombo(.defaultCombo)
     }
 }
