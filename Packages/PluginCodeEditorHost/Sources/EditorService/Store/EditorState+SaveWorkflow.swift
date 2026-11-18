@@ -272,7 +272,9 @@ extension EditorState {
 
         Task {
             do {
-                guard let newContent = try await externalFileController.loadExternalText(from: url) else { return }
+                // #398：解码失败现在按错误抛出并被下方 catch 记录，
+                // 不再有静默吞掉外部改动的 nil 分支。
+                let newContent = try await externalFileController.loadExternalText(from: url)
                 // await 期间可能已切到别的文件：写回前复核当前标签仍是发起重读的文件，
                 // 否则丢弃旧文件的结果，避免 A 的内容覆盖 B 并被随后保存写坏（#206）。
                 guard self.currentFileURL == url else { return }

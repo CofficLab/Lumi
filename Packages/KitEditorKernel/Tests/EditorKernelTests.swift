@@ -660,6 +660,20 @@ struct EditorKernelTests {
     }
 
     @Test
+    @MainActor
+    func externalFileControllerDetectsNonUtf8EncodingOnReread() async throws {
+        // #398：外部重读必须复用初次打开的编码探测——固定按 UTF-8
+        // 解码曾把 UTF-16 文件的外部改动静默丢弃。
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "second".write(to: url, atomically: true, encoding: .utf16)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let controller = EditorExternalFileController()
+        let loaded = try await controller.loadExternalText(from: url)
+        #expect(loaded == "second")
+    }
+
+    @Test
     func cursorMotionWordAndLineBehaviorsRemainStable() {
         #expect(CursorMotionController.moveWordLeft(location: 10, text: "foo  +  bar").location == 8)
         #expect(CursorMotionController.moveWordRight(location: 0, text: "foo  +  bar").location == 3)
