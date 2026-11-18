@@ -133,8 +133,18 @@ public struct RAGIndexer: SuperLog, Sendable {
             // 不用 mtime 判断「未变化」：内容替换可能保留时间戳（issue #342），
             // 一律读内容比对哈希；哈希相同才跳过重索引（仍刷新 mtime）。
 
-            guard let content = try? RAGTextFileReader.read(path: filePath),
-                  !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            guard let content = try? RAGTextFileReader.read(path: filePath) else {
+                stats.skippedFiles += 1
+                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
+                continue
+            }
+            if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                // 空文件没有可索引内容：清掉历史 chunks/向量与文件状态（issue #341），
+                // 否则文件仍在扫描集合里，删除清理不会兜底，检索会继续返回已删正文。
+                if existingStates[filePath] != nil {
+                    try store.deleteChunks(projectPath: projectPath, filePath: filePath)
+                    try store.deleteFileState(projectPath: projectPath, filePath: filePath)
+                }
                 stats.skippedFiles += 1
                 logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
                 continue
