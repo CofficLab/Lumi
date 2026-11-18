@@ -418,6 +418,38 @@ public struct PostgreSQLIntrospector: DatabaseIntrospector {
 
     public func describeTable(_ object: DatabaseObject, in connection: any DatabaseConnection) async throws -> TableSchema {
         let schema = object.schema ?? "public"
+        // 物化视图不出现在 information_schema.columns 里（#566）：必须改查 pg_catalog。
+        if object.kind == .materializedView {
+            let sql = """
+            SELECT a.attname AS column_name,
+                   pg_catalog.format_type(a.atttypid, a.atttypmod) AS data_type,
+                   CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS is_nullable,
+                   NULL::text AS column_default,
+                   a.attnum AS ordinal_position
+            FROM pg_attribute a
+            JOIN pg_class c ON c.oid = a.attrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relkind = 'm'
+              AND n.nspname = '\(Self.escape(schema))'
+              AND c.relname = '\(Self.escape(object.name))'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+            ORDER BY a.attnum;
+            """
+            let result = try await connection.query(sql, params: nil)
+            // 物化视图没有主键，全部列按普通可空列映射。
+            let columns: [TableColumn] = result.rows.map { row in
+                TableColumn(
+                    name: SchemaRowDecoder.string(row, at: 0) ?? "",
+                    dataType: SchemaRowDecoder.string(row, at: 1) ?? "",
+                    isNullable: SchemaRowDecoder.string(row, at: 2)?.uppercased() == "YES",
+                    isPrimaryKey: false,
+                    defaultValue: SchemaRowDecoder.string(row, at: 3),
+                    position: (SchemaRowDecoder.int(row, at: 4) ?? 1) - 1
+                )
+            }
+            return TableSchema(table: object, columns: columns)
+        }
         let sql = """
         SELECT column_name, data_type, is_nullable, column_default, ordinal_position
         FROM information_schema.columns
