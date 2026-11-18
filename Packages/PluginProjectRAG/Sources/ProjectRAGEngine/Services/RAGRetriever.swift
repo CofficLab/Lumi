@@ -183,18 +183,28 @@ public struct RAGRetriever: SuperLog {
         )
     }
 
-    private func loadANNCandidates(
+    /// `projectPath` 暴露为 internal 供测试直接验证多项目扩窗行为。
+    func loadANNCandidates(
         queryEmbedding: [Float],
         projectPath: String?,
         topK: Int
     ) throws -> [RAGStoredChunk] {
-        let annLimit = max(topK * 12, 60)
-        guard let vectorMatches = try store.searchNearestVectors(queryEmbedding: queryEmbedding, limit: annLimit),
-              !vectorMatches.isEmpty else {
-            return []
+        // 所有项目共用一张 vec0 表：固定全局窗口内其他项目的近邻会挤占
+        // 本项目的召回名额，topK 个候选可能只剩个位数（#343）。这里按需
+        // 成倍扩窗，直到凑满 topK 个本项目候选，或返回数 < 窗口（向量表
+        // 已取尽）。窗口单调扩大时 MATCH 结果是前缀超集，最后一轮即全集。
+        var window = max(topK * 12, 60)
+        while true {
+            guard let vectorMatches = try store.searchNearestVectors(queryEmbedding: queryEmbedding, limit: window),
+                  !vectorMatches.isEmpty else {
+                return []
+            }
+            let ids = vectorMatches.map(\.chunkId)
+            let chunks = try store.loadChunksByIDs(ids, projectPath: projectPath)
+            if projectPath == nil || chunks.count >= topK || vectorMatches.count < window {
+                return chunks
+            }
+            window *= 2
         }
-
-        let ids = vectorMatches.map(\.chunkId)
-        return try store.loadChunksByIDs(ids, projectPath: projectPath)
     }
 }
