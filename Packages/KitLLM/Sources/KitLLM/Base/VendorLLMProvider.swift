@@ -389,13 +389,25 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     /// `[any LLMToolSchemaProviding]`，并构建工具名 sanitize 的 reverseMap，
     /// 供响应解析时把下划线还原成注册 id。子类（如 GoProvider）覆写协议路由时
     /// 必须复用此方法注入 tools，否则工具定义会丢失。
+    ///
+    /// sanitize 后撞名的工具（如 `a.b` 与 `a_b`）只保留先注册者（#179）：
+    /// 重复的 function name 会被供应商拒绝，或让模型把调用路由到错误的工具，
+    /// 反查映射也只会命中先注册者——被丢弃的工具反正无法被正确调度。
     public func toolSchemas(from schemas: [LLMFunctionSchema]?)
         -> ([any LLMToolSchemaProviding]?, [String: String]?) {
         guard let schemas, !schemas.isEmpty else { return (nil, nil) }
         var reverseMap: [String: String] = [:]
-        let adapted: [AdapterToolSchema] = schemas.map { schema in
-            reverseMap[LLMToolNameSanitizer.sanitize(schema.name)] = schema.name
-            return AdapterToolSchema(schema)
+        var adapted: [AdapterToolSchema] = []
+        for schema in schemas {
+            let sanitized = LLMToolNameSanitizer.sanitize(schema.name)
+            guard reverseMap[sanitized] == nil else {
+                Self.logger.error(
+                    "Dropping tool \(schema.name, privacy: .public): sanitized name \(sanitized, privacy: .public) collides with \(reverseMap[sanitized]!, privacy: .public)"
+                )
+                continue
+            }
+            reverseMap[sanitized] = schema.name
+            adapted.append(AdapterToolSchema(schema))
         }
         return (adapted, reverseMap)
     }
