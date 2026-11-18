@@ -195,11 +195,37 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         ])
     }
 
+    /// 运行时重新启用：与 onBoot 一致地重装设置入口、Agent 工具与 ActivityBar 入口。
+    /// 禁用期间账户/缓存等懒服务保持存活，重新启用后无需重建（issue #452）。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        try onBoot(kernel: kernel)
+    }
+
+    /// 运行时禁用：内核不会调用 `onShutdown`，也不会代撤 Provider 侧贡献
+    /// （工具、观察者、入口都直接注册在各 Provider 上，与 Browser #451 同类），
+    /// 必须在此撤回入口与工具，并断开全部账户会话（issue #452）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        guard didBoot else { return }
+        withdrawRuntime(kernel: kernel)
+        await sessionManager.disconnectAll()
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // 从未 boot 过的插件没有装配任何东西，无需清理；更重要的是不能触碰
         // lazy 属性——那会连带创建 accountStore / cacheService 并解析目录。
         guard didBoot else { return }
 
+        withdrawRuntime(kernel: kernel)
+
+        didBoot = false
+        storageProvider = nil
+        Task {
+            await sessionManager.disconnectAll()
+        }
+    }
+
+    /// 撤回 Provider 侧贡献：设置入口、ActivityBar 入口（含激活态还原）与 Agent 工具。
+    private func withdrawRuntime(kernel: KernelCoreContainer) {
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
 
@@ -224,11 +250,5 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         tools?.remove(id: MailReadMessageTool.toolName)
         tools?.remove(id: MailSearchMessagesTool.toolName)
         tools?.remove(id: MailSendMessageTool.toolName)
-
-        didBoot = false
-        storageProvider = nil
-        Task {
-            await sessionManager.disconnectAll()
-        }
     }
 }
