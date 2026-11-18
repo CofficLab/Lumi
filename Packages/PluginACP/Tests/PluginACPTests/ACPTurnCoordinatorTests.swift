@@ -308,6 +308,30 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         })
     }
 
+    /// #354：最后一条 assistant 消息带 token 截断 stopReason 时，回合结果
+    /// 必须映射成 max_tokens 而不是 end_turn。
+    func testTokenLimitTruncationReportsMaxTokens() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "部分输出", stopReason: "length")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .maxTokens)
+    }
+
     func testCompletedFinalizesOnlyOnce() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))

@@ -600,6 +600,14 @@ public final class ACPTurnCoordinator {
             stopReason = .cancelled
         } else if failed {
             stopReason = .refusal
+        } else if let lastStop = messages.messagesSnapshot(in: conversationID)
+            .reversed()
+            .first(where: { $0.role == .assistant })?.stopReason,
+            lastStop == "length" || lastStop == "max_tokens" {
+            // #354：token 截断（OpenAI finish_reason=length / Anthropic
+            // stop_reason=max_tokens）已随 assistant 消息落库，如实映射成
+            // ACP 的 max_tokens，不要与自然完成一样折叠成 end_turn。
+            stopReason = .maxTokens
         } else {
             stopReason = .endTurn
         }
