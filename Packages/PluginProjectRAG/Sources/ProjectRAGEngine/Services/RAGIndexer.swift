@@ -130,11 +130,8 @@ public struct RAGIndexer: SuperLog, Sendable {
             }
 
             let modifiedTime = modifiedDate.timeIntervalSince1970
-            if let indexed = existingStates[filePath], abs(indexed.modifiedTime - modifiedTime) < 0.001 {
-                stats.skippedFiles += 1
-                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
-                continue
-            }
+            // 不用 mtime 判断「未变化」：内容替换可能保留时间戳（issue #342），
+            // 一律读内容比对哈希；哈希相同才跳过重索引（仍刷新 mtime）。
 
             guard let content = try? RAGTextFileReader.read(path: filePath),
                   !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
