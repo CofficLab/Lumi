@@ -202,15 +202,49 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
 
     // MARK: - Git Log
 
+    /// `file` 过滤时最多扫描的提交数：超出即停止，避免大仓库无界扫描。
+    private static let fileLogScanLimit = 1000
+
     public func getLog(path: String?, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
         let repoPath = Self.resolvePath(path)
 
         return try await performOnGitQueue(repoPath: repoPath) {
-            let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count)
+            // #154: branch / file 过滤必须真实生效，而不是被静默忽略。
+            //
+            //   branch：从分支尖端遍历；分支不存在时 libgit2 抛 invalidReference
+            //   —— 与 `git log <branch>` 一致，报错而不是回落成 HEAD 历史。
+            //   file：遍历窗口内逐提交比对变更文件，只保留触碰该文件的提交；
+            //   窗口封顶（`fileLogScanLimit`），不足 `count` 条时如实返回。
+            let branchName = branch?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let targetFile = file?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let needsFileFilter = targetFile?.isEmpty == false
+            let scanLimit = needsFileFilter ? Self.fileLogScanLimit : count
+
+            let candidates: [GitCommit]
+            if let branchName, !branchName.isEmpty {
+                candidates = try LibGit2.getCommitList(on: branchName, at: repoPath, limit: scanLimit)
+            } else {
+                candidates = try LibGit2.getCommitList(at: repoPath, limit: scanLimit)
+            }
+
+            var selected: [GitCommit]
+            if let targetFile, !targetFile.isEmpty {
+                selected = []
+                for commit in candidates {
+                    if selected.count >= count { break }
+                    // 逐提交取变更文件；diff 失败按错误抛出，绝不静默丢弃提交。
+                    let changedFiles = try LibGit2.getCommitDiffFiles(atCommit: commit.hash, at: repoPath)
+                    if changedFiles.contains(where: { $0.file == targetFile }) {
+                        selected.append(commit)
+                    }
+                }
+            } else {
+                selected = Array(candidates.prefix(count))
+            }
 
             let dateFormatter = ISO8601DateFormatter()
 
-            return gitCommits.map { commit in
+            return selected.map { commit in
                 GitCommitLog(
                     hash: commit.hash,
                     author: commit.author,
