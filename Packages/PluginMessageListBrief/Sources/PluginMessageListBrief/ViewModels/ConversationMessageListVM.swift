@@ -212,15 +212,29 @@ final class ConversationMessageListVM: ObservableObject {
         // 检查序列号，确保本次重建仍然有效
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
-        // 当存在未被任何 turn 认领的用户消息时，说明新 turn 正在启动、
+        // 当存在真正未被任何 turn 认领的用户消息时，说明新 turn 正在启动、
         // 旧 turn 已经结束。此时不应把旧 turn 标记为 .running，否则旧 turn
         // 的 summaryMessage 会走 .running 分支（只看 finalAssistant），
         // 导致包含工具调用的旧回复从投影中消失。
+        //
+        // pending 口径必须与下方 pendingUserMessages 一致：turnID 为空且晚于
+        // 最新可见 turn 的开始时间。用户消息在 turnID 生成前落库，运行中
+        // turn 的用户消息同样是 turnID == nil；旧判定用裸 `turnID == nil`
+        // 会把当前 turn 误判成「新 turn 正在启动」，把 running 永久降级为
+        // completed，运行态、计时器与实时活动全部丢失（#312）。
+        // 边界用 .idle 重建：turn 的 startedAt 与运行状态无关。
         let rawConversationState = services.agentTurn?.state(for: conversationID) ?? .idle
+        let newestTurnStartedAtForPending = AgentTurnRecordBuilder.records(
+            from: messageWindow,
+            conversationID: conversationID,
+            conversationState: .idle
+        ).map(\.startedAt).max()
         let hasPendingUserMessages = messageWindow.contains { message in
-            message.role == .user
-                && message.conversationID == conversationID
-                && message.turnID == nil
+            guard message.role == .user,
+                  message.conversationID == conversationID,
+                  message.turnID == nil else { return false }
+            guard let newestTurnStartedAtForPending else { return true }
+            return message.createdAt > newestTurnStartedAtForPending
         }
         let conversationState: AgentLoopState = hasPendingUserMessages && rawConversationState == .running
             ? .completed
