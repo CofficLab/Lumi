@@ -54,10 +54,22 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         smtp.port = UInt32(account.smtpPort)
         smtp.username = account.username
         smtp.password = password
-        smtp.connectionType = account.useTLS ? .TLS : .startTLS
+        smtp.connectionType = Self.smtpConnectionType(port: account.smtpPort, useTLS: account.useTLS)
         smtp.timeout = Self.operationTimeout
         self.smtpSession = smtp
     }
+
+    /// SMTP 连接类型：587 是 STARTTLS 提交端口（RFC 6409），隐式 TLS 端口是 465。
+    /// 把 587 当隐式 TLS 直连会在握手期失败（issue #309：iCloud/Outlook 预设）。
+    static func smtpConnectionType(port: UInt16, useTLS: Bool) -> MCOConnectionType {
+        if port == 587 { return .startTLS }
+        return useTLS ? .TLS : .startTLS
+    }
+
+    // MARK: - 测试辅助
+
+    var imapConnectionType: MCOConnectionType { imapSession.connectionType }
+    var smtpConnectionType: MCOConnectionType { smtpSession.connectionType }
 
     // MARK: - MailSessionServing
 
