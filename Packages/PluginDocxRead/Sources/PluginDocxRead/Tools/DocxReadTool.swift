@@ -161,7 +161,21 @@ public struct DocxReadTool: SuperAgentTool {
         try extractTextUsingTextutil(from: sourceURL)
     }
 
-    private static func extractTextUsingTextutil(from sourceURL: URL) throws -> String {
+    /// `processFactory` 是测试接缝：默认拉起 `/usr/bin/textutil`，测试可注入
+    /// 慢速进程来确定性验证取消行为。
+    static func extractTextUsingTextutil(
+        from sourceURL: URL,
+        processFactory: @escaping @Sendable (_ source: URL, _ output: URL) throws -> Process = { source, output in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/textutil")
+            process.arguments = [
+                "-convert", "txt",
+                "-output", output.path,
+                source.path
+            ]
+            return process
+        }
+    ) throws -> String {
         let tempDir = FileManager.default.temporaryDirectory
         let tempFile = tempDir.appendingPathComponent(UUID().uuidString + ".txt")
 
@@ -169,13 +183,9 @@ public struct DocxReadTool: SuperAgentTool {
             try? FileManager.default.removeItem(at: tempFile)
         }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/textutil")
-        process.arguments = [
-            "-convert", "txt",
-            "-output", tempFile.path,
-            sourceURL.path
-        ]
+        try Task.checkCancellation()
+
+        let process = try processFactory(sourceURL, tempFile)
 
         let pipe = Pipe()
         // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
@@ -185,13 +195,45 @@ public struct DocxReadTool: SuperAgentTool {
         }
         process.standardError = pipe
 
+        // stderr 经 readabilityHandler 增量回收：旧实现 readDataToEndOfFile
+        // 会阻塞到进程退出，等待期间无法响应取消（#271）。
+        let errorCollector = StderrCollector()
+        pipe.fileHandleForReading.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            if chunk.isEmpty {
+                handle.readabilityHandler = nil
+            } else {
+                errorCollector.append(chunk)
+            }
+        }
+
         try process.run()
-        let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
+
+        // 兜底：任何退出路径（含取消、异常）都不留孤儿 textutil。
+        defer {
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+
+        // 轮询运行状态代替阻塞等待：命中取消立即 SIGTERM，读取与 waitUntilExit
+        // 随之返回，不再让 Job 等子进程自然结束（#271）。
+        while process.isRunning {
+            if Task.isCancelled, process.isRunning {
+                process.terminate()
+            }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
         process.waitUntilExit()
+        pipe.fileHandleForReading.readabilityHandler = nil
+
+        if Task.isCancelled {
+            throw CancellationError()
+        }
 
         guard process.terminationStatus == 0,
               FileManager.default.fileExists(atPath: tempFile.path) else {
-            let errorDesc = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            let errorDesc = String(data: errorCollector.snapshot(), encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "com.coffic.lumi.plugin.docx-read.textutil",
                 code: Int(process.terminationStatus),
@@ -200,6 +242,24 @@ public struct DocxReadTool: SuperAgentTool {
         }
 
         return try String(contentsOf: tempFile, encoding: .utf8)
+    }
+
+    /// readabilityHandler 回调在后台队列执行，stderr 累积需加锁。
+    private final class StderrCollector: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            defer { lock.unlock() }
+            return data
+        }
     }
 }
 

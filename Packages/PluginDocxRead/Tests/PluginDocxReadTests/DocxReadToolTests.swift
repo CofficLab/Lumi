@@ -128,6 +128,46 @@ import Testing
         _ = try await DocxReadTool().execute(arguments: ["path": ToolArgument(documentURL.path)])
     }
 }
+
+@Test func cancellationTerminatesConversionProcessPromptly() async throws {
+    let box = ConversionProcessBox()
+    let sourceURL = temporaryDocumentURL()
+
+    // 注入 /bin/sleep 5 代替 textutil：转换若不被终止，取消后要等满 5 秒。
+    let task = Task {
+        try DocxReadTool.extractTextUsingTextutil(from: sourceURL) { _, _ in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/sleep")
+            process.arguments = ["5"]
+            box.store(process)
+            return process
+        }
+    }
+
+    let launchDeadline = Date().addingTimeInterval(2)
+    while box.stored == nil, Date() < launchDeadline {
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    guard let process = box.stored else {
+        Issue.record("conversion process never launched")
+        return
+    }
+
+    let cancelStart = Date()
+    task.cancel()
+    do {
+        _ = try await task.value
+        Issue.record("Expected CancellationError after task.cancel()")
+    } catch let error as CancellationError {
+        #expect(Date().timeIntervalSince(cancelStart) < 2.0)
+        _ = error
+    } catch {
+        Issue.record("Unexpected error: \(error)")
+    }
+
+    // SIGTERM 已送达，不再有存活的转换进程。
+    #expect(process.isRunning == false)
+}
 #endif
 
 private func temporaryDocumentURL() -> URL {
@@ -159,4 +199,22 @@ private func makeDocx(containing text: String) throws -> URL {
 private enum StubExtractionError: Error, Equatable, Sendable {
     case failed
     case unexpectedInvocation
+}
+
+/// 测试里把注入工厂创建的进程传出来，供取消断言检查存活状态。
+private final class ConversionProcessBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
+
+    func store(_ process: Process) {
+        lock.lock()
+        self.process = process
+        lock.unlock()
+    }
+
+    var stored: Process? {
+        lock.lock()
+        defer { lock.unlock() }
+        return process
+    }
 }
