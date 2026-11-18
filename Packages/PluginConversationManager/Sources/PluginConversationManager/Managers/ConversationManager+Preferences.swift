@@ -107,6 +107,10 @@ extension ConversationManager {
         guard globalReasoningEffort != reasoningEffort else { return }
         globalReasoningEffort = reasoningEffort
         notifyConversationObservers(.reasoningChanged(nil))
+        // New Chat 的默认推理强度没有会话承载，必须单独落盘才能跨重启保留；
+        // 否则重启后静默回到 .high，下一个新会话还会把这个被重置的值持久化
+        // 下去（issue #597）。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalReasoningEffort: effort=\(reasoningEffort?.rawValue ?? "off")")
