@@ -168,7 +168,7 @@ final class ACPMethodsTests: XCTestCase {
     }
 
     func testEncodePromptResult() throws {
-        let message = try ACPMessage.makeResponse(id: .number(2), result: ACPPromptResult(stopReason: .endTurn))
+        let message = try ACPMessage.makeResponse(id: .integer(2), result: ACPPromptResult(stopReason: .endTurn))
         let data = try message.encodedData()
         let json = String(data: data, encoding: .utf8)!
         XCTAssertTrue(json.contains("\"stopReason\":\"end_turn\""))
@@ -301,7 +301,7 @@ final class ACPMethodsTests: XCTestCase {
 
     func testEncodeReadTextFileResponse() throws {
         let message = try ACPMessage.makeResponse(
-            id: .number(3),
+            id: .integer(3),
             result: ACPReadTextFileResult(content: "def hello_world():\n print('Hello, world!')\n")
         )
         let data = try message.encodedData()

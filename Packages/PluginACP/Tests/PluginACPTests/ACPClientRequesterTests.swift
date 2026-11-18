@@ -192,7 +192,7 @@ final class ACPClientRequesterTests: XCTestCase {
         let requestID = await waitForRequest(box)
         let id = try XCTUnwrap(requestID)
         // Agent 侧 ID 从 1000 起，避免与 Client 的 1..n 混淆。
-        guard case .number(let value) = id else {
+        guard case .integer(let value) = id else {
             return XCTFail("期望数字 id")
         }
         XCTAssertGreaterThanOrEqual(value, 1000)

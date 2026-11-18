@@ -265,7 +265,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
         let error = coordinator.startTurn(
             sessionID: sessionID,
-            requestID: .number(1),
+            requestID: .integer(1),
             prompt: [.text("修复这个 bug")]
         )
         XCTAssertNil(error)
@@ -281,7 +281,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
 
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         store.messagesByConversation[conversationID, default: []].append(
@@ -289,9 +289,9 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -312,7 +312,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
 
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
         store.messagesByConversation[conversationID, default: []].append(
             Message(conversationID: conversationID, role: .assistant, content: "ok")
@@ -320,10 +320,10 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // 事件与 runTurn 返回双路径：只应产生一个响应。
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
-        waitUntil { self.sent.filter { $0.id == .number(1) }.count >= 1 }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+        waitUntil { self.sent.filter { $0.id == .integer(1) }.count >= 1 }
 
-        XCTAssertEqual(sent.filter { $0.id == .number(1) }.count, 1)
+        XCTAssertEqual(sent.filter { $0.id == .integer(1) }.count, 1)
     }
 
     // MARK: - 工具调用
@@ -331,7 +331,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testToolCallsReceivedEmitsToolCallNotification() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_001", name: "bash", arguments: #"{"cmd":"ls"}"#)
@@ -353,7 +353,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testFinalizePublishesToolResultUpdates() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         let call = MessageToolCall(
@@ -367,7 +367,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
         XCTAssertTrue(sent.contains {
             guard case .notification(_, let params) = $0,
@@ -386,7 +386,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testSuspendedYesNoRequestsPermission() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         let suspension = AgentLoopSuspension(
@@ -412,7 +412,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testSuspendedChoiceRequestsPermissionWithOptions() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         let suspension = AgentLoopSuspension(
@@ -436,7 +436,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testSuspendedFreeTextDegradesToTextAndEndsTurn() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         let suspension = AgentLoopSuspension(
@@ -462,8 +462,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // 内核以 .cancelled 事件报告兜底停回合（cancelTurn 是唯一手段），
         // 但客户端并未取消：wire stopReason 必须是 end_turn 而不是 cancelled（#482）。
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -475,7 +475,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testToolPermissionUsesRealToolCallIDAndStandardOptions() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_write_1")
@@ -506,7 +506,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testToolPermissionAllowSendsInProgressAndResumes() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_write_1")
@@ -546,7 +546,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testToolPermissionRejectResumesWithRejectAnswer() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_write_2")
@@ -582,7 +582,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testPermissionCancelledOutcomeCancelsTurn() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_write_3")
@@ -609,7 +609,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testPermissionFailureCancelsTurn() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_write_4")
@@ -655,7 +655,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/timeout")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         runner.emit(.suspended(
@@ -680,14 +680,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testFinalizeMarksPendingToolCallsCancelled() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_pending")
         // 回合被取消：未出结果的工具调用应补发 cancelled。
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .cancelled
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
         XCTAssertTrue(sent.contains {
             guard case .notification(_, let p) = $0,
@@ -700,7 +700,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testFinalizeCancelsPendingPermissionRequest() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_p")
@@ -720,7 +720,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // 回合因外部原因结束：挂起的权限请求必须被作废，不能残留。
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .cancelled
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
         // 请求已被作废：之后再回包不应触发 resume。
         client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("allow_once"))
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
@@ -730,7 +730,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testSessionCancelCancelsPendingPermission() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_c")
@@ -761,14 +761,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testCancelSendsCancelledStopReason() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .cancelled
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望响应")
         }
@@ -781,7 +781,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testStartTurnRejectsUnknownSession() {
         let error = coordinator.startTurn(
             sessionID: ACPSessionId(rawValue: "sess_unknown"),
-            requestID: .number(1),
+            requestID: .integer(1),
             prompt: [.text("hi")]
         )
         XCTAssertNotNil(error)
@@ -791,7 +791,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionID = try makeSessionID()
         let error = coordinator.startTurn(
             sessionID: sessionID,
-            requestID: .number(1),
+            requestID: .integer(1),
             prompt: [.image(mimeType: "image/png", data: "AA==", uri: nil, annotations: nil)]
         )
         XCTAssertNotNil(error)
@@ -799,8 +799,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     func testStartTurnRejectsConcurrentTurn() throws {
         let sessionID = try makeSessionID()
-        XCTAssertNil(coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("a")]))
-        let error = coordinator.startTurn(sessionID: sessionID, requestID: .number(2), prompt: [.text("b")])
+        XCTAssertNil(coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("a")]))
+        let error = coordinator.startTurn(sessionID: sessionID, requestID: .integer(2), prompt: [.text("b")])
         XCTAssertNotNil(error)
     }
 
@@ -822,11 +822,11 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionID = try sessions.createSession(cwd: "/tmp/wd")
         _ = shortCoordinator.startTurn(
             sessionID: sessionID,
-            requestID: .number(1),
+            requestID: .integer(1),
             prompt: [.text("hello")]
         )
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
-        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
+        guard let response = box.messages.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望 watchdog 超时响应")
         }
@@ -860,7 +860,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/wd2")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hello")])
         waitUntil { runner.runCalls.count == 1 }
         runner.emit(.toolCallsReceived(
             conversationID: conversationID,
@@ -872,8 +872,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             Message(conversationID: conversationID, role: .assistant, content: "ok")
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
-        let responses = box.messages.filter { $0.id == .number(1) }
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
+        let responses = box.messages.filter { $0.id == .integer(1) }
         XCTAssertEqual(responses.count, 1)
         guard let response = responses.first, case .response(_, let result) = response else {
             return XCTFail("期望响应")
@@ -897,12 +897,12 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/wd-cancel")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
 
         // 超时拒绝必须同时取消底层回合，否则模型晚回包后工具仍会执行（#222）。
         XCTAssertEqual(runner.cancelCalls, [conversationID])
-        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+        guard let response = box.messages.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望 watchdog 超时响应")
         }
@@ -911,7 +911,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // 取消产生的 cancelled 事件晚到：不得重复响应，也不得把 refusal 改成 cancelled。
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
-        let responses = box.messages.filter { $0.id == .number(1) }
+        let responses = box.messages.filter { $0.id == .integer(1) }
         XCTAssertEqual(responses.count, 1)
         guard let only = responses.first, case .response(_, let result) = only else {
             return XCTFail("期望唯一响应")
@@ -934,8 +934,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/wd-late")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hello")])
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
         XCTAssertFalse(runner.cancelCalls.isEmpty)
 
         // 模型在超时拒绝之后才回包带工具调用：不得再向客户端上报任何副作用。
@@ -970,13 +970,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionID = try sessions.createSession(cwd: "/tmp/cancel-prestart")
         _ = try XCTUnwrap(sessions.conversationID(for: sessionID))
         // startTurn 调度 runner Task 后立即 cancel：此刻 Task 尚未在主 actor 执行。
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         coordinator.cancel(sessionID: sessionID)
 
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
         // 被取消的回合绝不能启动模型/工具（这是 #480 的核心副作用）。
         XCTAssertTrue(runner.runCalls.isEmpty, "取消先于 runner 启动时不得调用 runTurn")
-        let responses = box.messages.filter { $0.id == .number(1) }
+        let responses = box.messages.filter { $0.id == .integer(1) }
         XCTAssertEqual(responses.count, 1)
         guard let response = responses.first, case .response(_, let result) = response else {
             return XCTFail("期望取消响应")
@@ -1002,15 +1002,15 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
 
         // 第一回合：prompt 后立即 cancel（runner 未启动）。
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         coordinator.cancel(sessionID: sessionID)
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
         XCTAssertTrue(runner.runCalls.isEmpty)
         // 排空主 actor，确保被取消的旧 runner Task 已执行完毕。
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // 同一会话发起新回合：必须正常启动 runner，不被上一回合的取消污染。
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(2), prompt: [.text("again")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(2), prompt: [.text("again")])
         waitUntil({ runner.runCalls.contains(conversationID) }, timeout: 3.0)
         XCTAssertTrue(runner.runCalls.contains(conversationID), "新回合必须正常启动 runner")
         store.messagesByConversation[conversationID, default: []].append(
@@ -1018,8 +1018,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil({ box.messages.contains { $0.id == .number(2) } }, timeout: 3.0)
-        guard let response = box.messages.first(where: { $0.id == .number(2) }),
+        waitUntil({ box.messages.contains { $0.id == .integer(2) } }, timeout: 3.0)
+        guard let response = box.messages.first(where: { $0.id == .integer(2) }),
               case .response(_, let result) = response else {
             return XCTFail("期望第二回合响应")
         }
@@ -1042,13 +1042,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/cancel-running")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         // 等 runner 真正启动后再取消。
         waitUntil { runner.runCalls.contains(conversationID) }
         coordinator.cancel(sessionID: sessionID)
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
         XCTAssertTrue(runner.runCalls.contains(conversationID), "已启动的回合不应被启动前判定跳过")
-        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+        guard let response = box.messages.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望取消响应")
         }
@@ -1121,7 +1121,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         // 内核分两次追加 token。
@@ -1155,7 +1155,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream2")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         stream.append("完整答复", to: conversationID)
@@ -1165,7 +1165,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        waitUntil { box.messages.contains { $0.id == .integer(1) } }
 
         // 已流式发送过的文本不得在收尾时重复整段发送。
         // 流式那次本身就会产生一个等于全量的增量帧，因此这里断言"恰好一次"
@@ -1199,14 +1199,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-wd")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         // 正文开始流式产出：这就是 LLM 进展，watchdog 必须解除。
         stream.append("正在输出", to: conversationID)
         // 越过 watchdog 超时窗口：不得产生 refusal，也不得取消底层回合。
         RunLoop.main.run(until: Date().addingTimeInterval(0.8))
-        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "健康流式不应触发超时响应")
+        XCTAssertFalse(box.messages.contains { $0.id == .integer(1) }, "健康流式不应触发超时响应")
         XCTAssertTrue(runner.cancelCalls.isEmpty, "健康流式不应取消底层回合")
 
         // 回合正常收尾：恰好一次 end_turn 响应。
@@ -1215,8 +1215,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { box.messages.contains { $0.id == .number(1) } }
-        let responses = box.messages.filter { $0.id == .number(1) }
+        waitUntil { box.messages.contains { $0.id == .integer(1) } }
+        let responses = box.messages.filter { $0.id == .integer(1) }
         XCTAssertEqual(responses.count, 1)
         guard let response = responses.first, case .response(_, let result) = response else {
             return XCTFail("期望响应")
@@ -1243,13 +1243,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-think")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         // 只有思考通知，没有正文（acpStreamingContent 仍为 nil）。
         stream.emitThinkingSignal(for: conversationID)
         RunLoop.main.run(until: Date().addingTimeInterval(0.8))
-        XCTAssertFalse(box.messages.contains { $0.id == .number(1) }, "纯思考流式不应触发超时响应")
+        XCTAssertFalse(box.messages.contains { $0.id == .integer(1) }, "纯思考流式不应触发超时响应")
         XCTAssertTrue(runner.cancelCalls.isEmpty, "纯思考流式不应取消底层回合")
 
         // 思考结束后正文产出并正常收尾。
@@ -1259,8 +1259,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { box.messages.contains { $0.id == .number(1) } }
-        let responses = box.messages.filter { $0.id == .number(1) }
+        waitUntil { box.messages.contains { $0.id == .integer(1) } }
+        let responses = box.messages.filter { $0.id == .integer(1) }
         XCTAssertEqual(responses.count, 1)
         guard let response = responses.first, case .response(_, let result) = response else {
             return XCTFail("期望响应")
@@ -1287,12 +1287,12 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-idle")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
 
         // 没有任何流式活动：watchdog 必须照常触发。
-        waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
+        waitUntil({ box.messages.contains { $0.id == .integer(1) } }, timeout: 3.0)
         XCTAssertEqual(runner.cancelCalls, [conversationID])
-        guard let response = box.messages.first(where: { $0.id == .number(1) }),
+        guard let response = box.messages.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望 watchdog 超时响应")
         }
@@ -1317,7 +1317,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-short")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         // 第一段较长的正文，随后工具完成，底层 start 新消息并流式更短的最终正文。
@@ -1352,7 +1352,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-long")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         let finalBody = "Done with a much longer final answer"
@@ -1387,7 +1387,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-equal")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         stream.append("AAAA", to: conversationID)
@@ -1421,7 +1421,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         let sessionID = try sessions.createSession(cwd: "/tmp/stream-final")
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { runner.runCalls.contains(conversationID) }
 
         stream.append("Checking...", to: conversationID)
@@ -1432,7 +1432,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
-        waitUntil { box.messages.contains { $0.id == .number(1) } }
+        waitUntil { box.messages.contains { $0.id == .integer(1) } }
 
         let doneSends = box.messages.filter { message in
             guard case .notification(_, let params) = message,
@@ -1449,15 +1449,15 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testFailedTurnReportsRefusal() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         // 内核回合失败：必须上报 refusal，而不是把错误伪装成 end_turn。
         runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "provider exploded"))
         runner.nextOutcome = .failed("provider exploded")
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望响应")
         }
@@ -1480,7 +1480,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
     func testFailedTurnPublishesPersistedToolResults() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         reportToolCall(conversationID: conversationID, id: "call_ok", name: "read_file")
@@ -1505,7 +1505,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
         runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "provider exploded"))
         runner.nextOutcome = .failed("provider exploded")
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
         func toolUpdate(id: String) -> ToolCallUpdate? {
             for message in sent {
@@ -1522,7 +1522,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(toolUpdate(id: "call_err")?.status, .failed)
         XCTAssertEqual(toolUpdate(id: "call_pending")?.status, .cancelled)
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望响应")
         }
@@ -1535,7 +1535,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         installRetryLifecycle(retry)
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
         retry.retrying = true
 
@@ -1543,7 +1543,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // 重试已接管：原 prompt 必须保持未收尾状态。
-        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+        XCTAssertFalse(sent.contains { $0.id == .integer(1) })
 
         // 重试成功后，同一原请求以 endTurn 收尾。
         store.messagesByConversation[conversationID, default: []].append(
@@ -1551,9 +1551,9 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         retry.retrying = false
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -1566,20 +1566,20 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         installRetryLifecycle(retry)
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
         retry.retrying = true
 
         runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "HTTP 503"))
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+        XCTAssertFalse(sent.contains { $0.id == .integer(1) })
 
         // 重试耗尽：只有此时才向原 prompt 返回 refusal。
         retry.retrying = false
         retry.emit(.gaveUp(conversationID: conversationID, reason: "重试次数已耗尽"))
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -1599,14 +1599,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         installRetryLifecycle(retry)
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         // 没有重试接管时必须立即收尾，不能被注入的 Provider 误判为「等待中」。
         runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "auth failed"))
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -1619,19 +1619,19 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         installRetryLifecycle(retry)
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
         retry.retrying = true
 
         runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "HTTP 429"))
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+        XCTAssertFalse(sent.contains { $0.id == .integer(1) })
 
         coordinator.cancel(sessionID: sessionID)
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
         XCTAssertEqual(retry.cancelRetryCalls, [conversationID], "取消必须终止待执行的重试")
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
@@ -1642,21 +1642,21 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         // 取消后迟到的完成事件不得再补发第二次响应。
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-        XCTAssertEqual(sent.filter { $0.id == .number(1) }.count, 1)
+        XCTAssertEqual(sent.filter { $0.id == .integer(1) }.count, 1)
     }
 
     func testCancelledTurnStillReportsCancelledNotRefusal() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
-        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
         // 取消即使带 errorText 也必须保持 cancelled 语义。
         runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .cancelled
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
-        guard let response = sent.first(where: { $0.id == .number(1) }),
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
               case .response(_, let result) = response else {
             return XCTFail("期望响应")
         }
@@ -1733,8 +1733,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
         let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
         XCTAssertNotEqual(convA, convB)
-        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
-        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .integer(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .integer(2), prompt: [.text("B")])
         waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
 
         reportToolCall(conversationID: convA, id: "call_shared", name: "write_file", arguments: #"{"path":"/tmp/A.swift"}"#)
@@ -1763,8 +1763,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionB = try makeSessionID()
         let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
         let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
-        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
-        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .integer(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .integer(2), prompt: [.text("B")])
         waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
 
         reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"rm -rf B"}"#)
@@ -1792,15 +1792,15 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let sessionB = try makeSessionID()
         let convA = try XCTUnwrap(sessions.conversationID(for: sessionA))
         let convB = try XCTUnwrap(sessions.conversationID(for: sessionB))
-        _ = coordinator.startTurn(sessionID: sessionA, requestID: .number(1), prompt: [.text("A")])
-        _ = coordinator.startTurn(sessionID: sessionB, requestID: .number(2), prompt: [.text("B")])
+        _ = coordinator.startTurn(sessionID: sessionA, requestID: .integer(1), prompt: [.text("A")])
+        _ = coordinator.startTurn(sessionID: sessionB, requestID: .integer(2), prompt: [.text("B")])
         waitUntil { self.runner.runCalls.contains(convA) && self.runner.runCalls.contains(convB) }
 
         reportToolCall(conversationID: convA, id: "call_shared", name: "bash", arguments: #"{"cmd":"a"}"#)
         reportToolCall(conversationID: convB, id: "call_shared", name: "bash", arguments: #"{"cmd":"b"}"#)
 
         coordinator.cancel(sessionID: sessionA)
-        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
 
         XCTAssertTrue(sent.contains {
             guard case .notification(_, let p) = $0,

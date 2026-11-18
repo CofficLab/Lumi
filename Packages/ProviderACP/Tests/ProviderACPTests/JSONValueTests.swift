@@ -12,7 +12,7 @@ final class JSONValueTests: XCTestCase {
         }
         guard case .string(let s) = obj["s"] else { return XCTFail("s 应为 string") }
         XCTAssertEqual(s, "text")
-        guard case .number(let n) = obj["n"] else { return XCTFail("n 应为 number") }
+        guard case .integer(let n) = obj["n"] else { return XCTFail("n 应为 integer") }
         XCTAssertEqual(n, 42)
         guard case .bool(let b) = obj["b"] else { return XCTFail("b 应为 bool") }
         XCTAssertTrue(b)
@@ -25,7 +25,7 @@ final class JSONValueTests: XCTestCase {
 
     func testRoundTrip() throws {
         let original: JSONValue = .object([
-            "id": .number(1),
+            "id": .integer(1),
             "ok": .bool(true),
             "msg": .string("hi"),
         ])
@@ -46,5 +46,23 @@ final class JSONValueTests: XCTestCase {
         let value = try JSONValue.stringify(payload)
         let back: Payload = try value.decoded()
         XCTAssertEqual(payload, back)
+    }
+
+    /// #355：超出 Double 安全整数范围的合法 JSON-RPC id 必须无损往返。
+    func testLargeIntegerPreservesPrecision() throws {
+        let json = "9007199254740993"
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        guard case .integer(let i) = value else {
+            return XCTFail("2^53+1 应为 integer")
+        }
+        XCTAssertEqual(i, 9_007_199_254_740_993)
+
+        let encoded = String(data: try JSONEncoder().encode(value), encoding: .utf8)
+        XCTAssertEqual(encoded, "9007199254740993")
+    }
+
+    func testFractionalNumberStaysNumber() throws {
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data("3.5".utf8))
+        XCTAssertEqual(value, .number(3.5))
     }
 }
