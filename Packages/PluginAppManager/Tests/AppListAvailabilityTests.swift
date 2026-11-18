@@ -176,6 +176,8 @@ private final class GatedAppService: AppManagerServicing, @unchecked Sendable {
     let enumerationGates: [Bool: ScanGate]
     let sizeGates: [String: ScanGate]
     let sizedResults: [String: Int64]
+    /// 枚举调用计数（#329）：区分 loadFromCache 的初次发现与后续是否触发扫描。
+    private(set) var scanCallCounts: [Bool: Int] = [:]
 
     init(
         appsByForce: [Bool: [AppModel]],
@@ -190,6 +192,7 @@ private final class GatedAppService: AppManagerServicing, @unchecked Sendable {
     }
 
     func scanInstalledApps(force: Bool) async -> [AppModel] {
+        scanCallCounts[force, default: 0] += 1
         if let gate = enumerationGates[force] { await gate.wait() }
         return appsByForce[force] ?? []
     }
@@ -219,6 +222,61 @@ private final class GatedAppService: AppManagerServicing, @unchecked Sendable {
 /// is published: remap to the new model when still present, clear the whole
 /// selection/detail when gone. These tests drive two scans (force:false then
 /// force:true) through `GatedAppService` so the "new batch" is deterministic.
+/// Regression coverage for #329: on the very first open with an empty size
+/// cache, `scanInstalledApps(force: false)` only discovers apps (size == 0)
+/// and the view's non-empty check skips `refresh()`, so every row and the
+/// total size stayed 0 until the user refreshed manually. `loadFromCache`
+/// must trigger a non-forced scan when cache-missed apps exist, reusing the
+/// per-item size computation and cache saving of `performScan`; a fully
+/// cached re-entry must not re-scan.
+@MainActor
+struct LoadFromCacheSizeComputationTests {
+
+    @Test
+    func loadFromCacheComputesSizesWhenCacheMissed() async throws {
+        let alpha = Self.app(path: "/Applications/Alpha.app", name: "Alpha", size: 0)
+        let service = GatedAppService(
+            appsByForce: [false: [alpha]],
+            sizedResults: [alpha.bundleURL.path: 4096]
+        )
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.loadFromCache()
+
+        #expect(viewModel.installedApps.map(\.displayName) == ["Alpha"])
+        #expect(viewModel.installedApps.first?.size == 4096)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.isCalculatingSizes == false)
+    }
+
+    @Test
+    func loadFromCacheSkipsRescanWhenAllSizesCached() async throws {
+        let alpha = Self.app(path: "/Applications/Alpha.app", name: "Alpha", size: 4096)
+        let service = GatedAppService(appsByForce: [false: [alpha]])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        await viewModel.loadFromCache()
+
+        #expect(viewModel.installedApps.first?.size == 4096)
+        // 全部命中大小缓存：不得触发第二次扫描。
+        #expect(service.scanCallCounts[false] == 1)
+        #expect(service.scanCallCounts[true] == nil)
+    }
+
+    // MARK: - Helpers
+
+    private static func app(path: String, name: String, size: Int64) -> AppModel {
+        AppModel(
+            bundleURL: URL(fileURLWithPath: path),
+            name: name,
+            identifier: "com.example.\(name.lowercased())",
+            version: "1.0",
+            iconFileName: nil,
+            size: size
+        )
+    }
+}
+
 @MainActor
 struct AppSelectionReconciliationTests {
 
