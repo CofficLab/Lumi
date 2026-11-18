@@ -155,13 +155,19 @@ struct RefreshCoordinatorWatchProbeTests {
         #expect(watcher.stopCount == stopsBeforeDisappear + 1)
     }
 
-    @Test(".git 元数据目录仍被纳入监听列表")
+    @Test(".git 元数据位置仍被纳入监听列表")
     func gitMetadataDirectoriesAreStillWatched() async throws {
         let root = URL(fileURLWithPath: "/tmp/lumi-watch-probe-\(UUID().uuidString)")
         let gitDir = root.appendingPathComponent(".git").standardizedFileURL
+        let headURL = gitDir.appendingPathComponent("HEAD").standardizedFileURL
         let refsDir = gitDir.appendingPathComponent("refs").standardizedFileURL
+        let refsHeadsDir = gitDir.appendingPathComponent("refs/heads").standardizedFileURL
         let logsRefsDir = gitDir.appendingPathComponent("logs/refs").standardizedFileURL
-        let probe = StubWatchProbe(directories: [gitDir.path, refsDir.path, logsRefsDir.path])
+        let packedRefsURL = gitDir.appendingPathComponent("packed-refs").standardizedFileURL
+        let probe = StubWatchProbe(
+            directories: [gitDir.path, refsDir.path, refsHeadsDir.path, logsRefsDir.path],
+            files: [headURL.path]
+        )
         let watcher = RecordingWatcher()
         let coordinator = RefreshCoordinator(probe: probe, gitStatusEnabled: false)
         coordinator.attach(observer: watcher)
@@ -170,9 +176,65 @@ struct RefreshCoordinatorWatchProbeTests {
         #expect(await waitUntil { watcher.updatedDirectorySets.count == 1 })
 
         let applied = try #require(watcher.updatedDirectorySets.last)
+        #expect(applied.contains(headURL), "HEAD 是普通文件，写入/替换事件必须被监听")
         #expect(applied.contains(refsDir))
+        #expect(applied.contains(refsHeadsDir), "DispatchSource 不递归，嵌套的 refs/heads 必须单独监听")
         #expect(applied.contains(logsRefsDir))
-        #expect(!applied.contains(gitDir), "不监听整个 .git，避免 objects 写入造成无效刷新")
+        #expect(!applied.contains(packedRefsURL), "不存在的 packed-refs 不应进入监听列表")
+        #expect(!applied.contains(gitDir), "不监听整个 .git，避免无关写入造成无效刷新")
+    }
+
+    @Test("worktree 的 .git 文件解析出真实元数据目录")
+    func worktreeGitFileResolvesRealGitDir() throws {
+        let base = URL(fileURLWithPath: "/tmp/lumi-watch-probe-\(UUID().uuidString)")
+        let projectRoot = base.appendingPathComponent("project")
+        let realGitDir = base.appendingPathComponent("real-git")
+        try FileManager.default.createDirectory(at: realGitDir.appendingPathComponent("refs/heads"), withIntermediateDirectories: true)
+        try "ref: refs/heads/main\n".write(to: realGitDir.appendingPathComponent("HEAD"), atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        try "gitdir: \(realGitDir.path)\n".write(to: projectRoot.appendingPathComponent(".git"), atomically: true, encoding: .utf8)
+
+        let urls = RefreshCoordinator.gitMetadataWatchURLs(
+            projectRootURL: projectRoot,
+            probe: DefaultWatchDirectoryProbe()
+        )
+
+        let standard = urls.map { $0.standardizedFileURL }
+        #expect(standard.contains(realGitDir.appendingPathComponent("HEAD").standardizedFileURL))
+        #expect(standard.contains(realGitDir.appendingPathComponent("refs/heads").standardizedFileURL))
+    }
+
+    @Test("worktree 的相对 gitdir 以项目根为基准解析")
+    func relativeGitDirResolvesAgainstProjectRoot() throws {
+        let base = URL(fileURLWithPath: "/tmp/lumi-watch-probe-\(UUID().uuidString)")
+        let projectRoot = base.appendingPathComponent("project")
+        let realGitDir = base.appendingPathComponent("real-git")
+        try FileManager.default.createDirectory(at: realGitDir.appendingPathComponent("refs/heads"), withIntermediateDirectories: true)
+        try "ref: refs/heads/main\n".write(to: realGitDir.appendingPathComponent("HEAD"), atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        try "gitdir: ../real-git\n".write(to: projectRoot.appendingPathComponent(".git"), atomically: true, encoding: .utf8)
+
+        let urls = RefreshCoordinator.gitMetadataWatchURLs(
+            projectRootURL: projectRoot,
+            probe: DefaultWatchDirectoryProbe()
+        )
+
+        let standard = urls.map { $0.standardizedFileURL }
+        #expect(standard.contains(realGitDir.appendingPathComponent("HEAD").standardizedFileURL))
+        #expect(standard.contains(realGitDir.appendingPathComponent("refs/heads").standardizedFileURL))
+    }
+
+    @Test("非 Git 仓库不产生任何监听位置")
+    func nonGitRootProducesEmptyWatchList() throws {
+        let root = URL(fileURLWithPath: "/tmp/lumi-watch-probe-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        let urls = RefreshCoordinator.gitMetadataWatchURLs(
+            projectRootURL: root,
+            probe: DefaultWatchDirectoryProbe()
+        )
+
+        #expect(urls.isEmpty)
     }
 
     @Test("不存在的展开目录不会进入监听列表")
@@ -202,6 +264,7 @@ struct RefreshCoordinatorWatchProbeTests {
 private final class StubWatchProbe: WatchDirectoryProbing, @unchecked Sendable {
     private let lock = NSLock()
     private let directories: Set<String>
+    private let files: Set<String>
     private let manifests: [URL]
     private var paths: [String] = []
     private var mainThread = false
@@ -212,8 +275,9 @@ private final class StubWatchProbe: WatchDirectoryProbing, @unchecked Sendable {
     /// 需要门闩阻塞的探测路径；nil 表示不阻塞。
     var gatedPath: String?
 
-    init(directories: Set<String>, manifests: [URL] = []) {
+    init(directories: Set<String>, files: Set<String> = [], manifests: [URL] = []) {
         self.directories = directories
+        self.files = files
         self.manifests = manifests
     }
 
@@ -243,8 +307,7 @@ private final class StubWatchProbe: WatchDirectoryProbing, @unchecked Sendable {
 
     func isDirectory(atPath path: String) -> Bool {
         lock.lock()
-        if Thread.isMainThread { mainThread = true }
-        paths.append(path)
+        recordProbe(path)
         let exists = directories.contains(path)
         let shouldGate = !didGate && path == gatedPath
         if shouldGate {
@@ -255,6 +318,17 @@ private final class StubWatchProbe: WatchDirectoryProbing, @unchecked Sendable {
 
         if shouldGate { gate.wait() }
         return exists
+    }
+
+    func fileExists(atPath path: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        recordProbe(path)
+        return directories.contains(path) || files.contains(path)
+    }
+
+    private func recordProbe(_ path: String) {
+        if Thread.isMainThread { mainThread = true }
+        paths.append(path)
     }
 
     func manifestURLs(projectRootURL: URL) -> [URL] {
