@@ -269,6 +269,44 @@ struct ListV3ViewModelPaginationTests {
         #expect(harness.viewModel.hasEarlierMessages == false, "已翻到最早一条")
     }
 
+    @Test("窗口首条是工具执行消息时，翻页锚点是合成展示行 id 而非原始消息 id（#387）")
+    func loadEarlierAnchorUsesSynthesizedRowIDForToolExecutionFirst() async {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 100)
+        let toolMessage = msg(
+            conversationID: conversationID, role: .assistant, content: "",
+            createdAt: base.addingTimeInterval(2),
+            toolCalls: [MessageToolCall(id: "call-1", name: "read", arguments: "{}")]
+        )
+        let window = [
+            msg(conversationID: conversationID, role: .user, content: "mid", createdAt: base.addingTimeInterval(1)),
+            toolMessage,
+            msg(conversationID: conversationID, role: .user, content: "anchor", createdAt: base.addingTimeInterval(3)),
+        ]
+        let earlier = msg(conversationID: conversationID, role: .user, content: "old", createdAt: base)
+        let harness = Harness(
+            conversationID: conversationID,
+            window: window,
+            earlier: [earlier],
+            pageSize: 2
+        )
+        await harness.viewModel.activate(conversationID: conversationID)
+
+        // 首屏保留末尾 2 条：窗口首条恰是工具执行消息，展示层被合成为派生 id。
+        let rawFirstID = harness.viewModel.persistedMessages.first?.id
+        let rowAnchorBefore = harness.viewModel.historyRows.first?.id
+        #expect(rawFirstID == toolMessage.id)
+        #expect(rowAnchorBefore != nil && rowAnchorBefore != rawFirstID,
+                "工具执行消息的展示行 id 应为合成 id，不等于原始消息 id")
+
+        let anchorID = await harness.viewModel.loadEarlier()
+
+        // 旧实现返回原始落库 id —— 该 id 在展示行中不存在，scrollTo 找不到目标。
+        #expect(anchorID == rowAnchorBefore)
+        #expect(harness.viewModel.historyRows.contains { $0.id == anchorID },
+                "翻页后列表中必须存在该锚点对应的展示行")
+    }
+
     @Test("无更早消息时翻页返回 nil 且不改变窗口")
     func loadEarlierReturnsNilWithoutEarlierMessages() async {
         let conversationID = UUID()

@@ -204,11 +204,15 @@ final class ListV3ViewModel: ObservableObject {
     // MARK: - Pagination
 
     /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
-    /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
+    /// - Returns: prepend 前第一条可见展示行的 id，View 应把它钉回视口顶部。
     func loadEarlier() async -> UUID? {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
+        // 锚点必须是展示行 id 而非原始落库 id（#387）：工具执行消息在展示层
+        // 被合成（id 由组成员派生），原始消息 id 不存在于列表，用它 scrollTo
+        // 找不到目标。查询边界仍用落库 id（beforeMessageID）。
+        let displayAnchorID = historyRows.first?.id
         isLoadingEarlier = true
         defer { isLoadingEarlier = false }
         guard let result = await pagination.loadEarlier(
@@ -222,7 +226,7 @@ final class ListV3ViewModel: ObservableObject {
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
-        return result.anchorID
+        return displayAnchorID
     }
 
     /// 尾部刷新：重新查最近一页，与当前尾部比对并覆盖（新消息到达 / 流式落库）。

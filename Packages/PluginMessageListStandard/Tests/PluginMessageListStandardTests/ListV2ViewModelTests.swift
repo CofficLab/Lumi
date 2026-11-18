@@ -269,6 +269,43 @@ func loadEarlierPrependsPageWhenWithinWindowLimit() async {
     #expect(harness.viewModel.persistedMessages.map(\.id) == (earlier + windowBefore).map(\.id))
 }
 
+@MainActor
+@Test("窗口首条是工具执行消息时，翻页锚点是合成展示行 id 而非原始消息 id（#387）")
+func loadEarlierAnchorUsesSynthesizedRowIDForToolExecutionFirst() async {
+    let conversationID = UUID()
+    let toolMessage = makeMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "",
+        toolCalls: [MessageToolCall(id: "call-1", name: "read", arguments: "{}")]
+    )
+    // page = m1(user) + m2(tool) + m3..m41（39 条 user）共 41 条：
+    // 首屏保留 suffix(40) 后，窗口第一条恰是工具执行消息（issue #387 场景）。
+    let filler = (0..<39).map { index in
+        makeMessage(conversationID: conversationID, role: .user, content: "f\(index)")
+    }
+    let page = [makeMessage(conversationID: conversationID, role: .user, content: "older-user")]
+        + [toolMessage] + filler
+    let earlier = [makeMessage(conversationID: conversationID, role: .user, content: "e1")]
+    let manager = StubMessageListMessageCapability(page: page, hasEarlier: true, earlierPage: earlier)
+    let harness = ViewModelHarness(selected: conversationID, messages: manager)
+    await harness.viewModel.activateCurrentConversation()
+
+    let rawFirstID = harness.viewModel.persistedMessages.first?.id
+    let rowAnchorBefore = harness.viewModel.historyRows.first?.id
+    #expect(rawFirstID == toolMessage.id)
+    #expect(rowAnchorBefore != nil && rowAnchorBefore != rawFirstID,
+            "工具执行消息的展示行 id 应为合成 id，不等于原始消息 id")
+
+    let anchor = await harness.viewModel.loadEarlier()
+
+    // 旧实现返回原始落库 id —— 该 id 在展示行中不存在，scrollTo 找不到目标，
+    // 视口无法钉回原首行。
+    #expect(anchor == rowAnchorBefore)
+    #expect(harness.viewModel.historyRows.contains { $0.id == anchor },
+            "翻页后列表中必须存在该锚点对应的展示行")
+}
+
 // MARK: - Tail refresh
 
 @MainActor
