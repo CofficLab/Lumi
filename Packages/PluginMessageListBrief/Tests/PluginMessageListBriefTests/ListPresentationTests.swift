@@ -680,4 +680,59 @@ struct ListPresentationTests {
                 "激活 I/O 期间插入的消息不得被首屏整页结果抹掉")
         #expect(vm.displayMessages.contains { $0.id == page[0].id })
     }
+
+    // MARK: - §7 存储层清空后尾部刷新必须清空窗口（#145）
+
+    @Test("§7 删除最后一条消息后窗口必须一起清空（#145）")
+    func tailRefreshClearsWindowAfterLastMessageDeleted() async {
+        let only = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "m",
+            createdAt: Date(timeIntervalSince1970: 0)
+        )
+        let messages = StubMessages(snapshot: [only])
+        let vm = ConversationMessageListVM(
+            services: makeServices(messages: messages, conversations: StubConversations(selected: conversationID)),
+            pageSize: 40
+        )
+        await vm.activate(conversationID: conversationID)
+        #expect(vm.displayMessages.contains { $0.id == only.id })
+
+        // 删除最后一条消息：存储层最新一页变空，删除事件触发尾部刷新。
+        messages.snapshot = []
+        vm.handleMessageChange(.deleted(messageID: only.id, conversationID: conversationID))
+        // 事件驱动的 refresh 是异步 Task：轮询等它把空结果发布进窗口。
+        let deadline = Date().addingTimeInterval(2)
+        while !vm.displayMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(vm.displayMessages.isEmpty, "存储层已空后不得继续显示已删除的消息（#145）")
+    }
+
+    @Test("§7 清空会话后窗口必须一起清空（#145）")
+    func tailRefreshClearsWindowAfterConversationCleared() async {
+        let only = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "m",
+            createdAt: Date(timeIntervalSince1970: 0)
+        )
+        let messages = StubMessages(snapshot: [only])
+        let vm = ConversationMessageListVM(
+            services: makeServices(messages: messages, conversations: StubConversations(selected: conversationID)),
+            pageSize: 40
+        )
+        await vm.activate(conversationID: conversationID)
+        #expect(vm.displayMessages.contains { $0.id == only.id })
+
+        // 清空整个会话：存储层最新一页变空，cleared 事件触发尾部刷新。
+        messages.snapshot = []
+        vm.handleMessageChange(.cleared(conversationID: conversationID))
+        let deadline = Date().addingTimeInterval(2)
+        while !vm.displayMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(vm.displayMessages.isEmpty, "存储层已空后不得继续显示已删除的内容（#145）")
+    }
 }

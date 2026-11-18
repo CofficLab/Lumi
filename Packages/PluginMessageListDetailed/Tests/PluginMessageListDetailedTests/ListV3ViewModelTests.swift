@@ -548,6 +548,47 @@ struct ListV3ViewModelPaginationTests {
         #expect(viewModel.persistedMessages.contains { $0.id == page[0].id })
     }
 
+    @Test("删除最后一条消息后尾部刷新必须清空窗口（#145）")
+    func tailRefreshClearsWindowAfterLastMessageDeleted() async {
+        let conversationID = UUID()
+        let existing = msg(conversationID: conversationID, role: .user, content: "old")
+        let harness = Harness(conversationID: conversationID, page: [existing])
+        await harness.viewModel.activate(conversationID: conversationID)
+        #expect(harness.viewModel.persistedMessages.contains { $0.id == existing.id })
+
+        // 删除最后一条消息：存储层最新一页变空，删除事件触发尾部刷新。
+        harness.messages.setPage([])
+        harness.viewModel.handleMessageChange(
+            .deleted(messageID: existing.id, conversationID: conversationID)
+        )
+        // 事件驱动的 refreshTail 是异步 Task：轮询等它把空结果发布进窗口。
+        let deadline = Date().addingTimeInterval(2)
+        while !harness.viewModel.persistedMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(harness.viewModel.persistedMessages.isEmpty,
+                "存储层已空后不得继续显示已删除的消息（#145）")
+    }
+
+    @Test("清空会话后尾部刷新必须清空窗口（#145）")
+    func tailRefreshClearsWindowAfterConversationCleared() async {
+        let conversationID = UUID()
+        let existing = msg(conversationID: conversationID, role: .user, content: "old")
+        let harness = Harness(conversationID: conversationID, page: [existing])
+        await harness.viewModel.activate(conversationID: conversationID)
+        #expect(harness.viewModel.persistedMessages.contains { $0.id == existing.id })
+
+        // 清空整个会话：存储层最新一页变空，cleared 事件触发尾部刷新。
+        harness.messages.setPage([])
+        harness.viewModel.handleMessageChange(.cleared(conversationID: conversationID))
+        let deadline = Date().addingTimeInterval(2)
+        while !harness.viewModel.persistedMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(harness.viewModel.persistedMessages.isEmpty,
+                "存储层已空后不得继续显示已删除的内容（#145）")
+    }
+
     @Test("无更早消息时翻页返回 nil 且不改变窗口")
     func loadEarlierReturnsNilWithoutEarlierMessages() async {
         let conversationID = UUID()
