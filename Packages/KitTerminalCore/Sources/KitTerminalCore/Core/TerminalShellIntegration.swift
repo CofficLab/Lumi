@@ -85,10 +85,10 @@ public enum ShellIntegration {
             args.append("-i")
         case .bash:
             try setupBash(&args)
-            // bash 参数
-            if useLogin {
-                args.append("-l")
-            }
+            // bash 3.2（macOS 系统自带）在登录模式（-l）下会忽略 --init-file，
+            // 注入脚本完全不执行，标题集成随之失效（issue #346）。登录启动链由
+            // 脚本自身在 LUMI_SHELL_LOGIN=1 分支里重放（/etc/profile 与
+            // ~/.bash_profile 等），因此这里不能再叠加 -l。
             args.append("-i")
         }
 
