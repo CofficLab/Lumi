@@ -6,7 +6,7 @@ import Testing
 @Suite("Git activity project view model")
 @MainActor
 struct GitActivityHeatmapProjectViewModelTests {
-    @Test("syncs the matching project snapshot and rejects another repository's snapshot")
+    @Test("syncs the matching project snapshot and ignores another repository's snapshot")
     func scopesSnapshotsToTheSelectedProject() {
         let provider = MockActivityHeatmapProvider()
         provider.currentSnapshot = snapshot(path: "/tmp/first", count: 2)
@@ -17,18 +17,36 @@ struct GitActivityHeatmapProjectViewModelTests {
         #expect(viewModel.snapshot?.days.first?.commitCount == 2)
         #expect(viewModel.isLoading == false)
 
+        // 另一个仓库的快照与加载状态都不得改动本 Section 的展示（#371）。
         provider.currentSnapshot = snapshot(path: "/tmp/other", count: 9)
         provider.isLoading = true
         provider.notify(.snapshotChanged)
 
+        #expect(viewModel.snapshot?.days.first?.commitCount == 2)
+        #expect(viewModel.isLoading == false)
+
+        provider.currentSnapshot = snapshot(path: "/tmp/first", count: 3)
+        provider.isLoading = false
+        provider.notify(.snapshotChanged)
+        #expect(viewModel.snapshot?.days.first?.commitCount == 3)
+
+        observer.cancel()
+    }
+
+    @Test("own-project refresh failure still clears the section")
+    func ownNilSnapshotClears() {
+        let provider = MockActivityHeatmapProvider()
+        provider.currentSnapshot = snapshot(path: "/tmp/first", count: 2)
+        let capability = GitActivityHeatmapProjectCapability(provider: provider)
+        let viewModel = GitActivityHeatmapProjectViewModel(projectPath: "/tmp/first", capability: capability)
+        let observer = GitActivityHeatmapProjectObserver(capability: capability, viewModel: viewModel)
+        #expect(viewModel.snapshot?.days.first?.commitCount == 2)
+
+        viewModel.sync(snapshot: nil, isLoading: true)
         #expect(viewModel.snapshot == nil)
         #expect(viewModel.isLoading)
 
         observer.cancel()
-        provider.currentSnapshot = snapshot(path: "/tmp/first", count: 3)
-        provider.isLoading = false
-        provider.notify(.snapshotChanged)
-        #expect(viewModel.snapshot == nil)
     }
 
     @Test("updates the watched repository only when the project path changes")

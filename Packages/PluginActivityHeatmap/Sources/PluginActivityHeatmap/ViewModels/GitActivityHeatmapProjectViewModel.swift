@@ -33,7 +33,11 @@ final class GitActivityHeatmapProjectViewModel: ObservableObject {
     /// Observer 写入：Provider 快照/加载状态变化。
     func sync(snapshot: ActivityHeatmapSnapshot?, isLoading: Bool) {
         let normalizedPath = URL(fileURLWithPath: projectPath).standardizedFileURL.path
-        self.snapshot = snapshot?.repositoryPath == normalizedPath ? snapshot : nil
-        self.isLoading = isLoading && self.snapshot == nil
+        // 其他仓库的刷新（当前项目的 refsChanged 等会切换共享 Provider 的
+        // 快照）与本 Section 无关，必须整体忽略：既不改快照也不改加载状态，
+        // 否则设置页里正在展示的项目会被清成「无提交活动」（#371）。
+        if let snapshot, snapshot.repositoryPath != normalizedPath { return }
+        self.snapshot = snapshot
+        self.isLoading = isLoading && snapshot == nil
     }
 }
