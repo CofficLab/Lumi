@@ -41,5 +41,6 @@ struct GitBranchRow: View {
             }
         }
         .disabled(!isEnabled)
+        .opacity(branch.isRemote ? 0.55 : 1)
     }
 }
