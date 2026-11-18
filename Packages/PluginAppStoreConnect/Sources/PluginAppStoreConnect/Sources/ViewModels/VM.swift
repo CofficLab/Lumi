@@ -135,6 +135,12 @@ final class VM: ObservableObject, SuperLog {
     /// 首个操作启动的 500ms 遮罩延时任务，由最后一个操作负责取消。
     var busyOverlayDelayTask: Task<Void, Never>?
 
+    /// 仍在进行中的 force refresh 操作数（#437）：策略切换按窗口计数，
+    /// 并发操作不得各自保存/还原共享的 fetchPolicy。
+    var busyForceRefreshCount = 0
+    /// force refresh 窗口开启前的 fetchPolicy，由窗口内最后一个操作恢复。
+    var busyPreviousFetchPolicy: ConnectFetchPolicy = .cacheFirst
+
     init(
         credentialStore: CredentialStore = .shared,
         localStore: AppStoreConnectPluginLocalStore = .shared,
