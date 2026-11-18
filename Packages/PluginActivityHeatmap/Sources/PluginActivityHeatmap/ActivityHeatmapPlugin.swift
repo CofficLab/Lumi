@@ -43,6 +43,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
     private var projectSectionObservers: [String: GitActivityHeatmapProjectObserver] = [:]
     private var viewModel: ActivityHeatmapViewModel?
     private var insertionObserver: MessageObserver?
+    private var removalObserver: MessageRemovalObserver?
     private var idleTimeState: ActivityHeatmapIdleTimeState?
     private var idleTimeObserver: ActivityHeatmapIdleTimeObserver?
 
@@ -132,6 +133,11 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
                     self?.viewModel?.scheduleReload()
                 }
             }
+            removalObserver = MessageRemovalObserver(messages: messages) { [weak self] in
+                Task { @MainActor in
+                    self?.viewModel?.scheduleReloadAfterRemoval()
+                }
+            }
         }
         if let idleTime {
             let idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
@@ -185,6 +191,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         insertionObserver?.cancel()
         insertionObserver = nil
+        removalObserver?.cancel()
+        removalObserver = nil
         idleTimeObserver?.cancel()
         idleTimeObserver = nil
         idleTimeState = nil
@@ -229,6 +237,8 @@ public final class ActivityHeatmapViewModel: ObservableObject {
     let dayStartProvider: () -> Date
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
+    /// 待处理的历史缓存失效：删除/清空消息后置位，由下一次重载消费（#238）。
+    private var needsHistoricalCacheInvalidation = false
     static let periodKey = ActivityHeatmapPreferences.periodKey
 
     @Published public var period: ActivityHeatmapPeriod {
@@ -325,6 +335,17 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         }
     }
 
+    /// 删除或清空消息后的刷新入口（#238）。
+    ///
+    /// 删除事件只携带 messageID 且消息已不存在，清空事件只携带
+    /// conversationID，都无法映射回受影响日期，只能整体失效历史缓存。
+    /// 失效标记在重载真正开始时消费，因此防抖任务即使被后续插入的
+    /// 重载或手动刷新取消，失效也不会丢失。
+    func scheduleReloadAfterRemoval() {
+        needsHistoricalCacheInvalidation = true
+        scheduleReload()
+    }
+
     private func reloadNow() async {
         reloadGeneration += 1
         let generation = reloadGeneration
@@ -332,6 +353,11 @@ public final class ActivityHeatmapViewModel: ObservableObject {
             days = []
             heatmapDays = []
             return
+        }
+        if needsHistoricalCacheInvalidation {
+            needsHistoricalCacheInvalidation = false
+            // 整体失效历史缓存：下一次查询把全部历史日期视为缺失（#238）。
+            await cache?.invalidate()
         }
         isLoading = true
         defer {
@@ -673,6 +699,18 @@ public actor ActivityHeatmapCache {
         guard let data = try? JSONEncoder().encode(envelope) else { return }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: url, options: .atomic)
+    }
+
+    /// 删除/清空消息后整体失效缓存（#238）。
+    ///
+    /// 删除与清空事件都无法还原受影响的日期（删除只携带 messageID 且
+    /// 消息已不存在，清空只携带 conversationID），因此清空全部计数并
+    /// 删除磁盘文件，让下一次重载全量重查。
+    public func invalidate() {
+        values = [:]
+        loadedTimeZoneIdentifier = nil
+        guard let url else { return }
+        try? FileManager.default.removeItem(at: url)
     }
 
     /// 读取缓存，并在时区变化时整体失效（#504）。
