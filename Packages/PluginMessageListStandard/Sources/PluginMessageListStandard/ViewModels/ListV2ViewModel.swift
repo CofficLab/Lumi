@@ -334,7 +334,18 @@ final class ListV2ViewModel: ObservableObject {
         // 切换会话期间用户可能又选了别的会话，丢弃过期结果。
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
-        persistedMessages = result.messages
+        // 首屏 I/O 期间插入事件可能已经把新消息放进窗口（激活时清空过窗口，
+        // 此后只有 insert 会改它）：整页赋值会把它们抹掉，看起来像发送失败
+        // （#146）。发布前把窗口里不在这一页中的消息合并回来；与页内重复的
+        // 插入以落库版本为准。
+        let pageIDs = Set(result.messages.map(\.id))
+        let midFlightInserts = persistedMessages.filter { !pageIDs.contains($0.id) }
+        persistedMessages = midFlightInserts.isEmpty
+            ? result.messages
+            : (result.messages + midFlightInserts).sorted {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
         hasEarlierMessages = result.hasEarlierMessages
         isLoading = false
     }

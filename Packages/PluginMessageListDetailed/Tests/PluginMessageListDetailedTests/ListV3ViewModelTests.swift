@@ -98,6 +98,41 @@ private final class GatedTailStubMessageCapability: MessageListMessageCapability
     }
 }
 
+/// 首屏读取（无游标）armed 时卡在门闩上，放行后返回**不含激活期间插入消息**的
+/// 过期页面；翻页读取（带游标）永远直接返回（#146）。
+@MainActor
+private final class DeferredFirstPageMessages: MessageListMessageCapability {
+    let deferredPage: [Message]
+    let gate: PagingRaceGate
+    var armed = false
+
+    init(page: [Message], gate: PagingRaceGate) {
+        self.deferredPage = page
+        self.gate = gate
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] { deferredPage }
+
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message] {
+        if beforeMessageID != nil { return [] }
+        if armed { await gate.enter() }
+        return Array(deferredPage.suffix(limit))
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool {
+        false
+    }
+}
+
 @MainActor
 private func makeToolCallRecord(
     id: String,
@@ -443,6 +478,74 @@ struct ListV3ViewModelPaginationTests {
         #expect(viewModel.persistedMessages.first?.id == earliest.id,
                 "刚前插的 m1 不得被尾部刷新的旧快照结果抹掉")
         #expect(viewModel.hasEarlierMessages == false)
+    }
+
+    @Test("首屏加载期间插入的新消息不得被过期的整页结果抹掉（#146）")
+    func firstScreenLoadKeepsMidFlightInserts() async {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 0)
+        // 首屏读取最终返回的「过期页面」，不含悬挂期间插入的消息。
+        let page = (0..<3).map { index in
+            msg(
+                conversationID: conversationID,
+                role: .user,
+                content: "m\(index + 1)",
+                createdAt: base.addingTimeInterval(Double(index))
+            )
+        }
+        let gate = PagingRaceGate()
+        let manager = DeferredFirstPageMessages(page: page, gate: gate)
+        let viewModel = ListV3ViewModel(
+            services: MessageListServices(
+                conversations: StubConversationCapability(
+                    selectedConversationID: conversationID,
+                    verbosity: .standard
+                ),
+                conversationState: StubConversationStateCapability(
+                    snapshot: ConversationStateSnapshot(conversationID: conversationID)
+                ),
+                developerModeState: DeveloperModeStateViewModel(),
+                messages: manager,
+                rendering: nil,
+                streaming: StubStreamingCapability(),
+                toolManager: StubToolManagerCapability(),
+                agentTurn: StubAgentLoopCapability(),
+                promptSuggestions: nil,
+                promptSuggestionExecutor: nil,
+                project: nil,
+                toolbar: nil,
+                chat: nil
+            )
+        )
+
+        // 让激活的首屏读取卡在门闩上。
+        manager.armed = true
+        let activation = Task { await viewModel.activate(conversationID: conversationID) }
+        let deadline = Date().addingTimeInterval(5)
+        while await gate.enteredCount < 1, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.enteredCount >= 1, "首屏读取应已进入被门闩卡住的页面")
+
+        // 首屏 I/O 悬挂期间，同会话插入一条新消息（直接应用进窗口）。
+        let inserted = msg(
+            conversationID: conversationID,
+            role: .user,
+            content: "new",
+            createdAt: base.addingTimeInterval(10)
+        )
+        viewModel.handleMessageChange(.inserted(inserted, conversationID: conversationID))
+        #expect(viewModel.persistedMessages.contains { $0.id == inserted.id })
+
+        // 放行过期页面（不含 new）。
+        await gate.releaseAll()
+        await activation
+        // 给激活收尾（窗口合并 + 投影重建）留时间：放行后的续体要等主执行器调度。
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(viewModel.persistedMessages.contains { $0.id == inserted.id },
+                "激活 I/O 期间插入的消息不得被首屏整页结果抹掉")
+        #expect(viewModel.persistedMessages.contains { $0.id == page[0].id })
     }
 
     @Test("无更早消息时翻页返回 nil 且不改变窗口")

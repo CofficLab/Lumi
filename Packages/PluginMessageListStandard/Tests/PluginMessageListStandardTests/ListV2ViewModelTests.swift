@@ -367,6 +367,41 @@ private final class GatedTailStubMessageCapability: MessageListMessageCapability
     }
 }
 
+/// 首屏读取（beforeMessageID == nil）armed 时卡在门闩上，放行后返回**不含激活
+/// 期间插入消息**的过期页面；翻页读取（带游标）永远直接返回（#146）。
+@MainActor
+private final class DeferredFirstPageMessages: MessageListMessageCapability {
+    let deferredPage: [Message]
+    let gate: PagingRaceGate
+    var armed = false
+
+    init(page: [Message], gate: PagingRaceGate) {
+        self.deferredPage = page
+        self.gate = gate
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] { deferredPage }
+
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message] {
+        if beforeMessageID != nil { return [] }
+        if armed { await gate.enter() }
+        return Array(deferredPage.suffix(limit))
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool {
+        false
+    }
+}
+
 @MainActor
 @Test("尾部刷新 I/O 期间完成向上翻页：旧快照结果不得抹掉刚前插的历史（#388）")
 func tailRefreshDoesNotClobberConcurrentPaging() async {
@@ -417,6 +452,54 @@ func tailRefreshDoesNotClobberConcurrentPaging() async {
     #expect(harness.viewModel.persistedMessages.first?.id == earliest.id,
             "刚前插的 m1 不得被尾部刷新的旧快照结果抹掉")
     #expect(harness.viewModel.hasEarlierMessages == false)
+}
+
+@MainActor
+@Test("首屏加载期间插入的新消息不得被过期的整页结果抹掉（#146）")
+func firstScreenLoadKeepsMidFlightInserts() async {
+    let conversationID = UUID()
+    let base = Date(timeIntervalSince1970: 0)
+    // 首屏读取最终返回的「过期页面」，不含悬挂期间插入的消息。
+    let page = (0..<3).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "m\(index + 1)",
+            createdAt: base.addingTimeInterval(Double(index))
+        )
+    }
+    let gate = PagingRaceGate()
+    let manager = DeferredFirstPageMessages(page: page, gate: gate)
+    let harness = ViewModelHarness(selected: conversationID, messages: manager)
+
+    // 让激活的首屏读取卡在门闩上。
+    manager.armed = true
+    let activation = Task { await harness.viewModel.activateCurrentConversation() }
+    let deadline = Date().addingTimeInterval(5)
+    while await gate.enteredCount < 1, Date() < deadline {
+        try? await Task.sleep(nanoseconds: 5_000_000)
+    }
+    #expect(await gate.enteredCount >= 1, "首屏读取应已进入被门闩卡住的页面")
+
+    // 首屏 I/O 悬挂期间，同会话插入一条新消息（直接应用进窗口）。
+    let inserted = makeMessage(
+        conversationID: conversationID,
+        role: .user,
+        content: "new",
+        createdAt: base.addingTimeInterval(10)
+    )
+    harness.viewModel.handleMessageChange(.inserted(inserted, conversationID: conversationID))
+    #expect(harness.viewModel.persistedMessages.contains { $0.id == inserted.id })
+
+    // 放行过期页面（不含 new）。
+    await gate.releaseAll()
+    await activation
+    // 给激活收尾（窗口合并 + 投影重建）留时间：放行后的续体要等主执行器调度。
+    try? await Task.sleep(nanoseconds: 100_000_000)
+
+    #expect(harness.viewModel.persistedMessages.contains { $0.id == inserted.id },
+            "激活 I/O 期间插入的消息不得被首屏整页结果抹掉")
+    #expect(harness.viewModel.persistedMessages.contains { $0.id == page[0].id })
 }
 
 // MARK: - Tail refresh

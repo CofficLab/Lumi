@@ -629,4 +629,55 @@ struct ListPresentationTests {
                 "刚前插的 m1 不得被尾部刷新的旧快照结果抹掉")
         #expect(vm.hasEarlierTurns == false)
     }
+
+    // MARK: - §6 首屏加载与插入事件交错（#146）
+
+    @Test("§6 首屏加载期间插入的新消息不得被过期的整页结果抹掉（#146）")
+    func firstScreenLoadKeepsMidFlightInserts() async {
+        let base = Date(timeIntervalSince1970: 0)
+        // 首屏读取最终返回的「过期页面」，不含悬挂期间插入的消息。
+        let page = (0..<3).map { index in
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "m\(index + 1)",
+                createdAt: base.addingTimeInterval(Double(index))
+            )
+        }
+        let gate = PagingRaceGate()
+        let manager = GatedTailMessages(conversation: page, earlierPage: [], gate: gate)
+        let vm = ConversationMessageListVM(
+            services: makeServices(messages: manager, conversations: StubConversations(selected: conversationID)),
+            pageSize: 40
+        )
+
+        // 让激活的首屏读取卡在门闩上。
+        manager.armed = true
+        let activation = Task { await vm.activate(conversationID: conversationID) }
+        let deadline = Date().addingTimeInterval(5)
+        while await gate.enteredCount < 1, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.enteredCount >= 1, "首屏读取应已进入被门闩卡住的页面")
+
+        // 首屏 I/O 悬挂期间，同会话插入一条新消息（直接应用进窗口）。
+        let inserted = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "new",
+            createdAt: base.addingTimeInterval(10)
+        )
+        vm.handleMessageChange(.inserted(inserted, conversationID: conversationID))
+        #expect(vm.displayMessages.contains { $0.id == inserted.id })
+
+        // 放行过期页面（不含 new）。
+        await gate.releaseAll()
+        await activation
+        // 给激活收尾（窗口合并 + 投影重建）留时间：放行后的续体要等主执行器调度。
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(vm.displayMessages.contains { $0.id == inserted.id },
+                "激活 I/O 期间插入的消息不得被首屏整页结果抹掉")
+        #expect(vm.displayMessages.contains { $0.id == page[0].id })
+    }
 }

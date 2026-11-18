@@ -122,7 +122,15 @@ final class ConversationMessageListVM: ObservableObject {
         guard mySequence == activationSequence,
               selectedConversationID == conversationID else { return }
 
-        messageWindow = page.messages
+        // 首屏 I/O 期间插入事件可能已经把新消息放进窗口（激活开始时清空过
+        // 窗口，此后只有 insert 会改它）：整页赋值会把它们抹掉，看起来像发送
+        // 失败（#146）。发布前把窗口里不在这一页中的消息合并回来；与页内
+        // 重复的插入以落库版本为准。
+        let pageIDs = Set(page.messages.map(\.id))
+        let midFlightInserts = messageWindow.filter { !pageIDs.contains($0.id) }
+        messageWindow = midFlightInserts.isEmpty
+            ? page.messages
+            : (page.messages + midFlightInserts).sorted(by: messageOrdering)
         hasEarlierTurns = page.hasEarlierMessages
         rebuildWindow(for: conversationID, sequence: mySequence)
     }
