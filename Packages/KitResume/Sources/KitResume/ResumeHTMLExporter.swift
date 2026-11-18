@@ -67,12 +67,14 @@ public enum ResumeHTMLExporter {
         loadTimeout: TimeInterval = 8,
         resourceTimeout: TimeInterval = 5
     ) async throws -> PDFDocument {
+        try Task.checkCancellation()
         let preset = ResumePaperSpec.preset(for: paper)
         let webView = try await loadWebView(html: html, fileURL: fileURL, paper: preset, loadTimeout: loadTimeout, resourceTimeout: resourceTimeout)
         let inspection = try await inspectPages(in: webView, preset: preset)
 
         let merged = PDFDocument()
         for page in inspection.pages {
+            try Task.checkCancellation()
             let frame = CGRect(x: page.left, y: page.top, width: page.width, height: page.height)
             let data = try await capturePDF(in: webView, rect: frame)
             guard let pageDocument = PDFDocument(data: data), let pdfPage = pageDocument.page(at: 0) else {
@@ -132,6 +134,7 @@ public enum ResumeHTMLExporter {
         let preset = ResumePaperSpec.preset(for: paper)
         var results: [Data] = []
         for index in 0..<document.pageCount {
+            try Task.checkCancellation()
             guard let page = document.page(at: index) else { continue }
             let box = ExportablePDFPage(page: page)
             let data = try await Task.detached(priority: .userInitiated) {
@@ -184,9 +187,11 @@ public enum ResumeHTMLExporter {
             webView.loadHTMLString(html, baseURL: nil)
         }
 
+        try Task.checkCancellation()
         guard await delegate.waitForFinish(timeout: loadTimeout) else { throw ResumeExportError.loadTimedOut }
+        try Task.checkCancellation()
         try await disableMotion(in: webView)
-        guard await waitForResources(in: webView, timeout: resourceTimeout) else {
+        guard try await waitForResources(in: webView, timeout: resourceTimeout) else {
             throw ResumeExportError.resourcesTimedOut
         }
         return webView
@@ -284,21 +289,26 @@ public enum ResumeHTMLExporter {
         // WebKit 的完成回调不保证送达；没有超时的话 continuation 永不恢复，
         // 调用方会永久挂起（见 Issue #127）。
         let state = PDFCaptureState()
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            state.attach(continuation)
+        return try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+                state.attach(continuation)
 
-            webView.createPDF(configuration: configuration) { result in
-                switch result {
-                case .success(let data): state.finish(.success(data))
-                case .failure(let error): state.finish(.failure(error))
+                webView.createPDF(configuration: configuration) { result in
+                    switch result {
+                    case .success(let data): state.finish(.success(data))
+                    case .failure(let error): state.finish(.failure(error))
+                    }
+                }
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    state.finish(.failure(ResumeExportError.pdfCaptureTimedOut))
                 }
             }
-
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(timeout))
-                state.finish(.failure(ResumeExportError.pdfCaptureTimedOut))
-            }
-        }
+        }, onCancel: {
+            // 取消也要立即恢复等待方，否则已取消的导出仍要空等超时（#430）。
+            Task { @MainActor in state.finish(.failure(CancellationError())) }
+        })
     }
 
     /// `createPDF` 的一次性完成状态。
@@ -377,7 +387,7 @@ public enum ResumeHTMLExporter {
         _ = try await webView.evaluateJavaScript(script)
     }
 
-    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async -> Bool {
+    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async throws -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         let script = """
         document.readyState === 'complete' &&
@@ -385,8 +395,9 @@ public enum ResumeHTMLExporter {
         (!document.fonts || document.fonts.status === 'loaded')
         """
         while Date() < deadline {
+            try Task.checkCancellation()
             if let ready = try? await webView.evaluateJavaScript(script) as? Bool, ready { return true }
-            try? await Task.sleep(for: .milliseconds(50))
+            try await Task.sleep(for: .milliseconds(50))
         }
         return false
     }
@@ -397,13 +408,18 @@ public enum ResumeHTMLExporter {
 
         func waitForFinish(timeout: TimeInterval) async -> Bool {
             if let completedResult { return completedResult }
-            return await withCheckedContinuation { continuation in
-                self.continuation = continuation
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(timeout))
-                    self?.finish(false)
+            return await withTaskCancellationHandler(operation: {
+                await withCheckedContinuation { continuation in
+                    self.continuation = continuation
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(timeout))
+                        self?.finish(false)
+                    }
                 }
-            }
+            }, onCancel: {
+                // 取消也要立即唤醒等待方，否则已取消的导出仍要空等超时（#430）。
+                Task { @MainActor [weak self] in self?.finish(false) }
+            })
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finish(true) }

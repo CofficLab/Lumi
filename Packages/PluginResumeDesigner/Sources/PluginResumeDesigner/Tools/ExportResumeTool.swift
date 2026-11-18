@@ -77,6 +77,7 @@ public struct ExportResumeTool: SuperAgentTool {
 
         let overwrite = ResumeToolSupport.bool(arguments, "overwrite", default: false)
         let fileManager = FileManager.default
+        try Task.checkCancellation()
         let outputParent = URL(fileURLWithPath: resolvedOutput, isDirectory: true).deletingLastPathComponent()
         try fileManager.createDirectory(at: outputParent, withIntermediateDirectories: true)
         let stagingDirectory = outputParent.appendingPathComponent(".resume-export-\(UUID().uuidString)", isDirectory: true)
@@ -124,6 +125,7 @@ public struct ExportResumeTool: SuperAgentTool {
 
         // 事务式安装：staging → 备份 → 落盘，失败回滚。
         let backupDirectory = stagingDirectory.appendingPathComponent("backups", isDirectory: true)
+        try Task.checkCancellation()
         try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
         var installedURLs: [URL] = []
         var backups: [(original: URL, backup: URL)] = []

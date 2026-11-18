@@ -61,6 +61,7 @@ public struct ExportPrototypeTool: SuperAgentTool {
         var staged: [StagedExport] = []
 
         for screen in project.sortedScreens {
+            try Task.checkCancellation()
             let resolved = try PrototypeToolSupport.store.readScreen(
                 storagePath: storagePath,
                 projectSlug: projectID,
@@ -94,6 +95,7 @@ public struct ExportPrototypeTool: SuperAgentTool {
         }
 
         let backupDirectory = stagingDirectory.appendingPathComponent("backups", isDirectory: true)
+        try Task.checkCancellation()
         try Self.installStagedExports(staged, outputDirectory: outputDirectory, backupDirectory: backupDirectory)
 
         await PrototypeToolSupport.notify(projectID: projectID)
