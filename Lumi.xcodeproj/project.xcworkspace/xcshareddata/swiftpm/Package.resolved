@@ -231,8 +231,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiPluginDiskManager.git",
       "state": {
-        "revision": "ba6919cf3b501aeafa17db06eb4e790868d668c0",
-        "version": "1.1.0"
+        "revision": "ea0f2e58f97105cadc6dc5b7967a85bf45fb0219",
+        "version": "1.1.1"
       }
     },
     {
