@@ -144,6 +144,9 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     ///   注意这是「已批准」而不是「是否需要批准」——早期用 `allowLocalAccess`
     ///   命名导致调用处把判断结果反向传参，审批语义一度漂移。
     func navigate(to url: URL, localAccessApproved: Bool = false) async throws {
+        // 已取消的任务不再发起新导航：注册取消处理前就结束，避免
+        // continuation 在无人接管的情况下只能等 30 秒超时（#419）。
+        try Task.checkCancellation()
         if navigationContinuation != nil {
             finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
             webView.stopLoading()
@@ -156,18 +159,26 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
             localAccessApproved: localAccessApproved
         )
         isLoading = true
-        try await withCheckedThrowingContinuation { continuation in
-            navigationContinuation = continuation
-            navigationTimeoutTask = Task { [weak self] in
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-                guard !Task.isCancelled else { return }
-                self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                navigationContinuation = continuation
+                navigationTimeoutTask = Task { [weak self] in
+                    try? await Task.sleep(nanoseconds: 30_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
+                }
+                guard let navigation = webView.load(URLRequest(url: url)) else {
+                    finishNavigation(.failure(SessionError.invalidURL), token: token)
+                    return
+                }
+                self.navigation = navigation
             }
-            guard let navigation = webView.load(URLRequest(url: url)) else {
-                finishNavigation(.failure(SessionError.invalidURL), token: token)
-                return
+        } onCancel: { [weak self] in
+            // 取消必须立刻停止 WebKit 加载并结束 continuation（#419），
+            // 否则调用方要等 30 秒导航超时，页面也继续加载。
+            Task { @MainActor [weak self] in
+                self?.stop()
             }
-            self.navigation = navigation
         }
     }
 
@@ -432,6 +443,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     }
 
     func performAndWaitNavigation(_ action: () -> WKNavigation?) async throws {
+        // 已取消的任务不再发起新导航（#419，与 navigate(to:) 一致）。
+        try Task.checkCancellation()
         if navigationContinuation != nil {
             finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
             webView.stopLoading()
@@ -439,14 +452,21 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         let token = UUID()
         navigationToken = token
         isLoading = true
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            navigationContinuation = continuation
-            navigationTimeoutTask = Task { [weak self] in
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-                guard !Task.isCancelled else { return }
-                self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                navigationContinuation = continuation
+                navigationTimeoutTask = Task { [weak self] in
+                    try? await Task.sleep(nanoseconds: 30_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    self?.finishNavigation(.failure(SessionError.navigationTimedOut), token: token)
+                }
+                navigation = action()
             }
-            navigation = action()
+        } onCancel: { [weak self] in
+            // 取消即停止加载并结束 continuation（#419）。
+            Task { @MainActor [weak self] in
+                self?.stop()
+            }
         }
     }
 
