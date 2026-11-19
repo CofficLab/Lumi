@@ -36,27 +36,20 @@ public struct ListIconDocumentsTool: SuperAgentTool {
         let scopeFilter = (IconToolSupport.string(arguments, "scope") ?? IconScope.project.rawValue)
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-
-        let snapshot = await MainActor.run { () -> [(IconScope, [IconDocument])] in
-            // 列表以磁盘为准，确保 Agent 看到最新内容（包括尚未载入内存的文档）。
-            var result: [(IconScope, [IconDocument])] = []
-            let store = IconToolSupport.store()
-            if scopeFilter == IconScope.project.rawValue {
-                let docs = IconDocumentFileStore.loadAll(storagePath: store.projectStoragePath)
-                result.append((.project, docs))
-            }
-            return result
-        }
-
-        let lines = snapshot.flatMap { scope, documents in
-            documents.isEmpty
-                ? ["[scope=\(scope.rawValue)] (no documents)"]
-                : documents.map { Self.documentSummary($0, scope: scope) }
-        }
-        if lines.isEmpty {
+        guard scopeFilter == IconScope.project.rawValue else {
             return "No app icon documents found."
         }
-        return lines.joined(separator: "\n")
+
+        // 存储路径在主线程读取（廉价属性），全量磁盘扫描放到主线程之外，
+        // 避免每次列表调用都在主线程扫描并解码全部文档（#1292）。
+        let storagePath = await MainActor.run { IconToolSupport.store().projectStoragePath }
+        let documents = IconDocumentFileStore.loadAll(storagePath: storagePath)
+        if documents.isEmpty {
+            return "[scope=\(IconScope.project.rawValue)] (no documents)"
+        }
+        return documents
+            .map { Self.documentSummary($0, scope: .project) }
+            .joined(separator: "\n")
     }
 
     private static func documentSummary(_ document: IconDocument, scope: IconScope) -> String {
