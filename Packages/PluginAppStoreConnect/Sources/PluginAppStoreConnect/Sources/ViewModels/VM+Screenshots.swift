@@ -5,9 +5,13 @@ extension VM {
     func loadScreenshotSets(forceRefresh: Bool = false) async {
         guard let localizationID = selectedLocalizationID else { return }
         await runBusy(forceRefresh: forceRefresh) {
-            try await applyScreenshotPayload(
-                try await client.loadScreenshotSets(localizationID: localizationID)
-            )
+            let payload = try await client.loadScreenshotSets(localizationID: localizationID)
+            // 请求期间可能已切到其它本地化：迟到的截图集合不得覆盖当前选择（#435）。
+            guard selectedLocalizationID == localizationID else {
+                Self.logger.info("\(self.t)discarded stale screenshot sets for localization: \(localizationID)")
+                return
+            }
+            try await applyScreenshotPayload(payload, expectedLocalizationID: localizationID)
         }
     }
 
@@ -28,8 +32,17 @@ extension VM {
         }
 
         let loaded = try await client.listScreenshots(screenshotSetID: set.id)
-        screenshotsBySetID[set.id] = loaded
+        // await 期间可能已切到其它 set：旧 set 的列表只进缓存，不得覆盖当前展示（#435）。
+        applyLoadedScreenshots(loaded, forSetID: set.id)
+    }
+
+    /// 截图列表落盘：缓存按 set 键入，但展示列表只在当前选中仍是同一 set 时更新（#435）。
+    @discardableResult
+    func applyLoadedScreenshots(_ loaded: [AppScreenshot], forSetID setID: String) -> Bool {
+        screenshotsBySetID[setID] = loaded
+        guard selectedScreenshotSet?.id == setID else { return false }
         screenshots = loaded
+        return true
     }
 
     func reloadScreenshotsForSelectedDisplayType(forceRefresh: Bool = false) async {
@@ -87,6 +100,11 @@ extension VM {
                 localizationID: localizationID,
                 displayType: selectedScreenshotDisplayType
             )
+            // 创建期间可能已切到其它本地化：迟到的新集合不得混进当前视图（#435）。
+            guard selectedLocalizationID == localizationID else {
+                Self.logger.info("\(self.t)discarded stale created screenshot set for localization: \(localizationID)")
+                return
+            }
             screenshotSets.append(set)
             if set.screenshotDisplayType == selectedScreenshotDisplayType {
                 screenshotsBySetID[set.id] = []
@@ -95,7 +113,12 @@ extension VM {
         }
     }
 
-    func applyScreenshotPayload(_ payload: ScreenshotSetsPayload) async throws {
+    /// 载入截图集合负载；本地化已切走时整体丢弃，不得写任何状态（#435）。
+    func applyScreenshotPayload(_ payload: ScreenshotSetsPayload, expectedLocalizationID: String) async throws {
+        guard selectedLocalizationID == expectedLocalizationID else {
+            Self.logger.info("\(self.t)discarded stale screenshot payload for localization: \(expectedLocalizationID)")
+            return
+        }
         screenshotSets = payload.sets
         screenshotsBySetID = payload.screenshotsBySetID
         alignSelectedScreenshotDisplayType()
@@ -117,7 +140,8 @@ extension VM {
     func reloadScreenshotSetsFromNetwork() async throws {
         guard let localizationID = selectedLocalizationID else { return }
         try await applyScreenshotPayload(
-            try await client.loadScreenshotSets(localizationID: localizationID)
+            try await client.loadScreenshotSets(localizationID: localizationID),
+            expectedLocalizationID: localizationID
         )
     }
 
