@@ -67,6 +67,17 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// 通道持久化存储。可注入隔离实例以测试落盘失败路径（#524）。
     private let store: AppUpdatePluginLocalStore
 
+    /// 暂存安装目录解析用的缓存根注入点（#522）。测试传临时目录；
+    /// 生产为 nil，走真实用户缓存目录。
+    var stagedInstallationCachesRootOverride: URL?
+
+    /// Sparkle 最近一次请求 feed URL 时生效的通道（#522）。
+    ///
+    /// Sparkle 的检查会话以该次请求的 feed 发现更新，之后才下载并暂存；
+    /// 若在「检查 → 暂存」窗口内切换通道，暂存的便是被放弃通道的更新。
+    /// `willInstallUpdateOnQuit` 用它与当前通道比对，识别这类迟到暂存。
+    private var channelAtLastFeedURLRequest: AppUpdateChannel?
+
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
         updaterController?.updater
@@ -137,6 +148,11 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         // 手动检查或重启。prepareFeedURLIfNeeded 会先等 updateFeedURLs 完成
         // 再探测（updateFeedURLs 已清除缓存窗口）。
         _ = prepareFeedURLIfNeeded()
+
+        // 作废旧通道已暂存的安装（#522）：Sparkle 暂存后总是会在应用终止时
+        // 尝试安装（公开 API 无法取消，见 removeSparkleStagedInstallation），
+        // 切换通道后必须移除暂存产物，否则用户刚放弃的通道仍会被装上。
+        removeSparkleStagedInstallation()
     }
 
     /// Lazily initialize the Sparkle updater controller.
@@ -276,6 +292,9 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         willInstallUpdateOnQuit item: SUAppcastItem,
         immediateInstallationBlock immediateInstallHandler: @escaping () -> Void
     ) -> Bool {
+        // 迟到的旧通道暂存（#522）：检查发起后、暂存完成前切走通道，这里的
+        // 暂存产物属于被放弃的通道，必须在终止安装前作废。
+        invalidateStagedInstallIfChannelChanged()
         Task {
             await stateMachine.markReadyToInstall(version: item.displayVersionString)
         }
@@ -293,7 +312,69 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// is a plain `@MainActor` stored property, and this delegate method runs
     /// on the main actor, so the read is safe and cheap.
     public func feedURLString(for updater: SPUUpdater) -> String? {
-        resolvedFeedURL.absoluteString
+        noteFeedURLRequested()
+        return resolvedFeedURL.absoluteString
+    }
+
+    // MARK: - 暂存安装作废（#522）
+
+    /// 记录 Sparkle 请求 feed URL 时生效的通道（供暂存归属比对）。
+    /// 测试直接调用以模拟检查发起时刻。
+    func noteFeedURLRequested() {
+        channelAtLastFeedURLRequest = channel
+    }
+
+    /// 暂存产物属于被放弃通道时移除之；通道一致时保持不动，
+    /// 正常静默安装不受影响。
+    func invalidateStagedInstallIfChannelChanged() {
+        guard let requested = channelAtLastFeedURLRequest, requested != channel else { return }
+        Self.logger.info("\(Self.t)Staged update belongs to abandoned channel; invalidating it")
+        removeSparkleStagedInstallation()
+    }
+
+    /// Sparkle 2.x 的暂存安装目录约定（SPULocalCacheDirectory）：
+    /// `<Caches>/<hostBundleID>/org.sparkle-project.Sparkle/Installation`。
+    ///
+    /// 暂存后 Sparkle 总会在应用终止时尝试安装（公开 API 无法取消，取消消息
+    /// `SPUCancelInstallation` 仅内部可达）；移除该目录后工具的 stage-2 找不到
+    /// 暂存产物会报错退出，不执行安装。目录不存在时为 no-op——Sparkle 未来
+    /// 改变缓存布局时，本作废机制随之失效但不会产生新的破坏。
+    static func sparkleStagedInstallationDirectory(
+        inCachesRoot cachesRoot: URL,
+        hostBundleIdentifier: String
+    ) -> URL {
+        cachesRoot
+            .appendingPathComponent(hostBundleIdentifier, isDirectory: true)
+            .appendingPathComponent("org.sparkle-project.Sparkle", isDirectory: true)
+            .appendingPathComponent("Installation", isDirectory: true)
+    }
+
+    /// 移除 Sparkle 已暂存的安装产物（目录不存在时静默跳过）。
+    func removeSparkleStagedInstallation() {
+        let cachesRoot: URL?
+        if let override = stagedInstallationCachesRootOverride {
+            cachesRoot = override
+        } else {
+            cachesRoot = try? FileManager.default.url(
+                for: .cachesDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: false
+            )
+        }
+        guard let cachesRoot else { return }
+        let hostBundleIdentifier = Bundle.main.bundleIdentifier ?? ""
+        let directory = Self.sparkleStagedInstallationDirectory(
+            inCachesRoot: cachesRoot,
+            hostBundleIdentifier: hostBundleIdentifier
+        )
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        do {
+            try FileManager.default.removeItem(at: directory)
+            Self.logger.info("\(Self.t)Removed staged Sparkle installation at \(directory.path, privacy: .public)")
+        } catch {
+            Self.logger.error("\(Self.t)Failed to remove staged Sparkle installation: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     // MARK: - Notification Handlers

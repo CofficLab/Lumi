@@ -253,9 +253,96 @@ struct WaitingCheckChannelBindingTests {
     }
 }
 
+/// 通道切换作废 Sparkle 暂存安装（#522）
+@MainActor
+struct UpdateStagedInstallationInvalidationTests {
+    /// 测试进程的宿主标识：与生产 removeSparkleStagedInstallation 的推导一致。
+    private var hostBundleIdentifier: String { Bundle.main.bundleIdentifier ?? "" }
+
+    /// 在注入的缓存根下构造一份「已暂存的安装」产物。
+    @discardableResult
+    private func makeStagedInstallation(in root: URL) -> URL {
+        let directory = UpdateService.sparkleStagedInstallationDirectory(
+            inCachesRoot: root,
+            hostBundleIdentifier: hostBundleIdentifier
+        )
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? Data("archive".utf8).write(to: directory.appendingPathComponent("update.zip"))
+        return directory
+    }
+
+    private func makeService(label: String) -> UpdateService {
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("staged-install-\(label)")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store)
+        service.stagedInstallationCachesRootOverride = AppUpdateTestDoubles.makeTemporaryDirectory("staged-install-caches-\(label)")
+        return service
+    }
+
+    @Test("暂存安装目录遵循 Sparkle 2.x 的缓存布局约定")
+    func stagedInstallationDirectoryFollowsSparkleConvention() {
+        let root = URL(fileURLWithPath: "/tmp/caches-root")
+        let directory = UpdateService.sparkleStagedInstallationDirectory(
+            inCachesRoot: root,
+            hostBundleIdentifier: "com.coffic.lumi"
+        )
+        #expect(directory.path == "/tmp/caches-root/com.coffic.lumi/org.sparkle-project.Sparkle/Installation")
+    }
+
+    @Test("切换通道后移除被放弃通道已暂存的安装")
+    func setChannelRemovesStagedInstallationOfAbandonedChannel() {
+        let service = makeService(label: "switch-removes")
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        service.setChannel(.preview)
+
+        #expect(!FileManager.default.fileExists(atPath: staged.path), "切走的通道已暂存的安装必须被作废")
+    }
+
+    @Test("未暂存时切换通道是 no-op，不产生残留目录")
+    func setChannelIsNoOpWhenNothingStaged() {
+        let service = makeService(label: "switch-noop")
+
+        service.setChannel(.preview)
+
+        let root = service.stagedInstallationCachesRootOverride!
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        #expect(contents.isEmpty, "无暂存时不得凭空创建或残留目录")
+    }
+
+    @Test("检查发起后暂存才完成、且期间切换了通道：迟到的暂存被作废")
+    func lateStagingAfterChannelSwitchIsInvalidated() {
+        let service = makeService(label: "late-staging")
+        // 检查在 stable 上发起（Sparkle 请求 feed URL 记录当时通道）。
+        service.noteFeedURLRequested()
+        // 暂存完成前用户切到 Preview；此时暂存产物尚不存在，setChannel 的
+        // 移除是 no-op。
+        service.setChannel(.preview)
+        // 暂存随后才完成（旧通道的检查会话在切换后落盘）。
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        // willInstallUpdateOnQuit 触发暂存归属校验。
+        service.invalidateStagedInstallIfChannelChanged()
+
+        #expect(!FileManager.default.fileExists(atPath: staged.path), "迟到暂存的旧通道更新必须在终止安装前被作废")
+    }
+
+    @Test("通道一致时暂存安装保持不动，正常静默安装不受影响")
+    func matchingChannelStagedInstallIsKept() {
+        let service = makeService(label: "match-keeps")
+        service.setChannel(.preview)
+        // 当前通道（Preview）的检查请求了 feed URL，随后暂存完成。
+        service.noteFeedURLRequested()
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        service.invalidateStagedInstallIfChannelChanged()
+
+        #expect(FileManager.default.fileExists(atPath: staged.path), "属于当前通道的暂存安装不得被误删")
+    }
+}
+
 /// 闸门只拦第一次探测，后续探测立即返回不可达。
-private actor FirstProbeGatedChecker: FeedURLReachabilityChecker {
-    let gate: ProbeGate
+private actor FirstProbeGatedChecker: FeedURLReachabilityChecker {    let gate: ProbeGate
     private var probeCount = 0
 
     init(gate: ProbeGate) {
