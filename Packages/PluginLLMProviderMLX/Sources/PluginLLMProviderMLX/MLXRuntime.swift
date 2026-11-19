@@ -53,28 +53,30 @@ final class MLXRuntime {
         }
         guard let container = modelContainer else { throw MLXProviderError.loadFailed("模型容器未就绪") }
 
-        let lastUserImages = request.messages.last(where: { $0.role == .user })?.images ?? []
-        let imageURLs = try lastUserImages.enumerated().map { index, image in
-            let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)")
-                .appendingPathExtension(ext)
-            try image.data.write(to: url, options: .atomic)
-            return url
-        }
-        defer { imageURLs.forEach { try? FileManager.default.removeItem(at: $0) } }
-
-        let lastUserMessageIndex = request.messages.lastIndex(where: { $0.role == .user })
-        let messages = request.messages.enumerated().compactMap { index, message -> Chat.Message? in
-            switch message.role {
-            case .system: return .system(message.content)
-            case .user:
-                let images = index == lastUserMessageIndex ? imageURLs.map { UserInput.Image.url($0) } : []
-                return images.isEmpty ? .user(message.content) : .user(message.content, images: images)
-            case .assistant: return .assistant(message.content)
-            default: return nil
+        // 每条 user 消息的图片都写成临时文件并按消息位置传入（#412）：
+        // 只保留最后一条的图片会让多轮对话的历史图像全部丢失。
+        var imageFiles: [URL] = []
+        var imageURLsByMessageIndex: [Int: [URL]] = [:]
+        defer { imageFiles.forEach { try? FileManager.default.removeItem(at: $0) } }
+        for (index, message) in request.messages.enumerated() where message.role == .user {
+            let urls = try message.images.enumerated().map { imageIndex, image in
+                let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)-\(imageIndex)")
+                    .appendingPathExtension(ext)
+                try image.data.write(to: url, options: .atomic)
+                return url
+            }
+            if !urls.isEmpty {
+                imageURLsByMessageIndex[index] = urls
+                imageFiles.append(contentsOf: urls)
             }
         }
+
+        let messages = MLXChatMessages.build(
+            from: request.messages,
+            imageURLsByMessageIndex: imageURLsByMessageIndex
+        )
         guard !messages.isEmpty else { throw MLXProviderError.emptyPrompt }
         let tools = mlxTools(from: request.tools)
         let input = UserInput(chat: messages, tools: tools)
