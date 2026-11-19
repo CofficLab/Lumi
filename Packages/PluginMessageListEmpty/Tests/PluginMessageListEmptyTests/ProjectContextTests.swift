@@ -508,6 +508,82 @@ struct ProjectContextTests {
         #expect(model.hasProject == false)
     }
 
+    // MARK: - #807 会话增删后项目卡缓存必须重读
+
+    /// 会话 CRUD 不经过项目切换路径，卡片把会话数与最近会话连同项目身份
+    /// 一起缓存；不作废的话，同一项目的非强制加载永远短路返回旧数据。
+    /// 插件在 CRUD 事件里调用 `invalidateConversationData()`，回到空态时
+    /// 视图的 `.task` 只做非强制加载，缓存必须在这次加载里重读。
+    @Test("会话增删后非强制加载重读会话数与最近会话")
+    func conversationCRUDInvalidatesCardCache() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let conversations = DefaultConversationManager()
+        let a = try conversations.createConversation(title: "A", projectPath: root.path, providerID: nil, modelName: nil)
+
+        let model = ProjectContextViewModel(
+            project: provider,
+            conversations: conversations,
+            projectRAG: nil,
+            git: nil
+        )
+        await model.loadIfNeeded()
+        #expect(model.details.first { $0.id == "conversation-count" }?.value.contains("1") == true)
+
+        // 新建 B 后作废缓存：非强制加载也必须看到新会话。
+        let b = try conversations.createConversation(title: "B", projectPath: root.path, providerID: nil, modelName: nil)
+        model.invalidateConversationData()
+        await model.loadIfNeeded()
+
+        var detail = try #require(model.details.first { $0.id == "conversation-count" })
+        #expect(detail.value.contains("2"), "新建会话后卡片仍显示旧数量")
+        var row = try #require(model.rows.first { $0.id == "last-conversation" })
+        #expect(row.action == .resumeConversation(b), "新建会话后卡片仍指向旧会话")
+
+        // 删除 A：指向已删除会话的「Last time here」行必须消失。
+        conversations.deleteConversation(id: a)
+        model.invalidateConversationData()
+        await model.loadIfNeeded()
+
+        detail = try #require(model.details.first { $0.id == "conversation-count" })
+        #expect(detail.value.contains("1"))
+        row = try #require(model.rows.first { $0.id == "last-conversation" })
+        #expect(row.action == .resumeConversation(b))
+        #expect(row.action != .resumeConversation(a))
+    }
+
+    /// 未作废时（旧行为）同项目非强制加载短路返回旧数据——锁住回归前提。
+    @Test("未作废缓存时同项目非强制加载保持旧数据")
+    func nonForcedLoadShortCircuitsWithoutInvalidation() async throws {
+        let root = try makeProject(files: ["Package.swift"])
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: root.path, reason: .userSelected)
+
+        let conversations = DefaultConversationManager()
+        _ = try conversations.createConversation(title: "A", projectPath: root.path, providerID: nil, modelName: nil)
+
+        let model = ProjectContextViewModel(
+            project: provider,
+            conversations: conversations,
+            projectRAG: nil,
+            git: nil
+        )
+        await model.loadIfNeeded()
+
+        // 没有插件作废缓存（旧实现里 CRUD 静默发生）：非强制加载不重读。
+        _ = try conversations.createConversation(title: "B", projectPath: root.path, providerID: nil, modelName: nil)
+        await model.loadIfNeeded()
+
+        let detail = try #require(model.details.first { $0.id == "conversation-count" })
+        #expect(detail.value.contains("1"), "短路行为是旧行为的前提，改动时必须同步修插件观察者")
+    }
+
     // MARK: - #889 关闭项目后在途加载不得写回
 
     /// 关闭项目后，在途的旧加载不得把旧项目的身份写回来。
