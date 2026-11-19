@@ -160,12 +160,18 @@ public final class TerminalSession: ObservableObject, Identifiable {
         // 关闭 Tab 必须清理整棵进程树：交互式 shell 的后台作业拥有独立 PGID 且可能
         // 忽略 HUP/TERM，仅 killpg(shellPid) 会让它们在 Tab 关闭后长期存活（#497）。
         // 在 terminalView.terminate() 关闭 pty / 回收 shell 之前枚举并快照进程树。
-        if let process = terminalView.process, process.shellPid > 0 {
-            TerminalProcessTree.terminate(root: pid_t(process.shellPid))
+        let shellPid = pid_t(terminalView.process?.shellPid ?? 0)
+        if shellPid > 0 {
+            TerminalProcessTree.terminate(root: shellPid)
         }
 
         terminalView.terminate()
         isConnected = false
+
+        // terminalView.terminate() 会取消 SwiftTerm 的 childMonitor，而它是唯一
+        // waitpid 回收 shell 的路径；补一个收割线程等 shell 真正退出，避免进程表
+        // 残留 <defunct> 僵尸（#173）。
+        TerminalChildReaper.reapAfterExit(shellPid: shellPid)
     }
 }
 
