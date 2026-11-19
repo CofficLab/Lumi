@@ -24,6 +24,40 @@ struct MarkdownParserTests {
         )
     }
 
+    /// 回归覆盖 issue #407：引用式链接定义在文档层解析，
+    /// 段落要拿到解析后的行内链接而不是原始 `[text][label]` 语法。
+    @Test
+    func resolvesReferenceLinkDefinitions() {
+        let blocks = MarkdownParser.parse(
+            """
+            [Example][site]
+
+            Collapsed [site][] and shortcut [site] and titled [T][s].
+
+            ![img][site]
+
+            **bold [site] bold**
+
+            Code `[site]` stays literal.
+
+            [site]: https://example.com
+            [s]: https://titled.example.com "Title"
+            """
+        )
+
+        #expect(
+            blocks == [
+                .paragraph(text: "[Example](https://example.com)"),
+                .paragraph(
+                    text: "Collapsed [site](https://example.com) and shortcut [site](https://example.com) and titled [T](https://titled.example.com)."
+                ),
+                .paragraph(text: "![img](https://example.com)"),
+                .paragraph(text: "**bold [site](https://example.com) bold**"),
+                .paragraph(text: "Code `[site]` stays literal."),
+            ]
+        )
+    }
+
     @Test
     func parsesTaskListsAndOrderedLists() {
         let blocks = MarkdownParser.parse(
