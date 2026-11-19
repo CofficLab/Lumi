@@ -28,6 +28,7 @@ final class MailDraftAutosaveTests: XCTestCase {
             smtpHost: "smtp.example.com",
             username: "zhangsan"
         )
+        store.upsertAccount(account)
     }
 
     override func tearDownWithError() throws {

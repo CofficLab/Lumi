@@ -12,6 +12,11 @@ public actor MailSessionManager {
     private let accountStore: MailAccountStore
     private var sessions: [UUID: any MailSessionServing] = [:]
 
+    /// 账户配置代次（#400）：每次 `disconnect`（编辑凭据 / 删除账户）与
+    /// `disconnectAll` 递增。建立中的连接完成后必须代次未变才能入池——
+    /// 否则迟到的旧凭据会话会被写回缓存，之后的新配置请求一直复用它。
+    private var generations: [UUID: Int] = [:]
+
     public init(
         factory: any MailSessionFactory = MailCoreAdapterFactory(),
         accountStore: MailAccountStore
@@ -25,12 +30,26 @@ public actor MailSessionManager {
         if let existing = sessions[account.id] {
             return existing
         }
-        guard let password = accountStore.password(for: account.id) else {
+        // 调用方持有的配置快照可能已过期：设置页保存编辑后不会通知工作区
+        // 重载 accounts，首次冷连接若用快照里的旧 host/用户名建连，会一直
+        // 连到旧服务器（#400）。缓存按 id 键控，这里一律以存储中的当前
+        // 配置建连；账户已删除则报 notFound。
+        guard let current = accountStore.loadAccounts().first(where: { $0.id == account.id }) else {
+            throw MailError.notFound
+        }
+        guard let password = accountStore.password(for: current.id) else {
             throw MailError.authFailed
         }
-        let session = try await factory.makeSession(account: account, password: password)
+        let generation = generations[current.id, default: 0]
+        let session = try await factory.makeSession(account: current, password: password)
         try await session.connect()
-        sessions[account.id] = session
+        guard generations[current.id, default: 0] == generation else {
+            // 等待期间账户被编辑/删除（#400）：迟到的旧凭据连接既不入池也
+            // 不交给调用方，关闭后作废；下一次调用会用新配置重新建连。
+            await session.disconnect()
+            throw MailError.connectionInvalidated
+        }
+        sessions[current.id] = session
         return session
     }
 
@@ -43,7 +62,9 @@ public actor MailSessionManager {
     }
 
     /// 显式断开单个账户（删除账户 / 切换凭据时调用）。
+    /// 递增配置代次，使还在建立中的旧凭据连接完成后被作废（#400）。
     public func disconnect(accountID: UUID) async {
+        generations[accountID, default: 0] += 1
         guard let session = sessions.removeValue(forKey: accountID) else { return }
         await session.disconnect()
     }
@@ -52,6 +73,10 @@ public actor MailSessionManager {
     public func disconnectAll() async {
         let all = sessions.values
         sessions.removeAll()
+        // 同样作废在途连接：账户不在缓存里时 disconnect 路径摸不到它（#400）。
+        for account in accountStore.loadAccounts() {
+            generations[account.id, default: 0] += 1
+        }
         for session in all {
             await session.disconnect()
         }

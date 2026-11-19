@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 113 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 118 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 113
+测试文件: 13 个，用例总数: 118
 
 核心组件（源码目录）:
 - `Agent/`
@@ -45,10 +45,10 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 113 条
 - **MailHTMLContent**（5 条）：由 `testUnauthorizedHTMLBlocksRemoteSubresources`、`testLinkActivatedOpensExternallyEvenWithoutAuthorization` 等用例锁定；改动阅读器远程内容策略时优先跑对应测试文件。
 - **MailWorkspace**（7 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先、#842 服务器翻页）时优先跑对应测试文件。
 - **MailComposerService**（12 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind`、`testAppendDraftUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailSessionManager**（8 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；首次冷连接一律以存储中的当前配置建连（调用方快照可能已过期），连接建立期间保存编辑会让迟到的旧凭据连接被作废（issue #400）。改动该模块时优先跑对应测试文件。
 - **MailSyncService**（11 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailPluginRuntime**（2 条）：由 `usesInjectedDirectory`、`refusesFallbackWithoutInjection` 锁定；改动数据目录解析时优先跑对应测试文件。
-- **MailPluginLifecycle**（1 条）：由 `shutdownWithoutBootDoesNotInitializeLazyServices` 锁定；改动插件生命周期/关闭清理时优先跑对应测试文件。
+- **MailPluginLifecycle**（3 条）：由 `shutdownWithoutBootDoesNotInitializeLazyServices`、`disableWithdrawsToolsAndEntries`、`reEnableRestoresToolsAndEntries` 锁定；改动插件生命周期/关闭清理/运行时禁用恢复时优先跑对应测试文件。
 
 > **#403 变异验证**（composer 调用点，2 个独立变异均 RED）：
 > 1. 把 `send()` 归档到 Sent 的 `isDraft: false` 改为 `true`（复现原 bug）→ `testSendBuildsMIMEAndAppendsToSent` 与 `mail_send_message` 工具链的 `testSendMessageSendsAndAppends` 均失败（Sent 副本被标记为草稿），`testAppendDraftUsesDraftFlag` 仍 GREEN。
@@ -172,27 +172,32 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 113 条
 | 111 | MailAgentTools | mail_list_accounts schema 无必需参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsSchemaHasNoRequiredArguments` |
 | 112 | MailWorkspace | loadMore 向服务器请求上一页历史邮件并写入缓存（回归 #842） | 服务器 100 封、首页窗口 50 封 | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testLoadMoreFetchesOlderPageFromServer` |
 | 113 | MailWorkspace | 离线时 loadMore 退回本地缓存截断窗口 | 缓存 100 封、会话不可用 | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testLoadMoreOfflineFallsBackToCachedWindow` |
+| 114 | MailSessionManager | 首次冷连接一律以存储中的当前配置建连，不信任调用方的过期快照（#400） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSessionConnectsWithCurrentStoreConfig` |
+| 115 | MailSessionManager | 账户不在存储中时报 notFound，不建连（#400） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testSessionThrowsNotFoundForUnknownAccount` |
+| 116 | MailSessionManager | 连接建立期间保存编辑：迟到的旧凭据连接被作废，不入池不交付（#400） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testInFlightSessionInvalidatedByDisconnect` |
+| 117 | MailPluginLifecycle | onDisable 注销全部 Mail 工具与两个入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disableWithdrawsToolsAndEntries` |
+| 118 | MailPluginLifecycle | onDisable 后 onEnable 重新注册全部工具与入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reEnableRestoresToolsAndEntries` |
 
 > 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
-- P1: 已覆盖 80 / 80
-- P2: 已覆盖 5 / 5
-- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 29 / 29
+- P1: 已覆盖 83 / 83
+- P2: 已覆盖 6 / 6
+- **合计: 118 / 118**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
-- **P1**: 其余功能性用例（76 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（79 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 118 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

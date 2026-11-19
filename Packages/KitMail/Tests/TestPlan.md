@@ -5,7 +5,7 @@
 KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 40
+测试文件: 9 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,6 +39,7 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 40 条用�
 - **MailUID**（2 条）：由 `testValidatedAcceptsProtocolRange`、`testValidatedRejectsZeroAndOutOfRange` 等用例锁定；改动 UID 边界时优先跑对应测试文件。
 - **MailCoreCallbackBridge**（4 条）：由 `testVoidOperationSucceedsWithoutValue`、`testValueOperationStillRejectsMissingValue` 等用例锁定；改动回调桥接或错误判定时优先跑对应测试文件。
 - **MailCoreAdapterAttachment**（4 条）：由 `testFetchAttachmentsKeepsFilenamelessAttachment`、`testFetchAttachmentsAssignsUniqueNamesToMultipleFilenamelessAttachments` 等用例锁定；改动附件遍历、文件名回退或落盘映射时优先跑对应测试文件。
+- **MailCoreAdapterConnectionType**（3 条）：由 `testSMTPOnPort587UsesSTARTTLSEvenWithUseTLS`、`testSMTPOnPort465KeepsImplicitTLS`、`testSMTPFollowsUseTLSFlagOnOtherPorts` 锁定；SMTP 587 必须 STARTTLS、465 隐式 TLS、其余端口跟随 useTLS（issue #309）。
 
 > **#403 变异验证**（`MailCoreAdapterAppendFlagsTests`）：把适配层标记选择 `isDraft ? .draft : .seen` 改为恒 `.draft`（复现原 bug）→ `testSentAppendUsesSeenWithoutDraft` 失败（记录到 `.draft`=16 而非 `.seen`=1，且含 `\Draft`），`testDraftAppendUsesDraftFlag` 仍 GREEN。该变异锁定「已发送归档不得带 `\Draft`」的适配层不变量； composer 侧调用点的变异见 PluginMail TestPlan。
 
@@ -88,27 +89,30 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 40 条用�
 | 38 | MailCoreAdapterAttachment | 回归 #844：空文件名附件不得被丢弃，回退为序号名 | 构造 filename="" 的附件 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 1 个附件，名为 `attachment_1`，保留 mimeType 与 data | P1 | ✅ 已覆盖 | `testFetchAttachmentsKeepsEmptyFilenameAttachment` |
 | 39 | MailCoreAdapterAttachment | 回归 #844：同一消息多个无名附件的回退名互不覆盖 | 构造两个无名附件的 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 2 个附件，名为 `attachment_1`/`attachment_2`，data 各自对应 | P0 | ✅ 已覆盖 | `testFetchAttachmentsAssignsUniqueNamesToMultipleFilenamelessAttachments` |
 | 40 | MailCoreAdapterAttachment | 回归 #844：有名附件保留原名与原始顺序，与无名附件共存 | 构造 named+unnamed 附件的 MIME 并解析 | 调用 `fetchAttachments(for:uid:folder:)` | 返回 `["report.pdf", "attachment_2"]`，顺序与 data 不变 | P1 | ✅ 已覆盖 | `testFetchAttachmentsPreservesNamedAttachmentAndOrder` |
+| 41 | MailCoreAdapterConnectionType | SMTP 587 即使 useTLS=true 也必须走 STARTTLS（回归 #309） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testSMTPOnPort587UsesSTARTTLSEvenWithUseTLS` |
+| 42 | MailCoreAdapterConnectionType | SMTP 465 保持隐式 TLS 直连（回归 #309） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSMTPOnPort465KeepsImplicitTLS` |
+| 43 | MailCoreAdapterConnectionType | 其余端口 SMTP 连接类型跟随 useTLS 开关（回归 #309） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSMTPFollowsUseTLSFlagOnOtherPorts` |
 
 > 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 34 / 34
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 36 / 36
 - P2: 已覆盖 1 / 1
-- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（34 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（36 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
