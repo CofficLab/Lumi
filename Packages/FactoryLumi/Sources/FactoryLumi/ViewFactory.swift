@@ -3,10 +3,12 @@ import Combine
 import Foundation
 import KernelCore
 import LumiUI
+import PluginShowImage
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderConversation
+import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
 import PluginRootView
@@ -74,7 +76,18 @@ public struct DefaultViewFactory: ViewFactory {
             )
             rootView.setTrailingPane(trailingPane)
         }
-        return themed(rootView.makeRootView(), kernel: kernel)
+        // show_image 工具成功后只写 `ShowImageState`，真正把它渲染出来的
+        // `ShowImageOverlay` 必须在这里挂到主视图树上，否则工具会宣告成功
+        // 而用户看不到任何图片。
+        let network = kernel.resolveProvider((any NetworkProviding).self)
+        return themed(
+            AnyView(
+                ShowImageOverlay(network: network) {
+                    rootView.makeRootView()
+                }
+            ),
+            kernel: kernel
+        )
     }
 
     /// 使用已装配的内核返回设置视图（共享内核时使用）。
