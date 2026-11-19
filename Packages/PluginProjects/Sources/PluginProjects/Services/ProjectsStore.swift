@@ -34,6 +34,11 @@ public final class ProjectsStore: SuperLog, ObservableObject {
     /// 落盘实现，测试可注入门闩/线程记录替身。
     private let openedFilesWriter: @Sendable ([String: ProjectOpenedFiles], URL) async -> Void
 
+    /// 项目/当前项目快照的串行写入链：保证磁盘上最终是最后提交的一份。
+    private var projectsWriteTask: Task<Void, Never>?
+    /// 落盘实现，测试可注入门闩替身。
+    private let projectsWriter: @Sendable ([ProjectEntry], ProjectEntry?, URL, URL) async -> Void
+
     // MARK: - Constants
 
     // 文件名常量与写入逻辑均无并发风险（纯值/纯函数），标记 nonisolated 以支持后台写入。
@@ -52,7 +57,8 @@ public final class ProjectsStore: SuperLog, ObservableObject {
 
     public init(
         pluginDirectory: URL? = nil,
-        openedFilesWriter: (@Sendable ([String: ProjectOpenedFiles], URL) async -> Void)? = nil
+        openedFilesWriter: (@Sendable ([String: ProjectOpenedFiles], URL) async -> Void)? = nil,
+        projectsWriter: (@Sendable ([ProjectEntry], ProjectEntry?, URL, URL) async -> Void)? = nil
     ) {
         let directory = pluginDirectory ?? ProjectsStore.defaultPluginDirectory
         self.pluginDirectory = directory
@@ -60,6 +66,10 @@ public final class ProjectsStore: SuperLog, ObservableObject {
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
         self.openedFilesWriter = openedFilesWriter ?? { snapshot, fileURL in
             Self.write(snapshot, to: fileURL)
+        }
+        self.projectsWriter = projectsWriter ?? { projects, currentProject, projectsURL, currentProjectURL in
+            Self.write(projects, to: projectsURL)
+            Self.write(currentProject?.path, to: currentProjectURL)
         }
 
         if Self.verbose {
@@ -104,6 +114,34 @@ public final class ProjectsStore: SuperLog, ObservableObject {
         )
         Self.write(projects, to: projectsFileURL)
         Self.write(currentProject?.path, to: currentProjectFileURL)
+    }
+
+    /// 保存项目/当前项目快照（后台串行执行）。
+    ///
+    /// 每次同步都提交一份全量快照，写入链与 `saveOpenedFiles` 相同：新任务先等
+    /// 上一份写完再落盘，还没开始写的旧快照被取消。此前每次同步各自
+    /// `Task.detached` 落盘，调度颠倒写入顺序时，晚到的旧快照会把磁盘上的
+    /// 新状态覆盖回去，重启后恢复出错误的当前项目（见 issue #193）。
+    @discardableResult
+    public func saveSnapshot(projects: [ProjectEntry], currentProject: ProjectEntry?) -> Task<Void, Never> {
+        let previous = projectsWriteTask
+        previous?.cancel()
+        let projectsURL = projectsFileURL
+        let currentProjectURL = currentProjectFileURL
+        let directory = settingsDirectory
+        let writer = projectsWriter
+        let task = Task.detached(priority: .utility) {
+            await previous?.value
+            guard !Task.isCancelled else { return }
+            try? FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            await writer(projects, currentProject, projectsURL, currentProjectURL)
+        }
+        projectsWriteTask = task
+        return task
     }
 
     // MARK: - Opened Files (per project)
