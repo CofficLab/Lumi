@@ -8,13 +8,14 @@ import Foundation
 struct TerminalBashLoginIntegrationTests {
 
     @Test("bash 参数不得叠加 -l（回归 #346）")
-    func bashArgsOmitLoginFlag() throws {
-        var env: [String] = []
-        let args = try ShellIntegration.setupIntegration(
+    func bashArgsOmitLoginFlag() async throws {
+        let setup = try await ShellIntegration.setupIntegration(
             for: .bash,
-            environment: &env,
+            baseEnvironment: [],
             useLogin: true
         )
+        let args = setup.shellArguments
+        let env = setup.additionalEnvironment
         #expect(args.contains("--init-file"))
         #expect(args.contains("-i"))
         #expect(!args.contains("-l"))
@@ -22,26 +23,27 @@ struct TerminalBashLoginIntegrationTests {
     }
 
     @Test("zsh 登录模式仍保留 -l")
-    func zshArgsKeepLoginFlag() throws {
-        var env: [String] = []
-        let args = try ShellIntegration.setupIntegration(
+    func zshArgsKeepLoginFlag() async throws {
+        let setup = try await ShellIntegration.setupIntegration(
             for: .zsh,
-            environment: &env,
+            baseEnvironment: [],
             useLogin: true
         )
+        let args = setup.shellArguments
         #expect(args.contains("-l"))
         #expect(args.contains("-i"))
     }
 
     @Test("登录 bash 启动时执行注入脚本并输出标题序列（回归 #346）")
     @MainActor
-    func loginBashRunsIntegrationScript() throws {
-        var env: [String] = []
-        let args = try ShellIntegration.setupIntegration(
+    func loginBashRunsIntegrationScript() async throws {
+        let setup = try await ShellIntegration.setupIntegration(
             for: .bash,
-            environment: &env,
+            baseEnvironment: [],
             useLogin: true
         )
+        let env = setup.additionalEnvironment
+        let args = setup.shellArguments
 
         let shell = Process()
         shell.executableURL = URL(fileURLWithPath: "/bin/bash")

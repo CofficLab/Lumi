@@ -88,15 +88,9 @@ public final class TerminalSession: ObservableObject, Identifiable {
               terminalView.bounds.height > 0 else { return }
 
         hasStartedProcess = true
-        startShell()
-        terminalView.needsDisplay = true
-        terminalView.setNeedsDisplay(terminalView.bounds)
-    }
 
-    /// 启动 shell 进程
-    private func startShell() {
         // 先校验工作目录：SwiftTerm 会忽略 chdir 失败，无效目录会让 shell 静默落在
-        // Lumi 当前目录并误报已连接。校验失败时保持未连接并暴露原因，不创建进程（#174）。
+        // Lumi 当前目录并误报已连接。校验失败时同步暴露原因，不创建进程（#174）。
         do {
             try TerminalWorkingDirectory.validate(initialWorkingDirectory)
         } catch {
@@ -104,21 +98,31 @@ public final class TerminalSession: ObservableObject, Identifiable {
             return
         }
 
+        Task { @MainActor [weak self] in
+            await self?.startShell()
+        }
+        terminalView.needsDisplay = true
+        terminalView.setNeedsDisplay(terminalView.bounds)
+    }
+
+    /// 启动 shell 进程
+    private func startShell() async {
         let shell = ShellIntegration.autoDetectShell()
         let shellPath = shell.defaultPath
 
-        var environment = buildEnvironment(shellPath: shellPath)
-
         do {
-            let args = try ShellIntegration.setupIntegration(
+            // 集成脚本工件在后台线程准备并跨会话复用，主线程只做内存组装（#1234）。
+            var environment = buildEnvironment(shellPath: shellPath)
+            let setup = try await ShellIntegration.setupIntegration(
                 for: shell,
-                environment: &environment,
+                baseEnvironment: environment,
                 useLogin: true
             )
+            environment.append(contentsOf: setup.additionalEnvironment)
 
             terminalView.startProcess(
                 executable: shellPath,
-                args: args,
+                args: setup.shellArguments,
                 environment: environment,
                 execName: shell.rawValue,
                 currentDirectory: initialWorkingDirectory
