@@ -184,6 +184,91 @@ struct StartupUpdaterInitializationTests {
     }
 }
 
+@Suite("等待中的检查绑定发起时的通道（#235）")
+@MainActor
+struct WaitingCheckChannelBindingTests {
+    @Test("通道切换后，等待旧准备的检查被丢弃，不再驱动 Sparkle 检查")
+    func waitingCheckDiscardedAfterChannelSwitch() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let gate = ProbeGate()
+        // 闸门只拦第一次探测（stable 主源）；切通道后的 Preview 探测直接
+        // 返回不可达，让新通道准备走完整个流程。
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: FirstProbeGatedChecker(gate: gate),
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("waiting-check-channel")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        var checkCalls = 0
+        service.updaterInitializationStub = {}
+        service.sparkleCheckStub = { checkCalls += 1 }
+
+        // 检查 A：等待 stable 准备，探测被闸门挂起。
+        service.checkForUpdates()
+        await gate.waitUntilProbeStarts()
+
+        // 等待期间切到 Preview：旧准备被取消，新通道的探测流程跑完。
+        service.setChannel(.preview)
+        _ = await service.feedURLAfterPendingPreparation()
+
+        // 放行旧探测：检查 A 的迟到结果不得驱动新通道的 Sparkle 检查。
+        // 修复前：旧检查无条件继续，读到的 resolvedFeedURL 是新通道尚未
+        // 探测完的主源，备用源选择被绕过。
+        await gate.resume(returning: true)
+        for _ in 0..<10 {
+            if checkCalls != 0 { break }
+            await Task.yield()
+        }
+        #expect(checkCalls == 0, "通道切换后等待旧准备的检查必须被丢弃")
+    }
+
+    @Test("通道未切换时等待的检查正常驱动 Sparkle 检查")
+    func waitingCheckProceedsWhenChannelUnchanged() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let gate = ProbeGate()
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: GatedReachabilityChecker(gate: gate),
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("waiting-check-proceeds")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        var checkCalls = 0
+        service.updaterInitializationStub = {}
+        service.sparkleCheckStub = { checkCalls += 1 }
+
+        service.checkForUpdates()
+        await gate.waitUntilProbeStarts()
+        await gate.resume(returning: true)
+        for _ in 0..<10 {
+            if checkCalls != 0 { break }
+            await Task.yield()
+        }
+        #expect(checkCalls == 1, "通道未变时等待的检查要正常执行")
+    }
+}
+
+/// 闸门只拦第一次探测，后续探测立即返回不可达。
+private actor FirstProbeGatedChecker: FeedURLReachabilityChecker {
+    let gate: ProbeGate
+    private var probeCount = 0
+
+    init(gate: ProbeGate) {
+        self.gate = gate
+    }
+
+    func isReachable(_ url: URL) async -> Bool {
+        probeCount += 1
+        if probeCount == 1 { return await gate.wait() }
+        return false
+    }
+}
+
 private actor MutableReachabilityChecker: FeedURLReachabilityChecker {
     private var reachability: [URL: Bool]
     private var probedURLs: [URL] = []

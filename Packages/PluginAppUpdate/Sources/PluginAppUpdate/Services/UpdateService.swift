@@ -33,6 +33,10 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// `ensureUpdaterInitialized()` 只记录调用，不在测试进程里拉起 Sparkle。
     var updaterInitializationStub: (() -> Void)?
 
+    /// Sparkle 检查替身（#235）。生产为 nil，走真实 `updaterController`；
+    /// 测试注入后 `checkForUpdates` 只记录调用，用于断言检查是否真的发生。
+    var sparkleCheckStub: (() -> Void)?
+
     /// Feed URL detector (actor). Network probes run off the main actor.
     private var feedURLDetector: FeedURLDetector?
 
@@ -41,6 +45,10 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
 
     /// In-flight channel update that must complete before feed detection starts.
     private var feedConfigurationTask: Task<Void, Never>?
+
+    /// Feed 准备代次：通道切换/重配置都会递增（#235）。
+    /// 等待旧准备的检查用它识别「我等的准备已经被作废」。
+    private var feedPreparationGeneration = 0
 
     /// Update lifecycle state machine (tracks state + version only).
     private let stateMachine = UpdateServiceStateMachine()
@@ -81,6 +89,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         feedPreparationTask = nil
         feedConfigurationTask?.cancel()
         feedConfigurationTask = nil
+        feedPreparationGeneration &+= 1
         resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
         feedURLDetector = FeedURLDetector(
             initialURL: UpdateFeedURLProvider.primary(for: channel),
@@ -109,6 +118,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         feedPreparationTask = nil
         feedConfigurationTask?.cancel()
         feedConfigurationTask = nil
+        feedPreparationGeneration &+= 1
 
         if let feedURLDetector {
             let primaryURL = UpdateFeedURLProvider.primary(for: channel)
@@ -220,15 +230,28 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
 
         guard let preparationTask = prepareFeedURLIfNeeded() else {
             ensureUpdaterInitialized()
-            updaterController?.checkForUpdates(nil)
+            performSparkleCheck()
             return
         }
 
+        let generation = feedPreparationGeneration
         Task { @MainActor [weak self] in
             await preparationTask.value
             guard let self, AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
+            // 等待期间通道可能已切走（#235）：迟到的旧准备结果不得驱动
+            // 新通道的 Sparkle 检查——此时 resolvedFeedURL 是新通道尚未
+            // 探测的主源，备用源选择会被绕过。旧检查直接丢弃。
+            guard self.feedPreparationGeneration == generation else { return }
             self.ensureUpdaterInitialized()
-            self.updaterController?.checkForUpdates(nil)
+            self.performSparkleCheck()
+        }
+    }
+
+    private func performSparkleCheck() {
+        if let sparkleCheckStub {
+            sparkleCheckStub()
+        } else {
+            updaterController?.checkForUpdates(nil)
         }
     }
 
