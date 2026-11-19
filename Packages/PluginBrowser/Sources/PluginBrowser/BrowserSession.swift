@@ -234,36 +234,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
 
     func readPage(maxCharacters: Int) async throws -> String {
         let limit = min(max(maxCharacters, 500), 20_000)
-        let script = """
-        (() => {
-          const text = document.body ? document.body.innerText : "";
-          return {
-            title: document.title || "",
-            url: location.href,
-            text: text.slice(0, \(limit)),
-            truncated: text.length > \(limit),
-            controls: Array.from(document.querySelectorAll("a[href],button,input,textarea,select,[role=button]"))
-              .filter(el => el.getClientRects().length > 0)
-              .slice(0, 80)
-              .map((el, index) => {
-                const ref = `lumi-${index + 1}`;
-                el.setAttribute("data-lumi-browser-ref", ref);
-                const label = el.getAttribute("aria-label") || el.innerText || el.getAttribute("placeholder") || el.getAttribute("title") || "";
-                let href = el.tagName === "A" ? el.href : "";
-                if (href) {
-                  try {
-                    const link = new URL(href);
-                    for (const key of ["token", "access_token", "api_key", "key", "password", "secret", "code"]) {
-                      if (link.searchParams.has(key)) link.searchParams.set(key, "[redacted]");
-                    }
-                    href = link.href;
-                  } catch (_) {}
-                }
-                return { ref, tag: el.tagName.toLowerCase(), type: el.getAttribute("type") || "", label: label.trim().replace(/\\s+/g, " ").slice(0, 160), href };
-              })()
-          };
-        })()
-        """
+        let script = BrowserReadPageScript.script(maxCharacters: limit)
         guard let page = try await webView.evaluateJavaScript(script) as? [String: Any] else {
             throw SessionError.noPage
         }
@@ -288,7 +259,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         URL: \(pageURL)
 
         \(text)
-        \(controls.isEmpty ? "" : "\n\nInteractive elements (refs are valid until the page changes):\n\(controls)")
+        \(controls.isEmpty ? "" : "\n\nInteractive elements (refs are assigned from a persistent counter on every snapshot or read; use the refs from the most recent output, older refs may be stale):\n\(controls)")
         \(truncated ? "\n[Page text truncated. Call browser_read with a smaller scope or continue by interacting with the page.]" : "")
         """
     }
