@@ -45,11 +45,13 @@ final class AgentTurnVM: ObservableObject {
         let conversationID = item.conversationID
         let messages = await messageManager.messagesSnapshot(in: conversationID)
         guard sequence == refreshSequence else { return }
-        let nextProjection = Self.project(
-            item: item,
-            messages: messages
-        )
-        setProjection(nextProjection)
+        setProjection(Self.project(item: item, messages: messages))
+    }
+
+    /// 父级在每次消息事件里只读取一份快照并预计算一次投影上下文，
+    /// 所有可见 turn 行复用（#1187）；本行不再独立读取完整快照。
+    func apply(context: AgentTurnSummaryContext) {
+        setProjection(Self.project(item: item, context: context))
     }
 
     private func setProjection(_ nextProjection: AgentTurnMessageProjection) {
@@ -61,14 +63,21 @@ final class AgentTurnVM: ObservableObject {
         item: AgentTurnPresentationItem,
         messages: [Message]
     ) -> AgentTurnMessageProjection {
-        let chronological = messages.sorted(by: messageOrdering)
+        project(item: item, context: AgentTurnSummaryContext(messages))
+    }
+
+    nonisolated static func project(
+        item: AgentTurnPresentationItem,
+        context: AgentTurnSummaryContext
+    ) -> AgentTurnMessageProjection {
+        let chronological = context.chronological
         let userMessages: [Message]
         var responseMessages: [Message]
         var selectedSummaryMessageID: UUID?
 
         if let record = item.record {
             let summary = AgentTurnSummaryBuilder()
-                .build(records: [record], messages: chronological)
+                .build(records: [record], context: context)
                 .first
             userMessages = summary?.userMessage.map { [$0] } ?? []
             responseMessages = summary?.processMessages ?? []

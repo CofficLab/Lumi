@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 27 个，用例总数: 173
+测试文件: 28 个，用例总数: 182
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,7 +48,9 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 - **ConversationStateLineRender**（2 条）：由 `cardHeightFitsSingleLine`、`cardHeightStableWithoutDetail` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStateVM**（1 条）：由 `conversationStateVMAcceptsOnlySelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **InitialPositionGate**（10 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ListPresentation**（14 条）：由 `loadingStateDuringActivate`、`activateRequiresSelectedConversation`、`loadEarlierHiddenWhenPageFits` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListPresentation**（18 条）：由 `loadingStateDuringActivate`、`activateRequiresSelectedConversation`、`loadEarlierHiddenWhenPageFits` 等用例锁定；尾部刷新与并发翻页 / 首屏插入 / 删除与清空后的窗口一致性由 `tailRefreshDoesNotClobberConcurrentPaging`、`firstScreenLoadKeepsMidFlightInserts`、`tailRefreshClearsWindowAfterLastMessageDeleted`、`tailRefreshClearsWindowAfterConversationCleared` 锁定（#388 / #146 / #145）。改动该模块时优先跑对应测试文件。
+- **RunningTurnDowngrade**（2 条）：运行中 turn 的用户消息不算 pending（running 不被降级），只有新 turn 启动的未认领用户消息才触发降级，由 `runningTurnWithClaimedUserMessageStaysRunning`、`genuinelyPendingUserMessageStillDowngradesOldTurn` 锁定（#312）。
+- **SharedProjectionContext**（3 条）：一次消息事件只读取一份快照并构建一次 `AgentTurnSummaryContext`，全部可见 turn 行复用，不得退化为每个 VM 独立读取（**回归 #1187**），由 `singleSnapshotFetchPerMessageEvent` 锁定；`build(records:messages:)` 与 `build(records:context:)`、`AgentTurnVM.project` 的两条入口产出必须完全一致，由 `sharedContextBuildMatchesMessagesBuild`、`turnVMProjectEntriesMatch` 锁定。改动该模块时优先跑对应测试文件。
 - **ListV1LargeData**（3 条）：由 `windowStaysBoundedWhilePaging`、`evictionKeepsNewestTurnMessages`、`refreshBackfillsTheEvictedGap` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListSendPositioning**（7 条）：由 `conservativeReserveIsStable`、`cancelBeforeFirstAssistantEndsPostSendPositioning`、`liveTurnEndingEndsPostSendPositioning` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListServices**（11 条）：由 `tailGateCollapsesBursts`、`overlappingRunnersReturnFalse`、`loadFirstPageProbesEarlier` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -242,27 +244,42 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 171 | AgentTurnSummaryBuilderScaling | turn 之前没有用户消息时关联为空（#1267） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noUserMessageBeforeTurn` |
 | 172 | AgentTurnSummaryBuilderScaling | 瞬时 status 只挂到最新活跃 turn（#1267） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transientStatusesOnlyOnLatestActiveTurn` |
 | 173 | AgentTurnProjection | 失败 turn 与自动重试 turn 共用触发消息时行身份必须不同（回归 #593） | 一条用户消息 + failed / completed 两个 turn | 调用 `AgentTurnSummaryBuilder.build` 与 `AgentTurnPresentationItem(recorded:)` | 首个 turn 行身份为用户消息 ID，重试 turn 为 record.id，两行 ID 不同 | P0 | ✅ 已覆盖 | `retryTurnOfSameUserMessageGetsDistinctRowID` |
+| 174 | ListPresentation | 尾部刷新 I/O 期间完成向上翻页：旧快照结果不得抹掉刚前插的历史（#388） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshDoesNotClobberConcurrentPaging` |
+| 175 | ListPresentation | 首屏加载期间插入的新消息不得被过期的整页结果抹掉（#146） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `firstScreenLoadKeepsMidFlightInserts` |
+| 176 | ListPresentation | 删除最后一条消息后窗口必须一起清空（#145） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshClearsWindowAfterLastMessageDeleted` |
+| 177 | ListPresentation | 清空会话后窗口必须一起清空（#145） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshClearsWindowAfterConversationCleared` |
+| 178 | RunningTurnDowngrade | 运行中 turn 的用户消息不算 pending：running 不被降级，实时活动保留（#312） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runningTurnWithClaimedUserMessageStaysRunning` |
+| 179 | RunningTurnDowngrade | 新 turn 启动的未认领用户消息仍是 pending：旧 turn 照常降级（#312） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `genuinelyPendingUserMessageStillDowngradesOldTurn` |
+| 180 | SharedProjectionContext | `build(records:messages:)` 与 `build(records:context:)` 产出完全一致，乱序输入也一致（回归 #1187） | 多 turn + 工具消息 + 瞬时 status + error 的混合消息流 | 分别以 messages 与预构建 context 调用 `AgentTurnSummaryBuilder.build` | 两组产出逐项相等，且与乱序输入的产出相等 | P1 | ✅ 已覆盖 | `sharedContextBuildMatchesMessagesBuild` |
+| 181 | SharedProjectionContext | `AgentTurnVM.project` 的 messages / context 两条入口产出一致（回归 #1187） | 单 turn 含工具调用与工具结果 | 分别以 messages 与 context 调用 `AgentTurnVM.project` | 投影相等；user/last/process 内容正确，tool 原始返回不进 process | P1 | ✅ 已覆盖 | `turnVMProjectEntriesMatch` |
+| 182 | SharedProjectionContext | 一次消息事件只读取一份快照，全部 Turn VM 复用共享投影（回归 #1187） | 3 个已落库 turn，全部缓存行 VM 后插入新消息 | 触发 `handleMessageChange(.inserted:)`，统计快照读取次数 | 快照读取次数恰为 1（旧实现 T 个 VM 各读一份） | P0 | ✅ 已覆盖 | `singleSnapshotFetchPerMessageEvent` |
 
-> 说明：全部 **173 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **182 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
+
+> 变异验证（#1187）：把 `ConversationMessageListVM.refreshAgentTurnVMs` 改回
+> 每个 VM 独立 `Task { await vm.refresh() }`（旧扇出），用例 182 立即转红
+> （快照读取次数从 1 变为 T=3，`stub.snapshotCallCount - before == 1` 失败）；
+> 恢复共享上下文扇出后转绿。等价性用例 180/181 在该变异下保持绿
+> （等价性锁定的是投影语义，扇出计数锁定的是复杂度）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 38 / 38
-- P1: 已覆盖 109 / 109
+- P0: 已覆盖 43 / 43
+- P1: 已覆盖 113 / 113
 - P2: 已覆盖 26 / 26
-- **合计: 173 / 173**（仅表示清单场景，非源码覆盖率）
+- **合计: 182 / 182**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（38 条）
-- **P1**: 其余功能性用例（110 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（43 条）
+- **P1**: 其余功能性用例（113 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 172 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 182 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

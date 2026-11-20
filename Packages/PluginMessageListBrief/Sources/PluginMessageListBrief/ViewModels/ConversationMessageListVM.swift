@@ -356,8 +356,21 @@ final class ConversationMessageListVM: ObservableObject {
     }
 
     private func refreshAgentTurnVMs() {
-        for vm in agentTurnVMs.values {
-            Task { @MainActor in await vm.refresh() }
+        // 一次消息事件只读取一份快照、预计算一次投影上下文，全部可见
+        // turn 行复用（#1187）。原先每个缓存 VM 独立读取完整快照，并各自
+        // 在主线程排序 / 分组全量会话 —— O(T × M log M)。
+        guard !agentTurnVMs.isEmpty,
+              let conversationID = activeConversationID,
+              let messageManager = services.messages else { return }
+        let sequence = activationSequence
+        Task { @MainActor [weak self] in
+            guard let self, sequence == self.activationSequence else { return }
+            let messages = await messageManager.messagesSnapshot(in: conversationID)
+            guard sequence == self.activationSequence else { return }
+            let context = AgentTurnSummaryContext(messages)
+            for vm in self.agentTurnVMs.values {
+                vm.apply(context: context)
+            }
         }
     }
 
