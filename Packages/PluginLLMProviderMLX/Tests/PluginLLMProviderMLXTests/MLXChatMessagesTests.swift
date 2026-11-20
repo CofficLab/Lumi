@@ -61,8 +61,8 @@ struct MLXChatMessagesTests {
         #expect(imageSourceURL(chat[1].images[0])?.absoluteString == "file:///tmp/lumi-mlx-1-0.jpg")
     }
 
-    @Test("system 与 tool 消息的映射保持不变")
-    func systemAndToolMappingUnchanged() {
+    @Test("tool 消息带 id/name 进入历史，未知角色仍丢弃")
+    func systemAndToolMapping() {
         let messages: [LLMMessage] = [
             LLMMessage(role: .system, content: "you are helpful"),
             LLMMessage(role: .user, content: "hi"),
@@ -71,9 +71,72 @@ struct MLXChatMessagesTests {
 
         let chat = MLXChatMessages.build(from: messages, imageURLsByMessageIndex: [:])
 
-        #expect(chat.count == 2)
+        #expect(chat.count == 3)
         #expect(chat[0].role == .system)
         #expect(chat[0].content == "you are helpful")
         #expect(chat[1].role == .user)
+        #expect(chat[2].role == .tool)
+        #expect(chat[2].content == "result")
+    }
+
+    /// 与 chat template 实际消费的原始字典断言（tool_calls / tool_call_id / name）。
+    private func rawMessages(from chat: [Chat.Message]) -> [[String: any Sendable]] {
+        DefaultMessageGenerator().generate(messages: chat)
+    }
+
+    @Test("assistant 的 toolCalls 与对应工具结果进入提示词历史（#286）")
+    func toolHistorySurvivesIntoPrompt() {
+        let messages: [LLMMessage] = [
+            LLMMessage(role: .user, content: "东京天气如何？"),
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [LLMToolCall(id: "call-1", name: "get_weather", arguments: #"{"city":"Tokyo"}"#)]
+            ),
+            LLMMessage(role: .tool, content: "22°C 晴", toolCallID: "call-1"),
+            LLMMessage(role: .assistant, content: "东京 22°C，晴。"),
+        ]
+
+        let chat = MLXChatMessages.build(from: messages, imageURLsByMessageIndex: [:])
+
+        #expect(chat.count == 4)
+        #expect(chat[1].role == .assistant)
+        #expect(chat[2].role == .tool)
+        #expect(chat[2].content == "22°C 晴")
+
+        let raw = rawMessages(from: chat)
+        let calls = raw[1]["tool_calls"] as? [[String: any Sendable]]
+        #expect(calls?.count == 1, "assistant 历史必须携带 tool_calls，实际 \(raw[1])")
+        let function = calls?[0]["function"] as? [String: any Sendable]
+        #expect(function?["name"] as? String == "get_weather")
+        let arguments = function?["arguments"] as? [String: any Sendable]
+        #expect(arguments?["city"] as? String == "Tokyo")
+        #expect(calls?[0]["id"] as? String == "call-1")
+
+        let toolRaw = raw[2]
+        #expect(toolRaw["role"] as? String == "tool")
+        #expect(toolRaw["tool_call_id"] as? String == "call-1")
+        // 工具结果按 tool_call_id 关联到 assistant 调用里的函数名。
+        #expect(toolRaw["name"] as? String == "get_weather")
+    }
+
+    @Test("参数解析失败时保留调用并降级为空对象（#286）")
+    func malformedArgumentsDegradeToEmptyObject() {
+        let messages: [LLMMessage] = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [LLMToolCall(id: "call-9", name: "get_weather", arguments: "not-json")]
+            ),
+        ]
+
+        let chat = MLXChatMessages.build(from: messages, imageURLsByMessageIndex: [:])
+
+        #expect(chat.count == 1)
+        let raw = rawMessages(from: chat)
+        let calls = raw[0]["tool_calls"] as? [[String: any Sendable]]
+        #expect(calls?.count == 1)
+        let function = calls?[0]["function"] as? [String: any Sendable]
+        #expect((function?["arguments"] as? [String: any Sendable])?.isEmpty == true)
     }
 }
