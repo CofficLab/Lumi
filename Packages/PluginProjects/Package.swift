@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderProjectRAG"),
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
-        .package(path: "../ProviderLifecycleHooks"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
@@ -38,7 +38,7 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
-                "ProviderLifecycleHooks",
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -48,7 +48,7 @@ let package = Package(
             dependencies: [
                 "PluginProjects",
                 .product(name: "KitLLM", package: "LumiKitLLM"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
             ]

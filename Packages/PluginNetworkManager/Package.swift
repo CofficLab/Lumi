@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiSettings.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
         .package(path: "../KitShell"),
-        .package(path: "../ProviderAgentLoop"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
@@ -50,7 +50,7 @@ let package = Package(
             dependencies: [
                 "PluginNetworkManager",
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderMenuBar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),

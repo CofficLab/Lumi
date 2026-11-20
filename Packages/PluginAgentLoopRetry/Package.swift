@@ -13,9 +13,9 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderLifecycleHooks"),
-        .package(path: "../ProviderMessage"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -24,10 +24,10 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
             ],
             path: "Sources/PluginAgentLoopRetry",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -36,10 +36,10 @@ let package = Package(
             name: "PluginAgentLoopRetryTests",
             dependencies: [
                 "PluginAgentLoopRetry",
-                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
             ],
             path: "Tests/PluginAgentLoopRetryTests"
         ),

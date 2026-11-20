@@ -18,8 +18,8 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
         .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
-        .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderMessageRendering"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessageRendering.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
     ],
     targets: [
@@ -32,8 +32,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-                "ProviderMessage",
-                "ProviderMessageRendering",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "LumiProviderMessageRendering"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ],
             path: "Sources/PluginDiskSpeedTest",
@@ -44,8 +44,8 @@ let package = Package(
             dependencies: [
                 "PluginDiskSpeedTest",
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-                "ProviderMessage",
-                "ProviderMessageRendering",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "LumiProviderMessageRendering"),
             ],
             path: "Tests/PluginDiskSpeedTestTests"
         ),

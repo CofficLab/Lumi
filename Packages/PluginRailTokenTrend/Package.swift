@@ -14,7 +14,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
-        .package(path: "../ProviderMessage"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -23,7 +23,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],

@@ -12,7 +12,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(path: "../KitMarkdown"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitMarkdown.git", from: "1.0.0"),
         .package(path: "../ProviderPanelBottom"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
     ],
@@ -22,7 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "KitMarkdown", package: "KitMarkdown"),
+                .product(name: "KitMarkdown", package: "LumiKitMarkdown"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderPanelBottom", package: "ProviderPanelBottom"),
                 .product(name: "ProviderProject", package: "LumiProviders"),

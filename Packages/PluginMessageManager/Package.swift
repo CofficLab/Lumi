@@ -11,8 +11,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderAgentLoop"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
     ],
     targets: [
@@ -20,10 +20,10 @@ let package = Package(
             name: "PluginMessageManager",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "ProviderMessage",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                "ProviderAgentLoop",
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ]
         ),
@@ -31,7 +31,7 @@ let package = Package(
             name: "PluginMessageManagerTests",
             dependencies: [
                 "PluginMessageManager",
-                "ProviderMessage",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
             ],
             path: "Tests"

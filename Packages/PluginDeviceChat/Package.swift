@@ -20,8 +20,8 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
-        .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderMessageRendering"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessageRendering.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -32,8 +32,8 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-                "ProviderMessage",
-                "ProviderMessageRendering",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "LumiProviderMessageRendering"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),
@@ -43,8 +43,8 @@ let package = Package(
                 "PluginDeviceChat",
                 .product(name: "PluginDevice", package: "LumiPluginDevice"),
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-                "ProviderMessage",
-                "ProviderMessageRendering",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "LumiProviderMessageRendering"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
             ]
         ),

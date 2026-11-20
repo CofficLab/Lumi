@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../ProviderLLMContext"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
         .package(path: "../ProviderProjectRAG"),
-        .package(path: "../ProviderLifecycleHooks"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -61,7 +61,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 "ProjectRAGEngine",
             ],

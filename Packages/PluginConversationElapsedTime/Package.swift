@@ -12,7 +12,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(path: "../ProviderMessage"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderChatSection", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                "ProviderMessage",
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginConversationElapsedTime",
