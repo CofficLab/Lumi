@@ -10,21 +10,20 @@ import SwiftUI
 struct ContextToolbarView: View {
     @LumiTheme private var theme
 
-    let provider: LLMContextProvider
-    let messages: any MessageManaging
     let state: ContextToolbarState
 
-    @State private var usage: ContextWindowUsageSnapshot?
-    @State private var history: ContextUsageHistory = .empty
-    @State private var events: [Message] = []
-    @State private var auxiliaryEntries: [LLMAuxiliaryUsageEntry] = []
+    @State private var data: ContextToolbarData
     @State private var isPopoverPresented = false
-    @State private var selectedConversationID: UUID?
     @State private var refreshRevision = 0
     @State private var observerHandle: (any ContextToolbarState.ObserverHandle)?
 
+    init(provider: LLMContextProvider, messages: any MessageManaging, state: ContextToolbarState) {
+        self.state = state
+        _data = State(initialValue: ContextToolbarData(provider: provider, messages: messages))
+    }
+
     private var displayedWindowSize: Int? {
-        guard let usage else { return nil }
+        guard let usage = data.usage else { return nil }
         return usage.contextWindowTokens
             ?? (usage.usesFallbackWindow ? usage.effectiveContextWindowTokens : nil)
     }
@@ -38,26 +37,32 @@ struct ContextToolbarView: View {
         .buttonStyle(.plain)
         .help(contextTooltip)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ContextPopover(usage: usage, history: history, events: events, auxiliaryEntries: auxiliaryEntries)
+            ContextPopover(
+                usage: data.usage,
+                history: data.history,
+                events: data.events,
+                auxiliaryEntries: data.auxiliaryEntries
+            )
+            .task {
+                // 打开弹窗时补拉仅弹窗展示的数据（#1257）。
+                await data.refreshPopoverOnly(for: data.selectedConversationID)
+            }
         }
-        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(refreshRevision)") {
+        .task(id: "\(data.selectedConversationID?.uuidString ?? "nil")-\(refreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            await refreshUsage(for: selectedConversationID)
-            await refreshHistory(for: selectedConversationID)
-            await refreshEvents(for: selectedConversationID)
-            await refreshAuxiliaryUsage(for: selectedConversationID)
+            await data.refresh(isPopoverPresented: isPopoverPresented, for: data.selectedConversationID)
         }
         .onAppear {
             guard observerHandle == nil else { return }
-            selectedConversationID = state.selectedConversationID
+            data.setSelectedConversationID(state.selectedConversationID)
             observerHandle = state.addObserver { event in
                 switch event {
                 case let .selectedConversationChanged(id):
-                    selectedConversationID = id
+                    data.setSelectedConversationID(id)
                     isPopoverPresented = false
                 case let .messagesChanged(conversationID):
-                    guard conversationID == selectedConversationID else { return }
+                    guard conversationID == data.selectedConversationID else { return }
                     refreshRevision &+= 1
                 case .llmChanged:
                     refreshRevision &+= 1
@@ -77,7 +82,7 @@ struct ContextToolbarView: View {
             Image(systemName: "text.viewfinder")
                 .font(.system(size: 10))
             if let displayedWindowSize, displayedWindowSize > 0 {
-                if let used = usage?.estimatedInputTokens, used > 0 {
+                if let used = data.usage?.estimatedInputTokens, used > 0 {
                     Text("\(used.formattedTokensShort)/\(formattedWindowSize(displayedWindowSize))")
                         .font(.system(size: 10, weight: .medium))
                         .monospacedDigit()
@@ -91,12 +96,12 @@ struct ContextToolbarView: View {
                     .font(.system(size: 10, weight: .medium))
             }
 
-            if !events.isEmpty {
+            if !data.events.isEmpty {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 3))
                     .foregroundStyle(theme.warning)
                     .padding(.leading, 1)
-                Text("\(events.count)")
+                Text("\(data.events.count)")
                     .font(.system(size: 10, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(theme.warning)
@@ -113,13 +118,13 @@ struct ContextToolbarView: View {
     }
 
     private var labelColor: Color {
-        if !events.isEmpty { return theme.warning }
+        if !data.events.isEmpty { return theme.warning }
         return colorForUsage
     }
 
     private var colorForUsage: Color {
-        guard let used = usage?.estimatedInputTokens,
-              let limit = usage?.inputTokenLimit else {
+        guard let used = data.usage?.estimatedInputTokens,
+              let limit = data.usage?.inputTokenLimit else {
             return theme.textSecondary
         }
         switch Self.usageSeverity(used: used, limit: limit) {
@@ -143,7 +148,7 @@ struct ContextToolbarView: View {
     }
 
     private var contextTooltip: String {
-        guard let usage else {
+        guard let usage = data.usage else {
             return String(localized: "Context window size is unknown", defaultValue: "上下文窗口大小未知", bundle: .module)
         }
         if let used = usage.estimatedInputTokens,
@@ -169,50 +174,8 @@ struct ContextToolbarView: View {
     }
 
     private func formattedWindowSize(_ size: Int) -> String {
-        let suffix = usage?.usesFallbackWindow == true ? "*" : ""
+        let suffix = data.usage?.usesFallbackWindow == true ? "*" : ""
         return size.formattedContextSize + suffix
     }
 
-    // MARK: - Data
-
-    private func refreshUsage(for conversationID: UUID?) async {
-        let snapshot = await provider.contextWindowUsage(for: conversationID)
-        guard !Task.isCancelled, selectedConversationID == conversationID else { return }
-        usage = snapshot
-    }
-
-    private func refreshHistory(for conversationID: UUID?) async {
-        guard let conversationID else {
-            history = .empty
-            return
-        }
-        let snapshot = await messages.messagesSnapshot(in: conversationID)
-        guard !Task.isCancelled, selectedConversationID == conversationID else { return }
-        history = ContextUsageHistory.build(from: snapshot)
-    }
-
-    private func refreshEvents(for conversationID: UUID?) async {
-        guard let conversationID else {
-            events = []
-            return
-        }
-        let snapshot = await messages.messagesSnapshot(in: conversationID)
-        guard !Task.isCancelled, selectedConversationID == conversationID else { return }
-        events = snapshot
-            .filter(MessageTimelineEvent.isActualContextCompaction)
-            .sorted { lhs, rhs in
-                if lhs.createdAt == rhs.createdAt { return lhs.id > rhs.id }
-                return lhs.createdAt > rhs.createdAt
-            }
-    }
-
-    private func refreshAuxiliaryUsage(for conversationID: UUID?) async {
-        guard let conversationID else {
-            auxiliaryEntries = []
-            return
-        }
-        let entries = await provider.auxiliaryUsageEntries(for: conversationID)
-        guard !Task.isCancelled, selectedConversationID == conversationID else { return }
-        auxiliaryEntries = entries
-    }
 }
