@@ -38,7 +38,7 @@ let package = Package(
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
-        .package(path: "../../../../Lumi-Softworks/LumiChat"),
+        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.0.0"),
         .package(path: "../PluginConversationManager"),
         .package(path: "../PluginMessageManager"),
         .package(path: "../PluginLLMContext"),

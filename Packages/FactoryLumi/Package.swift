@@ -62,7 +62,7 @@ let package = Package(
         .package(path: "../PluginConversationSpeed"),
         .package(path: "../PluginConversationTokenUsage"),
         .package(path: "../PluginConversationTitle"),
-        .package(path: "../../../../Lumi-Softworks/LumiChat"),
+        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.0.0"),
         .package(path: "../PluginConversationPendingMessage"),
         .package(path: "../PluginConversationResume"),
         .package(path: "../PluginConversationFork"),

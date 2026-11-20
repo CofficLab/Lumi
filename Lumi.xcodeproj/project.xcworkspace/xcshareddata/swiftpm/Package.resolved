@@ -1,5 +1,5 @@
 {
-  "originHash" : "a7c280b36175b6b931e04bb5b0de50e27c8bc1797e56df86d8703c33031d1698",
+  "originHash" : "fbb9d245157664405af94585acecbc35ff3d2e9133e6958b006b023e0dea9cc9",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -89,6 +89,15 @@
       "state" : {
         "revision" : "5cc1b96e18c39ad1bd0e81c9b5d80865dd8038f7",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "lumichat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiChat.git",
+      "state" : {
+        "revision" : "de04e0d093ed787c5605fa7b21423e28435e8245",
+        "version" : "1.0.0"
       }
     },
     {
