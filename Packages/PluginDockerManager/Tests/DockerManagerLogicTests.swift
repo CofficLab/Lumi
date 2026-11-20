@@ -89,7 +89,8 @@ private actor StubDockerService: DockerManagerServicing {
 
     func scanImage(_ id: String) async throws -> String {
         scannedImages.append(id)
-        if let scanDelay { try? await Task.sleep(for: scanDelay) }
+        // 采样真实 KitShell 语义：任务被取消时抛 CancellationError（#253）。
+        if let scanDelay { try await Task.sleep(for: scanDelay) }
         if let scanError { throw scanError }
         return scanResult
     }
@@ -818,6 +819,94 @@ struct DockerManagerViewModelTests {
         #expect(viewModel.errorMessage == nil, "旧刷新的失败不得覆盖最新成功状态")
         #expect(viewModel.images.count == 1)
         #expect(viewModel.isLoading == false)
+    }
+
+    @Test("取消所有操作会终止在途扫描，且不写回失败文案（#253）")
+    func cancelAllOperationsStopsInFlightScan() async throws {
+        let image = Self.image(id: "sha256:a", repository: "alpha")
+        let service = StubDockerService()
+        await service.setImages([image])
+        await service.setInspectResult(
+            DockerInspect(
+                Id: image.imageID,
+                RepoTags: nil,
+                Architecture: "arm64",
+                Os: "linux",
+                Size: nil,
+                VirtualSize: nil,
+                Author: nil,
+                Config: nil
+            )
+        )
+        await service.setScanDelay(.seconds(10))
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.selectImage(image)
+
+        let scan = Task { await viewModel.scanImage(image) }
+        await waitUntil { await service.scannedImages.count == 1 }
+
+        viewModel.cancelAllOperations()
+
+        // 取消后长操作必须及时结束：真实实现里 KitShell 收到取消会终止
+        // docker/trivy 进程树，等待不能超过 2 秒。
+        let completed = await Self.waitFor(scan, timeout: .seconds(2))
+        #expect(completed, "取消后在途扫描必须及时结束")
+        #expect(
+            viewModel.scanResult?.contains("Scan failed") != true,
+            "取消不得把失败文案写回扫描结果"
+        )
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.isLoading == false)
+    }
+
+    @Test("插件关闭会取消在途操作并终止等待（#253）")
+    func pluginShutdownCancelsInFlightOperation() async throws {
+        let image = Self.image(id: "sha256:a", repository: "alpha")
+        let service = StubDockerService()
+        await service.setImages([image])
+        await service.setInspectResult(
+            DockerInspect(
+                Id: image.imageID,
+                RepoTags: nil,
+                Architecture: "arm64",
+                Os: "linux",
+                Size: nil,
+                VirtualSize: nil,
+                Author: nil,
+                Config: nil
+            )
+        )
+        await service.setScanDelay(.seconds(10))
+        let plugin = DockerManagerPlugin(viewModel: DockerManagerViewModel(service: service))
+        let viewModel = try #require(plugin.viewModel)
+        await viewModel.selectImage(image)
+
+        let scan = Task { await viewModel.scanImage(image) }
+        await waitUntil { await service.scannedImages.count == 1 }
+
+        try plugin.onShutdown(kernel: KernelCoreContainer())
+
+        let completed = await Self.waitFor(scan, timeout: .seconds(2))
+        #expect(completed, "插件关闭后在途扫描必须及时结束")
+        #expect(
+            viewModel.scanResult?.contains("Scan failed") != true,
+            "插件关闭不得把失败文案写回扫描结果"
+        )
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.isLoading == false)
+    }
+
+    private static func waitFor(_ task: Task<Void, Never>, timeout: Duration) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { await task.value; return true }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
     }
 
     private func waitUntil(_ condition: @MainActor () async -> Bool) async {
