@@ -431,27 +431,30 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 346 条用�
 | 355 | AnthropicThinkingSignature | 重建请求时 thinking 块携带原始签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transformMessageEchoesSignatureInThinkingBlock` |
 | 356 | AnthropicThinkingSignature | 没有签名时不伪造 signature 键（#287） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `transformMessageOmitsSignatureWhenAbsent` |
 | 357 | AnthropicThinkingSignature | 整段 JSON 回退一次性携带思考全文与签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `wholeJSONFallbackCarriesReasoningAndSignature` |
+| 358 | ResponsesVision | 带图用户消息编码为 input_text + input_image（#288） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `userImageEncodedAsResponsesParts` |
+| 359 | ResponsesVision | 无图消息保持纯字符串内容（#288） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageWithoutImageKeepsStringContent` |
+| 360 | ResponsesVision | 纯图消息不产生空文本块（#288） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `imageOnlyMessageOmitsEmptyTextPart` |
 
-> 说明：全部 **346 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **360 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 64 / 64
-- P1: 已覆盖 271 / 271
-- P2: 已覆盖 22 / 22
-- **合计: 357 / 357**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 65 / 65
+- P1: 已覆盖 272 / 272
+- P2: 已覆盖 23 / 23
+- **合计: 360 / 360**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（64 条）
-- **P1**: 其余功能性用例（271 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（22 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（65 条）
+- **P1**: 其余功能性用例（272 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（23 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 357 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 360 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

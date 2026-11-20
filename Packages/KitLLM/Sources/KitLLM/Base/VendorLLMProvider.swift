@@ -226,7 +226,15 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let model = request.model ?? providerInfo.defaultModel
         var input: [[String: Any]] = []
         for message in request.messages {
-            input.append(["role": message.role.rawValue, "content": message.content])
+            // 声明了 Vision 的 Responses 模型必须真正收到图片（issue #288）：
+            // 无图保持纯字符串内容，有图切分为 input_text/input_image 数组。
+            input.append([
+                "role": message.role.rawValue,
+                "content": VisionMessageContentBuilder.responsesContent(
+                    text: message.content,
+                    images: message.images
+                ),
+            ])
         }
         var body: [String: Any] = ["model": model, "input": input]
         if let reasoningEffort = normalizedReasoningEffort(request.reasoningEffort) {
