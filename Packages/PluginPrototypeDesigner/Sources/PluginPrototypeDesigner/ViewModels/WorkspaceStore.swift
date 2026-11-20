@@ -126,6 +126,15 @@ final class WorkspaceStore: ObservableObject {
         refreshSelectedScreen()
     }
 
+    /// 处理预览内声明的屏幕跳转（`data-prototype-link`，issue #323）。
+    ///
+    /// 目标屏不存在时保持当前屏幕不变；`refreshSelectedScreen` 对未知 ID 会
+    /// 回退到第一屏，直接复用会让坏目标意外跳到起始屏。
+    func selectHotspotTarget(_ target: String, in project: PrototypeProject) {
+        guard project.screen(id: target) != nil else { return }
+        select(projectID: project.id, screenID: target)
+    }
+
     // MARK: - 变更
 
     func deleteProject(id: String) {

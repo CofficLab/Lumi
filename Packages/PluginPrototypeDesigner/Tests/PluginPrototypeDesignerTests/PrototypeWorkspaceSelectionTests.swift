@@ -142,4 +142,27 @@ extension PrototypeDesignerPluginTests {
         WorkspaceStore.shared.select(projectID: "retry-project", screenID: "alpha")
         #expect(WorkspaceStore.shared.selectedScreen?.screen.id == "alpha")
     }
+
+    @Test("热点指向未知屏幕时保持当前选中不变（#323）")
+    func hotspotTargetToUnknownScreenKeepsCurrentSelection() throws {
+        let root = try makeSelectionProjectRoot("hotspot")
+        defer {
+            PrototypeDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: root)
+        }
+        activateSelectionStorage(for: root)
+        try createSelectionProject(slug: "hotspot-project", screens: ["alpha", "beta"], storagePath: WorkspaceStore.shared.projectStoragePath)
+        WorkspaceStore.shared.reload()
+
+        let project = try #require(WorkspaceStore.shared.projects.first(where: { $0.id == "hotspot-project" }))
+        WorkspaceStore.shared.select(projectID: project.id, screenID: "beta")
+
+        // 未知目标必须被忽略：refreshSelectedScreen 对未知 ID 会回退到第一屏
+        // （alpha），直接复用 select 会让坏热点意外跳到起始屏。
+        WorkspaceStore.shared.selectHotspotTarget("unknown-screen", in: project)
+        #expect(WorkspaceStore.shared.selectedScreen?.screen.id == "beta")
+
+        WorkspaceStore.shared.selectHotspotTarget("alpha", in: project)
+        #expect(WorkspaceStore.shared.selectedScreen?.screen.id == "alpha")
+    }
 }

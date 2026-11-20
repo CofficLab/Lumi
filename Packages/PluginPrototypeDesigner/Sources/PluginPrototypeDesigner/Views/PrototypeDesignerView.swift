@@ -105,7 +105,10 @@ public struct PrototypeDesignerView: View {
                     onElementReferenceSelected: { reference in
                         sendElementToConversation(reference, resolved: resolved)
                     },
-                    isElementReferenceActionEnabled: PrototypeDesignerRuntime.conversationInput != nil
+                    isElementReferenceActionEnabled: PrototypeDesignerRuntime.conversationInput != nil,
+                    onPrototypeLinkSelected: { target in
+                        workspace.selectHotspotTarget(target, in: resolved.project)
+                    }
                 )
                 .id("\(resolved.screen.updatedAt.timeIntervalSince1970)-\(resolved.project.device.kind.rawValue)")
             } else {
