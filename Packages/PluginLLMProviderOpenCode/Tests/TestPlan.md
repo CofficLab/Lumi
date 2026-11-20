@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderOpenCode 的实现包，包含 3 个主要类型；当前测试覆盖 15 条用例。
+PluginLLMProviderOpenCode 的实现包，包含 3 个主要类型；当前测试覆盖 18 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 15
+测试文件: 6 个，用例总数: 18
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -23,7 +23,7 @@ PluginLLMProviderOpenCode 的实现包，包含 3 个主要类型；当前测试
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **OpenCodeProviderPlugin**（3 条）：由 `pluginRegistersProviders`、`goProviderRejectsIncompleteToolCallStream`、`goProviderReconstructsFragmentedToolCall` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoProviderNonStreamingToolCalls / GoProviderResponsesCacheUsage / GoProviderResponsesToolHistory / GoProviderStreamingReasoningEffort**（12 条）：锁定 Go 供应商三条协议路径的非流式工具调用、Responses 缓存统计与工具历史回传、流式推理档位；改动 `GoProvider` 时须全部保持通过。
+- **GoProviderNonStreamingToolCalls / GoProviderResponsesCacheUsage / GoProviderResponsesToolHistory / GoProviderStreamingReasoningEffort / GoProviderResponsesStreaming**（15 条）：锁定 Go 供应商三条协议路径的非流式工具调用、Responses 缓存统计与工具历史回传、流式推理档位；改动 `GoProvider` 时须全部保持通过。
 
 ## 测试用例清单
 
@@ -44,27 +44,30 @@ PluginLLMProviderOpenCode 的实现包，包含 3 个主要类型；当前测试
 | 13 | GoProviderStreamingReasoningEffort | Chat Completions 流式请求带上 reasoning_effort | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAIStreamKeepsReasoningEffort` |
 | 14 | GoProviderStreamingReasoningEffort | Anthropic 流式请求带上启用状态的 thinking 配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicStreamKeepsReasoningEffort` |
 | 15 | GoProviderStreamingReasoningEffort | 未指定推理档位时不带 reasoning_effort | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `streamWithoutReasoningEffortOmitsIt` |
+| 16 | GoProviderResponsesStreaming | 流式请求带 stream 标记并逐段回调正文（#413） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `streamingDeliversIncrementalText` |
+| 17 | GoProviderResponsesStreaming | 流式收集 function_call 并按 sanitize 名还原注册名（#413） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `streamingCollectsFunctionCall` |
+| 18 | GoProviderResponsesStreaming | response.failed 必须抛错而不是返回空响应（#413） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `streamingFailureThrows` |
 
-> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 10 / 10
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 3 / 3
-- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

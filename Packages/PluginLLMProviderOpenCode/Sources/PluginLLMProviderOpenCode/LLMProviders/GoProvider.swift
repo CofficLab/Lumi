@@ -139,7 +139,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         let apiKey = try resolvedAPIKey()
         switch kind {
         case .responses:
-            return try await sendResponses(request, model: model, apiKey: apiKey)
+            return try await streamResponses(request, model: model, apiKey: apiKey, onChunk: onChunk)
         case .openAI:
             return try await streamChat(request, model: model, apiKey: apiKey, anthropic: false, onChunk: onChunk)
         case .anthropic:
@@ -328,44 +328,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)sendResponses model=\(model, privacy: .public)")
         }
-        // 历史里的工具调用名必须与工具定义同样 sanitize：解析时按 reverseMap
-        // 还原成注册名，回传时写回 sanitize 名，否则端点看到的 function_call
-        // 与 tools 定义名称不一致。工具结果必须以 function_call_output（带
-        // call_id）回传，而不是普通 role:text 项——否则第二轮工具循环无法
-        // 重建（issue #285）。
-        var sanitizedNames: [String: String] = [:]
-        if let schemas = request.tools {
-            for schema in schemas {
-                sanitizedNames[schema.name] = LLMToolNameSanitizer.sanitize(schema.name)
-            }
-        }
-        var input: [[String: Any]] = []
-        for message in request.messages {
-            if message.role == .assistant, let calls = message.toolCalls, !calls.isEmpty {
-                if !message.content.isEmpty {
-                    input.append(["role": message.role.rawValue, "content": message.content])
-                }
-                for call in calls {
-                    let name = sanitizedNames[call.name] ?? LLMToolNameSanitizer.sanitize(call.name)
-                    input.append([
-                        "type": "function_call",
-                        "call_id": call.id,
-                        "name": name,
-                        "arguments": call.arguments,
-                    ])
-                }
-                continue
-            }
-            if message.role == .tool, let callID = message.toolCallID {
-                input.append([
-                    "type": "function_call_output",
-                    "call_id": callID,
-                    "output": message.content,
-                ])
-                continue
-            }
-            input.append(["role": message.role.rawValue, "content": message.content])
-        }
+        var input = Self.responsesInput(from: request.messages)
         var body: [String: Any] = ["model": model, "input": input]
 
         // 注入工具定义，否则模型看不到任何可调用函数、只会返回纯文本。
@@ -399,6 +362,135 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             cacheWriteInputTokenCount: tokenCounts.cacheWrite,
             cacheTotalInputTokenCount: tokenCounts.cacheTotal
         )
+    }
+
+    /// Responses 协议的流式请求（issue #413）：模型元数据声明
+    /// `supportsStreaming = true`，此前 streamComplete 却直接回落到一次性
+    /// `sendResponses`，既不带 `stream: true` 也没有任何增量回调。
+    private func streamResponses(
+        _ request: LLMRequest,
+        model: String,
+        apiKey: String,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)streamResponses model=\(model, privacy: .public)")
+        }
+        var body: [String: Any] = [
+            "model": model,
+            "input": Self.responsesInput(from: request.messages),
+            "stream": true,
+        ]
+        let (tools, reverseMap) = toolSchemas(from: request.tools)
+        if let tools, !tools.isEmpty {
+            body["tools"] = tools.map(formatResponsesTool)
+        }
+        if let reasoningEffort = normalizedReasoningEffort(request.reasoningEffort) {
+            body["reasoning"] = ["effort": reasoningEffort]
+        }
+
+        var httpRequest = URLRequest(url: try endpointURL("\(Self.base)/responses"))
+        httpRequest.httpMethod = "POST"
+        httpRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let accumulator = GoStreamingAccumulator()
+        nonisolated(unsafe) let finalBody = body
+        try await apiService.sendStreamingChatRequest(request: httpRequest, body: finalBody) { data in
+            let chunks = Self.responsesStreamChunks(from: data, reverseMap: reverseMap)
+            for chunk in chunks {
+                guard await accumulator.consume(chunk, onChunk: onChunk) else { return false }
+            }
+            return true
+        }
+        return try accumulator.finish(model: model)
+    }
+
+    /// 解析 Responses SSE 事件块。每个交付的 Data 是一个完整事件
+    /// （`event:` + `data:` 行）；`data` JSON 自带 `type` 字段，缺失时回退
+    /// `event:` 行。
+    ///
+    /// 工具调用只在 `response.output_item.done` 一次性收集完整参数——
+    /// 增量 delta 仅用于 UI 无需流式展示参数，一次成块可避免与增量拼接
+    /// 逻辑互相干扰。
+    private nonisolated static func responsesStreamChunks(
+        from data: Data,
+        reverseMap: [String: String]?
+    ) -> [StreamChunk] {
+        guard let text = String(data: data, encoding: .utf8) else { return [] }
+        var dataPayload = ""
+        var eventName: String?
+        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("data:") {
+                dataPayload += String(trimmed.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+            } else if trimmed.hasPrefix("event:") {
+                eventName = String(trimmed.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        guard !dataPayload.isEmpty, dataPayload != "[DONE]" else { return [] }
+        guard let object = try? JSONSerialization.jsonObject(with: Data(dataPayload.utf8)) as? [String: Any] else {
+            return []
+        }
+        let type = (object["type"] as? String) ?? eventName ?? ""
+
+        switch type {
+        case "response.output_text.delta":
+            guard let delta = object["delta"] as? String, !delta.isEmpty else { return [] }
+            return [StreamChunk(content: delta, eventType: .textDelta)]
+
+        case "response.output_item.done":
+            guard let item = object["item"] as? [String: Any],
+                  item["type"] as? String == "function_call",
+                  let name = item["name"] as? String else { return [] }
+            let arguments = item["arguments"] as? String ?? "{}"
+            let id = (item["call_id"] as? String) ?? (item["id"] as? String) ?? UUID().uuidString
+            return [
+                StreamChunk(
+                    toolCalls: [
+                        ToolCall(id: id, name: reverseMap?[name] ?? name, arguments: arguments)
+                    ]
+                )
+            ]
+
+        case "response.completed":
+            guard let response = object["response"] as? [String: Any] else {
+                return [StreamChunk(isDone: true)]
+            }
+            let usage = response["usage"] as? [String: Any]
+            let input = usage?["input_tokens"] as? Int
+            return [
+                StreamChunk(
+                    isDone: true,
+                    inputTokens: input,
+                    outputTokens: usage?["output_tokens"] as? Int,
+                    cachedInputTokens: usage.flatMap { OpenAICompatibleProviderAdapter.cacheReadInputTokens(from: $0) },
+                    cacheWriteInputTokens: usage.flatMap { OpenAICompatibleProviderAdapter.cacheWriteInputTokens(from: $0) },
+                    cacheTotalInputTokens: input,
+                    responseID: response["id"] as? String
+                )
+            ]
+
+        case "response.incomplete":
+            let reason = (object["response"] as? [String: Any])
+                .flatMap { $0["incomplete_details"] as? [String: Any] }?["reason"] as? String
+            return [StreamChunk(isDone: true, stopReason: reason ?? "incomplete")]
+
+        case "response.failed", "error":
+            return [StreamChunk(error: Self.responsesStreamErrorMessage(from: object))]
+
+        default:
+            return []
+        }
+    }
+
+    /// 从失败事件的多种供应商形态里提取安全的错误文本。
+    private nonisolated static func responsesStreamErrorMessage(from object: [String: Any]) -> String {
+        let message =
+            ((object["response"] as? [String: Any])?["error"] as? [String: Any])?["message"] as? String
+            ?? (object["error"] as? [String: Any])?["message"] as? String
+            ?? object["message"] as? String
+        return message ?? "Responses stream failed"
     }
 
     /// OpenCode 网关的不同协议使用不同的 usage 字段名，统一转换到 Lumi 的
@@ -449,6 +541,42 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             "parameters": tool.inputSchema,
             "strict": false,
         ]
+    }
+
+    /// Responses 协议的历史序列化：历史里的工具调用名必须与工具定义同样
+    /// sanitize——解析时按 reverseMap 还原成注册名，回传时写回 sanitize 名，
+    /// 否则端点看到的 function_call 与 tools 定义名称不一致。工具结果必须
+    /// 以 function_call_output（带 call_id）回传，而不是普通 role:text 项——
+    /// 否则第二轮工具循环无法重建（issue #285）。
+    private static func responsesInput(from messages: [LLMMessage]) -> [[String: Any]] {
+        var input: [[String: Any]] = []
+        for message in messages {
+            if message.role == .assistant, let calls = message.toolCalls, !calls.isEmpty {
+                if !message.content.isEmpty {
+                    input.append(["role": message.role.rawValue, "content": message.content])
+                }
+                for call in calls {
+                    let name = LLMToolNameSanitizer.sanitize(call.name)
+                    input.append([
+                        "type": "function_call",
+                        "call_id": call.id,
+                        "name": name,
+                        "arguments": call.arguments,
+                    ])
+                }
+                continue
+            }
+            if message.role == .tool, let callID = message.toolCallID {
+                input.append([
+                    "type": "function_call_output",
+                    "call_id": callID,
+                    "output": message.content,
+                ])
+                continue
+            }
+            input.append(["role": message.role.rawValue, "content": message.content])
+        }
+        return input
     }
 
     /// 从 Responses 响应中提取正文文本与工具调用。
