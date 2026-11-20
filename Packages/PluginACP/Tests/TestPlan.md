@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 - **ACPFileClient**（13 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；路径越权判定必须解析符号链接，workspace 内指向外部的 symlink 读写不得放行，workspace 内及经符号链接到达的 root 下的合法文件不得误拒（**回归 #356**）；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（54 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。首响应超时拒绝必须同时取消底层回合，超时后不得再执行或上报新的工具副作用（**#222**）。流式增量桥按底层流式消息身份（每次 `start` 新建消息）使用独立发送偏移：一个回合内「LLM → 工具 → LLM」的第二段正文必须完整且恰好发送一次，不得沿用第一段偏移被截断或整段丢弃（**#351**）。任何流式通知（正文或思考 token）都证明 LLM 正在产出，必须据此解除首响应 watchdog：健康的长流式回答（含纯思考阶段）不得被误判为「无 LLM 进展」而拒绝并取消底层回合；但装配流式桥本身不解除 watchdog，底层毫无流式活动时仍须照常超时拒绝（**#352**）。`session/cancel` 与 `session/prompt` 同一 burst 到达、runner Task 尚未启动（AgentLoop runtime 未创建、`cancelTurn` 为 no-op）时，取消必须仍然生效：持有并取消 runner Task 句柄，`runTurnTask` 启动前据此跳过模型/工具，由 `cancel()` 的 finalize 以 cancelled 收尾；取消标志随该回合 Task 存续，不得污染同一会话的下一回合，也不得误跳过已合法启动的运行中回合（**#480**）。AskUser 兜底（载荷缺失/选项为空/自由文本降级）由协调器主动结束回合而非客户端取消，wire stopReason 必须映射为 end_turn；只有客户端 `session/cancel` 产生的取消才收尾为 cancelled（**#482**）。
+- **ACPTurnCoordinator**（58 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。选项标签先去重再构造 optionId/answers 字典，重复标签不得触发崩溃（**#221**）。失败回合也必须补发已落库工具结果的 completed/failed 终态，不得让工具行永久 pending（**#481**）。工具调用元数据按 `(sessionID, toolCallID)` 隔离：不同会话上报相同 toolCallId 时，授权弹窗必须展示本会话自己的标题/类别/入参，不得被其它会话覆盖或借用，取消收尾也只作用于本会话（**#353**）。首响应超时拒绝必须同时取消底层回合，超时后不得再执行或上报新的工具副作用（**#222**）。流式增量桥按底层流式消息身份（每次 `start` 新建消息）使用独立发送偏移：一个回合内「LLM → 工具 → LLM」的第二段正文必须完整且恰好发送一次，不得沿用第一段偏移被截断或整段丢弃（**#351**）。任何流式通知（正文或思考 token）都证明 LLM 正在产出，必须据此解除首响应 watchdog：健康的长流式回答（含纯思考阶段）不得被误判为「无 LLM 进展」而拒绝并取消底层回合；但装配流式桥本身不解除 watchdog，底层毫无流式活动时仍须照常超时拒绝（**#352**）。`session/cancel` 与 `session/prompt` 同一 burst 到达、runner Task 尚未启动（AgentLoop runtime 未创建、`cancelTurn` 为 no-op）时，取消必须仍然生效：持有并取消 runner Task 句柄，`runTurnTask` 启动前据此跳过模型/工具，由 `cancel()` 的 finalize 以 cancelled 收尾；取消标志随该回合 Task 存续，不得污染同一会话的下一回合，也不得误跳过已合法启动的运行中回合（**#480**）。AskUser 兜底（载荷缺失/选项为空/自由文本降级）由协调器主动结束回合而非客户端取消，wire stopReason 必须映射为 end_turn；只有客户端 `session/cancel` 产生的取消才收尾为 cancelled（**#482**）。回合收尾的补发按 `.started` 登记的 turnID 限定范围：取消（尤其是尚未产生任何内容的空回合）不得回放上一回合的回复文本或历史回合的工具终态，正常结束的文本回填也只取当前回合产生的消息（**#220**）。
 
 ## 测试用例清单
 
@@ -144,8 +144,12 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 | 99 | ACPTurnCoordinator | prompt 与 cancel 同一 burst、runner 未启动时取消仍生效，不得跑模型/工具（**回归 #480**） | startTurn 调度 runner Task 后立即 cancel（runtime 未创建） | 等待原 prompt 响应 | runTurn 从未调用，响应唯一且 stopReason 为 cancelled | P0 | ✅ 已覆盖 | `testCancelBeforeRunnerStartDoesNotRunTurn` |
 | 100 | ACPTurnCoordinator | 启动前取消不得污染同一会话的下一回合（**守卫 #480**） | 第一回合启动前取消并收尾后，同会话再发新 prompt | 新回合启动并正常收尾 | 新回合 runner 正常启动，stopReason 为 endTurn | P0 | ✅ 已覆盖 | `testCancelBeforeStartDoesNotPoisonNextTurn` |
 | 101 | ACPTurnCoordinator | runner 已启动后再取消（运行中取消）仍正常生效，不被启动前判定误跳过（**守卫 #480/#233**） | 等 runner 真正启动后再 cancel | 等待原 prompt 响应 | runTurn 已调用，响应 stopReason 为 cancelled | P1 | ✅ 已覆盖 | `testCancelAfterRunnerStartStillCancelsRunningTurn` |
+| 102 | ACPTurnCoordinator | 取消空回合不得回放上一回合的回复文本与历史工具终态（**回归 #220**） | 上一回合已落库回复与已出结果工具；本回合取消在 .started 之前到达 | 等待原 prompt 响应 | stopReason 为 cancelled，无上一回合文本 chunk，无 old_call 终态补发 | P0 | ✅ 已覆盖 | `testCancelledEmptyTurnDoesNotReplayPreviousRound` |
+| 103 | ACPTurnCoordinator | 正常结束的文本回填只取当前回合消息，本回合无文本时不取上一回合兜底（**回归 #220**） | .started 登记当前 turnID；本回合只有空 assistant 消息 | 触发 completed 收尾 | endTurn 响应，无上一回合文本 chunk | P0 | ✅ 已覆盖 | `testCompletedTurnBackfillRestrictedToCurrentTurn` |
+| 104 | ACPTurnCoordinator | 工具终态补发只覆盖当前回合，历史回合终态不重放（**回归 #220**） | .started 登记当前 turnID；两回合各有已出结果工具 | 触发 completed 收尾 | 当前回合工具补发 completed，历史回合 old_call 不重放，文本回填来自当前回合 | P1 | ✅ 已覆盖 | `testTerminalToolUpdatesRestrictedToCurrentTurn` |
+| 105 | ACPTurnCoordinator | 最后一条 assistant 消息带 token 截断 stopReason 时，回合结果必须映射为 max_tokens 而非 end_turn（**回归 #354**） | 落库带 stopReason=length 的 assistant 消息后触发 completed 收尾 | 等待原 prompt 响应 | stopReason 为 maxTokens | P0 | ✅ 已覆盖 | `testTokenLimitTruncationReportsMaxTokens` |
 
-> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **105 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > 变异验证（**#353**，`ACPTurnCoordinator.toolCallMetadata` 按 `(sessionID, toolCallID)` 隔离）：
@@ -177,23 +181,30 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 101 条�
 > #482 回归：内核只有 `cancelTurn` 一种停回合手段且固定产生 `.cancelled`，AskUser 兜底停回合被误报为客户端取消（wire stopReason=cancelled）。修复增加 `gracefulStopConversations` 标记集合：三处兜底改经 `stopTurnGracefully` 打标再取消，`.cancelled` 事件与回合作业两处收尾先 `consumeGracefulStop` 消费标记，命中则按 end_turn 收尾。
 > 变异验证（**#482**，兜底停回合误报为取消）：把 free_text 分支改回直接 `agentLoop.cancelTurn` → `testSuspendedFreeTextDegradesToTextAndEndsTurn` 转红（stopReason 实际为 cancelled）；还原后 101 条全绿。
 
+> 变异验证（**#220**，回合收尾补发按 turnID 限定范围）：
+> - **M1** 去掉 `finalize` 中 `!cancelled, !failed` 的 `!cancelled`（取消回合也回填最终文本）→ `testCancelledEmptyTurnDoesNotReplayPreviousRound` 转红（无 turnID 时空回合回填取到上一回合整段回复）。
+> - **M2** 去掉 `publishFinalContent` 的 turnID 过滤 → `testCompletedTurnBackfillRestrictedToCurrentTurn` 转红（上一回合文本被兜底回放）；`testCancelledEmptyTurnDoesNotReplayPreviousRound` 与 `testTerminalToolUpdatesRestrictedToCurrentTurn` 保持绿。
+> - **M3** 去掉 `publishTerminalToolUpdates` 的 turnID 过滤 → `testTerminalToolUpdatesRestrictedToCurrentTurn` 转红（历史回合 old_call 终态被重放）；另两条保持绿。
+> - **M4** 去掉「取消且回合未登记 turnID 时跳过 `publishTerminalToolUpdates`」的守卫 → `testCancelledEmptyTurnDoesNotReplayPreviousRound` 转红（全量扫描重放 old_call 终态，文本回放断言不触发）。
+> - 还原完整修复 → 105 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 32 / 32
-- P1: 已覆盖 68 / 68
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 1 / 1
-- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
+- **合计: 105 / 105**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（68 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P1**: 其余功能性用例（69 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 105 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

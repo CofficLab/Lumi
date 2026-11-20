@@ -800,6 +800,190 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         XCTAssertEqual(decoded?.stopReason, .cancelled)
     }
 
+    // MARK: - 回合范围限定（#220）
+
+    /// #220：取消一个尚未产生任何内容的回合，不得回放上一回合的回复文本，
+    /// 也不得重放历史回合的工具终态。
+    func testCancelledEmptyTurnDoesNotReplayPreviousRound() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        // 上一回合已落库的回复与工具结果。
+        let previousTurnID = UUID()
+        let oldCall = MessageToolCall(
+            id: "old_call",
+            name: "bash",
+            arguments: #"{"cmd":"ls"}"#,
+            result: MessageToolResult(content: "old result", isError: false)
+        )
+        store.messagesByConversation[conversationID] = [
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "上一回合的回复",
+                turnID: previousTurnID,
+                toolCalls: [oldCall]
+            )
+        ]
+
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        // 取消在 .started 之前到达（空回合）：本回合没有任何自己的消息。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: previousTurnID))
+        runner.nextOutcome = .cancelled
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .cancelled)
+
+        // 不回放上一回合的文本。
+        XCTAssertFalse(sent.contains {
+            if case .notification(let method, let params) = $0 {
+                return method == ACPMethod.sessionUpdate &&
+                    (try? params?.decoded(as: ACPSessionUpdateParams.self))?.update ==
+                    SessionUpdate.agentMessageChunk(.text("上一回合的回复"))
+            }
+            return false
+        })
+
+        // 不重放历史回合的工具终态。
+        XCTAssertFalse(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCallUpdate(let tc) = update.update else { return false }
+            return tc.toolCallId == "old_call"
+        })
+    }
+
+    /// #220：正常结束的最终文本回填只取当前回合的消息，本回合无文本时
+    /// 不得取上一回合的回复兜底。
+    func testCompletedTurnBackfillRestrictedToCurrentTurn() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        let previousTurnID = UUID()
+        store.messagesByConversation[conversationID] = [
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "上一回合的回复",
+                turnID: previousTurnID
+            )
+        ]
+
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        let currentTurnID = UUID()
+        runner.emit(.started(conversationID: conversationID, turnID: currentTurnID))
+        // 本回合只有空 assistant 消息（如纯工具回合），没有可回填的文本。
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                turnID: currentTurnID
+            )
+        )
+
+        runner.emit(.completed(conversationID: conversationID, turnID: currentTurnID))
+        runner.nextOutcome = .completed
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+
+        guard let response = sent.first(where: { $0.id == .integer(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .endTurn)
+
+        XCTAssertFalse(sent.contains {
+            if case .notification(let method, let params) = $0 {
+                return method == ACPMethod.sessionUpdate &&
+                    (try? params?.decoded(as: ACPSessionUpdateParams.self))?.update ==
+                    SessionUpdate.agentMessageChunk(.text("上一回合的回复"))
+            }
+            return false
+        })
+    }
+
+    /// #220：工具终态补发只覆盖当前回合；正常结束的文本回填来自当前回合。
+    func testTerminalToolUpdatesRestrictedToCurrentTurn() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+
+        let previousTurnID = UUID()
+        let oldCall = MessageToolCall(
+            id: "old_call",
+            name: "bash",
+            arguments: #"{"cmd":"ls"}"#,
+            result: MessageToolResult(content: "old result", isError: false)
+        )
+        store.messagesByConversation[conversationID] = [
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "上一回合",
+                turnID: previousTurnID,
+                toolCalls: [oldCall]
+            )
+        ]
+
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .integer(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        let currentTurnID = UUID()
+        runner.emit(.started(conversationID: conversationID, turnID: currentTurnID))
+        let newCall = MessageToolCall(
+            id: "new_call",
+            name: "bash",
+            arguments: #"{"cmd":"pwd"}"#,
+            result: MessageToolResult(content: "new result", isError: false)
+        )
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "本回合完成",
+                turnID: currentTurnID,
+                toolCalls: [newCall]
+            )
+        )
+
+        runner.emit(.completed(conversationID: conversationID, turnID: currentTurnID))
+        runner.nextOutcome = .completed
+        waitUntil { self.sent.contains { $0.id == .integer(1) } }
+
+        // 当前回合的终态正常补发。
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCallUpdate(let tc) = update.update else { return false }
+            return tc.toolCallId == "new_call" && tc.status == .completed
+        })
+        // 历史回合的终态不重放。
+        XCTAssertFalse(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCallUpdate(let tc) = update.update else { return false }
+            return tc.toolCallId == "old_call"
+        })
+        // 正常结束的文本回填来自当前回合。
+        XCTAssertTrue(sent.contains {
+            if case .notification(let method, let params) = $0 {
+                return method == ACPMethod.sessionUpdate &&
+                    (try? params?.decoded(as: ACPSessionUpdateParams.self))?.update ==
+                    SessionUpdate.agentMessageChunk(.text("本回合完成"))
+            }
+            return false
+        })
+    }
+
     // MARK: - 输入校验
 
     func testStartTurnRejectsUnknownSession() {
