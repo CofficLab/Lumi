@@ -58,7 +58,20 @@ enum BrowserInteractionScript {
 
       // 页面可能在快照之后复制/改写 ref 属性；只取第一个匹配会静默操作
       // 错误控件。匹配不唯一时拒绝执行，要求重新快照。
-      const matches = document.querySelectorAll("[" + REF_ATTR + '="' + ref + '"]');
+      // 快照会进入 open shadow root 并给其中的元素分配 ref（#267），
+      // document 级查询无命中时按同样方式深入 open shadow root 解析。
+      const selector = "[" + REF_ATTR + '="' + ref + '"]';
+      let matches = Array.from(document.querySelectorAll(selector));
+      if (matches.length === 0) {
+        matches = [];
+        const visitShadowRoots = (root) => {
+          for (const el of root.querySelectorAll(selector)) matches.push(el);
+          for (const el of root.querySelectorAll("*")) {
+            if (el.shadowRoot) visitShadowRoots(el.shadowRoot);
+          }
+        };
+        visitShadowRoots(document);
+      }
       if (matches.length === 0) {
         return fail("STALE_REF:" + ref);
       }

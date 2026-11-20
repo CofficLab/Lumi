@@ -51,13 +51,13 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser ref 登记簿**（5 条）：由 `normalizesRefFormats`、`staleMessageIncludesLastKnownSignature` 等用例锁定；ref 规范化规则与失效提示的措辞是 LLM 恢复动作的依据。
 - **Browser 内容边界**（6 条）：由 `wrapsContentInMarkers`、`neutralizesForgedMarkers` 等用例锁定；nonce 机制是防提示注入的核心，任何削弱都会造成安全问题。
 - **Browser 工具本地化**（3 条）：由 `allToolsDescribeInChinese`、`interactExposesEveryAction` 等用例锁定；工具描述与参数说明必须覆盖 4 种语言。
-- **PluginBrowser 工具装配**（5 条）：由 `registersAllTools`、`removesAllToolsOnShutdown` 等用例锁定；工具漏注册或漏注销是本插件最容易犯且最难发现的错误。
+- **PluginBrowser 工具装配**（7 条）：由 `registersAllTools`、`removesAllToolsOnShutdown` 等用例锁定；工具漏注册或漏注销是本插件最容易犯且最难发现的错误。onDisable 必须同时注销全部工具与 ActivityBar 入口，之后的 onEnable 再重新注册（issue #451）。
 - **Browser 活动会话隔离**（2 条）：由 `readOnlyToolsDoNotHijackActiveConversation`、`explicitSelectionStillSwitchesActiveConversation` 锁定；只读工具只能读取自己会话的页面，不得改写用户当前选中的 Browser 工作区。
 - **Browser 会话释放**（4 条）：由 `deletedConversationReleasesBrowserSession`、`deletingActiveConversationClearsActiveState` 等用例锁定；删除会话必须立刻释放 BrowserSession/WKWebView，并在活动会话被删时清空活动状态。
 - **Browser 整页截图边界**（6 条）：由 `clampsExtremelyWidePages`、`downscalesBeyondPixelBudget`、`outputPixelsStayWithinBudget` 等用例锁定；整页截图必须同时限制宽度、高度与总像素数，不能只钳制高度（issue #1060）。
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 - **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
-- **Browser ref 分配与唯一性**（3 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。
+- **Browser ref 分配与唯一性**（5 条）：由 `snapshotReplacesPresetDuplicateRefs`、`interactionRejectsAmbiguousRef`、`interactionReportsStaleRef` 锁定；ref 必须由 Lumi 分配并覆盖页面预置值，交互遇到同名多元素时必须拒绝（issue #1091）。`browser_read` 也必须沿用同一计数器、不从 lumi-1 重新编号，两次读取不得重用编号，否则跨快照的 ref 会指向错误元素（issue #268）。
 - **Browser click 遮挡检测**（2 条）：由 `coveredClickReportsFailureAndDoesNotClick`、`uncoveredClickSucceedsAndClicks` 锁定；非链接元素被遮挡时 `click()` 返回失败对象，调用处必须检查 `.ok` 并原样回传失败，不得因 JS 对象恒真而误报 "Clicked." 成功（issue #832）。
 - **browser_evaluate 结果解析**（6 条）：由 `stringValueReturnsAsIs`、`errorEnvelopeMapsToScriptFailed`、`largeResultDecodesOffMain` 等用例锁定；信封到 `.success` / `.scriptFailed` / `.noPage` 的映射是模型判断脚本成败的依据，数 MB 结果的解析必须在后台完成（issue #1297）。
 - **截图 PNG 编码**（3 条）：由 `encodesValidPNGFromCGImage`、`directEncodingMatchesTIFFRoundTrip`、`encodingRunsOffMainThread` 锁定；直接从 CGImage 建位图并在后台编码，去掉 TIFF 往返，像素尺寸不得丢失（issue #1282）。
@@ -65,6 +65,9 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser DNS 根点归一化**（8 条）：由 `trailingRootDotLocalHostsAreStillLocal`、`openAndNavigateToolsRequireApprovalForTrailingDot`、`openWithoutApprovalIsBlocked`、`approvedHostKeyIsNormalized` 锁定；`localhost.` 与 `localhost` 解析到同一个回环地址，分类与审批键都必须先去掉 DNS 根点，否则等价 host 就能绕过本地访问审批（issue #830）。
 - **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
 - **back/forward/reload 导航失败传播**（4 条）：由 `backNavigationCancellationPropagates`、`reloadNavigationFailurePropagates`、`successfulNavigationReturns`、`blockedLocalNavigationPropagates` 锁定；back/forward/reload 必须通过 continuation 等待导航结果，WebKit 报错或策略取消时必须抛出错误，不得静默返回成功（issue #833）。
+- **press Enter 提交流程**（3 条）：由 `enterUsesRequestSubmitOnly`、`fallbackDispatchesSingleCancelableSubmit`、`fallbackRespectsCancellation` 锁定；Enter 必须只走一次提交流程——有 requestSubmit 时只触发原生提交，无 requestSubmit 时派发一次可取消 submit，被取消后不得再启动原生提交（issue #266）。
+- **Browser shadow DOM ref 解析**（4 条）：由 `shadowRefResolvesIntoOpenShadowRoot`、`nestedShadowRefResolves`、`missingShadowRefStillStale`、`ambiguousShadowRefRejected` 锁定；快照会深入 open shadow root 分配 ref，交互解析在 document 级查询无命中时必须按同样方式递归深入 open shadow root，元素缺失仍报 STALE_REF，跨 shadow root 多匹配必须拒绝执行（issue #267）。
+- **Browser 导航任务取消与迟到回调**（5 条）：由 `cancelledNavigateStopsLoadAndThrows`、`cancelledPerformAndWaitThrowsPromptly`、`precancelledNavigateFailsImmediately`、`staleDidFinishDoesNotCompleteNewerNavigation`、`staleDidFailIsIgnoredForNewerNavigation` 锁定；导航任务被取消时必须立刻停止加载并抛出 navigationCancelled，已取消的任务不得再发起新导航，旧导航迟到的 didFinish/didFail 回调不得推进新导航（issue #419）。
 
 ## 测试用例清单
 
@@ -165,20 +168,37 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 93 | Browser click 遮挡检测 | 被遮挡的非链接元素点击必须报告失败且不执行真实点击（**回归 #832**） | elementFromPoint 返回遮挡元素 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=false 且提示被遮挡，`el.click()` 未执行 | P0 | ✅ 已覆盖 | `coveredClickReportsFailureAndDoesNotClick` |
 | 94 | Browser click 遮挡检测 | 未被遮挡的非链接元素点击成功并执行真实点击 | elementFromPoint 返回自身 | 对 `@lumi-1`（BUTTON）执行 click | 返回 ok=true、message "Clicked."，`el.click()` 执行一次 | P1 | ✅ 已覆盖 | `uncoveredClickSucceedsAndClicks` |
 | 95 | Browser 会话标题同步 | 运行时修改 document.title 后会话标题立即跟随 | 内联加载带标题的 HTML 页面 | `browser` 场景：加载 Original 页后用 JS 把 `document.title` 改为 Changed | 会话缓存标题先变为 Original、随后立即变为 Changed（**#835**） | P0 | ✅ 已覆盖 | `runtimeTitleChangeIsReflected` |
+| 96 | press Enter 提交 | 有 requestSubmit 时 Enter 只触发一次原生提交流程（**回归 #266**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `enterUsesRequestSubmitOnly` |
+| 97 | press Enter 提交 | 无 requestSubmit 时派发一次可取消 submit，未取消才原生提交（**回归 #266**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackDispatchesSingleCancelableSubmit` |
+| 98 | press Enter 提交 | 取消 submit 后不启动原生提交（**回归 #266**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallbackRespectsCancellation` |
+| 99 | Browser shadow DOM ref 解析 | open shadow root 内的 ref 必须可解析并完成点击（**回归 #267**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `shadowRefResolvesIntoOpenShadowRoot` |
+| 100 | Browser shadow DOM ref 解析 | 嵌套 open shadow root 内的 ref 必须递归解析（**回归 #267**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nestedShadowRefResolves` |
+| 101 | Browser shadow DOM ref 解析 | 元素不存在时仍报告 STALE_REF（**回归 #267**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingShadowRefStillStale` |
+| 102 | Browser shadow DOM ref 解析 | 多个 shadow root 同时匹配时必须拒绝执行（**回归 #267**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `ambiguousShadowRefRejected` |
+| 103 | Browser 导航任务取消与迟到回调 | navigate 的任务被取消时立刻停止加载并抛出 navigationCancelled（**回归 #419**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledNavigateStopsLoadAndThrows` |
+| 104 | Browser 导航任务取消与迟到回调 | 挂起的导航任务被取消时立刻停止加载并抛出 navigationCancelled（**回归 #419**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledPerformAndWaitThrowsPromptly` |
+| 105 | Browser 导航任务取消与迟到回调 | 任务已取消时不再发起新导航（**回归 #419**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `precancelledNavigateFailsImmediately` |
+| 106 | Browser 导航任务取消与迟到回调 | 旧导航的迟到完成回调不会提前完成新导航 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleDidFinishDoesNotCompleteNewerNavigation` |
+| 107 | Browser 导航任务取消与迟到回调 | 旧导航的迟到失败回调不会失败新导航 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleDidFailIsIgnoredForNewerNavigation` |
+| 108 | Browser ref 分配与唯一性 | browser_read 沿用共享计数器，不从 lumi-1 重新编号（**回归 #268**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readScriptContinuesSharedCounter` |
+| 109 | Browser ref 分配与唯一性 | 同一页面两次 browser_read 编号不重置（**回归 #268**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedReadsNeverReuseNumbers` |
+| 110 | PluginBrowser 工具装配 | onDisable 注销全部浏览器工具与 ActivityBar 入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesAllToolsAndEntryOnDisable` |
+| 111 | PluginBrowser 工具装配 | onDisable 后 onEnable 重新注册全部工具与入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reEnablesAfterDisable` |
 
-> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **111 条场景**已在本包 `swift test` 中实跑通过。
 >
 > 变异验证（#835）：禁用 init 中的 `observeTitle()` → `runtimeTitleChangeIsReflected` 转红（加载期的 Initial 标题与运行时 Changed 标题都收不到——URL 观察对 `loadHTMLString` 的标题时序不生效）。变异确认转红后还原，最终 95 条全绿。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
 > **#832 变异验证**：对 `BrowserInteractionScript` 的 click 路径注入 2 个变异均被相应用例捕获——M1 还原原始 bug（成功 `return true;` + 调用处 `if (!click()) return fail(...)`，JS 失败对象恒真使遮挡被当成功），被 `coveredClickReportsFailureAndDoesNotClick` 捕获（ok=false 与遮挡提示两处断言失败）；M2 把成功返回改为 `return { ok: false };`，被 `uncoveredClickSucceedsAndClicks` 唯一捕获（ok=true 与 message "Clicked." 两处断言失败），证明正向用例能区分成功返回。
+> **#267 变异验证**：去掉 `BrowserInteractionScript` ref 解析中「document 级查询无命中时深入 open shadow root」的整段回退 → `shadowRefResolvesIntoOpenShadowRoot`、`nestedShadowRefResolves` 转红（shadow 内元素误报 STALE_REF），`ambiguousShadowRefRejected` 转红（误报 STALE_REF 而非 AMBIGUOUS_REF），`missingShadowRefStillStale` 保持绿（缺失场景两种实现行为相同）；还原后 111 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
-- P1: 已覆盖 59 / 59
+- P0: 已覆盖 33 / 33
+- P1: 已覆盖 63 / 63
 - P2: 已覆盖 15 / 15
-- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
+- **合计: 111 / 111**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -191,8 +211,8 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
-- **P1**: 其余功能性用例（59 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（33 条）
+- **P1**: 其余功能性用例（63 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
