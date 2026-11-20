@@ -328,8 +328,42 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)sendResponses model=\(model, privacy: .public)")
         }
+        // 历史里的工具调用名必须与工具定义同样 sanitize：解析时按 reverseMap
+        // 还原成注册名，回传时写回 sanitize 名，否则端点看到的 function_call
+        // 与 tools 定义名称不一致。工具结果必须以 function_call_output（带
+        // call_id）回传，而不是普通 role:text 项——否则第二轮工具循环无法
+        // 重建（issue #285）。
+        var sanitizedNames: [String: String] = [:]
+        if let schemas = request.tools {
+            for schema in schemas {
+                sanitizedNames[schema.name] = LLMToolNameSanitizer.sanitize(schema.name)
+            }
+        }
         var input: [[String: Any]] = []
         for message in request.messages {
+            if message.role == .assistant, let calls = message.toolCalls, !calls.isEmpty {
+                if !message.content.isEmpty {
+                    input.append(["role": message.role.rawValue, "content": message.content])
+                }
+                for call in calls {
+                    let name = sanitizedNames[call.name] ?? LLMToolNameSanitizer.sanitize(call.name)
+                    input.append([
+                        "type": "function_call",
+                        "call_id": call.id,
+                        "name": name,
+                        "arguments": call.arguments,
+                    ])
+                }
+                continue
+            }
+            if message.role == .tool, let callID = message.toolCallID {
+                input.append([
+                    "type": "function_call_output",
+                    "call_id": callID,
+                    "output": message.content,
+                ])
+                continue
+            }
             input.append(["role": message.role.rawValue, "content": message.content])
         }
         var body: [String: Any] = ["model": model, "input": input]
