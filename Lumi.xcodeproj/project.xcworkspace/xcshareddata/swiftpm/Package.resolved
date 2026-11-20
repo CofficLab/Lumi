@@ -96,8 +96,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiKernel.git",
       "state": {
-        "revision": "c0aace6a4b0b428f3b059020327a558c470538ed",
-        "version": "1.1.1"
+        "revision": "7a0e1609a70420921164d12d8cd154aaa5946f0a",
+        "version": "1.1.2"
       }
     },
     {
