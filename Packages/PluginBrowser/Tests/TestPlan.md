@@ -66,6 +66,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser 本地地址分类**（3 条）：由 `publicDomainsStartingWithFcOrFdAreNotLocal`、`ipv6ULAAndLinkLocalAreLocal`、`existingLocalAndPublicClassificationsArePreserved` 锁定；只有含 `:` 的 IPv6 字面量才可能属于 `fc00::/7`，fc/fd 开头的公网域名（如 `fdic.gov`）不得被判为内网，否则触发错误的本地网络审批并阻断导航（issue #831）。
 - **back/forward/reload 导航失败传播**（4 条）：由 `backNavigationCancellationPropagates`、`reloadNavigationFailurePropagates`、`successfulNavigationReturns`、`blockedLocalNavigationPropagates` 锁定；back/forward/reload 必须通过 continuation 等待导航结果，WebKit 报错或策略取消时必须抛出错误，不得静默返回成功（issue #833）。
 - **press Enter 提交流程**（3 条）：由 `enterUsesRequestSubmitOnly`、`fallbackDispatchesSingleCancelableSubmit`、`fallbackRespectsCancellation` 锁定；Enter 必须只走一次提交流程——有 requestSubmit 时只触发原生提交，无 requestSubmit 时派发一次可取消 submit，被取消后不得再启动原生提交（issue #266）。
+- **Browser 链接真实点击**（4 条）：由 `linkClickRunsHandlerAndReportsHref`、`linkClickRespectsPreventDefault`、`blankLinkClickReportsHref`、`nonLinkClickDoesNotPreventDefault` 锁定；`<a href>` 必须走真实点击（页面 onclick / 路由拦截生效），页面 preventDefault 时不得上报 href 触发导航；页面未阻止时由脚本阻断原生导航并回传 href 交上层打开（本地审批仍然生效），target=_blank 同样回传 href（issue #265）。
 - **Browser shadow DOM ref 解析**（4 条）：由 `shadowRefResolvesIntoOpenShadowRoot`、`nestedShadowRefResolves`、`missingShadowRefStillStale`、`ambiguousShadowRefRejected` 锁定；快照会深入 open shadow root 分配 ref，交互解析在 document 级查询无命中时必须按同样方式递归深入 open shadow root，元素缺失仍报 STALE_REF，跨 shadow root 多匹配必须拒绝执行（issue #267）。
 - **Browser 导航任务取消与迟到回调**（5 条）：由 `cancelledNavigateStopsLoadAndThrows`、`cancelledPerformAndWaitThrowsPromptly`、`precancelledNavigateFailsImmediately`、`staleDidFinishDoesNotCompleteNewerNavigation`、`staleDidFailIsIgnoredForNewerNavigation` 锁定；导航任务被取消时必须立刻停止加载并抛出 navigationCancelled，已取消的任务不得再发起新导航，旧导航迟到的 didFinish/didFail 回调不得推进新导航（issue #419）。
 
@@ -184,21 +185,26 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 109 | Browser ref 分配与唯一性 | 同一页面两次 browser_read 编号不重置（**回归 #268**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedReadsNeverReuseNumbers` |
 | 110 | PluginBrowser 工具装配 | onDisable 注销全部浏览器工具与 ActivityBar 入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesAllToolsAndEntryOnDisable` |
 | 111 | PluginBrowser 工具装配 | onDisable 后 onEnable 重新注册全部工具与入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reEnablesAfterDisable` |
+| 112 | Browser 链接真实点击 | 链接真实点击必须运行页面 onclick 并回传 href（**回归 #265**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `linkClickRunsHandlerAndReportsHref` |
+| 113 | Browser 链接真实点击 | 页面 preventDefault 后不得上报 href 触发导航（**回归 #265**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `linkClickRespectsPreventDefault` |
+| 114 | Browser 链接真实点击 | target=_blank 链接点击后回传 href 交上层在同一会话打开（**回归 #265**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `blankLinkClickReportsHref` |
+| 115 | Browser 链接真实点击 | 非链接元素的点击不补发 preventDefault（**回归 #265**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonLinkClickDoesNotPreventDefault` |
 
-> 说明：全部 **111 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **115 条场景**已在本包 `swift test` 中实跑通过。
 >
 > 变异验证（#835）：禁用 init 中的 `observeTitle()` → `runtimeTitleChangeIsReflected` 转红（加载期的 Initial 标题与运行时 Changed 标题都收不到——URL 观察对 `loadHTMLString` 的标题时序不生效）。变异确认转红后还原，最终 95 条全绿。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > **#834 变异验证**：对 `BrowserAccessibilityNode.filterInteractive` 注入 3 个变异均被相应用例捕获——M1 过滤谓词 `$0.isInteractive`→`true`（等同忽略 interactive_only 的旧 bug，被 `interactiveFilterDropsHeadingWhenInteractiveOnly` 等捕获）；M2 谓词→`!$0.isInteractive`（反向选择，被 `interactiveFilterKeepsAllWhenAllInteractive` 唯一捕获）；M3 guard 的 `else { return nodes }`→`else { return [] }`（关闭标志时误清空，被 `interactiveFilterDisabledKeepsAllMatches` 唯一捕获）。
 > **#832 变异验证**：对 `BrowserInteractionScript` 的 click 路径注入 2 个变异均被相应用例捕获——M1 还原原始 bug（成功 `return true;` + 调用处 `if (!click()) return fail(...)`，JS 失败对象恒真使遮挡被当成功），被 `coveredClickReportsFailureAndDoesNotClick` 捕获（ok=false 与遮挡提示两处断言失败）；M2 把成功返回改为 `return { ok: false };`，被 `uncoveredClickSucceedsAndClicks` 唯一捕获（ok=true 与 message "Clicked." 两处断言失败），证明正向用例能区分成功返回。
 > **#267 变异验证**：去掉 `BrowserInteractionScript` ref 解析中「document 级查询无命中时深入 open shadow root」的整段回退 → `shadowRefResolvesIntoOpenShadowRoot`、`nestedShadowRefResolves` 转红（shadow 内元素误报 STALE_REF），`ambiguousShadowRefRejected` 转红（误报 STALE_REF 而非 AMBIGUOUS_REF），`missingShadowRefStillStale` 保持绿（缺失场景两种实现行为相同）；还原后 111 条全绿。
+> **#265 变异验证**：把 click 分支还原为旧实现（`<a href>` 直接返回 href、跳过 `click()` 真实点击）→ `linkClickRunsHandlerAndReportsHref`、`linkClickRespectsPreventDefault`、`blankLinkClickReportsHref` 三条转红（页面 onclick 从未运行、preventDefault 分支消失、脚本补发的 preventDefault 不存在），`nonLinkClickDoesNotPreventDefault` 保持绿（非链接路径行为相同）；还原后 115 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 33 / 33
-- P1: 已覆盖 63 / 63
+- P0: 已覆盖 35 / 35
+- P1: 已覆盖 65 / 65
 - P2: 已覆盖 15 / 15
-- **合计: 111 / 111**（仅表示清单场景，非源码覆盖率）
+- **合计: 115 / 115**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -211,8 +217,8 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（33 条）
-- **P1**: 其余功能性用例（63 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（35 条）
+- **P1**: 其余功能性用例（65 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明

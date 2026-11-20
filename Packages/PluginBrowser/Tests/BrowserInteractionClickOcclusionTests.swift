@@ -83,7 +83,9 @@ struct BrowserInteractionClickOcclusionTests {
         var document = {
           querySelectorAll: function () { return [__el]; },
           querySelector: function () { return __el; },
-          elementFromPoint: function () { return \#(target); }
+          elementFromPoint: function () { return \#(target); },
+          addEventListener: function () {},
+          removeEventListener: function () {}
         };
         var getComputedStyle = function () { return { visibility: "visible", display: "block" }; };
         """#

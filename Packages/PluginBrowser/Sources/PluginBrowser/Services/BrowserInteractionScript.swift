@@ -137,20 +137,48 @@ enum BrowserInteractionScript {
         if (target && !el.contains(target) && target !== el) {
           return fail("The element is covered by another element: " + (target.tagName || "unknown") + ".");
         }
+        // #265：链接必须走真实点击，页面的 onclick / 路由拦截 / preventDefault
+        // 才能生效。用 document 冒泡监听读取页面处理器的最终 default 状态
+        // （冒泡阶段晚于目标上的处理器运行）；页面未阻止且是链接时由我们
+        // 补一次 preventDefault 阻断原生导航，把导航决定权交回上层——
+        // 本地地址审批在 open() 里仍然生效。事件被 stopPropagation 截走
+        // 导致监听未运行时，无法得知也不应再补发 href，交由原生导航自行推进。
+        const isLinkNavigation = el.tagName === "A" && el.getAttribute("href") != null;
+        let pagePreventedDefault = false;
+        let sawClickEvent = false;
+        const clickWatch = (event) => {
+          sawClickEvent = true;
+          if (event.defaultPrevented === true) {
+            pagePreventedDefault = true;
+          } else if (isLinkNavigation) {
+            event.preventDefault();
+          }
+        };
+        if (typeof document.addEventListener === "function") {
+          document.addEventListener("click", clickWatch);
+        }
         for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
           el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y }));
         }
         el.click();
-        return { ok: true };
+        if (typeof document.removeEventListener === "function") {
+          document.removeEventListener("click", clickWatch);
+        }
+        return { ok: true, pagePreventedDefault: pagePreventedDefault, sawClickEvent: sawClickEvent };
       };
 
       switch (OPTS.action) {
         case "click": {
-          if (el.tagName === "A" && el.getAttribute("href")) {
-            return { ok: true, href: el.href, message: "Clicked link." };
-          }
           const result = click();
           if (!result.ok) return result;
+          if (el.tagName === "A" && el.getAttribute("href")) {
+            // 页面处理器 preventDefault（或事件被截走无法观测）时不上报
+            // href：上层因此不发起导航，去留由页面自己决定。
+            if (result.pagePreventedDefault || !result.sawClickEvent) {
+              return { ok: true, href: "", message: "Clicked link. The page prevented default navigation." };
+            }
+            return { ok: true, href: el.href, message: "Clicked link." };
+          }
           return { ok: true, href: "", message: "Clicked." };
         }
 
