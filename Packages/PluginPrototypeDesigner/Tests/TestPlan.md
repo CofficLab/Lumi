@@ -5,7 +5,7 @@
 PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 43 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 43
+测试文件: 6 个，用例总数: 44
 
 核心组件（源码目录）:
 - `Conversation/`
@@ -38,7 +38,7 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **PrototypeDesignerPlugin**（27 条）：由 `pluginMetadataMatchesContract`、`contributesCompleteUniqueToolSet`、`everyToolAdvertisesAValidSchemaAndDescription` 等用例锁定；轨道行选中只刷新选中屏幕——不重扫项目目录、同一屏已加载不重读 HTML、加载失败后重试（#1290）；改动该模块时优先跑对应测试文件。
+- **PrototypeDesignerPlugin**（27 条）：由 `pluginMetadataMatchesContract`、`contributesCompleteUniqueToolSet`、`everyToolAdvertisesAValidSchemaAndDescription` 等用例锁定；轨道行选中只刷新选中屏幕——不重扫项目目录、同一屏已加载不重读 HTML、加载失败后重试（#1290）；预览内 `data-prototype-link` 热点跳转由 `selectHotspotTarget` 校验目标屏，未知目标保持当前选中（#323）；改动该模块时优先跑对应测试文件。
 - **PrototypeDesignerRuleContributor**（1 条）：由 `loadsPrototypeRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeElementConversationAction**（3 条）：由 `appendsFileURL`、`unavailableInput`、`discardsStaleSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PrototypeExport 安装**（3 条）：由 `installsIntoDirectoryThatDoesNotExistYet`、`rollsBackWhenAnInstallStepFails`、`backsUpAndReplacesExistingFile` 用例锁定；`ExportPrototypeTool.installStagedExports` 必须先创建用户选中的导出目录（含中间目录）再 moveItem，中途失败必回滚已安装文件并恢复备份，覆盖前先备份（#427）。
@@ -91,6 +91,7 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 | 41 | 工作区选中 | 重复选中同一屏不再重读 HTML（**回归 #1290**） | 已选中并加载某屏，磁盘 HTML 已被破坏 | 再次 `select` 同一屏 | 缓存 HTML 保持原内容，未被破坏内容覆盖 | P1 | ✅ 已覆盖 | `repeatedSelectionOfSameScreenDoesNotRereadHTML` |
 | 42 | 工作区选中 | 切换屏幕仍会加载新屏幕的 HTML（**回归 #1290**） | 项目内已有两屏 | 依次 `select` 两屏 | 每次选中均加载对应屏幕 | P1 | ✅ 已覆盖 | `selectingAnotherScreenStillLoadsItsHTML` |
 | 43 | 工作区选中 | 加载失败后再次选中会重试（**回归 #1290**） | 屏幕 HTML 文件缺失 | 首次 `select` 后恢复文件再 `select` | 首次失败 `selectedScreen` 为空，恢复后重选加载成功 | P0 | ✅ 已覆盖 | `failedSelectionRetriesOnNextSelect` |
+| 44 | 工作区选中 | 热点指向未知屏幕时保持当前选中不变（**回归 #323**） | 项目内已有 alpha/beta 两屏，当前选中 beta | `selectHotspotTarget("unknown-screen")` 后再跳转 alpha | 未知目标保持 beta 不回退起始屏，有效目标切换到 alpha | P0 | ✅ 已覆盖 | `hotspotTargetToUnknownScreenKeepsCurrentSelection` |
 
 > 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
