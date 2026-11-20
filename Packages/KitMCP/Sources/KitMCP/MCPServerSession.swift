@@ -187,6 +187,9 @@ public actor MCPServerSession: MCPServerServing {
     private var unexpectedExitContinuation: AsyncStream<Int32>.Continuation?
     /// `disconnect()` 置位：随后的子进程退出视为主动停止，不算意外退出（#473）。
     private var stoppingIntentionally = false
+    /// 连接代次（#401）：每次 `disconnect()` 递增。`connect()` 的 await
+    /// 期间被 disconnect 后，迟到的完成不得写回局部 client。
+    private var connectionGeneration = 0
 
     public init(
         config: MCPServerConfig,
@@ -208,7 +211,11 @@ public actor MCPServerSession: MCPServerServing {
             throw error
         }
         self.prepared = prepared
+        // 新连接生命周期开始：复位主动停止标记，否则重连后的意外退出
+        // 会被上一次 disconnect 置位的标记吞掉，不触发撤回（#473）。
+        stoppingIntentionally = false
 
+        let generation = connectionGeneration
         let client = Client(name: "Lumi", version: "1.0.0")
         do {
             try await client.connect(transport: prepared.transport)
@@ -219,12 +226,20 @@ public actor MCPServerSession: MCPServerServing {
             self.prepared = nil
             throw MCPClientError.transport(Self.message(error, diagnostics: prepared.diagnosticOutput?()))
         }
+        // 连接建立期间被 disconnect（#401）：actor 重入使 disconnect 摸不到
+        // 这个局部 client，迟到的完成既不写回也不生效；关闭后按未连接报错，
+        // 状态归属由上层连接代次决定。
+        guard connectionGeneration == generation else {
+            await client.disconnect()
+            throw MCPClientError.notConnected
+        }
         self.client = client
         isConnected = true
         armUnexpectedExitMonitoring()
     }
 
     public func disconnect() async {
+        connectionGeneration &+= 1
         // 先置主动停止标记：terminate 触发的退出经监测任务回到本 actor 时
         // 必须被吞掉，不得作为意外退出上报（#473）。
         stoppingIntentionally = true

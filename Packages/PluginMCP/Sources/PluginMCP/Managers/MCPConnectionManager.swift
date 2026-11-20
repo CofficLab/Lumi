@@ -40,6 +40,8 @@ public final class MCPConnectionManager: ObservableObject {
     private let policy: MCPPermissionPolicy
     /// serverID → 意外退出监视任务。
     private var terminationWatchers: [String: Task<Void, Never>] = [:]
+    /// serverID → 连接代次（#401）：断开/重连递增，作废在途连接的迟到完成。
+    private var connectGenerations: [String: Int] = [:]
     /// 会话工厂（测试注入替身用；生产为 nil，直接构造 `MCPServerSession`）。
     private let sessionFactory: ((MCPServerConfig) -> any MCPServerServing)?
 
@@ -97,9 +99,19 @@ public final class MCPConnectionManager: ObservableObject {
         states[serverID] = .connecting
         let session = sessionFactory?(config) ?? MCPServerSession(config: config)
         sessions[serverID] = session
+        connectGenerations[serverID, default: 0] &+= 1
+        let generation = connectGenerations[serverID]!
         do {
             try await session.connect()
             let descriptors = try await session.listTools()
+            // 等待期间服务器可能被禁用、整体关闭或断开重连（#401）：迟到的
+            // 完成不得注册工具，也不得把状态改回 Connected；旧会话直接废弃。
+            guard connectGenerations[serverID] == generation,
+                  registry.server(id: serverID)?.enabled == true,
+                  registry.globalEnabled else {
+                await session.disconnect()
+                return
+            }
             // 精确 Xcode 规则只对本机 mcpbridge 生效；以实际命令而非服务器 id
             // 判定身份，避免 foreign 服务器的同名工具继承权限（#530）。
             let isXcodeNative = MCPPermissionPolicy.isXcodeNativeServer(
@@ -130,6 +142,8 @@ public final class MCPConnectionManager: ObservableObject {
             watchUnexpectedTermination(serverID: serverID, session: session)
         } catch {
             await session.disconnect()
+            // 迟到的失败不得覆盖断开后的 Disconnected（#401）。
+            guard connectGenerations[serverID] == generation else { return }
             sessions[serverID] = nil
             registeredTools[serverID] = nil
             states[serverID] = .error(Self.describe(error))
@@ -137,6 +151,9 @@ public final class MCPConnectionManager: ObservableObject {
     }
 
     public func disconnect(serverID: String) async {
+        // 递增连接代次作废在途连接：禁用开关在 Connecting 状态关闭时，
+        // 旧连接与 listTools 的迟到完成不得再注册工具或改写状态（#401）。
+        connectGenerations[serverID, default: 0] &+= 1
         terminationWatchers[serverID]?.cancel()
         terminationWatchers[serverID] = nil
         let manager = toolManager

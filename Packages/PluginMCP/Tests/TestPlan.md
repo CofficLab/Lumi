@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 13 个，用例总数: 83
+测试文件: 14 个，用例总数: 87
 
 核心组件（源码目录）:
 - `Managers/`
@@ -39,6 +39,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 - **MCPPluginBoot**（2 条）：由 `bootResolvesPluginDataDirectory`、`refusesWithoutStorageProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPluginShutdown**（1 条）：由 `shutdownDisconnectsSessions` 用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPConnectionTermination**（2 条，**回归 #473**）：由 `unexpectedExitWithdrawsToolsAndMarksError`、`lateEventAfterExplicitDisconnectDoesNotOverwriteState` 锁定——stdio 子进程意外退出时 Manager 必须立即撤回该服务器的全部已注册工具、断开会话并把状态置为 error（「服务器进程已退出（码 N）」），不得维持过期的 Running 与失效工具注册；显式 disconnect 之后到达的迟到退出事件不得重复处理（watcher 已取消、会话已移除时直接跳过）。改动 `MCPConnectionManager` 的 `watchUnexpectedTermination`/`handleUnexpectedTermination` 或 `attachSessionForTesting` 时优先跑该文件。
+- **MCPConnectionInvalidation**（4 条，**回归 #401**）：由 `lateConnectAfterDisconnectDoesNotRegister`、`lateListToolsAfterDisconnectDoesNotRegister`、`lateListToolsAfterDisableDoesNotRegister`、`staleCompletionAfterReconnectDoesNotClobberNewConnection` 锁定——connect/listTools 的 await 期间发生 disconnect 或禁用后，迟到的完成不得注册工具、不得把状态改回 Connected；断开后重连时旧会话的迟到完成不得覆盖新连接的注册。改动 `MCPConnectionManager.connect(serverID:)` 的代次守卫或禁用复查时优先跑该文件。
 - **MCPServerEditValidation**（5 条）：由 `httpAllowsEmptyCommand`、`httpRequiresURL`、`stdioRequiresCommand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（16 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip`、`corruptFileIsPreservedOnLoad` 等用例锁定（含 #531 解码失败不得清空写回、#532 写回失败必须抛出且不污染内存列表）；改动该模块时优先跑对应测试文件。
 - **MCPSaveFailure**（7 条）：由 `editorSaveThrowsWhenWriteFails`、`toggleFailureReportsErrorAndKeepsState`、`deleteFailureReportsErrorAndKeepsServer` 等用例锁定（#532：编辑页/启停/删除都以「确实写进磁盘」为成功前提，失败必须给出错误文案且不改状态）；改动该模块时优先跑对应测试文件。
@@ -133,24 +134,29 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 81 | MCPAutoStartSync | 写回失败时 autoStart 与 enabled 都保持原值（**回归 #533** / #532 护栏） | 配置文件路径被换成目录，原子写必然失败 | 调用 setEnabled(false) | 返回非空错误文案，enabled 与 autoStart 均保持 true | P0 | ✅ 已覆盖 | `toggleFailureKeepsAutoStartUnchanged` |
 | 82 | MCPConnectionTermination | 子进程意外退出必须立即撤回工具、断开会话并置 error（**回归 #473**） | sessionFactory 注入 TerminatableSession，connect 成功且工具已注册 | 向会话注入意外退出事件 | 状态变为 error（含退出码文案），registeredTools 清空，remove 覆盖全部已注册名，session.disconnect 恰好一次 | P0 | ✅ 已覆盖 | `unexpectedExitWithdrawsToolsAndMarksError` |
 | 83 | MCPConnectionTermination | 显式 disconnect 后到达的迟到退出事件不得重复处理（**回归 #473**） | 同上，connect 后先显式 disconnect | 再注入意外退出事件 | 状态保持 disconnected，工具不再额外撤回，disconnectCount 保持 1 | P0 | ✅ 已覆盖 | `lateEventAfterExplicitDisconnectDoesNotOverwriteState` |
+| 84 | MCPConnectionInvalidation | 连接建立期间断开：迟到的完成不得注册工具或改回 Connected（**回归 #401**） | sessionFactory 注入 gated 会话，connect 挂起中 | disconnect 后放行迟到的完成 | 状态保持 disconnected，registeredTools 为空，addedIDs 为空，旧会话被 disconnect 清理 | P0 | ✅ 已覆盖 | `lateConnectAfterDisconnectDoesNotRegister` |
+| 85 | MCPConnectionInvalidation | listTools 期间断开：迟到的工具列表不得注册（**回归 #401**） | 同上，gate 在 listTools | disconnect 后放行迟到的工具列表 | 状态保持 disconnected，registeredTools 为空，addedIDs 为空 | P0 | ✅ 已覆盖 | `lateListToolsAfterDisconnectDoesNotRegister` |
+| 86 | MCPConnectionInvalidation | listTools 期间禁用：迟到的工具列表不得注册（**回归 #401**） | 同上，gate 在 listTools | 禁用服务器（registry.updateServer enabled=false）后放行 | 状态不回到 connected，registeredTools 为空，addedIDs 为空 | P0 | ✅ 已覆盖 | `lateListToolsAfterDisableDoesNotRegister` |
+| 87 | MCPConnectionInvalidation | 断开后重连：旧会话迟到的完成不得覆盖新连接的注册（**回归 #401**） | 旧会话 gated 返回 staleEcho，重连会话返回 echo | disconnect → 重连 → 放行旧会话迟到完成 | 新连接保持 connected，registeredTools 仅含 echo，addedIDs 仅 echo | P0 | ✅ 已覆盖 | `staleCompletionAfterReconnectDoesNotClobberNewConnection` |
 
-> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **87 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#178）：移除适配器的 `catch is CancellationError` 透传与回包后的 `Task.checkCancellation()` 后，两条新用例分别失败（取消被包装成执行失败 / 产出成功结果）；恢复后重新通过。
 > 变异验证（#534）：① 去掉 join 的引号包裹（含空格参数原样输出）→ `joinQuotesArgumentWithSpaces` 失败；② parse 把双引号当普通字符（不进入引号态）→ `parseDoubleQuotedInputKeepsSpaces` 失败；③ 用 `current.isEmpty` 取代 `hasToken` 标志（空引号 token 被丢弃）→ `emptyArgumentRoundTrips` 失败；恢复后重新通过。
 > 变异验证（#532）：① `persist(_:)` 把写入错误重新吞掉（`throw writeFailed` → `return`）→ 6 条写回失败用例失败；② `loadFailed` 守卫改回静默 `return` → `corruptFileSurvivesCRUD` 失败；③ addServer 先提交内存再写盘 → 新增/编辑页两条用例失败（列表被污染）；④ removeServer 先记墓碑再写盘 → 两条删除失败用例失败；⑤⑥ 启停/删除 helper 的 catch 返回 nil → 对应用例失败；⑦ 编辑页 save 用 `try?` 吞掉编辑模式失败 → `editorSaveThrowsWhenWriteFails` 失败；恢复后全部重新通过。
 > 变异验证（#533）：① 启停开关去掉 `updated.autoStart = enabled`（复现原 bug）→ `toggleOnPersistsAutoStartForNextLaunch`、`toggleOffClearsAutoStart` 失败；② `load()` 退回只去重、不做 autoStart 自愈 → `legacyEnabledWithoutAutoStartIsRepairedOnLoad`、`repairDoesNotTouchDisabledServers` 失败；③ 自愈去掉 `if repaired.enabled`（把禁用服务器也改成自动启动）→ `repairDoesNotTouchDisabledServers` 失败；④ 自愈后不写盘（`if servers.count != rawCount || needsAutoStartRepair` → `if servers.count != rawCount`）→ `legacyEnabledWithoutAutoStartIsRepairedOnLoad` 失败；恢复后全部重新通过。
+> 变异验证（**#401**）：M1 删除 `MCPServerSession.connect` 的连接代次守卫 → KitMCP `invalidatedConnectDoesNotWriteBack` 转红（迟到完成未抛错、isConnected 被写回 true）；M2 删除 `MCPConnectionManager.connect(serverID:)` 的代次守卫（含 catch 分支）→ `lateConnectAfterDisconnectDoesNotRegister`、`lateListToolsAfterDisconnectDoesNotRegister`、`staleCompletionAfterReconnectDoesNotClobberNewConnection` 转红（旧会话 staleEcho 覆盖注册），禁用用例仍绿；M3 删除同一守卫中的 `enabled`/`globalEnabled` 复查 → 仅 `lateListToolsAfterDisableDoesNotRegister` 转红（禁用后仍注册工具）。三个守卫签名互不重叠，还原后全部重新通过。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
+- P0: 已覆盖 32 / 32
 - P1: 已覆盖 47 / 47
 - P2: 已覆盖 8 / 8
-- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
+- **合计: 87 / 87**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
 - **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
