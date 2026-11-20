@@ -507,3 +507,40 @@ struct ProviderMessageTests {
         #expect(!MessageTimelineEvent.isSubagentDelegation(plain))
     }
 }
+
+    /// #287：thinking 签名与思考文本配对，持久化后重启仍能原样回传。
+    /// Message 的 Codable 由 CodingKeys 自定义 decode、合成 encode 组成，
+    /// 新字段漏掉任何一侧都会在 JSON 往返中静默丢失。
+    @Test("thinking 签名经 JSON 编解码往返保留（#287）")
+    func thinkingSignatureSurvivesCodableRoundTrip() throws {
+        let message = Message(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "答案",
+            reasoningContent: "先分析上下文",
+            thinkingSignature: "sig-abc123"
+        )
+
+        let data = try JSONEncoder().encode(message)
+        let decoded = try JSONDecoder().decode(Message.self, from: data)
+
+        #expect(decoded.reasoningContent == "先分析上下文")
+        #expect(decoded.thinkingSignature == "sig-abc123")
+    }
+
+    @Test("旧 JSON 缺失 thinking 签名时解码为 nil（#287）")
+    func legacyJSONWithoutSignatureDecodesToNil() throws {
+        let message = Message(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "答案",
+            reasoningContent: "先分析上下文"
+        )
+        let data = try JSONEncoder().encode(message)
+        #expect(
+            String(decoding: data, as: UTF8.self).contains("\"thinkingSignature\"") == false,
+            "nil 签名不应被编码出来"
+        )
+        let decoded = try JSONDecoder().decode(Message.self, from: data)
+        #expect(decoded.thinkingSignature == nil)
+    }

@@ -62,7 +62,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 346 条用�
 - **ResponsesFailedStatus**（3 条）：由 `failedStatusThrowsProviderError`、`failedStatusWithPartialTextIsNotSuccess`、`completedStatusReturnsNormally` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResponsesRefusalBlock**（3 条）：由 `refusalTextIsPreserved`、`refusalAndTextCoexist`、`regularTextUnaffected` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResponsesResponseID**（2 条）：由 `responsesKeepsResponseID`、`missingResponseIDStaysNil` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RetryAfterAndBackoff**（21 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RetryAfterAndBackoff**（22 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ThinkingDeltaChunk**（2 条）：由 `thinkingDeltaChunkDoesNotCarryContent`、`textDeltaChunkDoesNotCarryReasoning` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolCallArgumentsParser**（16 条）：由 `parsesValidJSONObject`、`rejectsInvalidJSON`、`rejectsNonObjectJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorAPIService**（9 条）：由 `retriesOnServerError`、`givesUpAfterMaxAttempts`、`doesNotRetryOnClientError` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -420,27 +420,38 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 346 条用�
 | 344 | AnthropicAdapter | 流式请求体在最后一条消息文本块上放置 prompt cache 断点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `addsPromptCacheBoundaryInStreamingBody` |
 | 345 | AnthropicAdapter | 官方响应 2048/1800/248 的总输入是 4096，命中率 50%（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialResponseIssue512ExampleSumsAllParts` |
 | 346 | 综合 | Anthropic 官方响应的总输入是三段之和，命中率分母不再误判（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicAdapterSumsOfficialCacheUsage` |
+| 347 | ToolNameCollision | 撞名工具只保留先注册者，reverseMap 指向先注册者 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolSchemasDropsCollidingTools` |
+| 348 | ToolNameCollision | OpenAI 非流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAINonStreamingBodyHasUniqueToolNames` |
+| 349 | ToolNameCollision | OpenAI 流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAIStreamingBodyHasUniqueToolNames` |
+| 350 | ToolNameCollision | Anthropic 非流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicNonStreamingBodyHasUniqueToolNames` |
+| 351 | ToolNameCollision | Anthropic 流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicStreamingBodyHasUniqueToolNames` |
+| 352 | AnthropicThinkingSignature | SSE signature_delta 事件解析出签名 chunk（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `parsesSignatureDeltaEvent` |
+| 353 | AnthropicThinkingSignature | 累积器把签名带入最终响应（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `accumulatorCarriesSignatureIntoFinalResponse` |
+| 354 | AnthropicThinkingSignature | 非流式响应解析 thinking 文本与签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `parsesThinkingAndSignatureFromNonStreamingResponse` |
+| 355 | AnthropicThinkingSignature | 重建请求时 thinking 块携带原始签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transformMessageEchoesSignatureInThinkingBlock` |
+| 356 | AnthropicThinkingSignature | 没有签名时不伪造 signature 键（#287） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `transformMessageOmitsSignatureWhenAbsent` |
+| 357 | AnthropicThinkingSignature | 整段 JSON 回退一次性携带思考全文与签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `wholeJSONFallbackCarriesReasoningAndSignature` |
 
 > 说明：全部 **346 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 58 / 58
-- P1: 已覆盖 267 / 267
-- P2: 已覆盖 21 / 21
-- **合计: 346 / 346**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 64 / 64
+- P1: 已覆盖 271 / 271
+- P2: 已覆盖 22 / 22
+- **合计: 357 / 357**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
-- **P1**: 其余功能性用例（266 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（64 条）
+- **P1**: 其余功能性用例（271 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（22 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 346 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 357 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

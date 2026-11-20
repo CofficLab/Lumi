@@ -96,16 +96,18 @@ ProviderMessage 的实现包，包含 8 个主要类型；当前测试覆盖 62 
 | 60 | 综合 | integerMetadata parses int strings and tolerates missing or non-numeric | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `integerMetadataParsing` |
 | 61 | 综合 | 子代理委托时间线事件可识别且不回流 LLM | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `subagentDelegationTimelineDetection` |
 | 62 | 综合 | 子代理委托事件仅凭 renderKind 也可识别 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `subagentDelegationDetectionByRenderKind` |
+| 63 | ProviderMessage | thinking 签名经 JSON 编解码往返保留（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `thinkingSignatureSurvivesCodableRoundTrip` |
+| 64 | ProviderMessage | 旧 JSON 缺失 thinking 签名时解码为 nil（#287） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacyJSONWithoutSignatureDecodesToNil` |
 
 > 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 45 / 45
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 46 / 46
 - P2: 已覆盖 10 / 10
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

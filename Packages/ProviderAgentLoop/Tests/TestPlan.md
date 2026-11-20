@@ -85,16 +85,17 @@ ProviderAgentLoop 的实现包，包含 11 个主要类型；当前测试覆盖 
 | 44 | DefaultAgentLoop 终态钩子与失败详情 | 取消后迟到的工具调用不得执行（**回归 #233**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateToolCallsAfterCancelDoNotExecute` |
 | 45 | DefaultAgentLoop 终态钩子与失败详情 | 取消后同一会话的新回合不受旧请求迟到响应影响（**回归 #233**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `newTurnAfterCancelStillWorks` |
 | 46 | DefaultAgentLoop 终态钩子与失败详情 | 旧回合在新回合运行中迟到返回，不得覆盖新回合状态（**回归 #438**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateOldTurnReturnDoesNotOverwriteNewTurn` |
+| 47 | DefaultAgentLoop 全链路 | thinking 签名随 assistant 消息落库并在下一轮请求回传（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `thinkingSignaturePersistsAndEchoesBack` |
 
 > 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
+- P0: 已覆盖 28 / 28
 - P1: 已覆盖 17 / 17
 - P2: 已覆盖 2 / 2
-- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
+- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

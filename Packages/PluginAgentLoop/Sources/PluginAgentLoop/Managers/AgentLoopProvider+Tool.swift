@@ -887,6 +887,7 @@ extension AgentLoopManager {
                 providerID: response.model.flatMap { _ in nil } ?? nil,
                 modelName: response.model,
                 reasoningContent: response.reasoningContent,
+                thinkingSignature: response.thinkingSignature,
                 redactedThinkingData: response.redactedThinking?.map(\.data),
                 toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,

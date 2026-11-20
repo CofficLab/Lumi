@@ -78,6 +78,14 @@ public struct StreamChunk: Sendable, Equatable {
     public let stopReason: String?
     /// `redacted_thinking` 块的不透明数据，原样收集后回传。
     public let redactedThinkingData: String?
+    /// `thinking` 块的签名（`signature_delta`），原样收集后回传（#287）。
+    public let thinkingSignature: String?
+    /// 整段 JSON 回退一次性携带的思考全文（#287）。
+    ///
+    /// SSE 逐 token 下发思考增量（`.thinkingDelta` + `content`）；整段 JSON
+    /// 回退是单个 chunk，思考全文没有增量可言，用独立字段承载，避免把它
+    /// 塞进 `content` 被当成正文。
+    public let reasoningContent: String?
     /// 整段 JSON 回退一次携带的多个 `redacted_thinking` 不透明块（#1167）。
     ///
     /// SSE 每个 content_block_start 只带一块，用 `redactedThinkingData`；
@@ -114,6 +122,8 @@ public struct StreamChunk: Sendable, Equatable {
             responseID: responseID,
             stopReason: stopReason,
             redactedThinkingData: redactedThinkingData,
+            thinkingSignature: thinkingSignature,
+            reasoningContent: reasoningContent,
             redactedThinkingBlocks: redactedThinkingBlocks,
             images: images
         )
@@ -137,6 +147,8 @@ public struct StreamChunk: Sendable, Equatable {
         responseID: String? = nil,
         stopReason: String? = nil,
         redactedThinkingData: String? = nil,
+        thinkingSignature: String? = nil,
+        reasoningContent: String? = nil,
         redactedThinkingBlocks: [String]? = nil,
         images: [MessageImage]? = nil
     ) {
@@ -157,15 +169,17 @@ public struct StreamChunk: Sendable, Equatable {
         self.responseID = responseID
         self.stopReason = stopReason
         self.redactedThinkingData = redactedThinkingData
+        self.thinkingSignature = thinkingSignature
+        self.reasoningContent = reasoningContent
         self.redactedThinkingBlocks = redactedThinkingBlocks
         self.images = images
     }
 
     public func withRawStreamPayload(_ raw: String?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, redactedThinkingBlocks: redactedThinkingBlocks)
+        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, thinkingSignature: thinkingSignature, reasoningContent: reasoningContent, redactedThinkingBlocks: redactedThinkingBlocks)
     }
 
     public func withToolCalls(_ newToolCalls: [ToolCall]?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, redactedThinkingBlocks: redactedThinkingBlocks)
+        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData, thinkingSignature: thinkingSignature, reasoningContent: reasoningContent, redactedThinkingBlocks: redactedThinkingBlocks)
     }
 }

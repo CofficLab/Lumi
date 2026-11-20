@@ -39,6 +39,9 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var toolCallID: String?
     /// 思考/推理内容（reasoning）。
     public var reasoningContent: String?
+    /// Anthropic `thinking` 块签名；与 `reasoningContent` 配对，下一轮请求
+    /// 重建 thinking 块时必须一并回传（#287）。
+    public var thinkingSignature: String?
     /// Anthropic `redacted_thinking` 的不透明 `data`，下一轮请求需原样回传。
     public var redactedThinkingData: [String]?
     /// 结构化工具调用列表。
@@ -85,6 +88,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         preferredRendererID: String? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         redactedThinkingData: [String]? = nil,
         toolCalls: [MessageToolCall]? = nil,
         inputTokenCount: Int? = nil,
@@ -119,6 +123,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         self.preferredRendererID = preferredRendererID
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.redactedThinkingData = redactedThinkingData
         self.toolCalls = toolCalls
         self.inputTokenCount = inputTokenCount
@@ -143,7 +148,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         case id, conversationID, role, content, createdAt, turnID, metadata, isError
         case providerID, modelName, rawErrorDetail, httpStatusCode, httpBody
         case renderKind, preferredRendererID, toolCallID, reasoningContent
-        case redactedThinkingData, toolCalls
+        case thinkingSignature, redactedThinkingData, toolCalls
         case inputTokenCount, outputTokenCount, cachedInputTokenCount
         case cacheWriteInputTokenCount, cacheTotalInputTokenCount
         case responseID, requestID, rawResponseJSON, rawStreamEventsJSON, stopReason
@@ -170,6 +175,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         preferredRendererID = try c.decodeIfPresent(String.self, forKey: .preferredRendererID)
         toolCallID = try c.decodeIfPresent(String.self, forKey: .toolCallID)
         reasoningContent = try c.decodeIfPresent(String.self, forKey: .reasoningContent)
+        thinkingSignature = try c.decodeIfPresent(String.self, forKey: .thinkingSignature)
         redactedThinkingData = try c.decodeIfPresent([String].self, forKey: .redactedThinkingData)
         toolCalls = try c.decodeIfPresent([MessageToolCall].self, forKey: .toolCalls)
         inputTokenCount = try c.decodeIfPresent(Int.self, forKey: .inputTokenCount)

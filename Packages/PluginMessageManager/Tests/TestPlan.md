@@ -133,16 +133,19 @@ PluginMessageManager 的实现包，包含 8 个主要类型；当前测试覆�
 | 76 | MessageManager 写回代次门控 | 工具调用未命中也排空被 bump 的代次，pending 不泄漏（#150） | assistant 仍在 pending，写回不存在的 toolCallID | 放行存储锁并排空落盘队列 | pending 清空，磁盘 toolCalls 保持原样、result 为 nil | P0 | ✅ 已覆盖 | `toolCallMissStillDrainsPendingGeneration` |
 | 77 | MessageManager 写回代次门控 | 代次门控 dequeue：旧代次不撤新 pending，匹配代次才撤（#150） | enqueue A(gen1) 后 update 到 B(gen2) | 先按 gen1 dequeue，再按 gen2 dequeue | gen1 不撤（pending 仍 B），gen2 撤掉（pending 空） | P0 | ✅ 已覆盖 | `gatedDequeueOnlyRemovesMatchingGeneration` |
 | 78 | MessageManager 写回代次门控 | 重复同值更新仍推进代次，最新一代写回后 pending 清空（#150） | enqueue A 后连续两次 update 到同值 B | 按第一代 dequeue，再按最新代 dequeue | 第一代不撤，最新代撤掉后 pending 空 | P1 | ✅ 已覆盖 | `duplicateUpdateStillResolvesLatestGeneration` |
+| 79 | MessageStore thinking 签名持久化（#287） | MessageModel 往返保留 thinking 签名 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `messageModelRoundTripPreservesSignature` |
+| 80 | MessageStore thinking 签名持久化（#287） | LLM 上下文窄读取还原 thinking 签名 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `llmContextFetchRestoresSignature` |
+| 81 | MessageStore thinking 签名持久化（#287） | 无签名消息读取结果保持 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `messageWithoutSignatureStaysNil` |
 
 > 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 26 / 26
+- P0: 已覆盖 28 / 28
 - P1: 已覆盖 51 / 51
-- P2: 已覆盖 1 / 1
-- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 2 / 2
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

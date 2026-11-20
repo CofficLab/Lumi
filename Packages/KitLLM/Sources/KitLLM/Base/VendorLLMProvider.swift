@@ -203,6 +203,8 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             content: parsed.content,
             model: model,
             toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            reasoningContent: parsed.reasoningContent,
+            thinkingSignature: parsed.thinkingSignature,
             // 不透明 redacted_thinking 块：非流式与 SSE 必须同样保留，
             // 否则下一轮请求无法回传原始块（#1167）。
             redactedThinking: parsed.redactedThinking.isEmpty ? nil : parsed.redactedThinking,
@@ -585,6 +587,7 @@ private struct AdapterToolSchema: LLMToolSchemaProviding, @unchecked Sendable {
 final class StreamingAccumulator: @unchecked Sendable {
     private var content = ""
     private var reasoningContent = ""
+    private var thinkingSignature: String?
     private var redactedThinking: [LLMRedactedThinkingBlock] = []
     private var toolCalls: [Int: ToolCall] = [:]
     private var toolCallOrder: [Int] = []
@@ -635,6 +638,17 @@ final class StreamingAccumulator: @unchecked Sendable {
             for data in blocks where !data.isEmpty {
                 redactedThinking.append(LLMRedactedThinkingBlock(data: data))
             }
+        }
+
+        // 思考签名（#287）：SSE 的 signature_delta 与整段 JSON 回退的终结
+        // chunk 都可能携带签名，last-wins。必须与思考文本一起落库回传，
+        // 否则带工具调用的下一轮请求会被供应商以签名缺失拒绝。
+        if let signature = chunk.thinkingSignature, !signature.isEmpty {
+            thinkingSignature = signature
+        }
+        // 整段 JSON 回退的思考全文（#287）：单 chunk 无增量可言，一次性并入。
+        if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+            reasoningContent += reasoning
         }
 
         // 思考增量
@@ -700,6 +714,7 @@ final class StreamingAccumulator: @unchecked Sendable {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent,
+            thinkingSignature: thinkingSignature,
             redactedThinking: redactedThinking.isEmpty ? nil : redactedThinking,
             inputTokenCount: inputTokens,
             outputTokenCount: outputTokens,

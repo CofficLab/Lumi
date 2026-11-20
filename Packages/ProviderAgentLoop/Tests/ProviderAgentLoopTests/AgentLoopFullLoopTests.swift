@@ -524,4 +524,59 @@ struct AgentLoopFullLoopTests {
             $0.role == MessageRole.tool && $0.content.contains("blocked")
         })
     }
+
+    /// Anthropic 扩展思考的签名必须随 assistant 消息落库，并在下一轮请求的
+    /// 历史 assistant 消息上原样回传：供应商会拒绝缺失签名的 thinking 块
+    /// （issue #287）。修复前 `Message.llmMessage` 重建历史时丢掉签名，
+    /// 第二轮带工具调用的请求被供应商以 400 拒绝。
+    @Test("thinking 签名随 assistant 消息落库并在下一轮请求回传（#287）")
+    func thinkingSignaturePersistsAndEchoesBack() async throws {
+        let tool = ScriptedTool(name: "fetch_weather", risk: .safe, result: ToolCallResult(content: "sunny"))
+        let toolManager = TestToolManager()
+        toolManager.add(tool, pluginID: "test")
+
+        let provider = ScriptedLLMProvider(responses: [
+            // 第一轮：思考 + 签名 + 工具调用（#287 的精确场景）
+            LLMResponse(
+                content: "",
+                toolCalls: [LLMToolCall(id: "call-1", name: "fetch_weather", arguments: "{}")],
+                reasoningContent: "先查天气",
+                thinkingSignature: "sig-abc123"
+            ),
+            // 第二轮：拿到工具结果后的最终回复
+            LLMResponse(content: "今天晴天"),
+        ])
+
+        let messages = DefaultMessageManager()
+        let conversationID = UUID()
+        messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "天气如何？"), to: conversationID)
+        let conversations = TestConversationManager()
+        conversations.setAutomation(.build, for: conversationID)
+
+        let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
+
+        let outcome = try await loop.runTurn(in: conversationID)
+        #expect(outcome == .completed)
+
+        // 落库：assistant 消息必须带上签名，否则重启后无从回传。
+        let assistant = try #require(
+            messages.messages(for: conversationID).first(where: { $0.role == .assistant })
+        )
+        #expect(assistant.reasoningContent == "先查天气")
+        #expect(assistant.thinkingSignature == "sig-abc123")
+
+        // 回传：第二轮请求历史里的 assistant 消息必须携带签名。
+        #expect(provider.receivedRequests.count == 2)
+        let echoed = try #require(
+            provider.receivedRequests[1].messages.first(where: {
+                $0.role == .assistant && !($0.toolCalls ?? []).isEmpty
+            }),
+            "第二轮请求应包含第一轮的 assistant 工具调用消息"
+        )
+        #expect(echoed.reasoningContent == "先查天气")
+        #expect(
+            echoed.thinkingSignature == "sig-abc123",
+            "带工具调用的历史必须原样回传 thinking 签名，否则供应商拒绝请求"
+        )
+    }
 }
