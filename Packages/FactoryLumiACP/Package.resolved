@@ -49,7 +49,7 @@
     {
       "identity": "lumikitagenttool",
       "kind": "remoteSourceControl",
-      "location": "https://github.com/lumi-softworks/KitAgentTool.git",
+      "location": "https://github.com/lumi-softworks/LumiKitAgentTool.git",
       "state": {
         "revision": "4d57227722997993ab3b1edad74b3bdd6450fbe5",
         "version": "1.0.5"
@@ -265,7 +265,7 @@
     {
       "identity": "lumiprovidertoolmanager",
       "kind": "remoteSourceControl",
-      "location": "https://github.com/lumi-softworks/ProviderToolManager.git",
+      "location": "https://github.com/lumi-softworks/LumiProviderToolManager.git",
       "state": {
         "revision": "a1aa9592181b0763ce758c8f5a8650546653f3c7",
         "version": "1.0.4"
