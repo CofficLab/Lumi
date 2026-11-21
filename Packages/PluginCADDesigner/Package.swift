@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginCADDesigner",
+    defaultLocalization: "en",
     platforms: [.macOS("14.0")],
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
