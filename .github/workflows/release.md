@@ -174,33 +174,9 @@ base64 AuthKey_XXXX.p8 > api.txt
 
 ## 五、独立 app 的发版（Tag → Xcode Cloud）
 
-Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIconDesigner、CADDesigner）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。BookletMaker 已移除独立 app，只保留 Lumi 内插件，不再拥有独立发布 tag。DatabaseManager 已剥离为独立仓库 [Lode](https://github.com/CofficLab/Lode)，不再在本仓库构建或发版。
+Lumi 走上面的 Developer ID + Notarization 流程。BookletMaker、AppIconDesigner、CADDesigner 已移除独立 app，只保留 Lumi 内插件，不再拥有独立发布 tag。DatabaseManager 已剥离为独立仓库 [Lode](https://github.com/CofficLab/Lode)，不再在本仓库构建或发版。
 
-### Tag 与 scope 约定
-
-| app | tag 前缀 | conventional commit scope | 版本注入脚本 | xcconfig |
-|-----|---------|--------------------------|-------------|----------|
-| AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `AppIconDesignerApp/AppIconDesigner.xcconfig` |
-| CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `CADDesignerApp/CADDesigner.xcconfig` |
-
-### 流程
-
-1. commit 推到 `main` → 对应的 `*-tag.yml` workflow 按 scope 计算下一个版本并打 tag。
-2. Xcode Cloud（在 App Store Connect 后台为每个 app 各配一个 workflow）监听对应 tag 前缀触发构建。
-3. `ci_post_clone.sh` 从脚本自身位置定位仓库根目录，再按 `CI_TAG` 前缀分发到对应 `set-*-version.sh`，把版本号写入该 app 的 xcconfig（版本号不进 git 历史）。发布 tag 下若脚本缺失、版本非法或 `CI_BUILD_NUMBER` 非正整数，构建会立即失败，避免上传错误版本。
-4. 修改版本注入逻辑后，运行 `.github/scripts/test-ci-version-injection.sh` 回归测试；该脚本会模拟 Xcode Cloud 从 `ci_scripts` 目录启动的行为。
-5. Xcode Cloud archive + 上传 TestFlight。
-
-### 给某个 app 发版
-
-提交时带上对应 scope 即可，例如：
-
-```
-feat(appicondesigner): 支持导出 1024 图标
-fix(caddesigner): 修复导出崩溃
-```
-
-下一次推 `main` 时对应 workflow 会自动打 tag（`feat` → minor 递增；`fix`/`chore` → patch；`!` → major）。首次从 `*-v1.0.0` 起步。
+> **注意**：本仓库目前不再有任何独立 app 走 Tag → Xcode Cloud 流程。所有功能均以插件形式集成在 Lumi 中，随 Lumi 主版本一起发布。
 
 ### 在 App Store Connect 配置 Xcode Cloud（每个 app 一次性）
 
