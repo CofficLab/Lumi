@@ -52,7 +52,7 @@ fi
 # 4. 校验 Info.plist 中的版本号(只读)
 # --------------------------------------------------
 echo "==> [ci_pre_testflight] 版本信息校验..."
-INFO_PLIST="AppIconDesignerApp/AppIconDesigner-Info.plist"
+INFO_PLIST="LumiApp/Lumi-Info.plist"
 if [[ -f "${INFO_PLIST}" ]]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "${INFO_PLIST}" 2>/dev/null || echo "<未找到>")

@@ -44,12 +44,6 @@
       "path": "Packages/PluginAppUpdate",
     }, {
       "kind": "local",
-      "path": "Packages/FactoryAppIconDesigner",
-    }, {
-      "kind": "local",
-      "path": "Packages/FactoryCADDesigner",
-    }, {
-      "kind": "local",
       "path": "Packages/FactoryDatabaseManager",
     },
   ],
@@ -86,34 +80,6 @@
       ],
     }, {
       "kind": "folder",
-      "path": "AppIconDesignerApp",
-      "target-membership": [
-        "AppIconDesigner",
-      ],
-      "membership-exceptions": [
-        {
-          "target": "AppIconDesigner",
-          "exclusions": [
-            "AppIconDesigner-Info.plist",
-          ],
-        },
-      ],
-    }, {
-      "kind": "folder",
-      "path": "CADDesignerApp",
-      "target-membership": [
-        "CADDesigner",
-      ],
-      "membership-exceptions": [
-        {
-          "target": "CADDesigner",
-          "exclusions": [
-            "CADDesigner-Info.plist",
-          ],
-        },
-      ],
-    }, {
-      "kind": "folder",
       "path": "Packages/PluginRClick/FinderExtension",
       "target-membership": [
         "LumiFinder",
@@ -130,15 +96,11 @@
     { "kind": "folder", "path": "LumiUITests", "target-membership": [ "LumiUITests" ] },
     { "path": "<PRODUCTS>/Lumi.app", "id": "F53C49142F1A42EC00929321", "type": "wrapper.application", "index": false },
     { "path": "<PRODUCTS>/LumiACP.app", "id": "AC0000000000000000000002", "type": "wrapper.application", "index": false },
-    { "path": "<PRODUCTS>/AppIconDesigner.app", "id": "AI0000000000000000000002", "type": "wrapper.application", "index": false },
-    { "path": "<PRODUCTS>/CADDesigner.app", "id": "CD0000000000000000000002", "type": "wrapper.application", "index": false },
     { "path": "<PRODUCTS>/LumiFinder.appex", "id": "LF000000000000000001", "type": "wrapper.app-extension", "index": false, "target-membership": [ { "build-phase": "Lumi/copy/Embed PlugIns", "header-preservation": "remove-on-copy" } ] },
     { "path": "<PRODUCTS>/LumiUITests.xctest", "id": "UT0000000000000000000002", "type": "wrapper.cfbundle", "index": false },
     { "kind": "group", "name": "Frameworks" },
     { "path": "LumiApp/Config/Project-Debug.xcconfig", "index": true },
     { "path": "LumiApp/Config/Project-Release.xcconfig", "index": true },
-    { "path": "AppIconDesignerApp/AppIconDesigner.xcconfig", "index": true },
-    { "path": "CADDesignerApp/CADDesigner.xcconfig", "index": true },
     { "path": "LumiApp/Config/Lumi-Debug.xcconfig", "index": true },
     { "path": "LumiApp/Config/Lumi-Release.xcconfig", "index": true },
     { "path": "Packages/PluginRClick/FinderExtension/LumiFinder-Debug.xcconfig", "index": true },
@@ -401,48 +363,6 @@
             "  --output-name \"$(/usr/bin/basename \"${DEST}\")\"",
             "",
           ],
-        },
-      ],
-    }, {
-      "name": "AppIconDesigner",
-      "id": "AI0000000000000000000009",
-      "product": "AppIconDesigner.app",
-      "product-type": "application",
-      "specialized-configurations": [
-        { "name": "Debug", "file": "AppIconDesigner.xcconfig" },
-        { "name": "Release", "file": "AppIconDesigner.xcconfig" },
-      ],
-      "build-phases": [
-        "compile-sources",
-        "frameworks",
-        "resources",
-      ],
-      "package-product-members": [
-        {
-          "package": "FactoryAppIconDesigner",
-          "product-name": "FactoryAppIconDesigner",
-          "build-phase": { "build-phase": "frameworks" },
-        },
-      ],
-    }, {
-      "name": "CADDesigner",
-      "id": "CD0000000000000000000009",
-      "product": "CADDesigner.app",
-      "product-type": "application",
-      "specialized-configurations": [
-        { "name": "Debug", "file": "CADDesigner.xcconfig" },
-        { "name": "Release", "file": "CADDesigner.xcconfig" },
-      ],
-      "build-phases": [
-        "compile-sources",
-        "frameworks",
-        "resources",
-      ],
-      "package-product-members": [
-        {
-          "package": "FactoryCADDesigner",
-          "product-name": "FactoryCADDesigner",
-          "build-phase": { "build-phase": "frameworks" },
         },
       ],
     }, {
