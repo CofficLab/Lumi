@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
       "state" : {
-        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
-        "version" : "1.0.1"
+        "revision" : "8a0b79ce3b728be452df9f18257a3d7c5617988c",
+        "version" : "1.1.1"
       }
     },
     {
