@@ -191,8 +191,22 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         imageSlug: String,
         localeIdentifier: String? = nil
     ) throws -> AppStorePromoResolvedImage {
-        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
-        let task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
+        try readImage(
+            task: try readTask(storagePath: storagePath, taskSlug: taskSlug),
+            storagePath: storagePath,
+            imageSlug: imageSlug,
+            localeIdentifier: localeIdentifier
+        )
+    }
+
+    /// 基于调用方已解码的任务读取图像，避免每次都重复读盘解码 manifest。
+    public func readImage(
+        task: AppStorePromoTask,
+        storagePath: String,
+        imageSlug: String,
+        localeIdentifier: String? = nil
+    ) throws -> AppStorePromoResolvedImage {
+        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: task.id)
         guard let image = task.images.first(where: { $0.id == imageSlug }) else {
             throw AppStorePromoStoreError.imageNotFound(imageSlug)
         }

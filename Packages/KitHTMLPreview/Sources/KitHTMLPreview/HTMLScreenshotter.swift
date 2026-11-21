@@ -24,6 +24,7 @@ public struct HTMLScreenshotter {
         timeout: TimeInterval = 30,
         limits: HTMLScreenshotLimits = .standard
     ) async throws -> NSImage {
+        try Task.checkCancellation()
         // WebKit 交互必须留在主 actor；PDF 解析与逐页栅格化是纯 CPU/分配重活，
         // 移到后台线程，避免每次截图都阻塞 UI（见 issue #1263）。
         let pdfData = try await createPDF(from: webView, timeout: timeout)
@@ -131,24 +132,29 @@ public struct HTMLScreenshotter {
     /// 调用方会永久挂起（见 Issue #127）。
     private static func createPDF(from webView: WKWebView, timeout: TimeInterval) async throws -> Data {
         let state = PDFRequestState()
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            state.attach(continuation)
+        return try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+                state.attach(continuation)
 
-            webView.createPDF { result in
-                switch result {
-                case .success(let data):
-                    state.finish(.success(data))
-                case .failure(let error):
-                    state.finish(.failure(error))
+                webView.createPDF { result in
+                    switch result {
+                    case .success(let data):
+                        state.finish(.success(data))
+                    case .failure(let error):
+                        state.finish(.failure(error))
+                    }
+                }
+
+                // 超时兜底：回调永不到达时也要恢复 continuation，否则调用方永久挂起。
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    state.finish(.failure(HTMLError.renderTimedOut))
                 }
             }
-
-            // 超时兜底：回调永不到达时也要恢复 continuation，否则调用方永久挂起。
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(timeout))
-                state.finish(.failure(HTMLError.renderTimedOut))
-            }
-        }
+        }, onCancel: {
+            // 取消也要立即恢复等待方，否则已取消的截图仍要空等超时（#430）。
+            Task { @MainActor in state.finish(.failure(CancellationError())) }
+        })
     }
 
     /// `createPDF` 的一次性完成状态。

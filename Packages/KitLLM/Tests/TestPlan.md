@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 346 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 32 个，用例总数: 343
+测试文件: 32 个，用例总数: 346
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -38,7 +38,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **APIKeyMemoryCache**（5 条）：由 `freshWithinTTL`、`negativeEntry`、`lastKnownIgnoresTTL` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **AnthropicAdapter**（54 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AnthropicAdapter**（55 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicToolUseNullArguments**（4 条）：由 `topLevelNullStaysNull`、`nestedNullStaysNull`、`arrayNullStaysNull` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicUnpairedToolCallRepair**（3 条）：由 `unpairedToolUseIsRepairedWhenFollowedByUserMessage`、`completedToolUseIsNotDuplicated`、`trailingAssistantIsStillRepaired` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicWholeJSONFallbackMetadata**（5 条）：由 `fallbackCarriesTokenUsage`、`fallbackCarriesCacheUsage`、`fallbackCarriesResponseIDAndStopReason` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -62,7 +62,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 - **ResponsesFailedStatus**（3 条）：由 `failedStatusThrowsProviderError`、`failedStatusWithPartialTextIsNotSuccess`、`completedStatusReturnsNormally` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResponsesRefusalBlock**（3 条）：由 `refusalTextIsPreserved`、`refusalAndTextCoexist`、`regularTextUnaffected` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResponsesResponseID**（2 条）：由 `responsesKeepsResponseID`、`missingResponseIDStaysNil` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RetryAfterAndBackoff**（21 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RetryAfterAndBackoff**（22 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ThinkingDeltaChunk**（2 条）：由 `thinkingDeltaChunkDoesNotCarryContent`、`textDeltaChunkDoesNotCarryReasoning` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolCallArgumentsParser**（16 条）：由 `parsesValidJSONObject`、`rejectsInvalidJSON`、`rejectsNonObjectJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorAPIService**（9 条）：由 `retriesOnServerError`、`givesUpAfterMaxAttempts`、`doesNotRetryOnClientError` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -124,7 +124,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 | 48 | AnthropicAdapter | 带思考内容的 assistant 消息生成 thinking 块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transformsReasoningContent` |
 | 49 | AnthropicAdapter | 带图片的消息转成 base64 图片块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `transformsImages` |
 | 50 | AnthropicAdapter | 工具定义被转成 Anthropic 形态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `formatsToolSchema` |
-| 51 | AnthropicAdapter | 官方语义下总输入就是 input_tokens | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialSemanticsUseInputTokens` |
+| 51 | AnthropicAdapter | 官方语义下总输入是三段之和（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialSemanticsSumsAllParts` |
 | 52 | AnthropicAdapter | 兼容层语义下总输入是三段之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compatibleSemanticsSumAllParts` |
 | 53 | AnthropicAdapter | 缺少 input_tokens 时退回到缓存字段之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToCacheFields` |
 | 54 | AnthropicAdapter | 完全没有任何计数时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilWithoutAnyCount` |
@@ -417,27 +417,44 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 343 条用�
 | 341 | VisionMessageContentBuilderCache | 不同图片产生不同的 data URL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentImagesProduceDifferentURLs` |
 | 342 | VisionMessageContentBuilderCache | 重复构建同一批图片的耗时显著低于每次重新编码 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedBuildIsCheaperThanFirstBuild` |
 | 343 | VisionMessageContentBuilderCache | 统计编码长度不得使用 O(n) 的 String.count | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `encodedLengthUsesConstantTimeCount` |
+| 344 | AnthropicAdapter | 流式请求体在最后一条消息文本块上放置 prompt cache 断点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `addsPromptCacheBoundaryInStreamingBody` |
+| 345 | AnthropicAdapter | 官方响应 2048/1800/248 的总输入是 4096，命中率 50%（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialResponseIssue512ExampleSumsAllParts` |
+| 346 | 综合 | Anthropic 官方响应的总输入是三段之和，命中率分母不再误判（#512） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicAdapterSumsOfficialCacheUsage` |
+| 347 | ToolNameCollision | 撞名工具只保留先注册者，reverseMap 指向先注册者 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolSchemasDropsCollidingTools` |
+| 348 | ToolNameCollision | OpenAI 非流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAINonStreamingBodyHasUniqueToolNames` |
+| 349 | ToolNameCollision | OpenAI 流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `openAIStreamingBodyHasUniqueToolNames` |
+| 350 | ToolNameCollision | Anthropic 非流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicNonStreamingBodyHasUniqueToolNames` |
+| 351 | ToolNameCollision | Anthropic 流式请求体不含重复工具名 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicStreamingBodyHasUniqueToolNames` |
+| 352 | AnthropicThinkingSignature | SSE signature_delta 事件解析出签名 chunk（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `parsesSignatureDeltaEvent` |
+| 353 | AnthropicThinkingSignature | 累积器把签名带入最终响应（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `accumulatorCarriesSignatureIntoFinalResponse` |
+| 354 | AnthropicThinkingSignature | 非流式响应解析 thinking 文本与签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `parsesThinkingAndSignatureFromNonStreamingResponse` |
+| 355 | AnthropicThinkingSignature | 重建请求时 thinking 块携带原始签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `transformMessageEchoesSignatureInThinkingBlock` |
+| 356 | AnthropicThinkingSignature | 没有签名时不伪造 signature 键（#287） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `transformMessageOmitsSignatureWhenAbsent` |
+| 357 | AnthropicThinkingSignature | 整段 JSON 回退一次性携带思考全文与签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `wholeJSONFallbackCarriesReasoningAndSignature` |
+| 358 | ResponsesVision | 带图用户消息编码为 input_text + input_image（#288） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `userImageEncodedAsResponsesParts` |
+| 359 | ResponsesVision | 无图消息保持纯字符串内容（#288） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageWithoutImageKeepsStringContent` |
+| 360 | ResponsesVision | 纯图消息不产生空文本块（#288） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `imageOnlyMessageOmitsEmptyTextPart` |
 
-> 说明：全部 **343 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **360 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 58 / 58
-- P1: 已覆盖 264 / 264
-- P2: 已覆盖 21 / 21
-- **合计: 343 / 343**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 65 / 65
+- P1: 已覆盖 272 / 272
+- P2: 已覆盖 23 / 23
+- **合计: 360 / 360**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（58 条）
-- **P1**: 其余功能性用例（264 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（65 条）
+- **P1**: 其余功能性用例（272 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（23 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 343 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 360 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

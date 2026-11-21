@@ -237,6 +237,14 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                 if let persistedAutomation = persistedState?.globalAutomationLevel {
                     self.globalAutomationLevel = persistedAutomation
                 }
+                // 推理强度同理（issue #597）：New Chat 的默认档位没有会话承载，
+                // 需要独立落盘。hasGlobalReasoningEffort 区分三态 —— 旧版本
+                // state.json 缺键（保持出厂默认）、用户显式关闭（nil）、用户
+                // 选择的档位。
+                if let hasPersistedEffort = persistedState?.hasGlobalReasoningEffort,
+                   hasPersistedEffort {
+                    self.globalReasoningEffort = persistedState?.globalReasoningEffort
+                }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
@@ -426,6 +434,7 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         let verbosity = globalVerbosity
         let language = globalLanguage
         let automationLevel = globalAutomationLevel
+        let reasoningEffort = globalReasoningEffort
         let fileURL = stateFileURL
         let directory = fileURL.deletingLastPathComponent()
         Self.stateWriteQueue.async {
@@ -433,7 +442,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                 selectedConversationID: selectedID,
                 globalVerbosity: verbosity,
                 globalLanguage: language,
-                globalAutomationLevel: automationLevel
+                globalAutomationLevel: automationLevel,
+                hasGlobalReasoningEffort: true,
+                globalReasoningEffort: reasoningEffort
             )
             guard let data = try? JSONEncoder().encode(state) else { return }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -456,6 +467,12 @@ private struct ConversationState: Codable {
     let globalLanguage: ConversationLanguage?
     /// New Chat 的默认自动化级别（没有会话承载，需单独落盘）。
     let globalAutomationLevel: AutomationLevel?
+    /// New Chat 的默认推理强度（issue #597）。`globalReasoningEffort` 的 nil
+    /// 与「用户显式关闭」重合，无法靠键缺失区分新旧文件，因此用独立的存在
+    /// 标记表达三态：缺键 = 旧文件保持出厂默认；`true` + nil = 用户显式关闭；
+    /// `true` + 档位 = 用户选择的默认档位。
+    let hasGlobalReasoningEffort: Bool?
+    let globalReasoningEffort: ReasoningEffort?
 }
 
 // MARK: - Selected Conversation Observer

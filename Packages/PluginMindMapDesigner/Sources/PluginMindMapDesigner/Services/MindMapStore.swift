@@ -93,6 +93,36 @@ public final class MindMapStore: ObservableObject {
         setList(onDisk, for: .project)
     }
 
+    /// 节点级写操作前只对齐将被写回的那张导图（#1190）。
+    ///
+    /// 写回只覆盖目标导图一个文件，因此无需枚举并解码目录下全部导图：
+    /// - 磁盘上有该导图：以磁盘为准替换（或补入）内存条目，避免基于
+    ///   旧快照覆盖别处的新编辑；
+    /// - 磁盘上已删除：同步丢弃内存条目，`updateMap` 按找不到失败，
+    ///   与全量同步语义一致，不会把别处删除的导图「复活」；
+    /// - 文件损坏：保留内存快照，写回会用有效数据修复它。
+    /// 新建 / 导入 / 整图替换 / 删除等低频操作仍走 `synchronizeBeforeWrite`。
+    private func synchronizeTargetForWrite(id: String, scope: MindMapScope) {
+        let path = storagePath(for: scope)
+        guard !path.isEmpty else { return }
+        var list = self.list(for: scope)
+        switch MindMapFileStore.diskState(forMapID: id, storagePath: path) {
+        case .missing:
+            guard list.contains(where: { $0.id == id }) else { return }
+            list.removeAll { $0.id == id }
+            setList(list, for: scope)
+        case .loaded(let diskMap):
+            if let index = list.firstIndex(where: { $0.id == diskMap.id }) {
+                list[index] = diskMap
+            } else {
+                list.insert(diskMap, at: 0)
+            }
+            setList(list, for: scope)
+        case .unreadable:
+            break
+        }
+    }
+
     /// 在某个作用域的数据变化后调用：按需刷新并切换选中。
     public func reload(scope: MindMapScope, selectMapId mapId: String? = nil) {
         reloadScope(scope)
@@ -347,8 +377,8 @@ public final class MindMapStore: ObservableObject {
 
     @discardableResult
     private func updateMap(id: String, scope: MindMapScope, _ update: (inout MindMap) throws -> Void) throws -> MindMap {
-        // 写前先与磁盘对齐，避免用陈旧快照整体覆盖别人的新编辑。
-        synchronizeBeforeWrite()
+        // 写前只对齐将被写回的那张导图，避免每次节点编辑都重读整个目录（#1190）。
+        synchronizeTargetForWrite(id: id, scope: scope)
         var list = self.list(for: scope)
         guard let index = list.firstIndex(where: { $0.id == id }) else {
             throw MindMapStoreError.mapNotFound(id)

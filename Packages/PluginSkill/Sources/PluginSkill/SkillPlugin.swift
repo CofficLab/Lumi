@@ -44,6 +44,8 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
     /// `willSendToLLM` 技能注入钩子（见 `Hooks/SkillInjectionHook.swift`）。
     private var skillInjectionHook: SkillInjectionHook?
+    /// onBoot 构造的 Agent 工具实例（onShutdown 按实例撤回）。
+    private var registeredTools: [any SuperAgentTool] = []
     private var toolbarViewModel: SkillChatToolbarViewModel?
     private var toolbarObserver: SkillChatToolbarObserver?
     /// 设置页 ViewModel 与观察者（参照 Agent Rules 插件的设置入口模式）。
@@ -124,9 +126,18 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
             lifecycleHandles.append(handle)
         }
 
-        // 4. 注册 Agent 工具：创建项目技能。
+        // 4. 注册 Agent 工具：技能 CRUD + 列出/读取。列出/读取需要底座
+        //    （插件贡献 + 内置），否则插件贡献的技能无法被模型按需读取正文。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
+            let tools: [any SuperAgentTool] = [
+                ListSkillsTool(skillProvider: skillProvider),
+                ReadSkillTool(skillProvider: skillProvider),
+                CreateSkillTool(),
+                UpdateSkillTool(),
+                DeleteSkillTool(),
+            ]
+            registeredTools = tools
+            for tool in tools {
                 toolManager.add(tool, pluginID: id)
             }
         }
@@ -169,10 +180,11 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
         // 撤回 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
+            for tool in registeredTools {
                 toolManager.remove(id: tool.name)
             }
         }
+        registeredTools = []
 
         for handle in lifecycleHandles { handle.cancel() }
         lifecycleHandles.removeAll()
@@ -186,16 +198,6 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     }
 
     private var lifecycleHandles: [any LifecycleHookHandle] = []
-
-    // MARK: - Agent Tools
-
-    public static let agentTools: [any SuperAgentTool] = [
-        ListSkillsTool(),
-        ReadSkillTool(),
-        CreateSkillTool(),
-        UpdateSkillTool(),
-        DeleteSkillTool(),
-    ]
 }
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。

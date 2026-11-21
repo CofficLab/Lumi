@@ -73,6 +73,9 @@ final class VM: ObservableObject, SuperLog {
     @Published var screenshotsBySetID: [String: [AppScreenshot]] = [:]
     @Published var selectedScreenshotDisplayType = "APP_IPHONE_67"
     @Published var metadataIsDirty = false
+    /// 元数据编辑代次：每次标记脏或切换本地化递增。保存响应据此判断
+    /// await 期间是否发生过新编辑，避免迟到的响应覆盖新内容（#436）。
+    var metadataEditGeneration = 0
     @Published var builds: [ConnectBuild] = []
     @Published var assignedBuildID: String?
     @Published var selectedBuildID: String?
@@ -131,6 +134,12 @@ final class VM: ObservableObject, SuperLog {
     var busyOperationCount = 0
     /// 首个操作启动的 500ms 遮罩延时任务，由最后一个操作负责取消。
     var busyOverlayDelayTask: Task<Void, Never>?
+
+    /// 仍在进行中的 force refresh 操作数（#437）：策略切换按窗口计数，
+    /// 并发操作不得各自保存/还原共享的 fetchPolicy。
+    var busyForceRefreshCount = 0
+    /// force refresh 窗口开启前的 fetchPolicy，由窗口内最后一个操作恢复。
+    var busyPreviousFetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
         credentialStore: CredentialStore = .shared,

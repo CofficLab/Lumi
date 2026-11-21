@@ -60,11 +60,11 @@ extension ConversationManager {
         }
     }
 
+    /// 未绑定详细度的对话必须继承全局默认（契约语义，回归 #598），
+    /// 与 DefaultConversationManager 保持一致。
     public func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
-        guard let conversationID else {
-            return .defaultVerbosity
-        }
-        return conversations.first { $0.id == conversationID }?.verbosity ?? .defaultVerbosity
+        guard let conversationID else { return globalVerbosity }
+        return conversations.first { $0.id == conversationID }?.verbosity ?? globalVerbosity
     }
 
     public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
@@ -107,6 +107,10 @@ extension ConversationManager {
         guard globalReasoningEffort != reasoningEffort else { return }
         globalReasoningEffort = reasoningEffort
         notifyConversationObservers(.reasoningChanged(nil))
+        // New Chat 的默认推理强度没有会话承载，必须单独落盘才能跨重启保留；
+        // 否则重启后静默回到 .high，下一个新会话还会把这个被重置的值持久化
+        // 下去（issue #597）。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalReasoningEffort: effort=\(reasoningEffort?.rawValue ?? "off")")

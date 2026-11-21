@@ -54,10 +54,22 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         smtp.port = UInt32(account.smtpPort)
         smtp.username = account.username
         smtp.password = password
-        smtp.connectionType = account.useTLS ? .TLS : .startTLS
+        smtp.connectionType = Self.smtpConnectionType(port: account.smtpPort, useTLS: account.useTLS)
         smtp.timeout = Self.operationTimeout
         self.smtpSession = smtp
     }
+
+    /// SMTP 连接类型：587 是 STARTTLS 提交端口（RFC 6409），隐式 TLS 端口是 465。
+    /// 把 587 当隐式 TLS 直连会在握手期失败（issue #309：iCloud/Outlook 预设）。
+    static func smtpConnectionType(port: UInt16, useTLS: Bool) -> MCOConnectionType {
+        if port == 587 { return .startTLS }
+        return useTLS ? .TLS : .startTLS
+    }
+
+    // MARK: - 测试辅助
+
+    var imapConnectionType: MCOConnectionType { imapSession.connectionType }
+    var smtpConnectionType: MCOConnectionType { smtpSession.connectionType }
 
     // MARK: - MailSessionServing
 
@@ -169,6 +181,37 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             }
         }
         return messages.map { Self.summary(from: $0, accountID: account.id, folder: folder) }
+    }
+
+    public func fetchMessages(
+        folder: String,
+        beforeUID: UInt64,
+        limit: Int
+    ) async throws -> [MailMessageSummary] {
+        // 游标 = 1 时没有更旧的邮件，直接返回空页；其余先校验，
+        // 避免在 UInt32 边界上构造非法 UID 区间。
+        guard beforeUID > 1 else { return [] }
+        let cursor = try Self.validatedUID(beforeUID)
+        let range = MCORangeMake(1, UInt64(cursor) - 1)
+        let uids = MCOIndexSet(range: range)
+        let messages: [MCOIMAPMessage] = try await bridge.perform { completion in
+            guard let op = self.imapSession.fetchMessagesOperation(
+                withFolder: folder,
+                requestKind: [.headers, .flags, .structure],
+                uids: uids
+            ) else {
+                completion(nil, MailError.protocolError("operation creation failed"))
+                return
+            }
+            op.start { error, values, _ in
+                completion(values, error)
+            }
+        }
+        // 取游标之前最新的 N 条（uid 降序）。
+        return messages
+            .sorted { $0.uid > $1.uid }
+            .prefix(limit)
+            .map { Self.summary(from: $0, accountID: account.id, folder: folder) }
     }
 
     public func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {

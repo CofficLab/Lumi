@@ -62,7 +62,9 @@ struct GitBranchPopoverView: View {
                         GitBranchRow(
                             branch: branch,
                             isCurrent: branch.name == viewModel.currentBranch,
-                            isEnabled: !viewModel.isBusy,
+                            // 远端分支只读展示：不提供切换动作（#391），避免
+                            // 「看起来可点、点了却毫无反应」的静默失效。
+                            isEnabled: !viewModel.isBusy && !branch.isRemote,
                             action: { Task { await viewModel.switchBranch(to: branch) } }
                         )
                     }

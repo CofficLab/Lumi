@@ -20,7 +20,7 @@ final class ACPMessageTests: XCTestCase {
         guard case .request(let id, let method, let params) = message else {
             return XCTFail("应为 request，实际：\(message)")
         }
-        XCTAssertEqual(id, .number(0))
+        XCTAssertEqual(id, .integer(0))
         XCTAssertEqual(method, "initialize")
         let decoded: ACPInitializeParams = try XCTUnwrap(params?.decoded())
         XCTAssertEqual(decoded.protocolVersion, 1)
@@ -55,7 +55,7 @@ final class ACPMessageTests: XCTestCase {
         guard case .response(let id, let result) = message else {
             return XCTFail("应为 response")
         }
-        XCTAssertEqual(id, .number(1))
+        XCTAssertEqual(id, .integer(1))
         let decoded: ACPSessionNewResult = try XCTUnwrap(result?.decoded())
         XCTAssertEqual(decoded.sessionId.rawValue, "sess_abc123def456")
     }
@@ -80,7 +80,7 @@ final class ACPMessageTests: XCTestCase {
         guard case .error(let id, let error) = message else {
             return XCTFail("应为 error")
         }
-        XCTAssertEqual(id, .number(2))
+        XCTAssertEqual(id, .integer(2))
         XCTAssertEqual(error.code, -32602)
         XCTAssertEqual(error.message, "Invalid params")
     }
@@ -126,6 +126,23 @@ final class ACPMessageTests: XCTestCase {
         { "jsonrpc": "2.0" }
         """
         XCTAssertThrowsError(try ACPMessage.decode(Data(json.utf8)))
+    }
+
+    /// #355：2^53+1 的请求 id 经 decode → encode 往返后必须逐位一致，
+    /// 否则对端无法把响应关联回请求。
+    func testLargeIntegerIDSurvivesRoundTrip() throws {
+        let request = """
+        { "jsonrpc": "2.0", "id": 9007199254740993, "method": "session/new", "params": {} }
+        """
+        let message = try ACPMessage.decode(Data(request.utf8))
+        XCTAssertEqual(message.id, .integer(9_007_199_254_740_993))
+
+        let response = try ACPMessage.makeResponse(id: message.id!, result: ["sessionId": "sess_x"])
+        let encoded = String(data: try response.encodedData(), encoding: .utf8) ?? ""
+        XCTAssertTrue(encoded.contains("9007199254740993"), "响应 id 丢失精度：\(encoded)")
+
+        let echoed = try ACPMessage.decode(Data(encoded.utf8))
+        XCTAssertEqual(echoed.id, .integer(9_007_199_254_740_993))
     }
 }
 

@@ -33,6 +33,106 @@ private func msg(
     )
 }
 
+// MARK: - 尾部刷新与向上翻页并发（#388）
+
+/// 门闩：让「最新一页」读取挂起，直到测试显式放行。
+private actor PagingRaceGate {
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+    private(set) var enteredCount = 0
+
+    func enter() async {
+        enteredCount += 1
+        if released { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func releaseAll() {
+        released = true
+        for waiter in waiters { waiter.resume() }
+        waiters.removeAll()
+    }
+}
+
+/// 只有 armed 状态下的「最新一页」读取（无游标）会被卡在门闩上；激活探测时
+/// 未 armed 直接通过，翻页读取（带游标）永远直接返回，保证时序确定。
+@MainActor
+private final class GatedTailStubMessageCapability: MessageListMessageCapability {
+    let window: [Message]
+    let earlierPage: [Message]
+    let gate: PagingRaceGate
+    var armed = false
+
+    private lazy var allMessages: [Message] = (earlierPage + window).sorted { $0.createdAt < $1.createdAt }
+
+    init(window: [Message], earlierPage: [Message], gate: PagingRaceGate) {
+        self.window = window
+        self.earlierPage = earlierPage
+        self.gate = gate
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] { window }
+
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message] {
+        if let beforeMessageID,
+           let index = allMessages.firstIndex(where: { $0.id == beforeMessageID }) {
+            return Array(allMessages[..<index].suffix(limit))
+        }
+        if armed { await gate.enter() }
+        return Array(window.suffix(limit))
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool {
+        guard let beforeMessageID,
+              let index = allMessages.firstIndex(where: { $0.id == beforeMessageID }) else { return false }
+        return index > 0
+    }
+}
+
+/// 首屏读取（无游标）armed 时卡在门闩上，放行后返回**不含激活期间插入消息**的
+/// 过期页面；翻页读取（带游标）永远直接返回（#146）。
+@MainActor
+private final class DeferredFirstPageMessages: MessageListMessageCapability {
+    let deferredPage: [Message]
+    let gate: PagingRaceGate
+    var armed = false
+
+    init(page: [Message], gate: PagingRaceGate) {
+        self.deferredPage = page
+        self.gate = gate
+    }
+
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] { deferredPage }
+
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message] {
+        if beforeMessageID != nil { return [] }
+        if armed { await gate.enter() }
+        return Array(deferredPage.suffix(limit))
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool {
+        false
+    }
+}
+
 @MainActor
 private func makeToolCallRecord(
     id: String,
@@ -267,6 +367,226 @@ struct ListV3ViewModelPaginationTests {
         // 首屏 2 条 + 翻页 2 条更早历史。
         #expect(harness.viewModel.persistedMessages.count == 4)
         #expect(harness.viewModel.hasEarlierMessages == false, "已翻到最早一条")
+    }
+
+    @Test("窗口首条是工具执行消息时，翻页锚点是合成展示行 id 而非原始消息 id（#387）")
+    func loadEarlierAnchorUsesSynthesizedRowIDForToolExecutionFirst() async {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 100)
+        let toolMessage = msg(
+            conversationID: conversationID, role: .assistant, content: "",
+            createdAt: base.addingTimeInterval(2),
+            toolCalls: [MessageToolCall(id: "call-1", name: "read", arguments: "{}")]
+        )
+        let window = [
+            msg(conversationID: conversationID, role: .user, content: "mid", createdAt: base.addingTimeInterval(1)),
+            toolMessage,
+            msg(conversationID: conversationID, role: .user, content: "anchor", createdAt: base.addingTimeInterval(3)),
+        ]
+        let earlier = msg(conversationID: conversationID, role: .user, content: "old", createdAt: base)
+        let harness = Harness(
+            conversationID: conversationID,
+            window: window,
+            earlier: [earlier],
+            pageSize: 2
+        )
+        await harness.viewModel.activate(conversationID: conversationID)
+
+        // 首屏保留末尾 2 条：窗口首条恰是工具执行消息，展示层被合成为派生 id。
+        let rawFirstID = harness.viewModel.persistedMessages.first?.id
+        let rowAnchorBefore = harness.viewModel.historyRows.first?.id
+        #expect(rawFirstID == toolMessage.id)
+        #expect(rowAnchorBefore != nil && rowAnchorBefore != rawFirstID,
+                "工具执行消息的展示行 id 应为合成 id，不等于原始消息 id")
+
+        let anchorID = await harness.viewModel.loadEarlier()
+
+        // 旧实现返回原始落库 id —— 该 id 在展示行中不存在，scrollTo 找不到目标。
+        #expect(anchorID == rowAnchorBefore)
+        #expect(harness.viewModel.historyRows.contains { $0.id == anchorID },
+                "翻页后列表中必须存在该锚点对应的展示行")
+    }
+
+    @Test("尾部刷新 I/O 期间完成向上翻页：旧快照结果不得抹掉刚前插的历史（#388）")
+    func tailRefreshDoesNotClobberConcurrentPaging() async {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 0)
+        // 41 条升序消息 m1...m41：首屏探测 41 条 → hasEarlier，窗口 = [m2...m41]。
+        let conversation = (0..<41).map { index in
+            msg(
+                conversationID: conversationID,
+                role: .user,
+                content: "m\(index + 1)",
+                createdAt: base.addingTimeInterval(Double(index))
+            )
+        }
+        let earliest = conversation[0]
+        let second = conversation[1]
+        let gate = PagingRaceGate()
+        let manager = GatedTailStubMessageCapability(
+            window: conversation,
+            earlierPage: [earliest],
+            gate: gate
+        )
+        // Gated stub 不走 Harness（它内部固定使用普通 stub），直接组装服务容器。
+        let viewModel = ListV3ViewModel(
+            services: MessageListServices(
+                conversations: StubConversationCapability(
+                    selectedConversationID: conversationID,
+                    verbosity: .standard
+                ),
+                conversationState: StubConversationStateCapability(
+                    snapshot: ConversationStateSnapshot(conversationID: conversationID)
+                ),
+                developerModeState: DeveloperModeStateViewModel(),
+                messages: manager,
+                rendering: nil,
+                streaming: StubStreamingCapability(),
+                toolManager: StubToolManagerCapability(),
+                agentTurn: StubAgentLoopCapability(),
+                promptSuggestions: nil,
+                promptSuggestionExecutor: nil,
+                project: nil,
+                toolbar: nil,
+                chat: nil
+            )
+        )
+        await viewModel.activate(conversationID: conversationID)
+        #expect(viewModel.hasEarlierMessages)
+        #expect(viewModel.persistedMessages.first?.id == second.id)
+
+        // 让尾部刷新卡在最新一页读取上。
+        manager.armed = true
+        let refreshTask = Task { await viewModel.refreshTail() }
+        let deadline = Date().addingTimeInterval(5)
+        while await gate.enteredCount < 1, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.enteredCount >= 1, "尾部刷新应已进入被门闩卡住的读取")
+
+        // 刷新 I/O 悬挂期间完成向上翻页：窗口变 [m1] + [m2...m41]。
+        let anchorID = await viewModel.loadEarlier()
+        #expect(anchorID == second.id)
+        #expect(viewModel.persistedMessages.first?.id == earliest.id)
+        #expect(viewModel.hasEarlierMessages == false)
+
+        await gate.releaseAll()
+        _ = await refreshTask
+        // 给补跑的尾部刷新留时间（它应基于新窗口计算，结果无变化不写回）。
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(viewModel.persistedMessages.first?.id == earliest.id,
+                "刚前插的 m1 不得被尾部刷新的旧快照结果抹掉")
+        #expect(viewModel.hasEarlierMessages == false)
+    }
+
+    @Test("首屏加载期间插入的新消息不得被过期的整页结果抹掉（#146）")
+    func firstScreenLoadKeepsMidFlightInserts() async {
+        let conversationID = UUID()
+        let base = Date(timeIntervalSince1970: 0)
+        // 首屏读取最终返回的「过期页面」，不含悬挂期间插入的消息。
+        let page = (0..<3).map { index in
+            msg(
+                conversationID: conversationID,
+                role: .user,
+                content: "m\(index + 1)",
+                createdAt: base.addingTimeInterval(Double(index))
+            )
+        }
+        let gate = PagingRaceGate()
+        let manager = DeferredFirstPageMessages(page: page, gate: gate)
+        let viewModel = ListV3ViewModel(
+            services: MessageListServices(
+                conversations: StubConversationCapability(
+                    selectedConversationID: conversationID,
+                    verbosity: .standard
+                ),
+                conversationState: StubConversationStateCapability(
+                    snapshot: ConversationStateSnapshot(conversationID: conversationID)
+                ),
+                developerModeState: DeveloperModeStateViewModel(),
+                messages: manager,
+                rendering: nil,
+                streaming: StubStreamingCapability(),
+                toolManager: StubToolManagerCapability(),
+                agentTurn: StubAgentLoopCapability(),
+                promptSuggestions: nil,
+                promptSuggestionExecutor: nil,
+                project: nil,
+                toolbar: nil,
+                chat: nil
+            )
+        )
+
+        // 让激活的首屏读取卡在门闩上。
+        manager.armed = true
+        let activation = Task { await viewModel.activate(conversationID: conversationID) }
+        let deadline = Date().addingTimeInterval(5)
+        while await gate.enteredCount < 1, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(await gate.enteredCount >= 1, "首屏读取应已进入被门闩卡住的页面")
+
+        // 首屏 I/O 悬挂期间，同会话插入一条新消息（直接应用进窗口）。
+        let inserted = msg(
+            conversationID: conversationID,
+            role: .user,
+            content: "new",
+            createdAt: base.addingTimeInterval(10)
+        )
+        viewModel.handleMessageChange(.inserted(inserted, conversationID: conversationID))
+        #expect(viewModel.persistedMessages.contains { $0.id == inserted.id })
+
+        // 放行过期页面（不含 new）。
+        await gate.releaseAll()
+        await activation
+        // 给激活收尾（窗口合并 + 投影重建）留时间：放行后的续体要等主执行器调度。
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(viewModel.persistedMessages.contains { $0.id == inserted.id },
+                "激活 I/O 期间插入的消息不得被首屏整页结果抹掉")
+        #expect(viewModel.persistedMessages.contains { $0.id == page[0].id })
+    }
+
+    @Test("删除最后一条消息后尾部刷新必须清空窗口（#145）")
+    func tailRefreshClearsWindowAfterLastMessageDeleted() async {
+        let conversationID = UUID()
+        let existing = msg(conversationID: conversationID, role: .user, content: "old")
+        let harness = Harness(conversationID: conversationID, page: [existing])
+        await harness.viewModel.activate(conversationID: conversationID)
+        #expect(harness.viewModel.persistedMessages.contains { $0.id == existing.id })
+
+        // 删除最后一条消息：存储层最新一页变空，删除事件触发尾部刷新。
+        harness.messages.setPage([])
+        harness.viewModel.handleMessageChange(
+            .deleted(messageID: existing.id, conversationID: conversationID)
+        )
+        // 事件驱动的 refreshTail 是异步 Task：轮询等它把空结果发布进窗口。
+        let deadline = Date().addingTimeInterval(2)
+        while !harness.viewModel.persistedMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(harness.viewModel.persistedMessages.isEmpty,
+                "存储层已空后不得继续显示已删除的消息（#145）")
+    }
+
+    @Test("清空会话后尾部刷新必须清空窗口（#145）")
+    func tailRefreshClearsWindowAfterConversationCleared() async {
+        let conversationID = UUID()
+        let existing = msg(conversationID: conversationID, role: .user, content: "old")
+        let harness = Harness(conversationID: conversationID, page: [existing])
+        await harness.viewModel.activate(conversationID: conversationID)
+        #expect(harness.viewModel.persistedMessages.contains { $0.id == existing.id })
+
+        // 清空整个会话：存储层最新一页变空，cleared 事件触发尾部刷新。
+        harness.messages.setPage([])
+        harness.viewModel.handleMessageChange(.cleared(conversationID: conversationID))
+        let deadline = Date().addingTimeInterval(2)
+        while !harness.viewModel.persistedMessages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(harness.viewModel.persistedMessages.isEmpty,
+                "存储层已空后不得继续显示已删除的内容（#145）")
     }
 
     @Test("无更早消息时翻页返回 nil 且不改变窗口")

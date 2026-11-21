@@ -309,6 +309,14 @@ public struct PrototypeResolvedScreen: Equatable, Sendable {
 
     public var htmlURL: URL { directoryURL.appendingPathComponent(screen.htmlFileName) }
 
+    /// 项目根目录：屏幕目录的上级（`assets/` 与各屏幕目录的共同父目录）。
+    ///
+    /// 预览加载屏幕 HTML 时应把它作为 WebKit 读取权限根，使官方
+    /// `../assets/...` 引用路径可用；只授予屏幕目录会拦截共享素材（#324）。
+    public var projectDirectoryURL: URL {
+        directoryURL.deletingLastPathComponent()
+    }
+
     public init(
         project: PrototypeProject,
         screen: PrototypeScreen,

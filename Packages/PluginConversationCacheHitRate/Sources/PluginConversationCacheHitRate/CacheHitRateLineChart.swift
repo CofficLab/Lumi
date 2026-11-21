@@ -16,63 +16,8 @@ struct CacheHitRateLineChart: View {
     private static let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
 
     var body: some View {
-        Canvas { context, size in
-            guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
-
-            let geometry = ChartGeometry(size: size, inset: Self.inset)
-
-            // Grid lines
-            var grid = Path()
-            for step in 0...2 {
-                let y = Self.inset.top + geometry.plotHeight * Double(step) / 2
-                grid.move(to: CGPoint(x: Self.inset.leading, y: y))
-                grid.addLine(to: CGPoint(x: Self.inset.leading + geometry.plotWidth, y: y))
-            }
-            context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
-
-            let perRequestPoints = geometry.points(for: samples, value: \.hitRate)
-            let cumulativePoints = geometry.points(for: samples, value: \.cumulativeHitRate)
-
-            // 累计曲线：填充与描边共用同一条路径，避免重复构建。
-            let cumulativePath = Self.smoothedPath(points: cumulativePoints)
-
-            // Fill area under the cumulative curve
-            var fill = cumulativePath
-            fill.addLine(to: CGPoint(x: cumulativePoints.last?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
-            fill.addLine(to: CGPoint(x: cumulativePoints.first?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
-            fill.closeSubpath()
-            context.fill(fill, with: .linearGradient(
-                Gradient(colors: [.teal.opacity(0.22), .teal.opacity(0.02)]),
-                startPoint: CGPoint(x: size.width / 2, y: Self.inset.top),
-                endPoint: CGPoint(x: size.width / 2, y: Self.inset.top + geometry.plotHeight)
-            ))
-
-            // Per-request line (thin, secondary)
-            context.stroke(
-                Self.smoothedPath(points: perRequestPoints),
-                with: .color(.teal.opacity(0.55)),
-                lineWidth: 1.4
-            )
-
-            // Cumulative line (thick, primary)
-            context.stroke(
-                cumulativePath,
-                with: .color(.teal),
-                lineWidth: 2.4
-            )
-
-            // Last point dot
-            if let last = cumulativePoints.last {
-                context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.teal))
-                context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.teal.opacity(0.32)), lineWidth: 2)
-            }
-
-            // - Important: hover 指示线**不在** Canvas 里画。
-            //   `hoveredIndex` 变化会让整个 Canvas 重绘，从而把全量点集映射
-            //   与平滑路径重建都重跑一遍；鼠标每移动一次就是一次全量重算
-            //   （见 issue #1224）。指示线改由 overlay 用 O(1) 计算绘制。
-        }
-        .overlay {
+        CacheHitRateStaticChart(samples: samples)
+            .overlay {
             GeometryReader { proxy in
                 let geometry = ChartGeometry(size: proxy.size, inset: Self.inset)
 
@@ -207,6 +152,71 @@ struct CacheHitRateLineChart: View {
         }
 
         return path
+    }
+}
+
+/// 只依赖 `samples` 的静态折线图。
+///
+/// hover 状态留在 `CacheHitRateLineChart`：SwiftUI 会在输入未变化时跳过子视图更新，
+/// 于是 `hoveredIndex` 每次变化只重跑 hover overlay，Canvas 的绘制闭包
+/// （全量点集映射 + 平滑路径重建）不再执行（#1224）。
+private struct CacheHitRateStaticChart: View {
+    let samples: [CacheHitRateSample]
+
+    private static let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
+
+    var body: some View {
+        Canvas { context, size in
+            guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
+
+            let geometry = ChartGeometry(size: size, inset: Self.inset)
+
+            // Grid lines
+            var grid = Path()
+            for step in 0...2 {
+                let y = Self.inset.top + geometry.plotHeight * Double(step) / 2
+                grid.move(to: CGPoint(x: Self.inset.leading, y: y))
+                grid.addLine(to: CGPoint(x: Self.inset.leading + geometry.plotWidth, y: y))
+            }
+            context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
+
+            let perRequestPoints = geometry.points(for: samples, value: \.hitRate)
+            let cumulativePoints = geometry.points(for: samples, value: \.cumulativeHitRate)
+
+            // 累计曲线：填充与描边共用同一条路径，避免重复构建。
+            let cumulativePath = CacheHitRateLineChart.smoothedPath(points: cumulativePoints)
+
+            // Fill area under the cumulative curve
+            var fill = cumulativePath
+            fill.addLine(to: CGPoint(x: cumulativePoints.last?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
+            fill.addLine(to: CGPoint(x: cumulativePoints.first?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
+            fill.closeSubpath()
+            context.fill(fill, with: .linearGradient(
+                Gradient(colors: [.teal.opacity(0.22), .teal.opacity(0.02)]),
+                startPoint: CGPoint(x: size.width / 2, y: Self.inset.top),
+                endPoint: CGPoint(x: size.width / 2, y: Self.inset.top + geometry.plotHeight)
+            ))
+
+            // Per-request line (thin, secondary)
+            context.stroke(
+                CacheHitRateLineChart.smoothedPath(points: perRequestPoints),
+                with: .color(.teal.opacity(0.55)),
+                lineWidth: 1.4
+            )
+
+            // Cumulative line (thick, primary)
+            context.stroke(
+                cumulativePath,
+                with: .color(.teal),
+                lineWidth: 2.4
+            )
+
+            // Last point dot
+            if let last = cumulativePoints.last {
+                context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.teal))
+                context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.teal.opacity(0.32)), lineWidth: 2)
+            }
+        }
     }
 }
 

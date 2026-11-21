@@ -115,6 +115,39 @@ struct GoalStateManagerAppendForkTests {
         #expect(appended[1].order == GoalStateManager.maxTasksPerGoal)
     }
 
+    @Test("向终态 Goal 追加任务抛 goalIsTerminal，不落库（#464）")
+    func testAddTasksToTerminalGoalThrows() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let created = try await manager.createGoal(
+            conversationId: "append-terminal",
+            title: "Terminal goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Only", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        // 把 Goal 推进到终态（failed 与 completed/skipped 同为不可调度状态）。
+        // created.goal 是落库时的旧快照，需重新读取再断言。
+        try await manager.updateGoalStatus(id: created.goal.id, status: .failed, failureReason: "boom")
+        let failedGoal = await manager.fetchGoal(id: created.goal.id)
+        #expect(failedGoal?.isTerminal == true)
+
+        do {
+            _ = try await manager.addTasksToGoal(
+                goalId: created.goal.id,
+                tasks: [(title: "Never runs", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            Issue.record("expected goalIsTerminal")
+        } catch let error as GoalStateError {
+            #expect(error == .goalIsTerminal(id: created.goal.id))
+        }
+
+        // 报错不应写入任何任务
+        #expect(await manager.fetchTasks(goalId: created.goal.id).count == 1)
+    }
+
     @Test("向不存在的 Goal 追加任务抛 goalNotFound")
     func testAddTasksToMissingGoalThrows() async throws {
         let (manager, tempDir) = try makeManager()

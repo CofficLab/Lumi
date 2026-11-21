@@ -519,8 +519,8 @@ final class TextActionMenuController {
             // 全局监听只收到其他应用的事件。
             let type = event.type
             let modifiers = event.modifierFlags
-            let keyCode = event.keyCode
-            let deltaY = event.scrollingDeltaY
+            let keyCode = TextActionDismissPolicy.keyCode(of: event)
+            let deltaY = TextActionDismissPolicy.scrollingDeltaY(of: event)
             Task { @MainActor [weak self] in
                 self?.handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
             }
@@ -532,8 +532,8 @@ final class TextActionMenuController {
         localDismissMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
             let type = event.type
             let modifiers = event.modifierFlags
-            let keyCode = event.keyCode
-            let deltaY = event.scrollingDeltaY
+            let keyCode = TextActionDismissPolicy.keyCode(of: event)
+            let deltaY = TextActionDismissPolicy.scrollingDeltaY(of: event)
             let windowNumber = event.windowNumber
             Task { @MainActor [weak self] in
                 self?.handleLocalEvent(

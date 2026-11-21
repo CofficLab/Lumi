@@ -67,52 +67,16 @@ final class ToolCallsObserver: SuperLog {
                 turnID: turnID
             )
         case .requireApprovalForHighRisk:
-            var autoExecutableInputs: [ToolCall] = []
-            var approvalInputs: [ToolCall] = []
-            var blockedInputs: [ToolCall] = []
-            for toolCall in inputs {
-                switch toolManager.authorizationDecision(
-                    for: toolCall,
-                    conversationID: conversationID
-                ) {
-                case .autoApproved:
-                    autoExecutableInputs.append(toolCall)
-                case .requiresUserApproval:
-                    approvalInputs.append(toolCall)
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)🌚 工具需要授权，暂停执行 tool=\(toolCall.name), id=\(toolCall.id)")
-                    }
-                case .blocked:
-                    // build 模式通常不会返回 blocked，但自定义授权策略可能会；
-                    // 单独走 blockAll，避免被 requireApproval 的兼容逻辑误执行。
-                    blockedInputs.append(toolCall)
-                }
-            }
-
-            if !autoExecutableInputs.isEmpty {
-                _ = toolManager.submit(
-                    autoExecutableInputs,
-                    policy: .autoExecute,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            }
-            if !blockedInputs.isEmpty {
-                executeLegacyBatch(
-                    blockedInputs,
-                    policy: .blockAll,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            }
-            if !approvalInputs.isEmpty {
-                executeLegacyBatch(
-                    approvalInputs,
-                    policy: .requireApprovalForHighRisk,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            }
+            // 整批按模型给定的顺序交给 executeBatch：免授权调用依次执行，
+            // 遇到第一个需要授权的调用即暂停，其后所有调用（包括免授权的）
+            // 都必须等用户决定（#149）。此前按授权类型分桶再分别提交，会把
+            // 暂停点之后的免授权调用提前执行，破坏批次契约。
+            executeLegacyBatch(
+                inputs,
+                policy: .requireApprovalForHighRisk,
+                conversationID: conversationID,
+                turnID: turnID
+            )
         }
         if Self.verbose {
             Self.logger.info("\(Self.t)🍋 收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(inputs.count)")

@@ -5,7 +5,7 @@
 AppManagerPlugin Manage installed applications for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 42
+测试文件: 5 个，用例总数: 44
 
 核心组件（源码目录）:
 - `Models/`
@@ -122,6 +122,8 @@ AppManagerPlugin Manage installed applications for Lumi.
 | 40 | 应用发现范围 | 只下降容器一层，不得进入 .app 包或任意目录（回归 #648） | 根含 Top.app、Utilities/Terminal.app、Utilities/Nested/Deep.app、Other/Stray.app、Top.app/Contents/Inner.app | AppService.appBundleURLs(under:) | 仅返回 {Top.app, Terminal.app}，更深层/非容器/包内部条目均不出现 | P0 | ✅ 已覆盖 | `discoveryStopsAtOneLevelAndNeverEntersAppBundles` |
 | 41 | 应用发现范围 | 空容器不影响直接子项的既有发现（回归 #648） | 根含 Direct.app 与空的 Utilities 目录 | AppService.appBundleURLs(under:) | 返回 [Direct.app] | P1 | ✅ 已覆盖 | `discoveryStillReturnsDirectAppChildren` |
 | 42 | 应用发现范围 | 隐藏条目在根与容器内都被跳过（回归 #648） | 根含 Visible.app、.Hidden.app、Utilities/Console.app、Utilities/.Secret.app | AppService.appBundleURLs(under:) | 仅返回 {Visible.app, Console.app} | P1 | ✅ 已覆盖 | `discoverySkipsHiddenEntries` |
+| 43 | 体积统计 | 目录体积必须包含 .app 包内的隐藏文件（**回归 #796**） | 临时目录含 Contents/Resources/visible.bin 与 .payload | AppService.calculateSize(for:) | 返回值 == 可见 + 隐藏内容字节之和 | P0 | ✅ 已覆盖 | `sizeIncludesHiddenFilesInsideBundle` |
+| 44 | 体积统计 | 隐藏目录的子孙文件同样计入体积（**回归 #796**） | 临时目录含 Contents/.cache/nested/deep.bin | AppService.calculateSize(for:) | 返回值 == deep.bin 字节数 | P1 | ✅ 已覆盖 | `sizeIncludesDescendantsOfHiddenDirectories` |
 
 > 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -161,15 +163,15 @@ AppManagerPlugin Manage installed applications for Lumi.
 
 ## 覆盖率统计
 
-- P0: 已覆盖 18 / 18
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 1 / 1
-- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（18 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明

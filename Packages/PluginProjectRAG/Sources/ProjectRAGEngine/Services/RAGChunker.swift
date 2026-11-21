@@ -32,11 +32,21 @@ public struct RAGChunker: Sendable {
             if block.count <= maxCharsPerChunk {
                 let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
+                    // trim 只去掉首尾空白，行号必须跟着落到实际保留的首尾内容行；
+                    // 沿用原块的行号会让 lineRange 指向空白行（#606）。注意
+                    // ArraySlice 保留原集合索引，firstIndex/lastIndex 返回的是
+                    // 全局行下标，直接 + 1 即行号。
+                    let windowLines = lines[start..<end]
+                    let firstContentIndex = windowLines.firstIndex { !$0.allSatisfy(\.isWhitespace) } ?? start
+                    let lastContentIndex = windowLines.lastIndex { !$0.allSatisfy(\.isWhitespace) } ?? end - 1
                     chunks.append(
                         RAGChunk(
                             index: chunkIndex,
                             content: trimmed,
-                            lineRange: RAGLineRange(startLine: start + 1, endLine: end)
+                            lineRange: RAGLineRange(
+                                startLine: firstContentIndex + 1,
+                                endLine: lastContentIndex + 1
+                            )
                         )
                     )
                     chunkIndex += 1
@@ -46,19 +56,25 @@ public struct RAGChunker: Sendable {
                 var cursor = block.startIndex
                 while cursor < block.endIndex {
                     let next = block.index(cursor, offsetBy: maxCharsPerChunk, limitedBy: block.endIndex) ?? block.endIndex
-                    let segment = String(block[cursor..<next]).trimmingCharacters(in: .whitespacesAndNewlines)
+                    let rawSegment = block[cursor..<next]
+                    let segment = rawSegment.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !segment.isEmpty {
-                        let startLine = start + 1 + block[..<cursor].reduce(into: 0) { count, character in
-                            if character == "\n" { count += 1 }
-                        }
-                        let endLine = startLine + segment.reduce(into: 0) { count, character in
+                        // 与整块分支同理：先定位窗口起点行，再跳过 segment 首尾被
+                        // trim 掉的空白行，让行号落在实际保留的内容上（#606）。
+                        let segmentLines = rawSegment.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+                        let firstOffset = segmentLines.firstIndex { !$0.allSatisfy(\.isWhitespace) } ?? 0
+                        let lastOffset = segmentLines.lastIndex { !$0.allSatisfy(\.isWhitespace) } ?? segmentLines.count - 1
+                        let windowStartLine = start + 1 + block[..<cursor].reduce(into: 0) { count, character in
                             if character == "\n" { count += 1 }
                         }
                         chunks.append(
                             RAGChunk(
                                 index: chunkIndex,
                                 content: segment,
-                                lineRange: RAGLineRange(startLine: startLine, endLine: endLine)
+                                lineRange: RAGLineRange(
+                                    startLine: windowStartLine + firstOffset,
+                                    endLine: windowStartLine + lastOffset
+                                )
                             )
                         )
                         chunkIndex += 1

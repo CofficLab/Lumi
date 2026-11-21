@@ -31,10 +31,11 @@ WORK_DIR="$(mktemp -d "$TEMP_ROOT/lumi-dmg.XXXXXX")"
 STAGING_DIR="$WORK_DIR/staging"
 READ_WRITE_DMG="$WORK_DIR/$VOLUME_NAME-rw.dmg"
 MOUNT_POINT=""
+DEVICE_NODE=""
 
 cleanup() {
-  if [[ -n "$MOUNT_POINT" && -d "$MOUNT_POINT" ]]; then
-    hdiutil detach "$MOUNT_POINT" -force >/dev/null 2>&1 || true
+  if [[ -n "$DEVICE_NODE" || -n "$MOUNT_POINT" ]]; then
+    hdiutil detach "${DEVICE_NODE:-$MOUNT_POINT}" -force >/dev/null 2>&1 || true
   fi
   rm -rf "$WORK_DIR"
 }
@@ -86,6 +87,7 @@ done
 
 ATTACH_OUTPUT="$(hdiutil attach "$READ_WRITE_DMG" -readwrite -noverify -noautoopen)"
 MOUNT_POINT="$(printf '%s\n' "$ATTACH_OUTPUT" | awk '/\/Volumes\// {print substr($0, index($0, "/Volumes/")); exit}')"
+DEVICE_NODE="$(printf '%s\n' "$ATTACH_OUTPUT" | awk '/\/Volumes\// {print $1; exit}')"
 
 if [[ -z "$MOUNT_POINT" || ! -d "$MOUNT_POINT" ]]; then
   echo "Unable to locate mounted DMG for $VOLUME_NAME" >&2
@@ -125,23 +127,47 @@ end run
 APPLESCRIPT
 
 sync
-detach_mount() {
-  local attempt
+volume_is_attached() {
+  if [[ -n "$DEVICE_NODE" ]]; then
+    hdiutil info 2>/dev/null | grep -q "^${DEVICE_NODE}[[:space:]]"
+    return $?
+  fi
+  [[ -n "$MOUNT_POINT" && -d "$MOUNT_POINT" ]]
+}
 
-  for attempt in 1 2 3 4 5; do
-    if hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1; then
+detach_mount() {
+  local attempt target
+  # Detach by device node: the /Volumes path can vanish or get renamed while
+  # Finder flushes metadata, and detach must not hinge on that path existing.
+  target="${DEVICE_NODE:-$MOUNT_POINT}"
+
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if ! volume_is_attached; then
       return 0
     fi
-    echo "DMG is still busy; retrying detach (${attempt}/5): ${VOLUME_NAME}" >&2
+    if hdiutil detach "$target" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "DMG is still busy; retrying detach (${attempt}/8): ${VOLUME_NAME}" >&2
     sleep "$attempt"
   done
 
-  echo "DMG remained busy after 5 detach attempts; forcing detach: ${VOLUME_NAME}" >&2
-  hdiutil detach "$MOUNT_POINT" -force >/dev/null
+  echo "DMG remained busy after 8 detach attempts; forcing detach: ${VOLUME_NAME}" >&2
+  if hdiutil detach "$target" -force >/dev/null 2>&1; then
+    return 0
+  fi
+  # Force detach can report "No such file or directory" when the volume was
+  # already unmounted between retries; only fail if it is genuinely still there.
+  if ! volume_is_attached; then
+    return 0
+  fi
+  echo "Unable to detach DMG: $VOLUME_NAME" >&2
+  return 1
 }
 
 detach_mount
 MOUNT_POINT=""
+DEVICE_NODE=""
 
 rm -f "$OUTPUT_PATH"
 hdiutil convert "$READ_WRITE_DMG" \

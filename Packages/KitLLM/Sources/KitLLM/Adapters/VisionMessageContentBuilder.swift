@@ -79,4 +79,28 @@ public enum VisionMessageContentBuilder {
 
         return content
     }
+
+    /// Responses 协议的消息内容：无图保持纯字符串，有图切分为
+    /// `input_text` / `input_image` 内容数组。
+    ///
+    /// 与 Chat Completions 不同，Responses 的 `image_url` 是**字符串**
+    /// （data URI 即可），不再包一层对象。此前自定义 Responses 模型即便
+    /// 声明了 `supportsVision`，序列化也只读 role/content，附件被静默
+    /// 丢弃（issue #288）。
+    public static func responsesContent(text: String, images: [MessageImage]) -> Any {
+        guard !images.isEmpty else { return text }
+
+        var content: [[String: Any]] = []
+        if !text.isEmpty {
+            content.append(["type": "input_text", "text": text])
+        }
+        for image in images {
+            let base64 = base64Cache.base64(for: image.data)
+            content.append([
+                "type": "input_image",
+                "image_url": "data:\(image.mimeType);base64,\(base64)",
+            ])
+        }
+        return content
+    }
 }

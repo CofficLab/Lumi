@@ -89,6 +89,10 @@ final class ProjectContextViewModel: ObservableObject {
     private var loadedProjectPath: String?
     /// 会话 ID 缓存：`(项目路径, 窗口起点所属日, 会话 ID)`。
     private var conversationIDsCache: (path: String, day: Date, ids: [String])?
+    /// 会话数据（数量、最近会话）自上次加载后是否发生过变化（#807）。
+    /// 会话增删改不经过项目切换路径，若不作废，「同项目已加载」短路
+    /// 会让卡片一直显示旧数量与旧最近会话。
+    private var conversationDataStale = false
 
     init(
         project: (any ProjectProviding)?,
@@ -131,7 +135,7 @@ final class ProjectContextViewModel: ObservableObject {
             return
         }
         let path = info.path
-        if !force, loadedProjectPath == path, identity != nil { return }
+        if !force, loadedProjectPath == path, identity != nil, !conversationDataStale { return }
 
         loadGeneration &+= 1
         let generation = loadGeneration
@@ -180,6 +184,7 @@ final class ProjectContextViewModel: ObservableObject {
             last: conversation.last
         )
         loadedProjectPath = path
+        conversationDataStale = false
     }
 
     /// 取某个项目在给定时间窗口内仍有活动的会话 ID。
@@ -220,6 +225,16 @@ final class ProjectContextViewModel: ObservableObject {
         details = []
         loadedProjectPath = nil
         conversationIDsCache = nil
+        conversationDataStale = false
+    }
+
+    /// 会话增删或最近会话变化后作废项目卡的会话数据缓存（#807）。
+    ///
+    /// 项目卡把会话数与最近会话连同项目身份一起缓存，而会话 CRUD 不经过
+    /// 项目切换路径。置位后「同项目已加载」短路失效，卡片下次出现（或
+    /// 下次加载）时会重读持久化状态。
+    public func invalidateConversationData() {
+        conversationDataStale = true
     }
 
     // MARK: - 数据获取

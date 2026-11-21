@@ -1,4 +1,5 @@
 import Foundation
+import Logging
 import MCP
 import Testing
 @testable import KitMCP
@@ -256,6 +257,50 @@ struct MCPServerSessionTests {
         await session.disconnect()
     }
 
+    @Test("连接建立期间 disconnect：迟到的完成不写回（**#401**）")
+    func invalidatedConnectDoesNotWriteBack() async throws {
+        // 包装 transport 在首个 send（initialize 请求）处设闸门：测试先
+        // disconnect 再放行，构造「连接建立期间被断开」的确定性交错。
+        // （不能靠延后启动服务器——InMemoryTransport 对未 connect 的对端
+        // 会静默丢弃消息，initialize 永远送不到。）
+        let (clientTransport, serverTransport) = await InMemoryTransport.createConnectedPair()
+        let server = Server(name: "LateMock", version: "1.0.0")
+        try await server.withMethodHandler(ListTools.self) { _ in
+            ListTools.Result(tools: [])
+        }
+        try await server.start(transport: serverTransport)
+
+        let gatedTransport = GatedSendTransport(inner: clientTransport)
+        let config = MCPServerConfig(name: "Mock", command: "/bin/echo", arguments: [])
+        let session = MCPServerSession(
+            config: config,
+            prepare: { _ in MCPPreparedTransport(transport: gatedTransport) }
+        )
+
+        let pending = Task { try await session.connect() }
+        var gated = false
+        let deadline = Date().addingTimeInterval(2)
+        while !gated, Date() < deadline {
+            gated = await gatedTransport.isGated()
+            if !gated {
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        }
+        #expect(gated, "首个 send（initialize）应已进入闸门")
+        guard gated else { return }
+
+        await session.disconnect()
+        await gatedTransport.releaseGate()
+
+        await #expect(throws: MCPClientError.notConnected) {
+            try await pending.value
+        }
+        #expect(await session.isConnected == false)
+        await #expect(throws: MCPClientError.notConnected) {
+            _ = try await session.listTools()
+        }
+    }
+
     @Test("listTools 游标重复时终止而非无限翻页（**#181**）")
     func listToolsStopsOnRepeatedCursor() async throws {
         let prepared = try await makeListToolsMockServer { cursor in
@@ -277,4 +322,53 @@ struct MCPServerSessionTests {
 /// 构造仅含名字的最小 MCP 工具（分页测试用）。
 private func mcpTestTool(_ name: String) -> Tool {
     Tool(name: name, description: name, inputSchema: .object([:]))
+}
+
+/// 在首个 send 处挂起的 transport 替身（#401 测试用）：内部持有一只
+/// 真实配对的 InMemoryTransport，connect/receive/disconnect 全部转发，
+/// 首个 send（initialize 请求）挂起等待测试放行。
+/// （SDK 的 InMemoryTransport 非 open，不能跨模块继承，只能包装实现。）
+private actor GatedSendTransport: Transport {
+    nonisolated let logger: Logger
+    private let inner: InMemoryTransport
+    private var receiveStream: AsyncThrowingStream<Data, Swift.Error>?
+    private var gateEntered = false
+    private var gateContinuation: CheckedContinuation<Void, Never>?
+
+    init(inner: InMemoryTransport) {
+        self.inner = inner
+        self.logger = Logger(label: "mcp.transport.gated")
+    }
+
+    func isGated() -> Bool {
+        gateEntered
+    }
+
+    func releaseGate() {
+        gateContinuation?.resume()
+        gateContinuation = nil
+    }
+
+    func connect() async throws {
+        try await inner.connect()
+        // Client 在 connect 完成后才调用 receive；预取 inner 的流缓存，
+        // 使同步的 receive() 不必跨 actor 调用。
+        receiveStream = await inner.receive()
+    }
+
+    func disconnect() async {
+        await inner.disconnect()
+    }
+
+    func send(_ data: Data) async throws {
+        if !gateEntered {
+            gateEntered = true
+            await withCheckedContinuation { gateContinuation = $0 }
+        }
+        try await inner.send(data)
+    }
+
+    func receive() -> AsyncThrowingStream<Data, Swift.Error> {
+        receiveStream ?? AsyncThrowingStream { $0.finish() }
+    }
 }

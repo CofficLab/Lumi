@@ -123,6 +123,34 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         isLoading = activeOperations > 0
     }
 
+    /// 在 ViewModel 名下执行长操作。
+    ///
+    /// 视图层的 `Task { await viewModel.xxx() }` 只负责等待结果；真正的工作
+    /// 在这里创建的子任务里执行并登记取消句柄。插件 shutdown 调用
+    /// `cancelAllOperations()` 后，取消会传播到 KitShell 并终止对应的
+    /// docker/trivy 进程树（#253）。
+    private func runOwnedOperation<T: Sendable>(_ body: @escaping @MainActor () async -> T) async -> T {
+        let id = UUID()
+        let task = Task { @MainActor () -> T in
+            let value = await body()
+            ownedOperationCancellers.removeValue(forKey: id)
+            return value
+        }
+        ownedOperationCancellers[id] = { task.cancel() }
+        let value = await task.value
+        ownedOperationCancellers.removeValue(forKey: id)
+        return value
+    }
+
+    /// 取消所有在 ViewModel 名下运行的操作任务与镜像详情任务。
+    func cancelAllOperations() {
+        for canceller in ownedOperationCancellers.values {
+            canceller()
+        }
+        ownedOperationCancellers.removeAll()
+        imageDetailsTask?.cancel()
+    }
+
     @Published var errorMessage: String?
     @Published var searchText: String = ""
     
@@ -137,6 +165,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     
     private let service: any DockerManagerServicing
     private var imageDetailsTask: Task<Void, Never>?
+    /// 在 ViewModel 名下登记的长操作取消句柄（#253）。插件 shutdown 时
+    /// 统一取消，让 KitShell 终止 docker/trivy 进程树，而不是依赖视图层
+    /// 创建的临时 Task 句柄。
+    private var ownedOperationCancellers: [UUID: @Sendable () -> Void] = [:]
     /// 列表代次：每次刷新或删除递增，只有最新一代的刷新结果可写回列表，
     /// 避免删除前发起的旧刷新把已删除镜像重新插回（#252）。
     private var listGeneration = 0
@@ -166,6 +198,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     }
     
     func refreshImages() async {
+        await runOwnedOperation { await self.performRefresh() }
+    }
+
+    private func performRefresh() async {
         if Self.verbose {
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.info("\(self.t)刷新镜像列表")
@@ -191,6 +227,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         } catch {
             // 同理，旧刷新的失败不应覆盖最新一次的状态。
             guard generation == listGeneration else { return }
+            guard !Task.isCancelled else { return }
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.error("\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
             }
@@ -199,6 +236,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     }
 
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
+        await runOwnedOperation { await self.performDelete(image, force: force) }
+    }
+
+    private func performDelete(_ image: DockerImage, force: Bool) async {
         if Self.verbose {
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.info("\(self.t)删除镜像: \(image.repository)")
@@ -232,6 +273,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            guard !Task.isCancelled else { return }
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.error("\(self.t)删除镜像失败: \(error.localizedDescription)")
             }
@@ -246,6 +288,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             return false
         }
 
+        return await runOwnedOperation { await self.performPull(normalizedName) }
+    }
+
+    private func performPull(_ normalizedName: String) async -> Bool {
         if Self.verbose {
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.info("\(self.t)拉取镜像: \(normalizedName)")
@@ -256,9 +302,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         errorMessage = nil
         do {
             _ = try await service.pullImage(normalizedName)
-            await refreshImages()
+            await performRefresh()
             return true
         } catch {
+            guard !Task.isCancelled else { return false }
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
             }
@@ -317,14 +364,19 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             return false
         }
 
+        return await runOwnedOperation { await self.performTag(image, tag: normalizedTag) }
+    }
+
+    private func performTag(_ image: DockerImage, tag normalizedTag: String) async -> Bool {
         beginLoading()
         defer { endLoading() }
         errorMessage = nil
         do {
             try await service.tagImage(image.imageID, target: normalizedTag)
-            await refreshImages()
+            await performRefresh()
             return true
         } catch {
+            guard !Task.isCancelled else { return false }
             errorMessage = "Tag failed: \(error.localizedDescription)"
             return false
         }
@@ -337,6 +389,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     /// 写了一半或零字节的文件留在用户选定的路径上。
     @discardableResult
     func exportImage(_ image: DockerImage, to url: URL) async -> Bool {
+        await runOwnedOperation { await self.performExport(image, to: url) }
+    }
+
+    private func performExport(_ image: DockerImage, to url: URL) async -> Bool {
         beginLoading()
         defer { endLoading() }
         errorMessage = nil
@@ -359,9 +415,11 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             }
             succeeded = true
         } catch {
+            // 取消（进程被终止）同样要清理临时文件，避免留下半成品。
             if fileManager.fileExists(atPath: temporaryURL.path) {
                 try? fileManager.removeItem(at: temporaryURL)
             }
+            guard !Task.isCancelled else { return false }
             errorMessage = "Export failed: \(error.localizedDescription)"
         }
 
@@ -369,18 +427,27 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     }
 
     func loadImage(from url: URL) async {
+        await runOwnedOperation { await self.performLoad(from: url) }
+    }
+
+    private func performLoad(from url: URL) async {
         beginLoading()
         defer { endLoading() }
         errorMessage = nil
         do {
             try await service.loadImage(from: url.path)
-            await refreshImages()
+            await performRefresh()
         } catch {
+            guard !Task.isCancelled else { return }
             errorMessage = "Load failed: \(error.localizedDescription)"
         }
     }
 
     func scanImage(_ image: DockerImage) async {
+        await runOwnedOperation { await self.performScan(image) }
+    }
+
+    private func performScan(_ image: DockerImage) async {
         let imageID = image.imageID
         beginLoading()
         defer { endLoading() }
@@ -392,6 +459,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             guard selectedImage?.imageID == imageID else { return }
             scanResult = result
         } catch {
+            guard !Task.isCancelled else { return }
             guard selectedImage?.imageID == imageID else { return }
             scanResult = "Scan failed: \(error.localizedDescription)"
         }
@@ -407,6 +475,9 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
 
     deinit {
         imageDetailsTask?.cancel()
+        for canceller in ownedOperationCancellers.values {
+            canceller()
+        }
     }
     
     private func filterAndSortImages(

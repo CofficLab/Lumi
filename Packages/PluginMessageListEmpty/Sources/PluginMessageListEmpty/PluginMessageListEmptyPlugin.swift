@@ -44,7 +44,9 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var services: MessageListEmptyServices?
     private var guideState: MessageListGuideState?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var conversationObserver: (any ConversationObserverHandle)?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
+    private var projectContextRefreshTask: Task<Void, Never>?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var chatObserver: (any ChatSectionProvidingObserverHandle)?
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
@@ -147,6 +149,10 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         messageChangeObserver = messages?.addMessageChangeObserver { [weak self] change in
             self?.handleMessageChange(change)
         }
+        // 会话增删改会改变项目卡的会话数与最近会话（#807）：卡片缓存必须作废。
+        conversationObserver = conversations?.addConversationObserver { [weak self] event in
+            self?.handleConversationEvent(event)
+        }
         projectObserver = project?.addObserver { [weak guideState, weak projectContext, weak activityModel, project] _ in
             guideState?.handleProjectChange(project)
             // 换了项目，项目上下文与项目维度的活动统计都得重算：
@@ -200,6 +206,10 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         registrationEvaluationTask = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
+        conversationObserver?.cancel()
+        conversationObserver = nil
+        projectContextRefreshTask?.cancel()
+        projectContextRefreshTask = nil
         messageChangeObserver?.cancel()
         messageChangeObserver = nil
         projectObserver?.cancel()
@@ -229,6 +239,31 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
     private func updateSelection(_ conversationID: UUID?) {
         guideState?.handleSelectionChange(conversationID)
+    }
+
+    /// 会话事件里只有 CRUD 类事件影响项目卡（#807）。
+    private func handleConversationEvent(_ event: ConversationEvent) {
+        switch event {
+        case .created, .deleted, .listChanged:
+            projectContext?.invalidateConversationData()
+            scheduleProjectContextRefresh()
+        case .markedActive, .updated:
+            // 排序与标题变化不改变数量；流式回合里逐条强制重载代价太高，
+            // 作废缓存让卡片下次出现时重读即可。
+            projectContext?.invalidateConversationData()
+        case .selected, .providerChanged, .verbosityChanged, .reasoningChanged,
+             .automationChanged, .languageChanged:
+            break
+        }
+    }
+
+    /// 合并同一段事件风暴里的多次刷新：新任务会取消上一个尚未开始的任务。
+    private func scheduleProjectContextRefresh() {
+        projectContextRefreshTask?.cancel()
+        projectContextRefreshTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
+            await self?.projectContext?.loadIfNeeded(force: true)
+        }
     }
 
     private func handleMessageChange(_ change: MessageChange) {

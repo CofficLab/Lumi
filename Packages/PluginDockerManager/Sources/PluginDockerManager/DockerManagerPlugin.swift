@@ -31,9 +31,18 @@ public final class DockerManagerPlugin: SuperPlugin, SuperLog {
 
     private let activityItemID = "com.coffic.lumi.plugin.docker-manager.entry"
     private let titleItemID = "com.coffic.lumi.plugin.docker-manager.title"
-    private var viewModel: DockerManagerViewModel?
+    var viewModel: DockerManagerViewModel?
+    private let viewModelFactory: () -> DockerManagerViewModel
 
-    public init() {}
+    public init() {
+        self.viewModelFactory = { DockerManagerViewModel() }
+    }
+
+    /// 测试专用：注入预构造的 ViewModel，验证 shutdown 会取消在途操作（#253）。
+    init(viewModel: DockerManagerViewModel) {
+        self.viewModel = viewModel
+        self.viewModelFactory = { viewModel }
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         let title = metadata.name
@@ -44,7 +53,7 @@ public final class DockerManagerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let viewModel = DockerManagerViewModel()
+        let viewModel = viewModelFactory()
         self.viewModel = viewModel
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -89,6 +98,9 @@ public final class DockerManagerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [titleItemID])
+        // 禁用插件时取消所有在途操作：取消会传播到 KitShell 并终止 docker/trivy
+        // 进程树，迟到的结果也不再写回已停用的 UI（#253）。
+        viewModel?.cancelAllOperations()
         viewModel = nil
     }
 

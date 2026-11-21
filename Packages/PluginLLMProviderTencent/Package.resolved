@@ -1,5 +1,5 @@
 {
-  "originHash" : "856a4bace8ee77587fd633bec0788b87fd013282745e7e570908caff7c3c1b82",
+  "originHash" : "d156b8d2535987548bba44de730196ccf6fee3b515de8a3fc6b5bdb077fa11e1",
   "pins" : [
     {
       "identity" : "lumikernel",
@@ -15,8 +15,26 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
       "state" : {
-        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
-        "version" : "1.0.3"
+        "revision" : "a91621cb4704162468eaef9095e8aeacae4f9ded",
+        "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "lumikitkeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitKeychain.git",
+      "state" : {
+        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikitllm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
+      "state" : {
+        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
+        "version" : "1.0.1"
       }
     },
     {

@@ -134,7 +134,9 @@ final class ConversationForkCoordinator {
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
         // 只发送摘要文本，必须走显式空附件入口：隐式 sendMessage 会快照全局挂起池，
         // 把源对话里用户未发送的附件带进新对话的摘要消息，并从输入框清空（#578）。
-        try? await sender.sendMessage(
+        // 只 commit 不等回合：消息插入观察者会触发 AgentLoop 回合（#853），
+        // fork 必须立刻返回，不能阻塞到新对话回复结束。
+        try? sender.commitUserMessage(
             summaryOutcome.summary,
             imageAttachments: [],
             fileAttachments: [],

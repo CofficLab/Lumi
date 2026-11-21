@@ -106,7 +106,9 @@ actor DirectoryTreeScanCoordinator {
         case topLevelSummary(maxEntries: Int, maxDuration: TimeInterval)
     }
 
-    private var activeToken: DirectoryTreeScanCancellationToken?
+    /// 当前活跃扫描的取消令牌注册表：每个扫描持有独立的令牌，
+    /// 并行只读扫描（`.parallelReadOnly` 工具）互不取消（#226）。
+    private var activeTokens: [UUID: DirectoryTreeScanCancellationToken] = [:]
     private var currentProgress: ScanProgress? {
         didSet {
             if let progress = currentProgress {
@@ -144,10 +146,11 @@ actor DirectoryTreeScanCoordinator {
         mode: Mode,
         onProgress: (@Sendable (ScanProgress) async -> Void)? = nil
     ) async throws -> [DirectoryEntry] {
-        activeToken?.cancel()
-
+        let scanID = UUID()
         let token = DirectoryTreeScanCancellationToken()
-        activeToken = token
+        // 只注册自己的令牌，不取消其他活跃扫描 —— 并行只读调用
+        // 互相取消会把合法扫描误报成用户取消（#226）。
+        activeTokens[scanID] = token
         let normalizedPath = URL(fileURLWithPath: path)
             .standardizedFileURL
             .resolvingSymlinksInPath()
@@ -196,23 +199,29 @@ actor DirectoryTreeScanCoordinator {
 
             try Task.checkCancellation()
             guard !token.isCancelled else { throw CancellationError() }
-            currentProgress = nil
-            activeToken = nil
-            finishAllProgressStreams()
+            finishScan(scanID: scanID)
             return result
         } catch {
-            if activeToken === token {
-                activeToken = nil
-            }
-            currentProgress = nil
-            finishAllProgressStreams()
+            finishScan(scanID: scanID)
             throw error
         }
     }
 
+    /// 注销本次扫描；只有当所有扫描都已结束时才回收进度流，
+    /// 避免并行扫描中先结束的一个掐断其余扫描的进度（#226）。
+    private func finishScan(scanID: UUID) {
+        activeTokens[scanID] = nil
+        guard activeTokens.isEmpty else { return }
+        currentProgress = nil
+        finishAllProgressStreams()
+    }
+
     func cancelCurrentScan() {
-        activeToken?.cancel()
-        activeToken = nil
+        // 用户显式取消（UI 停止按钮）：终止当前所有扫描。
+        for token in activeTokens.values {
+            token.cancel()
+        }
+        activeTokens.removeAll()
         currentProgress = nil
         finishAllProgressStreams()
     }

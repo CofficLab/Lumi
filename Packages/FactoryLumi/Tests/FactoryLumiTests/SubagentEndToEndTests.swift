@@ -1107,6 +1107,14 @@ private final class SlowTestTool: SuperAgentTool, @unchecked Sendable {
         return startedFlag
     }
 
+    /// 同步封装锁操作：Swift 6 不允许在 async 上下文直接调用 NSLock.lock/unlock，
+    /// 因此把写入放到同步方法里，再由 async 的 execute 调用。
+    private func markStarted() {
+        lock.lock()
+        defer { lock.unlock() }
+        startedFlag = true
+    }
+
     init(duration: TimeInterval) {
         self.duration = duration
     }
@@ -1117,9 +1125,7 @@ private final class SlowTestTool: SuperAgentTool, @unchecked Sendable {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
     func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        lock.lock()
-        startedFlag = true
-        lock.unlock()
+        markStarted()
         try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
         return "slow done"
     }

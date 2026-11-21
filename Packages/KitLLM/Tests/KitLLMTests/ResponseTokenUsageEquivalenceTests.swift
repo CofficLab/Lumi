@@ -52,13 +52,20 @@ struct ResponseTokenUsageEquivalenceTests {
         let cacheWrite = anthropic
             ? legacyAnthropicCacheWrite(usage)
             : legacyOpenAICacheWrite(usage)
-        let cacheTotal = anthropic
-            ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
-                inputTokens: input,
-                cachedInputTokens: cachedInput,
-                cacheWriteInputTokens: cacheWrite
-            )
-            : input
+        let cacheTotal: Int?
+        if anthropic {
+            // 与生产字典路径同步：`input_tokens` 键存在才三段相加（#512）；
+            // `prompt_tokens` 等别名已是含缓存的总量，直接沿用。
+            cacheTotal = usage["input_tokens"] != nil
+                ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
+                    inputTokens: input,
+                    cachedInputTokens: cachedInput,
+                    cacheWriteInputTokens: cacheWrite
+                )
+                : input
+        } else {
+            cacheTotal = input
+        }
         return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
 

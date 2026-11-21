@@ -174,6 +174,11 @@ final class ResumeCoordinator {
 
         let record = await store.record(for: conversationID)
         let history = await messages.messages(for: conversationID)
+
+        // await 期间选中会话可能已切换：迟到的刷新必须丢弃，
+        // 不得覆盖新选中会话的「继续」横幅（#462）。
+        guard conversations.selectedConversationID == conversationID else { return }
+
         let turnState = loop.turnState(for: conversationID)
 
         let verdict = ResumeEligibility.evaluate(

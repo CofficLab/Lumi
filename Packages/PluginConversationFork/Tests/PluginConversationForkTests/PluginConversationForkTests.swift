@@ -760,6 +760,43 @@ struct ConversationForkCoordinatorTests {
         let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
         #expect(forked.projectPath == "/tmp/source-project")
     }
+
+    // MARK: - fork 立即返回
+
+    @Test("fork 在新对话回合结束前就已返回（**回归 #853**）")
+    func forkReturnsBeforeTurnCompletes() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "旧对话", projectPath: nil, providerID: nil, modelName: nil)
+        // 先写入源对话历史再装 loop：桩只观测到 fork 摘要提交的那一次插入，
+        // 历史插入不会提前触发被门闩挡住的回合。
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "第一条问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+        let loop = GatedAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let coordinator = makeCoordinator(conversations: conversations, messages: messages, sender: sender)
+
+        let flag = ForkReturnFlag()
+        let forkTask = Task { @MainActor in
+            let outcome = try await coordinator.fork(conversationID: sourceID)
+            flag.returned = true
+            return outcome
+        }
+
+        // 等新对话的回合被触发并挂起在门闩上：此刻回合尚未结束。
+        await loop.waitUntilTurnStarted()
+        // fork 必须已经返回，而不是阻塞等待回合结束（#853）。
+        #expect(flag.returned, "fork 应在回合仍在执行时就返回")
+
+        loop.release()
+        let outcome = try await forkTask.value
+        #expect(outcome.newConversationID != sourceID)
+        #expect(messages.messages(for: outcome.newConversationID).contains { $0.content == outcome.summary })
+    }
 }
 
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
@@ -822,6 +859,83 @@ private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
         cancelAction?()
         cancelAction = nil
     }
+}
+
+// MARK: - 回合门闩桩（#853）
+
+/// 回合一启动就挂起在门闩上的 AgentLoop 桩：测试用 `waitUntilTurnStarted()`
+/// 确定性地等到「回合已触发但尚未结束」，再用 `release()` 放行。
+/// 与 StubAgentLoop 同形，仅把即时完成的 runTurn 换成可挂起的版本。
+@MainActor
+private final class GatedAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+    private var turnGate: CheckedContinuation<Void, Never>?
+    private var turnStartedContinuation: CheckedContinuation<Void, Never>?
+    private(set) var turnStarted = false
+    private var released = false
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor in
+                _ = try? await self?.runTurn(in: conversationID)
+            }
+        }
+    }
+
+    func waitUntilTurnStarted() async {
+        if turnStarted { return }
+        await withCheckedContinuation { turnStartedContinuation = $0 }
+    }
+
+    func release() {
+        released = true
+        turnGate?.resume()
+        turnGate = nil
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return StubAgentLoopObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        turnStarted = true
+        turnStartedContinuation?.resume()
+        turnStartedContinuation = nil
+        await withCheckedContinuation { turnGate = $0 }
+        let event = AgentLoopEvent.completed(conversationID: conversationID, turnID: UUID())
+        for observer in observers.values {
+            observer(event)
+        }
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { turnStarted && !released }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+/// 标记 fork 是否已经返回：在 forkTask 内部于 fork 返回后置位，
+/// 让测试能在回合仍被门闩挡住时断言 fork 没有阻塞等回合（#853）。
+@MainActor
+private final class ForkReturnFlag {
+    var returned = false
 }
 
 // MARK: - 当前项目回退替身

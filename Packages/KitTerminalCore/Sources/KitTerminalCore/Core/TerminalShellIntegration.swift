@@ -59,44 +59,58 @@ public enum ShellIntegration {
 
     // MARK: - Setup
 
-    /// 配置 shell 集成
+    /// 配置 shell 集成的逐会话产物。
     ///
     /// - Parameters:
     ///   - shell: 要启动的 shell 类型
-    ///   - environment: 环境变量数组（会被修改）
+    ///   - baseEnvironment: 进程已有的环境变量，用于读取用户的 ZDOTDIR（#500）
     ///   - useLogin: 是否使用 login shell
-    /// - Returns: 传递给 shell 可执行文件的参数
+    /// - Returns: 需要追加到进程环境的环境变量，与传给 shell 可执行文件的参数
+    ///
+    /// 集成脚本文件由 `prepareArtifacts` 在后台准备并跨会话复用；本方法只做
+    /// 内存中的环境/参数组装，可在主线程安全调用（#1234）。
     public static func setupIntegration(
         for shell: Shell,
-        environment: inout [String],
+        baseEnvironment: [String],
         useLogin: Bool = true
-    ) throws -> [String] {
-        environment.append("\(Vars.lumiInjection)=1")
+    ) async throws -> ShellIntegrationSetup {
+        var additionalEnvironment: [String] = ["\(Vars.lumiInjection)=1"]
 
         var args: [String] = []
 
         switch shell {
         case .zsh:
-            try setupZsh(environment: &environment)
+            let tempDir = try await prepareArtifacts(for: .zsh)
+            // 保存用户的 ZDOTDIR
+            let envZDotDir = baseEnvironment.first(where: { $0.starts(with: "ZDOTDIR=") })?
+                .trimmingPrefix("ZDOTDIR=")
+            let userHome = NSHomeDirectory()
+            let userZDotDir = (envZDotDir?.isEmpty ?? true) ? userHome : String(envZDotDir ?? "")
+            additionalEnvironment.append("\(Vars.zDotDir)=\(tempDir.path)")
+            additionalEnvironment.append("\(Vars.userZDotDir)=\(userZDotDir)")
             // zsh 参数
             if useLogin {
                 args.append("-l")
             }
             args.append("-i")
         case .bash:
-            try setupBash(&args)
-            // bash 参数
-            if useLogin {
-                args.append("-l")
-            }
+            let tempDir = try await prepareArtifacts(for: .bash)
+            // bash 3.2（macOS 系统自带）在登录模式（-l）下会忽略 --init-file，
+            // 注入脚本完全不执行，标题集成随之失效（issue #346）。登录启动链由
+            // 脚本自身在 LUMI_SHELL_LOGIN=1 分支里重放（/etc/profile 与
+            // ~/.bash_profile 等），因此这里不能再叠加 -l。
+            args.append(contentsOf: ["--init-file", tempDir.appendingPathComponent("lumi_bash_integration.sh").path])
             args.append("-i")
         }
 
         if useLogin {
-            environment.append("\(Vars.lumiShellLogin)=1")
+            additionalEnvironment.append("\(Vars.lumiShellLogin)=1")
         }
 
-        return args
+        return ShellIntegrationSetup(
+            additionalEnvironment: additionalEnvironment,
+            shellArguments: args
+        )
     }
 
     /// 自动检测系统默认 shell
@@ -124,59 +138,87 @@ public enum ShellIntegration {
         return env
     }
 
-    // MARK: - zsh Setup
+    // MARK: - Artifacts
 
-    private static func setupZsh(environment: inout [String]) throws {
-        // 生成注入脚本内容
-        let rcScript = generateZshRcScript()
-        let profileScript = generateZshProfileScript()
-        let loginScript = generateZshLoginScript()
-        let envScript = generateZshEnvScript()
-
-        // 创建临时目录
-        let tempDir = try makeTempDir(forShell: .zsh)
-
-        // 保存用户的 ZDOTDIR
-        let envZDotDir = environment.first(where: { $0.starts(with: "ZDOTDIR=") })?
-            .trimmingPrefix("ZDOTDIR=")
-        let userHome = NSHomeDirectory()
-        let userZDotDir = (envZDotDir?.isEmpty ?? true) ? userHome : String(envZDotDir ?? "")
-
-        environment.append("\(Vars.zDotDir)=\(tempDir.path)")
-        environment.append("\(Vars.userZDotDir)=\(userZDotDir)")
-
-        // 写入注入脚本
-        try rcScript.write(to: tempDir.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
-        try profileScript.write(to: tempDir.appendingPathComponent(".zprofile"), atomically: true, encoding: .utf8)
-        try loginScript.write(to: tempDir.appendingPathComponent(".zlogin"), atomically: true, encoding: .utf8)
-        try envScript.write(to: tempDir.appendingPathComponent(".zshenv"), atomically: true, encoding: .utf8)
+    /// shell 集成的逐会话组装结果（#1234）。
+    public struct ShellIntegrationSetup: Sendable {
+        /// 追加到进程环境的环境变量
+        public let additionalEnvironment: [String]
+        /// 传给 shell 可执行文件的参数
+        public let shellArguments: [String]
     }
 
-    // MARK: - bash Setup
-
-    private static func setupBash(_ args: inout [String]) throws {
-        // bash 使用 --init-file 注入
-        let script = generateBashScript()
-        let tempDir = try makeTempDir(forShell: .bash)
-        let scriptURL = tempDir.appendingPathComponent("lumi_bash_integration.sh")
-        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
-        args.append(contentsOf: ["--init-file", scriptURL.path])
+    /// 准备（或复用）shell 集成脚本工件，返回其所在目录。
+    ///
+    /// 脚本内容只由 shell 类型决定，与具体会话无关：同进程内首次调用在后台
+    /// 校验/落盘，之后直接复用磁盘上已有的文件，不再逐会话删除重建、重复
+    /// 写入（#1234）。跨进程（如应用升级）时通过内容比对修复过时脚本。
+    public static func prepareArtifacts(for shell: Shell) async throws -> URL {
+        try await artifactStore.directory(for: shell)
     }
 
-    // MARK: - Temp Directory
+    /// 工件目录（按 shell 类型固定），供测试与诊断使用。
+    static func artifactsDirectory(for shell: Shell) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(NSUserName())-lumi-\(shell.rawValue)")
+    }
 
-    private static func makeTempDir(forShell shell: Shell) throws -> URL {
-        let username = NSUserName()
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(username)-lumi-\(shell.rawValue)")
-
-        // 清理旧的目录
-        if FileManager.default.fileExists(atPath: tempDir.path) {
-            try? FileManager.default.removeItem(at: tempDir)
+    /// 各 shell 的预期工件：文件名 → 内容。
+    static func expectedArtifacts(for shell: Shell) -> [(name: String, content: String)] {
+        switch shell {
+        case .zsh:
+            return [
+                (".zshrc", generateZshRcScript()),
+                (".zprofile", generateZshProfileScript()),
+                (".zlogin", generateZshLoginScript()),
+                (".zshenv", generateZshEnvScript()),
+            ]
+        case .bash:
+            return [("lumi_bash_integration.sh", generateBashScript())]
         }
+    }
 
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        return tempDir
+    /// 校验/落盘工件；内容一致则保留原文件，缺失或过时才写入。
+    /// 无隔离，仅供 `ArtifactStore` 在后台执行与测试直接调用。
+    static func materializeArtifacts(for shell: Shell) throws -> URL {
+        let dir = artifactsDirectory(for: shell)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            throw Error.failedToCreateTempDirectory
+        }
+        for artifact in expectedArtifacts(for: shell) {
+            let fileURL = dir.appendingPathComponent(artifact.name)
+            if let existing = try? String(contentsOf: fileURL, encoding: .utf8),
+               existing == artifact.content {
+                continue
+            }
+            try artifact.content.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+        return dir
+    }
+
+    private static let artifactStore = ArtifactStore()
+
+    /// 工件缓存：同进程内已校验过的目录直接复用，避免每次启动都做磁盘 I/O。
+    private actor ArtifactStore {
+        private var directories: [Shell: URL] = [:]
+
+        func directory(for shell: Shell) throws -> URL {
+            if let cached = directories[shell],
+               FileManager.default.fileExists(atPath: cached.path) {
+                let names = ShellIntegration.expectedArtifacts(for: shell).map(\.name)
+                let missing = names.contains { name in
+                    !FileManager.default.fileExists(atPath: cached.appendingPathComponent(name).path)
+                }
+                if !missing {
+                    return cached
+                }
+            }
+            let dir = try ShellIntegration.materializeArtifacts(for: shell)
+            directories[shell] = dir
+            return dir
+        }
     }
 
     // MARK: - zsh Scripts

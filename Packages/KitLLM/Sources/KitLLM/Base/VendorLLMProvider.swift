@@ -203,6 +203,8 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             content: parsed.content,
             model: model,
             toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            reasoningContent: parsed.reasoningContent,
+            thinkingSignature: parsed.thinkingSignature,
             // 不透明 redacted_thinking 块：非流式与 SSE 必须同样保留，
             // 否则下一轮请求无法回传原始块（#1167）。
             redactedThinking: parsed.redactedThinking.isEmpty ? nil : parsed.redactedThinking,
@@ -224,7 +226,15 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let model = request.model ?? providerInfo.defaultModel
         var input: [[String: Any]] = []
         for message in request.messages {
-            input.append(["role": message.role.rawValue, "content": message.content])
+            // 声明了 Vision 的 Responses 模型必须真正收到图片（issue #288）：
+            // 无图保持纯字符串内容，有图切分为 input_text/input_image 数组。
+            input.append([
+                "role": message.role.rawValue,
+                "content": VisionMessageContentBuilder.responsesContent(
+                    text: message.content,
+                    images: message.images
+                ),
+            ])
         }
         var body: [String: Any] = ["model": model, "input": input]
         if let reasoningEffort = normalizedReasoningEffort(request.reasoningEffort) {
@@ -389,13 +399,25 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     /// `[any LLMToolSchemaProviding]`，并构建工具名 sanitize 的 reverseMap，
     /// 供响应解析时把下划线还原成注册 id。子类（如 GoProvider）覆写协议路由时
     /// 必须复用此方法注入 tools，否则工具定义会丢失。
+    ///
+    /// sanitize 后撞名的工具（如 `a.b` 与 `a_b`）只保留先注册者（#179）：
+    /// 重复的 function name 会被供应商拒绝，或让模型把调用路由到错误的工具，
+    /// 反查映射也只会命中先注册者——被丢弃的工具反正无法被正确调度。
     public func toolSchemas(from schemas: [LLMFunctionSchema]?)
         -> ([any LLMToolSchemaProviding]?, [String: String]?) {
         guard let schemas, !schemas.isEmpty else { return (nil, nil) }
         var reverseMap: [String: String] = [:]
-        let adapted: [AdapterToolSchema] = schemas.map { schema in
-            reverseMap[LLMToolNameSanitizer.sanitize(schema.name)] = schema.name
-            return AdapterToolSchema(schema)
+        var adapted: [AdapterToolSchema] = []
+        for schema in schemas {
+            let sanitized = LLMToolNameSanitizer.sanitize(schema.name)
+            guard reverseMap[sanitized] == nil else {
+                Self.logger.error(
+                    "Dropping tool \(schema.name, privacy: .public): sanitized name \(sanitized, privacy: .public) collides with \(reverseMap[sanitized]!, privacy: .public)"
+                )
+                continue
+            }
+            reverseMap[sanitized] = schema.name
+            adapted.append(AdapterToolSchema(schema))
         }
         return (adapted, reverseMap)
     }
@@ -521,13 +543,21 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let cacheWrite = anthropic
             ? AnthropicCompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
             : OpenAICompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
-        let cacheTotal = anthropic
-            ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
-                inputTokens: input,
-                cachedInputTokens: cachedInput,
-                cacheWriteInputTokens: cacheWrite
-            )
-            : input
+        let cacheTotal: Int?
+        if anthropic {
+            // `input_tokens`（官方与兼容层）都是「未命中」口径，需三段相加得
+            // 总输入（#512）；`prompt_tokens` 等别名来自 OpenAI/Gemini 形态
+            // 网关，已是含缓存的总量，直接沿用，否则分母被重复放大。
+            cacheTotal = usage["input_tokens"] != nil
+                ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
+                    inputTokens: input,
+                    cachedInputTokens: cachedInput,
+                    cacheWriteInputTokens: cacheWrite
+                )
+                : input
+        } else {
+            cacheTotal = input
+        }
         return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
 }
@@ -565,6 +595,7 @@ private struct AdapterToolSchema: LLMToolSchemaProviding, @unchecked Sendable {
 final class StreamingAccumulator: @unchecked Sendable {
     private var content = ""
     private var reasoningContent = ""
+    private var thinkingSignature: String?
     private var redactedThinking: [LLMRedactedThinkingBlock] = []
     private var toolCalls: [Int: ToolCall] = [:]
     private var toolCallOrder: [Int] = []
@@ -615,6 +646,17 @@ final class StreamingAccumulator: @unchecked Sendable {
             for data in blocks where !data.isEmpty {
                 redactedThinking.append(LLMRedactedThinkingBlock(data: data))
             }
+        }
+
+        // 思考签名（#287）：SSE 的 signature_delta 与整段 JSON 回退的终结
+        // chunk 都可能携带签名，last-wins。必须与思考文本一起落库回传，
+        // 否则带工具调用的下一轮请求会被供应商以签名缺失拒绝。
+        if let signature = chunk.thinkingSignature, !signature.isEmpty {
+            thinkingSignature = signature
+        }
+        // 整段 JSON 回退的思考全文（#287）：单 chunk 无增量可言，一次性并入。
+        if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+            reasoningContent += reasoning
         }
 
         // 思考增量
@@ -680,6 +722,7 @@ final class StreamingAccumulator: @unchecked Sendable {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent,
+            thinkingSignature: thinkingSignature,
             redactedThinking: redactedThinking.isEmpty ? nil : redactedThinking,
             inputTokenCount: inputTokens,
             outputTokenCount: outputTokens,

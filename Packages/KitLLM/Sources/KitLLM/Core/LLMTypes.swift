@@ -31,6 +31,9 @@ public struct LLMMessage: Sendable, Equatable {
     public var toolCalls: [LLMToolCall]?
     public var toolCallID: String?
     public var reasoningContent: String?
+    /// Anthropic `thinking` 块的签名：落库后下一轮请求必须随思考文本原样回传，
+    /// 否则带工具调用的历史会被供应商判定为签名缺失而拒绝（#287）。
+    public var thinkingSignature: String?
     /// 不透明的 redacted thinking 块；下一轮请求必须按原样回传。
     public var redactedThinking: [LLMRedactedThinkingBlock]?
     /// 工具结果是否为失败结果；Anthropic 协议据此生成 `is_error: true`。
@@ -43,6 +46,7 @@ public struct LLMMessage: Sendable, Equatable {
         toolCalls: [LLMToolCall]? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         redactedThinking: [LLMRedactedThinkingBlock]? = nil,
         isError: Bool = false,
         images: [MessageImage] = []
@@ -52,6 +56,7 @@ public struct LLMMessage: Sendable, Equatable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.redactedThinking = redactedThinking
         self.isError = isError
         self.images = images
@@ -182,6 +187,9 @@ public struct LLMResponse: Sendable, Equatable {
     public let model: String?
     public let toolCalls: [LLMToolCall]?
     public let reasoningContent: String?
+    /// Anthropic `thinking` 块签名；与 `reasoningContent` 同源，下一轮请求
+    /// 重建 thinking 块时必须一并回传（#287）。
+    public let thinkingSignature: String?
     public let redactedThinking: [LLMRedactedThinkingBlock]?
     public let inputTokenCount: Int?
     public let outputTokenCount: Int?
@@ -203,6 +211,7 @@ public struct LLMResponse: Sendable, Equatable {
         model: String? = nil,
         toolCalls: [LLMToolCall]? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         redactedThinking: [LLMRedactedThinkingBlock]? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
@@ -219,6 +228,7 @@ public struct LLMResponse: Sendable, Equatable {
         self.model = model
         self.toolCalls = toolCalls
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.redactedThinking = redactedThinking
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount

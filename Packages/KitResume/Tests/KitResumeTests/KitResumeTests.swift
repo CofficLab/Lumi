@@ -212,6 +212,55 @@ struct KitResumeTests {
             }
         }
 
+        @Test func horizontallyOverflowingPageIsReported() async throws {
+            let preset = ResumePaperSpec.preset(for: .a4)
+            let html = """
+            <!doctype html><html lang="en"><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; }
+              .resume-page { width: \(preset.cssWidth)px; height: \(preset.cssHeight)px; overflow: hidden; background: #fff; }
+            </style>
+            </head><body>
+              <section class="resume-page" data-page="1">
+                <div style="width: 2000px; height: 100px;">clipped content</div>
+              </section>
+            </body></html>
+            """
+            let inspection = try await ResumeHTMLExporter.inspectPages(html: html, fileURL: nil, paper: .a4)
+            #expect(inspection.pageCount == 1)
+            #expect(inspection.overflowingPages == [0])
+
+            await #expect(throws: ResumeExportError.pageOverflow(pages: [1])) {
+                _ = try await ResumeHTMLExporter.exportPDF(html: html, fileURL: nil, paper: .a4)
+            }
+        }
+
+        @Test func positionedNestedPageMeasuresAbsoluteDocumentCoordinates() async throws {
+            let preset = ResumePaperSpec.preset(for: .a4)
+            let html = """
+            <!doctype html><html lang="en"><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; }
+              .resume-page { width: \(preset.cssWidth)px; height: \(preset.cssHeight)px; overflow: hidden; background: #fff; }
+            </style>
+            </head><body>
+              <div style="position: relative; top: 1200px; left: 100px;">
+                <section class="resume-page" data-page="1"><p>VISIBLE RESUME TEXT</p></section>
+              </div>
+            </body></html>
+            """
+            let inspection = try await ResumeHTMLExporter.inspectPages(html: html, fileURL: nil, paper: .a4)
+            #expect(inspection.pageCount == 1)
+            // offsetTop/offsetLeft 只相对 offsetParent，会量出 (0, 0)（#488）。
+            // PDF/PNG 捕获矩形直接消费这里的 top/left（inspectPages 是唯一测量源）。
+            #expect(abs(inspection.pages[0].top - 1200) <= 1)
+            #expect(abs(inspection.pages[0].left - 100) <= 1)
+        }
+
         @Test func wrongPageSizeIsRejectedOnExport() async throws {
             let html = """
             <!doctype html><html lang="en"><head><meta charset="utf-8">

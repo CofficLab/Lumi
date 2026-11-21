@@ -122,6 +122,240 @@ struct UpdateChannelPersistenceTests {
     }
 }
 
+@Suite("通道切换后重新探测 feed（#236）")
+@MainActor
+struct UpdateChannelSwitchProbeTests {
+    @Test("切换通道后自动探测新通道主源，不可达时落到备用源")
+    func setChannelReprobesNewChannelFeed() async {
+        // setChannel 的 URL 一律来自 UpdateFeedURLProvider（静态生产清单），
+        // 因此测试直接用真实 URL，把可达性交给注入的假 checker 决定。
+        let previewPrimary = UpdateFeedURLProvider.primary(for: .preview)
+        let previewFallback = UpdateFeedURLProvider.fallback(for: .preview)
+        let checker = MutableReachabilityChecker(reachable: [
+            previewPrimary: false,
+            previewFallback: true,
+        ])
+        let detector = FeedURLDetector(
+            initialURL: UpdateFeedURLProvider.primary(for: .stable),
+            reachabilityChecker: checker,
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("channel-switch-probe")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        service.setChannel(.preview)
+        let url = await service.feedURLAfterPendingPreparation()
+
+        // 修复前：切换不排入探测任务，Sparkle 后台检查会一直读未探测的
+        // Preview 主源，主源不可达时无法发现备用源上的更新。
+        #expect(url == previewFallback)
+        #expect(await checker.calls() == [previewPrimary])
+    }
+}
+
+@Suite("启动 feed 准备完成后自动启动 updater（#234）")
+@MainActor
+struct StartupUpdaterInitializationTests {
+    @Test("feed 准备完成后自动初始化 updater，无需手动检查")
+    func setupInitializesUpdaterAfterPreparation() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let checker = MutableReachabilityChecker(reachable: [stablePrimary: true])
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: checker,
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("startup-updater-init")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        // 测试进程不拉起真实 Sparkle：注入替身记录初始化调用。
+        var initializationCalls = 0
+        service.updaterInitializationStub = { initializationCalls += 1 }
+
+        service.setupFeedURLIfNeeded()
+        _ = await service.feedURLAfterPendingPreparation()
+
+        // 修复前：启动只探测 feed，Sparkle 控制器保持 nil，配置的自动检查
+        // 要等用户手动点一次「检查更新」才开始工作。
+        #expect(initializationCalls == 1)
+        #expect(service.updaterController == nil)
+    }
+}
+
+@Suite("等待中的检查绑定发起时的通道（#235）")
+@MainActor
+struct WaitingCheckChannelBindingTests {
+    @Test("通道切换后，等待旧准备的检查被丢弃，不再驱动 Sparkle 检查")
+    func waitingCheckDiscardedAfterChannelSwitch() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let gate = ProbeGate()
+        // 闸门只拦第一次探测（stable 主源）；切通道后的 Preview 探测直接
+        // 返回不可达，让新通道准备走完整个流程。
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: FirstProbeGatedChecker(gate: gate),
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("waiting-check-channel")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        var checkCalls = 0
+        service.updaterInitializationStub = {}
+        service.sparkleCheckStub = { checkCalls += 1 }
+
+        // 检查 A：等待 stable 准备，探测被闸门挂起。
+        service.checkForUpdates()
+        await gate.waitUntilProbeStarts()
+
+        // 等待期间切到 Preview：旧准备被取消，新通道的探测流程跑完。
+        service.setChannel(.preview)
+        _ = await service.feedURLAfterPendingPreparation()
+
+        // 放行旧探测：检查 A 的迟到结果不得驱动新通道的 Sparkle 检查。
+        // 修复前：旧检查无条件继续，读到的 resolvedFeedURL 是新通道尚未
+        // 探测完的主源，备用源选择被绕过。
+        await gate.resume(returning: true)
+        for _ in 0..<10 {
+            if checkCalls != 0 { break }
+            await Task.yield()
+        }
+        #expect(checkCalls == 0, "通道切换后等待旧准备的检查必须被丢弃")
+    }
+
+    @Test("通道未切换时等待的检查正常驱动 Sparkle 检查")
+    func waitingCheckProceedsWhenChannelUnchanged() async {
+        let stablePrimary = UpdateFeedURLProvider.primary(for: .stable)
+        let gate = ProbeGate()
+        let detector = FeedURLDetector(
+            initialURL: stablePrimary,
+            reachabilityChecker: GatedReachabilityChecker(gate: gate),
+            fallbackURL: UpdateFeedURLProvider.fallback(for: .stable)
+        )
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("waiting-check-proceeds")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store, feedURLDetector: detector)
+
+        var checkCalls = 0
+        service.updaterInitializationStub = {}
+        service.sparkleCheckStub = { checkCalls += 1 }
+
+        service.checkForUpdates()
+        await gate.waitUntilProbeStarts()
+        await gate.resume(returning: true)
+        for _ in 0..<10 {
+            if checkCalls != 0 { break }
+            await Task.yield()
+        }
+        #expect(checkCalls == 1, "通道未变时等待的检查要正常执行")
+    }
+}
+
+/// 通道切换作废 Sparkle 暂存安装（#522）
+@MainActor
+struct UpdateStagedInstallationInvalidationTests {
+    /// 测试进程的宿主标识：与生产 removeSparkleStagedInstallation 的推导一致。
+    private var hostBundleIdentifier: String { Bundle.main.bundleIdentifier ?? "" }
+
+    /// 在注入的缓存根下构造一份「已暂存的安装」产物。
+    @discardableResult
+    private func makeStagedInstallation(in root: URL) -> URL {
+        let directory = UpdateService.sparkleStagedInstallationDirectory(
+            inCachesRoot: root,
+            hostBundleIdentifier: hostBundleIdentifier
+        )
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? Data("archive".utf8).write(to: directory.appendingPathComponent("update.zip"))
+        return directory
+    }
+
+    private func makeService(label: String) -> UpdateService {
+        let directory = AppUpdateTestDoubles.makeTemporaryDirectory("staged-install-\(label)")
+        let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
+        let service = UpdateService(store: store)
+        service.stagedInstallationCachesRootOverride = AppUpdateTestDoubles.makeTemporaryDirectory("staged-install-caches-\(label)")
+        return service
+    }
+
+    @Test("暂存安装目录遵循 Sparkle 2.x 的缓存布局约定")
+    func stagedInstallationDirectoryFollowsSparkleConvention() {
+        let root = URL(fileURLWithPath: "/tmp/caches-root")
+        let directory = UpdateService.sparkleStagedInstallationDirectory(
+            inCachesRoot: root,
+            hostBundleIdentifier: "com.coffic.lumi"
+        )
+        #expect(directory.path == "/tmp/caches-root/com.coffic.lumi/org.sparkle-project.Sparkle/Installation")
+    }
+
+    @Test("切换通道后移除被放弃通道已暂存的安装")
+    func setChannelRemovesStagedInstallationOfAbandonedChannel() {
+        let service = makeService(label: "switch-removes")
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        service.setChannel(.preview)
+
+        #expect(!FileManager.default.fileExists(atPath: staged.path), "切走的通道已暂存的安装必须被作废")
+    }
+
+    @Test("未暂存时切换通道是 no-op，不产生残留目录")
+    func setChannelIsNoOpWhenNothingStaged() {
+        let service = makeService(label: "switch-noop")
+
+        service.setChannel(.preview)
+
+        let root = service.stagedInstallationCachesRootOverride!
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        #expect(contents.isEmpty, "无暂存时不得凭空创建或残留目录")
+    }
+
+    @Test("检查发起后暂存才完成、且期间切换了通道：迟到的暂存被作废")
+    func lateStagingAfterChannelSwitchIsInvalidated() {
+        let service = makeService(label: "late-staging")
+        // 检查在 stable 上发起（Sparkle 请求 feed URL 记录当时通道）。
+        service.noteFeedURLRequested()
+        // 暂存完成前用户切到 Preview；此时暂存产物尚不存在，setChannel 的
+        // 移除是 no-op。
+        service.setChannel(.preview)
+        // 暂存随后才完成（旧通道的检查会话在切换后落盘）。
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        // willInstallUpdateOnQuit 触发暂存归属校验。
+        service.invalidateStagedInstallIfChannelChanged()
+
+        #expect(!FileManager.default.fileExists(atPath: staged.path), "迟到暂存的旧通道更新必须在终止安装前被作废")
+    }
+
+    @Test("通道一致时暂存安装保持不动，正常静默安装不受影响")
+    func matchingChannelStagedInstallIsKept() {
+        let service = makeService(label: "match-keeps")
+        service.setChannel(.preview)
+        // 当前通道（Preview）的检查请求了 feed URL，随后暂存完成。
+        service.noteFeedURLRequested()
+        let staged = makeStagedInstallation(in: service.stagedInstallationCachesRootOverride!)
+
+        service.invalidateStagedInstallIfChannelChanged()
+
+        #expect(FileManager.default.fileExists(atPath: staged.path), "属于当前通道的暂存安装不得被误删")
+    }
+}
+
+/// 闸门只拦第一次探测，后续探测立即返回不可达。
+private actor FirstProbeGatedChecker: FeedURLReachabilityChecker {    let gate: ProbeGate
+    private var probeCount = 0
+
+    init(gate: ProbeGate) {
+        self.gate = gate
+    }
+
+    func isReachable(_ url: URL) async -> Bool {
+        probeCount += 1
+        if probeCount == 1 { return await gate.wait() }
+        return false
+    }
+}
+
 private actor MutableReachabilityChecker: FeedURLReachabilityChecker {
     private var reachability: [URL: Bool]
     private var probedURLs: [URL] = []

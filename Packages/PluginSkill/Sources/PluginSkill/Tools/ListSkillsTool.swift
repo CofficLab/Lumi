@@ -11,7 +11,12 @@ public struct ListSkillsTool: SuperAgentTool {
 
     public let name = "list_skills"
 
-    public init() {}
+    /// 装配层注入的 `SkillProviding` 盒子：底座层由此聚合（插件贡献 + 内置）。
+    private let skillProvider: SkillProvidingBox?
+
+    public init(skillProvider: (any SkillProviding)? = nil) {
+        self.skillProvider = SkillProvidingBox(skillProvider)
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "List available skills. Returns project skills from the .lumi/skills directory plus the shared base skills (built-in and plugin-contributed), including each skill's name, title, description, triggers and content path."
@@ -82,7 +87,9 @@ public struct ListSkillsTool: SuperAgentTool {
         let projectNames = Set(skills.map(\.name))
         if includeBase {
             // 底座与项目层同名去重：项目技能优先（与 SkillMergePolicy 语义一致）。
-            let base = await SkillService.shared.listBuiltinSkills()
+            // 底座必须走 SkillProviding 聚合通道，否则插件贡献的技能
+            // （如 xcode-build）只在 prompt 元数据里出现，list_skills 却看不到（#294）。
+            let base = await Self.baseSkills(skillProvider: skillProvider)
             skills += base.filter { !projectNames.contains($0.name) }
         }
         skills.sort { $0.name < $1.name }
@@ -126,6 +133,15 @@ public struct ListSkillsTool: SuperAgentTool {
     }
 
     // MARK: - 内部
+
+    /// 底座技能（插件贡献 + 内置）。装配层注入了 `SkillProviding` 时走聚合
+    /// 通道；未注入（工具单测 / 降级装配）时回退随包内置目录。
+    private static func baseSkills(skillProvider: SkillProvidingBox?) async -> [SkillMetadata] {
+        guard let skillProvider, skillProvider.hasProvider else {
+            return await SkillService.shared.listBuiltinSkills()
+        }
+        return await skillProvider.allSkills()
+    }
 
     private static func encode(_ object: Any) throws -> String {
         let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted])

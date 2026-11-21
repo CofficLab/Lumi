@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import ProviderConversation
 import ProviderConversationState
+import ProviderProject
 import SwiftUI
 
 /// 对话列表 + 标题栏唯一的数据来源与交互入口。
@@ -54,6 +55,7 @@ final class ConversationListViewModel: ObservableObject {
     private var listGeneration: UInt64 = 0
     private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
     private var attentionObserverHandle: (any ConversationAttentionStore.ObserverHandle)?
+    private var projectObserverHandle: (any ProjectProvidingObserverHandle)?
 
     init(
         context: ConversationListContext,
@@ -76,6 +78,12 @@ final class ConversationListViewModel: ObservableObject {
             case let .selectedConversationChanged(id):
                 self?.selectedConversationID = id
                 self?.immediateSelectionID = id
+                // 外部入口（项目空态「上次聊到」、建议消费等）选中会话时，
+                // 列表此刻正把它显示为选中；不同步 markRead 的话绿点残留
+                // 会被理解成「还没看」（#637）。
+                if let id {
+                    self?.attentionStore.markRead(conversationID: id)
+                }
             case let .conversationAutomationChanged(id):
                 self?.updateAutomationLevel(for: id)
             case let .conversationStateChanged(id):
@@ -87,6 +95,15 @@ final class ConversationListViewModel: ObservableObject {
         attentionObserverHandle = attentionStore.addObserver { [weak self] _ in
             self?.objectWillChange.send()
         }
+        // 「当前项目」作用域可能有多个 ViewModel 实例（rail 与工具栏弹层各自
+        // 持有，#208）：项目切换必须在本层自订阅并重载，不能依赖外部观察者
+        // 只刷新其中一个实例。`.all` 作用域不按项目过滤，无需订阅。
+        if case .currentProject = scope {
+            projectObserverHandle = context.project?.addObserver { [weak self] event in
+                guard case .currentProjectChanged = event else { return }
+                self?.scheduleReload()
+            }
+        }
     }
 
     /// 插件卸载时调用，释放外部观察订阅。
@@ -95,6 +112,8 @@ final class ConversationListViewModel: ObservableObject {
         contextObserverHandle = nil
         attentionObserverHandle?.cancel()
         attentionObserverHandle = nil
+        projectObserverHandle?.cancel()
+        projectObserverHandle = nil
     }
 
     // MARK: - Derived
@@ -155,6 +174,9 @@ final class ConversationListViewModel: ObservableObject {
         // 先同步写入乐观选中，立刻高亮，不等管理器链路。
         immediateSelectionID = id
         selectedConversationID = id
+        // 用户主动查看会话时刷新粘性排序锚点：否则刚看过的对话仍按旧的
+        // lastMessageAt 排序，随后被新消息顶走（#800）。
+        sortStabilizer.markViewed(conversationID: id)
         Task { @MainActor in
             context.conversations.selectConversation(id: id)
             attentionStore.markRead(conversationID: id)

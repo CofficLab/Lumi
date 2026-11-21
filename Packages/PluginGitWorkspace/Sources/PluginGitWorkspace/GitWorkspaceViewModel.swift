@@ -45,6 +45,8 @@ final class GitWorkspaceViewModel: ObservableObject {
     private let git: any GitWorkspaceGitProviding
     private var requestGeneration = 0
     private var loadingPath: String?
+    /// 当前展示的数据所属的仓库路径；用于区分“切换项目”与“同路径刷新”。
+    private var loadedPath: String?
 
     /// 缓存的工作树文件列表（去重 + 排序），仅在 status 变化时重建。
     /// 视图每次 body 会多次读取它，避免每次都重建 Set 并排序（见 issue #1283）。
@@ -100,6 +102,13 @@ final class GitWorkspaceViewModel: ObservableObject {
 
         requestGeneration += 1
         let generation = requestGeneration
+        if path != loadedPath {
+            // 切换到新项目时立即丢弃上一个项目的数据（#389），否则新项目
+            // 加载失败时旧数据会顶着新项目的标题与路径继续展示，且错误页
+            // 永远不会出现。同路径刷新不清理，避免面板闪烁。
+            status = nil
+            commits = []
+        }
         loadingPath = path
         isLoading = true
         errorMessage = nil
@@ -113,6 +122,7 @@ final class GitWorkspaceViewModel: ObservableObject {
             let resolvedCommits = try await loadedCommits
             guard generation == requestGeneration else { return }
             commits = resolvedCommits
+            loadedPath = path
         } catch {
             guard generation == requestGeneration else { return }
             errorMessage = error.localizedDescription

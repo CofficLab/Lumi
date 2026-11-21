@@ -5,7 +5,7 @@
 KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ## Overview `KitHTMLPreview` provides a ready-to-use `HTMLPreviewView` that renders HTML content inside a SwiftUI view hierarchy. It supports two loading modes: - **File-based loading** — pass a `fileURL` to load a local `.html`/`.htm` file. Relative resources (CSS, JS, images) are resolved against the file's directory. - **String-based loading** — pass an `htmlText` string directly. When a `fileURL` is also provided, relative resources are resolved against the file's parent directory as the base URL. The view automatically detects whether the in-memory HTML string is still in sync with the on-disk file and loads
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 62
+测试文件: 14 个，用例总数: 79
 
 ## 公开 API
 
@@ -16,6 +16,8 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 - `HTMLPreviewElementContextMenuItem`
 - `HTMLPreviewElementReference`
 - `HTMLPreviewLoadPlanner`
+- `HTMLPreviewPrototypeLinkRequest`
+- `HTMLPreviewPrototypeLinkScript`
 - `HTMLPreviewView`
 - `HTMLScreenshotter`
 - `KitHTMLPreviewLocalization`
@@ -33,6 +35,9 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 - **HTMLPreviewElementContextMenu**（7 条）：由 `ordersCandidates`、`distinguishesRepeatedLabels`、`truncatesLabels` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLPreviewLegacyCompatibility**（3 条）：由 `legacyInitializerRemainsAvailable`、`legacyMessageDecoding`、`newInitializerKeepsLegacyDisabled` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLPreviewLegacySelectionScript**（2 条）：存量选区桥点击「发给助手」时，回传源码须剔除宿主注入的浮动按钮/描边遮罩、只保留用户原始区块标记（issue #495）；由 `serializedBlockExcludesHostOverlays`、`serializedBlockKeepsOriginalDocumentMarkup` 锁定；改动 `selectionScript` 序列化路径时优先跑对应测试文件。
+- **HTMLPreviewPrototypeLinkScript**（7 条）：生产预览必须响应声明的 `data-prototype-link` 热点点击并回传目标屏 ID，装饰性子元素解析到最近热点，空白目标与非热点点击静默忽略，锚点默认导航被阻止（issue #323）；由 `hotspotClickPostsDeclaredTarget` 等用例锁定；改动 `HTMLPreviewPrototypeLinkScript` 或预览注入路径时优先跑对应测试文件。
+- **HTMLPreviewPrototypeLinkRequest**（8 条）：回传载荷按 schemaVersion=1 / action=prototypeLink 校验，目标裁剪空白且不超过 256 字符，超限载荷与非法结构被拒绝（issue #323）；由 `decodesValidRequest` 等用例锁定；改动 `HTMLPreviewPrototypeLinkRequestDecoder` 时优先跑对应测试文件。
+- **HTMLScreenshotterCancellation**（1 条）：取消快照必须在渲染前中止；改动快照取消路径时优先跑对应测试文件。
 - **HTMLPreviewLoadPlanner**（13 条）：由 `rawHTMLWithoutFileURL`、`matchingUTF8FileLoadsFileURL`、`matchingUTF16FileLoadsFileURL`、`emptyHTMLWithReadableFileLoadsFileURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLScreenshotterCapture**（5 条）：由 `capturesFullPage`、`throwsForEmptyDocument`、`rejectsOversizedDocument` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HTMLScreenshotterLimits**（6 条）：页数、总像素与单边尺寸的独立上限，在分配位图前拒绝超限文档（issue #1055）；改动快照资源边界时优先跑对应测试文件。
@@ -104,8 +109,24 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 | 60 | HTMLScreenshotterOffMain | 在主 actor 之外分配位图前拒绝超限 PDF | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectsOversizedOffMain` |
 | 61 | HTMLPreviewLegacySelectionScript | 发给助手的区块源码剔除宿主浮动按钮与遮罩（**回归 #495**） | 右键命中 data-block 区块后点击浮动按钮 | 捕获真实脚本回传载荷并检查 outerHTML | 不含 data-promo-floating / data-promo-highlight / 按钮文案 | P0 | ✅ 已覆盖 | `serializedBlockExcludesHostOverlays` |
 | 62 | HTMLPreviewLegacySelectionScript | 发给助手的区块源码保留用户原始标记（**#495 护栏**） | 同上 | 经 `decodeLegacyMessageBody` 解码后检查 outerHTML | 以 section 标签开头、含 data-block="hero" 与原始 span | P1 | ✅ 已覆盖 | `serializedBlockKeepsOriginalDocumentMarkup` |
+| 63 | HTMLScreenshotterCancellation | 取消快照必须在渲染前中止 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledCaptureAbortsBeforeRendering` |
+| 64 | HTMLPreviewPrototypeLinkScript | 热点点击回传声明的目标屏（**回归 #323**） | 注入原型跳转桥接脚本并桩接消息通道 | 点击 `[data-prototype-link="02-detail"]` | 回传 schemaVersion=1、action=prototypeLink、target=02-detail | P0 | ✅ 已覆盖 | `hotspotClickPostsDeclaredTarget` |
+| 65 | HTMLPreviewPrototypeLinkScript | 装饰性子元素的点击解析到最近的热点（**#323**） | 嵌套热点：外层 00-home、内层 02-detail | 点击内层按钮内的 span | target=02-detail（最近祖先获胜） | P1 | ✅ 已覆盖 | `descendantClickResolvesNearestHotspot` |
+| 66 | HTMLPreviewPrototypeLinkScript | 空白链接值不回传消息（**#323**） | `data-prototype-link` 为纯空白 | 点击该元素 | 捕获数组为空 | P1 | ✅ 已覆盖 | `blankTargetIgnored` |
+| 67 | HTMLPreviewPrototypeLinkScript | 热点之外的点击不回传消息（**#323**） | 无 `data-prototype-link` 的普通区块 | 点击该区块 | 捕获数组为空 | P1 | ✅ 已覆盖 | `clickOutsideHotspotIgnored` |
+| 68 | HTMLPreviewPrototypeLinkScript | 目标去除首尾空白并截断到 256 字符（**#323**） | 带 ` 02-detail ` 与 300 字符目标 | 分别点击 | 回传 02-detail 与 256 字符截断值 | P1 | ✅ 已覆盖 | `trimsAndBoundsTarget` |
+| 69 | HTMLPreviewPrototypeLinkScript | 热点点击阻止锚点默认导航（**#323**） | `<a href="#fallback">` 热点 | 派发可取消 click 并检查 defaultPrevented | defaultPrevented == true | P1 | ✅ 已覆盖 | `preventsDefaultOnAnchorHotspot` |
+| 70 | HTMLPreviewPrototypeLinkScript | dispose 移除监听且重注入保持单次回传（**#323**） | 注入 → dispose → 再注入 | dispose 后点击、再注入后点击 | dispose 后无消息；重注入后恰好 1 条 | P1 | ✅ 已覆盖 | `disposalAndReinjection` |
+| 71 | HTMLPreviewPrototypeLinkRequest | 解码合法请求并保留导航代次（**#323**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesValidRequest`（PrototypeLinkRequest） |
+| 72 | HTMLPreviewPrototypeLinkRequest | 目标首尾空白被裁剪（**#323**） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `trimsTarget` |
+| 73 | HTMLPreviewPrototypeLinkRequest | 拒绝不支持的 schema 版本（**#323**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsUnsupportedVersion`（PrototypeLinkRequest） |
+| 74 | HTMLPreviewPrototypeLinkRequest | 拒绝未知 action（**#323**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsUnknownAction`（PrototypeLinkRequest） |
+| 75 | HTMLPreviewPrototypeLinkRequest | 拒绝空白目标（**#323**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsBlankTarget` |
+| 76 | HTMLPreviewPrototypeLinkRequest | 拒绝超长目标（**#323**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsOversizedTarget` |
+| 77 | HTMLPreviewPrototypeLinkRequest | 拒绝超限载荷（**#323**） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsPayloadTooLarge` |
+| 78 | HTMLPreviewPrototypeLinkRequest | 拒绝非对象载荷（**#323**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectsInvalidJSON` |
 
-> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过（清单按用例名登记；`renderTimedOutDescription` 在 Capture 与 Timeout 两个套件各有一个同名用例，共表一行）。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#494）：移除 `HTMLPreviewWebViewFactory` 的 `allowsContentJavaScript = false` 后，`configurationDisablesContentJavaScript` 与 `inlineHandlersAndScriptTagsDoNotRun` 转红（内联 onload 重新执行），`nativeInjectedBridgeStillWorks` 保持绿（桥接独立于该开关）；恢复后全绿。
 > 变异验证（#495）：M1 把点击回传的 `cleanOuterHTML(el)` 改回 `el.outerHTML` 后，`serializedBlockExcludesHostOverlays` 转红（浮动按钮 `data-promo-floating` 与文案混入源码），`serializedBlockKeepsOriginalDocumentMarkup` 保持绿；M2 把 `cleanOuterHTML` 的返回值由 `clone.outerHTML` 改为 `clone.innerHTML` 后，`serializedBlockKeepsOriginalDocumentMarkup` 转红（丢失 section 外层标签与 `data-block`），`serializedBlockExcludesHostOverlays` 保持绿；两处恢复后全绿。

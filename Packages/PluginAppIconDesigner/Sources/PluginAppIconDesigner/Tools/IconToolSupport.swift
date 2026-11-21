@@ -66,6 +66,9 @@ enum IconToolSupport {
 
     /// 解析工具要操作的文档：优先读可选 `documentId`+`scope`，缺省回退到选中文档。
     /// 返回文档快照（值类型）与其作用域。
+    ///
+    /// 内存快照命中（廉价读取）留在主线程；显式 `documentId` 未命中时只在
+    /// 主线程之外按 ID 补载目标文档，不再全量扫描并解码目录（#1292）。
     static func resolveDocument(
         _ arguments: [String: ToolArgument]
     ) async throws -> (IconDocument, IconScope) {
@@ -73,39 +76,54 @@ enum IconToolSupport {
         let explicitId = string(arguments, "documentId")?
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        return try await MainActor.run {
+        let memoryMatch: (document: IconDocument, scope: IconScope)? = await MainActor.run {
             let store = store()
             if let explicitId, !explicitId.isEmpty {
-                if let match = store.documents(for: scope).first(where: { $0.id == explicitId }) {
-                    return (match, scope)
-                }
-                // 内存未命中：尝试从该作用域磁盘加载（文档可能尚未载入列表）。
-                let path = store.storagePath(for: scope)
-                if !path.isEmpty,
-                   let match = IconDocumentFileStore.loadAll(storagePath: path)
-                       .first(where: { $0.id == explicitId }) {
-                    return (match, scope)
-                }
-                throw IconDocumentStoreError.documentNotFound(explicitId)
+                return store.documents(for: scope).first(where: { $0.id == explicitId })
+                    .map { ($0, scope) }
             }
-            guard let selected = store.selectedDocument else {
-                throw IconDocumentStoreError.noSelectedDocument
-            }
+            guard let selected = store.selectedDocument else { return nil }
             return (selected, store.selectedScope)
         }
+        if let memoryMatch {
+            return (memoryMatch.document, memoryMatch.scope)
+        }
+
+        // 走到这里：显式 documentId 未在内存命中，或未指定且无选中文档。
+        guard let explicitId, !explicitId.isEmpty else {
+            throw IconDocumentStoreError.noSelectedDocument
+        }
+        let path = await MainActor.run { store().storagePath(for: scope) }
+        if !path.isEmpty,
+           let match = IconDocumentFileStore.loadDocument(withID: explicitId, storagePath: path) {
+            return (match, scope)
+        }
+        throw IconDocumentStoreError.documentNotFound(explicitId)
     }
 
     /// 写操作完成后刷新 UI（按作用域重载并保持/切换选中）。
     ///
     /// 跨项目写入时不刷新 UI：面板展示的是「当前打开项目」的内容，
-    /// 刷新它只会把另一个项目的数据混进来。
+    /// 刷新它只会把另一个项目的数据混进来。主线程只做轻量判断与路径读取，
+    /// 全量磁盘扫描放到主线程之外，完成后回主线程发布（#1292）。
     static func notify(scope: IconScope, documentId: String?) async {
+        let (isCurrentProject, path) = await MainActor.run {
+            let shared = IconDocumentStore.shared
+            let current = scopedProjectPath()
+            let isCurrent = current == nil
+                || current == normalizedProjectPath(shared.currentProjectPath)
+            return (isCurrent, shared.storagePath(for: scope))
+        }
+        guard isCurrentProject else { return }
+        let (documents, directoryModificationDate) = IconDocumentFileStore
+            .loadAllWithDirectoryModificationDate(storagePath: path)
         await MainActor.run {
-            if let scoped = scopedProjectPath(),
-               scoped != normalizedProjectPath(IconDocumentStore.shared.currentProjectPath) {
-                return
-            }
-            IconDocumentStore.shared.reload(scope: scope, selectDocumentId: documentId)
+            IconDocumentStore.shared.applyReloaded(
+                documents,
+                scope: scope,
+                selectDocumentId: documentId,
+                directoryModificationDate: directoryModificationDate
+            )
         }
     }
 

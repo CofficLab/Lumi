@@ -88,15 +88,9 @@ public final class TerminalSession: ObservableObject, Identifiable {
               terminalView.bounds.height > 0 else { return }
 
         hasStartedProcess = true
-        startShell()
-        terminalView.needsDisplay = true
-        terminalView.setNeedsDisplay(terminalView.bounds)
-    }
 
-    /// 启动 shell 进程
-    private func startShell() {
         // 先校验工作目录：SwiftTerm 会忽略 chdir 失败，无效目录会让 shell 静默落在
-        // Lumi 当前目录并误报已连接。校验失败时保持未连接并暴露原因，不创建进程（#174）。
+        // Lumi 当前目录并误报已连接。校验失败时同步暴露原因，不创建进程（#174）。
         do {
             try TerminalWorkingDirectory.validate(initialWorkingDirectory)
         } catch {
@@ -104,21 +98,31 @@ public final class TerminalSession: ObservableObject, Identifiable {
             return
         }
 
+        Task { @MainActor [weak self] in
+            await self?.startShell()
+        }
+        terminalView.needsDisplay = true
+        terminalView.setNeedsDisplay(terminalView.bounds)
+    }
+
+    /// 启动 shell 进程
+    private func startShell() async {
         let shell = ShellIntegration.autoDetectShell()
         let shellPath = shell.defaultPath
 
-        var environment = buildEnvironment(shellPath: shellPath)
-
         do {
-            let args = try ShellIntegration.setupIntegration(
+            // 集成脚本工件在后台线程准备并跨会话复用，主线程只做内存组装（#1234）。
+            var environment = buildEnvironment(shellPath: shellPath)
+            let setup = try await ShellIntegration.setupIntegration(
                 for: shell,
-                environment: &environment,
+                baseEnvironment: environment,
                 useLogin: true
             )
+            environment.append(contentsOf: setup.additionalEnvironment)
 
             terminalView.startProcess(
                 executable: shellPath,
-                args: args,
+                args: setup.shellArguments,
                 environment: environment,
                 execName: shell.rawValue,
                 currentDirectory: initialWorkingDirectory
@@ -160,12 +164,18 @@ public final class TerminalSession: ObservableObject, Identifiable {
         // 关闭 Tab 必须清理整棵进程树：交互式 shell 的后台作业拥有独立 PGID 且可能
         // 忽略 HUP/TERM，仅 killpg(shellPid) 会让它们在 Tab 关闭后长期存活（#497）。
         // 在 terminalView.terminate() 关闭 pty / 回收 shell 之前枚举并快照进程树。
-        if let process = terminalView.process, process.shellPid > 0 {
-            TerminalProcessTree.terminate(root: pid_t(process.shellPid))
+        let shellPid = pid_t(terminalView.process?.shellPid ?? 0)
+        if shellPid > 0 {
+            TerminalProcessTree.terminate(root: shellPid)
         }
 
         terminalView.terminate()
         isConnected = false
+
+        // terminalView.terminate() 会取消 SwiftTerm 的 childMonitor，而它是唯一
+        // waitpid 回收 shell 的路径；补一个收割线程等 shell 真正退出，避免进程表
+        // 残留 <defunct> 僵尸（#173）。
+        TerminalChildReaper.reapAfterExit(shellPid: shellPid)
     }
 }
 
@@ -175,9 +185,24 @@ extension TerminalSession: LocalProcessTerminalViewDelegate {
     nonisolated public func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
     nonisolated public func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
-        Task { @MainActor [weak self] in
-            self?.title = title.isEmpty ? "Terminal" : title
+        let normalized = title.isEmpty ? "Terminal" : title
+        if Thread.isMainThread {
+            // SwiftTerm 在主队列同步投递输出：直接应用，避免为每个 OSC 标题
+            // 新建 MainActor Task（#1232）。
+            MainActor.assumeIsolated {
+                applyTitleIfChanged(normalized)
+            }
+        } else {
+            Task { @MainActor [weak self] in
+                self?.applyTitleIfChanged(normalized)
+            }
         }
+    }
+
+    /// 与当前标题相同则跳过发布：重复 OSC 标题不得反复触发 SwiftUI 失效（#1232）。
+    private func applyTitleIfChanged(_ newTitle: String) {
+        guard title != newTitle else { return }
+        title = newTitle
     }
 
     nonisolated public func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}

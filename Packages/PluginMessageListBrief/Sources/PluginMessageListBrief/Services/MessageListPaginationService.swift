@@ -102,8 +102,9 @@ struct MessageListPaginationService {
     /// 回填找不到消息（说明本来就没有空档，只是窗口整体落后于最近一页）时，
     /// 仍按「用户在翻历史，不要强行覆盖」处理，返回 `nil`。
     ///
-    /// - Returns: `nil` 表示无需操作：缺 `messageManager`；或最近一页为空；
-    ///   或窗口与最近一页之间没有空档且没有重叠。
+    /// - Returns: `nil` 表示无需操作：缺 `messageManager`；或存储层已空但窗口
+    ///   本来也为空；或窗口与最近一页之间没有空档且没有重叠。
+    ///   存储层已空且窗口非空时返回**空结果**（调用方清空窗口，#145）。
     func refreshTail(
         conversationID: UUID,
         messageManager: (any MessageListMessageCapability)?,
@@ -116,7 +117,16 @@ struct MessageListPaginationService {
             beforeMessageID: nil,
             includesToolMessages: false
         )
-        guard !latestPage.isEmpty else { return nil }
+        // Important: 存储层已空（会话被清空或最后一条消息被删除）时，窗口必须
+        // **一起清空**，否则界面会继续显示已被删除的内容，看起来操作没有生效
+        // （#145）。返回空结果而不是 nil，让调用方把窗口替换成空；窗口本来就
+        // 为空时无需发布。
+        guard !latestPage.isEmpty else {
+            return current.isEmpty ? nil : RefreshTailResult(
+                merged: [],
+                hasEarlierMessages: false
+            )
+        }
 
         guard !current.isEmpty else {
             // 从无到有：直接把最近一页铺上，并补查 hasEarlier。

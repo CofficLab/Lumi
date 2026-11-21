@@ -51,6 +51,29 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
     private let entryID = "Browser.entry"
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        installRuntime(kernel: kernel)
+    }
+
+    /// 运行时重新启用：重建会话管理器并重新注册全部贡献。
+    ///
+    /// 内核在运行时禁用插件时**不会**调用 `onShutdown`，也不会代撤 Provider 侧
+    /// 贡献（工具、观察者、ActivityBar 入口都直接注册在各 Provider 上）——
+    /// 因此 `onDisable` 必须全部撤回，重新启用时在此对称重建（issue #451）。
+    /// onReady 的 MCP 服务器模板按 command+arguments 去重，重复注册是安全的。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        installRuntime(kernel: kernel)
+        try onReady(kernel: kernel)
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        teardownRuntime(kernel: kernel)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        teardownRuntime(kernel: kernel)
+    }
+
+    private func installRuntime(kernel: KernelCoreContainer) {
         let sessions = BrowserSessionManager()
         self.sessions = sessions
         activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
@@ -138,7 +161,9 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
         #endif
     }
 
-    public func onShutdown(kernel: KernelCoreContainer) throws {
+    /// 撤回全部运行时贡献并释放会话。onShutdown 与运行时禁用（onDisable）共用：
+    /// 内核禁用插件只调用 onDisable，不代撤 Provider 侧注册的工具与观察者。
+    private func teardownRuntime(kernel: KernelCoreContainer) {
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
         conversationObserver?.cancel()

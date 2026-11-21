@@ -78,7 +78,15 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
         notify(.initialized)
         if background {
             await service.ensureIndexedBackground(projectPath: projectPath, force: force)
-            notify(.indexingFinished(projectPath))
+            // 后台索引只是排队即返回：完成事件必须等任务真正结束（成功或
+            // 失败）后再发，观察者收到事件时才能读到最终索引状态（issue #195）。
+            // 用独立任务等待而不是在此处内联等待——当前 LLM 请求不能排在
+            // 无关项目的索引后面。
+            let service = self.service
+            Task { [weak self] in
+                await service.waitForBackgroundIndexing(projectPath: projectPath)
+                self?.notify(.indexingFinished(projectPath))
+            }
             return
         }
         try await service.ensureIndexed(projectPath: projectPath, force: force)

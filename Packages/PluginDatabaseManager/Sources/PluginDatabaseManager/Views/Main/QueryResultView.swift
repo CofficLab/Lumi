@@ -55,26 +55,27 @@ struct QueryResultView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let widths = Self.columnWidths(for: result)
             ScrollView([.horizontal, .vertical]) {
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
                         ForEach(0 ..< result.rows.count, id: \.self) { rowIndex in
-                            resultRow(at: rowIndex)
+                            resultRow(at: rowIndex, widths: widths)
                         }
                         if let cm = changeManager, !cm.pendingInserts.isEmpty {
                             ForEach(cm.pendingInserts) { insert in
-                                insertedRow(insert)
+                                insertedRow(insert, widths: widths)
                             }
                         }
                     } header: {
-                        headerRow
+                        headerRow(widths: widths)
                     }
 
                     Spacer()
                 }
                 // 内容比视口小时：撑满视口并靠左上对齐；比视口大时：自然产生横/纵滚动。
                 .frame(
-                    minWidth: max(proxy.size.width, tableWidth),
+                    minWidth: max(proxy.size.width, Self.rowNumberWidth + widths.reduce(0, +)),
                     minHeight: proxy.size.height,
                     alignment: .topLeading
                 )
@@ -85,13 +86,13 @@ struct QueryResultView: View {
 
     // MARK: - Layout
 
-    /// 行号列 + 各数据列宽度之和。
-    private var tableWidth: CGFloat {
-        Self.rowNumberWidth + columnWidths.reduce(0, +)
-    }
-
     /// 按列名 + 前 50 行内容估算的列宽（钳制在上下限内）。
-    private var columnWidths: [CGFloat] {
+    ///
+    /// 只依赖 `result`：在 body 里计算一次并传给表头与所有单元格复用。
+    /// 历史实现把它做成实例计算属性，SwiftUI 不缓存计算属性，表格宽度、
+    /// 每个表头与每个单元格各自触发一次全量扫描，一次渲染接近
+    /// Θ(50 × (V + 1) × C²) 次采样访问（#1253）。
+    static func columnWidths(for result: QueryResult) -> [CGFloat] {
         let sampleCount = min(50, result.rows.count)
         return result.columns.indices.map { colIndex in
             var maxChars = result.columns[colIndex].count
@@ -107,7 +108,7 @@ struct QueryResultView: View {
 
     // MARK: - Subviews
 
-    private var headerRow: some View {
+    private func headerRow(widths: [CGFloat]) -> some View {
         HStack(spacing: 0) {
             Text("#")
                 .font(.appMicroEmphasized)
@@ -115,7 +116,7 @@ struct QueryResultView: View {
                 .frame(width: Self.rowNumberWidth, alignment: .center)
                 .border(theme.appSubtleBorder)
             ForEach(result.columns.indices, id: \.self) { colIndex in
-                headerCell(for: colIndex)
+                headerCell(for: colIndex, width: widths[colIndex])
             }
             Spacer(minLength: 0)
         }
@@ -123,7 +124,7 @@ struct QueryResultView: View {
     }
 
     @ViewBuilder
-    private func headerCell(for colIndex: Int) -> some View {
+    private func headerCell(for colIndex: Int, width: CGFloat) -> some View {
         let name = result.columns[colIndex]
         let isSorted = (sortColumn == name)
         let label = HStack(spacing: 4) {
@@ -139,7 +140,7 @@ struct QueryResultView: View {
         .font(.appBodyEmphasized)
         .foregroundColor(theme.textPrimary)
         .padding(8)
-        .frame(width: columnWidths[colIndex], alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .border(theme.appSubtleBorder)
 
         if let onToggleSort {
@@ -152,7 +153,7 @@ struct QueryResultView: View {
         }
     }
 
-    private func resultRow(at rowIndex: Int) -> some View {
+    private func resultRow(at rowIndex: Int, widths: [CGFloat]) -> some View {
         let row = result.rows[rowIndex]
         let isDeleted = changeManager?.isRowDeleted(rowValues: row, columns: result.columns) ?? false
         return HStack(spacing: 0) {
@@ -164,7 +165,7 @@ struct QueryResultView: View {
                 .border(theme.appSubtleBorder.opacity(0.7))
 
             ForEach(0 ..< row.count, id: \.self) { colIndex in
-                cellView(row: row, rowIndex: rowIndex, colIndex: colIndex, width: columnWidths[colIndex])
+                cellView(row: row, rowIndex: rowIndex, colIndex: colIndex, width: widths[colIndex])
                     .strikethrough(isDeleted)
                     .opacity(isDeleted ? 0.55 : 1)
             }
@@ -188,7 +189,7 @@ struct QueryResultView: View {
     }
 
     /// 渲染一条未保存的新增行（行号显示 "+"）。
-    private func insertedRow(_ insert: TableChangeManager.PendingInsert) -> some View {
+    private func insertedRow(_ insert: TableChangeManager.PendingInsert, widths: [CGFloat]) -> some View {
         return HStack(spacing: 0) {
             Text("+")
                 .font(.appMicroEmphasized)
@@ -198,7 +199,7 @@ struct QueryResultView: View {
                 .border(theme.appSubtleBorder.opacity(0.7))
 
             ForEach(result.columns.indices, id: \.self) { colIndex in
-                insertCellView(insert: insert, column: result.columns[colIndex], width: columnWidths[colIndex])
+                insertCellView(insert: insert, column: result.columns[colIndex], width: widths[colIndex])
             }
             Spacer(minLength: 0)
         }
@@ -228,7 +229,7 @@ struct QueryResultView: View {
                 .onKeyPress(.escape) { editingInsert = nil; return .handled }
         } else {
             let value = changeManager?.insertDisplayValue(insertId: insert.id, column: column) ?? .null
-            let text = content(for: value)
+            let text = Self.content(for: value)
             Text(text)
                 .font(.monospaced(.body)())
                 .foregroundColor(value == .null ? theme.textTertiary : theme.textPrimary)
@@ -283,7 +284,7 @@ struct QueryResultView: View {
                     return .handled
                 }
         } else {
-            let text = content(for: displayed)
+            let text = Self.content(for: displayed)
             Text(text)
                 .font(.monospaced(.body)())
                 .foregroundColor(isNull ? theme.textTertiary : theme.textPrimary)
@@ -332,7 +333,7 @@ struct QueryResultView: View {
 
     // MARK: - Helpers
 
-    private func content(for value: DatabaseValue) -> String {
+    private static func content(for value: DatabaseValue) -> String {
         switch value {
         case let .integer(v): return String(v)
         case let .double(v): return String(v)

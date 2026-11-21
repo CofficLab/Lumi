@@ -108,6 +108,39 @@ struct ChatFileAttachmentConversationBindingTests {
         #expect(attachment.textContent == "hello")
         #expect(capability.errorMessage == nil)
     }
+
+    @Test("并发读取按选择顺序回写，完成先后不改变附件顺序（回归 #424）")
+    func attachmentsAppendInSelectionOrderRegardlessOfCompletionOrder() async throws {
+        let capability = AttachmentButtonTestCapability()
+        capability.selectedConversationID = UUID()
+        let button = ChatFileAttachmentButton(capability: capability)
+
+        let slow = URL(fileURLWithPath: "/tmp/424-slow-first.txt")
+        let fast = URL(fileURLWithPath: "/tmp/424-fast-second.txt")
+
+        // 首个选择的文件读取远慢于第二个：完成顺序为 B、A，
+        // 但挂起池必须保持用户选择的 A、B 顺序。
+        button.handle(.success([slow, fast])) { url in
+            if url == slow {
+                try await Task.sleep(for: .milliseconds(200))
+            }
+            return UserFileAttachment(
+                fileName: url.lastPathComponent,
+                mimeType: "text/plain",
+                textContent: url.lastPathComponent
+            )
+        }
+
+        #expect(await capability.waitForAttachmentReads())
+
+        #expect(
+            capability.pendingFileAttachments.map(\.fileName)
+                == ["424-slow-first.txt", "424-fast-second.txt"],
+            "附件顺序必须与选择顺序一致，而不是完成顺序"
+        )
+        #expect(capability.readFailureCount == 0)
+        #expect(capability.errorMessage == nil)
+    }
 }
 
 @MainActor

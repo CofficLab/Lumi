@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import Foundation
 import XCTest
+import EditorSource
 @testable import EditorService
 
 @MainActor
@@ -140,6 +141,50 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertEqual(service.files.content?.string, updated)
         XCTAssertFalse(service.files.hasUnsavedChanges)
         XCTAssertEqual(service.files.saveRevision, previousSaveRevision + 1)
+    }
+
+    /// 回归 #461：保存落盘成功必须广播 `.lumiEditorSave`，IdleTime 等监听方
+    /// 才能记录 fileSave 活动。此前该通知从未被发出。
+    func testBuiltinSavePostsEditorSaveNotification() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("SaveNotify.swift")
+        try "struct SaveNotify {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        service.sessions.open(at: fileURL)
+        try await waitUntil("file loaded") {
+            service.files.currentFileURL == fileURL && service.files.content?.string == "struct SaveNotify {}\n"
+        }
+
+        var postedURLs: [URL] = []
+        let token = NotificationCenter.default.addObserver(
+            forName: .lumiEditorSave, object: nil, queue: .main
+        ) { note in
+            if let url = note.object as? URL {
+                postedURLs.append(url)
+            }
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        let updated = "struct SaveNotify { let value = 1 }\n"
+        let result = service.state.documentController.replaceText(updated)
+        service.state.content = service.state.documentController.textStorage
+        service.state.totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        service.state.notifyContentChangedAfterSynchronizedEdit(using: updated)
+
+        service.commands.performCommand(id: "builtin.save")
+        try await waitUntil("save finished") {
+            !service.files.hasUnsavedChanges
+        }
+        try await waitUntil("save notification posted") {
+            postedURLs.contains(fileURL)
+        }
+
+        XCTAssertEqual(postedURLs, [fileURL])
     }
 
     func testReplaceCurrentDocumentTextUpdatesContentAndDirtyState() async throws {

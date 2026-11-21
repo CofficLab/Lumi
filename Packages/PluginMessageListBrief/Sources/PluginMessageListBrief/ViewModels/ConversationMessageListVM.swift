@@ -26,6 +26,9 @@ final class ConversationMessageListVM: ObservableObject {
     private let builder = AgentTurnSummaryBuilder()
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
+    /// 窗口版本：向上翻页前插更早历史时自增。尾部刷新在 I/O 期间捕获的是
+    /// 旧窗口快照，返回时若版本已变，整体替换会抹掉刚前插的消息（#388）。
+    private var windowVersion: UInt64 = 0
     private var agentTurnVMs: [UUID: AgentTurnVM] = [:]
 
     /// 测试可读的 Turn VM 缓存规模；生产代码不依赖它。
@@ -119,7 +122,15 @@ final class ConversationMessageListVM: ObservableObject {
         guard mySequence == activationSequence,
               selectedConversationID == conversationID else { return }
 
-        messageWindow = page.messages
+        // 首屏 I/O 期间插入事件可能已经把新消息放进窗口（激活开始时清空过
+        // 窗口，此后只有 insert 会改它）：整页赋值会把它们抹掉，看起来像发送
+        // 失败（#146）。发布前把窗口里不在这一页中的消息合并回来；与页内
+        // 重复的插入以落库版本为准。
+        let pageIDs = Set(page.messages.map(\.id))
+        let midFlightInserts = messageWindow.filter { !pageIDs.contains($0.id) }
+        messageWindow = midFlightInserts.isEmpty
+            ? page.messages
+            : (page.messages + midFlightInserts).sorted(by: messageOrdering)
         hasEarlierTurns = page.hasEarlierMessages
         rebuildWindow(for: conversationID, sequence: mySequence)
     }
@@ -154,12 +165,20 @@ final class ConversationMessageListVM: ObservableObject {
         guard let conversationID = activeConversationID,
               let messageManager = services.messages else { return false }
 
+        let windowVersionAtStart = windowVersion
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: messageManager,
             current: messageWindow
         ) else { return false }
         guard selectedConversationID == conversationID else { return false }
+        guard windowVersion == windowVersionAtStart else {
+            // 翻页在 I/O 期间前插了更早历史：本次结果基于旧窗口快照计算，
+            // 整体替换会抹掉刚前插的消息（#388）。丢弃，并在门外补跑一次
+            // 基于新窗口的刷新，避免本次落库事件丢失。
+            Task { @MainActor [weak self] in await self?.refresh() }
+            return false
+        }
 
         let previousPresentation = presentation
         messageWindow = result.merged
@@ -195,6 +214,8 @@ final class ConversationMessageListVM: ObservableObject {
         // 窗口上限：翻页会把更早一页整段加进来，不回收的话长会话会把整个
         // 会话拉进内存（展示投影也要跟着整体重建）。
         messageWindow = pagination.evictTailIfNeeded(messages: messageWindow)
+        // 翻页改动了窗口：作废在途尾部刷新基于旧快照的结果（#388）。
+        windowVersion &+= 1
         rebuildWindow(for: conversationID, sequence: activationSequence)
         return anchorID
     }
@@ -212,15 +233,29 @@ final class ConversationMessageListVM: ObservableObject {
         // 检查序列号，确保本次重建仍然有效
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
-        // 当存在未被任何 turn 认领的用户消息时，说明新 turn 正在启动、
+        // 当存在真正未被任何 turn 认领的用户消息时，说明新 turn 正在启动、
         // 旧 turn 已经结束。此时不应把旧 turn 标记为 .running，否则旧 turn
         // 的 summaryMessage 会走 .running 分支（只看 finalAssistant），
         // 导致包含工具调用的旧回复从投影中消失。
+        //
+        // pending 口径必须与下方 pendingUserMessages 一致：turnID 为空且晚于
+        // 最新可见 turn 的开始时间。用户消息在 turnID 生成前落库，运行中
+        // turn 的用户消息同样是 turnID == nil；旧判定用裸 `turnID == nil`
+        // 会把当前 turn 误判成「新 turn 正在启动」，把 running 永久降级为
+        // completed，运行态、计时器与实时活动全部丢失（#312）。
+        // 边界用 .idle 重建：turn 的 startedAt 与运行状态无关。
         let rawConversationState = services.agentTurn?.state(for: conversationID) ?? .idle
+        let newestTurnStartedAtForPending = AgentTurnRecordBuilder.records(
+            from: messageWindow,
+            conversationID: conversationID,
+            conversationState: .idle
+        ).map(\.startedAt).max()
         let hasPendingUserMessages = messageWindow.contains { message in
-            message.role == .user
-                && message.conversationID == conversationID
-                && message.turnID == nil
+            guard message.role == .user,
+                  message.conversationID == conversationID,
+                  message.turnID == nil else { return false }
+            guard let newestTurnStartedAtForPending else { return true }
+            return message.createdAt > newestTurnStartedAtForPending
         }
         let conversationState: AgentLoopState = hasPendingUserMessages && rawConversationState == .running
             ? .completed
@@ -321,8 +356,21 @@ final class ConversationMessageListVM: ObservableObject {
     }
 
     private func refreshAgentTurnVMs() {
-        for vm in agentTurnVMs.values {
-            Task { @MainActor in await vm.refresh() }
+        // 一次消息事件只读取一份快照、预计算一次投影上下文，全部可见
+        // turn 行复用（#1187）。原先每个缓存 VM 独立读取完整快照，并各自
+        // 在主线程排序 / 分组全量会话 —— O(T × M log M)。
+        guard !agentTurnVMs.isEmpty,
+              let conversationID = activeConversationID,
+              let messageManager = services.messages else { return }
+        let sequence = activationSequence
+        Task { @MainActor [weak self] in
+            guard let self, sequence == self.activationSequence else { return }
+            let messages = await messageManager.messagesSnapshot(in: conversationID)
+            guard sequence == self.activationSequence else { return }
+            let context = AgentTurnSummaryContext(messages)
+            for vm in self.agentTurnVMs.values {
+                vm.apply(context: context)
+            }
         }
     }
 

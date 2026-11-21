@@ -1,5 +1,5 @@
 {
-  "originHash" : "1e481694863e52ad542fc7b917eafe18fed98f32b001e309f97b56a35077254b",
+  "originHash" : "10696d67657758d7e11807af490213fb24f1eeb8d808f7fa8f8e92515de93cca",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -29,6 +29,42 @@
       }
     },
     {
+      "identity" : "lumikitagenttool",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
+      "state" : {
+        "revision" : "a91621cb4704162468eaef9095e8aeacae4f9ded",
+        "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "lumikitkeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitKeychain.git",
+      "state" : {
+        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikitllm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
+      "state" : {
+        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikittestsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitTestSupport.git",
+      "state" : {
+        "revision" : "3d43b467db654c19c7535fca8067f979d800dff4",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "lumilocalization",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiLocalization.git",
@@ -51,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "58db682f0b7153206f2c8e377f279eba99534fba",
-        "version" : "1.23.0"
+        "revision" : "285db9e528f6a3f75ead91216fb6697b0fbc7fe8",
+        "version" : "1.26.0"
       }
     },
     {
@@ -60,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
-        "version" : "1.17.1"
+        "revision" : "c5f9d55551151154290a67b65b1d69f95ea3c1cc",
+        "version" : "1.18.1"
       }
     },
     {

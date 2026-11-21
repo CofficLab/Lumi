@@ -50,11 +50,11 @@ struct TerminalEnvironmentTests {
     }
 
     @Test("集成脚本从环境恢复用户 ZDOTDIR 而非回退家目录")
-    func integrationRecoversCustomZdotdir() throws {
-        var env = ShellIntegration.makeEnvironment(
+    func integrationRecoversCustomZdotdir() async throws {
+        let base = ShellIntegration.makeEnvironment(
             base: [], shellPath: "/bin/zsh", parentEnvironment: ["ZDOTDIR": "/tmp/custom-zsh"]
         )
-        _ = try ShellIntegration.setupIntegration(for: .zsh, environment: &env)
-        #expect(env.contains("USER_ZDOTDIR=/tmp/custom-zsh"))
+        let setup = try await ShellIntegration.setupIntegration(for: .zsh, baseEnvironment: base)
+        #expect(setup.additionalEnvironment.contains("USER_ZDOTDIR=/tmp/custom-zsh"))
     }
 }

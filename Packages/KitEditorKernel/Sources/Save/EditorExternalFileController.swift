@@ -89,13 +89,13 @@ public final class EditorExternalFileController: SuperLog {
         lastKnownModificationDate = date
     }
 
-    public func loadExternalText(from url: URL) async throws -> String? {
+    /// 外部重读复用初次打开的编码探测（#398）：固定按 UTF-8 解码会把
+    /// UTF-16 等文件的外部改动静默丢弃；探测失败（如二进制内容）按错误
+    /// 抛出，由调用方记录，不再静默返回 nil。
+    public func loadExternalText(from url: URL) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
-            let fileHandle = try FileHandle(forReadingFrom: url)
-            let data = try fileHandle.readToEnd()
-            try fileHandle.close()
-            guard let data else { return nil }
-            return String(data: data, encoding: .utf8)
+            var encoding: String.Encoding = .utf8
+            return try String(contentsOf: url, usedEncoding: &encoding)
         }.value
     }
 

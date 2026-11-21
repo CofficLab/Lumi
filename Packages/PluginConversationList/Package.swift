@@ -8,14 +8,13 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
-        .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderConversationState"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.17.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderConversationState.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
+        .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(path: "../PluginRootView")
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0")
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "LumiKernel"),
@@ -28,8 +27,8 @@ let package = Package(
         .product(name: "ProviderProject", package: "LumiProviders"),
         .product(name: "ProviderToolbar", package: "LumiProviders"),
         .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
-        .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-        .product(name: "ProviderConversationState", package: "ProviderConversationState"),
+        .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
+        .product(name: "ProviderConversationState", package: "LumiProviderConversationState"),
         .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
         .product(name: "LumiUI", package: "LumiUI"),
     ],
@@ -39,7 +38,6 @@ let package = Package(
         dependencies: [
             "PluginConversationList",
             .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
-            .product(name: "PluginRootView", package: "PluginRootView"),
         ]
     )]
 )

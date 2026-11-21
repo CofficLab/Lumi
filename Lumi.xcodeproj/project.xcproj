@@ -28,13 +28,13 @@
       "kind": "remote",
       "repository": "https://github.com/lumi-softworks/LumiProviders.git",
       "version": {
-        "up-to-next-major-version": "1.23.0",
+        "up-to-next-major-version": "1.26.0",
       },
     }, {
       "kind": "remote",
       "repository": "https://github.com/lumi-softworks/LumiUI.git",
       "version": {
-        "up-to-next-major-version": "1.17.1",
+        "up-to-next-major-version": "1.18.1",
       },
     }, {
       "kind": "local",

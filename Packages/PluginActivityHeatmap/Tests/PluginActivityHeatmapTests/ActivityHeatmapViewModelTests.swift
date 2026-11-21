@@ -142,6 +142,46 @@ struct ActivityHeatmapViewModelTests {
         #expect(viewModel.heatmapDays.last?.messages == 3)
     }
 
+    @Test("day rollover monitor reloads the window when the local day changes (#507)")
+    func dayRolloverMonitorReloadsOnDayChange() async {
+        let calendar = Calendar.current
+        final class DayBox: @unchecked Sendable {
+            var value: Date
+            init(_ value: Date) { self.value = value }
+        }
+        let today = calendar.startOfDay(for: Date())
+        let box = DayBox(today)
+        let manager = HeatmapMessageManager(
+            messageCounts: [today: 1],
+            tokenCounts: [today: 10]
+        )
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences(),
+            dayStartProvider: { box.value }
+        )
+        viewModel.period = .days30
+
+        await viewModel.reload()
+        #expect(viewModel.heatmapDays.last?.date == today)
+
+        let monitorTask = Task { await viewModel.runDayRolloverMonitor(pollInterval: .milliseconds(20)) }
+        defer { monitorTask.cancel() }
+
+        // 先让监控落地基线（Task 异步启动），再模拟页面停留期间跨过本地午夜。
+        try? await Task.sleep(for: .milliseconds(50))
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: today)!
+        box.value = nextDay
+
+        for _ in 0..<300 where viewModel.heatmapDays.last?.date != nextDay {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(viewModel.heatmapDays.last?.date == nextDay)
+        #expect(viewModel.heatmapDays.count == 365)
+        #expect(viewModel.days.count == 30)
+    }
+
     @Test("an immediate reload cancels a pending debounced reload (#1262)")
     func immediateReloadCancelsPendingDebounce() async {
         let calendar = Calendar.current
@@ -166,6 +206,107 @@ struct ActivityHeatmapViewModelTests {
         try? await Task.sleep(for: .milliseconds(400))
         #expect(manager.messageQueryDates.count == messageQueriesAfterReload)
         #expect(manager.tokenQueryDates.count == 2)
+    }
+
+    @Test("deleting a message invalidates the cached historical day (#238)")
+    func deletingMessageClearsCachedDay() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "hello",
+            createdAt: yesterday.addingTimeInterval(3_600),
+            inputTokenCount: 10,
+            outputTokenCount: 5
+        )
+        manager.insertMessage(message, to: conversationID)
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
+        viewModel.period = .days30
+
+        await viewModel.reload()
+
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.messages == 1)
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.tokens == 15)
+
+        manager.deleteMessage(id: message.id, in: conversationID)
+        viewModel.scheduleReloadAfterRemoval()
+
+        try? await pollUntil(dayIsIdle: yesterday, in: viewModel, calendar: calendar)
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.messages == 0)
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.tokens == 0)
+    }
+
+    @Test("clearing a conversation invalidates the cached historical day (#238)")
+    func clearingConversationClearsCachedDay() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "hello",
+            createdAt: yesterday.addingTimeInterval(3_600),
+            inputTokenCount: 8,
+            outputTokenCount: 2
+        )
+        manager.insertMessage(message, to: conversationID)
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
+        viewModel.period = .days30
+
+        await viewModel.reload()
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.messages == 1)
+
+        manager.clearMessages(in: conversationID)
+        viewModel.scheduleReloadAfterRemoval()
+
+        try? await pollUntil(dayIsIdle: yesterday, in: viewModel, calendar: calendar)
+        #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: yesterday) })?.messages == 0)
+    }
+
+    /// 等待删除/清空后的防抖重载把目标日期清零（#238）。
+    private func pollUntil(
+        dayIsIdle day: Date,
+        in viewModel: ActivityHeatmapViewModel,
+        calendar: Calendar
+    ) async throws {
+        let deadline = Date().addingTimeInterval(2)
+        while Date() < deadline {
+            let entry = viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: day) })
+            if let entry, entry.messages == 0 { return }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
+    @Test("cache invalidate drops in-memory counts and the persisted file (#238)")
+    func cacheInvalidateDropsPersistedCounts() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ActivityHeatmapCache-\(UUID().uuidString)", isDirectory: true)
+        let cache = ActivityHeatmapCache(directory: directory)
+        await cache.save([yesterday: .init(messages: 3, tokens: 30)])
+        #expect(await cache.counts(for: [yesterday])[yesterday]?.messages == 3)
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("activity-cache-v3.json").path))
+
+        await cache.invalidate()
+
+        #expect(await cache.counts(for: [yesterday]).isEmpty)
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("activity-cache-v3.json").path) == false)
     }
 }
 

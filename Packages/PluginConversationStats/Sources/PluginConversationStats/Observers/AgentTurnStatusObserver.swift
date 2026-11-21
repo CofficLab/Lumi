@@ -20,6 +20,7 @@ final class AgentTurnStatusObserver {
         agentLoopHandle = agentLoop.addAgentLoopObserver { event in
             switch event {
             case .started(let conversationID, _),
+                 .resumed(let conversationID, _),
                  .toolCallsReceived(let conversationID, _, _, _),
                  .llmResponseReceived(let conversationID, _, _),
                  .suspended(let conversationID, _, _),

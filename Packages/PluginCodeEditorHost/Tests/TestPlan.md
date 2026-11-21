@@ -5,7 +5,7 @@
 PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 257 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 29 个，用例总数: 257
+测试文件: 29 个，用例总数: 258
 
 核心组件（源码目录）:
 - `Editor/`
@@ -63,7 +63,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorProjectContextLSPRefresh**（24 条）：由 `testBuildServerPathChangeRequiresServerRestart`、`testLegacyReuseLogicIgnoredBuildServerPathChange`、`testBuildServerKindExtractsInitializationOption` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorProvidingV2AdapterCapability**（24 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testAcceptReplacementHunkPreservesFollowingNewline`、`testAcceptPureAdditionInsertsAtActualPosition` 等用例锁定文档打开与 diff 逐块接受（替换补回末行换行、纯新增跳过前导上下文）；改动该模块时优先跑对应测试文件。
 - **EditorSelectionSet**（11 条）：由 `testInitialSelection`、`testEmptySelectionsFallbackToInitial`、`testMultipleSelectionsAreSortedByLocation` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorServiceFacade**（13 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorServiceFacade**（14 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorNavigationHistory**（2 条）：由 `testRemoveDropsEveryEntryForClosedSession`、`testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` 锁定关闭标签后历史清理与索引维护；改动导航历史时优先跑对应测试文件。
 - **EditorStateTheme**（2 条）：由 `testThemeObserverCancellationStopsCallbacks`、`testSameThemeNotificationRefreshesThemeAfterContributorRegistration` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSyntaxThemeResolver**（2 条）：由 `testResolveUsesRegisteredContributorPalette`、`testRegisterOrReplaceThemeContributorOverridesFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -282,6 +282,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 204 | EditorDocumentEncoding | UTF-8 文本记录的编码仍为 UTF-8 | sample.txt 以 UTF-8 写入 | 调用 `loadDocument` | 编码为 UTF-8 | P1 | ✅ 已覆盖 | `loadUTF8DocumentKeepsUTF8` |
 | 205 | EditorServiceFacade | 切回已加载过的文件时异步加载完成后恢复该 Session 保存的视图状态（**回归 #980**） | A 文件 Session 保存第 20 行光标与多光标状态，切换到 B 后再切回 A，触发异步重新加载 | 调用 `open(at:)` 并等待 A 重新加载完成 | 活动 Session 仍为 A，`cursorLine == 20`、`cursorColumn == 1`，不再被当前视图状态覆盖 | P1 | ✅ 已覆盖 | `testReopeningExistingSessionRestoresSavedStateAfterAsyncLoad` |
 | 206 | EditorServiceFacade | 后退加载目标文件并应用历史项快照（**回归 #981**） | A 的历史项记录第 15 行光标，打开 B 后调用 `goBack()` | 等待 A 重新加载完成 | 活动 Session 为 A、`currentFileURL` 与正文切回 A、`cursorLine == 15` | P1 | ✅ 已覆盖 | `testGoBackLoadsTargetFileAndAppliesHistorySnapshot` |
+| 207 | EditorServiceFacade | testBuiltinSavePostsEditorSaveNotification（**回归 #461**） | 隔离目录真实文件，订阅 .lumiEditorSave | 编辑后执行 builtin.save | 收到 object 为该文件 URL 的保存通知 | P1 | ✅ 已覆盖 | `testBuiltinSavePostsEditorSaveNotification` |
 | 207 | EditorNavigationHistory | 关闭标签时清除该 Session 的全部历史项（**回归 #982**） | A → B → A → C 形成 `[A, B, A, C]` | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项仍为 C，后退只能到 B，历史中不再有 A | P1 | ✅ 已覆盖 | `testRemoveDropsEveryEntryForClosedSession` |
 | 208 | EditorNavigationHistory | 关闭当前历史项对应的 Session 后回退到最近有效项（**回归 #982**） | 历史 `[A, B, A, C]` 且当前索引位于第二个 A | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项落在 C，不出现已关闭的 A | P1 | ✅ 已覆盖 | `testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` |
 | 209 | EditorExternalReloadIdentity | 切到 B 后 A 的外部重读结果被丢弃（**回归 #206**） | A 已加载并启动异步外部重读 | 重读返回前切到 B，等待 A 的磁盘读取续体执行 | currentFileURL 仍为 B，正文仍为 B-original，不被 A 的内容覆盖 | P0 | ✅ 已覆盖 | `externalReloadDiscardedAfterTabSwitch` |

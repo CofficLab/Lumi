@@ -61,7 +61,7 @@ final class ListV3ViewModel: ObservableObject {
     ///
     /// 曾是 `static` 全局开关，测试并行执行时会互相覆盖，导致同一 suite
     /// 内单跑通过、并行失败。改为实例属性 + 构造注入后不再有共享状态。
-    /// 生产代码从不设置它，默认关闭。
+    /// 生产构造显式开启（#313）；测试按需注入。
     private let streamingDisplayEnabled: Bool
 
     init(
@@ -111,6 +111,9 @@ final class ListV3ViewModel: ObservableObject {
     private let pagination: MessageListPaginationService
     private let rowBuilder = MessageListRowBuilder()
     private let tailRefreshGate = MessageListTailRefreshGate()
+    /// 窗口版本：向上翻页前插更早历史时自增。尾部刷新在 I/O 期间捕获的是
+    /// 旧窗口快照，返回时若版本已变，整体替换会抹掉刚前插的消息（#388）。
+    private var windowVersion: UInt64 = 0
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
@@ -204,11 +207,15 @@ final class ListV3ViewModel: ObservableObject {
     // MARK: - Pagination
 
     /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
-    /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
+    /// - Returns: prepend 前第一条可见展示行的 id，View 应把它钉回视口顶部。
     func loadEarlier() async -> UUID? {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
+        // 锚点必须是展示行 id 而非原始落库 id（#387）：工具执行消息在展示层
+        // 被合成（id 由组成员派生），原始消息 id 不存在于列表，用它 scrollTo
+        // 找不到目标。查询边界仍用落库 id（beforeMessageID）。
+        let displayAnchorID = historyRows.first?.id
         isLoadingEarlier = true
         defer { isLoadingEarlier = false }
         guard let result = await pagination.loadEarlier(
@@ -222,7 +229,9 @@ final class ListV3ViewModel: ObservableObject {
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
-        return result.anchorID
+        // 翻页改动了窗口：作废在途尾部刷新基于旧快照的结果（#388）。
+        windowVersion &+= 1
+        return displayAnchorID
     }
 
     /// 尾部刷新：重新查最近一页，与当前尾部比对并覆盖（新消息到达 / 流式落库）。
@@ -239,12 +248,20 @@ final class ListV3ViewModel: ObservableObject {
     /// one trailing pass before the owner returns.
     private func performTailRefresh() async -> Bool {
         guard let conversationID = selectedConversationID else { return false }
+        let windowVersionAtStart = windowVersion
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: services.messages,
             current: persistedMessages
         ) else { return false }
         guard selectedConversationID == conversationID else { return false }
+        guard windowVersion == windowVersionAtStart else {
+            // 翻页在 I/O 期间前插了更早历史：本次结果基于旧窗口快照计算，
+            // 整体替换会抹掉刚前插的消息（#388）。丢弃，并在门外补跑一次
+            // 基于新窗口的刷新，避免本次落库事件丢失。
+            Task { @MainActor [weak self] in await self?.refreshTail() }
+            return false
+        }
 
         let messagesChanged = persistedMessages != result.merged
         let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false
@@ -279,7 +296,18 @@ final class ListV3ViewModel: ObservableObject {
         // 切换会话期间用户可能又选了别的会话，丢弃过期结果。
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
-        persistedMessages = result.messages
+        // 首屏 I/O 期间插入事件可能已经把新消息放进窗口（激活时清空过窗口，
+        // 此后只有 insert 会改它）：整页赋值会把它们抹掉，看起来像发送失败
+        // （#146）。发布前把窗口里不在这一页中的消息合并回来；与页内重复的
+        // 插入以落库版本为准。
+        let pageIDs = Set(result.messages.map(\.id))
+        let midFlightInserts = persistedMessages.filter { !pageIDs.contains($0.id) }
+        persistedMessages = midFlightInserts.isEmpty
+            ? result.messages
+            : (result.messages + midFlightInserts).sorted {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
         hasEarlierMessages = result.hasEarlierMessages
         isLoading = false
     }

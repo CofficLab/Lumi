@@ -297,8 +297,20 @@ public struct PrototypeDocumentStore: @unchecked Sendable {
         projectSlug: String,
         screenSlug: String
     ) throws -> PrototypeResolvedScreen {
-        let projectDirectory = try projectDirectoryURL(storagePath: storagePath, projectSlug: projectSlug)
-        let project = try readProject(storagePath: storagePath, projectSlug: projectSlug)
+        try readScreen(
+            project: try readProject(storagePath: storagePath, projectSlug: projectSlug),
+            storagePath: storagePath,
+            screenSlug: screenSlug
+        )
+    }
+
+    /// 基于调用方已解码的项目读取屏幕，避免重复读盘解码 manifest。
+    public func readScreen(
+        project: PrototypeProject,
+        storagePath: String,
+        screenSlug: String
+    ) throws -> PrototypeResolvedScreen {
+        let projectDirectory = try projectDirectoryURL(storagePath: storagePath, projectSlug: project.id)
         guard let screen = project.screen(id: screenSlug) else {
             throw PrototypeStoreError.screenNotFound(screenSlug)
         }

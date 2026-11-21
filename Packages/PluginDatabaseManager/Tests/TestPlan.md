@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 21 个，用例总数: 182
+测试文件: 23 个，用例总数: 188
 
 核心组件（源码目录）:
 - `Agent/`
@@ -45,6 +45,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseAgentToolServiceConnectionTests**（1 条）：真实 SQLite 连接复用规则，由 `queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited` 锁定。：由 `readonlySQLAcceptsSelect`、`readonlySQLPreservesExistingLimit`、`readonlySQLAcceptsPragmaForSQLite` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **只读策略**（10 条）：由 `readonlySQLAllowsWriteKeywordInsideStringLiteral`、`readonlySQLStillRejectsWriteKeywordOutsideLiteral` 等用例锁定；改动只读 SQL 判定或字面量/注释剥离时优先跑对应测试文件。
 - **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
+- **MySQL 索引自省**（3 条）：由 `describeTablePopulatesIndexesFromShowIndex`、`existingIndexNameBlocksAddIndex`、`existingIndexCanBeDroppedWhilePrimaryIsProtected` 锁定（**回归 #584**）：`MySQLIntrospector.describeTable` 必须查询 `SHOW INDEX` 并按 `Key_name` 分组、`Seq_in_index` 排序还原全部已有索引（含 PRIMARY 与 FULLTEXT），否则结构页看不到已有索引、新增索引的本地重名校验全部失效。改动 `MySQLIntrospector.describeTable` 的索引读取或 `SchemaChangeManager` 的重名校验时优先跑对应测试文件。
 - **PostgreSQL 对象列举默认 schema**（3 条）：由 `loadObjectsUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadRoutinesUsesCurrentSchemaFunctionWhenSchemaUnspecified`、`loadObjectsBindsExplicitSchemaAsLiteral` 锁定（**回归 #275**）：未指定 schema 时表/视图/函数列举必须调用 `current_schema()` 函数而非字符串字面量，否则侧边栏漏掉当前 schema 的全部对象；显式 schema 仍按转义字面量过滤。改动 `PostgreSQLIntrospector.loadObjects` 的 schema 过滤时优先跑对应测试文件。
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -355,8 +356,14 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 180 | MySQL 重复列名解码 | JOIN 形态首尾同名列夹一个异名列，三列各按位置解码 | "id"/"name"/"id" 三列，值 "10"/"alice"/"20" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("10"), .string("alice"), .string("20")]` | P0 | ✅ 已覆盖 | `joinLikeDuplicateNamesAcrossThreeColumnsDecodeByPosition` |
 | 181 | MySQL 重复列名解码 | 重复列名中第二列为 NULL 时按位置解码为 null，不得回填首列值 | 两个同名 "id" 列，值 ["1", nil] | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .null]`，而非两列都 "1" | P0 | ✅ 已覆盖 | `duplicateColumnNameWithNullSecondValueDecodesPositionally` |
 | 182 | MySQL 重复列名解码 | 唯一列名仍按位置正确解码（重构不回归正常路径） | "id"/"name" 两列，值 "1"/"alice" | 构造 MySQLRow 后 `decodeRow` | 等于 `[.string("1"), .string("alice")]` | P1 | ✅ 已覆盖 | `uniqueColumnNamesStillDecodeCorrectly` |
+| 183 | 查询结果列宽 | 列宽只采样前 50 行，超出部分不影响宽度（回归 #1253） | 60 行数据，第 51 行起内容更长 | 调用 `QueryResultView.columnWidths(for:)` | 等于 `[264]`（30 字符 × 8pt + 24pt），未按第 51 行后的长内容放大 | P1 | ✅ 已覆盖 | `samplesOnlyFirst50Rows` |
+| 184 | 查询结果列宽 | 列宽钳制在上下限内，列名长度是下限基准（回归 #1253） | 短内容列与 1000 字符长内容列 | 调用 `QueryResultView.columnWidths(for:)` | 短列取下限 80，长列取上限 320 | P1 | ✅ 已覆盖 | `clampsToBounds` |
+| 185 | 查询结果列宽 | NULL 与 BLOB 的文本化不参与膨胀，估算结果稳定（回归 #1253） | 10KB BLOB 行与 NULL 行 | 两次调用 `QueryResultView.columnWidths(for:)` | 两次结果一致，等于 `"<BLOB 10000 bytes>"` 18 字符的估算值 | P1 | ✅ 已覆盖 | `handlesNullAndBlobValuesStably` |
+| 186 | MySQL 索引自省 | describeTable 必须用 SHOW INDEX 还原全部已有索引（回归 #584） | 5 行 SHOW INDEX 采样（PRIMARY / idx_name×2 / idx_email / ft_body） | 调用 `MySQLIntrospector.describeTable` | indexes 名为 `PRIMARY/idx_name/idx_email/ft_body`，复合列序按 Seq_in_index，唯一性与 Index_type 正确 | P1 | ✅ 已覆盖 | `describeTablePopulatesIndexesFromShowIndex` |
+| 187 | MySQL 索引自省 | 基于真实索引集，新增同名索引被本地重名校验拒绝（回归 #584） | 自省返回含 idx_name 的索引集 | 构造 `SchemaChangeManager` 后 `stageAddIndex(idx_name)` | 抛出 `duplicateIndex("idx_name")`，不再漏检 | P1 | ✅ 已覆盖 | `existingIndexNameBlocksAddIndex` |
+| 188 | MySQL 索引自省 | 已有索引可暂存删除，主键索引仍受保护（回归 #584） | 自省返回含 PRIMARY 与 idx_name 的索引集 | `stageDropIndex(idx_name)` 与 `stageDropIndex(PRIMARY)` | idx_name 进入暂存，PRIMARY 抛出 `protectedIndex` | P2 | ✅ 已覆盖 | `existingIndexCanBeDroppedWhilePrimaryIsProtected` |
 
-> 说明：全部 **182 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **188 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#559）：M1 将 `loadSchemas` 的写目标还原为 `databasesByConfig[config.id] = result` → `loadSchemasDoesNotOverwriteDatabaseCache`、`loadSchemasPopulatesSchemaCache` 转红（数据库缓存被 schema 覆盖、schema 缓存恒空）；M2 删除 `loadSchemas` 的 `schemasByConfig[config.id] = result` 写入 → `loadSchemasPopulatesSchemaCache` 转红（schema 缓存恒空）；M3 将 `loadDatabases` 的写目标改为 `schemasByConfig[config.id] = result` → `loadDatabasesPopulatesDatabaseCacheOnly`、`databaseCacheHitDoesNotRequeryAfterSchemaLoad`、`loadSchemasDoesNotOverwriteDatabaseCache` 转红（数据库缓存写错位置且缓存失效重新查询）。三处变异均单独施加并确认转红后还原，最终 103 条全绿。
@@ -383,25 +390,26 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 >
 > 变异验证（#1254）：`MainView.toolbar` 原先在每次 body 求值时同步 `SQLStatementParser.split(viewModel.queryText).count`，普通编辑与无关的 ViewModel 发布都在主线程重复整段词法解析。修复为 `StatementCountCache` 按文本 memo + `queryText.didSet → refreshStatementCount()` 更新存储值 `statementCount`（仅计数变化才发布），工具栏改读 O(1) 的 `viewModel.statementCount`。M1 删除缓存的 memo 命中分支（每次都 `parseCount += 1` 并重新 `split`）→ `repeatedSameTextDoesNotReparse` 转红（同文本三次调用 parseCount 变 3），其余缓存/VM 用例仍绿；M2 删除 `queryText` 的 `didSet { refreshStatementCount() }`（计数不再随文本更新）→ `statementCountTracksQueryTextChanges`、`unrelatedPublicationDoesNotChangeStatementCount`、`resettingSameQueryTextKeepsCount` 转红（statementCount 停在 init seeding 值不跟随编辑），`statementCountSeededOnInit` 仍绿。两处变异均单独施加并确认转红后还原，最终 178 条全绿。
 >
+> 变异验证（#584）：`MySQLIntrospector.describeTable` 原先只读列信息与 `SHOW CREATE TABLE`，从不查询 `SHOW INDEX`，`TableSchema.indexes` 恒为空，结构页看不到任何已有索引且本地重名校验对已有索引全部失效。修复为按 `Key_name` 分组、`Seq_in_index` 排序构建索引列表并传入 `TableSchema`。M1 将 `SHOW INDEX` 查询替换为恒 `nil`（禁用索引读取）→ `describeTablePopulatesIndexesFromShowIndex`、`existingIndexNameBlocksAddIndex`、`existingIndexCanBeDroppedWhilePrimaryIsProtected` 全部转红（索引列表为空、同名索引通过校验、受保护主键断言取不到对象）。变异施加并确认转红后还原，最终 188 条全绿。
 > 变异验证（#585）：`MySQLConnection.query` 原先对每个 `columnDefinitions` 调用 mysql-nio 的 `row.column(colDef.name)` 取值，而该方法按名字返回首个匹配列，重复列名（`SELECT a.id, b.id`、JOIN）时后面的同名列错显首列的值。修复为 `decodeRow` 按 `columnDefinitions` 与 `values` 的位置对应逐列构造 `MySQLData`。M1 把 `decodeRow` 的取值还原为按名字 `row.column(colDef.name) ?? MySQLData(...)`（原 bug）→ `duplicateColumnNamesKeepPositionalValues`、`joinLikeDuplicateNamesAcrossThreeColumnsDecodeByPosition`、`duplicateColumnNameWithNullSecondValueDecodesPositionally` 转红（同名列都拿到首列值、NULL 列被回填首列值），`uniqueColumnNamesStillDecodeCorrectly` 仍绿（唯一列名不受影响）。变异施加并确认转红后还原，最终 182 条全绿。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 92 / 92
-- P1: 已覆盖 87 / 87
-- P2: 已覆盖 3 / 3
-- **合计: 182 / 182**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 92 / 92
+- P2: 已覆盖 4 / 4
+- **合计: 188 / 188**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（92 条）
-- **P1**: 其余功能性用例（87 条）
+- **P1**: 其余功能性用例（90 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 182 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 185 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

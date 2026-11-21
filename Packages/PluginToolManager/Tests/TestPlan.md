@@ -5,7 +5,7 @@
 PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 194 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 194
+测试文件: 20 个，用例总数: 198
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -244,7 +244,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 163 | 完成通知 | 后台子代理的完成通知带完整结论而不是 2000 字截断 | 进程内子代理任务写入 8000 字结论 | finishInProcess 后投递完成事件 | 通知含完整 8000 字结论与 "Subagent conclusion:" | P0 | ✅ 已覆盖 | `subagentNotificationTailIsNotTruncated` |
 | 164 | 工具参数安全 | read_file 大文件显式分块读取不被总大小否决（**#393**） | >10 MiB 文本文件 | offset=1 limit=1 调用 execute | 返回首行内容，不报 too large | P0 | ✅ 已覆盖 | `readFileAllowsChunkedReadOfLargeFile` |
 | 165 | 工具参数安全 | read_file 大文件未指定范围的整文件读取仍受 10 MiB 限制（**#393**） | >10 MiB 文本文件 | 不带 offset/limit 调用 execute | 抛出 ToolExecutionError（总大小保护未被移除） | P0 | ✅ 已覆盖 | `readFileLargeFileWholeReadStillRejected` |
-| 166 | 工具参数安全 | read_file 大文件分块输出仍受 250 行上限（**#393**） | >10 MiB 文本文件 | offset=1 limit=250 调用 execute | 含第 250 行、不含第 251 行、含续读提示 | P0 | ✅ 已覆盖 | `readFileLargeFileChunkRespectsLineLimit` |
+| 166 | 工具参数安全 | read_file 大文件分块输出按请求行数返回并附精确续读偏移（**#393/#1320**） | >10 MiB 文本文件 | offset=1 limit=250 调用 execute | 含第 250 行、不含第 251 行、含 continue with offset=251 续读提示 | P0 | ✅ 已覆盖 | `readFileLargeFileChunkRespectsLineLimit` |
 | 167 | 工具参数安全 | read_file 大文件中段分块读取正确（**#393**） | >10 MiB 文本文件 | offset=100000 limit=2 调用 execute | 含第 100000/100001 行、不含第 100002 行 | P1 | ✅ 已覆盖 | `readFileLargeFileMiddleChunk` |
 | 168 | 综合 | run_command 的 workspace 回退路径首尾空白是合法字符，裁剪后会在错误目录执行（**回归 #499**） | 同时创建 `lumi` 与 `lumi `（带尾空格）两目录，各放不同 marker.txt | 注入返回 `lumi ` 的 workspaceRootProvider，执行 `cat marker.txt` | 读到带尾空格目录的 MARKER_SPACED_DIR，不读无空格目录的 MARKER_PLAIN_DIR | P1 | ✅ 已覆盖 | `shellToolWorkspaceFallbackPreservesPathWhitespace` |
 | 169 | 输出尾部缓冲 | 工具输出尾部缓冲追加后与参照实现一致（**#1310**） | OutputTailBuffer maxBytes=64KiB | 依次 append 多个 chunk | 每步 buffer.string 与「重编码+拼接+取尾」参照实现一致 | P1 | ✅ 已覆盖 | `matchesReferenceImplementation` |
@@ -273,21 +273,25 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 192 | ToolJob 关闭落盘 | 关闭排空持久化链后终态快照立即落盘且重启恢复为同一终态（**#1164**） | 配置 ToolJobRecordStore，注册 burst_output（400 chunk） | submit→waitForJobResult→drainPersistenceOnShutdown→立即 fetchRecord→重启 manager 恢复 | record.status==completed 且 result=="done"，重启恢复 completed、errorMessage 为 nil | P0 | ✅ 已覆盖 | `shutdownDrainPersistsTerminalStateBeforeRestart` |
 | 193 | ToolJob 关闭落盘 | 关闭排空后拒收新 Job 提交（**#1164**） | 已 drain 的 manager | 再次 submit 一个 ToolCall | 返回空数组，不排入新写入 | P1 | ✅ 已覆盖 | `shutdownRejectsNewJobSubmission` |
 | 194 | ToolJob 关闭落盘 | 无待写入时排空安全无副作用（**#1164**） | 全新 manager，未提交任何 Job | drainPersistenceOnShutdown | 不崩溃，fetchAllJobs 为空 | P2 | ✅ 已覆盖 | `drainWithNoPendingWritesIsSafe` |
+| 195 | 工具参数安全 | read_file 默认上限 2000：1,500 行短行文件默认一次读完整（**#1320**） | 1,500 行短行文本文件 | 不带 offset/limit 调用 execute | 含第 1500 行，无截断、无续读提示 | P1 | ✅ 已覆盖 | `readFileDefaultLimitReturns1500LineFileInOneCall` |
+| 196 | 工具参数安全 | read_file limit 超上限钳到 2000，行截断附精确续读偏移（**#1320**） | 2,500 行短行文本文件 | limit=5000 调用 execute | 含第 2000 行、不含第 2001 行，含 continue with offset=2001 | P0 | ✅ 已覆盖 | `readFileClampsLimitTo2000AndHintsNextOffset` |
+| 197 | 工具参数安全 | read_file 字符预算截断附精确续读偏移，续读无缺口无重复（**#1320**） | 2,500 行 ×约 80 字符文件（默认窗口输出超 100k 字符） | 默认调用 execute 后按提示 offset 续读 | 截断行含 offset=N，第 N-1 行为最后输出行，续读首行为第 N 行 | P0 | ✅ 已覆盖 | `readFileCharBudgetTruncationHintsLosslessContinuation` |
+| 198 | 工具参数安全 | read_file schema 的 limit maximum 与实现上限一致（**#1320**） | — | 读取 inputSchema | maximum=2000、minimum=1 | P1 | ✅ 已覆盖 | `readFileSchemaMaximumMatchesLimitCap` |
 
-> 说明：全部 **194 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **198 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 63 / 63
-- P1: 已覆盖 117 / 117
+- P0: 已覆盖 65 / 65
+- P1: 已覆盖 119 / 119
 - P2: 已覆盖 14 / 14
-- **合计: 194 / 194**（仅表示清单场景，非源码覆盖率）
+- **合计: 198 / 198**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（63 条）
-- **P1**: 其余功能性用例（117 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（65 条）
+- **P1**: 其余功能性用例（119 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明

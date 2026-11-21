@@ -211,6 +211,20 @@ enum TextActionDismissPolicy {
     static func isInsidePanel(eventWindowNumber: Int, panelWindowNumber: Int) -> Bool {
         panelWindowNumber != 0 && eventWindowNumber == panelWindowNumber
     }
+
+    /// 监听事件里安全读取 keyCode：仅键盘事件有效。
+    ///
+    /// 对鼠标 / 滚动事件发送 `keyCode` 会抛
+    /// NSInternalInconsistencyException，吞掉当次事件——表现为
+    /// 关闭按钮点不动、点击外部不消失。监听回调必须经此提取。
+    static func keyCode(of event: NSEvent) -> UInt16 {
+        event.type == .keyDown || event.type == .keyUp ? event.keyCode : 0
+    }
+
+    /// 监听事件里安全读取滚动增量：仅滚动事件有效，跨类型同样会抛异常。
+    static func scrollingDeltaY(of event: NSEvent) -> CGFloat {
+        event.type == .scrollWheel ? event.scrollingDeltaY : 0
+    }
 }
 
 // MARK: - 动作目录

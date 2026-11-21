@@ -5,7 +5,7 @@
 PluginChatScreenshot 的实现包，包含 12 个主要类型；当前测试覆盖 37 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 37
+测试文件: 8 个，用例总数: 42
 
 核心组件（源码目录）:
 - `Capture/`
@@ -85,18 +85,24 @@ PluginChatScreenshot 的实现包，包含 12 个主要类型；当前测试覆�
 | 35 | 截图流程会话绑定 | 未切换会话时截图正常进入挂起池（**#422**） | 无 | 选中会话保持 A，await insert | 挂起池新增 1 张 JPEG 附件 | P1 | ✅ 已覆盖 | `screenshotInSameConversationAttaches` |
 | 36 | 截图流程会话绑定 | 启动时无选中会话且写回时仍无会话，截图按全局池处理（**#422**） | 无 | 选中会话保持 nil，await insert | 挂起池新增 1 张附件 | P2 | ✅ 已覆盖 | `nilConversationStaysConsistent` |
 | 37 | 截图流程会话绑定 | 启动时无会话但写回时已选中新会话，旧截图被丢弃（**#422**） | 无 | 以 nil 启动 insert 后同步选中 B，await 编码完成 | 挂起池为空 | P1 | ✅ 已覆盖 | `nilToSelectedDiscardsStaleScreenshot` |
+| 38 | 截图坐标换算 | 原点在主屏内的单屏 union 换算后保持不变（**#646**） | AppKit union (0,0,1440,900)，主屏高 900 | 调用 `displaySpaceRect(fromAppKit:primaryDisplayHeight:)` | 返回同一矩形 | P1 | ✅ 已覆盖 | `singleDisplayAtOriginStaysUnchanged` |
+| 39 | 截图坐标换算 | 副屏在主屏上方时 union 转为负 y 显示空间矩形（**回归 #829** 示例） | AppKit union (0,0,1440,1800)，主屏高 900 | 调用 `displaySpaceRect` | 返回 (0,-900,1440,1800) | P1 | ✅ 已覆盖 | `secondaryAboveFlipsUnionToNegativeY` |
+| 40 | 截图坐标换算 | 副屏在主屏下方时 union 顶部对齐主屏顶端（**回归 #646**） | AppKit union (0,-900,1440,1800)，主屏高 900 | 调用 `displaySpaceRect` | 返回 (0,0,1440,1800) | P1 | ✅ 已覆盖 | `secondaryBelowAlignsTopToPrimaryTop` |
+| 41 | 截图坐标换算 | 横向双屏 union 只翻转 y 区间，x 区间不变（**#646**） | AppKit union (-1200,100,3600,800)，主屏高 900 | 调用 `displaySpaceRect` | 返回 (-1200,0,3600,800) | P2 | ✅ 已覆盖 | `keepsXAndFlipsOnlyY` |
+| 42 | 截图坐标换算 | 换算后的抓取区域与 AppKit 选区裁剪配对在同一桌面区域（**回归 #646**） | 双屏纵向堆叠 union + 模拟抓取位图（顶部 400 行黑色） | 用 union 作 captureFrame、副屏内选区调用 `ChatScreenshotState.crop` | 裁剪结果全部像素为黑色条带，无错位 | P0 | ✅ 已覆盖 | `captureRectAndCropPairOnSameDesktopRegion` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **42 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
+> 变异验证（#646 / #829）：`captureAllScreens` 原先把 AppKit union（主屏左下原点）直接传给 `SCScreenshotManager.captureImage(in:)` 与 `CGWindowListCreateImage`，而两者按显示空间（主屏左上原点、y 向下）解释矩形，多屏纵向偏移时抓到错误区域。修复为新增 `displaySpaceRect(fromAppKit:primaryDisplayHeight:)` 做左下↔左上换算，抓取前转换、返回的 `Result.frame` 保持 AppKit 坐标供选区裁剪。M1 把换算函数改为恒等返回（还原原 bug）→ `secondaryAboveFlipsUnionToNegativeY`、`secondaryBelowAlignsTopToPrimaryTop`、`keepsXAndFlipsOnlyY`、`captureRectAndCropPairOnSameDesktopRegion` 转红，`singleDisplayAtOriginStaysUnchanged` 仍绿（单屏原点布局不受影响）。变异施加并确认转红后还原，最终 42 条全绿。
 > 变异验证（#422）：删除 `ScreenshotFlowRunner.insert` 中写回前的 `guard capability.selectedConversationID == conversationID` 后，`staleScreenshotDoesNotLeakIntoNewConversation` 与 `nilToSelectedDiscardsStaleScreenshot` 转红（旧截图落入新会话挂起池），另两条（同会话正常入池 / nil→nil 一致）保持绿；恢复守卫后 37 条全绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 31 / 31
-- P2: 已覆盖 3 / 3
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 34 / 34
+- P2: 已覆盖 4 / 4
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

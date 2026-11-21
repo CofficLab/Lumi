@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -10,17 +10,17 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
-        .package(name: "ProviderAgentLoop", path: "../ProviderAgentLoop"),
-        .package(name: "ProviderMessage", path: "../ProviderMessage"),
-        .package(name: "ProviderMessageSender", path: "../ProviderMessageSender"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.0"),
-        .package(name: "ProviderLLMManager", path: "../ProviderLLMManager"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
-        .package(name: "ProviderMessageStreaming", path: "../ProviderMessageStreaming"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(name: "ProviderLifecycleHooks", path: "../ProviderLifecycleHooks"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessageSender.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLLMManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessageStreaming.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
         .package(name: "ProviderLLMContext", path: "../ProviderLLMContext"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
     ],
     targets: [
         .target(
@@ -28,15 +28,15 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "LumiProviderMessageSender"),
                 .product(name: "KitLLM", package: "LumiKitLLM"),
-                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderLLMManager", package: "LumiProviderLLMManager"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
-                .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
+                .product(name: "ProviderMessageStreaming", package: "LumiProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
                 .product(name: "ProviderLLMContext", package: "ProviderLLMContext"),
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
             ]

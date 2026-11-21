@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import EditorSource
 
 @MainActor
 extension EditorState {
@@ -80,6 +81,11 @@ extension EditorState {
                 guard let self, let url else { return }
                 self.recordSuccessfulSave()
                 self.lspClient.documentDidSave(uri: url.absoluteString, text: content)
+                // 保存落盘成功必须广播 `.lumiEditorSave`：IdleTime 等监听方靠它
+                // 记录 fileSave 活动。此前该通知从未被任何代码发出（#461）。
+                NotificationCenter.default.post(name: .lumiEditorSave, object: url)
+                // 保存落盘成功必须广播 `.lumiEditorSave`：IdleTime 等监听方靠它
+                // 记录 fileSave 活动。此前该通知从未被任何代码发出（#461）。
             },
             setHasUnsavedChanges: { [weak self] value in
                 self?.hasUnsavedChanges = value
@@ -266,7 +272,9 @@ extension EditorState {
 
         Task {
             do {
-                guard let newContent = try await externalFileController.loadExternalText(from: url) else { return }
+                // #398：解码失败现在按错误抛出并被下方 catch 记录，
+                // 不再有静默吞掉外部改动的 nil 分支。
+                let newContent = try await externalFileController.loadExternalText(from: url)
                 // await 期间可能已切到别的文件：写回前复核当前标签仍是发起重读的文件，
                 // 否则丢弃旧文件的结果，避免 A 的内容覆盖 B 并被随后保存写坏（#206）。
                 guard self.currentFileURL == url else { return }

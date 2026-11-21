@@ -164,28 +164,29 @@ struct EmptyStateActivityLoadingTests {
         #expect(since == day(-(EmptyStateActivityViewModel.windowDayCount - 1)))
     }
 
-    @Test("re-entering the empty state on the same day reuses the loaded window")
-    func sameDayReentryHitsTheCacheGate() async throws {
+    @Test("re-entering the empty state on the same day re-queries mutable today")
+    func sameDayReentryRequeriesToday() async throws {
         let manager = StubMessageManager()
         manager.messageSeries = [day(0): 4]
 
         let model = EmptyStateActivityViewModel(messages: manager, calendar: calendar)
         await model.loadIfNeeded()
         #expect(manager.messageQueryCount == 1)
-        #expect(manager.tokenQueryCount == 1)
-
-        // The strip is pure history, so repeated appearances within one calendar
-        // day must not re-query the store.
-        await model.loadIfNeeded()
-        await model.loadIfNeeded()
-        #expect(manager.messageQueryCount == 1)
-        #expect(manager.tokenQueryCount == 1)
         #expect(model.totalMessages == 4)
 
-        // An explicit force is the documented escape hatch.
-        await model.loadIfNeeded(force: true)
-        #expect(manager.messageQueryCount == 2)
-        #expect(manager.tokenQueryCount == 2)
+        // 今天是可变数据：新消息写入后，同日重入必须重查而不是命中缓存（#806）。
+        manager.messageSeries = [day(0): 7]
+        await model.loadIfNeeded()
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 3)
+        #expect(manager.tokenQueryCount == 3)
+        #expect(model.totalMessages == 7)
+
+        // 删除同样要反映出来，不能保留指向不存在历史的数字。
+        manager.messageSeries = [day(0): 2]
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 4)
+        #expect(model.totalMessages == 2)
     }
 
     @Test("an empty history resolves to zero instead of staying unknown")
@@ -293,21 +294,27 @@ struct EmptyStateActivityLoadingTests {
         #expect(model.hasActivity, "数据就绪后活动条仍不显示")
     }
 
-    /// 非零结果仍然受益于缓存门：同一天内重复进入不重复查库。
-    @Test("a non-zero result still short-circuits repeat queries")
-    func nonZeroResultKeepsTheCacheGate() async throws {
+    /// 非零结果同样在重入时重查：消息与 token 两级统计都要跟随今天的实际历史（#806）。
+    @Test("a non-zero result also refreshes on re-entry, both series")
+    func nonZeroResultAlsoRefreshesBothSeriesOnReentry() async throws {
         let manager = StubMessageManager()
         manager.messageSeries = [day(0): 3]
+        manager.tokenSeries = [day(0): 300]
 
         let model = EmptyStateActivityViewModel(messages: manager, calendar: calendar)
         await model.loadIfNeeded()
         #expect(manager.messageQueryCount == 1)
-
-        // 再加一条消息，属于「同一天历史小幅变化」——维持原缓存语义。
-        manager.messageSeries = [day(0): 4]
-        await model.loadIfNeeded()
-        #expect(manager.messageQueryCount == 1, "非零结果不应重复查库")
         #expect(model.totalMessages == 3)
+        #expect(model.totalTokens == 300)
+
+        // 同一天内 token 更新（新消息带 token 用量）也必须跟上。
+        manager.messageSeries = [day(0): 4]
+        manager.tokenSeries = [day(0): 500]
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 2)
+        #expect(manager.tokenQueryCount == 2)
+        #expect(model.totalMessages == 4)
+        #expect(model.totalTokens == 500)
     }
 
     /// Messages and tokens gate the two visuals independently: a day can have

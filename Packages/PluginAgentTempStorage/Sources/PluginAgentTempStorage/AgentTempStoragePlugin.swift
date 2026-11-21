@@ -28,6 +28,27 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
 
     public init() {}
 
+    // MARK: - 过期文件定时清理（#509）
+
+    /// 定时清理周期。清理此前只挂在 write/read/list 工具调用上，没有工具
+    /// 操作时过期文件会无限滞留；启动清理 + 每小时巡检保证承诺的自动删除。
+    nonisolated static let purgeInterval: Duration = .seconds(3600)
+
+    private var purgeScheduler: ExpiredTempFilePurgeScheduler?
+
+    /// 启动即清理一次过期文件，并按 `purgeInterval` 周期巡检（#509）。
+    private func startExpiredFilePurge() {
+        let scheduler = ExpiredTempFilePurgeScheduler(interval: Self.purgeInterval) {
+            do {
+                try await TempFileStorageService.shared.purgeExpiredFiles()
+            } catch {
+                Self.logger.error("\(Self.t)Scheduled temp file purge failed: \(String(describing: error))")
+            }
+        }
+        scheduler.start()
+        purgeScheduler = scheduler
+    }
+
     public func migrateData(context: PluginDataMigrationContext) throws {
         try PluginDataMigrationUtility.copyLegacyDirectories(
             legacyDirectoryNames: legacyDataDirectoryNames,
@@ -100,9 +121,13 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
                 toolManager.add(tool, pluginID: id)
             }
         }
+
+        startExpiredFilePurge()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        purgeScheduler?.stop()
+        purgeScheduler = nil
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)

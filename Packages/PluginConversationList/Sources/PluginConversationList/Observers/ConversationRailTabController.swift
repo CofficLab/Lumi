@@ -81,12 +81,7 @@ final class ConversationRailTabController {
             projectObserver = project.addObserver { [weak self] event in
                 guard case .currentProjectChanged = event else { return }
                 self?.scheduleRefresh()
-                if let projectViewModel = self?.projectViewModel {
-                    Task { @MainActor in
-                        await projectViewModel.reload()
-                    }
-                }
-                }
+            }
         }
 
         // 首次评估负责按数据注册 `chats` / `project-chats`。

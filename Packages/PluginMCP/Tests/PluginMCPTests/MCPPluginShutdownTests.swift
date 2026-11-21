@@ -27,7 +27,7 @@ struct MCPPluginShutdownTests {
         let session = ObservableSession(config: MCPServerConfig(name: "obs", command: "noop"))
         // 经独立函数注入：函数返回后测试侧不再强引用 manager，使 plugin.manager
         // 成为唯一强引用，忠实复现「弱捕获 + 随后置 nil」的竞态。
-        try attachObservableSession(session, to: plugin)
+        try await attachObservableSession(session, to: plugin)
 
         try plugin.onShutdown(kernel: kernel)
 
@@ -40,9 +40,9 @@ struct MCPPluginShutdownTests {
         #expect(await session.disconnectCount == 1)
     }
 
-    private func attachObservableSession(_ session: ObservableSession, to plugin: MCPPlugin) throws {
+    private func attachObservableSession(_ session: ObservableSession, to plugin: MCPPlugin) async throws {
         let manager = try #require(plugin.manager)
-        manager.attachSessionForTesting(session, serverID: "obs")
+        await manager.attachSessionForTesting(session, serverID: "obs")
     }
 }
 

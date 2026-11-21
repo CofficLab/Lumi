@@ -11,18 +11,36 @@ extension ConnectClient {
         ]
         let policy: ConnectFetchPolicy = forceRefresh ? .networkOnly : fetchPolicy
         Self.logger.info("\(Self.t)listVersions appID=\(appID) fetchPolicy=\(String(describing: policy))")
-        let response: AppStoreConnectListResponse<AppStoreVersion> = try await request(
+        let firstPage: AppStoreConnectListResponse<AppStoreVersion> = try await request(
             path: "/v1/apps/\(appID)/appStoreVersions",
             queryItems: query,
             cachePolicy: forceRefresh ? .networkOnly : nil
         )
-        Self.logger.info("\(Self.t)listVersions returned \(response.data.count) versions")
+
+        // 跟随 links.next 翻页：固定 limit=100 只读首页会把第 101 个之后的
+        // 版本静默丢弃（#319）。页数上限仅作防御，正常情况下一页为空即停。
+        var allData = firstPage.data
+        var nextURL = firstPage.links?.next
+        var pageCount = 1
+        let maxPages = 100
+        while let url = nextURL {
+            if pageCount >= maxPages {
+                Self.logger.error("\(Self.t)listVersions hit the \(maxPages)-page cap; versions beyond page \(maxPages) are not fetched")
+                break
+            }
+            let page: AppStoreConnectListResponse<AppStoreVersion> = try await requestAbsolute(url: url)
+            allData += page.data
+            nextURL = page.links?.next
+            pageCount += 1
+        }
+
+        Self.logger.info("\(Self.t)listVersions returned \(allData.count) versions")
         if Self.verbose {
-            for v in response.data.prefix(5) {
+            for v in allData.prefix(5) {
                 Self.logger.info("\(Self.t)  - \(v.versionString) (state: \(v.appStoreState), platform: \(v.platform))")
             }
         }
-        return response.data.sorted {
+        return allData.sorted {
             ($0.createdDate ?? .distantPast) > ($1.createdDate ?? .distantPast)
         }
     }

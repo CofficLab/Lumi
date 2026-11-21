@@ -89,6 +89,39 @@ struct BrowserToolRegistrationTests {
         }
     }
 
+    @Test("onDisable 注销全部浏览器工具与 ActivityBar 入口")
+    func removesAllToolsAndEntryOnDisable() async throws {
+        let (kernel, toolManager) = try makeKernel()
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) as? DefaultActivityBarProviding
+        let plugin = BrowserPlugin()
+        try plugin.onBoot(kernel: kernel)
+        try await plugin.onDisable(kernel: kernel)
+
+        for name in Self.expectedToolNames {
+            #expect(toolManager.tool(named: name) == nil, "工具 \(name) 在禁用后仍注册")
+        }
+        #expect(activityBar?.items.contains(where: { $0.id == "Browser.entry" }) != true, "ActivityBar 入口在禁用后仍存在")
+    }
+
+    @Test("onDisable 后 onEnable 重新注册全部工具与入口")
+    func reEnablesAfterDisable() async throws {
+        let (kernel, toolManager) = try makeKernel()
+        let plugin = BrowserPlugin()
+        try plugin.onBoot(kernel: kernel)
+        try await plugin.onDisable(kernel: kernel)
+        // 前置确认：禁用确实撤回了贡献，否则重新注册断言无法区分「恢复了」与「从未撤回」。
+        for name in Self.expectedToolNames {
+            #expect(toolManager.tool(named: name) == nil, "前置失败：工具 \(name) 在禁用后仍注册")
+        }
+        try await plugin.onEnable(kernel: kernel)
+
+        for name in Self.expectedToolNames {
+            #expect(toolManager.tool(named: name) != nil, "工具 \(name) 重新启用后未注册")
+        }
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) as? DefaultActivityBarProviding
+        #expect(activityBar?.items.contains(where: { $0.id == "Browser.entry" }) == true, "重新启用后 ActivityBar 入口缺失")
+    }
+
     @Test("工具的风险等级符合预期")
     func riskLevelsAreAppropriate() throws {
         let manager = BrowserSessionManager()

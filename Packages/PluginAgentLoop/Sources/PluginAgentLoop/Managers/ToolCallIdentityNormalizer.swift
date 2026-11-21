@@ -48,6 +48,7 @@ enum ToolCallIdentityNormalizer {
             model: response.model,
             toolCalls: normalizedToolCalls,
             reasoningContent: response.reasoningContent,
+            thinkingSignature: response.thinkingSignature,
             redactedThinking: response.redactedThinking,
             inputTokenCount: response.inputTokenCount,
             outputTokenCount: response.outputTokenCount,

@@ -191,6 +191,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         responseID: String?,
         stopReason: String?,
         redactedThinking: [LLMRedactedThinkingBlock],
+        reasoningContent: String?,
+        thinkingSignature: String?,
         /// 归一后的 token 计数。
         ///
         /// 随响应一起解码得出，调用方不必把整份响应再解析一遍只为读
@@ -206,10 +208,19 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         var textContent = ""
         var toolCalls: [ToolCall] = []
         var redactedThinking: [LLMRedactedThinkingBlock] = []
+        var reasoningContent = ""
+        var thinkingSignature: String?
 
         for item in response.content {
             if item.type == "text", let text = item.text {
                 textContent += text
+            } else if item.type == "thinking" {
+                // 非流式 thinking 文本与签名一并保留；多块时签名取最后一块，
+                // 与 SSE 累积器的 last-wins 语义一致（#287）。
+                reasoningContent += item.thinking ?? ""
+                if let signature = item.signature, !signature.isEmpty {
+                    thinkingSignature = signature
+                }
             } else if item.type == "redacted_thinking", let data = item.data, !data.isEmpty {
                 // 不透明密文整块保留：整段 JSON 回退必须与 SSE 一样带上它，
                 // 否则下一轮请求无法回传原始 redacted_thinking 块（#1167）。
@@ -253,6 +264,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             response.id,
             response.stopReason,
             redactedThinking,
+            reasoningContent.isEmpty ? nil : reasoningContent,
+            thinkingSignature,
             ResponseTokenUsage.counts(from: usage, anthropic: true)
         )
     }
@@ -293,6 +306,10 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                     cacheTotalInputTokens: parsed.cacheTotalInputTokens,
                     responseID: parsed.responseID,
                     stopReason: parsed.stopReason,
+                    // 思考全文与签名同样必须随回退 chunk 下发，否则整段 JSON
+                    // 网关的下一轮请求会因签名缺失被拒（#287）。
+                    thinkingSignature: parsed.thinkingSignature,
+                    reasoningContent: parsed.reasoningContent,
                     // 整段 JSON 一次到达多个 opaque 块，用数组承载，
                     // 与 SSE 逐块下发的最终结果保持一致（#1167）。
                     redactedThinkingBlocks: parsed.redactedThinking.isEmpty
@@ -475,6 +492,11 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                             rawEvent: text
                         )
                     }
+                    if let signature = delta["signature"] as? String, !signature.isEmpty {
+                        // 签名必须原样保存并随下一轮思考块回传，否则带工具
+                        // 调用的历史会因签名缺失被供应商拒绝（#287）。
+                        return StreamChunk(eventType: .signatureDelta, rawEvent: text, thinkingSignature: signature)
+                    }
                     if delta["signature"] != nil {
                         return StreamChunk(eventType: .signatureDelta, rawEvent: text)
                     }
@@ -501,14 +523,15 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
     /// 缓存命中率的分母 = 输入总 token 数。
     ///
-    /// 不同 Anthropic 兼容端点的 `input_tokens` 语义不一致，需按值推断：
-    /// - Anthropic 官方：`input_tokens` 已含 `cache_read` 与 `cache_creation`
-    ///   （故 `input_tokens >= cache_read + cache_creation`），直接用它即可；
-    /// - DeepSeek 等兼容层（实测 2026-08-06）：`input_tokens` 是「未命中」部分，
-    ///   总输入 = `input_tokens + cache_read + cache_creation`
-    ///   （例：总 580 = input 68 + read 512，此时 input < read）。
-    /// 用 `input_tokens` 与 `cache_read + cache_creation` 的大小关系做启发式区分。
-    /// 切勿无条件把三者相加——那会让官方语义下的分母被重复放大、缓存率系统性低估。
+    /// Anthropic 官方 `input_tokens` 只统计**未命中**缓存的部分，官方文档明确
+    /// 总输入 = `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`
+    /// 三段相加。DeepSeek 等兼容层同口径（实测 2026-08-06：总 580 =
+    /// input 68 + read 512）。因此一律无条件相加；按大小关系推断口径的
+    /// 启发式会把官方响应的缓存命中率放大近一倍（例：2048/4096 = 50%
+    /// 被算成 1800/2048 = 87.9%，#512）。
+    ///
+    /// OpenAI 形态（`prompt_tokens` 已含 `cached_tokens`）、Gemini 形态
+    /// （`prompt_token_count` 同理）不走本函数，直接用各自的总数字段。
     static func cacheTotalInputTokens(
         inputTokens: Int?,
         cachedInputTokens: Int?,
@@ -519,12 +542,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             guard !values.isEmpty else { return nil }
             return values.reduce(0, +)
         }
-        let read = cachedInputTokens ?? 0
-        let write = cacheWriteInputTokens ?? 0
-        if inputTokens < read + write {
-            return inputTokens + read + write
-        }
-        return inputTokens
+        return inputTokens + (cachedInputTokens ?? 0) + (cacheWriteInputTokens ?? 0)
     }
 
     /// 兼容阿里云不同协议入口及网关转发时使用的缓存字段路径。
@@ -572,6 +590,11 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
         // redacted thinking 必须作为独立的不透明块原样回传。
         // 协议要求 thinking / redacted_thinking 出现在 text 与 tool_use 之前。
+        // thinking 块必须携带原始签名回传（#287）。
+        let signatureBlock: [String: Any]? = {
+            guard let signature = message.thinkingSignature, !signature.isEmpty else { return nil }
+            return ["signature": signature]
+        }()
         let redactedBlocks: [[String: Any]] = (message.redactedThinking ?? []).compactMap { block in
             guard !block.data.isEmpty else { return nil }
             return ["type": "redacted_thinking", "data": block.data]
@@ -585,7 +608,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
             if let reasoningContent = message.reasoningContent,
                !reasoningContent.isEmpty {
-                content.append(["type": "thinking", "thinking": reasoningContent])
+                var thinkingBlock: [String: Any] = ["type": "thinking", "thinking": reasoningContent]
+                thinkingBlock.merge(signatureBlock ?? [:]) { _, new in new }
+                content.append(thinkingBlock)
             }
 
             if !message.content.isEmpty {
@@ -607,7 +632,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             var content = redactedBlocks
             if let reasoningContent = message.reasoningContent,
                !reasoningContent.isEmpty {
-                content.append(["type": "thinking", "thinking": reasoningContent])
+                var thinkingBlock: [String: Any] = ["type": "thinking", "thinking": reasoningContent]
+                thinkingBlock.merge(signatureBlock ?? [:]) { _, new in new }
+                content.append(thinkingBlock)
             }
             if !message.content.isEmpty {
                 content.append(["type": "text", "text": message.content])

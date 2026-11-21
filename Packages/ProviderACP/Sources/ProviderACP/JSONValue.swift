@@ -7,6 +7,8 @@ public enum JSONValue: Sendable, Equatable, Hashable {
     case array([JSONValue])
     case string(String)
     case number(Double)
+    /// 64 位整数字面量。JSON-RPC id 必须原样回显，Double 会丢失 2^53 之外的精度（#355）。
+    case integer(Int64)
     case bool(Bool)
     case null
 }
@@ -24,11 +26,12 @@ public extension JSONValue {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
-    /// 作为请求 ID 使用时的便捷取值（string / number）。
+    /// 作为请求 ID 使用时的便捷取值（string / number / integer）。
     var requestIDValue: String? {
         switch self {
         case .string(let s): return s
         case .number(let n): return String(n)
+        case .integer(let i): return String(i)
         default: return nil
         }
     }
@@ -43,6 +46,8 @@ extension JSONValue: Codable {
             self = .null
         } else if let bool = try? container.decode(Bool.self) {
             self = .bool(bool)
+        } else if let integer = try? container.decode(Int64.self) {
+            self = .integer(integer)
         } else if let number = try? container.decode(Double.self) {
             self = .number(number)
         } else if let string = try? container.decode(String.self) {
@@ -66,6 +71,7 @@ extension JSONValue: Codable {
         case .array(let a): try container.encode(a)
         case .string(let s): try container.encode(s)
         case .number(let n): try container.encode(n)
+        case .integer(let i): try container.encode(i)
         case .bool(let b): try container.encode(b)
         case .null: try container.encodeNil()
         }

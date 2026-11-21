@@ -64,7 +64,8 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         try await execute(arguments: arguments, conversationProjectPath: nil, conversationID: nil)
     }
 
-    private func execute(
+    /// `conversationProjectPath` 暴露为 internal 供测试注入会话级回退路径。
+    func execute(
         arguments: [String: ToolArgument],
         conversationProjectPath: String?,
         conversationID: UUID?
@@ -73,11 +74,15 @@ public struct RAGCodeSearchTool: SuperAgentTool {
               !query.isEmpty else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing required `query` parameter.")
         }
-        let explicitPath = (arguments["project_path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 只把「空白参数」视为未提供；非空路径必须原样保留——macOS 目录名
+        // 可以合法地以空格开头/结尾，trim 会把它改写成另一个真实存在的
+        // 目录（issue #605）。
+        let rawExplicitPath = arguments["project_path"]?.value as? String
+        let hasExplicitPath = !(rawExplicitPath?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let currentPath = await MainActor.run { ProjectRAGRuntime.provider?.currentProjectPath }
         // 优先显式参数，其次工具调用所属会话绑定的项目，最后回退到 UI 当前项目。
-        let projectPath = explicitPath?.isEmpty == false
-            ? explicitPath
+        let projectPath = hasExplicitPath
+            ? rawExplicitPath!
             : conversationProjectPath ?? currentPath
         guard let projectPath, !projectPath.isEmpty else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Open a project or provide `project_path`.")

@@ -2,7 +2,6 @@ import Foundation
 import ProviderConversation
 import ProviderProject
 import ProviderRailView
-import PluginRootView
 import ProviderRootView
 import Testing
 @testable import PluginConversationList
@@ -152,7 +151,7 @@ import Testing
         pluginID: "test.conversation-list"
     )
     let rail = DefaultRailViewProviding()
-    let rootView = PluginRootView.DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     // 模拟 ChatPanelPlugin 首屏写入的 `true`：真实顺序里 Chat 先 boot。
     rootView.setRailViewVisible(true)
 

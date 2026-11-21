@@ -80,8 +80,22 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
             break
         }
 
-        try? await kernel
-            .resolveProvider((any MessageSendingProviding).self)?
-            .sendMessage(suggestion.prompt, conversationID: nil)
+        do {
+            try await kernel
+                .resolveProvider((any MessageSendingProviding).self)?
+                .sendMessage(suggestion.prompt, conversationID: nil)
+        } catch {
+            // 发送失败不能静默：启用 / 切换界面等前置操作已经完成，
+            // 用户必须知道消息并没有发出（#493）。
+            let failedTitle = LumiLocalization.string(
+                "Failed to Send Message",
+                bundle: .module
+            )
+            kernel.resolveProvider((any ToastProviding).self)?.show(
+                failedTitle,
+                detail: error.localizedDescription,
+                style: .error
+            )
+        }
     }
 }

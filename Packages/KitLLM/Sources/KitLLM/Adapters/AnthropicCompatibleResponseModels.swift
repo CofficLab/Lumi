@@ -136,6 +136,10 @@ struct AnthropicCompatibleResponse: Decodable {
         let id: String?
         let name: String?
         let input: [String: AnthropicCompatibleAnyValue]?
+        /// `thinking` 块的思考文本。
+        let thinking: String?
+        /// `thinking` 块的签名，必须随思考文本原样回传（#287）。
+        let signature: String?
         /// `redacted_thinking` 块的不透明密文，必须原样回传（#1167）。
         let data: String?
     }

@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginAgentTurnNotification", targets: ["PluginAgentTurnNotification"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
-        .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderLifecycleHooks"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -23,9 +23,9 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                "ProviderAgentLoop",
+                .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                "ProviderLifecycleHooks",
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
             ],
             path: "Sources/PluginAgentTurnNotification",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -36,7 +36,7 @@ let package = Package(
                 "PluginAgentTurnNotification",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
             ],
             path: "Tests/PluginAgentTurnNotificationTests"
         ),

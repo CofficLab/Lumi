@@ -56,13 +56,21 @@ struct TokenHubProviderPluginTests {
             "glm-5.3", "glm-5.2", "glm-5.1", "glm-5", "glm-5-turbo",
             "minimax-m3", "minimax-m2.7", "qwen3.5-plus",
             "deepseek-v4-flash", "deepseek-v4-flash-0731", "hy-mt2-pro",
+            "deepseek/deepseek-v4-flash-vision-exp", "hy-vision-2.0-instruct", "glm-5.3-flash",
+        ])
+        #expect(info.models.count == 23)
+
+        // #414：聊天供应商只应列出支持 Chat Completions 的模型——图像、视频、
+        // 3D、语音模型走专用协议，混进清单会被当作流式聊天模型。
+        let nonChatIDs = [
             "hy-image-v3", "vidu-image-q2",
             "minimax-video-h3", "pixverse-video-c1", "kling-video-v3",
             "hy-3d-3.1", "hy-3d-3.0", "hy-3d-express",
-            "deepseek/deepseek-v4-flash-vision-exp", "hy-vision-2.0-instruct", "glm-5.3-flash",
             "hy-asr-3.0-preview", "minimax-speech-2.8-hd", "minimax-music-v2.6",
-        ])
-        #expect(info.models.count == 34)
+        ]
+        for id in nonChatIDs {
+            #expect(!info.contains(model: id), "非聊天模型 \(id) 不应出现在聊天供应商清单")
+        }
         #expect(info.contains(model: info.defaultModel))
 
         // 默认模型 hy4-preview 为 1M 上下文

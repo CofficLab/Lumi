@@ -56,6 +56,7 @@ extension Message {
             },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
+            thinkingSignature: thinkingSignature,
             redactedThinking: redactedThinkingData?.map {
                 KitLLM.LLMRedactedThinkingBlock(data: $0)
             },
@@ -215,6 +216,7 @@ func messageFromLLMMessage(_ message: LLMMessage, conversationID: UUID) -> Messa
         isError: message.isError,
         toolCallID: message.toolCallID,
         reasoningContent: message.reasoningContent,
+        thinkingSignature: message.thinkingSignature,
         toolCalls: message.toolCalls?.map {
             MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
         }

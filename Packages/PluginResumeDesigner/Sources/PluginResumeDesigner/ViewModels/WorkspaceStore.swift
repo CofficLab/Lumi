@@ -82,9 +82,10 @@ final class WorkspaceStore: ObservableObject {
             return
         }
         do {
+            // manifest 已随列表解码在内存里，直接复用，不再重复读盘（#1177）。
             selectedResume = try documentStore.readResume(
-                storagePath: projectStoragePath,
-                slug: document.id
+                document: document,
+                storagePath: projectStoragePath
             )
         } catch {
             selectedResume = nil
@@ -94,10 +95,8 @@ final class WorkspaceStore: ObservableObject {
     // MARK: - Selection
 
     func select(resumeID: String) {
-        guard projectResumes.contains(where: { $0.id == resumeID }) else {
-            // 未找到：仅记录 ID。
-            selectedResumeID = resumeID
-            refreshSelectedResume()
+        // 选中的仍是已加载的同一份简历时不再重复读盘（#1177）。
+        if selectedResumeID == resumeID, selectedResume != nil {
             return
         }
         selectedResumeID = resumeID

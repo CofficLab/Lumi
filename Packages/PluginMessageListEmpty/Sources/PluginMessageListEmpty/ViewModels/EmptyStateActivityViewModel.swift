@@ -176,27 +176,16 @@ final class EmptyStateActivityViewModel: ObservableObject {
         }
     }
 
-    /// Loads the window, unless it is already loaded for the same end day.
+    /// Loads the window; window ends today, so every load re-queries.
     ///
-    /// The strip is pure history, so repeated appearances of the empty state
-    /// should not re-query the database unless the calendar window moved.
+    /// 过去的日子是纯历史，但窗口末端永远包含「今天」——今天是可变数据：
+    /// 新消息、token 更新与删除都会改变统计，同日重入不能按历史缓存
+    /// 直接返回（#806）。零结果保持可重试（启动早期数据库尚未就绪时，
+    /// 第一次查询本来就该是 0）。
     func loadIfNeeded(force: Bool = false) async {
         guard let messages else { return }
 
         let today = calendar.startOfDay(for: .now)
-        // - Important: 只在**已经拿到非零结果**时才命中缓存门。
-        //
-        //   原先的条件是 `totalMessages != nil`，于是「首次查询得到 0」会把
-        //   结果永久钉死：启动早期数据库统计尚未就绪时，第一次查询本来就
-        //   应当是 0，等数据就绪后却再也不会重查。用户表现是本次运行内
-        //   活动条一直不出现（实测：查询返回 0 之后 0.4s，数据才带着 9 条
-        //   消息就绪，而缓存门已经拒绝重试）。
-        //
-        //   零结果是「可能还没准备好」而非「确定没有」，对它保持可重试；
-        //   非零结果才用「同一天内历史不变」这个前提换取不重复查库。
-        if !force, let visibleRange, visibleRange.upperBound == today, let total = totalMessages, total > 0 {
-            return
-        }
 
         loadGeneration &+= 1
         let generation = loadGeneration

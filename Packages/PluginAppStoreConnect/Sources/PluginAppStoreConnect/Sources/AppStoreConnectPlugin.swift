@@ -78,6 +78,10 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         // 早期版本的回退实现把缓存直接写到 bundle 根目录下的
         // AppStoreConnectPlugin，升级时也要并入 ID 目录。
+        defer {
+            // 截图缓存已迁到 App 级 DiskCache 桶，旧的自管目录只是遗留垃圾。
+            discardLegacyScreenshotCache(in: context.currentPluginDataDirectory)
+        }
         let legacyDirectory = AppStoreConnectPluginRuntimeBridge.productionFallbackRootDirectory
             .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
         guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
@@ -89,6 +93,16 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             from: legacyDirectory,
             to: context.currentPluginDataDirectory
         )
+    }
+
+    /// 删除插件数据目录里遗留的自管截图缓存（`screenshot-cache`）。
+    private func discardLegacyScreenshotCache(in pluginDataDirectory: URL) {
+        let legacyCache = pluginDataDirectory.appendingPathComponent(
+            ScreenshotCacheConfiguration.legacyCacheDirectoryName,
+            isDirectory: true
+        )
+        guard FileManager.default.fileExists(atPath: legacyCache.path) else { return }
+        try? FileManager.default.removeItem(at: legacyCache)
     }
 
     public func onRegister(kernel: KernelCoreContainer) throws {

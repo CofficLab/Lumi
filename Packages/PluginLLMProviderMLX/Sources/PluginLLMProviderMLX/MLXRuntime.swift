@@ -8,7 +8,7 @@ final class MLXRuntime {
     static let shared = MLXRuntime()
 
     private var modelContainer: ModelContainer?
-    private var currentModelID: String?
+    private var session = MLXModelSession()
 
     /// 引用 VLM factory，确保 `MLXVLM` 目标被链接进二进制。
     ///
@@ -24,7 +24,7 @@ final class MLXRuntime {
 
     func unload() {
         modelContainer = nil
-        currentModelID = nil
+        session.discardContainer()
     }
 
     func generate(
@@ -34,8 +34,12 @@ final class MLXRuntime {
     ) async throws -> LLMResponse {
         guard isAppleSilicon else { throw MLXProviderError.unsupportedPlatform }
         try await ensureModelDownloaded(modelID)
-        if currentModelID != modelID {
+        if session.needsLoad(for: modelID) {
+            // 先丢容器（session 同步置空）：此后无论加载成败，状态都保持一致。
+            // 加载失败时旧 ID 已被清空，重选原本可用的模型会重新走加载路径，
+            // 不会跳过加载后撞上空容器守卫而无法恢复（#411）。
             modelContainer = nil
+            session.discardContainer()
             let directory = MLXModelPaths.modelDirectory(for: modelID)
             do {
                 // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
@@ -45,32 +49,34 @@ final class MLXRuntime {
             } catch {
                 throw MLXProviderError.loadFailed(error.localizedDescription)
             }
-            currentModelID = modelID
+            session.didFinishLoad(modelID: modelID)
         }
         guard let container = modelContainer else { throw MLXProviderError.loadFailed("模型容器未就绪") }
 
-        let lastUserImages = request.messages.last(where: { $0.role == .user })?.images ?? []
-        let imageURLs = try lastUserImages.enumerated().map { index, image in
-            let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)")
-                .appendingPathExtension(ext)
-            try image.data.write(to: url, options: .atomic)
-            return url
-        }
-        defer { imageURLs.forEach { try? FileManager.default.removeItem(at: $0) } }
-
-        let lastUserMessageIndex = request.messages.lastIndex(where: { $0.role == .user })
-        let messages = request.messages.enumerated().compactMap { index, message -> Chat.Message? in
-            switch message.role {
-            case .system: return .system(message.content)
-            case .user:
-                let images = index == lastUserMessageIndex ? imageURLs.map { UserInput.Image.url($0) } : []
-                return images.isEmpty ? .user(message.content) : .user(message.content, images: images)
-            case .assistant: return .assistant(message.content)
-            default: return nil
+        // 每条 user 消息的图片都写成临时文件并按消息位置传入（#412）：
+        // 只保留最后一条的图片会让多轮对话的历史图像全部丢失。
+        var imageFiles: [URL] = []
+        var imageURLsByMessageIndex: [Int: [URL]] = [:]
+        defer { imageFiles.forEach { try? FileManager.default.removeItem(at: $0) } }
+        for (index, message) in request.messages.enumerated() where message.role == .user {
+            let urls = try message.images.enumerated().map { imageIndex, image in
+                let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)-\(imageIndex)")
+                    .appendingPathExtension(ext)
+                try image.data.write(to: url, options: .atomic)
+                return url
+            }
+            if !urls.isEmpty {
+                imageURLsByMessageIndex[index] = urls
+                imageFiles.append(contentsOf: urls)
             }
         }
+
+        let messages = MLXChatMessages.build(
+            from: request.messages,
+            imageURLsByMessageIndex: imageURLsByMessageIndex
+        )
         guard !messages.isEmpty else { throw MLXProviderError.emptyPrompt }
         let tools = mlxTools(from: request.tools)
         let input = UserInput(chat: messages, tools: tools)

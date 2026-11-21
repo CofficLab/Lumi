@@ -44,7 +44,8 @@ public struct ListAppStoreConnectAppsTool: SuperAgentTool {
         guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
-            let apps = try await client.listApps(search: search, limit: limit)
+            // limit 是对调用方有界的契约（schema 注明 maximum），不跟随翻页。
+            let apps = try await client.listApps(search: search, limit: limit, followPagination: false)
             if apps.isEmpty {
                 return "No apps were found for the current App Store Connect account."
             }

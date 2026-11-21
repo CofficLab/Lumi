@@ -101,15 +101,15 @@ final class TitleService: SuperLog {
             guard let summary = await conversations.fetchConversation(id: id) else { continue }
             // 缓存可能比查询结果新：以缓存里的标题为准。
             guard !summary.hasCustomTitle else { continue }
-            guard let firstUserMessage = await messages.firstUserMessage(in: id) else { continue }
-
-            let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
+            guard let firstTitleMessage = await firstTitleWorthyUserMessage(in: id) else { continue }
+            let titleSource = Self.titleSource(for: firstTitleMessage)
+            let placeholder = Self.placeholderTitle(forFirstUserMessage: titleSource)
             guard !placeholder.isEmpty else { continue }
             // 读取首条消息期间用户可能已通过 update_title 改了标题：写前再复核一次，
             // 旧回填不得覆盖新写入的自定义标题（#466）。与正常生成/兜底路径的二次校验一致。
             guard await shouldApplyGeneratedTitle(
                 conversationID: id,
-                firstUserMessageContent: firstUserMessage.content
+                firstUserMessageContent: titleSource
             ) else { continue }
             guard await conversations.updateConversationTitleAndWait(placeholder, for: id) else { continue }
             backfilled += 1
@@ -142,32 +142,34 @@ final class TitleService: SuperLog {
     }
 
     private func handleMessageSaved(conversationID: UUID, message: Message) async {
-        let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty else { return }
+        // 标题素材：正文，正文为空时退回附件文件名（#652）。纯空白且无附件的
+        // 消息（状态消息等）仍然跳过。
+        let titleSource = Self.titleSource(for: message)
+        guard !titleSource.isEmpty else { return }
         guard runningConversationIDs.insert(conversationID).inserted else {
             return
         }
         defer { runningConversationIDs.remove(conversationID) }
 
-        guard let firstUserMessage = await messages.firstUserMessage(in: conversationID),
-              firstUserMessage.id == message.id else {
+        guard let firstTitleMessage = await firstTitleWorthyUserMessage(in: conversationID),
+              firstTitleMessage.id == message.id else {
             return
         }
         guard await shouldApplyGeneratedTitle(
             conversationID: conversationID,
-            firstUserMessageContent: message.content
+            firstUserMessageContent: titleSource
         ) else {
             return
         }
 
         let generatedTitle: String
         do {
-            generatedTitle = try await generateTitle(for: message.content, conversationID: conversationID)
+            generatedTitle = try await generateTitle(for: titleSource, conversationID: conversationID)
         } catch {
             Self.logger.error("\(Self.t)Failed to generate conversation title for \(conversationID, privacy: .public): \(error.localizedDescription, privacy: .public)")
             await applyFallbackTitle(
                 conversationID: conversationID,
-                firstUserMessageContent: message.content,
+                firstUserMessageContent: titleSource,
                 reason: "title generation failed: \(error.localizedDescription)"
             )
             return
@@ -177,7 +179,7 @@ final class TitleService: SuperLog {
             Self.logger.error("\(Self.t)LLM returned an empty generated title for conversation \(conversationID, privacy: .public)")
             await applyFallbackTitle(
                 conversationID: conversationID,
-                firstUserMessageContent: message.content,
+                firstUserMessageContent: titleSource,
                 reason: "title generation returned an empty title"
             )
             return
@@ -185,7 +187,7 @@ final class TitleService: SuperLog {
 
         guard await shouldApplyGeneratedTitle(
             conversationID: conversationID,
-            firstUserMessageContent: message.content,
+            firstUserMessageContent: titleSource,
             generatedTitle: generatedTitle
         ) else {
             return
@@ -193,6 +195,22 @@ final class TitleService: SuperLog {
         guard await conversations.updateConversationTitleAndWait(generatedTitle, for: conversationID) else {
             Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
             return
+        }
+    }
+
+    /// 会话第一条「可产标题」的用户消息。
+    ///
+    /// `MessageManaging.firstUserMessage` 刻意跳过空正文用户消息（blank-filter
+    /// 有专门测试锁定，且是为标题服务定制的低成本查询，避免物化整个会话），
+    /// 纯附件消息因此永远匹配不上（#652）。这里优先走该快捷路径；只有它返回
+    /// nil——会话里还没有任何非空文本用户消息——才回退到全量快照扫描，把
+    /// 纯附件首条消息也纳入。回退只在纯附件会话发生，常规文本消息的开销不变。
+    private func firstTitleWorthyUserMessage(in conversationID: UUID) async -> Message? {
+        if let first = await messages.firstUserMessage(in: conversationID) {
+            return first
+        }
+        return await messages.messagesSnapshot(in: conversationID).first {
+            $0.role == .user && !Self.titleSource(for: $0).isEmpty
         }
     }
 
@@ -362,6 +380,23 @@ final class TitleService: SuperLog {
     /// 这里的倍数足够宽松：即使前缀里全是空白（每个空白折叠成一个空格），
     /// 结果也只会被压缩一个数量级，不会改变最终结果。
     private nonisolated static let placeholderTitlePrefixFactor = 8
+
+    /// 消息的标题素材：正文文本；正文为空时退回附件文件名（#652）。
+    ///
+    /// 发送端允许「只有附件、正文为空」的合法首条用户消息，而两条标题路径
+    /// （实时生成与启动回填）都曾以「正文非空」为前提——这类消息会被当成
+    /// 没有内容永久跳过，对话只能停留在 Untitled。附件文件名是现成的标题
+    /// 素材，与正文占位标题同理：用户自己提供的内容，一定比通用占位符有用。
+    ///
+    /// 粘贴的图片可能没有文件名：只统计带名字的附件；全部匿名时返回空串，
+    /// 由调用方按「无标题素材」跳过，保持原空白消息的语义。
+    nonisolated static func titleSource(for message: Message) -> String {
+        let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !content.isEmpty { return content }
+        let fileNames = UserAttachmentMetadata.decodeFileAttachments(from: message.metadata).map(\.fileName)
+            + UserAttachmentMetadata.decodeImageAttachments(from: message.metadata).compactMap(\.fileName)
+        return fileNames.joined(separator: ", ")
+    }
 
     nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
         let stripped = strippingInjectedReminders(text)

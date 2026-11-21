@@ -10,6 +10,9 @@ public struct MCPPreparedTransport: Sendable {
     public let stopProcess: (@Sendable () -> Void)?
     /// 查询子进程是否已退出及其退出码；仍在运行返回 `nil`。
     public let terminationStatus: (@Sendable () -> Int32?)?
+    /// stdio 子进程退出码流：主动 terminate 与意外退出都会发出（至多一次）；
+    /// 「是否意外」由会话层结合主动断开标记判定（#473）。HTTP 场景为 `nil`。
+    public let processExit: AsyncStream<Int32>?
     /// stdio 场景由子进程输出的诊断信息；HTTP 场景为 `nil`。
     public let diagnosticOutput: (@Sendable () -> String?)?
     /// 释放本次传输占用的管道 fd（stdio 场景）；HTTP 场景为 `nil`。
@@ -22,12 +25,14 @@ public struct MCPPreparedTransport: Sendable {
         transport: any Transport,
         stopProcess: (@Sendable () -> Void)? = nil,
         terminationStatus: (@Sendable () -> Int32?)? = nil,
+        processExit: AsyncStream<Int32>? = nil,
         diagnosticOutput: (@Sendable () -> String?)? = nil,
         cleanup: (@Sendable () -> Void)? = nil
     ) {
         self.transport = transport
         self.stopProcess = stopProcess
         self.terminationStatus = terminationStatus
+        self.processExit = processExit
         self.diagnosticOutput = diagnosticOutput
         self.cleanup = cleanup
     }
@@ -104,6 +109,15 @@ public enum MCPProcessTransport {
             }
         }
 
+        let box = ProcessBox(process)
+        let (exitStream, exitContinuation) = AsyncStream.makeStream(of: Int32.self)
+        // 退出观测必须由 terminationHandler 主动上报（#473）：只靠下一次
+        // 操作时的被动查询，意外退出后状态与已注册工具会一直保持过期值。
+        process.terminationHandler = { _ in
+            exitContinuation.yield(box.process.terminationStatus)
+            exitContinuation.finish()
+        }
+
         do {
             try process.run()
         } catch {
@@ -112,7 +126,6 @@ public enum MCPProcessTransport {
             )
         }
 
-        let box = ProcessBox(process)
         let transport = StdioTransport(
             input: FileDescriptor(rawValue: outputPipe.fileHandleForReading.fileDescriptor),
             output: FileDescriptor(rawValue: inputPipe.fileHandleForWriting.fileDescriptor)
@@ -127,6 +140,7 @@ public enum MCPProcessTransport {
             terminationStatus: { [box] in
                 box.process.isRunning ? nil : box.process.terminationStatus
             },
+            processExit: exitStream,
             diagnosticOutput: { diagnosticBuffer.contents() },
             cleanup: { [errorPipe, inputPipe, outputPipe] in
                 errorPipe.fileHandleForReading.readabilityHandler = nil
@@ -166,6 +180,16 @@ public actor MCPServerSession: MCPServerServing {
     private let prepare: (MCPServerConfig) throws -> MCPPreparedTransport
     private var prepared: MCPPreparedTransport?
     private var client: Client?
+    /// 子进程退出监测任务（仅 stdio 且连接成功后存在）。
+    private var exitMonitor: Task<Void, Never>?
+    /// 意外退出事件流及其续体；主动 `disconnect()` 不产生事件（#473）。
+    private var unexpectedExitStream: AsyncStream<Int32>?
+    private var unexpectedExitContinuation: AsyncStream<Int32>.Continuation?
+    /// `disconnect()` 置位：随后的子进程退出视为主动停止，不算意外退出（#473）。
+    private var stoppingIntentionally = false
+    /// 连接代次（#401）：每次 `disconnect()` 递增。`connect()` 的 await
+    /// 期间被 disconnect 后，迟到的完成不得写回局部 client。
+    private var connectionGeneration = 0
 
     public init(
         config: MCPServerConfig,
@@ -187,7 +211,11 @@ public actor MCPServerSession: MCPServerServing {
             throw error
         }
         self.prepared = prepared
+        // 新连接生命周期开始：复位主动停止标记，否则重连后的意外退出
+        // 会被上一次 disconnect 置位的标记吞掉，不触发撤回（#473）。
+        stoppingIntentionally = false
 
+        let generation = connectionGeneration
         let client = Client(name: "Lumi", version: "1.0.0")
         do {
             try await client.connect(transport: prepared.transport)
@@ -198,11 +226,23 @@ public actor MCPServerSession: MCPServerServing {
             self.prepared = nil
             throw MCPClientError.transport(Self.message(error, diagnostics: prepared.diagnosticOutput?()))
         }
+        // 连接建立期间被 disconnect（#401）：actor 重入使 disconnect 摸不到
+        // 这个局部 client，迟到的完成既不写回也不生效；关闭后按未连接报错，
+        // 状态归属由上层连接代次决定。
+        guard connectionGeneration == generation else {
+            await client.disconnect()
+            throw MCPClientError.notConnected
+        }
         self.client = client
         isConnected = true
+        armUnexpectedExitMonitoring()
     }
 
     public func disconnect() async {
+        connectionGeneration &+= 1
+        // 先置主动停止标记：terminate 触发的退出经监测任务回到本 actor 时
+        // 必须被吞掉，不得作为意外退出上报（#473）。
+        stoppingIntentionally = true
         if let client {
             await client.disconnect()
         }
@@ -212,6 +252,43 @@ public actor MCPServerSession: MCPServerServing {
         prepared?.cleanup?()
         prepared = nil
         isConnected = false
+        exitMonitor?.cancel()
+        exitMonitor = nil
+        unexpectedExitContinuation?.finish()
+        unexpectedExitContinuation = nil
+        unexpectedExitStream = nil
+    }
+
+    /// 订阅子进程「意外退出」事件：未主动断开时子进程退出，发出退出码。
+    ///
+    /// 每个连接生命周期至多发出一次，随后流结束。不支持退出监测的实现
+    /// （HTTP 传输、测试替身）由协议默认实现返回 `nil`。
+    public func unexpectedTerminationEvents() async -> AsyncStream<Int32>? {
+        unexpectedExitStream
+    }
+
+    // MARK: - Unexpected exit monitoring (#473)
+
+    /// 连接成功后监测 stdio 子进程退出；非主动断开的退出经事件流上报。
+    private func armUnexpectedExitMonitoring() {
+        guard let processExit = prepared?.processExit, unexpectedExitStream == nil else { return }
+        let (stream, continuation) = AsyncStream.makeStream(of: Int32.self)
+        unexpectedExitStream = stream
+        unexpectedExitContinuation = continuation
+        exitMonitor = Task { [weak self] in
+            for await code in processExit {
+                guard let self else { break }
+                await self.forwardExit(code)
+            }
+        }
+    }
+
+    private func forwardExit(_ code: Int32) {
+        guard !stoppingIntentionally else { return }
+        isConnected = false
+        lastTerminationStatus = code
+        unexpectedExitContinuation?.yield(code)
+        unexpectedExitContinuation?.finish()
     }
 
     // MARK: - Tools

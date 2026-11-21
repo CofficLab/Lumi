@@ -255,23 +255,23 @@ struct ScanDirectoryTreeTool: SuperAgentTool {
         let service = DirectoryTreeService.shared
 
         do {
-            let entries = try await withTaskCancellationHandler(operation: {
-                try await service.scanTopLevelDirectoryUsage(
-                    atPath: path,
-                    onProgress: { progress in
-                        let scanned = progress.scannedFiles + progress.scannedDirectories
-                        let location = URL(fileURLWithPath: progress.currentPath).lastPathComponent
-                        await context.reportProgress(
-                            ToolExecutionProgress(
-                                message: "Scanning \(location) · \(scanned) entries · \(DiskManagerToolSupport.formatBytes(progress.scannedBytes))",
-                                completed: scanned
-                            )
+            // Important: 不在这里额外调用 `service.cancelScan()` —— 那会终止
+            // 所有并行扫描，把同批次的兄弟调用误报成用户取消（#226）。
+            // 本调用被取消时，`withTaskCancellationHandler` 会把取消传播进来，
+            // 协调器内部只取消属于本次扫描的令牌。
+            let entries = try await service.scanTopLevelDirectoryUsage(
+                atPath: path,
+                onProgress: { progress in
+                    let scanned = progress.scannedFiles + progress.scannedDirectories
+                    let location = URL(fileURLWithPath: progress.currentPath).lastPathComponent
+                    await context.reportProgress(
+                        ToolExecutionProgress(
+                            message: "Scanning \(location) · \(scanned) entries · \(DiskManagerToolSupport.formatBytes(progress.scannedBytes))",
+                            completed: scanned
                         )
-                    }
-                )
-            }, onCancel: {
-                Task { await service.cancelScan() }
-            })
+                    )
+                }
+            )
 
             guard !entries.isEmpty else {
                 return ToolCallResult(content: "No entries were found under \(path).")

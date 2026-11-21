@@ -225,6 +225,65 @@ struct AgentTurnNotificationPluginTests {
         #expect(request.content.sound != nil)
     }
 
+    @Test("前台送达展示横幅并播放声音（回归 #457）")
+    func foregroundPresentationShowsBannerAndSound() {
+        let options = TurnNotificationTapHandler.foregroundPresentationOptions()
+        #expect(options.contains(.banner))
+        #expect(options.contains(.sound))
+    }
+
+    /// 轮询等待门控流里 fire-and-forget 的 Task 完成。
+    private func waitFor(
+        _ condition: () -> Bool,
+        timeout: TimeInterval = 2
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        return condition()
+    }
+
+    /// 回归 #456：首次发送先请求系统授权；被拒不投递，同意才投递，
+    /// 且授权确认后不再重复请求。
+    @Test("首次发送先请求授权，被拒不投递，同意后投递一次（回归 #456）")
+    func firstSendRequestsAuthorizationAndGatesDelivery() async throws {
+        let originalAvailability = AgentTurnNotificationPlugin.isNotificationDeliveryAvailable
+        AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = true
+        defer { AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = originalAvailability }
+
+        let plugin = AgentTurnNotificationPlugin()
+        var requestCount = 0
+        var authorizationGranted = false
+        plugin.requestAuthorization = {
+            requestCount += 1
+            return authorizationGranted
+        }
+        var delivered: [String] = []
+        plugin.deliverNotification = { title, _, _ in delivered.append(title) }
+
+        // 授权被拒：请求一次，不投递。
+        plugin.notifier("任务完成", "body", UUID())
+        #expect(await waitFor { requestCount == 1 }, "首次发送应触发授权请求")
+        try await Task.sleep(nanoseconds: 50_000_000)
+        #expect(requestCount == 1)
+        #expect(delivered.isEmpty, "授权被拒时不应投递通知")
+
+        // 用户允许后：再次发送触发第二次请求并投递。
+        authorizationGranted = true
+        plugin.notifier("任务完成", "body", UUID())
+        #expect(await waitFor { !delivered.isEmpty }, "授权同意后应投递通知")
+        #expect(delivered == ["任务完成"])
+        #expect(requestCount == 2)
+
+        // 已确认授权：后续发送直接投递，不再重复请求。
+        plugin.notifier("任务失败", "body", UUID())
+        #expect(await waitFor { delivered.count == 2 }, "已授权的发送应直接投递")
+        #expect(delivered == ["任务完成", "任务失败"])
+        #expect(requestCount == 2, "授权确认后不应重复请求")
+    }
+
     @Test("点击通知激活应用并选中来源会话")
     func tapSelectsOriginatingConversation() throws {
         let originalAvailability = AgentTurnNotificationPlugin.isNotificationDeliveryAvailable

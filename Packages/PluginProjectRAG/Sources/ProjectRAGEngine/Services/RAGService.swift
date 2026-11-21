@@ -414,6 +414,17 @@ public actor RAGService: SuperLog {
         backgroundIndexTasks.removeValue(forKey: projectPath)
     }
 
+    /// 等待指定项目的后台索引任务真正结束（成功或失败）。
+    ///
+    /// `ensureIndexedBackground` 排队即返回；需要可靠知道「索引已结束」的
+    /// 调用方（如完成事件通知）用本方法挂起等待。等待期间 actor 被让出，
+    /// 不阻塞检索。没有排队中的任务（已结束或从未排队）时立即返回。
+    public func waitForBackgroundIndexing(projectPath: String) async {
+        let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
+        guard let task = backgroundIndexTasks[normalized] else { return }
+        _ = await task.value
+    }
+
     /// 兼容旧接口：执行一次全量重建
     public func indexProject(at path: String) async throws {
         guard isInitialized else { throw RAGError.notInitialized }

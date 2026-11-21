@@ -51,6 +51,7 @@ final class MailComposerServiceTests: XCTestCase {
             accountStore: store
         )
         let account = makeAccount()
+        store.upsertAccount(account)
         store.setPassword("p", for: account.id)
 
         let composer = MailComposerService(sessionManager: manager, accountStore: store)
@@ -92,6 +93,7 @@ final class MailComposerServiceTests: XCTestCase {
         let session = MockMailSession(messages: [])
         let manager = MailSessionManager(factory: SingleSessionFactory(session: session), accountStore: store)
         let account = makeAccount()
+        store.upsertAccount(account)
         store.setPassword("p", for: account.id)
 
         let composer = MailComposerService(sessionManager: manager, accountStore: store)
@@ -106,6 +108,7 @@ final class MailComposerServiceTests: XCTestCase {
         let session = MockMailSession(messages: [])
         let manager = MailSessionManager(factory: SingleSessionFactory(session: session), accountStore: store)
         let account = makeAccount()
+        store.upsertAccount(account)
         store.setPassword("p", for: account.id)
 
         let composer = MailComposerService(sessionManager: manager, accountStore: store)
@@ -288,6 +291,7 @@ final class MailComposeViewModelTests: XCTestCase {
     func testSuccessfulSendClearsLocalDraft() async {
         let session = MockMailSession(messages: [])
         let account = makeAccount()
+        store.upsertAccount(account)
         store.setPassword("p", for: account.id)
         let vm = makeVM(mode: .new, session: session, account: account)
         vm.to = "lisi@example.com"
@@ -305,6 +309,7 @@ final class MailComposeViewModelTests: XCTestCase {
     func testSendFailureRetainsDraftState() async {
         let session = MockMailSession(messages: [])
         let account = makeAccount()
+        store.upsertAccount(account)
         store.setPassword("p", for: account.id)
         let vm = makeVM(mode: .new, session: session, account: account)
         vm.to = "lisi@example.com"

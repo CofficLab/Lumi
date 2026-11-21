@@ -1,5 +1,5 @@
 {
-  "originHash" : "967783c209f11fbebdfa1860cb3345a8a6cd5ed277ecc0e13abb7d71f4251071",
+  "originHash" : "9e1ade7be18d47d0df7a10c1c97e42020036a1e3de200a65cf301c0507f66b08",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -51,8 +51,35 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
       "state" : {
-        "revision" : "344dc0884b423ac46e049825f12f2723d435ed86",
-        "version" : "1.0.3"
+        "revision" : "a91621cb4704162468eaef9095e8aeacae4f9ded",
+        "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "lumikitkeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitKeychain.git",
+      "state" : {
+        "revision" : "1c3d503343749a9504e8be02ab98f3fd37aa3171",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikitllm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
+      "state" : {
+        "revision" : "32b68d88408b627f075e36d04aca9d5629af3494",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumikittestsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitTestSupport.git",
+      "state" : {
+        "revision" : "3d43b467db654c19c7535fca8067f979d800dff4",
+        "version" : "1.0.1"
       }
     },
     {
@@ -78,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "218327a2a2268a759d0c064bbbcd4b46c400a9d4",
-        "version" : "1.24.1"
+        "revision" : "285db9e528f6a3f75ead91216fb6697b0fbc7fe8",
+        "version" : "1.26.0"
       }
     },
     {
@@ -87,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "6071aeccea31a48039bdecfffbdc34a98e4e4b20",
-        "version" : "1.17.1"
+        "revision" : "c5f9d55551151154290a67b65b1d69f95ea3c1cc",
+        "version" : "1.18.1"
       }
     },
     {

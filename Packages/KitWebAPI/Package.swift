@@ -21,10 +21,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.24.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.1"),
-        .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderToolManager.git", from: "1.0.2"),
         .package(path: "../ProviderWebServer"),
     ],
     targets: [
@@ -33,7 +33,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessage", package: "LumiProviderMessage"),
                 .product(name: "ProviderToolManager", package: "LumiProviderToolManager"),
                 .product(name: "ProviderWebServer", package: "ProviderWebServer"),
                 .product(name: "ProviderPluginControl", package: "LumiProviders"),

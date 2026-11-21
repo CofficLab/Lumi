@@ -282,7 +282,14 @@ public actor GoalStateManager: SuperLog {
         guard let goal = fetchGoal(id: goalId, context: context) else {
             throw GoalStateError.goalNotFound(id: goalId)
         }
-        
+
+        // 终态 Goal（completed/failed/skipped）不会再被自动续跑调度：静默接受
+        // 追加会让工具报告成功、任务落库，却永远没有执行路径（#464）。明确
+        // 拒绝，让模型改走 createGoal 重建工作序列。
+        guard !goal.isTerminal else {
+            throw GoalStateError.goalIsTerminal(id: goalId)
+        }
+
         // 获取当前最大 order
         let existingTasks = fetchAllTasks(goalId: goalId, context: context)
         let remainingCapacity = max(0, Self.maxTasksPerGoal - existingTasks.count)

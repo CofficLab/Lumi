@@ -37,39 +37,73 @@ struct ChatFileAttachmentButton: View {
         }
     }
 
-    func handle(_ result: Result<[URL], Error>) {
+    func handle(
+        _ result: Result<[URL], Error>,
+        load: @escaping @Sendable (URL) async throws -> UserFileAttachment = { try UserFileAttachmentLoader.load(from: $0) }
+    ) {
         switch result {
         case .success(let urls):
             // 挂起池是发送器级全局数组，读取期间切换会话后旧结果不能落入新会话（#161）。
             let conversationID = capability.selectedConversationID
-            for url in urls {
-                let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
-                // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
+            // 先同步登记全部读取，再启动批量读取：读取窗口内触发的发送会等整批结束（#1023）。
+            for _ in urls {
                 capability.beginAttachmentRead()
-                Task { @MainActor in
-                    defer {
+            }
+            Task { @MainActor in
+                defer {
+                    for _ in urls {
                         capability.endAttachmentRead()
-                        if hasSecurityScopedAccess {
-                            url.stopAccessingSecurityScopedResource()
-                        }
-                    }
-
-                    do {
-                        let attachment = try await Task.detached(priority: .userInitiated) {
-                            try UserFileAttachmentLoader.load(from: url)
-                        }.value
-                        guard capability.selectedConversationID == conversationID else { return }
-                        capability.addFileAttachment(attachment)
-                    } catch {
-                        guard capability.selectedConversationID == conversationID else { return }
-                        capability.recordAttachmentReadFailure()
-                        capability.presentLoadError(error.localizedDescription)
                     }
                 }
+                await loadAttachmentsInSelectionOrder(urls, conversationID: conversationID, load: load)
             }
         case .failure:
             // 用户取消或读取失败时静默
             break
+        }
+    }
+
+    /// 并发读取每个文件，但按选择顺序收集、一次性按序回写（#424）。
+    ///
+    /// 完成先后取决于文件大小与 IO 时长：各自独立追加会让附件顺序随
+    /// 完成顺序漂移，与用户在文件选择器里看到的顺序不一致。
+    private func loadAttachmentsInSelectionOrder(
+        _ urls: [URL],
+        conversationID: UUID?,
+        load: @escaping @Sendable (URL) async throws -> UserFileAttachment
+    ) async {
+        var outcomes = [Result<UserFileAttachment, Error>?](repeating: nil, count: urls.count)
+        await withTaskGroup(of: (Int, Result<UserFileAttachment, Error>).self) { group in
+            for (index, url) in urls.enumerated() {
+                let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
+                group.addTask {
+                    defer {
+                        if hasSecurityScopedAccess {
+                            url.stopAccessingSecurityScopedResource()
+                        }
+                    }
+                    do {
+                        return (index, .success(try await load(url)))
+                    } catch {
+                        return (index, .failure(error))
+                    }
+                }
+            }
+            for await (index, outcome) in group {
+                outcomes[index] = outcome
+            }
+        }
+
+        guard capability.selectedConversationID == conversationID else { return }
+        for outcome in outcomes {
+            guard let outcome else { continue }
+            switch outcome {
+            case .success(let attachment):
+                capability.addFileAttachment(attachment)
+            case .failure(let error):
+                capability.recordAttachmentReadFailure()
+                capability.presentLoadError(error.localizedDescription)
+            }
         }
     }
 }

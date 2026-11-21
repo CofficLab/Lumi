@@ -29,26 +29,24 @@ struct ComputerUseTargetOverlayTests {
     /// （`expected?.minY == 300` 却得到 332）完全看不出是**环境差异**，
     /// 很容易被误判成生产代码的换算缺陷。
     ///
-    /// 这里用「窗口所在屏幕的实际几何」重算一遍期望值：断言的仍然是
-    /// 同一条语义 —— **翻转必须锚定在窗口所在的那块屏幕上** ——
-    /// 而不是某个具体分辨率下的具体数值。
+    /// 这里按换算语义重算一遍期望值：**桌面顶边是所有屏幕 maxY 的最大值，
+    /// AppKit y = 桌面顶边 - Quartz y**（#269）。多屏布局的正确定位由
+    /// 注入屏幕矩形的专项测试覆盖（不依赖真实显示器数量）。
     private func expectedAppKitRect(forQuartz quartz: CGRect) -> CGRect? {
+        guard let globalTop = NSScreen.screens.map({ $0.frame.maxY }).max() else { return nil }
         for screen in NSScreen.screens {
             let frame = screen.frame
-            // 屏幕在 Quartz 坐标里的顶边（AppKit 原点在左下，故翻转）。
-            let screenQuartzTop = frame.maxY - frame.height
+            // 屏幕在 Quartz 坐标里的矩形（AppKit 原点在左下，故翻转）。
             let screenQuartz = CGRect(
                 x: frame.minX,
-                y: screenQuartzTop,
+                y: globalTop - frame.maxY,
                 width: frame.width,
                 height: frame.height
             )
             guard quartz.intersects(screenQuartz) else { continue }
-            // 窗口顶边相对该屏幕顶部的偏移，换算回 AppKit 的 y。
-            let topOffsetInQuartz = quartz.minY - screenQuartzTop
             return CGRect(
                 x: quartz.minX,
-                y: frame.maxY - topOffsetInQuartz - quartz.height,
+                y: globalTop - quartz.minY - quartz.height,
                 width: quartz.width,
                 height: quartz.height
             )
@@ -85,24 +83,84 @@ struct ComputerUseTargetOverlayTests {
         #expect(expected.width == quartz.width)
         #expect(expected.height == quartz.height)
 
-        // 翻转语义的核心不变量：窗口顶边在 AppKit 坐标里，
-        // 等于「所在屏幕顶边」减去「窗口顶边到屏幕顶边的距离」。
+        // 翻转语义的核心不变量：AppKit y = 桌面顶边 - Quartz y，
+        // 其中桌面顶边是所有屏幕 maxY 的最大值。
         //
-        // - Note: 这条不变量是「按所在屏幕翻转」与「按主屏高度翻转」
-        //   的分界 —— 多屏且副屏在主屏上方时，两者结果不同。
-        let screen = try #require(NSScreen.screens.first { screen in
-            let frame = screen.frame
-            let screenQuartz = CGRect(
-                x: frame.minX,
-                y: frame.maxY - frame.height,
-                width: frame.width,
-                height: frame.height
+        // - Note: 这条不变量是「按桌面顶边翻转」与「按屏幕自身几何推导」
+        //   的分界 —— 多屏且副屏在主屏上方/下方时，两者结果不同（#269）。
+        let globalTop = try #require(NSScreen.screens.map({ $0.frame.maxY }).max())
+        #expect(expected.maxY == globalTop - quartz.minY)
+    }
+
+    @Test("副屏在主屏上方：副屏上的窗口命中副屏并正确定位（回归 #269）")
+    func secondaryScreenAboveMainHostsHitRect() throws {
+        // 主屏 AppKit (0, 0, 1920x1080)，副屏叠在上方 (0, 1080, 1920x1080)。
+        let screenFrames = [
+            CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            CGRect(x: 0, y: 1080, width: 1920, height: 1080),
+        ]
+        // Quartz 桌面高 2160：副屏占 [0, 1080)，主屏占 [1080, 2160)。
+        // 窗口 (100, 200, 800x600) 在副屏上。
+        let quartz = CGRect(x: 100, y: 200, width: 800, height: 600)
+        let converted = try #require(
+            ScreenCoordinateConverter.appKitRect(fromQuartz: quartz, screenFrames: screenFrames)
+        )
+        // 窗口必须落在副屏的 AppKit 区间 [1080, 2160) 内：
+        // 顶边 = 2160 - 200 = 1960。旧实现按屏幕自身 minY 推导，会把这个
+        // 窗口误判到主屏（顶边算成 880）。
+        #expect(converted.maxY == 1960)
+        #expect(converted.minX == 100)
+        #expect(converted.width == 800)
+        #expect(converted.height == 600)
+    }
+
+    @Test("副屏在主屏下方：副屏上的窗口命中副屏并正确定位（回归 #269）")
+    func secondaryScreenBelowMainHostsHitRect() throws {
+        // 主屏 AppKit (0, 0, 1920x1080)，副屏挂在下方 (0, -1440, 2560x1440)。
+        let screenFrames = [
+            CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            CGRect(x: 0, y: -1440, width: 2560, height: 1440),
+        ]
+        // Quartz 桌面高 2520：主屏占 [0, 1080)，副屏占 [1080, 2520)。
+        let quartz = CGRect(x: 0, y: 1380, width: 1000, height: 700)
+        let converted = try #require(
+            ScreenCoordinateConverter.appKitRect(fromQuartz: quartz, screenFrames: screenFrames)
+        )
+        // 窗口必须落在副屏的 AppKit 区间 [-1440, 0) 内。
+        #expect(converted.maxY == -300)
+        #expect(converted.minY == -1000)
+        #expect(converted.width == 1000)
+        #expect(converted.height == 700)
+    }
+
+    @Test("主屏窗口的单屏布局换算结果不变")
+    func mainScreenWindowConversionIsUnchanged() throws {
+        // Quartz 桌面高 1080：窗口顶边距桌面顶部 200。
+        let quartz = CGRect(x: 100, y: 200, width: 800, height: 600)
+        let converted = try #require(
+            ScreenCoordinateConverter.appKitRect(
+                fromQuartz: quartz,
+                screenFrames: [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
             )
-            return quartz.intersects(screenQuartz)
-        })
-        let screenQuartzTop = screen.frame.maxY - screen.frame.height
-        let expectedTop = screen.frame.maxY - (quartz.minY - screenQuartzTop)
-        #expect(expected.maxY == expectedTop)
+        )
+        // 期望值必须是 CGFloat：swift-testing 的 #expect 表达式捕获会把
+        // Int 表达式（1080 - 200）单独求值，跨类型比较在捕获路径里失真。
+        let expectedTop: CGFloat = 1080 - 200
+        let expectedBottom: CGFloat = 1080 - 200 - 600
+        #expect(converted.maxY == expectedTop)
+        #expect(converted.minY == expectedBottom)
+    }
+
+    @Test("屏幕列表为空或矩形退化时无法定位")
+    func emptyScreensAndDegenerateRectsAreRejected() {
+        let quartz = CGRect(x: 10, y: 10, width: 100, height: 100)
+        #expect(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz, screenFrames: []) == nil)
+        #expect(
+            ScreenCoordinateConverter.appKitRect(
+                fromQuartz: .zero,
+                screenFrames: [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+            ) == nil
+        )
     }
 
     @Test("空矩形与退化尺寸不产生遮罩矩形")
