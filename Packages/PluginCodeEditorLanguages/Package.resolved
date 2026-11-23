@@ -1,5 +1,5 @@
 {
-  "originHash" : "f5446a645d8afc7d0d1037be060100a83664a80ecec0ac84950ef736d758dc9b",
+  "originHash" : "8362fd2c33f89d62fc0c6d43e5104b3746cfb6e881eb972b0114cc4d27211d77",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKernel.git",
       "state" : {
-        "revision" : "c0aace6a4b0b428f3b059020327a558c470538ed",
-        "version" : "1.1.1"
+        "revision" : "7a0e1609a70420921164d12d8cd154aaa5946f0a",
+        "version" : "1.1.2"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitAgentTool.git",
       "state" : {
-        "revision" : "a91621cb4704162468eaef9095e8aeacae4f9ded",
-        "version" : "1.0.4"
+        "revision" : "4d57227722997993ab3b1edad74b3bdd6450fbe5",
+        "version" : "1.0.5"
       }
     },
     {
@@ -83,12 +83,21 @@
       }
     },
     {
+      "identity" : "lumikittreesittergrammars",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiKitTreeSitterGrammars.git",
+      "state" : {
+        "revision" : "af10f9d192bb02ed574ec55d6d0dd3e177356950",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "lumilocalization",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiLocalization.git",
       "state" : {
-        "revision" : "da8ca9d0cc77e9c1f979680f9cb79e87f79a3f87",
-        "version" : "1.0.2"
+        "revision" : "1001e2ac03381de98e3941e7415e26b8c4093511",
+        "version" : "1.0.3"
       }
     },
     {
@@ -96,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiLogging.git",
       "state" : {
-        "revision" : "ed01ea8d6e95c627be241a01924c75999b6d8256",
-        "version" : "1.0.2"
+        "revision" : "d4c680231703c4eeb3303c6f8e5a929c8bd3d969",
+        "version" : "1.0.3"
       }
     },
     {
@@ -105,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviders.git",
       "state" : {
-        "revision" : "285db9e528f6a3f75ead91216fb6697b0fbc7fe8",
-        "version" : "1.26.0"
+        "revision" : "ec02c13da086ca257f5a8a41ee98c810365665dd",
+        "version" : "1.27.0"
       }
     },
     {
@@ -114,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiUI.git",
       "state" : {
-        "revision" : "c5f9d55551151154290a67b65b1d69f95ea3c1cc",
-        "version" : "1.18.1"
+        "revision" : "6e187bcc2d36c5f98f2c498e79e49562ed351191",
+        "version" : "1.19.3"
       }
     },
     {
