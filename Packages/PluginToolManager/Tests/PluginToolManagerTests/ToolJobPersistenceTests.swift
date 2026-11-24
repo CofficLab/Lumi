@@ -232,4 +232,48 @@ struct ToolJobPersistenceTests {
         try await Task.sleep(nanoseconds: 50_000_000)
         #expect(await store.fetchRecord(forJobID: jobID) == nil)
     }
+
+    @MainActor
+    @Test("按回合删除工具记录：取消该回合的 Job，其它回合与后台任务不受影响")
+    func deletingTurnsCancelsOnlyTheirJobs() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ToolManager()
+        manager.jobRecordStore = store
+        manager.add(PersistedDelayedTool(delayNanoseconds: 5_000_000_000), pluginID: "test")
+
+        let conversationID = UUID()
+        let removedTurn = UUID()
+        let keptTurn = UUID()
+        let removedJobID = try #require(manager.submit(
+            [ToolCall(id: "removed-turn-job", name: "persisted_delay", arguments: "{}")],
+            policy: .autoExecute,
+            conversationID: conversationID,
+            turnID: removedTurn
+        ).first?.id)
+        let keptJobID = try #require(manager.submit(
+            [ToolCall(id: "kept-turn-job", name: "persisted_delay", arguments: "{}")],
+            policy: .autoExecute,
+            conversationID: conversationID,
+            turnID: keptTurn
+        ).first?.id)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        await manager.deleteToolCalls(forTurnIDs: [removedTurn], in: conversationID)
+
+        // 运行中的 Job 先进入 cancelling，工具任务响应取消后才落到终态。
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, manager.job(for: removedJobID)?.status.isTerminal != true {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #expect(manager.job(for: removedJobID)?.status == .cancelled)
+        #expect(manager.job(for: keptJobID)?.status.isTerminal == false)
+
+        // 被截断回合的 Job 收尾时迟到的落库必须丢弃；其它回合照常持久化。
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(await store.fetchRecord(forJobID: removedJobID) == nil)
+        #expect(await store.fetchRecord(forJobID: keptJobID) != nil)
+        #expect(manager.job(for: keptJobID)?.status.isTerminal == false)
+    }
 }
