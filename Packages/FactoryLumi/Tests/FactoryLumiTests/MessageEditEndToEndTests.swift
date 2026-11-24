@@ -50,6 +50,9 @@ struct MessageEditEndToEndTests {
         let secondUser = try #require(latestRealUserMessage(in: ctx))
         #expect(secondUser.content == secondPrompt)
         #expect(ctx.editing.eligibility(for: secondUser, in: ctx.conversationID) == .allowed)
+        let conversationCount = await ctx.conversations.conversationCount(
+            projectPath: nil, includingChildConversations: true
+        )
 
         var events: [MessageEditingEvent] = []
         let observer = ctx.editing.addObserver { events.append($0) }
@@ -90,6 +93,13 @@ struct MessageEditEndToEndTests {
 
         let editedUser = try #require(timeline.first { $0.content == editedPrompt })
         #expect(commit.userMessageID == editedUser.id)
+        // 同一会话、新回合：既不新建会话，也不复用被移除回合的 turnID。
+        #expect(editedUser.conversationID == ctx.conversationID)
+        #expect(await ctx.conversations.conversationCount(
+            projectPath: nil, includingChildConversations: true
+        ) == conversationCount)
+        let editedAnswer = try #require(timeline.first { $0.content == "Option A versus option B in a table." })
+        #expect(try #require(editedAnswer.turnID) != firstAnswer.turnID)
         #expect(UserAttachmentMetadata.decodeImageAttachments(from: editedUser.metadata) == [image])
         #expect(UserAttachmentMetadata.decodeFileAttachments(from: editedUser.metadata) == [file])
 
@@ -361,6 +371,7 @@ struct MessageEditEndToEndTests {
         let kernel: KernelCoreContainer
         let stub: EditScriptedLLMManager
         let conversationID: UUID
+        let conversations: any ConversationManaging
         let messages: any MessageManaging
         let sender: any MessageSendingProviding
         let editing: any MessageEditingProviding
@@ -401,6 +412,7 @@ struct MessageEditEndToEndTests {
             kernel: kernel,
             stub: stub,
             conversationID: conversationID,
+            conversations: conversations,
             messages: try #require(kernel.resolveProvider((any MessageManaging).self)),
             sender: try #require(kernel.resolveProvider((any MessageSendingProviding).self)),
             editing: try #require(kernel.resolveProvider((any MessageEditingProviding).self)),
