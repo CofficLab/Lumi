@@ -99,6 +99,8 @@ public final class MLXProviderPlugin: SuperPlugin, PluginDataMigrating, SuperLog
             DeepSeekMLXProvider(),
             CoderMLXProvider(),
             MicrosoftMLXProvider(),
+            GPTOSSMLXProvider(),
+            GLMMLXProvider(),
         ]
         for provider in providers {
             try manager.register(provider)

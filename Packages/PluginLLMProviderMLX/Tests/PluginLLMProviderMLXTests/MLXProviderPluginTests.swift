@@ -9,7 +9,7 @@ import ProviderStorage
 
 @Suite("PluginLLMProviderMLX")
 struct MLXProviderPluginTests {
-    @Test("注册 5.16.0 的七个本地 MLX 供应商")
+    @Test("注册 5.16.0 的本地 MLX 供应商")
     @MainActor
     func registersAllLocalProviders() throws {
         let kernel = KernelCoreContainer()
@@ -26,13 +26,13 @@ struct MLXProviderPluginTests {
 
         try MLXProviderPlugin().onBoot(kernel: kernel)
 
-        #expect(manager.providerCount == 7)
+        #expect(manager.providerCount == 9)
         #expect(manager.allProviders().allSatisfy { $0.providerInfo.isLocal })
         #expect(manager.allProviders().allSatisfy { $0 is any LLMModelDownloadProviding })
-        #expect(MLXProviderCatalog.registrations.count == 32)
+        #expect(MLXProviderCatalog.registrations.count == 44)
         #expect(manager.allProviders().map { $0.providerInfo.id } == [
             "mlx-qwen", "mlx-llama", "mlx-mistral", "mlx-gemma4",
-            "mlx-deepseek", "mlx-coder", "mlx-microsoft",
+            "mlx-deepseek", "mlx-coder", "mlx-microsoft", "mlx-gptoss", "mlx-glm",
         ])
     }
 
