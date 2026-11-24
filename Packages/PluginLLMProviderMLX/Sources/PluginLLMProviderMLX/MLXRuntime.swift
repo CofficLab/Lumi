@@ -93,7 +93,7 @@ final class MLXRuntime {
         do {
             return try await Self.streamGeneration(
                 container: container,
-                prepared: prepared,
+                prepared: MLXInputBox(prepared),
                 tools: tools,
                 modelID: modelID,
                 onChunk: onChunk
@@ -107,18 +107,23 @@ final class MLXRuntime {
         }
     }
 
-    /// 在 MainActor 之外执行生成：MLX 的 `withError` 是 `@concurrent`，从
-    /// 主 actor 调用会把非 Sendable 的 `LMInput` 连同闭包一起判为跨域发送。
+    /// 在 MainActor 之外执行生成：MLX 的 `withError` 闭包不能被主 actor 发送。
+    ///
+    /// `LMInput` 是非 Sendable 的值类型，不能直接捕获进 `withError` 的闭包；
+    /// 也不能以 `sending` 参数借入后再在内部 `consume`——那样调用方的清理会和
+    /// 内部移交叠加成双重释放（运行期在 `_swift_release_dealloc` 崩溃）。
+    /// 因此用一次性盒子把所有权恰好转移一次（与 mlx-swift-lm 内部的
+    /// `SendableBox` 同一手法）。
     private nonisolated static func streamGeneration(
         container: ModelContainer,
-        prepared: sending LMInput,
+        prepared: MLXInputBox,
         tools: [[String: any Sendable]]?,
         modelID: String,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
         try await withError { mlxError in
             let stream = try await container.generate(
-                input: consume prepared,
+                input: prepared.take(),
                 parameters: GenerateParameters(temperature: 0.7),
                 tools: tools
             )
@@ -189,5 +194,23 @@ final class MLXRuntime {
         #else
         false
         #endif
+    }
+}
+
+/// 把非 Sendable 的 `LMInput` 带进非隔离域的一次性盒子：所有权恰好转移一次。
+///
+/// 只在 `generate` → `streamGeneration` 之间的单线程接力中使用，
+/// 取走后盒子即为空，不做任何跨任务的并发共享。
+private final class MLXInputBox: @unchecked Sendable {
+    private var input: LMInput?
+
+    init(_ input: consuming LMInput) {
+        self.input = input
+    }
+
+    func take() -> LMInput {
+        guard let input else { fatalError("LMInput 已被取走，不能重复用于生成") }
+        self.input = nil
+        return input
     }
 }
