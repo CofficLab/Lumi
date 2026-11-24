@@ -1,7 +1,9 @@
 import Foundation
 import KitLLM
+import MLX
 import MLXLLM
 @preconcurrency import MLXLMCommon
+import os
 
 @MainActor
 final class MLXRuntime {
@@ -42,10 +44,9 @@ final class MLXRuntime {
             session.discardContainer()
             let directory = MLXModelPaths.modelDirectory(for: modelID)
             do {
-                // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
-                // 因此只需从本地目录加载权重与 tokenizer）。
-                let tokenizerLoader: any TokenizerLoader = MLXTokenizerLoader()
-                modelContainer = try await loadModelContainer(from: directory, using: tokenizerLoader)
+                modelContainer = try await Self.loadContainer(directory: directory)
+            } catch let error as MLXError {
+                throw MLXProviderError.loadFailed(Self.mlxMessage(error))
             } catch {
                 throw MLXProviderError.loadFailed(error.localizedDescription)
             }
@@ -89,24 +90,64 @@ final class MLXRuntime {
         // 且不做 Schema 类型转换」：声明为 `integer` 的参数保持字符串，
         // 未声明的函数名也不会被拒绝——错误的参数类型会直接流进 Agent
         // 工具链。
-        let stream = try await container.generate(
-            input: prepared,
-            parameters: GenerateParameters(temperature: 0.7),
-            tools: tools
-        )
+        do {
+            return try await Self.streamGeneration(
+                container: container,
+                prepared: prepared,
+                tools: tools,
+                modelID: modelID,
+                onChunk: onChunk
+            )
+        } catch let error as MLXError {
+            // MLX 在 C++ 层报错后容器内部状态不可信，丢弃让下次生成重新加载。
+            unload()
+            let message = Self.mlxMessage(error)
+            MLXProviderPlugin.logger.error("MLX 生成失败，已释放模型容器：\(message, privacy: .public)")
+            throw MLXProviderError.generationFailed(message)
+        }
+    }
 
-        var consumer = MLXGenerationConsumer()
-        for await result in stream {
-            try Task.checkCancellation()
-            await consumer.consume(result, onChunk: onChunk)
+    /// 在 MainActor 之外执行生成：MLX 的 `withError` 是 `@concurrent`，从
+    /// 主 actor 调用会把非 Sendable 的 `LMInput` 连同闭包一起判为跨域发送。
+    private nonisolated static func streamGeneration(
+        container: ModelContainer,
+        prepared: sending LMInput,
+        tools: [[String: any Sendable]]?,
+        modelID: String,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        try await withError { mlxError in
+            let stream = try await container.generate(
+                input: consume prepared,
+                parameters: GenerateParameters(temperature: 0.7),
+                tools: tools
+            )
+
+            var consumer = MLXGenerationConsumer()
+            for await result in stream {
+                try Task.checkCancellation()
+                // 一旦 MLX 报错，后续 token 都建立在校验失败的计算图上，立即止损。
+                try mlxError.check()
+                await consumer.consume(result, onChunk: onChunk)
+            }
+            try mlxError.check()
+            // 拒绝事件不作为正文输出；静默丢弃会落入通用空响应重试（#1228）。
+            // 抛带安全诊断的错误，AgentLoopFailure 归为 unknown，不自动重试。
+            if let rejection = consumer.rejection {
+                throw MLXProviderError.rejectedToolCall(rejection)
+            }
+            await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
+            return consumer.response(model: modelID)
         }
-        // 拒绝事件不作为正文输出；静默丢弃会落入通用空响应重试（#1228）。
-        // 抛带安全诊断的错误，AgentLoopFailure 归为 unknown，不自动重试。
-        if let rejection = consumer.rejection {
-            throw MLXProviderError.rejectedToolCall(rejection)
+    }
+
+    private nonisolated static func loadContainer(directory: URL) async throws -> ModelContainer {
+        // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
+        // 因此只需从本地目录加载权重与 tokenizer）。
+        let tokenizerLoader: any TokenizerLoader = MLXTokenizerLoader()
+        return try await withError { _ in
+            try await loadModelContainer(from: directory, using: tokenizerLoader)
         }
-        await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
-        return consumer.response(model: modelID)
     }
 
     private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: any Sendable]]? {
@@ -133,6 +174,12 @@ final class MLXRuntime {
         await MLXDownloadManager.shared.download(modelID: modelID)
         guard MLXModelDownloader.isComplete(directory: MLXModelPaths.modelDirectory(for: modelID)) else {
             throw MLXProviderError.downloadFailed("模型下载未完成")
+        }
+    }
+
+    private static func mlxMessage(_ error: MLXError) -> String {
+        switch error {
+        case .caught(let detail): return detail
         }
     }
 
