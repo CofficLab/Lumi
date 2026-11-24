@@ -326,7 +326,8 @@ final class ChatGPTListViewModel: ObservableObject {
             projectionStore.reset()
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
-             let .deleted(_, conversationID: conversationID):
+             let .deleted(_, conversationID: conversationID),
+             let .truncated(_, conversationID: conversationID):
             guard conversationID == selectedConversationID else { return }
             Task { @MainActor [weak self] in await self?.refreshTail() }
         }

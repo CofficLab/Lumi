@@ -604,6 +604,49 @@ public final class MessageManager: MessageManaging, SuperLog {
         notifyMessageChange(.deleted(messageID: id, conversationID: conversationID))
     }
 
+    public func deleteMessages(from messageID: UUID, in conversationID: UUID) {
+        var removedIDs: [UUID] = []
+        // Same drain as deleteMessage: an insert of a tail message may still be
+        // queued, and landing after the delete would resurrect the tail.
+        persistQueue.sync {
+            let timeline = store?.fetchMessageTimeline(conversationId: conversationID) ?? []
+            removedIDs = Self.timelineSuffix(
+                from: messageID,
+                disk: timeline,
+                pendingMessages: pending.snapshot(for: conversationID)
+            )
+            guard !removedIDs.isEmpty else { return }
+            _ = store?.deleteMessages(ids: removedIDs, conversationId: conversationID)
+            for removedID in removedIDs {
+                pending.dequeue(id: removedID, conversationID: conversationID)
+                pending.dequeueToolResults(messageID: removedID, conversationID: conversationID)
+            }
+        }
+        guard !removedIDs.isEmpty else { return }
+        notifyMessageChange(.truncated(messageID: messageID, conversationID: conversationID))
+    }
+
+    /// The target and everything ordered after it, across disk and pending rows.
+    nonisolated private static func timelineSuffix(
+        from messageID: UUID,
+        disk: [(id: UUID, createdAt: Date)],
+        pendingMessages: [Message]
+    ) -> [UUID] {
+        var createdAts: [UUID: Date] = [:]
+        for entry in disk {
+            createdAts[entry.id] = entry.createdAt
+        }
+        for message in pendingMessages where createdAts[message.id] == nil {
+            createdAts[message.id] = message.createdAt
+        }
+        let ordered = createdAts.sorted { lhs, rhs in
+            if lhs.value == rhs.value { return lhs.key.uuidString < rhs.key.uuidString }
+            return lhs.value < rhs.value
+        }.map(\.key)
+        guard let index = ordered.firstIndex(of: messageID) else { return [] }
+        return Array(ordered[index...])
+    }
+
     public func clearMessages(in conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…")

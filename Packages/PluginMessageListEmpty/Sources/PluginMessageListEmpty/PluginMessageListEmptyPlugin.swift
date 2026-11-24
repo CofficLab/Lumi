@@ -275,7 +275,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         switch change {
         case let .inserted(_, conversationID), let .persisted(_, conversationID),
              let .updated(conversationID), let .deleted(_, conversationID),
-             let .cleared(conversationID):
+             let .cleared(conversationID), let .truncated(_, conversationID):
             changedID = conversationID
         }
         guard changedID == selectedID else { return }

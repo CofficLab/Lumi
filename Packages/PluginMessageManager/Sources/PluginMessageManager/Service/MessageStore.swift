@@ -1021,6 +1021,65 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// Delete the given messages of a conversation in a single `ModelContext` save.
+    ///
+    /// Rows are matched by explicit ID and conversation, never by timestamp, so a
+    /// same-`createdAt` message that sits before the truncation target is kept.
+    func deleteMessages(ids: [UUID], conversationId: UUID) -> Bool {
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
+
+            for chunk in Self.chunked(ids.map(\.uuidString), into: Self.maxConversationIDsPerChunk) {
+                let descriptor = FetchDescriptor<MessageModel>(
+                    predicate: #Predicate<MessageModel> {
+                        chunk.contains($0.id) && $0.conversationId == conversationIdString
+                    }
+                )
+
+                do {
+                    let models = try context.fetch(descriptor)
+                    for model in models {
+                        context.delete(model)
+                    }
+                } catch {
+                    Self.logger.error("\(Self.t)查询待删除消息失败：\(error.localizedDescription)")
+                    return false
+                }
+            }
+            return save(context, operation: "删除消息")
+        }
+    }
+
+    /// Order of a conversation's persisted messages: `createdAt`, then `id`.
+    ///
+    /// Only the ordering columns are read; message bodies are not decoded.
+    /// Ties are ordered here rather than in SQL: the store does not reliably
+    /// apply the secondary sort key, which would make a truncation boundary
+    /// depend on insertion order.
+    func fetchMessageTimeline(conversationId: UUID) -> [(id: UUID, createdAt: Date)] {
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
+            var descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+            )
+            descriptor.propertiesToFetch = [\.id, \.createdAt]
+
+            let models = (try? context.fetch(descriptor)) ?? []
+            return models
+                .sorted { lhs, rhs in
+                    if lhs.createdAt == rhs.createdAt { return lhs.id < rhs.id }
+                    return lhs.createdAt < rhs.createdAt
+                }
+                .compactMap { model in
+                    guard let id = UUID(uuidString: model.id) else { return nil }
+                    return (id, Date(timeIntervalSince1970: model.createdAt))
+                }
+        }
+    }
+
     // MARK: - Private
 
     /// Fetches a single message by ID on an already-acquired `context`.
