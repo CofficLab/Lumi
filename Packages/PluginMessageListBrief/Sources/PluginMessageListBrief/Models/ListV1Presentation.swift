@@ -55,7 +55,9 @@ struct AgentTurnPresentationItem: Identifiable, Equatable, Sendable {
         // 避免 macOS List 把同一行 diff 成「删除旧行 + 插入新行」。这类
         // identity replacement 发生在 NSTableView 自动计算行高期间时，
         // SwiftUI 的 DynamicLayoutViewChildGeometry 可能触发断点。
-        id = item.userMessage?.id ?? item.record.id
+        // 同一用户消息触发的后续 turn（自动重试）由 builder 改用 record.id，
+        // 防止失败与重试两行共用同一 ID（#593）。
+        id = item.rowID
         conversationID = item.record.conversationID
         startedAt = item.record.startedAt
         record = item.record

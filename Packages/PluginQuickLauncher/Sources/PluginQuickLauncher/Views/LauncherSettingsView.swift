@@ -35,41 +35,49 @@ public struct LauncherSettingsView: View {
             title: pluginLocalization.string("Global Hotkey"),
             titleAlignment: .leading
         ) {
-            AppSettingRow(
-                title: pluginLocalization.string("Toggle Launcher"),
-                description: pluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."),
-                icon: "command"
-            ) {
-                HStack(spacing: 8) {
-                    AppTag(viewModel.currentComboDisplay, systemImage: "command", style: .accent)
+            VStack(alignment: .leading, spacing: 8) {
+                AppSettingRow(
+                    title: pluginLocalization.string("Toggle Launcher"),
+                    description: pluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."),
+                    icon: "command"
+                ) {
+                    HStack(spacing: 8) {
+                        AppTag(viewModel.currentComboDisplay, systemImage: "command", style: .accent)
 
-                    if viewModel.isRecording {
-                        AppButton(
-                            pluginLocalization.string("Cancel"),
-                            systemImage: "xmark",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.stopRecording()
-                        }
-                    } else {
-                        AppButton(
-                            pluginLocalization.string("Record"),
-                            systemImage: "record.circle",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.startRecording()
-                        }
-                        AppButton(
-                            pluginLocalization.string("Reset"),
-                            systemImage: "arrow.counterclockwise",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.resetHotkey()
+                        if viewModel.isRecording {
+                            AppButton(
+                                pluginLocalization.string("Cancel"),
+                                systemImage: "xmark",
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                viewModel.stopRecording()
+                            }
+                        } else {
+                            AppButton(
+                                pluginLocalization.string("Record"),
+                                systemImage: "record.circle",
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                viewModel.startRecording()
+                            }
+                            AppButton(
+                                pluginLocalization.string("Reset"),
+                                systemImage: "arrow.counterclockwise",
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                viewModel.resetHotkey()
+                            }
                         }
                     }
+                }
+
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
             }
         }

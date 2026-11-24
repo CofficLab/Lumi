@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 27 个，用例总数: 151
+测试文件: 27 个，用例总数: 153
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -222,7 +222,10 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 150 | NetworkHistoryConfigure | 后台加载期间已录制的分钟点发布时必须保留，不得被旧加载覆盖丢失（**回归 #1212**） | configure 空目录后手动置入一个已录制分钟点 | 以当前代次与目录发布一段更旧的历史 | 合并后两点都在，按时间先后排列（旧历史在前、录制点在后） | P0 | ✅ 已覆盖 | `publishPreservesPointsRecordedDuringInFlightLoad` |
 | 151 | NetworkManager 禁用生命周期 | 运行时禁用撤回 7 个工具、停止采样并清空交换存储，重新启用恢复（**回归 #449**） | 真实 kernel 启停插件，注册 MenuBar/ToolManager/SettingView/Storage | 禁用/启用插件 | 禁用后 7 工具撤回、采样停止、交换存储清空、设置入口撤回、菜单栏空；启用后全部恢复；stop 后同样清空 | P0 | ✅ 已覆盖 | `disableWithdrawsToolsAndStopsMonitoring` |
 
-> 说明：全部 **151 条场景**已在本包 `swift test` 中实跑通过。
+| 152 | NetworkHistoryViewModel | recent-only 采样不得重复发布长期缓冲（**回归 #1214**） | 已应用一次长期缓冲，订阅 `$longTermHistory` 发布计数 | 连续两次 `applyRecent` | 长期缓冲发布计数保持 0，`longTermHistory` 内容不变 | P0 | ✅ 已覆盖 | `recentOnlySampleDoesNotRepublishLongTermHistory` |
+| 153 | NetworkHistoryViewModel | 长期缓冲更新仍会发布并失效长期范围缓存（**回归 #1214**） | 已缓存 month1 裁剪结果，订阅发布计数 | `applyLongTerm` 追加一个新点 | 发布计数为 1，`data(for: .month1)` 反映新点数 | P1 | ✅ 已覆盖 | `longTermUpdateRepublishesAndInvalidatesLongRangeCache` |
+
+> 说明：全部 **153 条场景**已在本包 `swift test` 中实跑通过。
 > ID 119–124 为此前已实跑通过、但漏登记到清单的既有图表几何量用例
 > （`NetworkChartGeometryTests`，见 #1211），本轮一并补齐，使
 > `verify-testplan.py` 的双向方法核对恢复绿色。
@@ -312,15 +315,15 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 ## 覆盖率统计
 
-- P0: 已覆盖 69 / 69
-- P1: 已覆盖 74 / 74
+- P0: 已覆盖 70 / 70
+- P1: 已覆盖 75 / 75
 - P2: 已覆盖 8 / 8
-- **合计: 151 / 151**（仅表示清单场景，非源码覆盖率）
+- **合计: 153 / 153**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（69 条）
-- **P1**: 其余功能性用例（74 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（70 条）
+- **P1**: 其余功能性用例（75 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明

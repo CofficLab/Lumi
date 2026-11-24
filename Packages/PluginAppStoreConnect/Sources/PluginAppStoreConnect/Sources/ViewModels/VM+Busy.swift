@@ -15,8 +15,15 @@ extension VM {
         busyOperationCount += 1
         let isFirstOperation = busyOperationCount == 1
 
-        let previousPolicy = client.fetchPolicy
+        // force refresh 覆盖整个重叠窗口（#437）：首个操作记住原策略并切到
+        // networkOnly，最后一个操作恢复。此前每个操作各自保存/还原共享的
+        // fetchPolicy——先结束者提前还原策略，后结束者把 networkOnly 永久
+        // 留在 client 上。
         if forceRefresh {
+            if busyForceRefreshCount == 0 {
+                busyPreviousFetchPolicy = client.fetchPolicy
+            }
+            busyForceRefreshCount += 1
             client.fetchPolicy = .networkOnly
         }
 
@@ -35,7 +42,12 @@ extension VM {
 
         defer {
             busyOperationCount -= 1
-            client.fetchPolicy = previousPolicy
+            if forceRefresh {
+                busyForceRefreshCount -= 1
+                if busyForceRefreshCount == 0 {
+                    client.fetchPolicy = busyPreviousFetchPolicy
+                }
+            }
             if busyOperationCount == 0 {
                 busyOverlayDelayTask?.cancel()
                 busyOverlayDelayTask = nil

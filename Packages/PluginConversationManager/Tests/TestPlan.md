@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 125 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 124
+测试文件: 16 个，用例总数: 125
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -190,8 +190,9 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 122 | 选中标题补载 | 缓存里已有旧摘要时后续补载仍须纠正标题（**回归 #641**） | 缓存含同 ID 的旧标题，选中后按 ID 补载会跳过 | 再次 `cache` 同 ID 的新摘要 | `currentTitle` 更新为新标题并发出 `.updated(id)` | P0 | ✅ 已覆盖 | `staleCachedTitleIsCorrectedByLaterHydration` |
 | 123 | 选中标题补载 | 补载其它会话不得改写选中项标题（**回归 #641** 护栏） | 已选中缓存内标题为 Selected 的会话 | `cache` 另一 ID 的摘要 | `currentTitle` 仍为 Selected，不发 `.updated(otherID)` | P1 | ✅ 已覆盖 | `hydrationOfOtherConversationKeepsSelectedTitle` |
 | 124 | 选中标题补载 | 标题未变的重复补载不得重复发事件（**回归 #641** 护栏） | 已选中缓存内会话，标题稳定 | 连续两次 `cache` 同一摘要 | `currentTitle` 不变，不产生 `.updated(id)`（避免整页补载通知风暴） | P1 | ✅ 已覆盖 | `repeatedHydrationWithSameTitleDoesNotRepublish` |
+| 125 | ConversationGlobalDefaultsIsolation | 未绑定详细度的对话必须继承全局默认（**回归 #598**） | 全局 detailed，缓存含 verbosity=nil 的会话与未知 ID | 读取 `verbosity(for:)` | 未绑定会话、未知 ID、nil ID 都返回 detailed 而非固定 standard | P0 | ✅ 已覆盖 | `unboundConversationInheritsGlobalVerbosity` |
 
-> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **125 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 >
 > 变异验证（#640）：将 `ConversationManager.messageManager`/`agentTurn` 计算属性还原为只返回 `capturedMessageManager`/`capturedAgentTurn`（忽略解析器）→ `singleDeletionCancelsAndClearsCurrentProductionProviders`、`batchDeletionCancelsAndClearsCurrentProductionProviders`、`capabilityStatisticsReadCurrentProductionMessageManager` 转红（生产替身收不到调用、统计读到空默认），`managerFallsBackToCapturedProvidersWithoutResolver` 仍绿。变异单独施加并确认转红后还原，最终 108 条全绿。
@@ -203,17 +204,19 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 > 变异验证（#537）：① `performReload` 直接用首页结果、不调用 `refillLoadedRange` → `eventReloadKeepsLoadedPagesAndSelection`、`eventReloadRefreshesSummariesAcrossLoadedRange`、`refillDeduplicatesConversationBumpedBetweenPages`、`staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（分页与第二页选中态丢失）；② 移除写回前的列表身份守卫（`conversations.count == loadedCount && last?.id == loadedLastID`）→ `staleReloadDoesNotDropPageAppendedDuringRefresh` 转红（晚到的旧范围刷新吃掉刚追加的第三页）；③ 续页游标改为 `beforeUpdatedAt: nil, beforeID: nil` → `eventReloadKeepsLoadedPagesAndSelection` 转红（续页重复取首页、游标断言失败）；④ 去掉按 ID 去重、直接返回 `loaded` → `refillDeduplicatesConversationBumpedBetweenPages` 转红（列表出现重复 ID）；⑤ `hasMoreConversations` 回退为 `page.count == conversationPageSize` → `reloadHidesLoadMoreWhenRangeCoversStore` 转红（正好 40 条时仍显示翻页入口）。变异单独施加并确认转红后还原，最终 119 条全绿。
 
 > 变异验证（#641，`ConversationManager.cache`）：① 删除补载后的选中项标题重算与 `.updated` 发布整块（恢复缺陷）→ `pageHydrationOfSelectedConversationPublishesRealTitle`、`hydratedSummaryEntryAlsoRefreshesTitle`、`staleCachedTitleIsCorrectedByLaterHydration` 转红（标题停在旧值、无事件），两条护栏仍绿；② 去掉 `currentTitle != previousTitle` 判定、每次补载都发 `.updated` → `repeatedHydrationWithSameTitleDoesNotRepublish` 转红（标题未变仍发事件），其余仍绿；③ 保留 `updateCurrentTitle()` 但删除 `notifyConversationObservers(.updated(summary.id))` → 三条纠正用例转红（标题已改但标题栏观察者收不到事件），两条护栏仍绿。变异单独施加并确认转红后还原，最终 124 条全绿。
+>
+> 变异验证（#598）：把 `ConversationManager+Preferences.verbosity(for:)` 的回退还原为固定 `.defaultVerbosity` → `unboundConversationInheritsGlobalVerbosity` 转红（未绑定会话与未知 ID 都返回 standard 而非全局 detailed），`changingConversationVerbosityDoesNotRewriteGlobalDefault` 等既有用例仍绿。变异确认转红后还原，最终 125 条全绿（另有既有时序 flake `loadMoreDoesNotAppendStalePageAfterReload` 全量跑偶发、单跑稳定通过，与本修复无关——已在不带本改动的干净工作树上复现确认）。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 31 / 31
+- P0: 已覆盖 32 / 32
 - P1: 已覆盖 85 / 85
 - P2: 已覆盖 8 / 8
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（31 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
 - **P1**: 其余功能性用例（85 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 

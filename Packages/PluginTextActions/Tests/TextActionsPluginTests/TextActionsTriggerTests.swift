@@ -121,6 +121,27 @@ struct TextActionsTriggerTests {
 
     // MARK: 键盘
 
+    @Test("停止监听后，挂起的延迟读取不再执行（回归 #546）")
+    func stopMonitoringDiscardsPendingDelayedRead() async throws {
+        let position = MousePositionBox(point: CGPoint(x: 100, y: 100))
+        let (manager, monitor, provider) = makeManager(mouseLocation: { position.point })
+        defer { manager.stopMonitoring() }
+
+        monitor.handler?(mouseEvent(.leftMouseDown))
+        position.point = CGPoint(x: 300, y: 140)
+        monitor.handler?(mouseEvent(.leftMouseUp))
+
+        // 等拖拽事件被处理、评估任务进入 60ms 的 initialDelay 睡眠窗口，
+        // 再停止监听——模拟「功能在 initialDelay 到期前被关闭」（#546）。
+        try await Task.sleep(for: .milliseconds(20))
+        manager.stopMonitoring()
+
+        // 等待远超 initialDelay + 重试窗口的时间。
+        try await Task.sleep(for: .milliseconds(500))
+
+        #expect(provider.readCount == 0, "停止监听后不得再读取选区")
+    }
+
     @Test("菜单不可见时 Cmd+C 的 keyUp 不读取选区")
     func copyKeyUpDoesNotReadSelection() async throws {
         let (manager, monitor, provider) = makeManager()

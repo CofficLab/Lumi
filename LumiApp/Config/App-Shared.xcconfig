@@ -1,6 +1,6 @@
 //
 // App-Shared.xcconfig
-// 5 个 macOS app target（Lumi / AppIconDesigner / BookletMaker / CADDesigner / DatabaseManager）共享。
+// 3 个 macOS app target（Lumi / BookletMaker / DatabaseManager）共享。
 // LumiFinder 是 app-extension，不走这里。
 //
 

@@ -247,6 +247,67 @@ struct ConnectCacheInvalidatorTests {
         #expect(!isCached(cache, path: path))
     }
 
+    // MARK: - 审核提交翻转变录版本状态 (#1333)
+
+    @Test("触发提交后失效版本详情缓存")
+    func submissionSubmitInvalidatesVersionDetail() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // PATCH 提交把版本从 PREPARE_FOR_SUBMISSION 翻到 WAITING_FOR_REVIEW，
+        // 详情缓存默认保留 1 小时，不清除会让 read_version 一直报提交前的旧状态。
+        let detail = "/v1/appStoreVersions/version-1"
+        seed(cache, path: detail)
+        #expect(isCached(cache, path: detail))
+
+        invalidate(cache, method: "PATCH", path: "/v1/reviewSubmissions/sub-1")
+
+        #expect(!isCached(cache, path: detail))
+    }
+
+    @Test("触发提交后失效版本列表缓存")
+    func submissionSubmitInvalidatesVersionList() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        let list = "/v1/apps/app-1/appStoreVersions"
+        seed(cache, path: list)
+
+        invalidate(cache, method: "PATCH", path: "/v1/reviewSubmissions/sub-1")
+
+        #expect(!isCached(cache, path: list))
+    }
+
+    @Test("撤回提交后失效版本详情缓存")
+    func submissionWithdrawInvalidatesVersionDetail() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // 撤回把版本翻回 PREPARE_FOR_SUBMISSION，同样必须失效版本缓存。
+        let detail = "/v1/appStoreVersions/version-1"
+        seed(cache, path: detail)
+
+        invalidate(cache, method: "PATCH", path: "/v1/reviewSubmissions/sub-1")
+
+        #expect(!isCached(cache, path: detail))
+    }
+
+    @Test("创建审核提交不改变版本状态，保留版本缓存")
+    func submissionCreateKeepsVersionCaches() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // 版本状态只在 PATCH submitted/canceled 时翻转；POST 创建提交
+        // 不影响版本详情，保留缓存避免过度失效。
+        let detail = "/v1/appStoreVersions/version-1"
+        seed(cache, path: detail)
+        #expect(isCached(cache, path: detail))
+
+        invalidate(cache, method: "POST", path: "/v1/reviewSubmissions")
+
+        #expect(isCached(cache, path: detail))
+    }
+
     // MARK: - 内存缓存失效（根因回归）
 
     @Test("accountKey 含分隔符时内存缓存同样被失效")

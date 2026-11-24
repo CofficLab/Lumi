@@ -328,7 +328,8 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             CASE WHEN json_valid(ZMETADATAJSON) \
             THEN json_extract(ZMETADATAJSON, '$.imageAttachments') END, \
             CASE WHEN json_valid(ZMETADATAJSON) \
-            THEN json_extract(ZMETADATAJSON, '$.fileAttachments') END \
+            THEN json_extract(ZMETADATAJSON, '$.fileAttachments') END, \
+            ZTHINKINGSIGNATURE \
             FROM ZMESSAGEMODEL WHERE ZCONVERSATIONID = ? ORDER BY ZCREATEDAT ASC
             """
             var statement: OpaquePointer?
@@ -402,6 +403,7 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             renderKind: text(at: 16),
             toolCallID: text(at: 7),
             reasoningContent: text(at: 8),
+            thinkingSignature: text(at: 20),
             toolCalls: toolCalls,
             inputTokenCount: optionalInt(at: 10),
             outputTokenCount: optionalInt(at: 11),

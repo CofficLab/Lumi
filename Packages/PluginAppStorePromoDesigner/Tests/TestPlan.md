@@ -5,7 +5,7 @@
 PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 9 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 16
+测试文件: 4 个，用例总数: 19
 
 核心组件（源码目录）:
 - `Observers/`
@@ -40,7 +40,7 @@ PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测
 - **AppStorePromoDesignerPlugin**（8 条）：由 `openingWithoutConfiguredStorageDoesNotShowAnError`、`contributesRailTabAndCompleteToolSet`、`promptSuggestionLocalizationResolves` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStorePromoDesignerRuleContributor**（1 条）：由 `loadsPromoRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-- **AppStorePromoDesignerPluginTests**（7 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AppStorePromoDesignerPluginTests**（10 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`selectionDoesNotRescanTaskCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -62,21 +62,24 @@ PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测
 | 14 | AppStorePromoDesignerPluginTests | 对话绑定的项目路径无效时不会写进别的项目 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `scopedConversationWithMissingProjectNeverWritesElsewhere` |
 | 15 | AppStorePromoDesignerPluginTests | 插件注册的 Agent 工具都带对话作用域包装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
 | 16 | AppStorePromoDesignerPluginTests | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
+| 17 | AppStorePromoDesignerPluginTests | 选中任务不重扫任务目录（**回归 #1178**） | 临时项目含两个带图像任务，磁盘上另有外部新增的第三个任务 | 点击选中第一个任务 | 列表仍为 2 条且不含外部新任务；选中图像加载成功 | P1 | ✅ 已覆盖 | `selectionDoesNotRescanTaskCatalog` |
+| 18 | AppStorePromoDesignerPluginTests | 重复选中同一行不重新读取图像（**回归 #1178**） | 选中已加载后，磁盘 HTML 被外部改写 | 再次选中同一行 | 选中图像内容保持首次加载结果 | P1 | ✅ 已覆盖 | `repeatedSelectionOfSameRowDoesNotRereadImage` |
+| 19 | AppStorePromoDesignerPluginTests | 选中另一个任务仍会加载其图像（**回归 #1178**） | 项目含两个带图像任务 | 依次选中两个任务 | 选中图像随任务切换 | P1 | ✅ 已覆盖 | `selectingAnotherTaskStillLoadsItsImage` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 14 / 14
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 1 / 1
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（14 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明

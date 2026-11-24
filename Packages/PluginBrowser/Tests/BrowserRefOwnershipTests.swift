@@ -57,10 +57,96 @@ struct BrowserRefOwnershipTests {
         #expect(message.hasPrefix("STALE_REF:lumi-7"))
     }
 
+    // MARK: - 读取
+
+    @Test("browser_read 沿用共享计数器，不从 lumi-1 重新编号（#268）")
+    func readScriptContinuesSharedCounter() throws {
+        guard let context = JSContext() else { throw HarnessError.contextUnavailable }
+        // 模拟先做过一次快照：三个控件已持有 lumi-1..3，计数器停在 3。
+        context.evaluateScript(Self.readHarness(counter: 3, presetRefs: ["lumi-1", "lumi-2", "lumi-3"]))
+
+        let result = try #require(context.evaluateScript(BrowserReadPageScript.script(maxCharacters: 5_000)))
+        let refs = Self.controlRefs(in: result)
+
+        // #268：read 不得从 lumi-1 重新编号，否则旧 ref 会被静默重映射到别的控件。
+        #expect(refs == ["lumi-4", "lumi-5", "lumi-6"])
+        #expect(context.evaluateScript("window.__lumiBrowserState.counter")?.toInt32() == 6)
+        #expect(elementAttribute(context, index: 0) == "lumi-4")
+    }
+
+    @Test("同一页面两次 browser_read 编号不重置（#268）")
+    func repeatedReadsNeverReuseNumbers() throws {
+        guard let context = JSContext() else { throw HarnessError.contextUnavailable }
+        context.evaluateScript(Self.readHarness(counter: nil, presetRefs: [nil, nil, nil]))
+
+        let first = try #require(context.evaluateScript(BrowserReadPageScript.script(maxCharacters: 5_000)))
+        #expect(Self.controlRefs(in: first) == ["lumi-1", "lumi-2", "lumi-3"])
+
+        let second = try #require(context.evaluateScript(BrowserReadPageScript.script(maxCharacters: 5_000)))
+        #expect(Self.controlRefs(in: second) == ["lumi-4", "lumi-5", "lumi-6"])
+        #expect(context.evaluateScript("window.__lumiBrowserState.counter")?.toInt32() == 6)
+    }
+
     // MARK: - Harness
 
     private enum HarnessError: Error {
         case contextUnavailable
+    }
+
+    private static func controlRefs(in result: JSValue) -> [String] {
+        let controls = result.objectForKeyedSubscript("controls")
+        let count = Int(controls?.forProperty("length")?.toInt32() ?? 0)
+        return (0..<count).compactMap {
+            controls?.atIndex($0)?.objectForKeyedSubscript("ref")?.toString()
+        }
+    }
+
+    /// 三个控件的页面替身，供 `browser_read` 脚本枚举；
+    /// `counter` 模拟同一页面上一次快照留下的共享计数器。
+    private static func readHarness(counter: Int?, presetRefs: [String?]) -> String {
+        let state = counter.map { "var window = { __lumiBrowserState: { counter: \($0) } };" }
+            ?? "var window = {};"
+        let controls = presetRefs.enumerated().map { index, ref in
+            "makeElement(\"button\", \"Control \(index + 1)\", \(ref.map { "\"\($0)\"" } ?? "null"))"
+        }.joined(separator: ",\n  ")
+        return #"""
+        function makeElement(tagName, text, presetRef) {
+          var el = {
+            nodeType: 1,
+            tagName: tagName.toUpperCase(),
+            children: [],
+            childNodes: text ? [{ nodeType: 3, nodeValue: text }] : [],
+            innerText: text || "",
+            _attrs: {},
+            getAttribute: function (name) {
+              return this._attrs.hasOwnProperty(name) ? this._attrs[name] : null;
+            },
+            hasAttribute: function (name) { return this._attrs.hasOwnProperty(name); },
+            setAttribute: function (name, value) { this._attrs[name] = String(value); },
+            removeAttribute: function (name) { delete this._attrs[name]; },
+            getClientRects: function () { return [{}]; }
+          };
+          if (presetRef) el._attrs["data-lumi-browser-ref"] = presetRef;
+          return el;
+        }
+
+        var __controls = [
+          \#(controls)
+        ];
+
+        var __body = {
+          innerText: "Page text",
+          children: __controls
+        };
+
+        var document = {
+          body: __body,
+          title: "Read page",
+          querySelectorAll: function () { return __controls; }
+        };
+        \#(state)
+        var location = { href: "https://example.com/" };
+        """#
     }
 
     private func makeSnapshotContext(stateCounter: Int?) throws -> JSContext {

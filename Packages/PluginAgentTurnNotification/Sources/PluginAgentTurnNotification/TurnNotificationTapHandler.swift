@@ -54,6 +54,22 @@ final class TurnNotificationTapHandler: NSObject, UNUserNotificationCenterDelega
         }
     }
 
+    /// 前台送达的展示选项：横幅 + 声音。
+    ///
+    /// 不实现 `willPresent` 时系统会静默抑制前台通知，应用在前台时
+    /// 「回合结束」完全不出现（#457）。抽成静态便于测试锁定契约。
+    nonisolated static func foregroundPresentationOptions() -> UNNotificationPresentationOptions {
+        [.banner, .sound]
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler(Self.foregroundPresentationOptions())
+    }
+
     /// iOS 点击通知会自动激活应用，只有 macOS 需要显式前置窗口。
     @MainActor
     static func activateHostApplication() {

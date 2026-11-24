@@ -1,4 +1,5 @@
 import CoreGraphics
+import Combine
 import Foundation
 import LumiLoggingKit
 import os
@@ -32,7 +33,16 @@ final class DisplayService: ObservableObject, SuperLog {
 
     static let shared = DisplayService()
 
-    @Published private(set) var displays: [ControlledDisplay] = []
+    /// 显示器列表变化信号：在写入**之后**发出。
+    ///
+    /// `objectWillChange` 在 `willSet` 阶段发出，订阅方此时读到的是旧数组，
+    /// 导致每轮刷新的结果在 ViewModel 里滞后一轮（#459）。需要
+    /// 「新值已就位」语义的观察方必须订阅本信号。
+    let displaysDidChange = PassthroughSubject<Void, Never>()
+
+    @Published private(set) var displays: [ControlledDisplay] = [] {
+        didSet { displaysDidChange.send() }
+    }
     @Published private var pendingValues: [CGDirectDisplayID: [DisplayControlKind: Double]] = [:]
 
     private let ddc = DisplayDDCBridge()

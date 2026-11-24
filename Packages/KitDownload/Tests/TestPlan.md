@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 104
+测试文件: 15 个，用例总数: 105
 
 ## 公开 API
 
@@ -32,6 +32,7 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 - **DownloadCoverage**（7 条）：由 `convenienceDownload`、`resumeWithoutPartialFile`、`isCompleteMissingFile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadError**（2 条）：由 `errorDescriptionsNotEmpty`、`errorEquality` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadManager**（18 条）：由 `downloadSuccess`、`downloadFailure`、`getTaskState` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadManagerTimeout**（1 条）：由 `configuredTimeoutIntervalAppliesToInternalSession` 锁定 `Configuration.timeoutInterval` 必须真正传给内部 HTTP 会话的资源级超时，无应答服务器下下载必须在预算内以超时失败，不得回落 URLSession 默认值（**回归 #485**）；改动内部 DefaultHTTPClient 创建时优先跑对应测试文件。
 - **DownloadRestartIdentity**（1 条）：由 `cancelledTaskLateCleanupDoesNotAffectRestartedSameID` 锁定取消后以同 id 重启时，旧任务的晚到终态写回与收尾清理必须按代次作废，不得把新任务改成 `.cancelled` 或注销其 `activeTasks`/`progressHandlers`（**回归 #157**）；改动下载取消/重启或状态写回时优先跑对应测试文件。
 - **DownloadProgress**（8 条）：由 `defaultProgress`、`fractionCompletedCalculation`、`zeroTotalBytes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DownloadTask**（5 条）：由 `taskCreation`、`incompleteURL`、`customId` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -148,8 +149,9 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 102 | DefaultHTTPClient | 416 声明总长与本地字节数不符时必须报错，不得伪装完成（**回归 #374**） | 本地 400 字节与 validator，existingBytes=400 | 服务器返回 416 Content-Range: bytes */1000 | 抛 httpError(416)，文件不变 | P0 | ✅ 已覆盖 | `redownloadWith416MismatchedTotalStillThrows` |
 | 103 | DefaultHTTPClient | 未发 Range（无 validator）时收到的 416 必须报错（**回归 #374**） | 本地 400 字节但无 validator，existingBytes=400 | 服务器返回 416 Content-Range: bytes */400 | 抛 httpError(416)，未发 Range，文件不变 | P0 | ✅ 已覆盖 | `range416WithoutValidatorThrows` |
 | 104 | DefaultHTTPClient | 416 缺 Content-Range 时必须报错，不得臆断完成（**回归 #374**） | 本地 400 字节与 validator，existingBytes=400 | 服务器返回 416 无 Content-Range | 抛 httpError(416)，文件不变 | P0 | ✅ 已覆盖 | `redownloadWith416MissingContentRangeThrows` |
+| 105 | DownloadManagerTimeout | 配置的 timeoutInterval 必须作用于内部 HTTP 会话（**回归 #485**） | 本地无应答服务器，timeoutInterval=0.1 | 发起下载并计时 | 下载在预算内以超时失败（elapsed < 5s），不挂到 URLSession 默认 60s | P0 | ✅ 已覆盖 | `configuredTimeoutIntervalAppliesToInternalSession` |
 
-> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **105 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 > **回归 #484 变异验证**（`DownloadConcurrencyLimitTests`，逐条单独施加后跑、确认 RED 再还原）：
@@ -175,23 +177,25 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 > - **M3** 删除 416 完成分支的 `canResume` 前置（未发 Range 也认完成）→ 103 RED（无 validator 的异常 416 被伪装完成）。
 > 三处变异分别命中「完成路径误报」「总长比较方向」「canResume 前置缺失」三个失效面，还原后 104 条全绿。
 
+> **回归 #485 变异验证**（`DownloadManagerTimeoutTests`）：把 `DownloadManager.init` 中向内部会话写入 `timeoutIntervalForResource` 的分支还原为不传配置 → `configuredTimeoutIntervalAppliesToInternalSession` RED（下载挂到 URLSession 默认 60s 请求超时，elapsed ≈ 61s 违反 < 5s 断言）；修复生效时同一测试 ≈ 0.1s 内按预算超时。还原后 105 条全绿。
+
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
+- P0: 已覆盖 24 / 24
 - P1: 已覆盖 74 / 74
 - P2: 已覆盖 7 / 7
-- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
+- **合计: 105 / 105**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
 - **P1**: 其余功能性用例（74 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 105 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 118 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 108
+测试文件: 13 个，用例总数: 118
 
 核心组件（源码目录）:
 - `Agent/`
@@ -38,17 +38,17 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MailAccountStore**（26 条）：由 `testUpsertAndLoad`、`testUpsertUpdatesExistingByID`、`testDeleteRemovesAccountAndPassword` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailAgentTools**（14 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailDraftAutosave**（9 条）：由 `testSaveEncodesAndWritesOffMainThread`、`testTextOnlyEditDoesNotRewriteAttachments`、`testStaleSaveDoesNotOverwriteNewerDraft` 等用例锁定；连续击键必须合并落盘、编码与写入不得占用主线程、附件只在增删时重写，晚到的旧快照不得覆盖新草稿（issue #1188）。
 - **Mail account_id 校验**（9 条）：由 `invalidAccountIDIsRejectedByEveryTool`、`nonStringAccountIDIsRejected`、`unknownAccountIDIsAnErrorNotAnEmptyResult`、`validAccountIDSelectsThatAccount` 锁定；只有完全省略 account_id 才能回落到第一个账户，传了但为空/格式非法/类型不对/账户不存在都必须在任何 IMAP/SMTP 操作前报错，否则发送工具会从错误的邮箱寄信（issue #840）。
 - **Mail 账户身份变更与缓存隔离**（9 条）：由 `testEmailChangeDetected`、`testIdentityChangePurgesCache`、`testDeletePurgesCache`、`testUnchangedIdentityKeepsCache` 锁定；编辑账户改变邮箱/用户名/IMAP/SMTP 主机时必须清空旧缓存，否则新邮箱会读到旧邮箱的邮件（issue #845）。
 - **MailHTMLContent**（5 条）：由 `testUnauthorizedHTMLBlocksRemoteSubresources`、`testLinkActivatedOpensExternallyEvenWithoutAuthorization` 等用例锁定；改动阅读器远程内容策略时优先跑对应测试文件。
-- **MailWorkspace**（5 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先）时优先跑对应测试文件。
+- **MailWorkspace**（7 条）：由 `testColdStartOfflineFallsBackToCachedInbox`、`testSelectMessageFetchesBodyWithoutSyncService`、`testFirstPageKeepsNewestMailsAndPagesTowardOlder` 锁定；改动工作区账户/文件夹加载、阅读取正文或列表分页排序（#308 最新优先、#842 服务器翻页）时优先跑对应测试文件。
 - **MailComposerService**（12 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind`、`testAppendDraftUsesDraftFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailSessionManager**（8 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；首次冷连接一律以存储中的当前配置建连（调用方快照可能已过期），连接建立期间保存编辑会让迟到的旧凭据连接被作废（issue #400）。改动该模块时优先跑对应测试文件。
 - **MailSyncService**（11 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailPluginRuntime**（2 条）：由 `usesInjectedDirectory`、`refusesFallbackWithoutInjection` 锁定；改动数据目录解析时优先跑对应测试文件。
-- **MailPluginLifecycle**（1 条）：由 `shutdownWithoutBootDoesNotInitializeLazyServices` 锁定；改动插件生命周期/关闭清理时优先跑对应测试文件。
+- **MailPluginLifecycle**（3 条）：由 `shutdownWithoutBootDoesNotInitializeLazyServices`、`disableWithdrawsToolsAndEntries`、`reEnableRestoresToolsAndEntries` 锁定；改动插件生命周期/关闭清理/运行时禁用恢复时优先跑对应测试文件。
 
 > **#403 变异验证**（composer 调用点，2 个独立变异均 RED）：
 > 1. 把 `send()` 归档到 Sent 的 `isDraft: false` 改为 `true`（复现原 bug）→ `testSendBuildsMIMEAndAppendsToSent` 与 `mail_send_message` 工具链的 `testSendMessageSendsAndAppends` 均失败（Sent 副本被标记为草稿），`testAppendDraftUsesDraftFlag` 仍 GREEN。
@@ -167,27 +167,37 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 99 条�
 | 106 | 账户身份与缓存隔离 | 身份变更后旧缓存必须被清空（**回归 #845**） | 账户 A 有 2 封缓存邮件 | 编辑为不同邮箱后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testIdentityChangePurgesCache` |
 | 107 | 账户身份与缓存隔离 | 删除账户后缓存必须被清空（**回归 #845**） | 账户 A 有缓存邮件 | 删除账户后 purge | 缓存为空 | P0 | ✅ 已覆盖 | `testDeletePurgesCache` |
 | 108 | 账户身份与缓存隔离 | 身份未变时保留缓存 | 账户 A 有 1 封缓存邮件 | 仅改显示名，不 purge | 缓存仍有 1 封 | P1 | ✅ 已覆盖 | `testUnchangedIdentityKeepsCache` |
+| 109 | MailAgentTools | mail_list_accounts 列出已配置账户且不含凭据（回归 #841） | 已配置两个账户 | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsReturnsConfiguredAccountsWithoutCredentials` |
+| 110 | MailAgentTools | 未配置账户时返回设置引导文案 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsHintsSetupWhenNoAccountsConfigured` |
+| 111 | MailAgentTools | mail_list_accounts schema 无必需参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testListAccountsSchemaHasNoRequiredArguments` |
+| 112 | MailWorkspace | loadMore 向服务器请求上一页历史邮件并写入缓存（回归 #842） | 服务器 100 封、首页窗口 50 封 | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testLoadMoreFetchesOlderPageFromServer` |
+| 113 | MailWorkspace | 离线时 loadMore 退回本地缓存截断窗口 | 缓存 100 封、会话不可用 | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testLoadMoreOfflineFallsBackToCachedWindow` |
+| 114 | MailSessionManager | 首次冷连接一律以存储中的当前配置建连，不信任调用方的过期快照（#400） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSessionConnectsWithCurrentStoreConfig` |
+| 115 | MailSessionManager | 账户不在存储中时报 notFound，不建连（#400） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testSessionThrowsNotFoundForUnknownAccount` |
+| 116 | MailSessionManager | 连接建立期间保存编辑：迟到的旧凭据连接被作废，不入池不交付（#400） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testInFlightSessionInvalidatedByDisconnect` |
+| 117 | MailPluginLifecycle | onDisable 注销全部 Mail 工具与两个入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disableWithdrawsToolsAndEntries` |
+| 118 | MailPluginLifecycle | onDisable 后 onEnable 重新注册全部工具与入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reEnableRestoresToolsAndEntries` |
 
-> 说明：全部 **90 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 27 / 27
-- P1: 已覆盖 76 / 76
-- P2: 已覆盖 5 / 5
-- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 29 / 29
+- P1: 已覆盖 83 / 83
+- P2: 已覆盖 6 / 6
+- **合计: 118 / 118**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
-- **P1**: 其余功能性用例（76 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（79 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 118 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

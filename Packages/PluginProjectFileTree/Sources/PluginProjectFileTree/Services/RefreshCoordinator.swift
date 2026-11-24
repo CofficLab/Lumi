@@ -21,6 +21,8 @@ import os
 public protocol WatchDirectoryProbing: Sendable {
     /// 路径存在且确实是目录。
     func isDirectory(atPath path: String) -> Bool
+    /// 路径存在（任意类型，含普通文件）。
+    func fileExists(atPath path: String) -> Bool
     /// 需要监听的包清单文件（`.xcodeproj/project.pbxproj`、`Package.resolved` 等）。
     func manifestURLs(projectRootURL: URL) -> [URL]
 }
@@ -32,6 +34,10 @@ public struct DefaultWatchDirectoryProbe: WatchDirectoryProbing {
     public func isDirectory(atPath path: String) -> Bool {
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
+    }
+
+    public func fileExists(atPath path: String) -> Bool {
+        FileManager.default.fileExists(atPath: path)
     }
 
     public func manifestURLs(projectRootURL: URL) -> [URL] {
@@ -371,37 +377,80 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         return directoryURLs
     }
 
-    /// 需要监听的 `.git` 内部目录集合。
+    /// 需要监听的 `.git` 元数据位置集合。
     ///
-    /// 监听范围：
-    /// - `.git/HEAD`：捕获 commit、reset、分支切换等改变 HEAD 指向的操作
-    /// - `.git/refs`：捕获 refs/heads（分支切换）、refs/tags 等引用变更
+    /// FileTreeWatcher 的 DispatchSource 只对被监听的 vnode 本身报告事件，不会
+    /// 递归子目录：监听 `refs` 根目录收不到 `refs/heads/<branch>` 的嵌套写入。
+    /// 因此必须把 Git 实际写入的位置逐个纳入监听（issue #444）：
+    /// - `HEAD`（文件）：commit、reset、分支切换都会改写 HEAD 指向
+    /// - `packed-refs`（文件，可选）：引用打包后 loose ref 被删除，只剩这份快照
+    /// - `refs/heads`：分支引用的实际落盘位置（分支切换、新提交）
+    /// - `refs`、`logs/refs`：保留原有监听，覆盖直接写入 `refs/` 的引用
     ///
-    /// 不监听整个 `.git` 目录，避免 `.git/objects/` 频繁写入导致无效刷新。
-    /// 只监听真正影响 Git 状态的关键位置。
-    /// 仅返回实际存在的目录，避免对非 Git 仓库空跑。
+    /// 不监听整个 `.git` 目录，避免无关写入造成无效刷新；且目录监听对子文件
+    /// 的增删改名是持久的，不会像单文件监听那样在 HEAD 被原子替换后失效。
+    /// worktree / submodule 的 `.git` 是内容为 `gitdir: <路径>` 的文件，解析出
+    /// 真实元数据目录后按同样的规则监听。仅返回实际存在的路径，避免对非 Git
+    /// 仓库空跑。
     nonisolated static func gitMetadataWatchURLs(
         projectRootURL: URL,
         probe: any WatchDirectoryProbing
     ) -> [URL] {
-        let gitURL = projectRootURL.appendingPathComponent(".git").standardizedFileURL
-        guard probe.isDirectory(atPath: gitURL.path) else { return [] }
+        guard let gitURL = resolvedGitDirURL(projectRootURL: projectRootURL, probe: probe) else {
+            return []
+        }
 
         var urls: [URL] = []
 
-        // 只监听 refs 目录（分支切换、tag 变更）
-        let refsURL = gitURL.appendingPathComponent("refs").standardizedFileURL
-        if probe.isDirectory(atPath: refsURL.path) {
-            urls.append(refsURL)
+        let headURL = gitURL.appendingPathComponent("HEAD").standardizedFileURL
+        if probe.fileExists(atPath: headURL.path) {
+            urls.append(headURL)
         }
 
-        // 可选：监听 logs/refs 目录（reflog 变更）
-        let logsRefsURL = gitURL.appendingPathComponent("logs/refs").standardizedFileURL
-        if probe.isDirectory(atPath: logsRefsURL.path) {
-            urls.append(logsRefsURL)
+        let packedRefsURL = gitURL.appendingPathComponent("packed-refs").standardizedFileURL
+        if probe.fileExists(atPath: packedRefsURL.path) {
+            urls.append(packedRefsURL)
+        }
+
+        for relativeDirectory in ["refs", "refs/heads", "logs/refs"] {
+            let directoryURL = gitURL
+                .appendingPathComponent(relativeDirectory)
+                .standardizedFileURL
+            if probe.isDirectory(atPath: directoryURL.path) {
+                urls.append(directoryURL)
+            }
         }
 
         return urls
+    }
+
+    /// 解析项目根对应的 `.git` 元数据目录。
+    ///
+    /// 普通仓库的 `.git` 是目录；worktree / submodule 的 `.git` 是一个内容为
+    /// `gitdir: <路径>` 的文件（相对路径以项目根为基准解析）。返回的路径必须
+    /// 确实是目录，否则返回 nil。
+    nonisolated static func resolvedGitDirURL(
+        projectRootURL: URL,
+        probe: any WatchDirectoryProbing
+    ) -> URL? {
+        let gitURL = projectRootURL.appendingPathComponent(".git").standardizedFileURL
+        if probe.isDirectory(atPath: gitURL.path) {
+            return gitURL
+        }
+
+        guard probe.fileExists(atPath: gitURL.path),
+              let contents = try? String(contentsOf: gitURL, encoding: .utf8),
+              contents.hasPrefix("gitdir:") else { return nil }
+
+        let trimmed = contents.dropFirst("gitdir:".count)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let resolvedURL = trimmed.hasPrefix("/")
+            ? URL(fileURLWithPath: trimmed)
+            : projectRootURL.appendingPathComponent(trimmed)
+        let directoryURL = resolvedURL.standardizedFileURL
+        return probe.isDirectory(atPath: directoryURL.path) ? directoryURL : nil
     }
 
     /// 处理目录变化事件

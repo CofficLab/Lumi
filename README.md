@@ -64,7 +64,6 @@ The main implementation layers are:
 - [`FactoryLumi`](Packages/FactoryLumi) — composition and dependency wiring.
 - [`PluginAgentLoop`](Packages/PluginAgentLoop) — agent-loop integration.
 - [`PluginToolManager`](Packages/PluginToolManager) — tool registration, authorization, execution, and records.
-- [`KitLLM`](Packages/KitLLM) — shared LLM models, adapters, and provider contracts.
 - [`PluginProjectRAG`](Packages/PluginProjectRAG) — project indexing and local vector search.
 - [`PluginWebServer`](Packages/PluginWebServer) — plugin route registration for the local web server.
 

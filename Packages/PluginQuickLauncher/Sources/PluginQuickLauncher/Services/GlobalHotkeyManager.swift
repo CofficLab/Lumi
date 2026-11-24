@@ -152,19 +152,24 @@ public final class GlobalHotkeyManager: NSObject, ObservableObject, SuperLog {
         unregisterHotkey()
     }
 
-    /// 更新热键组合：持久化并热切换
-    public func updateCombo(_ combo: HotkeyCombo) {
-        guard combo != currentCombo else { return }
-        currentCombo = combo
-        if let data = try? JSONEncoder().encode(combo) {
-            defaults.set(data, forKey: Self.keyCodeKey + ".encoded")
-        }
-        defaults.set(Int(exactly: combo.keyCode) ?? 0, forKey: Self.keyCodeKey)
-        defaults.set(Int(exactly: combo.modifiers) ?? 0, forKey: Self.modifiersKey)
-        // 已在监听则热切换
+    /// 更新热键组合：持久化并热切换。
+    ///
+    /// 监听中时**先注册新组合、成功才提交状态**：注册失败（组合被其它应用占用）
+    /// 时原热键保持注册、`currentCombo` 与持久化配置都不变，返回 `false`（#454）。
+    /// 未监听时只更新状态，总是返回 `true`。
+    /// - Returns: 注册是否成功（或无需注册）。
+    @discardableResult
+    public func updateCombo(_ combo: HotkeyCombo) -> Bool {
+        guard combo != currentCombo else { return true }
         if eventHandler != nil {
-            registerHotkey()
+            guard let newRef = makeRegistration(for: combo) else { return false }
+            // 新组合已注册成功：换掉旧注册（先注册后注销，失败时原热键不受影响）。
+            unregisterHotkey()
+            hotKeyRef = newRef
         }
+        currentCombo = combo
+        persist(combo)
+        return true
     }
 
     /// 恢复默认 ⌥Space
@@ -174,27 +179,42 @@ public final class GlobalHotkeyManager: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Registration
 
-    private func registerHotkey() {
-        unregisterHotkey()
-
+    /// 注册指定组合，返回热键引用；失败（如组合被占用）时返回 nil 并记录日志。
+    private func makeRegistration(for combo: HotkeyCombo) -> EventHotKeyRef? {
         let hotKeyID = EventHotKeyID(signature: Self.eventSignature, id: 1)
         var newRef: EventHotKeyRef?
         let status = RegisterEventHotKey(
-            currentCombo.keyCode,
-            currentCombo.modifiers,
+            combo.keyCode,
+            combo.modifiers,
             hotKeyID,
             GetApplicationEventTarget(),
             0,
             &newRef
         )
         guard status == noErr, let newRef else {
-            QuickLauncherPluginSupport.logger.error("\(self.t)注册全局热键失败: \(status) (\(self.currentCombo.displayString))")
-            return
+            QuickLauncherPluginSupport.logger.error("\(self.t)注册全局热键失败: \(status) (\(combo.displayString))")
+            return nil
         }
-        hotKeyRef = newRef
-        if Self.verbose {
-            QuickLauncherPluginSupport.logger.info("\(self.t)全局热键已注册: \(self.currentCombo.displayString)")
+        return newRef
+    }
+
+    private func registerHotkey() {
+        if let newRef = makeRegistration(for: currentCombo) {
+            unregisterHotkey()
+            hotKeyRef = newRef
+            if Self.verbose {
+                QuickLauncherPluginSupport.logger.info("\(self.t)全局热键已注册: \(self.currentCombo.displayString)")
+            }
         }
+        // 注册失败（如重复 start 或组合被占用）时保留既有注册，不撤掉原热键。
+    }
+
+    private func persist(_ combo: HotkeyCombo) {
+        if let data = try? JSONEncoder().encode(combo) {
+            defaults.set(data, forKey: Self.keyCodeKey + ".encoded")
+        }
+        defaults.set(Int(exactly: combo.keyCode) ?? 0, forKey: Self.keyCodeKey)
+        defaults.set(Int(exactly: combo.modifiers) ?? 0, forKey: Self.modifiersKey)
     }
 
     private func unregisterHotkey() {

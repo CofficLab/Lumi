@@ -24,6 +24,9 @@ public struct HTMLPreviewView: View {
     var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
     var isElementReferenceActionEnabled: Bool
 
+    /// 点击 `data-prototype-link` 热点后回调，携带声明的目标屏 ID（issue #323）。
+    var onPrototypeLinkSelected: ((String) -> Void)?
+
     public init(
         htmlText: String,
         fileURL: URL? = nil,
@@ -32,7 +35,8 @@ public struct HTMLPreviewView: View {
         onWebViewResolved: ((WKWebView) -> Void)? = nil,
         onBlockSelected: ((PromoBlockSelection) -> Void)? = nil,
         onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)? = nil,
-        isElementReferenceActionEnabled: Bool = true
+        isElementReferenceActionEnabled: Bool = true,
+        onPrototypeLinkSelected: ((String) -> Void)? = nil
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
@@ -42,6 +46,7 @@ public struct HTMLPreviewView: View {
         self.onBlockSelected = onBlockSelected
         self.onElementReferenceSelected = onElementReferenceSelected
         self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
+        self.onPrototypeLinkSelected = onPrototypeLinkSelected
     }
 
     public var body: some View {
@@ -80,7 +85,8 @@ public struct HTMLPreviewView: View {
                 onWebViewResolved: onWebViewResolved,
                 onBlockSelected: onBlockSelected,
                 onElementReferenceSelected: onElementReferenceSelected,
-                isElementReferenceActionEnabled: isElementReferenceActionEnabled
+                isElementReferenceActionEnabled: isElementReferenceActionEnabled,
+                onPrototypeLinkSelected: onPrototypeLinkSelected
             )
             .frame(width: webViewSize.width, height: webViewSize.height)
             .scaleEffect(fitScale)
@@ -143,12 +149,14 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     let onBlockSelected: ((PromoBlockSelection) -> Void)?
     let onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
     let isElementReferenceActionEnabled: Bool
+    let onPrototypeLinkSelected: ((String) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
             onBlockSelected: onBlockSelected,
             onElementReferenceSelected: onElementReferenceSelected,
-            isElementReferenceActionEnabled: isElementReferenceActionEnabled
+            isElementReferenceActionEnabled: isElementReferenceActionEnabled,
+            onPrototypeLinkSelected: onPrototypeLinkSelected
         )
     }
 
@@ -167,6 +175,12 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
             userContentController.add(
                 WeakScriptMessageHandler(proxy: context.coordinator),
                 name: HTMLPreviewElementBridgeScript.messageHandlerName
+            )
+        }
+        if onPrototypeLinkSelected != nil {
+            userContentController.add(
+                WeakScriptMessageHandler(proxy: context.coordinator),
+                name: HTMLPreviewPrototypeLinkScript.messageHandlerName
             )
         }
         let config = HTMLPreviewWebViewFactory.makeConfiguration(userContentController: userContentController)
@@ -188,6 +202,7 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         context.coordinator.onBlockSelected = onBlockSelected
         context.coordinator.onElementReferenceSelected = onElementReferenceSelected
         context.coordinator.isElementReferenceActionEnabled = isElementReferenceActionEnabled
+        context.coordinator.onPrototypeLinkSelected = onPrototypeLinkSelected
 
         DispatchQueue.main.async {
             onWebViewResolved?(webView)
@@ -236,21 +251,25 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     var onBlockSelected: ((PromoBlockSelection) -> Void)?
     var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
     var isElementReferenceActionEnabled: Bool
+    var onPrototypeLinkSelected: ((String) -> Void)?
     var lastLoadKey: LoadKey?
     /// 标记当前 webview 实例是否已注入选区脚本（重载后会被重置，需重新注入）。
     var didInjectSelectionScript = false
     var didInjectElementBridge = false
+    var didInjectPrototypeLinkScript = false
     var navigationGeneration = 0
     private let elementContextMenuPresenter = HTMLPreviewElementContextMenuPresenter()
 
     init(
         onBlockSelected: ((PromoBlockSelection) -> Void)?,
         onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?,
-        isElementReferenceActionEnabled: Bool
+        isElementReferenceActionEnabled: Bool,
+        onPrototypeLinkSelected: ((String) -> Void)? = nil
     ) {
         self.onBlockSelected = onBlockSelected
         self.onElementReferenceSelected = onElementReferenceSelected
         self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
+        self.onPrototypeLinkSelected = onPrototypeLinkSelected
     }
 
     // MARK: WKNavigationDelegate
@@ -260,6 +279,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
         navigationGeneration += 1
         didInjectSelectionScript = false
         didInjectElementBridge = false
+        didInjectPrototypeLinkScript = false
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -270,6 +290,12 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     // MARK: WKScriptMessageHandler
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == HTMLPreviewPrototypeLinkScript.messageHandlerName {
+            guard let request = try? HTMLPreviewPrototypeLinkRequestDecoder.decode(body: message.body),
+                  request.navigationGeneration == navigationGeneration else { return }
+            onPrototypeLinkSelected?(request.target)
+            return
+        }
         if message.name == HTMLPreviewElementBridgeScript.messageHandlerName {
             guard let request = try? HTMLPreviewContextMenuRequestDecoder.decode(body: message.body),
                   request.navigationGeneration == navigationGeneration,
@@ -309,6 +335,9 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
         if onElementReferenceSelected != nil, !didInjectElementBridge {
             injectElementBridge(into: webView)
         }
+        if onPrototypeLinkSelected != nil, !didInjectPrototypeLinkScript {
+            injectPrototypeLinkScript(into: webView)
+        }
     }
 
     func injectSelectionScript(into webView: WKWebView) {
@@ -323,6 +352,15 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
         )
         webView.evaluateJavaScript(script) { [weak self] _, error in
             self?.didInjectElementBridge = error == nil
+        }
+    }
+
+    func injectPrototypeLinkScript(into webView: WKWebView) {
+        let script = HTMLPreviewPrototypeLinkScript.makeSource(
+            navigationGeneration: navigationGeneration
+        )
+        webView.evaluateJavaScript(script) { [weak self] _, error in
+            self?.didInjectPrototypeLinkScript = error == nil
         }
     }
 

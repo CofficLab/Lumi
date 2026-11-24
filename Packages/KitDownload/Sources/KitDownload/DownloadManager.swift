@@ -90,7 +90,12 @@ public actor DownloadManager {
         } else {
             let limiter = RateLimiter(bytesPerSecond: configuration.maxBytesPerSecond)
             self.rateLimiter = limiter
-            self.httpClient = DefaultHTTPClient(rateLimiter: limiter)
+            // configuration.timeoutInterval 是整个下载的资源级预算；此前只存不读，
+            // 内部会话一直用的是 URLSession 默认值，配置从不生效（#485）。
+            // 空闲超时保持 URLSession 默认，不因预算大而放宽断连容忍。
+            let sessionConfiguration = URLSessionConfiguration.default
+            sessionConfiguration.timeoutIntervalForResource = configuration.timeoutInterval
+            self.httpClient = DefaultHTTPClient(configuration: sessionConfiguration, rateLimiter: limiter)
         }
 
         self.fileValidator = FileValidator()

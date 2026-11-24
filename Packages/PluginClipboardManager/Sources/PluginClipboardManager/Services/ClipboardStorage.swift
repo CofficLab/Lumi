@@ -79,7 +79,26 @@ public actor ClipboardStorage: SuperLog {
 
     /// 获取所有项
     public func getItems() async -> [ClipboardHistoryItem] {
-        return await historyManager.getAll(limit: ClipboardHistoryManager.maxFetchLimit)
+        let latest = await historyManager.getAll(limit: ClipboardHistoryManager.maxFetchLimit)
+        // 固定项被清理策略永久保留，但可能落在「最新 maxFetchLimit 条」的
+        // 时间窗之外（如 Unlimited 历史下被更新的记录挤出窗口），只取窗口
+        // 会让固定项从 UI 和搜索里消失（#421）。单独取回固定项并去重后并入。
+        let pinned = await historyManager.getPinned()
+        return Self.mergingPinned(latest, pinned: pinned)
+    }
+
+    /// 合并时间窗结果与固定项：按 id 去重（窗口内的固定项两条查询都会返回），
+    /// 统一按时间倒序。纯函数，便于单元测试。
+    static func mergingPinned(
+        _ latest: [ClipboardHistoryItem],
+        pinned: [ClipboardHistoryItem]
+    ) -> [ClipboardHistoryItem] {
+        guard !pinned.isEmpty else { return latest }
+        var byID: [UUID: ClipboardHistoryItem] = [:]
+        byID.reserveCapacity(latest.count + pinned.count)
+        for item in latest { byID[item.id] = item }
+        for item in pinned { byID[item.id] = item }
+        return byID.values.sorted { $0.timestamp > $1.timestamp }
     }
 
     /// 获取最新的 N 项

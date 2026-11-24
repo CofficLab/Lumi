@@ -13,10 +13,21 @@ final class NetworkHistoryViewModel: ObservableObject {
     /// 这里按范围缓存，缓冲或范围变化时失效。
     private var rangeCache: [TimeRange: [NetworkDataPoint]] = [:]
 
-    func apply(recent: [NetworkDataPoint], longTerm: [NetworkDataPoint]) {
-        recentHistory = recent
-        longTermHistory = longTerm
-        rangeCache.removeAll()
+    /// 应用高频缓冲（每个采样 tick 调用一次）。
+    ///
+    /// 只发布 `recentHistory` 并只失效高频范围的缓存：recent-only 的采样
+    /// 不得唤醒未变化的长期图表（30 天视图）重算（#1214）。
+    func applyRecent(_ points: [NetworkDataPoint]) {
+        recentHistory = points
+        // 高频缓冲变化只失效高频范围（hour1）的缓存。
+        rangeCache = rangeCache.filter { !$0.key.usesHighResolutionBuffer }
+    }
+
+    /// 应用长期缓冲（分钟聚合或历史恢复时调用）。
+    func applyLongTerm(_ points: [NetworkDataPoint]) {
+        longTermHistory = points
+        // 长期缓冲变化只失效长期范围的缓存，hour1 不受影响。
+        rangeCache = rangeCache.filter { $0.key.usesHighResolutionBuffer }
     }
 
     /// 按时间范围裁剪历史数据。

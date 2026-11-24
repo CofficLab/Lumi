@@ -392,6 +392,35 @@ struct KitPrototypeTests {
         }
     }
 
+    /// 基于已解码项目读取屏幕的结果与按 slug 读取一致（#1290）。
+    @Test func readScreenWithPreloadedProjectMatchesSlugBasedRead() throws {
+        try withTemporaryStorage { root in
+            let store = PrototypeDocumentStore()
+            _ = try store.createProject(
+                storagePath: root.path,
+                slug: "checkout-flow",
+                title: "Checkout Flow",
+                style: .wireframe,
+                device: PrototypeDeviceKind.iPhone15Pro.preset!
+            )
+            _ = try store.addScreen(
+                storagePath: root.path,
+                projectSlug: "checkout-flow",
+                screenSlug: "01-home",
+                title: "首页"
+            )
+
+            let project = try store.readProject(storagePath: root.path, projectSlug: "checkout-flow")
+            let fromProject = try store.readScreen(project: project, storagePath: root.path, screenSlug: "01-home")
+            let fromDisk = try store.readScreen(storagePath: root.path, projectSlug: "checkout-flow", screenSlug: "01-home")
+            #expect(fromProject == fromDisk)
+
+            #expect(throws: (any Error).self) {
+                _ = try store.readScreen(project: project, storagePath: root.path, screenSlug: "ghost")
+            }
+        }
+    }
+
     @Test func storeRejectsDuplicateAndReservedSlugs() throws {
         try withTemporaryStorage { root in
             let store = PrototypeDocumentStore()

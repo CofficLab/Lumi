@@ -232,11 +232,33 @@ final class MailWorkspaceViewModel: ObservableObject {
     /// 分页加载（列表滚动到底部时调用）。
     func loadMore() async {
         guard let context = currentContext, !messages.isEmpty else { return }
-        let targetCount = loadedCount + pageSize
-        let all = (try? await cache.messages(accountID: context.accountID, folder: context.folder)) ?? []
-        guard currentContext == context else { return }
-        loadedCount = targetCount
-        messages = Array(all.sorted { $0.uid > $1.uid }.prefix(loadedCount))
+        guard let account = accounts.first(where: { $0.id == context.accountID }) else { return }
+        do {
+            // 在线时向服务器请求上一页历史邮件：游标 = 已展示的最旧 uid（#842）。
+            // 只放大本地缓存截断窗口永远读不到首页同步窗口之外的历史邮件。
+            let session = try await sessionManager.session(for: account)
+            let oldestLoadedUID = messages.map { $0.uid }.min() ?? 0
+            let older = try await session.fetchMessages(
+                folder: context.folder,
+                beforeUID: oldestLoadedUID,
+                limit: pageSize
+            )
+            try await cache.upsertMessages(older, accountID: context.accountID, folder: context.folder)
+            guard currentContext == context else { return }
+            loadedCount += older.count
+            let all = try await cache.messages(accountID: context.accountID, folder: context.folder)
+            guard currentContext == context else { return }
+            messages = Array(all.sorted { $0.uid > $1.uid }.prefix(loadedCount))
+        } catch {
+            guard currentContext == context else { return }
+            // 离线降级：仅放大本地缓存截断窗口。
+            handleError(error, context: "加载更多")
+            let targetCount = loadedCount + pageSize
+            let all = (try? await cache.messages(accountID: context.accountID, folder: context.folder)) ?? []
+            guard currentContext == context else { return }
+            loadedCount = targetCount
+            messages = Array(all.sorted { $0.uid > $1.uid }.prefix(loadedCount))
+        }
     }
 
     // MARK: - 阅读

@@ -63,6 +63,9 @@ public final class ACPTurnCoordinator {
         /// 是否已出现 LLM 进展（工具调用 / 终态事件）。
         /// started 不算进展：它只证明回合已启动，不能证明 LLM 会响应。
         var hasLLMProgress = false
+        /// 本回合的 turnID（.started 事件登记，#220）。收尾补发只覆盖
+        /// 本回合产生的消息，避免取消/空回合回放上一回合的内容。
+        var turnID: UUID?
     }
 
     /// 已上报、可能进入授权流程的工具调用元数据。
@@ -116,6 +119,8 @@ public final class ACPTurnCoordinator {
     /// `cancel()` 里取消这个尚未启动的 Task，让 `runTurnTask` 启动前看到取消
     /// 并跳过模型/工具，取消意图不会在启动前丢失（#480）。
     private var runnerTasks: [ACPSessionId: Task<Void, Never>] = [:]
+    /// 内部兜底优雅结束的会话（AskUser 无法交互时主动停回合，非客户端取消）。
+    private var gracefulStopConversations: Set<UUID> = []
 
     public init(
         agentLoop: any ACPTurnRunning,
@@ -262,7 +267,9 @@ public final class ACPTurnCoordinator {
 
     private func handle(_ event: AgentLoopEvent) {
         switch event {
-        case .started:
+        case .started(let conversationID, let turnID):
+            recordTurnID(turnID, conversationID: conversationID)
+        case .resumed:
             break
         case .toolCallsReceived(let conversationID, _, _, let toolCalls):
             markLLMProgress(conversationID: conversationID)
@@ -284,8 +291,11 @@ public final class ACPTurnCoordinator {
             }
         case .cancelled(let conversationID, _):
             markLLMProgress(conversationID: conversationID)
+            // 优雅结束（AskUser 兜底）产生的 .cancelled 不代表客户端取消，
+            // 必须以 end_turn 收尾（#482）。
+            let graceful = consumeGracefulStop(conversationID)
             Task { @MainActor [weak self] in
-                await self?.finalize(conversationID: conversationID, cancelled: true, errorText: nil)
+                await self?.finalize(conversationID: conversationID, cancelled: !graceful, errorText: nil)
             }
         }
     }
@@ -296,6 +306,12 @@ public final class ACPTurnCoordinator {
         activeTurns[sessionID]?.hasLLMProgress = true
         watchdogTasks[sessionID]?.cancel()
         watchdogTasks[sessionID] = nil
+    }
+
+    /// 登记 .started 事件的 turnID（#220）：收尾时以此限定补发范围。
+    private func recordTurnID(_ turnID: UUID, conversationID: UUID) {
+        guard let sessionID = activeSessionID(for: conversationID) else { return }
+        activeTurns[sessionID]?.turnID = turnID
     }
 
     private func runTurnTask(sessionID: ACPSessionId, conversationID: UUID) async {
@@ -321,7 +337,10 @@ public final class ACPTurnCoordinator {
                 }
                 await finalize(conversationID: conversationID, cancelled: false, errorText: reason)
             case .cancelled:
-                await finalize(conversationID: conversationID, cancelled: true, errorText: nil)
+                // 事件路径可能已消费优雅标记并收尾（finalized 守卫兜底）；
+                // 这里同样消费，谁先看到标记谁负责按 end_turn 收尾（#482）。
+                let graceful = consumeGracefulStop(conversationID)
+                await finalize(conversationID: conversationID, cancelled: !graceful, errorText: nil)
             case .suspended:
                 // 回合挂起等待用户决定（resume 后继续），不结束。
                 break
@@ -359,6 +378,20 @@ public final class ACPTurnCoordinator {
 
     // MARK: - 挂起处理
 
+    /// 内核只有 `cancelTurn` 一种停止回合的手段，但它固定产生 `.cancelled`；
+    /// ACP 语义里 `cancelled` 专指客户端取消。AskUser 兜底（无自由文本通道、
+    /// 载荷缺失、选项为空）是协调者主动结束回合让用户下轮回答，不是取消，
+    /// 必须先登记优雅结束标记，让随后的 `.cancelled` 映射为 end_turn（#482）。
+    private func stopTurnGracefully(_ conversationID: UUID) {
+        gracefulStopConversations.insert(conversationID)
+        agentLoop.cancelTurn(in: conversationID)
+    }
+
+    /// 消费优雅结束标记；返回 true 表示该 `.cancelled` 来自内部兜底而非客户端。
+    private func consumeGracefulStop(_ conversationID: UUID) -> Bool {
+        gracefulStopConversations.remove(conversationID) != nil
+    }
+
     private func handleSuspension(_ suspension: AgentLoopSuspension) {
         guard let sessionID = sessions.sessionID(for: suspension.conversationID),
               activeTurns[sessionID] != nil else { return }
@@ -377,7 +410,7 @@ public final class ACPTurnCoordinator {
         guard let mode = payload?["mode"] as? String else {
             // 非 AskUser 载荷：把 payload 作为问题文本推送，并结束回合。
             sendAgentText(suspension.payload, sessionID: sessionID)
-            agentLoop.cancelTurn(in: suspension.conversationID)
+            stopTurnGracefully(suspension.conversationID)
             return
         }
 
@@ -387,7 +420,7 @@ public final class ACPTurnCoordinator {
             let labels = Self.choiceOptions(from: payload?["options"])
             guard !labels.isEmpty else {
                 sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
-                agentLoop.cancelTurn(in: suspension.conversationID)
+                stopTurnGracefully(suspension.conversationID)
                 return
             }
             // AskUser 的 answer 必须是选项标签本身（内核按标签匹配）；optionId
@@ -409,7 +442,7 @@ public final class ACPTurnCoordinator {
         case "free_text":
             // ACP 无自由文本输入通道：降级为文本问题 + 结束回合，用户下轮回答。
             sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
-            agentLoop.cancelTurn(in: suspension.conversationID)
+            stopTurnGracefully(suspension.conversationID)
         default: // yes_no
             // 展示文案走本地化，但 answer 固定传内核可识别的允许/拒绝词，
             // 否则非中文环境下用户点"允许"会被内核当成拒绝执行。
@@ -554,13 +587,22 @@ public final class ACPTurnCoordinator {
 
         activeTurns[sessionID]?.finalized = true
 
+        // #220：补发范围限定为本回合产生的消息。取消且回合从未真正启动
+        // （没有 turnID）时，历史回合的终态已在其自身收尾时补发过，不能重放。
+        let currentTurnID = turn.turnID
         // ACP 要求：回合结束前不得残留挂起的权限请求；未完成的工具调用
         // 一律以 cancelled 收尾，Client 才能正确收敛 UI 状态。
         cancelPendingPermissions(sessionID: sessionID)
         publishCancelledToolCalls(sessionID: sessionID)
         // 失败回合同样要收敛工具状态：已落库的结果补发 completed/failed，
         // 否则客户端的工具行永久停在 pending（#481）。
-        publishTerminalToolUpdates(conversationID: conversationID, sessionID: sessionID)
+        if currentTurnID != nil || !cancelled {
+            publishTerminalToolUpdates(
+                conversationID: conversationID,
+                sessionID: sessionID,
+                turnID: currentTurnID
+            )
+        }
 
         // stopReason 必须如实反映回合结局：把失败混成 end_turn 会让客户端
         // 把错误当成功（方案 §5 约定 failed → refusal）。因此先判定是否失败。
@@ -568,8 +610,14 @@ public final class ACPTurnCoordinator {
         if let errorText {
             sendAgentText(errorText, sessionID: sessionID)
         }
-        if !failed {
-            await publishFinalContent(conversationID: conversationID, sessionID: sessionID)
+        // #220：取消回合不做最终文本回填——此刻本回合通常还没有 assistant
+        // 消息，旧逻辑会取到上一回合的整段回复回放给客户端。
+        if !cancelled, !failed {
+            await publishFinalContent(
+                conversationID: conversationID,
+                sessionID: sessionID,
+                turnID: currentTurnID
+            )
         }
         streaming?.reset(conversationID: conversationID)
 
@@ -578,6 +626,14 @@ public final class ACPTurnCoordinator {
             stopReason = .cancelled
         } else if failed {
             stopReason = .refusal
+        } else if let lastStop = messages.messagesSnapshot(in: conversationID)
+            .reversed()
+            .first(where: { $0.role == .assistant })?.stopReason,
+            lastStop == "length" || lastStop == "max_tokens" {
+            // #354：token 截断（OpenAI finish_reason=length / Anthropic
+            // stop_reason=max_tokens）已随 assistant 消息落库，如实映射成
+            // ACP 的 max_tokens，不要与自然完成一样折叠成 end_turn。
+            stopReason = .maxTokens
         } else {
             stopReason = .endTurn
         }
@@ -621,9 +677,16 @@ public final class ACPTurnCoordinator {
     ///
     /// 成功与失败路径都必须调用：失败回合虽然跳过最终文本，但工具结果
     /// 是已经落库的事实，不补发会让客户端的工具行永久停在 pending（#481）。
-    private func publishTerminalToolUpdates(conversationID: UUID, sessionID: ACPSessionId) {
+    /// `turnID` 非 nil 时只补发该回合的消息（#220）；nil 表示回合未登记
+    /// turnID，保持全量扫描的旧行为。
+    private func publishTerminalToolUpdates(
+        conversationID: UUID,
+        sessionID: ACPSessionId,
+        turnID: UUID?
+    ) {
         let snapshot = messages.messagesSnapshot(in: conversationID)
         for message in snapshot.reversed() where message.role == .assistant {
+            if let turnID, message.turnID != turnID { continue }
             for call in message.toolCalls ?? [] {
                 guard let result = call.result else { continue }
                 sendUpdate(
@@ -639,9 +702,19 @@ public final class ACPTurnCoordinator {
     }
 
     /// 回合正常结束后：补发最终 assistant 文本。
-    private func publishFinalContent(conversationID: UUID, sessionID: ACPSessionId) async {
+    ///
+    /// `turnID` 非 nil 时只取该回合产生的消息（#220）——否则新回合尚无
+    /// 内容时会取到上一回合的整段回复回放给客户端。
+    private func publishFinalContent(
+        conversationID: UUID,
+        sessionID: ACPSessionId,
+        turnID: UUID?
+    ) async {
         let snapshot = messages.messagesSnapshot(in: conversationID)
-        let assistantMessages = snapshot.reversed().filter { $0.role == .assistant }
+        var assistantMessages = snapshot.reversed().filter { $0.role == .assistant }
+        if let turnID {
+            assistantMessages = assistantMessages.filter { $0.turnID == turnID }
+        }
 
         // 最终 assistant 文本（第一个非空内容）。
         // 已经流式发出过增量的回合不再整段重发，否则客户端会看到重复文本。

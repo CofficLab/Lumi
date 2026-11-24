@@ -25,6 +25,13 @@ public protocol MailSessionServing: Sendable {
     ///   - limit: 最多条数（倒序取最新 N 条；增量同步时忽略）
     func fetchMessages(folder: String, sinceUID: UInt64?, limit: Int) async throws -> [MailMessageSummary]
 
+    /// 向历史方向翻页：拉取文件夹内 uid < beforeUID 的更旧邮件摘要。
+    /// - Parameters:
+    ///   - folder: 文件夹路径
+    ///   - beforeUID: 游标（仅拉取 uid < beforeUID 的更旧邮件；1 表示没有更旧的邮件）
+    ///   - limit: 最多条数（取游标之前最新的 N 条）
+    func fetchMessages(folder: String, beforeUID: UInt64, limit: Int) async throws -> [MailMessageSummary]
+
     /// 拉取单封邮件正文与附件。附件默认落盘（`MailAttachment.localFileURL`）。
     func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail
 

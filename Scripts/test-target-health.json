@@ -1,20 +1,4 @@
 {
-  "FactoryAppIconDesigner": {
-    "status": "broken",
-    "errors": [
-      "error: error: accessing build database \"/Users/angel/Code/Coffic/Lumi/Packages/FactoryAppIconDesigner/.build/out/Intermediates.noindex/XCBuildData/build.db\": database or disk is full",
-      "error: error: accessing build database \"/Users/angel/Code/Coffic/Lumi/Packages/FactoryAppIconDesigner/.build/out/Intermediates.noindex/XCBuildData/build.db\": database or disk is full",
-      "error: The build service has encountered an internal inconsistency error: unexpected incomplete target: target-FactoryAppIconDesignerTests-product-PACKAGE-PRODUCT:factoryappicondesigner_FactoryAppIconDesignerTests.Factor"
-    ],
-    "hasTestPlan": false
-  },
-  "FactoryCADDesigner": {
-    "status": "broken",
-    "errors": [
-      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
-    ],
-    "hasTestPlan": false
-  },
   "FactoryDatabaseManager": {
     "status": "broken",
     "errors": [
@@ -47,13 +31,6 @@
     "status": "ok",
     "errors": [],
     "hasTestPlan": true
-  },
-  "KitCADDesigner": {
-    "status": "broken",
-    "errors": [
-      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
-    ],
-    "hasTestPlan": false
   },
   "KitDownload": {
     "status": "broken",
@@ -252,11 +229,6 @@
     ],
     "hasTestPlan": false
   },
-  "PluginAppIconDesigner": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginAppManager": {
     "status": "ok",
     "errors": [],
@@ -288,11 +260,6 @@
     "hasTestPlan": false
   },
   "PluginBrowser": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginCADDesigner": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false

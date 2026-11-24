@@ -34,7 +34,8 @@ public final class AnthropicProvider: VendorLLMProvider {
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
         AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://api.anthropic.com/v1/messages"
+            baseURL: "https://api.anthropic.com/v1/messages",
+            enablesPromptCaching: true
         )
     }
 }

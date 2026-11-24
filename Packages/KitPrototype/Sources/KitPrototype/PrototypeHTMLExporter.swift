@@ -44,6 +44,7 @@ public enum PrototypeHTMLExporter {
         loadTimeout: TimeInterval = 8,
         resourceTimeout: TimeInterval = 5
     ) async throws -> Data {
+        try Task.checkCancellation()
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
@@ -55,14 +56,16 @@ public enum PrototypeHTMLExporter {
         webView.navigationDelegate = delegate
 
         if let fileURL {
-            webView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
+            webView.loadFileURL(fileURL, allowingReadAccessTo: readAccessRoot(forScreenHTML: fileURL))
         } else {
             webView.loadHTMLString(html, baseURL: nil)
         }
 
+        try Task.checkCancellation()
         guard await delegate.waitForFinish(timeout: loadTimeout) else { throw PrototypeExportError.loadTimedOut }
+        try Task.checkCancellation()
         try await disableMotion(in: webView)
-        guard await waitForResources(in: webView, timeout: resourceTimeout) else {
+        guard try await waitForResources(in: webView, timeout: resourceTimeout) else {
             throw PrototypeExportError.resourcesTimedOut
         }
 
@@ -121,6 +124,16 @@ public enum PrototypeHTMLExporter {
 
     // MARK: - 私有
 
+    /// 屏幕 HTML 的 WebKit 读取权限根：项目根目录。
+    ///
+    /// 存储布局是 `<project>/<screen-slug>/index.html`，素材在项目级
+    /// `assets/`，导入工具官方返回的引用路径是 `../assets/...`。读取权限
+    /// 若只覆盖屏幕目录，官方素材路径会被 WebKit 拦截，预览图片全裂、
+    /// 导出等待资源加载永远超时（#324）。
+    static func readAccessRoot(forScreenHTML screenHTMLURL: URL) -> URL {
+        screenHTMLURL.deletingLastPathComponent().deletingLastPathComponent()
+    }
+
     private static func disableMotion(in webView: WKWebView) async throws {
         let script = """
         (() => {
@@ -133,7 +146,7 @@ public enum PrototypeHTMLExporter {
         _ = try await webView.evaluateJavaScript(script)
     }
 
-    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async -> Bool {
+    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async throws -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         let script = """
         document.readyState === 'complete' &&
@@ -141,8 +154,9 @@ public enum PrototypeHTMLExporter {
         (!document.fonts || document.fonts.status === 'loaded')
         """
         while Date() < deadline {
+            try Task.checkCancellation()
             if let ready = try? await webView.evaluateJavaScript(script) as? Bool, ready { return true }
-            try? await Task.sleep(for: .milliseconds(50))
+            try await Task.sleep(for: .milliseconds(50))
         }
         return false
     }
@@ -153,13 +167,18 @@ public enum PrototypeHTMLExporter {
 
         func waitForFinish(timeout: TimeInterval) async -> Bool {
             if let completedResult { return completedResult }
-            return await withCheckedContinuation { continuation in
-                self.continuation = continuation
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(timeout))
-                    self?.finish(false)
+            return await withTaskCancellationHandler(operation: {
+                await withCheckedContinuation { continuation in
+                    self.continuation = continuation
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(timeout))
+                        self?.finish(false)
+                    }
                 }
-            }
+            }, onCancel: {
+                // 取消也要立即唤醒等待方，否则已取消的导出仍要空等超时（#430）。
+                Task { @MainActor [weak self] in self?.finish(false) }
+            })
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finish(true) }

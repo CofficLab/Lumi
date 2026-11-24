@@ -91,7 +91,7 @@ public final class ACPClientRequester {
         sessionID: ACPSessionId?,
         timeout: TimeInterval? = nil
     ) async throws -> JSONValue? {
-        let id = JSONValue.number(Double(nextID))
+        let id = JSONValue.integer(Int64(nextID))
         nextID += 1
         let effectiveTimeout = timeout ?? defaultTimeout
 

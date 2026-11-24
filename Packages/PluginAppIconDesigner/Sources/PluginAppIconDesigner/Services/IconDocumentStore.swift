@@ -21,6 +21,13 @@ public final class IconDocumentStore: ObservableObject {
     private(set) var projectStorageDirectory: URL?
     private(set) var currentProjectPath: String?
 
+    /// 上次全量扫描的存储路径与其目录修改时间，用于跳过无变化的重复扫描（#1292）。
+    private var lastScannedStoragePath: String?
+    private var lastLoadedDirectoryModificationDate: Date?
+
+    /// 测试观测：`reloadScope` 实际执行全量磁盘扫描的次数。
+    private(set) var debugFullScanCount = 0
+
     public init() {}
 
     // MARK: - Lists
@@ -98,10 +105,56 @@ public final class IconDocumentStore: ObservableObject {
         clearHistory()
     }
 
-    /// Reloads one scope from disk.
+    /// Reloads one scope from disk. The directory is scanned only when its
+    /// modification time changed since the last scan (#1292).
     public func reloadScope(_ scope: IconScope) {
         let path = storagePath(for: scope)
+        guard !path.isEmpty else {
+            setDocumentsList([], for: scope)
+            return
+        }
+        guard shouldRescanDirectory(atPath: path) else { return }
         setDocumentsList(IconDocumentFileStore.loadAll(storagePath: path), for: scope)
+    }
+
+    /// 目录自上次全量扫描后没有任何变化时跳过重复扫描（#1292）。
+    /// 文档写入采用原子替换（临时文件+重命名）、删除直接移除文件，
+    /// 目录 mtime 均会更新，因此同一路径 mtime 不变即可断定内存快照仍
+    /// 与磁盘一致；目录不存在时始终重扫以清空列表。
+    private func shouldRescanDirectory(atPath path: String) -> Bool {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+        let modificationDate = attributes?[.modificationDate] as? Date
+        if lastScannedStoragePath == path,
+           let last = lastLoadedDirectoryModificationDate,
+           let modificationDate,
+           last == modificationDate {
+            return false
+        }
+        lastScannedStoragePath = path
+        lastLoadedDirectoryModificationDate = modificationDate
+        debugFullScanCount += 1
+        return true
+    }
+
+    /// 发布一份已在主线程之外扫描完成的文档列表，不做任何磁盘 I/O（#1292）。
+    ///
+    /// 工具完成后用此方法回主线程发布结果，避免每次写操作都在主线程
+    /// 全量扫描目录；同时记录扫描时的目录 mtime，让后续 `reloadScope`
+    /// 能跳过无变化的重复扫描。
+    public func applyReloaded(
+        _ documents: [IconDocument],
+        scope: IconScope,
+        selectDocumentId documentId: String?,
+        directoryModificationDate: Date?
+    ) {
+        lastScannedStoragePath = storagePath(for: scope)
+        lastLoadedDirectoryModificationDate = directoryModificationDate
+        setDocumentsList(documents, for: scope)
+        if let documentId {
+            selectedScope = scope
+            selectedDocumentId = documentId
+        }
+        refreshSelection()
     }
 
     /// 在某个作用域的数据变化后调用：按需刷新并切换选中。
@@ -460,6 +513,9 @@ public final class IconDocumentStore: ObservableObject {
         lastError = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
+        lastScannedStoragePath = nil
+        lastLoadedDirectoryModificationDate = nil
+        debugFullScanCount = 0
         clearHistory()
     }
 

@@ -1,14 +1,16 @@
 import Foundation
 import KitLLM
+import MLX
 import MLXLLM
 @preconcurrency import MLXLMCommon
+import os
 
 @MainActor
 final class MLXRuntime {
     static let shared = MLXRuntime()
 
     private var modelContainer: ModelContainer?
-    private var currentModelID: String?
+    private var session = MLXModelSession()
 
     /// 引用 VLM factory，确保 `MLXVLM` 目标被链接进二进制。
     ///
@@ -24,7 +26,7 @@ final class MLXRuntime {
 
     func unload() {
         modelContainer = nil
-        currentModelID = nil
+        session.discardContainer()
     }
 
     func generate(
@@ -34,43 +36,48 @@ final class MLXRuntime {
     ) async throws -> LLMResponse {
         guard isAppleSilicon else { throw MLXProviderError.unsupportedPlatform }
         try await ensureModelDownloaded(modelID)
-        if currentModelID != modelID {
+        if session.needsLoad(for: modelID) {
+            // 先丢容器（session 同步置空）：此后无论加载成败，状态都保持一致。
+            // 加载失败时旧 ID 已被清空，重选原本可用的模型会重新走加载路径，
+            // 不会跳过加载后撞上空容器守卫而无法恢复（#411）。
             modelContainer = nil
+            session.discardContainer()
             let directory = MLXModelPaths.modelDirectory(for: modelID)
             do {
-                // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
-                // 因此只需从本地目录加载权重与 tokenizer）。
-                let tokenizerLoader: any TokenizerLoader = MLXTokenizerLoader()
-                modelContainer = try await loadModelContainer(from: directory, using: tokenizerLoader)
+                modelContainer = try await Self.loadContainer(directory: directory)
+            } catch let error as MLXError {
+                throw MLXProviderError.loadFailed(Self.mlxMessage(error))
             } catch {
                 throw MLXProviderError.loadFailed(error.localizedDescription)
             }
-            currentModelID = modelID
+            session.didFinishLoad(modelID: modelID)
         }
         guard let container = modelContainer else { throw MLXProviderError.loadFailed("模型容器未就绪") }
 
-        let lastUserImages = request.messages.last(where: { $0.role == .user })?.images ?? []
-        let imageURLs = try lastUserImages.enumerated().map { index, image in
-            let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)")
-                .appendingPathExtension(ext)
-            try image.data.write(to: url, options: .atomic)
-            return url
-        }
-        defer { imageURLs.forEach { try? FileManager.default.removeItem(at: $0) } }
-
-        let lastUserMessageIndex = request.messages.lastIndex(where: { $0.role == .user })
-        let messages = request.messages.enumerated().compactMap { index, message -> Chat.Message? in
-            switch message.role {
-            case .system: return .system(message.content)
-            case .user:
-                let images = index == lastUserMessageIndex ? imageURLs.map { UserInput.Image.url($0) } : []
-                return images.isEmpty ? .user(message.content) : .user(message.content, images: images)
-            case .assistant: return .assistant(message.content)
-            default: return nil
+        // 每条 user 消息的图片都写成临时文件并按消息位置传入（#412）：
+        // 只保留最后一条的图片会让多轮对话的历史图像全部丢失。
+        var imageFiles: [URL] = []
+        var imageURLsByMessageIndex: [Int: [URL]] = [:]
+        defer { imageFiles.forEach { try? FileManager.default.removeItem(at: $0) } }
+        for (index, message) in request.messages.enumerated() where message.role == .user {
+            let urls = try message.images.enumerated().map { imageIndex, image in
+                let ext = image.mimeType.lowercased().contains("png") ? "png" : "jpg"
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("lumi-mlx-\(UUID().uuidString)-\(index)-\(imageIndex)")
+                    .appendingPathExtension(ext)
+                try image.data.write(to: url, options: .atomic)
+                return url
+            }
+            if !urls.isEmpty {
+                imageURLsByMessageIndex[index] = urls
+                imageFiles.append(contentsOf: urls)
             }
         }
+
+        let messages = MLXChatMessages.build(
+            from: request.messages,
+            imageURLsByMessageIndex: imageURLsByMessageIndex
+        )
         guard !messages.isEmpty else { throw MLXProviderError.emptyPrompt }
         let tools = mlxTools(from: request.tools)
         let input = UserInput(chat: messages, tools: tools)
@@ -83,24 +90,69 @@ final class MLXRuntime {
         // 且不做 Schema 类型转换」：声明为 `integer` 的参数保持字符串，
         // 未声明的函数名也不会被拒绝——错误的参数类型会直接流进 Agent
         // 工具链。
-        let stream = try await container.generate(
-            input: prepared,
-            parameters: GenerateParameters(temperature: 0.7),
-            tools: tools
-        )
+        do {
+            return try await Self.streamGeneration(
+                container: container,
+                prepared: MLXInputBox(prepared),
+                tools: tools,
+                modelID: modelID,
+                onChunk: onChunk
+            )
+        } catch let error as MLXError {
+            // MLX 在 C++ 层报错后容器内部状态不可信，丢弃让下次生成重新加载。
+            unload()
+            let message = Self.mlxMessage(error)
+            MLXProviderPlugin.logger.error("MLX 生成失败，已释放模型容器：\(message, privacy: .public)")
+            throw MLXProviderError.generationFailed(message)
+        }
+    }
 
-        var consumer = MLXGenerationConsumer()
-        for await result in stream {
-            try Task.checkCancellation()
-            await consumer.consume(result, onChunk: onChunk)
+    /// 在 MainActor 之外执行生成：MLX 的 `withError` 闭包不能被主 actor 发送。
+    ///
+    /// `LMInput` 是非 Sendable 的值类型，不能直接捕获进 `withError` 的闭包；
+    /// 也不能以 `sending` 参数借入后再在内部 `consume`——那样调用方的清理会和
+    /// 内部移交叠加成双重释放（运行期在 `_swift_release_dealloc` 崩溃）。
+    /// 因此用一次性盒子把所有权恰好转移一次（与 mlx-swift-lm 内部的
+    /// `SendableBox` 同一手法）。
+    private nonisolated static func streamGeneration(
+        container: ModelContainer,
+        prepared: MLXInputBox,
+        tools: [[String: any Sendable]]?,
+        modelID: String,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        try await withError { mlxError in
+            let stream = try await container.generate(
+                input: prepared.take(),
+                parameters: GenerateParameters(temperature: 0.7),
+                tools: tools
+            )
+
+            var consumer = MLXGenerationConsumer()
+            for await result in stream {
+                try Task.checkCancellation()
+                // 一旦 MLX 报错，后续 token 都建立在校验失败的计算图上，立即止损。
+                try mlxError.check()
+                await consumer.consume(result, onChunk: onChunk)
+            }
+            try mlxError.check()
+            // 拒绝事件不作为正文输出；静默丢弃会落入通用空响应重试（#1228）。
+            // 抛带安全诊断的错误，AgentLoopFailure 归为 unknown，不自动重试。
+            if let rejection = consumer.rejection {
+                throw MLXProviderError.rejectedToolCall(rejection)
+            }
+            await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
+            return consumer.response(model: modelID)
         }
-        // 拒绝事件不作为正文输出；静默丢弃会落入通用空响应重试（#1228）。
-        // 抛带安全诊断的错误，AgentLoopFailure 归为 unknown，不自动重试。
-        if let rejection = consumer.rejection {
-            throw MLXProviderError.rejectedToolCall(rejection)
+    }
+
+    private nonisolated static func loadContainer(directory: URL) async throws -> ModelContainer {
+        // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
+        // 因此只需从本地目录加载权重与 tokenizer）。
+        let tokenizerLoader: any TokenizerLoader = MLXTokenizerLoader()
+        return try await withError { _ in
+            try await loadModelContainer(from: directory, using: tokenizerLoader)
         }
-        await onChunk(LLMStreamChunk(isDone: true, eventTitle: "结束"))
-        return consumer.response(model: modelID)
     }
 
     private func mlxTools(from tools: [LLMFunctionSchema]?) -> [[String: any Sendable]]? {
@@ -130,11 +182,35 @@ final class MLXRuntime {
         }
     }
 
+    private static func mlxMessage(_ error: MLXError) -> String {
+        switch error {
+        case .caught(let detail): return detail
+        }
+    }
+
     private var isAppleSilicon: Bool {
         #if arch(arm64)
         true
         #else
         false
         #endif
+    }
+}
+
+/// 把非 Sendable 的 `LMInput` 带进非隔离域的一次性盒子：所有权恰好转移一次。
+///
+/// 只在 `generate` → `streamGeneration` 之间的单线程接力中使用，
+/// 取走后盒子即为空，不做任何跨任务的并发共享。
+private final class MLXInputBox: @unchecked Sendable {
+    private var input: LMInput?
+
+    init(_ input: consuming LMInput) {
+        self.input = input
+    }
+
+    func take() -> LMInput {
+        guard let input else { fatalError("LMInput 已被取走，不能重复用于生成") }
+        self.input = nil
+        return input
     }
 }

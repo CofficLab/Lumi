@@ -9,6 +9,8 @@ final class MockMailSessionFactory: MailSessionFactory, @unchecked Sendable {
         var failMessages = false
         var failFolders = false
         var failSearch = false
+        /// connect 前的固定延迟：构造「账户编辑发生在连接建立期间」的竞态（#400）。
+        var connectDelay: Duration?
     }
 
     private let behavior: Behavior
@@ -18,6 +20,8 @@ final class MockMailSessionFactory: MailSessionFactory, @unchecked Sendable {
     nonisolated(unsafe) private(set) var createdCount = 0
     /// 最近一次创建的会话，供测试注入延迟。
     nonisolated(unsafe) private(set) var lastSession: MockMailSession?
+    /// 最近一次建连使用的账户配置，供测试断言用的是当前配置而非过期快照（#400）。
+    nonisolated(unsafe) private(set) var lastAccount: MailAccountConfig?
 
     init(
         behavior: Behavior = Behavior(),
@@ -34,6 +38,7 @@ final class MockMailSessionFactory: MailSessionFactory, @unchecked Sendable {
         password: String
     ) async throws -> any MailSessionServing {
         createdCount += 1
+        lastAccount = account
         let session = prebuiltSession ?? MockMailSession(behavior: behavior, messages: messages)
         lastSession = session
         return session
@@ -74,6 +79,9 @@ actor MockMailSession: MailSessionServing {
     }
 
     func connect() async throws {
+        if let delay = behavior.connectDelay {
+            try? await Task.sleep(for: delay)
+        }
         if behavior.failConnect {
             throw MailError.authFailed
         }
@@ -100,6 +108,15 @@ actor MockMailSession: MailSessionServing {
             filtered = filtered.filter { $0.uid > sinceUID }
         }
         return Array(filtered.prefix(limit))
+    }
+
+    func fetchMessages(folder: String, beforeUID: UInt64, limit: Int) async throws -> [MailMessageSummary] {
+        if behavior.failMessages { throw MailError.protocolError("mock fetch failure") }
+        if let delay = folderFetchDelays[folder] { try? await Task.sleep(for: delay) }
+        return Array(messages
+            .filter { $0.folder == folder && $0.uid < beforeUID }
+            .sorted { $0.uid > $1.uid }
+            .prefix(limit))
     }
 
     func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {

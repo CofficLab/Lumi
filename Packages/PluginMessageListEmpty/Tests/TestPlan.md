@@ -48,7 +48,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **PluginMessageListEmptyPlugin**（4 条）：由 `pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages`、`pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders`、`pluginDoesNotBootWithoutChatSectionProvider`、`abandonedEvaluationNeverLeavesStateHanging` 锁定；改动该模块时优先跑对应测试文件。
 - **PromptSuggestionVisibility**（2 条）：由 `promptSuggestionsRespectProjectVisibilityAndLauncherScope`、`promptSuggestionVisibilityAndScopeMustBothMatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RegistrationEvaluationWindow**（2 条，P0）：由 `emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight`、`emptyStateOnlyAppearsAfterEvaluationSettles` 锁定。锁定 `registrationState = .evaluating` 期间**不参与** `message-list` 槽位竞争这一三态模型核心不变量；改动 `scheduleRegistrationEvaluation` / `shouldRenderEmptyState` 时必须优先跑该文件。
-- **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、同日缓存门、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
+- **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、今天可变因此同日重入必须重查（**回归 #806**，移除原同日非零缓存门）、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
 - **EmptyStateActivityWindow**（10 条）：由 `the window covers every calendar day including idle ones`、`a same-day merge keeps the larger count regardless of arrival order`、`levels are normalized against the busiest day in the window`、`a quiet day next to a busy one stays on the lowest active level` 锁定。覆盖 `makeDays` 的窗口填充、跨天归一化、同日合并取 max、level 相对峰值归一化与 ceiling 除法；改动热力图分桶逻辑时必须优先跑该文件。
 - **EmptyStateTokenTrend**（9 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`zero tokens hide the trend even when the heatmap has messages`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列、曲线可见性或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
 - **ActivityCardLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityCardLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
@@ -75,7 +75,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 12 | RegistrationEvaluationWindow | emptyStateOnlyAppearsAfterEvaluationSettles | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateOnlyAppearsAfterEvaluationSettles` |
 | 13 | EmptyStateActivityLoading | loading fills the window and derives totals from both series | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadPopulatesWindowAndTotals` |
 | 14 | EmptyStateActivityLoading | the provider is asked for a window anchored at the model calendar | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadQueriesWindowStart` |
-| 15 | EmptyStateActivityLoading | re-entering the empty state on the same day reuses the loaded window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayReentryHitsTheCacheGate` |
+| 15 | EmptyStateActivityLoading | 同日重入必须重查可变的「今天」，新增与删除都要跟上（**回归 #806**） | 首次查询返回非零统计 | 同日再改消息序列后重入 | 查询计数递增，totalMessages 反映新值 | P0 | ✅ 已覆盖 | `sameDayReentryRequeriesToday` |
 | 16 | EmptyStateActivityLoading | an empty history resolves to zero instead of staying unknown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyHistoryResolvesToZero` |
 | 17 | EmptyStateActivityLoading | a missing message provider degrades to an invisible strip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingProviderDegrades` |
 | 18 | EmptyStateActivityLoading | a stale slow load cannot overwrite a newer window | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleSlowLoadLosesToTheNewerOne` |
@@ -99,7 +99,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 36 | CompactTokenFormatting | millions and billions use their own suffixes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeMagnitudes` |
 
 | 37 | EmptyStateActivityLoading | a zero result stays retryable so late-arriving data still shows | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zeroResultDoesNotPinTheStrip` |
-| 38 | EmptyStateActivityLoading | a non-zero result still short-circuits repeat queries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonZeroResultKeepsTheCacheGate` |
+| 38 | EmptyStateActivityLoading | 非零结果重入时同样重查，消息与 token 两级都刷新（**回归 #806**） | 首次查询返回非零统计与 token | 同日更新两个序列后重入 | 两级查询计数递增，消息与 token 合计均为新值 | P0 | ✅ 已覆盖 | `nonZeroResultAlsoRefreshesBothSeriesOnReentry` |
 | 39 | MessageListEmptyUITestingSupport | seeds exactly the three conversations the UI tests depend on | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsAllThreeConversations` |
 | 40 | MessageListEmptyUITestingSupport | selects the empty conversation as the starting state | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsEmptyConversation` |
 | 41 | MessageListEmptyUITestingSupport | the empty conversation really has no messages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureEmptyConversationIsEmpty` |
@@ -156,8 +156,8 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 ## 覆盖率统计
 
-- P0: 已覆盖 19 / 19
-- P1: 已覆盖 60 / 60
+- P0: 已覆盖 21 / 21
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 7 / 7
 - **合计: 86 / 86**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）

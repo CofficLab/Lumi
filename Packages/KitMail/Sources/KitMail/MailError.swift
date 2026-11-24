@@ -19,6 +19,8 @@ public enum MailError: Error, Sendable, Codable, Hashable {
     case unsupported(String)
     /// 调用参数不合法（如 UID 超出 IMAP 协议范围）
     case invalidArgument(String)
+    /// 连接作废（会话建立期间账户配置被编辑/删除，迟到的旧凭据连接不得再使用）
+    case connectionInvalidated
 
     /// 本地化描述键（`Mail.Error.AuthFailed` 等），供 xcstrings 使用。
     public var localizedDescriptionKey: String {
@@ -30,6 +32,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .offline: return "Mail.Error.Offline"
         case .unsupported: return "Mail.Error.Unsupported"
         case .invalidArgument: return "Mail.Error.InvalidArgument"
+        case .connectionInvalidated: return "Mail.Error.ConnectionInvalidated"
         }
     }
 
@@ -43,6 +46,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .offline: return "You are offline. Showing cached messages."
         case .unsupported(let feature): return "Not supported: \(feature)"
         case .invalidArgument(let detail): return "Invalid mail request: \(detail)"
+        case .connectionInvalidated: return "The connection was invalidated because the account was reconfigured. Try again."
         }
     }
 
@@ -56,6 +60,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .offline: return "offline"
         case .unsupported: return "unsupported"
         case .invalidArgument: return "invalidArgument"
+        case .connectionInvalidated: return "connectionInvalidated"
         }
     }
 }

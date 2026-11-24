@@ -32,6 +32,7 @@ public enum AppStorePromoHTMLExporter {
         loadTimeout: TimeInterval = 8,
         resourceTimeout: TimeInterval = 5
     ) async throws -> Data {
+        try Task.checkCancellation()
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
@@ -50,9 +51,11 @@ public enum AppStorePromoHTMLExporter {
             webView.loadHTMLString(html, baseURL: nil)
         }
 
+        try Task.checkCancellation()
         guard await delegate.waitForFinish(timeout: loadTimeout) else { throw AppStorePromoExportError.loadTimedOut }
+        try Task.checkCancellation()
         try await disableMotion(in: webView)
-        guard await waitForResources(in: webView, timeout: resourceTimeout) else {
+        guard try await waitForResources(in: webView, timeout: resourceTimeout) else {
             throw AppStorePromoExportError.resourcesTimedOut
         }
 
@@ -116,22 +119,27 @@ public enum AppStorePromoHTMLExporter {
         // WebKit 的完成回调不保证送达；没有超时的话 continuation 永不恢复，
         // 调用方会永久挂起（见 Issue #127）。
         let state = SnapshotState()
-        return try await withCheckedThrowingContinuation { continuation in
-            state.attach(continuation)
+        return try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { continuation in
+                state.attach(continuation)
 
-            webView.takeSnapshot(with: nil) { image, error in
-                if let image {
-                    state.finish(.success(image))
-                } else {
-                    state.finish(.failure(error ?? AppStorePromoExportError.pngEncodingFailed))
+                webView.takeSnapshot(with: nil) { image, error in
+                    if let image {
+                        state.finish(.success(image))
+                    } else {
+                        state.finish(.failure(error ?? AppStorePromoExportError.pngEncodingFailed))
+                    }
+                }
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    state.finish(.failure(AppStorePromoExportError.snapshotTimedOut))
                 }
             }
-
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(timeout))
-                state.finish(.failure(AppStorePromoExportError.snapshotTimedOut))
-            }
-        }
+        }, onCancel: {
+            // 取消也要立即恢复等待方，否则已取消的导出仍要空等超时（#430）。
+            Task { @MainActor in state.finish(.failure(CancellationError())) }
+        })
     }
 
     /// `takeSnapshot` 的一次性完成状态。
@@ -170,7 +178,7 @@ public enum AppStorePromoHTMLExporter {
         _ = try await webView.evaluateJavaScript(script)
     }
 
-    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async -> Bool {
+    private static func waitForResources(in webView: WKWebView, timeout: TimeInterval) async throws -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         let script = """
         document.readyState === 'complete' &&
@@ -178,8 +186,9 @@ public enum AppStorePromoHTMLExporter {
         (!document.fonts || document.fonts.status === 'loaded')
         """
         while Date() < deadline {
+            try Task.checkCancellation()
             if let ready = try? await webView.evaluateJavaScript(script) as? Bool, ready { return true }
-            try? await Task.sleep(for: .milliseconds(50))
+            try await Task.sleep(for: .milliseconds(50))
         }
         return false
     }
@@ -190,13 +199,18 @@ public enum AppStorePromoHTMLExporter {
 
         func waitForFinish(timeout: TimeInterval) async -> Bool {
             if let completedResult { return completedResult }
-            return await withCheckedContinuation { continuation in
-                self.continuation = continuation
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(timeout))
-                    self?.finish(false)
+            return await withTaskCancellationHandler(operation: {
+                await withCheckedContinuation { continuation in
+                    self.continuation = continuation
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(timeout))
+                        self?.finish(false)
+                    }
                 }
-            }
+            }, onCancel: {
+                // 取消也要立即唤醒等待方，否则已取消的导出仍要空等超时（#430）。
+                Task { @MainActor [weak self] in self?.finish(false) }
+            })
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finish(true) }

@@ -1,7 +1,8 @@
 import Foundation
 import KitLLM
 
-/// The seven provider families shipped by Lumi 5.16.0.
+/// 供应商族与模型清单。模型均来自 `mlx-community`，且架构由当前
+/// `mlx-swift-lm` 版本支持（DeepSeek-V4、Kimi K2.5 等自定义架构不在其中）。
 @MainActor
 public enum MLXProviderCatalog {
     public static let registrations: [MLXModelRegistration] = [
@@ -24,14 +25,23 @@ public enum MLXProviderCatalog {
         .init(id: "mlx-community/Qwen3-VL-2B-Instruct-4bit", displayName: "Qwen3 VL 2B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 8, supportsVision: true, supportsTools: false),
         .init(id: "mlx-community/Qwen3-VL-4B-Instruct-4bit", displayName: "Qwen3 VL 4B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 8, supportsVision: true, supportsTools: false),
         .init(id: "mlx-community/Qwen2-VL-7B-Instruct-4bit", displayName: "Qwen2 VL 7B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 16, supportsVision: true, supportsTools: false),
+        .init(id: "mlx-community/Qwen3.5-0.8B-4bit", displayName: "Qwen3.5 0.8B", series: "Qwen", providerID: "mlx-qwen", contextWindowSize: 131_072, minimumRAMGB: 8, supportsVision: true),
+        .init(id: "mlx-community/Qwen3.5-4B-MLX-4bit", displayName: "Qwen3.5 4B", series: "Qwen", providerID: "mlx-qwen", contextWindowSize: 131_072, minimumRAMGB: 8, supportsVision: true),
+        .init(id: "mlx-community/Qwen3.6-27B-4bit", displayName: "Qwen3.6 27B", series: "Qwen", providerID: "mlx-qwen", contextWindowSize: 131_072, minimumRAMGB: 24, supportsVision: true),
+        .init(id: "mlx-community/Qwen3.8-27B-4bit", displayName: "Qwen3.8 27B", series: "Qwen", providerID: "mlx-qwen", contextWindowSize: 131_072, minimumRAMGB: 24, supportsVision: true),
         .init(id: "mlx-community/Llama-3.2-1B-Instruct-4bit", displayName: "Llama 3.2 1B", series: "Llama", providerID: "mlx-llama", minimumRAMGB: 8),
         .init(id: "mlx-community/Llama-3.2-3B-Instruct-4bit", displayName: "Llama 3.2 3B", series: "Llama", providerID: "mlx-llama", minimumRAMGB: 8),
         .init(id: "mlx-community/Llama-3.3-70B-Instruct-4bit", displayName: "Llama 3.3 70B", series: "Llama", providerID: "mlx-llama", contextWindowSize: 131_072, minimumRAMGB: 64),
         .init(id: "mlx-community/Mistral-Nemo-Instruct-2407-4bit", displayName: "Mistral Nemo 12B", series: "Mistral", providerID: "mlx-mistral", minimumRAMGB: 16),
+        .init(id: "mlx-community/Ministral-3-3B-Instruct-2512-4bit", displayName: "Ministral 3 3B", series: "Mistral", providerID: "mlx-mistral", contextWindowSize: 131_072, minimumRAMGB: 8),
+        .init(id: "mlx-community/Ministral-3-8B-Instruct-2512-4bit", displayName: "Ministral 3 8B", series: "Mistral", providerID: "mlx-mistral", contextWindowSize: 131_072, minimumRAMGB: 16),
+        .init(id: "mlx-community/Ministral-3-14B-Instruct-2512-4bit", displayName: "Ministral 3 14B", series: "Mistral", providerID: "mlx-mistral", contextWindowSize: 131_072, minimumRAMGB: 24),
+        .init(id: "mlx-community/Devstral-Small-2-24B-Instruct-2512-4bit", displayName: "Devstral Small 2 24B", series: "Mistral", providerID: "mlx-mistral", contextWindowSize: 131_072, minimumRAMGB: 24),
         .init(id: "mlx-community/gemma-4-E2B-it-4bit", displayName: "Gemma 4 E2B Instruct", series: "Gemma", providerID: "mlx-gemma4", minimumRAMGB: 8),
         .init(id: "mlx-community/gemma-4-E4B-it-4bit", displayName: "Gemma 4 E4B Instruct", series: "Gemma", providerID: "mlx-gemma4", minimumRAMGB: 16),
         .init(id: "mlx-community/gemma-4-E2B-4bit", displayName: "Gemma 4 E2B", series: "Gemma", providerID: "mlx-gemma4", minimumRAMGB: 8, supportsTools: false),
         .init(id: "mlx-community/gemma-4-E4B-4bit", displayName: "Gemma 4 E4B", series: "Gemma", providerID: "mlx-gemma4", minimumRAMGB: 16, supportsTools: false),
+        .init(id: "mlx-community/gemma-4-12B-4bit", displayName: "Gemma 4 12B", series: "Gemma", providerID: "mlx-gemma4", contextWindowSize: 131_072, minimumRAMGB: 16, supportsVision: true),
         .init(id: "mlx-community/gemma-4-26B-A4B-it-4bit", displayName: "Gemma 4 26B-A4B Instruct", series: "Gemma", providerID: "mlx-gemma4", contextWindowSize: 131_072, minimumRAMGB: 32),
         .init(id: "mlx-community/gemma-4-26B-A4B-4bit", displayName: "Gemma 4 26B-A4B", series: "Gemma", providerID: "mlx-gemma4", contextWindowSize: 131_072, minimumRAMGB: 32, supportsVision: true, supportsTools: false),
         .init(id: "mlx-community/gemma-4-31B-it-4bit", displayName: "Gemma 4 31B Instruct", series: "Gemma", providerID: "mlx-gemma4", contextWindowSize: 131_072, minimumRAMGB: 32, supportsVision: true),
@@ -42,7 +52,10 @@ public enum MLXProviderCatalog {
         .init(id: "mlx-community/Qwen2.5-Coder-3B-Instruct-4bit", displayName: "Qwen2.5 Coder 3B", series: "Coder", providerID: "mlx-coder", minimumRAMGB: 8),
         .init(id: "mlx-community/Qwen2.5-Coder-7B-Instruct-4bit", displayName: "Qwen2.5 Coder 7B", series: "Coder", providerID: "mlx-coder", minimumRAMGB: 16),
         .init(id: "mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit", displayName: "Qwen3 Coder 30B", series: "Coder", providerID: "mlx-coder", contextWindowSize: 131_072, minimumRAMGB: 32),
+        .init(id: "mlx-community/KAT-Coder-V2.5-Dev-OptiQ-4bit", displayName: "KAT Coder V2.5 Dev", series: "Coder", providerID: "mlx-coder", contextWindowSize: 131_072, minimumRAMGB: 32),
         .init(id: "mlx-community/Phi-4-mini-instruct-4bit", displayName: "Phi-4 mini", series: "Microsoft", providerID: "mlx-microsoft", minimumRAMGB: 8),
+        .init(id: "mlx-community/gpt-oss-20b-MXFP4-Q8", displayName: "GPT-OSS 20B", series: "GPT-OSS", providerID: "mlx-gptoss", contextWindowSize: 131_072, minimumRAMGB: 24),
+        .init(id: "mlx-community/GLM-4.7-Flash-4bit", displayName: "GLM 4.7 Flash", series: "GLM", providerID: "mlx-glm", contextWindowSize: 131_072, minimumRAMGB: 32),
     ]
 
     public static func models(for providerID: String) -> [MLXModelRegistration] {

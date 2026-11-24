@@ -203,6 +203,14 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         let projectInfo = ProjectInfo(name: project.name, path: project.path, language: project.language)
 
         if shouldSelect {
+            // 先把 store 探测到的语言随条目入列，再打开（#477）：
+            // 直接按路径 openProject 会让 Provider 为该路径补一个无语言的
+            // 新条目，UI 上语言被显示为 Unknown。
+            var providerProjects = projectCapability.projects
+            if !providerProjects.contains(where: { $0.path == projectInfo.path }) {
+                providerProjects.insert(projectInfo, at: 0)
+                projectCapability.synchronizeProjects(providerProjects)
+            }
             openProject(at: project.path)
         } else {
             var providerProjects = projectCapability.projects
@@ -292,12 +300,10 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     /// 将当前状态快照异步写入磁盘。
     ///
-    /// 写入是全量快照（atomic），最终一致即可；放在后台线程执行以避免阻塞 UI。
-    /// 在主 actor 上捕获快照值与 store 引用后下放，规避跨 actor 访问。
+    /// 写入是全量快照，通过 Store 的串行写入链落盘：此前每次同步各自派发
+    /// 无序的 `Task.detached`，调度颠倒写入顺序时旧快照会把新状态覆盖回去，
+    /// 重启后恢复出错误的当前项目（见 issue #193）。
     private func persistAsync(projects: [ProjectEntry], currentProject: ProjectEntry?) {
-        let store = self.store
-        Task.detached(priority: .utility) {
-            store.save(projects: projects, currentProject: currentProject)
-        }
+        store.saveSnapshot(projects: projects, currentProject: currentProject)
     }
 }

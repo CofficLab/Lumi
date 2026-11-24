@@ -73,13 +73,54 @@ final class MailAgentToolsTests: XCTestCase {
             composer: MailComposerService(sessionManager: MailSessionManager(factory: SingleAgentSessionFactory(session: MockMailSession(messages: [])), accountStore: store), accountStore: store),
             accountStore: store
         )
+        XCTAssertEqual(MailListAccountsTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
         XCTAssertEqual(MailListMessagesTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
         XCTAssertEqual(MailReadMessageTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
         XCTAssertEqual(MailSearchMessagesTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
         XCTAssertEqual(MailSendMessageTool(service: service).permissionRiskLevel(arguments: [:]), .high)
         XCTAssertTrue(MailSendMessageTool(service: service).requiresExplicitApproval(arguments: [:]))
+        XCTAssertEqual(MailListAccountsTool(service: service).executionCapability, .parallelReadOnly)
         XCTAssertEqual(MailListMessagesTool(service: service).executionCapability, .parallelReadOnly)
         XCTAssertEqual(MailSendMessageTool(service: service).executionCapability, .serialSideEffect)
+    }
+
+    // MARK: - mail_list_accounts（#841）
+
+    func testListAccountsReturnsConfiguredAccountsWithoutCredentials() async throws {
+        let first = makeAccount()
+        let second = MailAccountConfig(
+            id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+            displayName: "王五",
+            email: "wangwu@example.com",
+            imapHost: "imap.example.com",
+            imapPort: 993,
+            smtpHost: "smtp.example.com",
+            smtpPort: 465,
+            username: "wangwu"
+        )
+        store.upsertAccount(first)
+        store.upsertAccount(second)
+        let tool = MailListAccountsTool(service: makeService(session: MockMailSession(messages: [])))
+
+        let output = try await tool.execute(arguments: [:])
+
+        XCTAssertTrue(output.contains(first.id.uuidString))
+        XCTAssertTrue(output.contains("zhangsan@example.com"))
+        XCTAssertTrue(output.contains(second.id.uuidString))
+        XCTAssertTrue(output.contains("wangwu@example.com"))
+        XCTAssertFalse(output.lowercased().contains("password"))
+    }
+
+    func testListAccountsHintsSetupWhenNoAccountsConfigured() async throws {
+        let tool = MailListAccountsTool(service: makeService(session: MockMailSession(messages: [])))
+        let output = try await tool.execute(arguments: [:])
+        XCTAssertTrue(output.contains("没有可用的邮件账户"))
+    }
+
+    func testListAccountsSchemaHasNoRequiredArguments() {
+        let schema = MailListAccountsTool(service: makeService(session: MockMailSession(messages: []))).inputSchema(for: .english)
+        XCTAssertTrue((schema["required"] as? [String] ?? []).isEmpty)
+        XCTAssertNotNil(schema["properties"])
     }
 
     // MARK: - 工具执行

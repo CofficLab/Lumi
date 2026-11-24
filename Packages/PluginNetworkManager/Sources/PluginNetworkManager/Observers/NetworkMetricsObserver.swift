@@ -50,10 +50,18 @@ final class NetworkMetricsObserver {
             }
             .store(in: &cancellables)
 
+        // 两个缓冲分开订阅：`@Published` 只在缓冲真正变化时发射。
+        // 原先 combineLatest 让 recent-only 的采样 tick 也携带长期缓冲进入
+        // `apply`，把未变化的 30 天数据重新发布一遍，唤醒 30 天图表重算（#1214）。
         NetworkHistoryService.shared.$recentHistory
-            .combineLatest(NetworkHistoryService.shared.$longTermHistory)
-            .sink { [weak self] recent, longTerm in
-                self?.viewModels.history.apply(recent: recent, longTerm: longTerm)
+            .sink { [weak self] recent in
+                self?.viewModels.history.applyRecent(recent)
+            }
+            .store(in: &cancellables)
+
+        NetworkHistoryService.shared.$longTermHistory
+            .sink { [weak self] longTerm in
+                self?.viewModels.history.applyLongTerm(longTerm)
             }
             .store(in: &cancellables)
 

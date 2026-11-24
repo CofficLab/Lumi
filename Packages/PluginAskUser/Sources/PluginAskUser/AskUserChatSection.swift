@@ -95,6 +95,7 @@ final class AskUserChatViewModel: ObservableObject {
         let conversationID: UUID
         switch event {
         case let .started(id, _),
+             let .resumed(id, _),
              let .toolCallsReceived(id, _, _, _),
              let .llmResponseReceived(id, _, _),
              let .suspended(id, _, _),

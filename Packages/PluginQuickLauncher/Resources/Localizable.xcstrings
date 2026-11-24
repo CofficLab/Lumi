@@ -919,6 +919,40 @@
           }
         }
       }
+    },
+    "Hotkey registration failed. The combination may be in use by another app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotkey registration failed. The combination may be in use by another app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "热键注册失败，该组合可能已被其它应用占用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱鍵註冊失敗，該組合可能已被其它應用佔用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱鍵註冊失敗，該組合可能已被其它應用佔用。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱鍵註冊失敗，該組合可能已被其它應用佔用。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -84,10 +84,15 @@ extension ToolManager {
                 // unsandboxed、mail_send_message）也直接执行，不弹授权。
                 results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
             case .requireApprovalForHighRisk:
-                if case .requiresUserApproval = authorizationDecision(
+                switch authorizationDecision(
                     for: toolCall,
                     conversationID: conversationID
                 ) {
+                case .blocked:
+                    // 自定义授权策略可能返回 blocked：显式拒绝，不得落入
+                    // 免授权分支被误执行（观察者按序整批提交后不再分桶）。
+                    results.append(.blocked(reason: "Tool execution was blocked by the authorization policy."))
+                case .requiresUserApproval:
                     eventManager.send(.authorizationRequired(
                         conversationID: conversationID,
                         turnID: turnID,
@@ -96,7 +101,7 @@ extension ToolManager {
                     results.append(.needsUserResponse(payload: approvalPayload(for: toolCall)))
                     // 授权是批次的暂停点；后续调用必须等用户决定后再处理。
                     break batchLoop
-                } else {
+                case .autoApproved:
                     results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
                 }
             }

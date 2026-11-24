@@ -51,12 +51,62 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     private var turnFinishedHook: TurnFinishedNotificationHook?
     /// 点击通知后恢复来源会话的 delegate。
     private var tapHandler: TurnNotificationTapHandler?
-    /// 通知发送器（测试可注入 no-op）。
+    /// 通知发送入口（hook 调用）：首次发送先请求授权，授权通过才投递（#456）。
+    ///
+    /// 默认实现走完整门控流；测试注入替身即可绕过系统 API。
+    public var notifier: @MainActor (String, String, UUID) -> Void {
+        get {
+            if let notifierOverride { return notifierOverride }
+            return { [weak self] title, body, conversationID in
+                guard let self else { return }
+                if self.hasConfirmedAuthorization {
+                    self.deliverNotification(title, body, conversationID)
+                    return
+                }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    let granted = await self.requestAuthorization()
+                    self.hasConfirmedAuthorization = granted
+                    guard granted else {
+                        Self.logger.info("\(Self.t)通知授权未通过，跳过回合结束通知")
+                        return
+                    }
+                    self.deliverNotification(title, body, conversationID)
+                }
+            }
+        }
+        set { notifierOverride = newValue }
+    }
+
+    /// `notifier` 的注入值；`nil` 表示走默认门控流。
+    private var notifierOverride: (@MainActor (String, String, UUID) -> Void)?
+
+    /// 是否已确认过通知授权；确认后不再重复请求系统弹窗（#456）。
+    private var hasConfirmedAuthorization = false
+
+    /// 请求通知授权（alert + sound）；返回是否已授权。
+    ///
+    /// 系统 API 在已授权/已拒绝时会立即返回当前状态，不会重复弹窗。
+    /// 测试可注入替身避免无 bundle 环境崩溃。
+    var requestAuthorization: @MainActor () async -> Bool = {
+        guard AgentTurnNotificationPlugin.isNotificationDeliveryAvailable else { return false }
+        do {
+            return try await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound])
+        } catch {
+            AgentTurnNotificationPlugin.logger.error(
+                "\(AgentTurnNotificationPlugin.t)请求通知授权失败：\(error)"
+            )
+            return false
+        }
+    }
+
+    /// 授权通过后的实际投递；默认走 `UNUserNotificationCenter.add`。
     ///
     /// 无 bundle 的进程（命令行工具、headless agent 等）必须跳过：
     /// `UNUserNotificationCenter.current()` 在 `mainBundle.bundleURL` 不含
     /// bundle 时会抛 `NSInternalInconsistencyException`，直接终止进程。
-    public var notifier: @MainActor (String, String, UUID) -> Void = { title, body, conversationID in
+    var deliverNotification: @MainActor (String, String, UUID) -> Void = { title, body, conversationID in
         guard AgentTurnNotificationPlugin.isNotificationDeliveryAvailable else { return }
         UNUserNotificationCenter.current().add(
             AgentTurnNotificationPlugin.notificationRequest(
@@ -106,9 +156,8 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
 
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 注意：不在插件启动时请求通知授权（测试/无 bundle 环境会崩溃）。
-        // 通知授权由宿主 App 在启动时请求；插件只负责订阅并发送。
-        // 发送侧同样需要保护，见 `isNotificationDeliveryAvailable`。
+        // 通知授权不在插件启动时请求：首次实际发送时才请求（#456），
+        // 避免启动即弹窗；无 bundle 进程仍直接跳过（见 isNotificationDeliveryAvailable）。
 
         guard AgentTurnNotificationPlugin.isNotificationDeliveryAvailable else {
             Self.logger.info(
@@ -151,6 +200,4 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - Private
-
-    // 通知授权由宿主 App 在启动时请求；插件只负责订阅并发送。
 }

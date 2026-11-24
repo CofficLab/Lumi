@@ -219,7 +219,9 @@ struct StoryOutlineView: View {
         panel.canChooseDirectories = false
 
         if panel.runModal() == .OK, let url = panel.url {
-            Task {
+            // 文件读取必须离开主 actor：Task 会继承 UI actor 上下文，
+            // 同步的整文件读取与解码会在首个 await 之前阻塞主线程（#1201）。
+            Task.detached(priority: .userInitiated) {
                 do {
                     let content = try String(contentsOf: url, encoding: .utf8)
                     let title = url.deletingPathExtension().lastPathComponent

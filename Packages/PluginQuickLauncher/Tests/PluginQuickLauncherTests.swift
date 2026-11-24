@@ -691,4 +691,84 @@ struct QuickLauncherTests {
         model.query = "trim"
         #expect(model.results.contains { $0.file?.path == item.path }, "文件结果归属按 trim 后的查询比对")
     }
+
+    // MARK: - 回归 #454：热键注册失败必须保留原组合与持久化配置
+
+    /// ⌃⌥⇧F17/F18/F19 组合冷僻且测试进程独占注册，结束即注销，不与真实应用冲突。
+    /// （F 键的虚拟键码未导出到 Swift Carbon 命名空间，使用 Events.h 原始值。）
+    private func makeOccupiedCombos() -> (occupied: HotkeyCombo, held: HotkeyCombo, free: HotkeyCombo) {
+        let modifiers = UInt32(controlKey | optionKey | shiftKey)
+        return (
+            HotkeyCombo(keyCode: 0x6B, modifiers: modifiers), // kVK_F18
+            HotkeyCombo(keyCode: 0x69, modifiers: modifiers), // kVK_F17
+            HotkeyCombo(keyCode: 0x6D, modifiers: modifiers)  // kVK_F19
+        )
+    }
+
+    @Test func updateComboKeepsOriginalHotkeyWhenRegistrationConflicts() {
+        let (occupied, held, free) = makeOccupiedCombos()
+        // Carbon 对重复注册同一组合返回 eventHotKeyExistsErr（-9878）：
+        // manager A 先真实注册「被占用」组合，B 在监听中注册自己的组合后尝试切换到它。
+        let suiteA = "lumi-454-a-\(UUID().uuidString)"
+        let suiteB = "lumi-454-b-\(UUID().uuidString)"
+        let defaultsA = UserDefaults(suiteName: suiteA)!
+        let defaultsB = UserDefaults(suiteName: suiteB)!
+        defer {
+            defaultsA.removePersistentDomain(forName: suiteA)
+            defaultsB.removePersistentDomain(forName: suiteB)
+        }
+
+        let occupier = GlobalHotkeyManager(defaults: defaultsA)
+        occupier.updateCombo(occupied)
+        occupier.start()
+        let challenger = GlobalHotkeyManager(defaults: defaultsB)
+        challenger.updateCombo(held)
+        challenger.start()
+        defer { occupier.stop(); challenger.stop() }
+
+        // 切到被占用组合：注册失败，返回 false，当前组合与持久化都保持原值。
+        let accepted = challenger.updateCombo(occupied)
+        #expect(!accepted, "被占用的组合必须注册失败（#454）")
+        #expect(challenger.currentCombo == held, "注册失败后必须保持原组合（#454）")
+        if let data = defaultsB.data(forKey: "QuickLauncher.Hotkey.keyCode.encoded"),
+           let persisted = try? JSONDecoder().decode(HotkeyCombo.self, from: data) {
+            #expect(persisted == held, "持久化配置不得被失败的组合覆盖（#454）")
+        } else {
+            Issue.record("持久化配置丢失")
+        }
+
+        // 空闲组合正常切换成功。
+        #expect(challenger.updateCombo(free))
+        #expect(challenger.currentCombo == free)
+    }
+
+    @Test func settingsViewModelSurfacesConflictThenClearsOnSuccess() {
+        let (occupied, held, free) = makeOccupiedCombos()
+        let suite = "lumi-454-vm-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        // 先真实占用目标组合，再让设置页的 manager 尝试切换到它。
+        let occupier = GlobalHotkeyManager(defaults: UserDefaults(suiteName: suite + "-occ")!)
+        occupier.updateCombo(occupied)
+        occupier.start()
+        defer { occupier.stop() }
+
+        let manager = GlobalHotkeyManager(defaults: defaults)
+        manager.updateCombo(held)
+        manager.start()
+        defer { manager.stop() }
+
+        let viewModel = QuickLauncherSettingsViewModel(hotkeyManager: manager)
+
+        // 应用被占用组合：提示冲突，展示组合保持原值。
+        viewModel.applyCombo(occupied)
+        #expect(viewModel.errorMessage != nil, "注册失败必须提示用户（#454）")
+        #expect(viewModel.currentComboDisplay == held.displayString, "失败后设置页展示的组合不得改变（#454）")
+
+        // 应用空闲组合：错误清除。
+        viewModel.applyCombo(free)
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.currentComboDisplay == free.displayString)
+    }
 }

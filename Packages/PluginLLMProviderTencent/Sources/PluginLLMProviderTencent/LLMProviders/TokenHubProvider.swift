@@ -35,25 +35,14 @@ public final class TokenHubProvider: VendorLLMProvider {
                     LLMModelInfo(id: "deepseek-v4-flash", displayName: "DeepSeek-V4-Flash", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "deepseek-v4-flash-0731", displayName: "DeepSeek-V4-Flash 0731 正式版", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "hy-mt2-pro", displayName: "HY-MT2-Pro", contextWindowSize: 1_000_000),
-                    // 图像生成
-                    LLMModelInfo(id: "hy-image-v3", displayName: "Hy-Image-3.0"),
-                    LLMModelInfo(id: "vidu-image-q2", displayName: "Vidu-Image-q2"),
-                    // 视频生成
-                    LLMModelInfo(id: "minimax-video-h3", displayName: "MiniMax-Video-H3"),
-                    LLMModelInfo(id: "pixverse-video-c1", displayName: "Pixverse-Video-c1"),
-                    LLMModelInfo(id: "kling-video-v3", displayName: "Kling-Video-V3"),
-                    // 3D 生成
-                    LLMModelInfo(id: "hy-3d-3.1", displayName: "HY-3D-3.1"),
-                    LLMModelInfo(id: "hy-3d-3.0", displayName: "HY-3D-3.0"),
-                    LLMModelInfo(id: "hy-3d-express", displayName: "HY-3D-Express"),
+                    // 只列出支持 Chat Completions 的模型（#414）：图像、视频、
+                    // 3D、语音等模型走的是各自专用协议，放进聊天供应商清单
+                    // 会继承流式/工具默认能力，选中后请求发往 Chat Completions
+                    // 必然报协议或能力错误。
                     // 多模态理解
                     LLMModelInfo(id: "deepseek/deepseek-v4-flash-vision-exp", displayName: "DeepSeek-V4-Flash-Vision-Exp", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "hy-vision-2.0-instruct", displayName: "HY-Vision-2.0-Instruct", contextWindowSize: 44_000, supportsVision: true),
                     LLMModelInfo(id: "glm-5.3-flash", displayName: "GLM-5.3-Flash", contextWindowSize: 1_000_000, supportsVision: true),
-                    // 语音模型
-                    LLMModelInfo(id: "hy-asr-3.0-preview", displayName: "Hy-ASR-3.0-preview"),
-                    LLMModelInfo(id: "minimax-speech-2.8-hd", displayName: "MiniMax-Speech-2.8-HD"),
-                    LLMModelInfo(id: "minimax-music-v2.6", displayName: "MiniMax-Music-v2.6"),
                 ],
                 websiteURL: URL(string: "https://cloud.tencent.com/product/tokenhub"),
                 apiFormat: .openAI,

@@ -38,20 +38,33 @@ enum ScreenCoordinateConverter {
     ///
     /// - Returns: 窗口所在屏幕无法确定时返回 `nil`（此时不能安全地画遮罩）。
     static func appKitRect(fromQuartz quartzRect: CGRect) -> CGRect? {
-        guard quartzRect.width > 0, quartzRect.height > 0 else { return nil }
-        for screen in NSScreen.screens {
-            let screenFrame = screen.frame
-            // 屏幕在 AppKit 坐标里的矩形，翻转成 Quartz 坐标用于命中判断。
+        appKitRect(fromQuartz: quartzRect, screenFrames: NSScreen.screens.map(\.frame))
+    }
+
+    /// 把 Quartz 矩形转换为 AppKit 矩形。
+    ///
+    /// - Parameters:
+    ///   - quartzRect: Quartz 坐标（桌面左上原点、y 向下）里的窗口矩形。
+    ///   - screenFrames: 各屏幕在 AppKit 全局坐标里的矩形；生产环境取
+    ///     `NSScreen.screens.map(\.frame)`，测试可注入任意多屏布局。
+    /// - Returns: 矩形落在所有屏幕之外时返回 `nil`。
+    static func appKitRect(fromQuartz quartzRect: CGRect, screenFrames: [CGRect]) -> CGRect? {
+        guard quartzRect.width > 0, quartzRect.height > 0, !screenFrames.isEmpty,
+              let globalTop = screenFrames.map(\.maxY).max() else { return nil }
+        for screenFrame in screenFrames {
+            // 屏幕在 Quartz 坐标里的矩形：顶部 y = 桌面顶边 - 屏幕顶边。
+            // y 翻转必须以「桌面顶边」（所有屏幕 maxY 的最大值）为基准；
+            // 用屏幕自己的 minY/maxY 推导，在副屏位于主屏上方/下方时会把
+            // 命中矩形与结果都算错（#269）。
             let screenQuartz = CGRect(
                 x: screenFrame.minX,
-                y: screenFrame.maxY - screenFrame.height,
+                y: globalTop - screenFrame.maxY,
                 width: screenFrame.width,
                 height: screenFrame.height
             )
             guard quartzRect.intersects(screenQuartz) else { continue }
-            // 窗口顶边相对该屏幕顶部的偏移，换算回 AppKit 的 y。
-            let topOffsetInQuartz = quartzRect.minY - screenQuartz.minY
-            let topInAppKit = screenFrame.maxY - topOffsetInQuartz
+            // 窗口顶边在 AppKit 坐标里的 y = 桌面顶边 - 窗口顶边到桌面顶部的距离。
+            let topInAppKit = globalTop - quartzRect.minY
             return CGRect(
                 x: quartzRect.minX,
                 y: topInAppKit - quartzRect.height,

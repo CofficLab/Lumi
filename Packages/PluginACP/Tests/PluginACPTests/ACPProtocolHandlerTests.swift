@@ -52,7 +52,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .response(let id, let result) = response else {
             return XCTFail("期望成功响应，得到 \(String(describing: response))")
         }
-        XCTAssertEqual(id, .number(1))
+        XCTAssertEqual(id, .integer(1))
         let decoded = try result?.decoded(as: ACPInitializeResult.self)
         XCTAssertEqual(decoded?.protocolVersion, 1)
         XCTAssertEqual(decoded?.agentInfo?.name, ACPConfig.default.agentName)
@@ -86,7 +86,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .error(let id, let error) = response else {
             return XCTFail("期望错误响应")
         }
-        XCTAssertEqual(id, .number(1))
+        XCTAssertEqual(id, .integer(1))
         XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
     }
 
@@ -102,7 +102,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .response(let id, let result) = response else {
             return XCTFail("期望成功响应，得到 \(String(describing: response))")
         }
-        XCTAssertEqual(id, .number(2))
+        XCTAssertEqual(id, .integer(2))
         let decoded = try result?.decoded(as: ACPSessionNewResult.self)
         let sessionID = try XCTUnwrap(decoded?.sessionId)
         XCTAssertTrue(sessionID.rawValue.hasPrefix("sess_"))
@@ -120,7 +120,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .error(let id, let error) = response else {
             return XCTFail("期望错误响应")
         }
-        XCTAssertEqual(id, .number(3))
+        XCTAssertEqual(id, .integer(3))
         XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
     }
 
@@ -140,7 +140,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .error(let id, let error) = response else {
             return XCTFail("期望错误响应")
         }
-        XCTAssertEqual(id, .number(7))
+        XCTAssertEqual(id, .integer(7))
         XCTAssertEqual(error.code, ACPErrorCode.methodNotFound)
     }
 
@@ -170,7 +170,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .error(let id, let error) = response else {
             return XCTFail("期望错误响应，得到 \(String(describing: response))")
         }
-        XCTAssertEqual(id, .number(5))
+        XCTAssertEqual(id, .integer(5))
         XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
         XCTAssertTrue(error.message.contains("Unknown session"))
     }
@@ -186,7 +186,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .error(let id, let error) = response else {
             return XCTFail("相对 cwd 应被拒绝，得到 \(String(describing: response))")
         }
-        XCTAssertEqual(id, .number(6))
+        XCTAssertEqual(id, .integer(6))
         XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
         XCTAssertTrue(error.message.contains("absolute"))
     }
@@ -210,7 +210,7 @@ final class ACPProtocolHandlerTests: XCTestCase {
         guard case .response(let id, let result) = response else {
             return XCTFail("MCP 未实现不应导致 session/new 失败，得到 \(String(describing: response))")
         }
-        XCTAssertEqual(id, .number(4))
+        XCTAssertEqual(id, .integer(4))
         let decoded = try result?.decoded(as: ACPSessionNewResult.self)
         XCTAssertNotNil(decoded?.sessionId)
     }

@@ -90,10 +90,18 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
     }
 
     func testConnection() async throws {
-        _ = try await listApps(limit: 1)
+        // 连接探测只需要一个资源：单页即可，不必翻完整列表。
+        _ = try await listApps(limit: 1, followPagination: false)
     }
 
-    func listApps(search: String? = nil, limit: Int = 100) async throws -> [AppStoreApp] {
+    /// - Parameter followPagination: 是否跟随 `links.next` 取回全部页；
+    ///   false 时只返回请求的单页（有界调用方，如连接探测与 Agent 工具的
+    ///   显式 limit 契约）。
+    func listApps(
+        search: String? = nil,
+        limit: Int = 100,
+        followPagination: Bool = true
+    ) async throws -> [AppStoreApp] {
         var query: [URLQueryItem] = [
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sort", value: "name"),
@@ -106,15 +114,37 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
             query.append(URLQueryItem(name: "filter[name]", value: search))
         }
 
-        let response: AppStoreConnectListResponseWithIncluded<AppStoreApp, BuildIconResource> = try await request(
+        let firstPage: AppStoreConnectListResponseWithIncluded<AppStoreApp, BuildIconResource> = try await request(
             path: "/v1/apps",
             queryItems: query
         )
+
+        // 跟随 links.next 翻页：固定 limit=100 只读首页会把第 101 个之后的
+        // App 静默丢弃，UI 与 Agent 都选不到（#319）。页数上限仅作防御，
+        // 正常情况下一页为空即停。
+        var allData = firstPage.data
+        var allIncluded = firstPage.included ?? []
+        var nextURL = followPagination ? firstPage.links?.next : nil
+        var pageCount = 1
+        let maxPages = 100
+        while let url = nextURL {
+            if pageCount >= maxPages {
+                Self.logger.error("\(Self.t)listApps hit the \(maxPages)-page cap; apps beyond page \(maxPages) are not fetched")
+                break
+            }
+            let page: AppStoreConnectListResponseWithIncluded<AppStoreApp, BuildIconResource> =
+                try await requestAbsolute(url: url)
+            allData += page.data
+            allIncluded += page.included ?? []
+            nextURL = page.links?.next
+            pageCount += 1
+        }
+
         let iconsByID = Dictionary(
-            (response.included ?? []).map { ($0.id, $0) },
+            allIncluded.map { ($0.id, $0) },
             uniquingKeysWith: { first, _ in first }
         )
-        return response.data.map { app in
+        return allData.map { app in
             app.withIconURL(app.appStoreIconID.flatMap { iconsByID[$0]?.iconAsset?.url(width: 64, height: 64) })
         }
     }
@@ -177,6 +207,21 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(T.self, from: data)
+    }
+
+    /// 请求一个绝对 URL（分页 `links.next` 已携带全部 query），不走缓存。
+    func requestAbsolute<T: Decodable>(url: URL) async throws -> T {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
+        request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, statusCode) = try await send(request)
+
+        guard (200 ..< 300).contains(statusCode) else {
+            throw apiError(from: data, statusCode: statusCode)
+        }
+        return try decodeResponse(data)
     }
 
     /// 发送不期望响应体的请求（如 DELETE 或返回 204 的 PATCH relationships）。

@@ -75,6 +75,13 @@ struct AnthropicProviderPluginTests {
         #expect(provider.anthropicConfiguration?.baseURL == "https://api.anthropic.com/v1/messages")
     }
 
+    @Test("官方供应商开启 prompt caching（回归 #1319）")
+    func officialProviderEnablesPromptCaching() {
+        let provider = AnthropicProvider()
+
+        #expect(provider.anthropicConfiguration?.enablesPromptCaching == true)
+    }
+
     @Test("onBoot 在缺少 LLM 管理器时不抛错")
     func onBootWithoutManagerDoesNotThrow() throws {
         let kernel = KernelCoreContainer()

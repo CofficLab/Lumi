@@ -173,17 +173,18 @@ struct LumiApp: App {
                 }
                 openWindow(id: "lumi.settings")
             }
-            .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
-                consumePendingOpenPath(path, kernel: kernel)
+            .onReceive(appDelegate.$pendingOpenPaths) { queue in
+                guard !queue.isEmpty else { return }
+                consumePendingOpenPaths(kernel: kernel)
             }
             .onAppear {
                 menuBarController.install(kernel: kernel)
                 warnIfDiskSpaceLow()
-                // Launch Services may deliver a file before the main window
+                // Launch Services may deliver files before the main window
                 // has installed its Combine subscription. Consume the
-                // retained delegate value once the V2 window is ready.
-                if let path = appDelegate.pendingOpenPath {
-                    consumePendingOpenPath(path, kernel: kernel)
+                // retained delegate queue once the V2 window is ready.
+                if !appDelegate.pendingOpenPaths.isEmpty {
+                    consumePendingOpenPaths(kernel: kernel)
                 }
             }
         }
@@ -239,15 +240,15 @@ struct LumiApp: App {
         }
     }
 
-    private func consumePendingOpenPath(_ path: String, kernel: KernelCoreContainer) {
-        // `$pendingOpenPath` 在 `willSet` 阶段派发：`.onReceive` 回调执行时
-        // 属性仍是上一个值。在这里直接比较属性会把真正的新请求误判成
-        // 「已被消费」而静默丢弃（表现为外部点一次「在 Lumi 中打开」没反应，
-        // 同一个项目再点一次才生效）。去重必须等属性更新完之后再做。
+    private func consumePendingOpenPaths(kernel: KernelCoreContainer) {
+        // `$pendingOpenPaths` 在 `willSet` 阶段派发：`.onReceive` 回调执行时
+        // 属性还是旧值。drain 放进 Task 隔离跳转后再读属性，读到的是更新完
+        // 的队列；同一时刻只会有一个消费循环（见 delegate 的 drain 标记），
+        // 冷启动批次与后续事件逐个处理，不会丢项。
         Task { @MainActor in
-            guard appDelegate.pendingOpenPath == path else { return }
-            appDelegate.pendingOpenPath = nil
-            _ = await KernelFactory.openExternalPath(path, kernel: kernel)
+            await appDelegate.drainPendingOpenPaths { path in
+                _ = await KernelFactory.openExternalPath(path, kernel: kernel)
+            }
         }
     }
 }

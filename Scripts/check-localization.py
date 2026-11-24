@@ -29,14 +29,12 @@ LANGS = ["en", "zh-Hans", "zh-Hant", "zh-HK", "zh-TW"]
 CJK = re.compile(r"[\u4e00-\u9fff]")
 SKIP_DIRS = {"build", "SourcePackages", "temp", ".build", "Tests", "Vendor", "DerivedData"}
 SCAN_ROOTS = [
-    "Packages", "LumiApp", "LumiACPApp", "AppIconDesignerApp",
-    "CADDesignerApp", "NettoExtension",
+    "Packages", "LumiApp", "LumiACPApp",
+    "NettoExtension",
 ]
 APP_PLISTS = [
     "LumiApp/Lumi-Info.plist",
     "LumiACPApp/LumiACP-Info.plist",
-    "AppIconDesignerApp/AppIconDesigner-Info.plist",
-    "CADDesignerApp/CADDesigner-Info.plist",
     "Packages/PluginRClick/FinderExtension/Info.plist",
     "NettoExtension/Info.plist",
 ]

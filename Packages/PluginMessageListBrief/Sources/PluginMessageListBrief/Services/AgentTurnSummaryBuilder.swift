@@ -16,18 +16,57 @@ import KitMessageList
 ///
 /// **运行中 turn**：`processMessages` 暴露当前 turn 的助手工具调用、工具结果及
 /// 瞬时 status；视图展示这些过程。turn 进入终态后，视图折叠为 `message`。
+/// 一次共享投影的预计算上下文（#1187）。
+///
+/// 同一次消息事件要投影多个 turn 行：原先每个 `AgentTurnVM` 独立
+/// 读取完整快照并各自排序 / 分组全量会话。把排序、按 turnID 分组、
+/// 瞬时 status 分组与用户消息索引只做一次，全部行复用，
+/// 消除 O(T × M log M) 的重复主线程开销。
+struct AgentTurnSummaryContext {
+    let chronological: [Message]
+    let messagesByTurn: [UUID: [Message]]
+    let transientStatusesByConversation: [UUID: [Message]]
+    let userMessages: [Message]
+
+    /// - Note: 传入的 `messages` 必须与后续投影使用的消息数组同源。
+    init(_ messages: [Message]) {
+        chronological = messages.sorted(by: messageOrdering)
+        var byTurn: [UUID: [Message]] = [:]
+        for message in messages {
+            guard let turnID = message.turnID else { continue }
+            byTurn[turnID, default: []].append(message)
+        }
+        messagesByTurn = byTurn
+
+        // 无 turnID 的瞬时 status 属于当前会话而非某个历史 turn；只挂到最新活跃 turn。
+        var transientStatuses: [UUID: [Message]] = [:]
+        for candidate in chronological
+        where candidate.role == .status && candidate.turnID == nil {
+            transientStatuses[candidate.conversationID, default: []].append(candidate)
+        }
+        transientStatusesByConversation = transientStatuses
+
+        // `.user` 消息索引：每个 record 用二分查找，避免 O(N²)。
+        userMessages = chronological.filter { $0.role == .user }
+    }
+}
+
 struct AgentTurnSummaryBuilder {
     func build(
         records: [AgentTurnRecord],
         messages: [Message]
     ) -> [AgentTurnSummaryItem] {
-        // turn 自身的消息仍按 turnID 分组（助手/工具/错误消息携带 turnID）。
-        let messagesByTurn = Dictionary(grouping: messages.compactMap { message in
-            message.turnID.map { ($0, message) }
-        }, by: \.0)
+        build(records: records, context: AgentTurnSummaryContext(messages))
+    }
 
-        // 用户消息回溯匹配需要按时间升序的全量消息流。
-        let chronological = messages.sorted(by: messageOrdering)
+    func build(
+        records: [AgentTurnRecord],
+        context: AgentTurnSummaryContext
+    ) -> [AgentTurnSummaryItem] {
+        let chronological = context.chronological
+        // turn 自身的消息仍按 turnID 分组（助手/工具/错误消息携带 turnID）。
+        let messagesByTurn = context.messagesByTurn
+
         // 无 turnID 的瞬时 status 属于当前会话而非某个历史 turn；只挂到最新活跃 turn。
         let latestActiveTurnID = records
             .filter { !$0.isFinished }
@@ -38,22 +77,28 @@ struct AgentTurnSummaryBuilder {
         // 原先在每个 record 的循环里都对全量消息流做一次线性扫描 ——
         // N 个 record 就是 N 次全量扫描，整体 O(N²)（见 issue #1267）。
         // 这里按会话提前分好组，每个 record 只取自己会话的那一组。
-        var transientStatusesByConversation: [UUID: [Message]] = [:]
-        for candidate in chronological
-        where candidate.role == .status && candidate.turnID == nil {
-            transientStatusesByConversation[candidate.conversationID, default: []].append(candidate)
-        }
+        let transientStatusesByConversation = context.transientStatusesByConversation
 
         // `.user` 消息索引：每个 record 用二分查找，避免 O(N²)。
-        let userMessages = userMessageIndex(from: chronological)
+        let userMessages = context.userMessages
+
+        // 失败后的自动重试会生成新 turn，但回溯匹配到的是同一条用户消息。
+        // 行身份（用户消息 ID）只能被第一个认领它的 turn 使用；后续 turn
+        // 改用自身 record.id，否则两行拿到相同 ID，ForEach diff 与
+        // AgentTurnVM 缓存都互相覆盖（#593）。records 已按时间升序处理。
+        var claimedUserMessageIDs = Set<UUID>()
 
         return records
             .sorted(by: recordOrdering)
             .map { record -> AgentTurnSummaryItem in
                 let turnMessages = (messagesByTurn[record.id] ?? [])
-                    .map(\.1)
                     .sorted(by: messageOrdering)
                 let user = userMessage(from: userMessages, startedAt: record.startedAt)
+                var rowID = record.id
+                if let user {
+                    let (inserted, _) = claimedUserMessageIDs.insert(user.id)
+                    if inserted { rowID = user.id }
+                }
                 let message = summaryMessage(for: record, messages: turnMessages)
                     ?? placeholderMessage(for: record)
                 // 只有最新活跃 turn 才挂瞬时 status。
@@ -72,6 +117,7 @@ struct AgentTurnSummaryBuilder {
                 return AgentTurnSummaryItem(
                     record: record,
                     userMessage: user,
+                    rowID: rowID,
                     processMessages: processMessages,
                     message: message
                 )
@@ -79,15 +125,6 @@ struct AgentTurnSummaryBuilder {
     }
 
     // MARK: - User message matching
-
-    /// `.user` 消息的时间索引：按时间升序排列，供二分查找。
-    ///
-    /// 原先每个 record 都从全量消息尾部反向线性扫描找最近的用户消息，
-    /// N 个 record 就是 N 次扫描，整体 O(N²)（见 issue #1267）。
-    /// 这里只把 `.user` 消息抽出来建一次索引，各 record 用二分查找。
-    private func userMessageIndex(from messages: [Message]) -> [Message] {
-        messages.filter { $0.role == .user }
-    }
 
     /// 二分查找 `startedAt` 之前（含同时刻）最近的一条 `.user` 消息。
     ///

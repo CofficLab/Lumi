@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 75
+测试文件: 5 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,7 +29,7 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DockerManagerLogic**（45 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `multipleTagsOfSameImageHaveUniqueStableIDs` 锁定（**回归 #251**）：`DockerImage.id` 必须按 imageID+repository+tag 组合唯一，同一镜像多标签不得共享列表身份，同一引用的身份必须稳定；改动 `DockerImage.id` 或 List 行身份时优先跑该用例。`staleRefreshAfterDeleteDoesNotReinsertImage`、`overlappingRefreshesUseLatestRequestedSnapshot`、`staleRefreshFailureDoesNotClobberNewerSuccess` 锁定（**回归 #252**）：刷新/删除按 `listGeneration` 代次串行写回，只有最新一代的刷新结果（成功或失败）可写回列表与错误状态，删除会递增代次使在途旧刷新失效；改动 `refreshImages`/`deleteImage` 的写回逻辑时优先跑这三条。`ordinaryDeleteUntagsSelectedReferenceAndKeepsOtherTags`、`deletingAnotherTagKeepsSelectedReference`、`ordinaryDeleteOfDanglingImageFallsBackToImageID`、`forceDeleteRemovesWholeImageByImageID` 锁定（**回归 #250**）：普通删除按选中的 `repository:tag` 引用 untag（悬空镜像回退 imageID），只移除该引用行并按引用身份清空选中，强制删除才按 imageID 移除整镜像全部标签；改动 `deleteImage` 的删除目标或行/选中身份时优先跑这四条。
+- **DockerManagerLogic**（45 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。其中 `multipleTagsOfSameImageHaveUniqueStableIDs` 锁定（**回归 #251**）：`DockerImage.id` 必须按 imageID+repository+tag 组合唯一，同一镜像多标签不得共享列表身份，同一引用的身份必须稳定；改动 `DockerImage.id` 或 List 行身份时优先跑该用例。`staleRefreshAfterDeleteDoesNotReinsertImage`、`overlappingRefreshesUseLatestRequestedSnapshot`、`staleRefreshFailureDoesNotClobberNewerSuccess` 锁定（**回归 #252**）：刷新/删除按 `listGeneration` 代次串行写回，只有最新一代的刷新结果（成功或失败）可写回列表与错误状态，删除会递增代次使在途旧刷新失效；改动 `refreshImages`/`deleteImage` 的写回逻辑时优先跑这三条。`ordinaryDeleteUntagsSelectedReferenceAndKeepsOtherTags`、`deletingAnotherTagKeepsSelectedReference`、`ordinaryDeleteOfDanglingImageFallsBackToImageID`、`forceDeleteRemovesWholeImageByImageID` 锁定（**回归 #250**）：普通删除按选中的 `repository:tag` 引用 untag（悬空镜像回退 imageID），只移除该引用行并按引用身份清空选中，强制删除才按 imageID 移除整镜像全部标签；改动 `deleteImage` 的删除目标或行/选中身份时优先跑这四条。`cancelAllOperationsStopsInFlightScan`、`pluginShutdownCancelsInFlightOperation` 锁定（**回归 #253**）：插件 shutdown 调用 `cancelAllOperations()` 取消 ViewModel 名下登记的在途操作任务（取消传播到 KitShell 后终止 docker/trivy 进程树），被取消的操作不得把迟到的失败文案写回 `scanResult`/`errorMessage`；改动 `runOwnedOperation`/`cancelAllOperations` 或插件 `onShutdown` 时优先跑这两条。
 - **DockerManagerPluginLifecycle**（9 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootRegistersActivityBarItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`selectingAnotherImageIgnoresStaleDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Docker history decoding**（5 条）：由 `decodesRealHistoryLine`、`decodesMultiLayerHistory`、`allInvalidHistoryLinesThrow` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -114,21 +114,24 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 73 | 输出截断 | 退出码 0 且未截断时原样返回 stdout | 构造 stdoutTruncated=false 的结果 | 调用 interpretCommandOutput | 返回完整 stdout | P1 | ✅ 已覆盖 | `commandOutputReturnsStdoutWhenComplete` |
 | 74 | 输出截断 | 非零退出抛 commandFailed 并透传 stderr | 构造 exitCode=1、stderr=boom | 调用 interpretCommandOutput | 抛 commandFailed，message=boom | P1 | ✅ 已覆盖 | `commandOutputThrowsCommandFailedOnNonZeroExit` |
 | 75 | 输出截断 | 非零退出且 stderr 为空时回退到 stdout | 构造 exitCode=2、stderr 空、stdout 非空 | 调用 interpretCommandOutput | 抛 commandFailed，message=stdout | P1 | ✅ 已覆盖 | `commandFailedFallsBackToStdoutWhenStderrEmpty` |
+| 76 | DockerManagerLogic | 取消所有操作会终止在途扫描，且不写回失败文案（**回归 #253**） | 10s 延迟扫描在途 | cancelAllOperations → 2s 内等待扫描任务 | 扫描任务终止，`scanResult` 不含 Scan failed，`errorMessage` 为 nil，`isLoading` 为 false | P0 | ✅ 已覆盖 | `cancelAllOperationsStopsInFlightScan` |
+| 77 | DockerManagerLogic | 插件关闭会取消在途操作并终止等待（**回归 #253**） | 注入预构造 ViewModel，10s 延迟扫描在途 | onShutdown → 2s 内等待扫描任务 | 扫描任务终止，不写失败文案，`errorMessage` 为 nil，`isLoading` 为 false | P0 | ✅ 已覆盖 | `pluginShutdownCancelsInFlightOperation` |
 
-> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 > 变异验证（#258）：D-M1 删除 interpretCommandOutput 截断守卫 → `commandOutputThrowsWhenTruncated` 红；D-M2 守卫改判 stderrTruncated → `commandOutputThrowsWhenTruncated` 红；D-M3 删除 exitCode 守卫 → `commandOutputThrowsCommandFailedOnNonZeroExit` 红；D-M4 commandFailed 去掉 stdout 回退 → `commandFailedFallsBackToStdoutWhenStderrEmpty` 红。均恢复后复绿。
+> 变异验证（#253）：D-M5 删除 performScan catch 的取消守卫 → 两条新用例均红（取消后仍把 Scan failed 写回 `scanResult`）；D-M6 删除插件 `onShutdown` 的 `cancelAllOperations()` → `pluginShutdownCancelsInFlightOperation` 红（扫描任务未终止、等待超时）。均恢复后复绿。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 21 / 21
+- P0: 已覆盖 23 / 23
 - P1: 已覆盖 50 / 50
 - P2: 已覆盖 4 / 4
-- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
 - **P1**: 其余功能性用例（50 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 

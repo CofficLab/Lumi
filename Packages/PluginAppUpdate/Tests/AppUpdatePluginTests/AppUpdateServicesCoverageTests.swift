@@ -321,7 +321,7 @@ struct AppUpdateRuntimeEnvironmentTests {
 struct AppUpdateBootstrapTests {
 
     @Test("启动后注册更新通道 Provider")
-    func registersChannelProvider() throws {
+    func registersChannelProvider() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-register")
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(
@@ -330,13 +330,18 @@ struct AppUpdateBootstrapTests {
         )
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         #expect(kernel.resolveProvider((any AppUpdateChannelProviding).self) != nil)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("启动时把存储目录注入运行时配置")
-    func injectsStorageDirectory() throws {
+    func injectsStorageDirectory() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-directory")
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(
@@ -345,6 +350,10 @@ struct AppUpdateBootstrapTests {
         )
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         let expected = root.appendingPathComponent(
@@ -352,10 +361,11 @@ struct AppUpdateBootstrapTests {
             isDirectory: true
         )
         #expect(AppUpdateRuntime.settingsDirectory() == expected)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("停止后注销更新通道 Provider")
-    func unregistersChannelProviderOnStop() throws {
+    func unregistersChannelProviderOnStop() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-stop")
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(
@@ -364,13 +374,18 @@ struct AppUpdateBootstrapTests {
         )
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         AppUpdateBootstrap.stop()
 
         #expect(kernel.resolveProvider((any AppUpdateChannelProviding).self) == nil)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("同一个 kernel 重复启动不会重复注册 Provider")
-    func repeatedStartKeepsSingleProvider() throws {
+    func repeatedStartKeepsSingleProvider() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-repeat")
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(
@@ -379,10 +394,19 @@ struct AppUpdateBootstrapTests {
         )
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         #expect(kernel.resolveProvider((any AppUpdateChannelProviding).self) != nil)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("注册网络 Provider 时把网络注入更新服务")
@@ -397,16 +421,21 @@ struct AppUpdateBootstrapTests {
         try kernel.registerProvider((any NetworkProviding).self, network)
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         // 启动流程会准备 feed URL，探测请求走注册的 Provider。
         try await Task.sleep(for: .milliseconds(200))
 
         #expect(network.requests.isEmpty == false)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("legacy UserDefaults 通道在插件存储为空时被导入")
-    func importsLegacyChannel() throws {
+    func importsLegacyChannel() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-legacy")
         let kernel = KernelCoreContainer()
         try kernel.registerProvider(
@@ -424,15 +453,20 @@ struct AppUpdateBootstrapTests {
         defer { AppUpdateBootstrap.legacyUserDefaults = previousLegacyDefaults }
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         let directory = root.appendingPathComponent(AppUpdateBootstrap.pluginID, isDirectory: true)
         let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
         #expect(store.channel == .preview)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("插件存储已有记录时不覆盖 legacy 通道")
-    func keepsExistingChannelOverLegacy() throws {
+    func keepsExistingChannelOverLegacy() async throws {
         let root = AppUpdateTestDoubles.makeTemporaryDirectory("bootstrap-existing")
         let directory = root.appendingPathComponent(AppUpdateBootstrap.pluginID, isDirectory: true)
         try AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(.stable)
@@ -451,10 +485,15 @@ struct AppUpdateBootstrapTests {
         defer { AppUpdateBootstrap.legacyUserDefaults = previousLegacyDefaults }
 
         AppUpdateBootstrap.start(kernel: kernel)
+        // 在 start 返回后立刻注入替身：start 内 setupFeedURLIfNeeded 的探测
+        // 是异步的，suspend 期间主 actor 先执行到这一行，feed 完成回调必然
+        // 能看到替身，不会在测试进程拉起真实 Sparkle。
+        UpdateService.shared.updaterInitializationStub = {}
         defer { AppUpdateBootstrap.stop() }
 
         let store = AppUpdatePluginLocalStore(settingsDirectory: directory)
         #expect(store.channel == .stable)
+        await UpdateService.shared.feedURLAfterPendingPreparation()
     }
 
     @Test("未启动就停止是安全的")

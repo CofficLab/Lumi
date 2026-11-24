@@ -26,7 +26,7 @@ public extension ACPMessage {
         method: String,
         params: Params
     ) throws -> ACPMessage {
-        .request(id: .number(Double(id)), method: method, params: try JSONValue.stringify(params))
+        .request(id: .integer(Int64(id)), method: method, params: try JSONValue.stringify(params))
     }
 
     /// 构造类型化通知。

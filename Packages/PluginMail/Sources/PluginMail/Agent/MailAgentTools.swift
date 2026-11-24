@@ -223,6 +223,38 @@ public actor MailAgentToolService {
 
 // MARK: - 工具
 
+/// mail_list_accounts：列出已配置账户（safe，可并行只读）。
+/// 其余 mail_* 工具的 account_id 都引用本工具返回的 id（#841）。
+public struct MailListAccountsTool: SuperAgentTool {
+    public static let toolName = "mail_list_accounts"
+    public let name = Self.toolName
+    private let service: MailAgentToolService
+
+    public init(service: MailAgentToolService) {
+        self.service = service
+    }
+
+    public func description(for language: LanguagePreference) -> String {
+        "List configured mail accounts with their UUIDs, emails and display names (no credentials). Use the returned id as account_id in other mail tools."
+    }
+
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        MailToolSupport.schema(properties: [:], required: [])
+    }
+
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "列出邮件账户"
+    }
+
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+
+    public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
+    public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        await service.listAccounts()
+    }
+}
+
 /// mail_list_messages：列出最近邮件（safe，可并行只读）。
 public struct MailListMessagesTool: SuperAgentTool {
     public static let toolName = "mail_list_messages"

@@ -97,6 +97,25 @@ func testToolCallIdentityNormalizerAvoidsResponseCollisions() {
     #expect(toolCalls[1].id != "same")
 }
 
+/// #287：归一化会重建 LLMResponse，重建时丢掉签名的话，带工具调用的
+/// Anthropic 请求在下一轮就会因签名缺失被拒——而归一化恰好只在有工具
+/// 调用时触发，正是签名必需的场景。
+@Test("tool-call ID 归一化不丢 thinking 签名（#287）")
+func testToolCallIdentityNormalizerPreservesThinkingSignature() {
+    let normalized = ToolCallIdentityNormalizer.normalize(
+        LLMResponse(
+            content: "",
+            toolCalls: [LLMToolCall(id: "ls_0", name: "ls", arguments: "{}")],
+            reasoningContent: "先分析",
+            thinkingSignature: "sig-abc123"
+        ),
+        avoiding: ["ls_0"]
+    )
+
+    #expect(normalized.reasoningContent == "先分析")
+    #expect(normalized.thinkingSignature == "sig-abc123")
+}
+
 @Test("可恢复的 LLM 工具协议错误会重试当前回合")
 func testRetryableLLMFailureRetriesCurrentTurn() {
     let turnID = UUID()

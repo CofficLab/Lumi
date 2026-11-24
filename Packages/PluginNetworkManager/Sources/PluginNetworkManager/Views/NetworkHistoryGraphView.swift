@@ -4,11 +4,10 @@ import KernelCore
 
 /// 图表的几何量。
 ///
-/// 一次 body 求值只算一次，供所有 Shape 共用：
-/// 原先每个 Shape 各自拿一份 `dataPoints.map { ... }`，
-/// `maxValue` 与 `timeFractions` 也是计算属性 —— 一次求值要跑
-/// 4 次全量 map 加 2 次全量扫描，鼠标每移动一次就重跑一遍
-/// （见 issue #1211）。
+/// 由只依赖 `dataPoints` 的静态子视图构建（见 ``NetworkHistoryPlot``）：
+/// hover 状态变化时 SwiftUI 跳过子视图更新，几何量不再重建。
+/// 原先几何量在每次 body 求值时重算，每个 Shape 还各自拿一份
+/// `dataPoints.map { ... }`，鼠标每移动一次就重跑一遍（见 issue #1211）。
 struct ChartGeometry {
     /// 下载速率序列。
     let downloadValues: [Double]
@@ -24,20 +23,27 @@ struct ChartGeometry {
         var upload: [Double] = []
         download.reserveCapacity(points.count)
         upload.reserveCapacity(points.count)
-        var maxDown: Double = 0
-        var maxUp: Double = 0
 
         for point in points {
             download.append(point.downloadSpeed)
             upload.append(point.uploadSpeed)
-            if point.downloadSpeed > maxDown { maxDown = point.downloadSpeed }
-            if point.uploadSpeed > maxUp { maxUp = point.uploadSpeed }
         }
 
         self.downloadValues = download
         self.uploadValues = upload
-        self.maxValue = max(max(maxDown, maxUp) * 1.1, 1024 * 10) // Min 10KB/s scale
+        self.maxValue = Self.maxValue(of: points)
         self.timeFractions = NetworkHistoryGraphView.timeFractions(for: points)
+    }
+
+    /// 纵轴最大值：上下行峰值取较大者，留 10% 余量，并有 10KB/s 下限。
+    static func maxValue(of points: [NetworkDataPoint]) -> Double {
+        var maxDown: Double = 0
+        var maxUp: Double = 0
+        for point in points {
+            if point.downloadSpeed > maxDown { maxDown = point.downloadSpeed }
+            if point.uploadSpeed > maxUp { maxUp = point.uploadSpeed }
+        }
+        return max(max(maxDown, maxUp) * 1.1, 1024 * 10) // Min 10KB/s scale
     }
 }
 
@@ -52,114 +58,130 @@ public struct NetworkHistoryGraphView: View {
     private let xAxisHeight: CGFloat = 30
 
     public var body: some View {
-        // 几何量在这里一次性算好，body 内部不再重复计算。
-        //
-        // - Important: 原先每个图表 Shape 都各自拿一份 `dataPoints.map { ... }`，
-        //   `maxValue` 与 `timeFractions` 也是计算属性 —— 一次 body 求值要跑
-        //   4 次全量 map 加 2 次全量扫描。鼠标在图上移动时每次 hover 更新
-        //   都会重跑一遍，30 天范围下是数万次元素操作（见 issue #1211）。
-        let geometry = ChartGeometry(points: dataPoints)
-
         VStack(spacing: 0) {
             // 图表区域（包含 y 轴）
             HStack(spacing: 0) {
                 // Y 轴
-                yAxisView(maxValue: geometry.maxValue)
+                NetworkHistoryYAxis(dataPoints: dataPoints)
                     .frame(width: yAxisWidth)
 
                 // 主图表
                 GeometryReader { proxy in
-                    ZStack(alignment: .topLeading) {
-                        // 背景网格
-                        gridLines(for: proxy.size)
-
-                        if !dataPoints.isEmpty {
-                            // Download Graph (Green)
-                            MiniGraphArea(
-                                data: geometry.downloadValues,
-                                maxValue: geometry.maxValue,
-                                xFractions: geometry.timeFractions
-                            )
-                                .fill(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color.green.opacity(0.5), Color.green.opacity(0.1)]),
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-
-                            MiniGraphLine(
-                                data: geometry.downloadValues,
-                                maxValue: geometry.maxValue,
-                                xFractions: geometry.timeFractions
-                            )
-                                .stroke(.green, lineWidth: 1.5)
-
-                            // Upload Graph (Red)
-                            MiniGraphArea(
-                                data: geometry.uploadValues,
-                                maxValue: geometry.maxValue,
-                                xFractions: geometry.timeFractions
-                            )
-                                .fill(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)]),
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-
-                            MiniGraphLine(
-                                data: geometry.uploadValues,
-                                maxValue: geometry.maxValue,
-                                xFractions: geometry.timeFractions
-                            )
-                                .stroke(.red, lineWidth: 1.5)
-                        } else {
-                            Text(pluginLocalization.string("Collecting data..."))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    NetworkHistoryPlot(dataPoints: dataPoints)
+                        .overlay {
+                            hoverOverlay(in: proxy.size)
                         }
-
-                        // Hover Overlay
-                        if let hoverLocation = hoverLocation, let point = hoverDataPoint {
-                            // Vertical Line
-                            Path { path in
-                                path.move(to: CGPoint(x: hoverLocation.x, y: 0))
-                                path.addLine(to: CGPoint(x: hoverLocation.x, y: proxy.size.height))
+                        .background(Color.white.opacity(0.01))
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case let .active(location):
+                                hoverLocation = location
+                                updateHoverDataPoint(at: location.x, width: proxy.size.width)
+                            case .ended:
+                                hoverLocation = nil
+                                hoverDataPoint = nil
                             }
-                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-
-                            // Info Tooltip
-                            TooltipView(point: point, timeRange: timeRange)
-                                .position(x: clampedX(hoverLocation.x, width: proxy.size.width), y: 40)
                         }
-                    }
-                    .background(Color.white.opacity(0.01))
-                    .onContinuousHover { phase in
-                        switch phase {
-                        case let .active(location):
-                            hoverLocation = location
-                            updateHoverDataPoint(at: location.x, width: proxy.size.width)
-                        case .ended:
-                            hoverLocation = nil
-                            hoverDataPoint = nil
-                        }
-                    }
                 }
             }
 
             // X 轴
-            xAxisView
+            NetworkHistoryXAxis(dataPoints: dataPoints, timeRange: timeRange, yAxisWidth: yAxisWidth)
                 .frame(height: xAxisHeight)
         }
         .padding()
     }
 
-    // MARK: - Y Axis View
+    // MARK: - Hover Overlay
 
-    private func yAxisView(maxValue: Double) -> some View {
+    @ViewBuilder
+    private func hoverOverlay(in size: CGSize) -> some View {
+        if let hoverLocation, let point = hoverDataPoint {
+            // Vertical Line
+            Path { path in
+                path.move(to: CGPoint(x: hoverLocation.x, y: 0))
+                path.addLine(to: CGPoint(x: hoverLocation.x, y: size.height))
+            }
+            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+
+            // Info Tooltip
+            TooltipView(point: point, timeRange: timeRange)
+                .position(x: clampedX(hoverLocation.x, width: size.width), y: 40)
+        }
+    }
+
+    // MARK: - Formatting Helpers
+
+    private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
+        guard !dataPoints.isEmpty, width > 0 else { return }
+        let fraction = Double(min(max(x / width, 0), 1))
+        if let index = Self.nearestIndex(forXFraction: fraction, in: dataPoints) {
+            hoverDataPoint = dataPoints[index]
+        }
+    }
+
+    /// 每个点在图表中的水平位置（0...1），按真实时间戳线性映射。
+    /// 点数不足或时间跨度为 0 时返回 nil，交由图表退回等距布局。
+    static func timeFractions(for points: [NetworkDataPoint]) -> [Double]? {
+        guard points.count > 1,
+              let first = points.first?.timestamp,
+              let last = points.last?.timestamp,
+              last > first
+        else { return nil }
+        let span = last - first
+        return points.map { min(max(($0.timestamp - first) / span, 0), 1) }
+    }
+
+    /// 按同一时间映射把水平位置换算为目标时间，取最接近的数据点下标。
+    ///
+    /// 时间戳按顺序排列，直接二分查找；原先这里先全量分配 `timeFractions`
+    /// 仅为了判空，再线性扫全部点，30 天范围下每次 hover 都是数万次比较
+    /// （见 issue #1211）。
+    static func nearestIndex(forXFraction fraction: Double, in points: [NetworkDataPoint]) -> Int? {
+        guard !points.isEmpty else { return nil }
+        let clamped = min(max(fraction, 0), 1)
+        guard points.count > 1,
+              let first = points.first?.timestamp,
+              let last = points.last?.timestamp,
+              last > first
+        else {
+            // 单点或同一时刻：没有可用的时间轴，退回数组下标。
+            let index = Int((clamped * Double(points.count - 1)).rounded())
+            return min(max(index, 0), points.count - 1)
+        }
+        let target = first + clamped * (last - first)
+        var low = 0
+        var high = points.count - 1
+        while low < high {
+            let mid = (low + high) / 2
+            if points[mid].timestamp < target {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        // low 是第一个 >= target 的下标；与前一个点比较取更近者（并列取较早者）。
+        if low > 0,
+           abs(points[low - 1].timestamp - target) <= abs(points[low].timestamp - target) {
+            return low - 1
+        }
+        return low
+    }
+
+    private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
+        // Tooltip width is approx 140?
+        // Let's keep it inside bounds
+        return min(max(x, 70), width - 70)
+    }
+}
+
+/// 只依赖 `dataPoints` 的 Y 轴刻度。
+///
+/// hover 状态变化时 SwiftUI 跳过其更新，纵轴最大值的全量扫描不再重跑（#1211）。
+private struct NetworkHistoryYAxis: View {
+    let dataPoints: [NetworkDataPoint]
+
+    var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 Spacer()
@@ -167,7 +189,7 @@ public struct NetworkHistoryGraphView: View {
                 // Y 轴标签（从上到下，5 个刻度）
                 ForEach(0..<5, id: \.self) { index in
                     if index > 0 {
-                        Text(formatYValue(for: index, maxValue: maxValue))
+                        Text(formatYValue(for: index))
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
@@ -183,9 +205,109 @@ public struct NetworkHistoryGraphView: View {
         }
     }
 
-    // MARK: - X Axis View
+    private func formatYValue(for index: Int) -> String {
+        let value = ChartGeometry.maxValue(of: dataPoints) * (1.0 - Double(index) / 5.0)
+        if value >= 1024 * 1024 * 1024 {
+            return String(format: "%.1fG", value / (1024 * 1024 * 1024))
+        } else if value >= 1024 * 1024 {
+            return String(format: "%.0fM", value / (1024 * 1024))
+        } else if value >= 1024 {
+            return String(format: "%.0fK", value / 1024)
+        } else {
+            return String(format: "%.0f", value)
+        }
+    }
+}
 
-    private var xAxisView: some View {
+/// 只依赖 `dataPoints` 的主绘图区：网格 + 四个图形。
+///
+/// hover 状态变化时 SwiftUI 跳过其更新，几何量与路径不再重建（#1211）。
+private struct NetworkHistoryPlot: View {
+    let dataPoints: [NetworkDataPoint]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let geometry = ChartGeometry(points: dataPoints)
+
+            ZStack(alignment: .topLeading) {
+                gridLines(for: proxy.size)
+
+                if !dataPoints.isEmpty {
+                    // Download Graph (Green)
+                    MiniGraphArea(
+                        data: geometry.downloadValues,
+                        maxValue: geometry.maxValue,
+                        xFractions: geometry.timeFractions
+                    )
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.green.opacity(0.5), Color.green.opacity(0.1)]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    MiniGraphLine(
+                        data: geometry.downloadValues,
+                        maxValue: geometry.maxValue,
+                        xFractions: geometry.timeFractions
+                    )
+                        .stroke(.green, lineWidth: 1.5)
+
+                    // Upload Graph (Red)
+                    MiniGraphArea(
+                        data: geometry.uploadValues,
+                        maxValue: geometry.maxValue,
+                        xFractions: geometry.timeFractions
+                    )
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    MiniGraphLine(
+                        data: geometry.uploadValues,
+                        maxValue: geometry.maxValue,
+                        xFractions: geometry.timeFractions
+                    )
+                        .stroke(.red, lineWidth: 1.5)
+                } else {
+                    Text(pluginLocalization.string("Collecting data..."))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+    }
+
+    private func gridLines(for size: CGSize) -> some View {
+        ZStack {
+            // 水平网格线（与 y 轴刻度对应）
+            ForEach(1..<5, id: \.self) { index in
+                Path { path in
+                    let y = size.height - (CGFloat(index) / 5) * size.height
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
+            }
+        }
+    }
+}
+
+/// 只依赖 `dataPoints` 与 `timeRange` 的 X 轴。
+///
+/// hover 状态变化时 SwiftUI 跳过其更新，日期格式化不再重跑（#1211）。
+private struct NetworkHistoryXAxis: View {
+    let dataPoints: [NetworkDataPoint]
+    let timeRange: TimeRange
+    let yAxisWidth: CGFloat
+
+    var body: some View {
         HStack(spacing: 0) {
             Spacer().frame(width: yAxisWidth)
 
@@ -212,37 +334,6 @@ public struct NetworkHistoryGraphView: View {
         }
     }
 
-    // MARK: - Grid Lines
-
-    private func gridLines(for size: CGSize) -> some View {
-        ZStack {
-            // 水平网格线（与 y 轴刻度对应）
-            ForEach(1..<5, id: \.self) { index in
-                Path { path in
-                    let y = size.height - (CGFloat(index) / 5) * size.height
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                }
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
-            }
-        }
-    }
-
-    // MARK: - Formatting Helpers
-
-    private func formatYValue(for index: Int, maxValue: Double) -> String {
-        let value = maxValue * (1.0 - Double(index) / 5.0)
-        if value >= 1024 * 1024 * 1024 {
-            return String(format: "%.1fG", value / (1024 * 1024 * 1024))
-        } else if value >= 1024 * 1024 {
-            return String(format: "%.0fM", value / (1024 * 1024))
-        } else if value >= 1024 {
-            return String(format: "%.0fK", value / 1024)
-        } else {
-            return String(format: "%.0f", value)
-        }
-    }
-
     private func formatXAxisDate(_ timestamp: TimeInterval) -> String {
         let date = Date(timeIntervalSince1970: timestamp)
         let formatter = DateFormatter()
@@ -254,57 +345,6 @@ public struct NetworkHistoryGraphView: View {
             formatter.dateFormat = "MM-dd"
         }
         return formatter.string(from: date)
-    }
-
-    private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
-        guard !dataPoints.isEmpty, width > 0 else { return }
-        let fraction = Double(min(max(x / width, 0), 1))
-        if let index = Self.nearestIndex(forXFraction: fraction, in: dataPoints) {
-            hoverDataPoint = dataPoints[index]
-        }
-    }
-
-    /// 每个点在图表中的水平位置（0...1），按真实时间戳线性映射。
-    /// 点数不足或时间跨度为 0 时返回 nil，交由图表退回等距布局。
-    static func timeFractions(for points: [NetworkDataPoint]) -> [Double]? {
-        guard points.count > 1,
-              let first = points.first?.timestamp,
-              let last = points.last?.timestamp,
-              last > first
-        else { return nil }
-        let span = last - first
-        return points.map { min(max(($0.timestamp - first) / span, 0), 1) }
-    }
-
-    /// 按同一时间映射把水平位置换算为目标时间，取最接近的数据点下标。
-    static func nearestIndex(forXFraction fraction: Double, in points: [NetworkDataPoint]) -> Int? {
-        guard !points.isEmpty else { return nil }
-        guard timeFractions(for: points) != nil,
-              let first = points.first?.timestamp,
-              let last = points.last?.timestamp
-        else {
-            // 单点或同一时刻：没有可用的时间轴，退回数组下标。
-            let clamped = min(max(fraction, 0), 1)
-            let index = Int((clamped * Double(points.count - 1)).rounded())
-            return min(max(index, 0), points.count - 1)
-        }
-        let target = first + min(max(fraction, 0), 1) * (last - first)
-        var bestIndex = 0
-        var bestDelta = Double.infinity
-        for (index, point) in points.enumerated() {
-            let delta = abs(point.timestamp - target)
-            if delta < bestDelta {
-                bestDelta = delta
-                bestIndex = index
-            }
-        }
-        return bestIndex
-    }
-
-    private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
-        // Tooltip width is approx 140?
-        // Let's keep it inside bounds
-        return min(max(x, 70), width - 70)
     }
 }
 

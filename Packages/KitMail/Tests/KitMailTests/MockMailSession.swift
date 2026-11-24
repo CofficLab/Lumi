@@ -55,6 +55,18 @@ final class MockMailSession: MailSessionServing, @unchecked Sendable {
         return Array(result.suffix(limit))
     }
 
+    func fetchMessages(
+        folder: String,
+        beforeUID: UInt64,
+        limit: Int
+    ) async throws -> [MailMessageSummary] {
+        if failFetch { throw MailError.network }
+        return Array(messages
+            .filter { $0.uid < beforeUID }
+            .sorted { $0.uid > $1.uid }
+            .prefix(limit))
+    }
+
     func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
         guard let summary = messages.first(where: { $0.uid == uid }) else {
             throw MailError.notFound

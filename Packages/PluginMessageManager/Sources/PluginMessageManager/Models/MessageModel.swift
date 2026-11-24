@@ -53,6 +53,10 @@ public final class MessageModel {
     /// Reasoning content (thinking)。
     public var reasoningContent: String?
 
+    /// Anthropic thinking 块签名（#287）：下一轮请求重建 thinking 块时必须
+    /// 原样回传，否则带工具调用的历史会被供应商拒绝。
+    public var thinkingSignature: String?
+
     /// Metadata as JSON string。
     public var metadataJson: String?
 
@@ -99,6 +103,7 @@ public final class MessageModel {
         preferredRendererId: String? = nil,
         toolCallId: String? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         metadataJson: String? = nil,
         toolCallsJson: String? = nil,
         inputTokenCount: Int? = nil,
@@ -131,6 +136,7 @@ public final class MessageModel {
         self.preferredRendererId = preferredRendererId
         self.toolCallId = toolCallId
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.metadataJson = metadataJson
         self.toolCallsJson = toolCallsJson
         self.inputTokenCount = inputTokenCount
@@ -187,6 +193,7 @@ public extension MessageModel {
             preferredRendererId: message.preferredRendererID,
             toolCallId: message.toolCallID,
             reasoningContent: message.reasoningContent,
+            thinkingSignature: message.thinkingSignature,
             metadataJson: metadataJson,
             toolCallsJson: toolCallsJson,
             inputTokenCount: message.inputTokenCount,
@@ -239,6 +246,7 @@ public extension MessageModel {
             preferredRendererID: preferredRendererId,
             toolCallID: toolCallId,
             reasoningContent: reasoningContent,
+            thinkingSignature: thinkingSignature,
             toolCalls: toolCalls,
             inputTokenCount: inputTokenCount,
             outputTokenCount: outputTokenCount,
@@ -314,6 +322,7 @@ public extension MessageModel {
             isError: isError,
             toolCallID: toolCallId,
             reasoningContent: reasoningContent,
+            thinkingSignature: thinkingSignature,
             toolCalls: toolCalls,
             inputTokenCount: inputTokenCount,
             outputTokenCount: outputTokenCount,

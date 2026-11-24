@@ -153,4 +153,88 @@ struct MindMapStoreSyncTests {
         #expect(remaining.isEmpty, "磁盘上的文件应被删除")
         #expect(!scopedStore.projectMaps.contains { $0.id == map.id })
     }
+
+    @Test("节点编辑只重读目标导图，不再全量解码目录（回归 #1190）")
+    func nodeEditDoesNotReloadUnrelatedMaps() throws {
+        let root = try makeProjectRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let store = MindMapStore()
+        store.setProjectStorage(
+            projectPath: root.path,
+            projectStorageDirectory: storageDirectory(for: root)
+        )
+        let target = store.createMindMap(
+            title: "Target",
+            rootText: "Target Root",
+            direction: .right,
+            scope: .project
+        )
+        let unrelated = store.createMindMap(
+            title: "Unrelated",
+            rootText: "Unrelated Root",
+            direction: .right,
+            scope: .project
+        )
+
+        // 把无关导图的文件损坏：若编辑仍走全量同步，损坏文件会被
+        // loadAll 解码失败而从内存列表里丢弃；只对齐目标导图时它应保留。
+        let unrelatedFile = storageDirectory(for: root)
+            .appendingPathComponent(MindMapFileStore.fileName(for: unrelated))
+        try Data("not json".utf8).write(to: unrelatedFile)
+
+        _ = try store.updateNode(
+            mapId: target.id,
+            nodeId: target.root!.id,
+            scope: .project,
+            text: "Target Renamed",
+            note: nil,
+            color: nil,
+            collapsed: nil
+        )
+
+        #expect(store.projectMaps.contains { $0.id == unrelated.id },
+                "编辑目标导图不得重读并丢弃无关导图的内存条目")
+        let texts = MindMapFileStore.loadAll(storagePath: storageDirectory(for: root).path)
+            .flatMap { $0.nodes.map(\.text) }
+        #expect(texts.contains("Target Renamed"))
+    }
+
+    @Test("别处删除目标导图后，节点编辑按找不到失败且不复活文件（回归 #1190）")
+    func nodeEditAfterExternalDeletionFailsWithoutResurrecting() throws {
+        let root = try makeProjectRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let store = MindMapStore()
+        store.setProjectStorage(
+            projectPath: root.path,
+            projectStorageDirectory: storageDirectory(for: root)
+        )
+        let map = store.createMindMap(
+            title: "Doomed",
+            rootText: "Doomed Root",
+            direction: .right,
+            scope: .project
+        )
+        let file = storageDirectory(for: root).appendingPathComponent(MindMapFileStore.fileName(for: map))
+        try FileManager.default.removeItem(at: file)
+
+        do {
+            _ = try store.updateNode(
+                mapId: map.id,
+                nodeId: map.root!.id,
+                scope: .project,
+                text: "Resurrected",
+                note: nil,
+                color: nil,
+                collapsed: nil
+            )
+            Issue.record("磁盘上已删除的导图不应再可编辑")
+        } catch let error as MindMapStoreError {
+            #expect(error == .mapNotFound(map.id))
+        }
+
+        #expect(!FileManager.default.fileExists(atPath: file.path), "编辑失败不得把删除的文件写回")
+        #expect(!store.projectMaps.contains { $0.id == map.id }, "内存列表应与磁盘一致地丢弃该导图")
+    }
 }

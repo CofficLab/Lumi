@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderAnthropic 的实现包，包含 2 个主要类型；当前测试覆盖 6 条用例。
+PluginLLMProviderAnthropic 的实现包，包含 2 个主要类型；当前测试覆盖 7 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 6
+测试文件: 1 个，用例总数: 7
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -21,7 +21,7 @@ PluginLLMProviderAnthropic 的实现包，包含 2 个主要类型；当前测�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AnthropicProviderPlugin**（6 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersAnthropicProvider`、`anthropicModelCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AnthropicProviderPlugin**（7 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersAnthropicProvider`、`anthropicModelCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -33,16 +33,17 @@ PluginLLMProviderAnthropic 的实现包，包含 2 个主要类型；当前测�
 | 4 | AnthropicProviderPlugin | Anthropic 供应商指向官方 Messages 端点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `anthropicEndpointConfiguration` |
 | 5 | AnthropicProviderPlugin | onBoot 在缺少 LLM 管理器时不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootWithoutManagerDoesNotThrow` |
 | 6 | AnthropicProviderPlugin | onShutdown 不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onShutdownDoesNotThrow` |
+| 7 | AnthropicProviderPlugin | 官方供应商开启 prompt caching | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `officialProviderEnablesPromptCaching` |
 
-> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P1: 已覆盖 6 / 6
 - P2: 已覆盖 1 / 1
-- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
+- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

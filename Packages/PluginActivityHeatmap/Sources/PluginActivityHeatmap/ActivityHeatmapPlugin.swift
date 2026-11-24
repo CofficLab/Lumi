@@ -43,6 +43,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
     private var projectSectionObservers: [String: GitActivityHeatmapProjectObserver] = [:]
     private var viewModel: ActivityHeatmapViewModel?
     private var insertionObserver: MessageObserver?
+    private var removalObserver: MessageRemovalObserver?
     private var idleTimeState: ActivityHeatmapIdleTimeState?
     private var idleTimeObserver: ActivityHeatmapIdleTimeObserver?
 
@@ -132,6 +133,11 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
                     self?.viewModel?.scheduleReload()
                 }
             }
+            removalObserver = MessageRemovalObserver(messages: messages) { [weak self] in
+                Task { @MainActor in
+                    self?.viewModel?.scheduleReloadAfterRemoval()
+                }
+            }
         }
         if let idleTime {
             let idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
@@ -185,6 +191,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         insertionObserver?.cancel()
         insertionObserver = nil
+        removalObserver?.cancel()
+        removalObserver = nil
         idleTimeObserver?.cancel()
         idleTimeObserver = nil
         idleTimeState = nil
@@ -225,8 +233,12 @@ public final class ActivityHeatmapViewModel: ObservableObject {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
     private let preferences: ActivityHeatmapPreferences
+    /// 本地「现在」。测试注入固定值以模拟跨过本地午夜（#507）。
+    let dayStartProvider: () -> Date
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
+    /// 待处理的历史缓存失效：删除/清空消息后置位，由下一次重载消费（#238）。
+    private var needsHistoricalCacheInvalidation = false
     static let periodKey = ActivityHeatmapPreferences.periodKey
 
     @Published public var period: ActivityHeatmapPeriod {
@@ -252,12 +264,37 @@ public final class ActivityHeatmapViewModel: ObservableObject {
     public init(
         messages: (any MessageManaging)?,
         cache: ActivityHeatmapCache? = nil,
-        preferences: ActivityHeatmapPreferences
+        preferences: ActivityHeatmapPreferences,
+        dayStartProvider: @escaping () -> Date = { Date() }
     ) {
         self.messages = messages
         self.cache = cache
         self.preferences = preferences
+        self.dayStartProvider = dayStartProvider
         self.period = ActivityHeatmapPeriod(rawValue: preferences.storedPeriodRawValue ?? 0) ?? .days30
+    }
+
+    /// 本地「今天」的零点。
+    private var currentDayStart: Date {
+        Calendar.current.startOfDay(for: dayStartProvider())
+    }
+
+    /// 监控本地日界变化（#507）。
+    ///
+    /// 页面停留期间跨过本地午夜时，新的一天不会由消息插入触发重载，
+    /// 窗口会停留在昨天。此监控周期性比较 `startOfDay`，一旦变化（跨午夜、
+    /// 时区/日历变更、休眠唤醒后日期不同）立即重载窗口。取消随调用方任务
+    /// 传播（设置页 `.task` 在视图消失时自动取消），无需额外停止入口。
+    func runDayRolloverMonitor(pollInterval: Duration = .seconds(30)) async {
+        var dayStart = currentDayStart
+        while !Task.isCancelled {
+            try? await Task.sleep(for: pollInterval)
+            if Task.isCancelled { return }
+            let current = currentDayStart
+            guard current != dayStart else { continue }
+            dayStart = current
+            await reloadNow()
+        }
     }
 
     /// 从旧版 JSON 设置（`settings/settings.json`）恢复周期偏好。
@@ -298,6 +335,17 @@ public final class ActivityHeatmapViewModel: ObservableObject {
         }
     }
 
+    /// 删除或清空消息后的刷新入口（#238）。
+    ///
+    /// 删除事件只携带 messageID 且消息已不存在，清空事件只携带
+    /// conversationID，都无法映射回受影响日期，只能整体失效历史缓存。
+    /// 失效标记在重载真正开始时消费，因此防抖任务即使被后续插入的
+    /// 重载或手动刷新取消，失效也不会丢失。
+    func scheduleReloadAfterRemoval() {
+        needsHistoricalCacheInvalidation = true
+        scheduleReload()
+    }
+
     private func reloadNow() async {
         reloadGeneration += 1
         let generation = reloadGeneration
@@ -306,6 +354,11 @@ public final class ActivityHeatmapViewModel: ObservableObject {
             heatmapDays = []
             return
         }
+        if needsHistoricalCacheInvalidation {
+            needsHistoricalCacheInvalidation = false
+            // 整体失效历史缓存：下一次查询把全部历史日期视为缺失（#238）。
+            await cache?.invalidate()
+        }
         isLoading = true
         defer {
             if generation == reloadGeneration {
@@ -313,7 +366,7 @@ public final class ActivityHeatmapViewModel: ObservableObject {
             }
         }
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = currentDayStart
         let heatmapDayCount = ActivityHeatmapPeriod.year.rawValue
         guard let start = calendar.date(byAdding: .day, value: -(heatmapDayCount - 1), to: today) else {
             isLoading = false
@@ -417,7 +470,12 @@ public struct ActivityHeatmapSettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .task { await model.reload() }
+        .task {
+            await model.reload()
+            // 停留在页面上跨过本地午夜时自动滚动窗口（#507）；
+            // 视图消失时 `.task` 取消，监控随之停止。
+            await model.runDayRolloverMonitor()
+        }
     }
 
     private var summary: some View {
@@ -601,42 +659,86 @@ public actor ActivityHeatmapCache {
         public let tokens: Int
     }
 
+    /// 持久化格式 v3：日期分桶与写入时的时区绑定（#504）。
+    private struct Envelope: Codable {
+        let timeZoneIdentifier: String
+        let counts: [String: Counts]
+    }
+
     private let url: URL?
     private var values: [String: Counts]?
-    private let calendar = Calendar.current
+    private var loadedTimeZoneIdentifier: String?
+    /// 当前时区。测试注入固定值以模拟时区切换（#504）。
+    let timeZoneProvider: () -> TimeZone
 
-    public init(directory: URL?) {
-        self.url = directory?.appendingPathComponent("activity-cache-v2.json")
+    public init(directory: URL?, timeZoneProvider: @escaping () -> TimeZone = { TimeZone.current }) {
+        self.url = directory?.appendingPathComponent("activity-cache-v3.json")
+        self.timeZoneProvider = timeZoneProvider
+        // v2 缓存不带时区标识，不再读取；删除避免过期残留。
+        if let directory {
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent("activity-cache-v2.json"))
+        }
     }
 
     public func counts(for dates: [Date]) -> [Date: Counts] {
         let stored = loadIfNeeded()
+        let calendar = Calendar.current
         return Dictionary(uniqueKeysWithValues: dates.compactMap { date in
-            stored[key(for: date)].map { (calendar.startOfDay(for: date), $0) }
+            stored[key(for: date, calendar: calendar)].map { (calendar.startOfDay(for: date), $0) }
         })
     }
 
     public func save(_ updates: [Date: Counts]) {
         guard !updates.isEmpty else { return }
         var stored = loadIfNeeded()
-        for (date, counts) in updates { stored[key(for: date)] = counts }
+        let calendar = Calendar.current
+        for (date, counts) in updates { stored[key(for: date, calendar: calendar)] = counts }
         values = stored
-        guard let url, let data = try? JSONEncoder().encode(stored) else { return }
+        guard let url else { return }
+        let envelope = Envelope(timeZoneIdentifier: timeZoneProvider().identifier, counts: stored)
+        guard let data = try? JSONEncoder().encode(envelope) else { return }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: url, options: .atomic)
     }
 
-    private func loadIfNeeded() -> [String: Counts] {
-        if let values { return values }
-        guard let url,
-              let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode([String: Counts].self, from: data)
-        else { values = [:]; return [:] }
-        values = decoded
-        return decoded
+    /// 删除/清空消息后整体失效缓存（#238）。
+    ///
+    /// 删除与清空事件都无法还原受影响的日期（删除只携带 messageID 且
+    /// 消息已不存在，清空只携带 conversationID），因此清空全部计数并
+    /// 删除磁盘文件，让下一次重载全量重查。
+    public func invalidate() {
+        values = [:]
+        loadedTimeZoneIdentifier = nil
+        guard let url else { return }
+        try? FileManager.default.removeItem(at: url)
     }
 
-    private func key(for date: Date) -> String {
+    /// 读取缓存，并在时区变化时整体失效（#504）。
+    ///
+    /// 日期分桶（`yyyy-MM-dd`）依赖写入时的时区：同一条消息在
+    /// `America/Los_Angeles` 属于 1 月 1 日，切换到 `Asia/Shanghai` 后属于
+    /// 1 月 2 日。若沿用旧分桶，同一条消息会同时出现在旧日期缓存与
+    /// 当前查询里，被永久双计。因此无论内存缓存还是磁盘信封，时区
+    /// 与当前不符时一律视为空，触发全量重查并以当前时区重写。
+    private func loadIfNeeded() -> [String: Counts] {
+        let currentIdentifier = timeZoneProvider().identifier
+        if let values, loadedTimeZoneIdentifier == currentIdentifier {
+            return values
+        }
+        let diskCounts: [String: Counts] = {
+            guard let url,
+                  let data = try? Data(contentsOf: url),
+                  let envelope = try? JSONDecoder().decode(Envelope.self, from: data),
+                  envelope.timeZoneIdentifier == currentIdentifier
+            else { return [:] }
+            return envelope.counts
+        }()
+        values = diskCounts
+        loadedTimeZoneIdentifier = currentIdentifier
+        return diskCounts
+    }
+
+    private func key(for date: Date, calendar: Calendar) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
     }

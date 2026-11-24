@@ -128,7 +128,19 @@ public enum CLIScriptBuilder {
             exit 1
         fi
 
-        ABS_TARGET="$(cd "$TARGET" 2>/dev/null && pwd -P || printf '%s' "$TARGET")"
+        if [ -d "$TARGET" ]; then
+            ABS_TARGET="$(cd "$TARGET" && pwd -P)"
+        else
+            # 普通文件：以文件所在目录为锚解析绝对路径。旧实现 cd 失败后原样保留
+            # 相对路径并 exit 0，App 按自己的工作目录解析导致打不开，甚至开错
+            # 同名目标（#491）。
+            FILE_DIR="$(cd "$(dirname "$TARGET")" && pwd -P)"
+            ABS_TARGET="${FILE_DIR}/$(basename "$TARGET")"
+        fi
+        if [ ! -e "$ABS_TARGET" ]; then
+            echo "\(commandName): 无法解析目标的绝对路径：$TARGET" >&2
+            exit 1
+        fi
 
         # --- 编码为 URL -----------------------------------------------------------
         # 手工百分号编码，保证路径中的空格、#、&、中文、换行等字符都能安全通过

@@ -840,7 +840,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
         try execute(RAGSQL.dropVectorTable)
         try execute(RAGSQL.createVectorTable(dimension: dimension))
-        try rebuildVectorTableFromChunks()
+        try rebuildVectorTableFromChunks(dimension: dimension)
         try setMetaValue(key: "vector_dimension", value: String(dimension))
         if let model {
             try setMetaValue(key: "embedding_model", value: model)
@@ -891,7 +891,11 @@ final class RAGSQLiteStore: @unchecked Sendable {
         }
     }
 
-    private func rebuildVectorTableFromChunks() throws {
+    /// 重建回灌时跳过与目标维度不兼容的历史向量（issue #602）：换模型后
+    /// `rag_chunks` 里仍是旧维度的 embedding，逐条塞进 `float[N]` 新表会让
+    /// 整个初始化反复失败，模型迁移逻辑永远没有机会执行。被跳过的行保留
+    /// 在 `rag_chunks` 里，对应项目会经 modelMismatch 全量重建回灌新向量。
+    private func rebuildVectorTableFromChunks(dimension: Int) throws {
         let sql = RAGSQL.rebuildVectorFromChunks
         var queryStmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &queryStmt, nil) == SQLITE_OK else {
@@ -906,10 +910,12 @@ final class RAGSQLiteStore: @unchecked Sendable {
         }
         defer { sqlite3_finalize(insertStmt) }
 
+        let expectedBytes = dimension * MemoryLayout<Float>.size
         while sqlite3_step(queryStmt) == SQLITE_ROW {
             let rowID = sqlite3_column_int64(queryStmt, 0)
             guard let blob = sqlite3_column_blob(queryStmt, 1) else { continue }
             let bytes = Int(sqlite3_column_bytes(queryStmt, 1))
+            guard bytes == expectedBytes else { continue }
 
             sqlite3_reset(insertStmt)
             sqlite3_clear_bindings(insertStmt)
@@ -919,6 +925,14 @@ final class RAGSQLiteStore: @unchecked Sendable {
                 throw dbError("rebuildVectorTableFromChunks upsert failed")
             }
         }
+    }
+
+    /// 当前 sqlite-vec 向量表的行数（诊断与测试观察用）。
+    func vectorIndexRowCount() throws -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        guard runtimeInfo.vectorBackend == .sqliteVec else { return 0 }
+        return try countRows(in: Self.vecTableName)
     }
 
     private func loadSQLiteExtension(at path: String) throws {

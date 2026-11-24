@@ -88,6 +88,7 @@ import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
 import PluginHydrationReminder
+import PluginKeyboardCleaner
 import PluginActivityHeatmap
 import PluginRailTokenTrend
 import PluginLLMProviderAiRouter
@@ -232,6 +233,15 @@ public struct DefaultPluginFactory: PluginFactory {
                     pluginID: "com.coffic.lumi.plugin.caffeinate",
                     loggerSubsystem: "com.coffic.lumi.plugin.caffeinate",
                     accessibilityIdentifierPrefix: "lumi.caffeinate"
+                )
+            ),
+            // 键盘清洁插件（共享包 LumiPluginKeyboardCleaner）。默认关闭：
+            // 会话期间会全局屏蔽键盘，必须由用户在插件管理中显式启用。
+            PluginKeyboardCleaner(
+                configuration: KeyboardCleanerConfiguration(
+                    pluginID: "com.coffic.lumi.plugin.keyboard-cleaner",
+                    loggerSubsystem: "com.coffic.lumi.plugin.keyboard-cleaner",
+                    accessibilityIdentifierPrefix: "lumi.keyboard-cleaner"
                 )
             ),
             SettingGeneralPlugin(),

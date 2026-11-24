@@ -116,6 +116,64 @@ struct AgentTurnProjectionTests {
         #expect(summaries[1].userMessage?.id == secondUser.id)
     }
 
+    // MARK: - §2.6 失败重试的行身份
+
+    @Test("失败 turn 与自动重试 turn 共用触发消息时行身份必须不同（#593）")
+    func retryTurnOfSameUserMessageGetsDistinctRowID() {
+        let started = Date()
+        let user = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "重试我",
+            createdAt: started
+        )
+        let failedTurnID = UUID()
+        let retryTurnID = UUID()
+        let failedError = Message(
+            conversationID: conversationID,
+            role: .error,
+            content: "boom",
+            createdAt: started.addingTimeInterval(1),
+            turnID: failedTurnID
+        )
+        let retryReply = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "成功",
+            createdAt: started.addingTimeInterval(3),
+            turnID: retryTurnID
+        )
+        let failed = AgentTurnRecord(
+            id: failedTurnID,
+            conversationID: conversationID,
+            startedAt: started,
+            endedAt: failedError.createdAt,
+            state: .failed
+        )
+        let retry = AgentTurnRecord(
+            id: retryTurnID,
+            conversationID: conversationID,
+            startedAt: started.addingTimeInterval(2),
+            endedAt: retryReply.createdAt,
+            state: .completed
+        )
+        // 乱序传入，确认按时间升序处理后首个认领生效。
+        let items = AgentTurnSummaryBuilder()
+            .build(records: [retry, failed], messages: [user, failedError, retryReply])
+
+        #expect(items.count == 2)
+        let failedItem = try! #require(items.first { $0.record.id == failedTurnID })
+        let retryItem = try! #require(items.first { $0.record.id == retryTurnID })
+        // 首个认领的 turn 沿用用户消息 ID，保持 pending → 落库的行身份连续。
+        #expect(failedItem.rowID == user.id)
+        // 重试 turn 改用自身 record.id，两行不再共用同一 ID。
+        #expect(retryItem.rowID == retryTurnID)
+
+        let failedRow = AgentTurnPresentationItem(recorded: failedItem, acceptsLiveActivity: false)
+        let retryRow = AgentTurnPresentationItem(recorded: retryItem, acceptsLiveActivity: false)
+        #expect(failedRow.id != retryRow.id)
+    }
+
     // MARK: - §2.4 / §2.5 tool / system 不在投影里，error 仍是最后回复
 
     @Test("tool 与 system 不会进入 process / last 投影")

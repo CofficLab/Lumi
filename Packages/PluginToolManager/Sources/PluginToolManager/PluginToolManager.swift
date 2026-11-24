@@ -166,6 +166,16 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
         // 退出前把 ToolJob 的有序持久化链落盘：终态快照若不等待就释放，
         // 快速重启会把已成功的 Job 恢复成 failed，丢掉结果（#1164）。
         service?.toolExecutionManager.drainPersistenceOnShutdown()
+        // 退出前同步冲刷调用记录缓冲：不足一批的记录只存在缓冲里，不落库
+        // 会在退出后永久丢失（#1163）。store actor 不占主线程，阻塞等待安全。
+        if let recordStore = service?.recordStore {
+            let semaphore = DispatchSemaphore(value: 0)
+            Task.detached {
+                await recordStore.stopFlushTask()
+                semaphore.signal()
+            }
+            semaphore.wait()
+        }
         service = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider。
     }

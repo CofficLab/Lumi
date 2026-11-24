@@ -208,16 +208,17 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 150 | ToolSchemaBuilding | 离主线程组装的 schema 与逐个组装完全一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offMainActorSchemasMatchSequentialBuild` |
 | 151 | MultipleSuspensionsResume | 恢复后同一回合再次触发 turnStarted 钩子（回归 #805） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeFiresTurnStartedHookAgain` |
 | 152 | MultipleSuspensionsResume | 恢复后重新挂起时，turnStarted 先于新的 suspended 终态（回归 #805） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeThenResuspendKeepsHookOrder` |
+| 153 | ToolCallIdentityNormalizer | tool-call ID 归一化不丢 thinking 签名（#287） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testToolCallIdentityNormalizerPreservesThinkingSignature` |
 
 > 说明：全部 **152 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 25 / 25
+- P0: 已覆盖 26 / 26
 - P1: 已覆盖 122 / 122
 - P2: 已覆盖 5 / 5
-- **合计: 152 / 152**（仅表示清单场景，非源码覆盖率）
+- **合计: 153 / 153**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

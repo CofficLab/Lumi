@@ -287,39 +287,20 @@ struct ChatGPTListView: View {
         }
     }
 
+    /// 流式尾行已作为独立的一轮包含在 `projection.turns` 里，无需重复渲染。
+    ///
+    /// 原先这里再渲染一次 `viewModel.streamingRow`，与 `turnRows` 对同一
+    /// live turn 构建两个 `ChatGPTTurnView` 子树，流式刷新期间布局/差分
+    /// 工作翻倍（#1181）。V4 的做法一致：独立分支退化为 `EmptyView`。
     @ViewBuilder
     private var streamingTurn: some View {
-        if let streaming = viewModel.streamingRow {
-            ChatGPTTurnView(
-                services: services,
-                turn: ChatGPTTurnProjector.project(
-                    history: [],
-                    streaming: streaming,
-                    activity: nil
-                ).turns[0],
-                verbosity: viewModel.verbosity,
-                containerWidth: containerWidth
-            )
-            .id("chatgpt-streaming-turn")
-        }
+        EmptyView()
     }
 
+    /// 活动行同理：仅当无流式行时投影会包含它，这里不再单独渲染。
     @ViewBuilder
     private var activityTurn: some View {
-        if let activity = viewModel.activityMessage,
-           viewModel.streamingRow == nil {
-            ChatGPTTurnView(
-                services: services,
-                turn: ChatGPTTurnProjector.project(
-                    history: [],
-                    streaming: nil,
-                    activity: activity
-                ).turns[0],
-                verbosity: viewModel.verbosity,
-                containerWidth: containerWidth
-            )
-            .id("chatgpt-activity-turn")
-        }
+        EmptyView()
     }
 
     // MARK: - 加载更早

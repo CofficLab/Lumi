@@ -18,8 +18,15 @@ public enum OcrEngine {
     ///   - languages: 识别语言列表（BCP 47 标签），默认简体中文 + 英文。
     /// - Returns: 识别到的文本（每行一条）；若图片中无文字则返回空字符串。
     public static func recognizeText(at path: String, languages: [String] = defaultLanguages) async throws -> String {
+        try Task.checkCancellation()
+
         let resolvedLanguages = languages
-        return try await Task.detached(priority: .userInitiated) {
+        let completion = InferenceCompletionBox()
+        // Vision 的同步 perform 无法中断，推理本身仍在 detached 中跑完；
+        // 但外层等待必须响应取消（#270）：轮询外层取消状态，命中即立刻抛出
+        // CancellationError 释放 Job，迟到的推理结果被丢弃。
+        let work = Task.detached(priority: .userInitiated) {
+            defer { completion.markFinished() }
             let url = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: path) else {
                 throw OcrError.fileNotFound(path)
@@ -50,7 +57,37 @@ public enum OcrEngine {
             let lines = (request.results ?? [])
                 .compactMap { $0.topCandidates(1).first?.string }
             return lines.joined(separator: "\n")
-        }.value
+        }
+
+        return try await awaitInference(work, completion: completion)
+    }
+
+    /// 等待推理任务完成，期间轮询外层任务的取消状态：命中取消立即抛出，
+    /// 不再等 Vision 推理自然结束（#270）。
+    static func awaitInference<T: Sendable>(_ work: Task<T, Error>, completion: InferenceCompletionBox) async throws -> T {
+        while !completion.isFinished {
+            try Task.checkCancellation()
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        return try await work.value
+    }
+}
+
+/// 推理完成信号：Task 没有可查询的 isCompleted，轮询等待用它判定推理是否结束。
+final class InferenceCompletionBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var finished = false
+
+    func markFinished() {
+        lock.lock()
+        finished = true
+        lock.unlock()
+    }
+
+    var isFinished: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return finished
     }
 }
 

@@ -67,9 +67,17 @@ final class NoiseGenerator {
 
     /// 输出格式：非交错 32-bit 浮点，44.1kHz，立体声。
     private let format: AVAudioFormat
-    private let engine: AVAudioEngine
+    let engine: AVAudioEngine
     private let sourceNode: AVAudioSourceNode
     private let state: LockedBox<ControlState>
+    /// 用户是否期望播放中。`start` 成功后置真，`stop` 置假；
+    /// 硬件打断（路由/采样率变化令引擎自动停止）**不改写它**——
+    /// 恢复逻辑据此判断是否应该自动重启（issue #455）。
+    private let playingIntent = LockedBox(false)
+    private var configObserver: NSObjectProtocol?
+
+    /// 引擎被打断且无法自动恢复时回调（任意线程触发，订阅方负责切主线程）。
+    var onPlaybackLost: (() -> Void)?
 
     var isRunning: Bool { engine.isRunning }
 
@@ -90,9 +98,21 @@ final class NoiseGenerator {
                         filters: filters)
             return noErr
         }
+
+        // 输出设备或其采样率/声道数变化会令引擎自动停止（issue #455）。
+        configObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: nil
+        ) { [weak self] _ in
+            self?.handleConfigurationChange()
+        }
     }
 
     deinit {
+        if let configObserver {
+            NotificationCenter.default.removeObserver(configObserver)
+        }
         engine.stop()
     }
 
@@ -107,10 +127,35 @@ final class NoiseGenerator {
         }
         engine.prepare()
         try engine.start()
+        playingIntent.withLock { $0 = true }
     }
 
     func stop() {
+        playingIntent.withLock { $0 = false }
         engine.stop()
+    }
+
+    /// 输出路由/采样率变化后的恢复入口（`AVAudioEngineConfigurationChange` 触发）。
+    ///
+    /// 用户仍期望播放且引擎已被系统中断停止时，重新连接并启动引擎；
+    /// 恢复成功对 UI 无感知（仍显示播放中），恢复失败才回调 `onPlaybackLost`，
+    /// 由 ViewModel 把 UI 同步为停止态（issue #455）。
+    func handleConfigurationChange() {
+        let shouldResume = playingIntent.withLock { intent in
+            intent
+        }
+        guard shouldResume, !engine.isRunning else { return }
+        do {
+            if sourceNode.engine == nil {
+                engine.attach(sourceNode)
+                engine.connect(sourceNode, to: engine.mainMixerNode, format: format)
+            }
+            engine.prepare()
+            try engine.start()
+        } catch {
+            playingIntent.withLock { $0 = false }
+            onPlaybackLost?()
+        }
     }
 
     // MARK: - Controls（主线程调用）

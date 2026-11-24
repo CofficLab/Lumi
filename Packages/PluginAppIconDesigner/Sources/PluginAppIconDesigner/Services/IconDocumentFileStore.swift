@@ -34,6 +34,41 @@ public enum IconDocumentFileStore {
         return bestByID.values.sorted { $0.order < $1.order }.map(\.document)
     }
 
+    /// 按 ID 精确补载单个文档：只读取 id 后缀匹配的候选文件，不做全量
+    /// 扫描解码（#1292）。同一 ID 残留多个文件时取 updatedAt 最新的修订。
+    public static func loadDocument(withID id: String, storagePath: String) -> IconDocument? {
+        guard !id.isEmpty, !storagePath.isEmpty else { return nil }
+        let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
+        guard
+            let urls = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        else { return nil }
+        let suffix = "-\(id.prefix(8)).json"
+        var best: IconDocument?
+        for url in urls where url.pathExtension.lowercased() == "json" && url.lastPathComponent.hasSuffix(suffix) {
+            guard let document = try? fileService.load(from: url), document.id == id else { continue }
+            if let existing = best, existing.updatedAt >= document.updatedAt { continue }
+            best = document
+        }
+        return best
+    }
+
+    /// 与 `loadAll` 相同，但同时返回扫描时目录的修改时间：供调用方在
+    /// 主线程之外完成扫描后，让 store 跳过后续对同一目录的重复校验（#1292）。
+    public static func loadAllWithDirectoryModificationDate(
+        storagePath: String
+    ) -> (documents: [IconDocument], directoryModificationDate: Date?) {
+        let documents = loadAll(storagePath: storagePath)
+        guard !storagePath.isEmpty else { return (documents, nil) }
+        let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
+        let attributes = try? fileManager.attributesOfItem(atPath: directory.path)
+        let modificationDate = attributes?[.modificationDate] as? Date
+        return (documents, modificationDate)
+    }
+
     /// 将文档写入指定目录（原子写），自动创建目录。
     public static func save(_ document: IconDocument, storagePath: String) throws {
         guard !storagePath.isEmpty else { return }

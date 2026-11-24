@@ -131,4 +131,21 @@ struct ConversationGlobalDefaultsIsolationTests {
         #expect(manager.globalVerbosity == .brief)
         #expect(manager.verbosity(for: aID) == .detailed)
     }
+
+    /// 回归 #598：未绑定详细度的对话必须继承全局默认，
+    /// 而不是固定回退 V2/standard。
+    @Test func unboundConversationInheritsGlobalVerbosity() {
+        let directory = makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalVerbosity(.detailed)
+        let unboundID = UUID()
+        let unknownID = UUID()
+        manager.conversations = [ConversationSummary(id: unboundID, verbosity: nil)]
+
+        #expect(manager.verbosity(for: unboundID) == .detailed)
+        #expect(manager.verbosity(for: unknownID) == .detailed)
+        #expect(manager.verbosity(for: nil) == .detailed)
+    }
 }

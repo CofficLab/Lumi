@@ -37,12 +37,20 @@ final class WhiteNoiseViewModel: ObservableObject {
     }
     @Published private(set) var remainingSeconds: Int?
 
-    private let generator = NoiseGenerator()
+    private let generator: NoiseGenerator
     private var sleepTask: Task<Void, Never>?
 
-    init() {
+    init(generator: NoiseGenerator = NoiseGenerator()) {
+        self.generator = generator
         // 把初始音量/开关同步到生成器。
         syncControlsToGenerator()
+        // 硬件打断且无法自动恢复（路由/采样率变化）：同步 UI 为停止态，
+        // 使一次点击即可重新开始，而不是停在虚假的「播放中」（issue #455）。
+        generator.onPlaybackLost = { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.handlePlaybackLost()
+            }
+        }
     }
 
     // MARK: - Playback
@@ -101,6 +109,15 @@ final class WhiteNoiseViewModel: ObservableObject {
 
     func dismissError() {
         errorMessage = nil
+    }
+
+    /// 生成器报告播放中断且无法恢复：同步为停止态并停掉睡眠倒计时。
+    private func handlePlaybackLost() {
+        guard isPlaying else { return }
+        isPlaying = false
+        sleepTask?.cancel()
+        sleepTask = nil
+        remainingSeconds = nil
     }
 
     // MARK: - Sleep Timer

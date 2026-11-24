@@ -90,16 +90,17 @@ final class WorkspaceStore: ObservableObject {
             let imageID = selectedImageID ?? task.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
             let image: AppStorePromoResolvedImage
             do {
+                // manifest 已随列表解码在内存里，直接复用，不再重复读盘（#1178）。
                 image = try documentStore.readImage(
+                    task: task,
                     storagePath: projectStoragePath,
-                    taskSlug: selectedTaskID,
                     imageSlug: imageID,
                     localeIdentifier: selectedLocaleIdentifier
                 )
             } catch AppStorePromoStoreError.localeNotFound {
                 image = try documentStore.readImage(
+                    task: task,
                     storagePath: projectStoragePath,
-                    taskSlug: selectedTaskID,
                     imageSlug: imageID
                 )
             }
@@ -119,12 +120,20 @@ final class WorkspaceStore: ObservableObject {
     // MARK: - Selection
 
     func select(taskID: String, imageID: String?) {
+        // 选中的仍是已加载的同一行时不再重复读盘（#1178）。
+        if selectedTaskID == taskID, selectedImage != nil,
+           imageID == nil || imageID == selectedImageID {
+            return
+        }
         if selectedTaskID != taskID || selectedImageID != imageID {
             selectedLocaleIdentifier = nil
         }
         selectedTaskID = taskID
         selectedImageID = imageID
-        reload()
+        // 选中不改变任务目录：只刷新选中图像，不重扫全部任务。
+        // 原先这里无条件 reload()，每次点击轨道行都会在主线程枚举并解码
+        // 整个任务目录，再重复读取选中任务的 manifest 与 HTML（#1178）。
+        refreshSelectedImage()
     }
 
     // MARK: - Mutations

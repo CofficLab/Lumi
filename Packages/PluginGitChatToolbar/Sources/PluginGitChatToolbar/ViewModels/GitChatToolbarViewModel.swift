@@ -104,6 +104,12 @@ public final class GitChatToolbarViewModel: ObservableObject {
         errorMessage = nil
         isLoading = false
         guard path != nil else {
+            // 关闭项目：必须作废在途刷新（#385）。旧请求若仍持有启动时的
+            // generation，等它返回时会通过校验，把已关闭仓库的状态写回、
+            // 让 Git 按钮在无项目时复活。
+            reloadGeneration &+= 1
+            reloadTask?.cancel()
+            reloadTask = nil
             isGitRepository = false
             return
         }
@@ -112,6 +118,11 @@ public final class GitChatToolbarViewModel: ObservableObject {
 
     /// 仓库 watch 停止时清空数据（项目被 close 等场景）。
     public func resetForMissingWatch() {
+        // 与关闭项目同理：作废在途刷新（#385），否则旧仓库的迟到结果
+        // 会把已清空的状态写回。
+        reloadGeneration &+= 1
+        reloadTask?.cancel()
+        reloadTask = nil
         status = nil
         cachedWorkingChanges = []
         commits = []

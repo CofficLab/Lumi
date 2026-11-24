@@ -58,7 +58,20 @@ enum BrowserInteractionScript {
 
       // 页面可能在快照之后复制/改写 ref 属性；只取第一个匹配会静默操作
       // 错误控件。匹配不唯一时拒绝执行，要求重新快照。
-      const matches = document.querySelectorAll("[" + REF_ATTR + '="' + ref + '"]');
+      // 快照会进入 open shadow root 并给其中的元素分配 ref（#267），
+      // document 级查询无命中时按同样方式深入 open shadow root 解析。
+      const selector = "[" + REF_ATTR + '="' + ref + '"]';
+      let matches = Array.from(document.querySelectorAll(selector));
+      if (matches.length === 0) {
+        matches = [];
+        const visitShadowRoots = (root) => {
+          for (const el of root.querySelectorAll(selector)) matches.push(el);
+          for (const el of root.querySelectorAll("*")) {
+            if (el.shadowRoot) visitShadowRoots(el.shadowRoot);
+          }
+        };
+        visitShadowRoots(document);
+      }
       if (matches.length === 0) {
         return fail("STALE_REF:" + ref);
       }
@@ -124,19 +137,48 @@ enum BrowserInteractionScript {
         if (target && !el.contains(target) && target !== el) {
           return fail("The element is covered by another element: " + (target.tagName || "unknown") + ".");
         }
+        // #265：链接必须走真实点击，页面的 onclick / 路由拦截 / preventDefault
+        // 才能生效。用 document 冒泡监听读取页面处理器的最终 default 状态
+        // （冒泡阶段晚于目标上的处理器运行）；页面未阻止且是链接时由我们
+        // 补一次 preventDefault 阻断原生导航，把导航决定权交回上层——
+        // 本地地址审批在 open() 里仍然生效。事件被 stopPropagation 截走
+        // 导致监听未运行时，无法得知也不应再补发 href，交由原生导航自行推进。
+        const isLinkNavigation = el.tagName === "A" && el.getAttribute("href") != null;
+        let pagePreventedDefault = false;
+        let sawClickEvent = false;
+        const clickWatch = (event) => {
+          sawClickEvent = true;
+          if (event.defaultPrevented === true) {
+            pagePreventedDefault = true;
+          } else if (isLinkNavigation) {
+            event.preventDefault();
+          }
+        };
+        if (typeof document.addEventListener === "function") {
+          document.addEventListener("click", clickWatch);
+        }
         for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
           el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y }));
         }
         el.click();
-        return true;
+        if (typeof document.removeEventListener === "function") {
+          document.removeEventListener("click", clickWatch);
+        }
+        return { ok: true, pagePreventedDefault: pagePreventedDefault, sawClickEvent: sawClickEvent };
       };
 
       switch (OPTS.action) {
         case "click": {
+          const result = click();
+          if (!result.ok) return result;
           if (el.tagName === "A" && el.getAttribute("href")) {
+            // 页面处理器 preventDefault（或事件被截走无法观测）时不上报
+            // href：上层因此不发起导航，去留由页面自己决定。
+            if (result.pagePreventedDefault || !result.sawClickEvent) {
+              return { ok: true, href: "", message: "Clicked link. The page prevented default navigation." };
+            }
             return { ok: true, href: el.href, message: "Clicked link." };
           }
-          if (!click()) return fail("The element could not be clicked.");
           return { ok: true, href: "", message: "Clicked." };
         }
 
@@ -242,11 +284,21 @@ enum BrowserInteractionScript {
           el.dispatchEvent(new KeyboardEvent("keyup", init));
           if (key === "Enter") {
             // Enter 在表单里通常意味着提交。
+            // 只走一条提交链路：requestSubmit 自己会派发可取消的 submit 事件并
+            // 执行原生提交流程。原先「手动 dispatchEvent(submit) + requestSubmit」
+            // 会让监听器跑两次，且第一次事件的 preventDefault 拦不住第二次（#266）。
             const form = el.form || el.closest("form");
             if (form) {
-              form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
               if (typeof form.requestSubmit === "function") {
-                try { form.requestSubmit(); } catch (_) {}
+                form.requestSubmit();
+              } else {
+                // 兜底：没有 requestSubmit 的内核手动派发一次可取消 submit，
+                // 未被取消才走原生提交（form.submit 不触发 submit 事件）。
+                const event = new Event("submit", { bubbles: true, cancelable: true });
+                const accepted = form.dispatchEvent(event);
+                if (accepted) {
+                  try { form.submit(); } catch (_) {}
+                }
               }
             }
           }

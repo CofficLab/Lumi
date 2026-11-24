@@ -5,7 +5,7 @@
 KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 64 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 64
+测试文件: 5 个，用例总数: 67
 
 ## 公开 API
 
@@ -23,9 +23,10 @@ KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 64
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **AppStorePromoModelCoverage**（8 条）：由 `familyDisplayTypes`、`presetDerivedProperties`、`localeHelpers` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **AppStorePromoStoreCoverage**（15 条）：由 `invalidLocaleDoesNotLeaveTaskDirectoryBehind`、`invalidHTMLDoesNotLeaveImageDirectoryBehind`、`slugValidationRejectsBadInputButTrimsGoodInput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AppStorePromoStoreCoverage**（16 条）：由 `invalidLocaleDoesNotLeaveTaskDirectoryBehind`、`readImageWithPreloadedTaskMatchesSlugBasedRead`、`slugValidationRejectsBadInputButTrimsGoodInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AssetImporterAndLinter**（16 条）：由 `importsImageAndReportsPixelSize`、`collidingFileNamesGetSuffix`、`missingSourceThrows` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（14 条）：由 `displayPresetsAreUniqueAndValid`、`linterRejectsRemoteAndExecutableHTML`、`storeCreatesPersistsAndAtomicallyPatchesTaskImage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AppStorePromoExportOffMain**（2 条）：由 `encodeRunsOffMain`、`encodeFailureThrows` 用例锁定（**回归 #1180**）；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -95,21 +96,24 @@ KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 64
 | 62 | AppStorePromoHTMLLinter | CSS `url(...)` 缺失资源报 `missing_asset`（**回归 #1083**） | 目录含 `real.png`，CSS 同时引用 `./ghost.png` | 执行 lint | 恰好 1 条 `missing_asset`（ghost.png）；无 `unsafe_asset_path` | P0 | ✅ 已覆盖 | `missingCSSURLAssetFailsWhenDirectoryProvided` |
 | 63 | AppStorePromoDocumentStore | 替换 HTML 时缺失的 CSS 背景图阻止保存（**回归 #1083**） | 任务与图片已创建，CSS 引用不存在的 `assets/does-not-exist.png` | 调用 `replaceHTML` | 抛出 `AppStorePromoStoreError` | P0 | ✅ 已覆盖 | `replaceHTMLRejectsMissingCSSURLAsset` |
 | 64 | AppStorePromoHTMLLinter | CSS 中的 data URI 与片段引用不误报 | — | lint 含 `url(data:...)` 与 `url(#gradient)` 的文档 | 无 `missing_asset` / `unsafe_asset_path` | P1 | ✅ 已覆盖 | `CSSDataURIsAndFragmentsAreSkipped` |
+| 65 | AppStorePromoDocumentStore | 基于已解码任务读图与按 slug 读图结果一致（**回归 #1178**） | 任务含一张图像 | 分别用 `readImage(task:)` 与 `readImage(storagePath:taskSlug:)` 读取并比较 | 两个结果完全相等；未知图像抛 `imageNotFound` | P1 | ✅ 已覆盖 | `readImageWithPreloadedTaskMatchesSlugBasedRead` |
+| 66 | AppStorePromoExportOffMain | encodePNG 在后台线程归一化并编码出目标尺寸的 PNG（**回归 #1180**） | 8×8 测试图像 | 调用 `encodePNG` 并检查执行线程与输出尺寸 | 编码在非主线程执行；PNG 尺寸为 8×8 | P1 | ✅ 已覆盖 | `encodeRunsOffMain` |
+| 67 | AppStorePromoExportOffMain | 非法尺寸导致编码抛出 pngEncodingFailed | — | 以非法尺寸调用 `encodePNG` | 抛出 pngEncodingFailed 错误 | P1 | ✅ 已覆盖 | `encodeFailureThrows` |
 
-> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 13 / 13
-- P1: 已覆盖 45 / 45
+- P1: 已覆盖 48 / 48
 - P2: 已覆盖 6 / 6
-- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（45 条）
+- **P1**: 其余功能性用例（48 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明

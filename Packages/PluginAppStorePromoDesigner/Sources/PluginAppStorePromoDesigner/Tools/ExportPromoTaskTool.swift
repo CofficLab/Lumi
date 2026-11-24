@@ -59,6 +59,7 @@ public struct ExportPromoTaskTool: SuperAgentTool {
         for preset in presets {
             for imageMeta in task.images.sorted(by: { $0.order < $1.order }) {
                 for localeIdentifier in imageMeta.localeIdentifiers {
+                    try Task.checkCancellation()
                     let filename = String(format: "%02d-%@.png", imageMeta.order + 1, imageMeta.id)
                     let destinationURL = outputDirectory
                         .appendingPathComponent(localeIdentifier, isDirectory: true)
@@ -99,6 +100,7 @@ public struct ExportPromoTaskTool: SuperAgentTool {
         }
 
         let backupDirectory = stagingDirectory.appendingPathComponent("backups", isDirectory: true)
+        try Task.checkCancellation()
         try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
         var installedURLs: [URL] = []
         var backups: [(original: URL, backup: URL)] = []

@@ -92,6 +92,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)从缓存加载 \(apps.count) 个应用")
             }
+            // 首次打开（大小缓存为空）时枚举只发现应用、大小全为 0（#329），
+            // 而视图的非空列表检查会跳过 refresh()，用户只能看到 0 并需手动刷新。
+            // 存在未命中项时自动跑一次非强制扫描，复用 performScan 既有的
+            // 逐个计算、进度态与缓存保存链路；已有缓存的二次进入全部命中，不触发。
+            if apps.contains(where: { $0.size == 0 }) {
+                await scanApps(force: false)
+            }
         } else if Self.verbose {
             if AppManagerPluginSupport.verbose {
                             AppManagerPluginSupport.logger.info("\(self.t)缓存为空，需要扫描")
