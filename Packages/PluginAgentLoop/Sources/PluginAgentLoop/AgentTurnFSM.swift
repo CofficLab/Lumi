@@ -94,6 +94,12 @@ public struct TurnRuntime {
     /// 当前执行任务句柄（用于取消）。
     public var task: Task<Void, Never>?
 
+    /// 终态通知的投递任务（生命周期钩子 + 观察者事件）。
+    ///
+    /// 终态通知是异步投递的；`cancelTurnAndWait` 要等它结束，返回时观察者
+    /// 才一定已经收到 `.cancelled`（例如发送器据此清掉自己的回合跟踪账本）。
+    public var terminalNotificationTask: Task<Void, Never>?
+
     /// 当前挂起批次中所有挂起点（toolCallID → Suspension）。
     public var pendingSuspensions: [String: AgentLoopSuspension] = [:]
 

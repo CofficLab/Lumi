@@ -348,7 +348,8 @@ final class ConversationMessageListVM: ObservableObject {
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
              let .deleted(_, conversationID: conversationID),
-             let .cleared(conversationID: conversationID):
+             let .cleared(conversationID: conversationID),
+             let .truncated(_, conversationID: conversationID):
             guard conversationID == activeConversationID else { return }
             Task { @MainActor [weak self] in await self?.refresh() }
             refreshAgentTurnVMs()

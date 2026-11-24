@@ -96,8 +96,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiChat.git",
       "state": {
-        "revision": "ab78e86e040f55f4cfe141188eb5d5640f869662",
-        "version": "1.2.0"
+        "revision": "2c297df8fd9c57d62a1ca43d7705e670156c9f22",
+        "version": "1.3.0"
       }
     },
     {
@@ -267,8 +267,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiPluginDevice.git",
       "state": {
-        "revision": "db00bad9f17b29543f4aae829770dc52bfc6c2d7",
-        "version": "1.2.9"
+        "revision": "8f326442db3811c7ea49140c3d75f4ca4066dbaf",
+        "version": "1.2.10"
       }
     },
     {
@@ -384,8 +384,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiProviderAgentLoop.git",
       "state": {
-        "revision": "20731ad20e69be4be6577dbaac5aee44536d808f",
-        "version": "1.0.0"
+        "revision": "9f0788db42c60bdd938672b75decc801c462c46a",
+        "version": "1.0.1"
       }
     },
     {
@@ -438,8 +438,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiProviderMessage.git",
       "state": {
-        "revision": "84dccecf6e1dffdda2438ae9f4062c4c8ff25114",
-        "version": "1.0.0"
+        "revision": "33ce488c2ecd8117e59b2f0f03c02146d7131ebf",
+        "version": "1.0.2"
       }
     },
     {
@@ -456,8 +456,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiProviderMessageSender.git",
       "state": {
-        "revision": "76067eff4fca17b5cb12c452bbcf5dad0a7d5e58",
-        "version": "1.0.0"
+        "revision": "1224bfcdb4c856ea31a70068504c276c2e4e264b",
+        "version": "1.0.1"
       }
     },
     {
@@ -483,8 +483,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/lumi-softworks/LumiProviderToolManager.git",
       "state": {
-        "revision": "a1aa9592181b0763ce758c8f5a8650546653f3c7",
-        "version": "1.0.4"
+        "revision": "dbe3c018888904fd83252a5831e55fe98655ffc2",
+        "version": "1.0.5"
       }
     },
     {

@@ -13,7 +13,7 @@ final class MessageRemovalObserver {
     init(messages: any MessageManaging, onRemoval: @escaping () -> Void) {
         handle = messages.addMessageChangeObserver { change in
             switch change {
-            case .deleted, .cleared:
+            case .deleted, .truncated, .cleared:
                 onRemoval()
             default:
                 break
