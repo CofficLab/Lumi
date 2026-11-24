@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiProviderMessageStreaming.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
-        .package(name: "ProviderLLMContext", path: "../ProviderLLMContext"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderLLMContext.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKitAgentTool.git", from: "1.0.4"),
     ],
     targets: [
@@ -38,7 +38,7 @@ let package = Package(
                 .product(name: "ProviderMessageStreaming", package: "LumiProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "LumiProviders"),
                 .product(name: "ProviderLifecycleHooks", package: "LumiProviderLifecycleHooks"),
-                .product(name: "ProviderLLMContext", package: "ProviderLLMContext"),
+                .product(name: "ProviderLLMContext", package: "LumiProviderLLMContext"),
                 .product(name: "KitAgentTool", package: "LumiKitAgentTool"),
             ]
         ),

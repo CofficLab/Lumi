@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiChat.git",
       "state" : {
-        "revision" : "de04e0d093ed787c5605fa7b21423e28435e8245",
-        "version" : "1.0.0"
+        "revision" : "ab78e86e040f55f4cfe141188eb5d5640f869662",
+        "version" : "1.2.0"
       }
     },
     {
@@ -205,6 +205,15 @@
       "location" : "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git",
       "state" : {
         "revision" : "f1c4fdc46a8879e0ae51f4c688cd9eb96dd7fdef",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lumiproviderllmcontext",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiProviderLLMContext.git",
+      "state" : {
+        "revision" : "f7172a4594cb509a235fb62bcdcf59aadf0c7086",
         "version" : "1.0.0"
       }
     },
