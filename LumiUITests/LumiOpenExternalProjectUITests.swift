@@ -6,12 +6,13 @@ import XCTest
 /// 复现链路与 GitOK 完全一致：**外部进程**（GitOK / Finder）用
 /// `NSWorkspace.open(_:withApplicationAt:)` 把一个已存在的文件夹交给
 /// **正在运行的** Lumi，Launch Services 转成 `odoc` 事件送到
-/// `LumiAppDelegate.application(_:open:)`。
+/// `HostAppDelegate.application(_:open:)`。
 ///
 /// 曾出现的症状：第一次点击被静默丢弃，工具栏仍显示上一个项目（或保持空），
 /// 在同一个项目上再点一次才切换。根因是 `@Published` 在 `willSet` 阶段发布，
 /// 消费方在 `.onReceive` 回调里直接比较属性拿到的是旧值，于是把真正的新请求
-/// 误判成重复请求丢弃。见 `LumiApp.consumePendingOpenPath(_:kernel:)`。
+/// 误判成重复请求丢弃。共享壳改用 `HostAppDelegate.deliverExternalURLs(_:)`：
+/// 内核已就绪就立即交给清单的 `openExternalPath`，否则排队到 `.ready` 后按序补发。
 ///
 /// 本用例用两个不同文件夹**依次**打开，且每个都只发一次事件：
 /// 第二个文件夹就是用户「再点一次」的场景，但它必须以新请求的身份在

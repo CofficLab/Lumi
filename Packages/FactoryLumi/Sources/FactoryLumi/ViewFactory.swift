@@ -4,6 +4,7 @@ import Foundation
 import KernelCore
 import LumiUI
 import PluginShowImage
+import PluginToast
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -14,6 +15,7 @@ import ProviderRootView
 import PluginRootView
 import ProviderSettingView
 import ProviderTheme
+import ProviderToast
 import ProviderToolbar
 import SwiftUI
 
@@ -26,56 +28,17 @@ import SwiftUI
 public struct DefaultViewFactory: ViewFactory {
     public init() {}
 
-    /// 使用已装配的内核组装完整主视图（工具栏 + ActivityBar + Rail + 内容区）。
+    /// 使用已装配的内核返回主视图（工具栏 + ActivityBar + Rail + 内容区）。
     ///
-    /// 视图组装逻辑集中在此：宿主只需要一个视图，无需关心内核如何把
-    /// 各 Provider 的能力组合起来。返回的视图应用了当前选中主题
-    /// （明暗外观 + 背景色）。
+    /// - Important: 本方法是**纯读取**，可在 SwiftUI 视图构建期调用。区域贡献的
+    ///   写入由 `LumiRegionWiring.wire(kernel:)` 在装配期完成；两者分离是为了避免
+    ///   在 body 求值期间向 `@Published` 字段写入而触发
+    ///   "Publishing changes from within view updates"。
     public func makeMainView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
             return AnyView(Text(pluginLocalizationMain.string("RootViewProviding not registered")))
         }
 
-        // ProviderTheme and LumiUI are separate layers. Resolve the selected
-        // theme before constructing injected views so SwiftUI semantic colors
-        // (.primary/.secondary) and AppKit controls see the same appearance
-        // on their first render.
-        if let theme = kernel.resolveProvider((any ThemeProviding).self) {
-            Self.syncLumiTheme(theme)
-        }
-
-        if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
-            rootView.setToolbarView(toolbar.makeToolbarView())
-        }
-        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
-            rootView.setActivityBarView(activityBar.makeActivityBarView())
-        }
-        if let rail = kernel.resolveProvider((any RailViewProviding).self) {
-            rootView.setRailView(rail.makeRailView())
-            rootView.setRailViewVisible(rail.hasVisibleTabs)
-            rootView.bindRailViewVisibility(to: rail)
-            rootView.bindRailViewWidth(
-                to: rail,
-                onResize: rail.saveCurrentWidth
-            )
-        }
-        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
-            rootView.setContentView(contentView.makeContentView())
-        }
-        if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
-            let trailingPane = RootTrailingPane(
-                id: "com.coffic.lumi.workspace.chat",
-                width: chat.chatSectionWidth,
-                isVisible: chat.isVisible,
-                content: chat.makeChatSectionView()
-            )
-            trailingPane.bindVisibility(to: chat)
-            trailingPane.bindWidth(
-                to: chat,
-                onResize: chat.saveCurrentWidth
-            )
-            rootView.setTrailingPane(trailingPane)
-        }
         // show_image 工具成功后只写 `ShowImageState`，真正把它渲染出来的
         // `ShowImageOverlay` 必须在这里挂到主视图树上，否则工具会宣告成功
         // 而用户看不到任何图片。
@@ -90,19 +53,37 @@ public struct DefaultViewFactory: ViewFactory {
         )
     }
 
+    /// 共享壳（LumiFactory）用的主视图组装：**纯读取**，可在 SwiftUI 视图初始化期调用。
+    ///
+    /// 与 `makeMainView(kernel:)` 的唯一区别是不再套 `ThemeHostingView`：共享壳的
+    /// `HostThemeView` 已经负责明暗外观、窗口背景与 LumiUI 主题桥接，再包一层只会
+    /// 造成双重 `preferredColorScheme` 与重复背景。
+    ///
+    /// `show_image` 工具的浮层与 ToastCenter 仍在这里挂载——两者都依赖 Lumi 的
+    /// Provider 组合，共享壳不了解这些区域的存在。
+    public static func shellMainView(kernel: KernelCoreContainer) -> AnyView {
+        let content: AnyView
+        if let rootView = kernel.resolveProvider((any RootViewProviding).self) {
+            content = AnyView(rootView.makeRootView())
+        } else {
+            content = AnyView(Text(pluginLocalizationMain.string("RootViewProviding not registered")))
+        }
+        let network = kernel.resolveProvider((any NetworkProviding).self)
+        let withImageOverlay = AnyView(ShowImageOverlay(network: network) { content })
+        guard let center = kernel.resolveProvider((any ToastProviding).self) as? ToastCenter else {
+            return withImageOverlay
+        }
+        return AnyView(ToastOverlay(content: withImageOverlay, center: center))
+    }
+
     /// 使用已装配的内核返回设置视图（共享内核时使用）。
     ///
     /// 侧边栏顶部 Logo 由设置实现（如 `PluginSettingView`）作为内部行为自行渲染，
-    /// 此处不再注入。仅负责把选中主题桥接到 LumiUI 主题体系后返回设置视图。
+    /// 此处不再注入。主题桥接同样属于装配期职责（`LumiRegionWiring.wire`），
+    /// 这里只做纯读取组装。
     public func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return AnyView(Text(pluginLocalizationMain.string("SettingViewProviding not registered")))
-        }
-
-        // 先把选中主题桥接到 LumiUI 主题体系，避免首帧渲染时 LumiUI 组件
-        // （@LumiTheme / ChromeThemes）读到未配置的默认主题而闪烁。
-        if let theme = kernel.resolveProvider((any ThemeProviding).self) {
-            Self.syncLumiTheme(theme)
         }
 
         return themed(settings.makeSettingView(), kernel: kernel)

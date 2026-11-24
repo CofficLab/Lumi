@@ -150,8 +150,8 @@ public protocol ProviderFactory {
     ///
     /// 实现方负责按依赖顺序创建各 Provider 并调用 `kernel.registerProvider`，
     /// 完成 Provider 间的接线（如主题持久化目录、AgentLoop 依赖注入、
-    /// 事件桥接等）。`KernelFactory.makeKernel` 只负责创建容器、调用本方法
-    /// 并启动插件，不再直接持有注册逻辑。
+    /// 事件桥接等）。容器创建、基线 Provider、插件启动与区域接线都由共享的
+    /// `LumiFactory.KernelAssembler` 负责，本方法只在它之后补齐 App 域 Provider。
     ///
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     func registerProviders(into kernel: KernelCoreContainer) throws

@@ -1,5 +1,5 @@
 {
-  "originHash" : "d8cd81e0eaa667f6d26ac879dd16f32b8773f5c40080632a862bd313d24d970e",
+  "originHash" : "0a5886695412e5905a7b6253718d0ff4856cb144022e7129c4f07d55d59e07bf",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -35,6 +35,15 @@
       "state" : {
         "revision" : "ab78e86e040f55f4cfe141188eb5d5640f869662",
         "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "lumifactory",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiFactory.git",
+      "state" : {
+        "revision" : "5a612a997a3dd147c8b43b3f9f02f5ddb3c39d20",
+        "version" : "1.7.8"
       }
     },
     {
@@ -287,6 +296,15 @@
       "state" : {
         "revision" : "3b37a6038f7c58fe550dca95ed4f93f77dc8330a",
         "version" : "1.1.2"
+      }
+    },
+    {
+      "identity" : "lumithemepack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiThemePack.git",
+      "state" : {
+        "revision" : "70631bc98363688eee68d7a5a6255a9cb2782d5f",
+        "version" : "1.1.0"
       }
     },
     {

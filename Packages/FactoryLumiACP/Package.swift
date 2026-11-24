@@ -11,6 +11,9 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
+        // 共享装配引擎：ACP 与 GUI 走同一条 boot 流水线（预检 → 基线 Provider →
+        // 迁移 → 异步启动 → 接线），不再各自维护一份。
+        .package(url: "https://github.com/lumi-softworks/LumiFactory.git", from: "1.7.8"),
         .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
@@ -83,6 +86,7 @@ let package = Package(
             name: "FactoryLumiACP",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiFactory", package: "LumiFactory"),
                 .product(name: "KitLLM", package: "LumiKitLLM"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderAgentLoop", package: "LumiProviderAgentLoop"),
@@ -189,6 +193,7 @@ let package = Package(
             dependencies: [
                 "FactoryLumiACP",
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiFactory", package: "LumiFactory"),
             ],
             path: "Tests/FactoryLumiACPTests"
         ),

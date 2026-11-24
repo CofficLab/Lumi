@@ -1,7 +1,8 @@
 import Foundation
-import Testing
-@testable import FactoryLumiACP
 import KernelCore
+import LumiFactory
+@testable import FactoryLumiACP
+import Testing
 
 @Suite("ACPBootstrapError Tests")
 struct ACPBootstrapErrorTests {
@@ -113,14 +114,42 @@ struct ACPPluginFactoryTests {
     }
 }
 
-@Suite("PluginDataMigrationCoordinator Tests")
+@Suite("ACP 宿主清单 Tests")
 @MainActor
-struct PluginDataMigrationCoordinatorTests {
+struct ACPHostManifestTests {
 
-    @Test("currentMajorVersion 为正整数")
-    func currentMajorVersionIsPositive() {
-        #expect(PluginDataMigrationCoordinator.currentMajorVersion > 0)
-        #expect(PluginDataMigrationCoordinator.currentMajorVersion == 6)
+    private var manifest: HostManifest {
+        KernelFactory.makeManifest(
+            providerFactory: DefaultProviderFactory(),
+            pluginFactory: ACPPluginFactory()
+        )
+    }
+
+    @Test("清单把历史目录迁移交给共享装配流水线")
+    func manifestDeclaresLegacyMigrations() {
+        #expect(manifest.storage.stateStorePluginID == "com.coffic.lumi.plugin.plugin-manager")
+        #expect(
+            manifest.storage.legacyDirectoryMigrations["com.coffic.lumi.plugin.plugin-manager"]
+                == ["PluginManager"]
+        )
+        #expect(
+            manifest.storage.legacyDirectoryMigrations["com.coffic.lumi.plugin.tool-manager"]
+                == ["ToolManager"]
+        )
+        // 启用状态的 id 兼容映射必须同样交给内核。
+        #expect(manifest.legacyPluginIDAliases["com.coffic.lumi.plugin.caffeinate"] == "Caffeinate")
+    }
+
+    @Test("headless 清单不开窗、不做共享根视图接线")
+    func manifestIsHeadless() {
+        #expect(manifest.features.statusBar == nil)
+        #expect(!manifest.features.opensMainWindowOnLaunch)
+        #expect(manifest.features.skipsSharedRootViewWiring)
+    }
+
+    @Test("插件目录由清单原样交付")
+    func manifestDeliversACPPlugins() {
+        #expect(manifest.makePlugins().count >= 50)
     }
 }
 
