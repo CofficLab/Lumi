@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviderMessage.git",
       "state" : {
-        "revision" : "33ea5d92e8b5a4f48303c7f5dac39cb9983acfa8",
-        "version" : "1.0.1"
+        "revision" : "33ce488c2ecd8117e59b2f0f03c02146d7131ebf",
+        "version" : "1.0.2"
       }
     },
     {

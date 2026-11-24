@@ -1,5 +1,5 @@
 {
-  "originHash" : "8b6e72e2bc73e813473b100723db2de13bba9c11ca3d70d4e28fab8a89ee2b1b",
+  "originHash" : "616cffc38c5ee040a57cbac82b17ef65b39130d7337c6dc6a7dc6e804c46867c",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -150,8 +150,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiProviderMessage.git",
       "state" : {
-        "revision" : "33ea5d92e8b5a4f48303c7f5dac39cb9983acfa8",
-        "version" : "1.0.1"
+        "revision" : "33ce488c2ecd8117e59b2f0f03c02146d7131ebf",
+        "version" : "1.0.2"
       }
     },
     {

@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderConversationState.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderMessageRendering.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderMessageStreaming.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderLifecycleHooks.git", from: "1.0.0"),
