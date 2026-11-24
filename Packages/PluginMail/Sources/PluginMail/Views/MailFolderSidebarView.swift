@@ -57,7 +57,45 @@ public struct MailFolderSidebarView: View {
 
     private var accountHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let account = accounts.first(where: { $0.id == selectedAccountID }) {
+            if accounts.count > 1 {
+                // 多账户：提供切换入口，调用已有的 onSelectAccount 回调。
+                Menu {
+                    ForEach(accounts) { account in
+                        Button {
+                            onSelectAccount(account.id)
+                        } label: {
+                            HStack {
+                                Text(account.displayName.isEmpty ? account.email : account.displayName)
+                                if account.id == selectedAccountID {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        if let account = accounts.first(where: { $0.id == selectedAccountID }) {
+                            Text(account.displayName.isEmpty ? account.email : account.displayName)
+                                .font(.appBodyEmphasized)
+                                .foregroundColor(theme.textPrimary)
+                                .lineLimit(1)
+                        }
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize(horizontal: false, vertical: true)
+
+                if let account = accounts.first(where: { $0.id == selectedAccountID }) {
+                    Text(account.email)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                }
+            } else if let account = accounts.first(where: { $0.id == selectedAccountID }) {
+                // 单账户：静态显示，无需切换。
                 Text(account.displayName.isEmpty ? account.email : account.displayName)
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
