@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.2.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderAgentLoop.git", from: "1.0.0"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
@@ -39,7 +39,7 @@ let package = Package(
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
-        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.2.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.4.0"),
         .package(path: "../PluginConversationManager"),
         .package(path: "../PluginMessageManager"),
         .package(path: "../PluginConversationPendingMessage"),
