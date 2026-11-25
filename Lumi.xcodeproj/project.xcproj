@@ -45,6 +45,12 @@
     }, {
       "kind": "local",
       "path": "Packages/FactoryDatabaseManager",
+    }, {
+      "kind": "remote",
+      "repository": "https://github.com/lumi-softworks/LumiFactory.git",
+      "version": {
+        "up-to-next-major-version": "1.7.8",
+      },
     },
   ],
   "files": [
@@ -294,6 +300,10 @@
         }, {
           "package": "LumiProviders",
           "product-name": "MenuBarHostKit",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "LumiFactory",
+          "product-name": "LumiFactory",
           "build-phase": { "build-phase": "frameworks" },
         }, {
           "package": "PluginAppUpdate",

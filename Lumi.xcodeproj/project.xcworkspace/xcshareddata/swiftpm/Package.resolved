@@ -1,5 +1,5 @@
 {
-  "originHash" : "be58e97974e330f919a81d6db2a341b3c9dab588c95e6c68a9c2cd82e2de74e6",
+  "originHash" : "5fc62a93f84afde8074d3999ea16c21607cca68fc28c9d179c64ad9cecb9fea7",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -98,6 +98,15 @@
       "state" : {
         "revision" : "d4abc5a443d6e7e0c62a1b9cbf604b11ae89cc75",
         "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "lumifactory",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lumi-softworks/LumiFactory.git",
+      "state" : {
+        "revision" : "5a612a997a3dd147c8b43b3f9f02f5ddb3c39d20",
+        "version" : "1.7.8"
       }
     },
     {
@@ -258,8 +267,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginDevice.git",
       "state" : {
-        "revision" : "db00bad9f17b29543f4aae829770dc52bfc6c2d7",
-        "version" : "1.2.9"
+        "revision" : "8f326442db3811c7ea49140c3d75f4ca4066dbaf",
+        "version" : "1.2.10"
       }
     },
     {

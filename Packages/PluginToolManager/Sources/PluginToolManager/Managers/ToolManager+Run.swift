@@ -280,6 +280,25 @@ extension ToolManager {
         await recordStore?.deleteAll(for: conversationID)
     }
 
+    public func deleteToolCalls(forTurnIDs turnIDs: [UUID], in conversationID: UUID) async {
+        guard !turnIDs.isEmpty else { return }
+        // 截断时间线不是删除会话：会话保持可写，后台任务也不受影响。
+        for turnID in turnIDs {
+            cancelJobs(forTurnID: turnID)
+        }
+        await jobRecordStore?.deleteJobs(forTurnIDs: turnIDs)
+        let prefix = conversationID.uuidString + "|"
+        let turnIDStrings = Set(turnIDs.map(\.uuidString))
+        // key 形如 conversation|turn|toolCallID；没有 turn 的记录不属于任何回合。
+        resultCache = resultCache.filter { key, _ in
+            guard key.hasPrefix(prefix) else { return true }
+            let turn = key.dropFirst(prefix.count).prefix(while: { $0 != "|" })
+            return !turnIDStrings.contains(String(turn))
+        }
+        resultCacheConversationIDs = resultCacheConversationIDs.filter { resultCache[$0.key] != nil }
+        await recordStore?.deleteRecords(forTurnIDs: turnIDs)
+    }
+
     func cache(_ result: ToolCallResult, for toolCallID: String, conversationID: UUID, turnID: UUID?) {
         guard !deletedConversationIDs.contains(conversationID) else { return }
         let key = resultCacheKey(toolCallID: toolCallID, conversationID: conversationID, turnID: turnID)

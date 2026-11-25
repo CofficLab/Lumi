@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(path: "../KitProjectDetect"),
         .package(path: "../ProviderGit"),
-        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.0"),
+        .package(url: "https://github.com/lumi-softworks/LumiProviderMessage.git", from: "1.0.2"),
         .package(path: "../ProviderProjectRAG"),
         .package(url: "https://github.com/lumi-softworks/LumiProviders.git", from: "1.26.0")
     ],

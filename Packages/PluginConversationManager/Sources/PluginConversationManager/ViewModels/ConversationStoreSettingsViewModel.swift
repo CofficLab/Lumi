@@ -165,7 +165,7 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     /// 但订阅不等于每个事件都要查库（#1311）：
     /// - 计数只统计**磁盘**。`.inserted`（仍在 pending）与 `.updated`（内容/工具
     ///   结果变化）不增删行，磁盘计数必然不变，直接跳过，不做主线程 COUNT。
-    /// - 只有 `.persisted` / `.deleted` / `.cleared` 才可能改变磁盘计数。
+    /// - 只有 `.persisted` / `.deleted` / `.cleared` / `.truncated` 才可能改变磁盘计数。
     /// - 计数仅在设置页可见、且该会话已在加载列表里（有人在看）时才刷新，并走
     ///   与预览相同的防抖合并 + 相等性守卫，避免重复 I/O 与重复 `objectWillChange`。
     func handleMessageChange(_ change: MessageChange) {
@@ -182,6 +182,9 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
             conversationID = id
             affectsDiskCount = false
         case .cleared(let id):
+            conversationID = id
+            affectsDiskCount = true
+        case .truncated(_, let id):
             conversationID = id
             affectsDiskCount = true
         case .deleted(_, let id):

@@ -303,7 +303,7 @@ extension AgentLoopManager {
         } else {
             completionWaiters[conversationID] = remainingWaiters
         }
-        Task { @MainActor [weak self] in
+        let notificationTask = Task { @MainActor [weak self] in
             guard let self else {
                 Self.logger.error("\(Self.t)无法完成 AgentLoop 回合：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
                 return
@@ -329,6 +329,7 @@ extension AgentLoopManager {
             }
             matchingWaiters.forEach { $0.continuation.resume(returning: outcome) }
         }
+        runtimes[conversationID]?.terminalNotificationTask = notificationTask
     }
 
     private func finishableOutcome(for phase: TurnPhase) -> AgentLoopOutcome? {

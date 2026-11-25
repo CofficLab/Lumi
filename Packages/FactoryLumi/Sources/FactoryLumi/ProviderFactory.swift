@@ -53,7 +53,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 新插件 ID → 旧插件 ID 的兼容映射。
     /// 读取新 ID 不存在的数据时回退到旧 ID，写入时同步维护两者。
-    static let pluginIDAliases: [String: String] = [
+    public static let pluginIDAliases: [String: String] = [
         "com.coffic.lumi.plugin.plugin-manager": "com.coffic.lumi.plugin.plugin-manager",
         "com.coffic.lumi.plugin.caffeinate": "Caffeinate",
     ]
@@ -274,13 +274,31 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     // MARK: - Provider Registration
 
+    /// 已存在同类型 Provider 时跳过注册。
+    ///
+    /// `KernelCore.registerProvider` 对重复注册直接抛错，而共享宿主基线会先于本
+    /// 方法注册同一批区域 Provider。跳过而非覆盖：基线实例由宿主生命周期持有，
+    /// 语义上更适合区域 Provider；本工厂的实现在独立装配路径里仍然生效。
+    private func registerIfAbsent<T>(
+        _ kernel: KernelCoreContainer,
+        _ type: T.Type,
+        _ provider: T
+    ) throws {
+        if kernel.resolveProvider(type) != nil { return }
+        try kernel.registerProvider(type, provider)
+    }
+
     /// 装配并注册全部默认 Provider，完成依赖接线。
     ///
     /// 由 `KernelFactory.makeKernel` 调用：工厂只负责产出与注册，
     /// 内核生命周期（`start(plugins:)`）与插件装配留在 KernelFactory。
+    ///
+    /// 共享宿主基线（LumiFactory 的 `KernelAssembler`）已经注册的区域 Provider
+    /// 走 `registerIfAbsent`：宿主侧实现只在独立装配（ACP、单测）时生效，
+    /// 经工厂装配时保留工厂的宿主级实例，避免 `providerAlreadyRegistered`。
     public func registerProviders(into kernel: KernelCoreContainer) throws {
-        try kernel.registerProvider((any StorageProviding).self, makeStorageProvider())
-        try kernel.registerProvider((any DiskCacheProviding).self, makeDiskCacheProvider())
+        try registerIfAbsent(kernel, (any StorageProviding).self, makeStorageProvider())
+        try registerIfAbsent(kernel, (any DiskCacheProviding).self, makeDiskCacheProvider())
 
         // 必须在启动插件之前注入，使 registerPlugin 能读取用户的禁用状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
@@ -295,7 +313,7 @@ public struct DefaultProviderFactory: ProviderFactory {
             kernel.legacyPluginIDAliases = Self.pluginIDAliases
         }
 
-        try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
+        try registerIfAbsent(kernel, (any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any ChatSectionProviding).self, makeChatSectionProvider())
 
         let conversations = makeConversationProvider()
@@ -391,13 +409,15 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any CommandProviding).self, makeCommandProvider())
         try kernel.registerProvider((any IdleTimeProviding).self, makeIdleTimeProvider(storage: storage))
         try kernel.registerProvider((any LegacyDataProviding).self, makeLegacyDataProvider())
-        try kernel.registerProvider(
+        try registerIfAbsent(
+            kernel,
             (any PluginControlling).self,
             makePluginControlProvider(kernel: kernel)
         )
         // 插件管理：基于真实 PluginControlling 实例装配，二者共享同一内核状态。
         let pluginControlling = kernel.resolveProvider((any PluginControlling).self)
-        try kernel.registerProvider(
+        try registerIfAbsent(
+            kernel,
             (any PluginManaging).self,
             makePluginManagingProvider(
                 kernel: kernel,
@@ -406,16 +426,16 @@ public struct DefaultProviderFactory: ProviderFactory {
         )
         try kernel.registerProvider((any WebServerProviding).self, makeWebServerProvider())
         try kernel.registerProvider((any ExternalFileOpening).self, makeExternalFileProvider())
-        try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
-        try kernel.registerProvider((any MenuBarProviding).self, makeMenuBarProvider())
-        try kernel.registerProvider((any LogoProviding).self, makeLogoProvider())
+        try registerIfAbsent(kernel, (any DocsViewProviding).self, makeDocsViewProvider())
+        try registerIfAbsent(kernel, (any MenuBarProviding).self, makeMenuBarProvider())
+        try registerIfAbsent(kernel, (any LogoProviding).self, makeLogoProvider())
         try kernel.registerProvider((any ProjectProviding).self, makeProjectProvider())
-        try kernel.registerProvider((any ToastProviding).self, makeToastProvider())
+        try registerIfAbsent(kernel, (any ToastProviding).self, makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, makeNetworkProvider())
-        try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
+        try registerIfAbsent(kernel, (any ToolbarProviding).self, makeToolbarProvider())
+        try registerIfAbsent(kernel, (any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
-        try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
+        try registerIfAbsent(kernel, (any SettingViewProviding).self, makeSettingViewProvider())
         // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
         // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
         try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())

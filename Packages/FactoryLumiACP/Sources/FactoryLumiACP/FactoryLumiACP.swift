@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import LumiFactory
 import PluginACP
 import PluginAgentLoop
 import PluginAgentLoopRetry
@@ -62,8 +63,8 @@ import TerminalPlugin
 /// 不再各自维护一份 ACP 装配逻辑。
 @MainActor
 public enum FactoryLumiACP {
-    public static func makeKernel() throws -> KernelCoreContainer {
-        try KernelFactory.makeKernel(
+    public static func makeKernel() async throws -> KernelCoreContainer {
+        try await KernelFactory.makeKernel(
             providerFactory: DefaultProviderFactory(),
             pluginFactory: ACPPluginFactory()
         )
@@ -73,27 +74,36 @@ public enum FactoryLumiACP {
     ///
     /// 入口由 LumiACP app 和历史 ACPBootstrap 共用，确保两个发布形态
     /// 不会因为各自维护一份启动逻辑而产生行为差异。
-    public static func runACPServer() throws {
+    ///
+    /// - Note: 本方法**不接管主 runloop**——内核装配走共享流水线只能在主线程异步
+    /// 进行，而 `RunLoop.run()` 禁止在异步上下文调用。启动完成后由调用方常驻主
+    /// runloop 驱动 stdio 事件，见 `LumiACPExecutable/main.swift`。
+    public static func runACPServer() async throws {
         setenv("LUMI_ACP_HEADLESS", "1", 1)
 
-        let kernel = try makeKernel()
+        let kernel = try await makeKernel()
         guard let plugin = kernel.resolvePlugin(id: "acp") as? PluginACP else {
             throw ACPBootstrapError.pluginNotFound
         }
 
         plugin.onEOF = { exit(0) }
         try plugin.startACPServer(transport: StdioTransport())
-        RunLoop.main.run()
     }
 }
 
-public enum ACPBootstrapError: Error, LocalizedError, CustomStringConvertible {
+// 显式声明 Equatable：无关联值的枚举会免费获得它，加上 kernelBootFailed 后必须自己要求，
+// 否则既有测试里的 `error == .pluginNotFound` 编不过。
+public enum ACPBootstrapError: Error, LocalizedError, CustomStringConvertible, Equatable {
     case pluginNotFound
+    /// 共享装配流水线未能交付内核（磁盘预检、基线 Provider、插件 boot 失败等）。
+    case kernelBootFailed(BootstrapFailureReport)
 
     public var description: String {
         switch self {
         case .pluginNotFound:
             "plugin 'acp' not found"
+        case .kernelBootFailed(let report):
+            "kernel boot failed: \(report.technicalDetail)"
         }
     }
 

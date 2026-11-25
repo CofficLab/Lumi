@@ -90,7 +90,7 @@ public enum KernelFactory {
     ///   `PluginUITestProvider` 注册时强制选中自己的模型（避免回落到用户上次
     ///   的真实供应商），非测试启动时再主动清除这份残留选中态。
     /// - Note: 每次启动使用独立子目录，保证测试之间不互相污染。
-    private static func uiTestingDataRootDirectory() -> URL? {
+    public static func uiTestingDataRootDirectory() -> URL? {
         #if DEBUG
         guard ProcessInfo.processInfo.arguments.contains(
             "--lumi-ui-testing-isolated-storage"
@@ -142,7 +142,18 @@ public enum KernelFactory {
         }
         try await kernel.startAsync(plugins: plugins)
         resetSettingsSelectionToFirstEntry(in: kernel)
+        wireRegions(kernel: kernel)
         return kernel
+    }
+
+    /// 装配期区域接线（工具栏 / 入口栏 / Rail / 内容区 / 聊天分栏绑定）。
+    ///
+    /// 必须在插件启动完成后执行：此时 ConversationManaging 已是最终实例
+    /// （PluginConversationManager order=7 可能已替换默认内存实现）。写入放在
+    /// 这里而非视图构建路径，是为了避免在 SwiftUI body 求值期间向 `@Published`
+    /// 字段写入而触发 "Publishing changes from within view updates"。
+    private static func wireRegions(kernel: KernelCoreContainer) {
+        LumiRegionWiring.wire(kernel: kernel)
     }
 
     /// 设置窗口默认选中 order 最小的入口（回归修复）。
@@ -189,15 +200,7 @@ public enum KernelFactory {
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         try kernel.start(plugins: plugins)
         resetSettingsSelectionToFirstEntry(in: kernel)
-
-        // header / toolbar 可见性绑定（复刻旧版 ChatView 语义：无选中会话时
-        // 隐藏 header / toolbar，仅保留正文与输入区）。
-        // 必须在插件启动完成后执行：此时 ConversationManaging 已是最终实例
-        // （PluginConversationManager order=7 可能已替换默认内存实现）。
-        if let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-           let conversations = kernel.resolveProvider((any ConversationManaging).self) {
-            chat.bindConversationSelection(conversations)
-        }
+        wireRegions(kernel: kernel)
 
         return kernel
     }
