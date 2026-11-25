@@ -20,6 +20,8 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
                     id: $0.id,
                     displayName: $0.displayName,
                     contextWindowSize: $0.contextWindowSize,
+                    minimumMemoryBytes: Int64($0.minimumRAMGB) * 1_073_741_824,
+                    downloadSizeBytes: $0.downloadSizeBytes,
                     supportsVision: $0.supportsVision,
                     supportsTools: $0.supportsTools
                 )

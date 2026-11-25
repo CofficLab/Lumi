@@ -399,6 +399,7 @@ public final class MLXDownloadManager: ObservableObject {
             ),
             currentFileName: currentFileName,
             downloadedModelIDs: cache.downloadedModelIDs,
+            downloadedModelSizesBytes: cache.downloadedModelSizesBytes,
             cacheSizeBytes: cache.cacheSizeBytes,
             speedLimitBytesPerSecond: downloadSpeedLimit
         )
@@ -415,12 +416,17 @@ public final class MLXDownloadManager: ObservableObject {
     ///
     /// 默认走真实的磁盘扫描；测试可替换为计数桩，断言进度事件不会触发扫描。
     var cacheScanner: () -> MLXDownloadCacheIndex.Snapshot = {
-        MLXDownloadCacheIndex.Snapshot(
-            downloadedModelIDs: Set(MLXProviderCatalog.availableRegistrations.compactMap { model in
-                MLXModelDownloader.isComplete(directory: MLXModelPaths.modelDirectory(for: model.id))
-                    ? model.id
-                    : nil
-            }),
+        var downloadedModelIDs = Set<String>()
+        var downloadedModelSizesBytes: [String: Int64] = [:]
+        for model in MLXProviderCatalog.availableRegistrations {
+            let directory = MLXModelPaths.modelDirectory(for: model.id)
+            guard MLXModelDownloader.isComplete(directory: directory) else { continue }
+            downloadedModelIDs.insert(model.id)
+            downloadedModelSizesBytes[model.id] = MLXDownloadManager.currentCacheSizeBytes(in: directory)
+        }
+        return MLXDownloadCacheIndex.Snapshot(
+            downloadedModelIDs: downloadedModelIDs,
+            downloadedModelSizesBytes: downloadedModelSizesBytes,
             cacheSizeBytes: MLXDownloadManager.currentCacheSizeBytes(in: MLXModelPaths.modelsDirectory)
         )
     }

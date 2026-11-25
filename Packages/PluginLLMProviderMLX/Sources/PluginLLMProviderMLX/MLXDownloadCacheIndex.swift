@@ -21,6 +21,8 @@ final class MLXDownloadCacheIndex {
     struct Snapshot: Equatable {
         /// 已下载（完整）的模型 ID。
         var downloadedModelIDs: Set<String>
+        /// 已下载模型在磁盘上的实际占用；键为模型 id。
+        var downloadedModelSizesBytes: [String: Int64] = [:]
         /// 缓存目录的总字节数。
         var cacheSizeBytes: Int64
     }

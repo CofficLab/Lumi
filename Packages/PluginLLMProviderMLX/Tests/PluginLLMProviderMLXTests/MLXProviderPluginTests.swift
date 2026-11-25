@@ -36,6 +36,19 @@ struct MLXProviderPluginTests {
         ])
     }
 
+    @Test("模型元数据携带最低内存与磁盘体积")
+    @MainActor
+    func modelMetadataIncludesMemoryAndDisk() throws {
+        let provider = MLXProviderBase(providerID: "mlx-qwen", displayName: "Qwen")
+        let model = try #require(
+            provider.providerInfo.models.first { $0.id == "mlx-community/Qwen3-1.7B-4bit" }
+        )
+
+        let expectedMinimumMemory: Int64 = 8 * 1_073_741_824
+        #expect(model.minimumMemoryBytes == expectedMinimumMemory)
+        #expect(model.downloadSizeBytes == 984_015_687)
+    }
+
     @Test("启动时把存储目录注入模型根目录与运行时目录")
     @MainActor
     func bootInjectsStorageDirectory() throws {

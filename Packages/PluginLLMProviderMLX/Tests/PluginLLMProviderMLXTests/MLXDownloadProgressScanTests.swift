@@ -78,6 +78,31 @@ struct MLXDownloadProgressScanTests {
         }
     }
 
+    @Test("下载状态包含已下载模型的实际磁盘占用")
+    func stateExposesDownloadedModelSizes() {
+        withInjectedDirectories {
+            let manager = MLXDownloadManager.shared
+            let original = manager.cacheScanner
+            manager.cacheScanner = {
+                MLXDownloadCacheIndex.Snapshot(
+                    downloadedModelIDs: ["mlx-qwen/Qwen3-0.6B-4bit"],
+                    downloadedModelSizesBytes: ["mlx-qwen/Qwen3-0.6B-4bit": 351_386_061],
+                    cacheSizeBytes: 351_386_061
+                )
+            }
+            manager.invalidateCacheSnapshot()
+            defer {
+                manager.cacheScanner = original
+                manager.invalidateCacheSnapshot()
+            }
+
+            #expect(
+                manager.downloadState.downloadedModelSizesBytes["mlx-qwen/Qwen3-0.6B-4bit"]
+                    == 351_386_061
+            )
+        }
+    }
+
     @Test("显式刷新会重新扫描（磁盘可能已被外部改动）")
     func explicitRefreshRescans() {
         withInjectedDirectories {
