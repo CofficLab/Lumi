@@ -52,7 +52,7 @@ let package = Package(
         .package(path: "../PluginActivityHeatmap"),
         .package(path: "../PluginRailTokenTrend"),
         .package(path: "../PluginChatPanel"),
-        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.4.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.4.2"),
         .package(path: "../PluginConversationPendingMessage"),
         .package(path: "../PluginConversationResume"),
         .package(path: "../PluginAskUser"),

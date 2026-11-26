@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiChat.git",
       "state" : {
-        "revision" : "721fd5fb29a8c5c5656a9ff1b278fe18b97050fb",
-        "version" : "1.4.1"
+        "revision" : "8cd1620cafefa7787e3f95ef99ae6503fa23d00b",
+        "version" : "1.4.2"
       }
     },
     {
