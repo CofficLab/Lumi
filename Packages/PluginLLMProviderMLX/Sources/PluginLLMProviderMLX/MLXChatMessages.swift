@@ -47,4 +47,15 @@ enum MLXChatMessages {
             }
         }
     }
+
+    /// 能进入 MLX 提示词的角色，与 `build` 的分支一一对应。
+    ///
+    /// 会话复用的前缀比较必须在**过滤后**的历史上做：status / error 这类
+    /// 仅用于 UI 的消息不会进入提示词，计入前缀会让下标与 transcript 错位。
+    static func isPromptMessage(_ message: LLMMessage) -> Bool {
+        switch message.role {
+        case .system, .user, .assistant, .tool: return true
+        case .status, .error, .unknown: return false
+        }
+    }
 }

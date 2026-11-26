@@ -28,12 +28,14 @@ struct MLXGenerationInfoTests {
     /// 构造一份 `.info` 终态事件。
     private func infoEvent(
         promptTokens: Int,
+        cachedPromptTokens: Int = 0,
         generationTokens: Int,
         stopReason: GenerateStopReason
     ) -> Generation {
         .info(
             GenerateCompletionInfo(
                 promptTokenCount: promptTokens,
+                cachedPromptTokenCount: cachedPromptTokens,
                 generationTokenCount: generationTokens,
                 promptTime: 0.1,
                 generationTime: 0.2,
@@ -81,6 +83,36 @@ struct MLXGenerationInfoTests {
         )
     }
 
+    @Test("缓存复用的 token 计入输入总量，并单独暴露复用数")
+    func cachedPromptTokensAreAccounted() async {
+        // 复用前缀 100 + 本轮预填充 28：渲染后的完整提示词是 128。
+        var consumer = MLXGenerationConsumer()
+
+        await consumer.consume(
+            infoEvent(promptTokens: 28, cachedPromptTokens: 100, generationTokens: 8, stopReason: .stop),
+            onChunk: { _ in }
+        )
+
+        let response = consumer.response(model: "qwen3-4b")
+
+        #expect(response.inputTokenCount == 128, "输入 token 应包含缓存复用部分")
+        #expect(response.cachedInputTokenCount == 100, "应单独暴露复用 token 数")
+    }
+
+    @Test("没有缓存复用时复用数为空")
+    func zeroCachedTokensStaysNil() async {
+        var consumer = MLXGenerationConsumer()
+
+        await consumer.consume(
+            infoEvent(promptTokens: 20, generationTokens: 4, stopReason: .stop),
+            onChunk: { _ in }
+        )
+
+        let response = consumer.response(model: "qwen3-4b")
+
+        #expect(response.cachedInputTokenCount == nil)
+    }
+
     @Test("info 事件不影响正文与工具调用")
     func infoEventDoesNotDisturbContent() async {
         var consumer = MLXGenerationConsumer()
@@ -117,7 +149,7 @@ struct MLXGenerationInfoTests {
         var consumer = MLXGenerationConsumer()
         await consumer.consume(.chunk("正文"), onChunk: { _ in })
         await consumer.consume(
-            infoEvent(promptTokens: 64, generationTokens: 16, stopReason: .stop),
+            infoEvent(promptTokens: 32, cachedPromptTokens: 32, generationTokens: 16, stopReason: .stop),
             onChunk: { _ in }
         )
         let streamed = consumer.response(model: "qwen3-4b")
@@ -125,6 +157,7 @@ struct MLXGenerationInfoTests {
         let nonStreaming = MLXProviderBase.nonStreamingResponse(from: streamed)
 
         #expect(nonStreaming.inputTokenCount == 64, "非流式响应应保留输入 token")
+        #expect(nonStreaming.cachedInputTokenCount == 32, "非流式响应应保留缓存复用 token")
         #expect(nonStreaming.outputTokenCount == 16, "非流式响应应保留输出 token")
         #expect(nonStreaming.stopReason == "stop", "非流式响应应保留停止原因")
         #expect(nonStreaming.content == "正文", "非流式响应应保留正文")

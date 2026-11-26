@@ -32,7 +32,9 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
     }
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
-        let response = try await streamComplete(request) { _ in }
+        // 标题、摘要等辅助调用与交互回合共用模型，但消息集不同；
+        // 不允许它们改写交互会话的缓存。
+        let response = try await streamComplete(request, reuseSession: false) { _ in }
         return Self.nonStreamingResponse(from: response)
     }
 
@@ -48,6 +50,7 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
             reasoningContent: response.reasoningContent,
             inputTokenCount: response.inputTokenCount,
             outputTokenCount: response.outputTokenCount,
+            cachedInputTokenCount: response.cachedInputTokenCount,
             stopReason: response.stopReason
         )
     }
@@ -56,11 +59,24 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
+        try await streamComplete(request, reuseSession: true, onChunk: onChunk)
+    }
+
+    private func streamComplete(
+        _ request: LLMRequest,
+        reuseSession: Bool,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
         let modelID = request.model ?? providerInfo.defaultModel
         guard providerInfo.contains(model: modelID) else {
             throw MLXProviderError.modelNotAvailable(modelID)
         }
-        return try await MLXRuntime.shared.generate(request: request, modelID: modelID, onChunk: onChunk)
+        return try await MLXRuntime.shared.generate(
+            request: request,
+            modelID: modelID,
+            reuseSession: reuseSession,
+            onChunk: onChunk
+        )
     }
 }
 

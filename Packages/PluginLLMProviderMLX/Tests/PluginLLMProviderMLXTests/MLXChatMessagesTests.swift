@@ -120,6 +120,17 @@ struct MLXChatMessagesTests {
         #expect(toolRaw["name"] as? String == "get_weather")
     }
 
+    @Test("只有能进入提示词的角色才参与历史与缓存前缀比较")
+    func promptMessageRoles() {
+        #expect(MLXChatMessages.isPromptMessage(LLMMessage(role: .system, content: "s")))
+        #expect(MLXChatMessages.isPromptMessage(LLMMessage(role: .user, content: "u")))
+        #expect(MLXChatMessages.isPromptMessage(LLMMessage(role: .assistant, content: "a")))
+        #expect(MLXChatMessages.isPromptMessage(LLMMessage(role: .tool, content: "t", toolCallID: "id")))
+        #expect(!MLXChatMessages.isPromptMessage(LLMMessage(role: .status, content: "运行中")))
+        #expect(!MLXChatMessages.isPromptMessage(LLMMessage(role: .error, content: "失败")))
+        #expect(!MLXChatMessages.isPromptMessage(LLMMessage(role: .unknown, content: "?")))
+    }
+
     @Test("参数解析失败时保留调用并降级为空对象（#286）")
     func malformedArgumentsDegradeToEmptyObject() {
         let messages: [LLMMessage] = [

@@ -21,7 +21,13 @@ struct MLXGenerationConsumer {
     private(set) var toolCalls: [LLMToolCall] = []
 
     /// 来自 `.info` 终态事件的输入 token 数。
+    ///
+    /// 取渲染后提示词的总长度（复用缓存 + 本轮预填充），与云端供应商的
+    /// prompt tokens 口径一致；缓存复用只影响实际计算量，不该让用量变少。
     private(set) var inputTokenCount: Int?
+
+    /// 来自 `.info` 终态事件的缓存复用 token 数；无复用时为 nil。
+    private(set) var cachedInputTokenCount: Int?
 
     /// 来自 `.info` 终态事件的输出 token 数。
     private(set) var outputTokenCount: Int?
@@ -56,7 +62,8 @@ struct MLXGenerationConsumer {
             await onChunk(LLMStreamChunk(eventTitle: "工具调用", toolCalls: [call]))
         }
         if let info = generation.info {
-            inputTokenCount = info.promptTokenCount
+            inputTokenCount = info.totalPromptTokenCount
+            cachedInputTokenCount = info.cachedPromptTokenCount > 0 ? info.cachedPromptTokenCount : nil
             outputTokenCount = info.generationTokenCount
             stopReason = Self.stopReasonText(info.stopReason)
         }
@@ -75,6 +82,7 @@ struct MLXGenerationConsumer {
             toolCalls: toolCalls.isEmpty ? nil : toolCalls,
             inputTokenCount: inputTokenCount,
             outputTokenCount: outputTokenCount,
+            cachedInputTokenCount: cachedInputTokenCount,
             stopReason: stopReason
         )
     }
