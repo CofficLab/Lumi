@@ -493,14 +493,17 @@ struct FactoryLumiTests {
         let theme = kernel.resolveProvider((any ThemeProviding).self)
         #expect(theme != nil)
 
-        // 内置 4 个（Lumi/System/Dark/Light）+ 复刻 19 个（Lumi 同 id 覆盖）= 22 个。
-        #expect(theme?.themes.count == 22)
+        // 内置 4 个（Lumi/System/Dark/Light）+ 目录 31 个（Lumi 同 id 覆盖）= 34 个。
+        #expect(theme?.themes.count == 34)
 
-        // 复刻主题 id 与旧版主题插件一致。
+        // 目录主题 id 与旧版插件及新增配色一致。
         for id in ["lumi", "midnight", "sky", "aurora", "nebula", "void",
                    "spring", "summer", "autumn", "winter", "github", "orchard",
                    "mountain", "vscode-auto", "vscode-dark", "vscode-light",
-                   "river", "one-dark", "dracula"] {
+                   "river", "one-dark", "dracula",
+                   "catppuccin-latte", "catppuccin-mocha", "tokyo-night", "nord",
+                   "gruvbox", "solarized", "rose-pine", "rose-pine-dawn",
+                   "monokai", "night-owl", "kanagawa", "everforest"] {
             #expect(theme?.themes.contains(where: { $0.id == id }) == true, "缺少复刻主题 \(id)")
         }
 
@@ -551,7 +554,7 @@ struct FactoryLumiTests {
             pluginFactory: DefaultPluginFactory()
         ))
         #expect(kernel.lifecycleState == .running)
-        #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
+        #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 34)
         // 设计类插件（图标/促销图/思维导图/简历/原型）均为 disabledByDefault，
         // 未启用时不贡献 ActivityBar 条目，因此此处只统计默认启用的插件。
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)

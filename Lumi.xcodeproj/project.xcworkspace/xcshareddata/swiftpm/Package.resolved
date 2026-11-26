@@ -501,8 +501,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiThemePack.git",
       "state" : {
-        "revision" : "70631bc98363688eee68d7a5a6255a9cb2782d5f",
-        "version" : "1.1.0"
+        "revision" : "210cbcd74042c39be7657f372e13281db0c4f9bb",
+        "version" : "1.2.0"
       }
     },
     {

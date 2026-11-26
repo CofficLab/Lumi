@@ -134,7 +134,7 @@ final class LumiUITests: LumiUITestCase {
                 "外观页缺少主题筛选：\(filter)"
             )
         }
-        // 主题数量标签（"19 Themes"）作为详情渲染完成的信号。
+        // 主题数量标签（"31 Themes"）作为详情渲染完成的信号。
         XCTAssertTrue(
             element(containingLabel: "Themes").waitForExistence(timeout: 8),
             "外观页没有渲染主题列表"

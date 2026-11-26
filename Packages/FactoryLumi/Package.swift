@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "FactoryLumi", targets: ["FactoryLumi"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/lumi-softworks/LumiThemePack.git", from: "1.0.13"),
+        .package(url: "https://github.com/lumi-softworks/LumiThemePack.git", from: "1.2.0"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiLocalization.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiUI.git", from: "1.18.1"),
