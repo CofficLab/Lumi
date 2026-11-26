@@ -207,10 +207,10 @@ public struct DeviceStatusTool: SuperAgentTool, @unchecked Sendable {
         }
 
         if let thermal = payload.thermal {
-            if let peak = thermal.peakCelsius {
+            if let peak = thermal.peakCelsius ?? thermal.readings.map(\.celsius).max() {
                 lines.append("Temperature peak \(String(format: "%.1f", peak))°C across \(thermal.readings.count) sensors")
             } else {
-                lines.append("Temperature: no sensor readings available")
+                lines.append("Thermal pressure: \(thermal.state.rawValue)")
             }
         }
 

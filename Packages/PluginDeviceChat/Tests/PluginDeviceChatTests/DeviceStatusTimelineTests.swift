@@ -61,10 +61,7 @@ struct DeviceStatusTimelineTests {
                     isEjectable: false
                 )
             ],
-            thermal: DeviceThermalStatus(
-                readings: [DeviceThermalReading(index: 0, kind: "die", celsius: 52.5)],
-                peakCelsius: 52.5
-            ),
+            thermal: DeviceThermalStatus(state: .fair),
             processes: [
                 DeviceProcessStatus(
                     pid: 42,

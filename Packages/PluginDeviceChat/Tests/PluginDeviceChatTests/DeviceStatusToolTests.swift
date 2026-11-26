@@ -127,6 +127,7 @@ struct DeviceStatusToolTests {
         #expect(summary.contains("Battery 72%"))
         #expect(summary.contains("Macintosh HD"))
         #expect(summary.contains("Safari"))
+        #expect(summary.contains("Thermal pressure: fair"))
     }
 
     @Test("摘要在无数据时不编造指标")
@@ -151,8 +152,8 @@ struct DeviceStatusToolTests {
         #expect(!summary.contains("Battery"))
     }
 
-    @Test("温度无读数时摘要如实说明")
-    func summaryReportsMissingThermalReadings() {
+    @Test("摘要说明热压力等级")
+    func summaryReportsThermalPressure() {
         let payload = DeviceStatusPayload(
             scope: .thermal,
             timestamp: 0,
@@ -164,11 +165,38 @@ struct DeviceStatusToolTests {
                 logicalCoreCount: 1,
                 uptime: 0
             ),
-            thermal: DeviceThermalStatus(readings: [], peakCelsius: nil)
+            thermal: DeviceThermalStatus(state: .serious)
         )
         let summary = DeviceStatusTool.summary(for: payload)
 
-        #expect(summary.contains("no sensor readings"))
+        #expect(summary.contains("Thermal pressure: serious"))
+    }
+
+    @Test("摘要在有传感器读数时报告峰值温度")
+    func summaryReportsTemperaturePeak() {
+        let payload = DeviceStatusPayload(
+            scope: .thermal,
+            timestamp: 0,
+            device: DeviceIdentity(
+                name: "Test Mac",
+                osVersion: "macOS 15.1.0",
+                processorName: "",
+                physicalCoreCount: 1,
+                logicalCoreCount: 1,
+                uptime: 0
+            ),
+            thermal: DeviceThermalStatus(
+                state: .fair,
+                readings: [
+                    DeviceThermalReading(index: 0, kind: "die", celsius: 62.5),
+                    DeviceThermalReading(index: 1, kind: "device", celsius: 48.0),
+                ],
+                peakCelsius: 62.5
+            )
+        )
+        let summary = DeviceStatusTool.summary(for: payload)
+
+        #expect(summary.contains("Temperature peak 62.5°C across 2 sensors"))
     }
 
     // MARK: - 字节格式化

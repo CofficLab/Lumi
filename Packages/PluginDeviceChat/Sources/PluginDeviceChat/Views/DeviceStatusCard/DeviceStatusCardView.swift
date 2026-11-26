@@ -10,7 +10,7 @@ import SwiftUI
 /// - `cpu`：总占用 + 每核分布 + 负载均值 + user/system/idle 拆分；
 /// - `memory`：已用 / 总量 / 内存压力；
 /// - `storage`：各卷容量条；
-/// - `thermal`：传感器读数与峰值；
+/// - `thermal`：温度传感器读数或系统热压力等级；
 /// - `processes`：进程排行。
 ///
 /// 载荷缺失时（历史数据或载荷损坏）回退到纯文本摘要，避免渲染空白。
@@ -90,7 +90,10 @@ struct DeviceStatusCardView: View {
         case .storage:
             return pluginLocalization.string("Storage")
         case .thermal:
-            return pluginLocalization.string("Temperature")
+            if payload.thermal?.peakCelsius != nil || !(payload.thermal?.readings.isEmpty ?? true) {
+                return pluginLocalization.string("Temperature")
+            }
+            return pluginLocalization.string("Thermal Pressure")
         case .processes:
             return pluginLocalization.string("Top Processes")
         }

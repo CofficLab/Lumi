@@ -267,8 +267,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiPluginDevice.git",
       "state" : {
-        "revision" : "99499fb53142b3281c4951f9807f537f5a7d635d",
-        "version" : "1.2.12"
+        "revision" : "41aa662c8fedeacc574ea6cb72d149e1c05a96c7",
+        "version" : "1.3.0"
       }
     },
     {

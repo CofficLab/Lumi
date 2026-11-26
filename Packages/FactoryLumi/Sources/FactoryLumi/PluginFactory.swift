@@ -81,6 +81,9 @@ import PluginConversationTitle
 import PluginConversationState
 import PluginDevice
 import PluginDeviceChat
+#if os(macOS)
+import PluginDeviceThermalSensors
+#endif
 import PluginDiskManager
 import PluginNetworkManager
 import PluginServerManager
@@ -215,6 +218,10 @@ public struct DefaultPluginFactory: PluginFactory {
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
+        // Lumi 不发行 App Store 版本，安装精确温度能力后设备插件展示传感器读数。
+        #if os(macOS)
+        ThermalSensors.install()
+        #endif
         var plugins: [any SuperPlugin] = []
         // 核心基础插件（order 10-20）：必须最先启动
         if let storage = StorageSuperPlugin.makeIfAvailable() {
