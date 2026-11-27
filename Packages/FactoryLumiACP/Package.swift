@@ -42,7 +42,7 @@ let package = Package(
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
-        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.4.2"),
+        .package(url: "https://github.com/lumi-softworks/LumiChat.git", from: "1.5.0"),
         .package(path: "../PluginConversationManager"),
         .package(path: "../PluginMessageManager"),
         .package(path: "../PluginConversationPendingMessage"),

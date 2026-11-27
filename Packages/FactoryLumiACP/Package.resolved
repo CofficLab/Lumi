@@ -1,5 +1,5 @@
 {
-  "originHash" : "4029af7ee019e232de433e89c73ca906df87d0ea179fbf497656905388341db7",
+  "originHash" : "7c6dc7a887be5b241fc13958da038de5ea7d5ee5136f417b3fa363832bc57f06",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiChat.git",
       "state" : {
-        "revision" : "8cd1620cafefa7787e3f95ef99ae6503fa23d00b",
-        "version" : "1.4.2"
+        "revision" : "a6f2ad5670d31ff0b6238216786527b802c64468",
+        "version" : "1.5.0"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lumi-softworks/LumiKitLLM.git",
       "state" : {
-        "revision" : "9529599475c94aa7f0618590d6b2f25e1f61d048",
-        "version" : "1.2.0"
+        "revision" : "40abf61e2af7207c796f53a027ead8a0b4761ff8",
+        "version" : "1.3.0"
       }
     },
     {
