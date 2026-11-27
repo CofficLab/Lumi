@@ -80,6 +80,12 @@ class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
     }
 }
 
+extension MLXProviderBase: LLMModelResidencyProviding {
+    func isModelResident(modelID: String) -> Bool? {
+        MLXRuntime.shared.isModelResident(modelID: modelID)
+    }
+}
+
 extension MLXProviderBase: LLMModelDownloadProviding {
     var downloadState: LLMModelDownloadState {
         MLXDownloadManager.shared.downloadState

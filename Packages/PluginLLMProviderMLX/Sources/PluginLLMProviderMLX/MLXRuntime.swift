@@ -44,6 +44,15 @@ final class MLXRuntime {
         session.discardContainer()
     }
 
+    /// 指定模型当前是否已驻留内存。
+    ///
+    /// 与 `generate` 的加载判定同源：`session` 记录已成功加载的模型 ID，
+    /// `modelContainer` 是容器是否在位，两者同时成立时下一次生成不会再
+    /// 触发加载。发送链路的大模型确认门禁据此跳过已驻留模型。
+    func isModelResident(modelID: String) -> Bool {
+        !session.needsLoad(for: modelID) && modelContainer != nil
+    }
+
     /// 执行一次生成。
     ///
     /// - Parameter reuseSession: 交互式回合传 `true`，允许复用上一轮的

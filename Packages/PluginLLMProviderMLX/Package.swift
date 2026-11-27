@@ -11,7 +11,7 @@ let package = Package(
         .package(url: "https://github.com/lumi-softworks/LumiLogging.git", from: "1.0.2"),
         .package(url: "https://github.com/lumi-softworks/LumiKernel.git", from: "1.1.1"),
         .package(url: "https://github.com/lumi-softworks/LumiProviderLLMManager.git", from: "1.0.0"),
-        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.0.1"),
+        .package(url: "https://github.com/lumi-softworks/LumiKitLLM.git", from: "1.3.0"),
         .package(path: "../KitDownload"),
         .package(url: "https://github.com/ml-explore/mlx-swift-lm.git", exact: "3.32.3"),
         .package(
